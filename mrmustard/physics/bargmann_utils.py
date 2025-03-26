@@ -24,7 +24,7 @@ from mrmustard.utils.typing import ComplexMatrix, Matrix, Vector, Scalar
 
 
 def bargmann_Abc_to_phasespace_cov_means(
-    A: Matrix, b: Vector, c: Scalar, batched: bool = False
+    A: Matrix, b: Vector, c: Scalar
 ) -> tuple[Matrix, Vector, Scalar]:
     r"""
     Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
@@ -44,28 +44,15 @@ def bargmann_Abc_to_phasespace_cov_means(
 
     Args:
         A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
-
     Returns:
         The covariance matrix, mean vector and coefficient of the state in phase space.
     """
-    # batched = len(A.shape) == 3 and len(b.shape) == 2 and len(c.shape) == 1
-    A = math.atleast_3d(A)
-    b = math.atleast_2d(b)
-    c = math.atleast_1d(c)
     num_modes = A.shape[-1] // 2
     Omega = math.cast(math.transpose(math.J(num_modes)), dtype=math.complex128)
     W = math.transpose(math.conj(math.rotmat(num_modes)))
-    coeff = c
-    cov = [
-        -Omega @ W @ Amat @ math.transpose(W) @ math.transpose(Omega) * settings.HBAR for Amat in A
-    ]
-    mean = [
-        1j * math.matvec(Omega @ W, bvec) * math.sqrt(settings.HBAR, dtype=math.complex128)
-        for bvec in b
-    ]
-    if batched:
-        return math.astensor(cov), math.astensor(mean), coeff
-    return cov[0], mean[0], coeff[0]
+    cov = -Omega @ W @ A @ math.transpose(W) @ math.transpose(Omega) * settings.HBAR
+    mean = 1j * math.matvec(Omega @ W, b) * math.sqrt(settings.HBAR, dtype=math.complex128)
+    return cov, mean, c
 
 
 def cayley(X, c):
@@ -184,14 +171,14 @@ def au2Symplectic(A):
     A = A * (1.0 + 0.0 * 1j)
     m = A.shape[-1]
     m = m // 2
-
+    batch_dim = len(A.shape[:-2])
     # identifying blocks of A_u
     u_2 = A[..., :m, m:]
     u_3 = A[..., m:, m:]
 
     # The formula to apply comes here
-    S_1 = math.conj(math.inv(math.transpose(u_2)))
-    S_2 = -math.conj(math.solve(u_2.T, u_3))
+    S_1 = math.conj(math.inv(math.batched_transpose(u_2, batch_dim)))
+    S_2 = -math.conj(math.solve(math.batched_transpose(u_2, batch_dim), u_3))
     S_3 = math.conj(S_2)
     S_4 = math.conj(S_1)
 
@@ -225,20 +212,19 @@ def symplectic2Au(S):
     """
     m = S.shape[-1]
     m = m // 2
+    batch_dim = len(S.shape[:-2])
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
     R = math.rotmat(m)
     S = R @ S @ math.dagger(R)
     # identifying blocks of S
-    S_1 = S[:m, :m]
-    S_2 = S[:m, m:]
-
-    # TODO: broadcasting/batch stuff consider a batch dimension
+    S_1 = S[..., :m, :m]
+    S_2 = S[..., :m, m:]
 
     # the formula to apply comes here
     A_1 = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
-    A_2 = math.conj(math.inv(math.transpose(S_1)))
-    A_3 = math.transpose(A_2)
+    A_2 = math.conj(math.inv(math.batched_transpose(S_1, batch_dim)))
+    A_3 = math.batched_transpose(A_2, batch_dim)
     A_4 = -math.conj(math.solve(S_1, S_2))
 
     A = math.block([[A_1, A_2], [A_3, A_4]])
@@ -256,18 +242,19 @@ def XY_of_channel(A: ComplexMatrix):
     """
     n = A.shape[-1] // 2
     m = n // 2
+    batch_dim = len(A.shape[:-2])
 
     # here we transform to the other convention for wires i.e. {out-bra, out-ket, in-bra, in-ket}
     A_out = math.block(
         [
-            [A[:m, :m], A[:m, 2 * m : 3 * m]],
-            [A[2 * m : 3 * m, :m], A[2 * m : 3 * m, 2 * m : 3 * m]],
+            [A[..., :m, :m], A[..., :m, 2 * m : 3 * m]],
+            [A[..., 2 * m : 3 * m, :m], A[..., 2 * m : 3 * m, 2 * m : 3 * m]],
         ]
     )
     R = math.block(
         [
-            [A[:m, m : 2 * m], A[:m, 3 * m :]],
-            [A[2 * m : 3 * m, m : 2 * m], A[2 * m : 3 * m, 3 * m :]],
+            [A[..., :m, m : 2 * m], A[..., :m, 3 * m :]],
+            [A[..., 2 * m : 3 * m, m : 2 * m], A[..., 2 * m : 3 * m, 3 * m :]],
         ]
     )
     X_tilde = (
@@ -289,13 +276,13 @@ def XY_of_channel(A: ComplexMatrix):
 
     sigma_H = math.inv(math.eye(n) - math.Xmat(m) @ A_out)  # the complex-Husimi covariance matrix
 
-    N = sigma_H[m:, m:]
-    M = sigma_H[:m, m:]
+    N = sigma_H[..., m:, m:]
+    M = sigma_H[..., :m, m:]
     sigma = (
         math.block([[math.real(N + M), math.imag(N + M)], [math.imag(M - N), math.real(N - M)]])
         - math.eye(n) / 2
     )
-    Y = sigma - X @ X.T / 2
+    Y = sigma - X @ math.batched_transpose(X, batch_dim) / 2
     math.error_if(
         X,
         math.norm(math.imag(X)) > settings.ATOL,
