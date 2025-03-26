@@ -305,7 +305,7 @@ class PolyExpAnsatz(Ansatz):
         )
         b_core = math.concat((math.zeros(batch_shape + (n,), dtype=b.dtype), b[..., n:]), axis=-1)
         if batch_shape:
-            batch_size = math.prod(A_core.shape[:-2])
+            batch_size = int(math.prod(A_core.shape[:-2]))  # tensorflow
             A_core_vectorized = math.reshape(A_core, (batch_size,) + A_core.shape[-2:])
             b_core_vectorized = math.reshape(b_core, (batch_size,) + b_core.shape[-1:])
             poly_core = math.hermite_renormalized_batch(

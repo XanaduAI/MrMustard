@@ -30,7 +30,6 @@ from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
-    ComplexTensor,
     RealVector,
     Scalar,
     Batch,
