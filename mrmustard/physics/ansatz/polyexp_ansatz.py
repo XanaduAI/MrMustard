@@ -308,9 +308,12 @@ class PolyExpAnsatz(Ansatz):
             batch_size = int(math.prod(A_core.shape[:-2]))  # tensorflow
             A_core_vectorized = math.reshape(A_core, (batch_size,) + A_core.shape[-2:])
             b_core_vectorized = math.reshape(b_core, (batch_size,) + b_core.shape[-1:])
-            poly_core = math.hermite_renormalized_batch(
-                A_core_vectorized, b_core_vectorized, complex(1), poly_shape
-            )  # TODO: hermite_renormalized_batch
+            poly_core = math.astensor(
+                [
+                    math.hermite_renormalized(A, b, complex(1), shape=poly_shape)
+                    for A, b in zip(A_core_vectorized, b_core_vectorized)
+                ]
+            )
         else:
             poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape)
 
@@ -498,9 +501,12 @@ class PolyExpAnsatz(Ansatz):
         b_poly = math.einsum("...ab,...a->...b", A[..., :n, n:], z) + b[..., n:]
         A_poly_vectorized = math.reshape(A[..., n:, n:], (batch_size,) + A[..., n:, n:].shape[-2:])
         b_poly_vectorized = math.reshape(b_poly, (batch_size,) + b_poly.shape[-1:])
-        ret = math.hermite_renormalized_batch(
-            A_poly_vectorized, b_poly_vectorized, complex(1), self.shape_derived_vars
-        )  # TODO: hermite_renormalized_batch
+        ret = math.astensor(
+            [
+                math.hermite_renormalized(A, b, complex(1), shape=self.shape_derived_vars)
+                for A, b in zip(A_poly_vectorized, b_poly_vectorized)
+            ]
+        )
         return math.reshape(ret, batch_shape + self.shape_derived_vars)
 
     def _equal_no_array(self, other: PolyExpAnsatz) -> bool:

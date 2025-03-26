@@ -173,11 +173,15 @@ class Representation:
             batch = (self.ansatz.batch_size,) if self.ansatz.batch_shape != () else ()  # tensorflow
 
             if self.ansatz.batch_shape != ():  # tensorflow
-                G = math.hermite_renormalized_batch(
-                    As, bs, complex(1), shape=shape + cs.shape[1:]
-                )  # TODO: hermite_renormalized_batch
+                G = math.astensor(
+                    [
+                        math.hermite_renormalized(A, b, complex(1), shape=shape + cs.shape[1:])
+                        for A, b in zip(As, bs)
+                    ]
+                )
             else:
                 G = math.hermite_renormalized(As, bs, complex(1), shape=shape + cs.shape)
+
             G = math.reshape(G, batch + shape + (-1,))
             cs = math.reshape(cs, batch + (-1,))
             core_str = "".join(
