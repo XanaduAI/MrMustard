@@ -256,7 +256,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     @Autocast()
     @jax.jit
     def matvec(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
-        return jnp.matmul(a, b)
+        return jnp.matmul(a, b[..., None])[..., 0]
 
     @jax.jit
     def cos(self, array: jnp.ndarray) -> jnp.ndarray:
