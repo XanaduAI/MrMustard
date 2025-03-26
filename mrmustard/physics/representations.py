@@ -17,7 +17,7 @@ This module contains the class for representations.
 """
 
 from __future__ import annotations
-from typing import Sequence
+from typing import Literal, Sequence
 from mrmustard import math
 from mrmustard.utils.typing import (
     ComplexTensor,
@@ -102,6 +102,36 @@ class Representation:
             return self.ansatz.triple
         except AttributeError as e:
             raise AttributeError("No Bargmann data for this component.") from e
+
+    def contract(self, other: Representation, mode: Literal["zip", "kron"] = "kron"):
+        r"""
+        Contracts two representations.
+
+        Args:
+            other: The other representation to contract with.
+            mode: "zip" the batch dimensions or "kron" the batch dimensions.
+        """
+        wires_result, perm = self.wires @ other.wires
+        idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
+
+        if type(self.ansatz) is type(other.ansatz):
+            self_ansatz = self.ansatz
+            other_ansatz = other.ansatz
+        else:
+            self_ansatz = self.to_bargmann().ansatz
+            other_ansatz = other.to_bargmann().ansatz
+
+        if mode == "zip":
+            eins_str = self_ansatz._zip_batch_strings(
+                len(self_ansatz.batch_shape), len(other_ansatz.batch_shape)
+            )
+        elif mode == "kron":
+            eins_str = self_ansatz._outer_product_batch_str(
+                len(self_ansatz.batch_shape), len(other_ansatz.batch_shape)
+            )
+        ansatz = self_ansatz.contract(other_ansatz, batch_str=eins_str, idx1=idx_z, idx2=idx_zconj)
+        ansatz = ansatz.reorder(perm) if perm else ansatz
+        return Representation(ansatz, wires_result)
 
     def fock_array(self, shape: int | Sequence[int]) -> ComplexTensor:
         r"""
@@ -199,35 +229,3 @@ class Representation:
         if isinstance(other, Representation):
             return self.ansatz == other.ansatz and self.wires == other.wires
         return False
-
-    def contract(self, other: Representation, mode: str = "kron"):
-        r"""
-        Contracts two representations.
-
-        Args:
-            other: The other representation to contract with.
-            mode: "zip" the batch dimensions, "kron" the batch dimensions or pass a custom einsum string.
-        """
-        wires_result, perm = self.wires @ other.wires
-        idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
-
-        if type(self.ansatz) is type(other.ansatz):
-            self_ansatz = self.ansatz
-            other_ansatz = other.ansatz
-        else:
-            self_ansatz = self.to_bargmann().ansatz
-            other_ansatz = other.to_bargmann().ansatz
-
-        if mode == "zip":
-            eins_str = self_ansatz._zip_batch_strings(
-                len(self_ansatz.batch_shape), len(other_ansatz.batch_shape)
-            )
-        elif mode == "kron":
-            eins_str = self_ansatz._outer_product_batch_str(
-                len(self_ansatz.batch_shape), len(other_ansatz.batch_shape)
-            )
-        else:
-            eins_str = mode
-        ansatz = self_ansatz.contract(other_ansatz, batch_str=eins_str, idx1=idx_z, idx2=idx_zconj)
-        ansatz = ansatz.reorder(perm) if perm else ansatz
-        return Representation(ansatz, wires_result)

@@ -354,6 +354,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError, match="Expected an operator defined on"):
             dm.expectation(op3)
 
+    def test_fock_distribution(self):
+        state = Coherent(0, x=1, y=2)
+        assert math.allclose(state.fock_distribution(10), state.dm().fock_distribution(10))
+
     def test_rshift(self):
         ket = Coherent(0, 1) >> Coherent(1, 1)
         unitary = Dgate(0, 1)

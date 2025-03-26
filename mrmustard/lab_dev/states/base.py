@@ -332,12 +332,11 @@ class State(CircuitComponent):
         Returns:
             The Fock distribution.
         """
+        fock_array = self.fock_array(cutoff)
         if self.wires.ket and not self.wires.bra:
-            fock_array = self.fock_array(cutoff)
             return math.reshape(math.abs(fock_array) ** 2, (-1,))
         else:
-            fock_array = math.diag_part(self.fock_array(cutoff))
-            return math.reshape(fock_array, (-1,))
+            return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
 
     def phase_space(self, s: float) -> tuple:
         r"""

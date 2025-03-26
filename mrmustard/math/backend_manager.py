@@ -361,8 +361,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The transposed array.
         """
-        if a is None:
-            return None
         perm = tuple(range(len(a.shape)))
         perm = perm[:batch_dims] + perm[batch_dims:][::-1]
         return self._apply("transpose", (a, perm))
