@@ -28,6 +28,7 @@ from mrmustard.utils.typing import (
 
 from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from .triples import identity_Abc
+from .utils import outer_product_batch_str, zip_batch_strings
 from .wires import Wires, ReprEnum
 
 __all__ = ["Representation"]
@@ -122,11 +123,11 @@ class Representation:
             other_ansatz = other.to_bargmann().ansatz
 
         if mode == "zip":
-            eins_str = self_ansatz._zip_batch_strings(
+            eins_str = zip_batch_strings(
                 len(self_ansatz.batch_shape), len(other_ansatz.batch_shape)
             )
         elif mode == "kron":
-            eins_str = self_ansatz._outer_product_batch_str(
+            eins_str = outer_product_batch_str(
                 len(self_ansatz.batch_shape), len(other_ansatz.batch_shape)
             )
         ansatz = self_ansatz.contract(other_ansatz, batch_str=eins_str, idx1=idx_z, idx2=idx_zconj)

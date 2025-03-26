@@ -30,6 +30,7 @@ from mrmustard.math.parameters import Variable
 from mrmustard.utils.typing import Batch, Scalar, Tensor
 
 from .base import Ansatz
+from ..utils import outer_product_batch_str
 
 __all__ = ["ArrayAnsatz"]
 
@@ -170,7 +171,7 @@ class ArrayAnsatz(Ansatz):
                 raise IndexError(f"Valid indices are 0 to {other.core_dims-1}. Got {j}.")
 
         if batch_str is None:
-            batch_str = self._outer_product_batch_str(self.batch_dims, other.batch_dims)
+            batch_str = outer_product_batch_str(self.batch_dims, other.batch_dims)
         input_str, output_str = batch_str.split("->")
         input_parts = input_str.split(",")
         if len(input_parts) != 2:

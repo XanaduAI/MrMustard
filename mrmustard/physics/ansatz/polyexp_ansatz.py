@@ -50,6 +50,7 @@ from mrmustard.math.parameters import Variable
 
 
 from .base import Ansatz
+from ..utils import outer_product_batch_str, reshape_args_to_batch_string
 
 __all__ = ["PolyExpAnsatz"]
 
@@ -257,7 +258,7 @@ class PolyExpAnsatz(Ansatz):
             The contracted ansatz.
         """
         if batch_str is None:
-            batch_str = self._outer_product_batch_str(self.batch_dims, other.batch_dims)
+            batch_str = outer_product_batch_str(self.batch_dims, other.batch_dims)
         idx1 = (idx1,) if isinstance(idx1, int) else idx1
         idx2 = (idx2,) if isinstance(idx2, int) else idx2
         for i, j in zip(idx1, idx2):
@@ -371,9 +372,9 @@ class PolyExpAnsatz(Ansatz):
         only_z = [math.astensor(zi) for zi in z if zi is not None]
 
         if batch_string is None:  # Generate default batch string if none provided
-            batch_string = self._outer_product_batch_str(*[len(zi.shape) for zi in only_z])
+            batch_string = outer_product_batch_str(*[len(zi.shape) for zi in only_z])
 
-        reshaped_z = self._reshape_args_to_batch_string(only_z, batch_string)
+        reshaped_z = reshape_args_to_batch_string(only_z, batch_string)
         broadcasted_z = math.broadcast_arrays(*reshaped_z)
         if len(evaluated_indices) == self.num_CV_vars:  # Full evaluation: all CV vars specified
             return self(*broadcasted_z)
@@ -769,7 +770,7 @@ class PolyExpAnsatz(Ansatz):
         As, bs, cs = join_Abc(
             self.triple,
             other.triple,
-            self._outer_product_batch_str(self.batch_dims, other.batch_dims),
+            outer_product_batch_str(self.batch_dims, other.batch_dims),
         )
         return PolyExpAnsatz(As, bs, cs)
 
