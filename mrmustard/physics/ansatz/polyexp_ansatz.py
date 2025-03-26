@@ -257,8 +257,6 @@ class PolyExpAnsatz(Ansatz):
         Returns:
             The contracted ansatz.
         """
-        if batch_str is None:
-            batch_str = outer_product_batch_str(self.batch_shape, other.batch_shape)
         idx1 = (idx1,) if isinstance(idx1, int) else idx1
         idx2 = (idx2,) if isinstance(idx2, int) else idx2
         for i, j in zip(idx1, idx2):
@@ -411,20 +409,9 @@ class PolyExpAnsatz(Ansatz):
             return
 
         to_keep = self._find_unique_terms_sorted()
-        A_vectorized = (
-            math.reshape(self.A, (-1, self.num_vars, self.num_vars))
-            if self.batch_shape != ()
-            else self.A  # tensorflow
-        )
-        b_vectorized = (
-            math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape != () else self.b
-        )  # tensorflow
-        c_vectorized = (
-            math.reshape(self.c, (-1, *self.shape_derived_vars))
-            if self.batch_shape != ()
-            else self.c  # tensorflow
-        )
-
+        A_vectorized = math.reshape(self.A, (-1, self.num_vars, self.num_vars))
+        b_vectorized = math.reshape(self.b, (-1, self.num_vars))
+        c_vectorized = math.reshape(self.c, (-1, *self.shape_derived_vars))
         _A = math.gather(A_vectorized, to_keep, axis=0)
         _b = math.gather(b_vectorized, to_keep, axis=0)
         _c = math.gather(c_vectorized, to_keep, axis=0)  # already added

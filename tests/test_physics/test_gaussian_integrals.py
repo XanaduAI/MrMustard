@@ -54,9 +54,11 @@ def test_real_gaussian_integral():
     b = math.astensor(np.arange(3) + 0j)
     c = 1.0 + 0j
     res = real_gaussian_integral((A, b, c), idx=[0, 1])
-    assert np.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
-    assert np.allclose(res[1], b[2] - math.sum(A[2:, :2] * math.matvec(math.inv(A[:2, :2]), b[:2])))
-    assert np.allclose(
+    assert math.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
+    assert math.allclose(
+        res[1], b[2] - math.sum(A[2:, :2] * math.matvec(math.inv(A[:2, :2]), b[:2]))
+    )
+    assert math.allclose(
         res[2],
         c
         * math.sqrt((-2 * np.pi) ** 2, math.complex128)
@@ -64,9 +66,9 @@ def test_real_gaussian_integral():
         * math.exp(-0.5 * math.sum(b[:2] * math.matvec(math.inv(A[:2, :2]), b[:2]))),
     )
     res2 = real_gaussian_integral((A, b, c), idx=[])
-    assert np.allclose(res2[0], A)
-    assert np.allclose(res2[1], b)
-    assert np.allclose(res2[2], c)
+    assert math.allclose(res2[0], A)
+    assert math.allclose(res2[1], b)
+    assert math.allclose(res2[2], c)
 
     A2 = math.astensor(
         np.array(
@@ -79,9 +81,9 @@ def test_real_gaussian_integral():
     b2 = math.astensor(np.arange(2) + 0j)
     c2 = 1.0 + 0j
     res3 = real_gaussian_integral((A2, b2, c2), idx=[0, 1])
-    assert np.allclose(res3[0], math.astensor([]))
-    assert np.allclose(res3[1], math.astensor([]))
-    assert np.allclose(
+    assert math.allclose(res3[0], math.astensor([]))
+    assert math.allclose(res3[1], math.astensor([]))
+    assert math.allclose(
         res3[2],
         c2
         * math.sqrt((-2 * np.pi) ** 2, math.complex128)
@@ -138,9 +140,9 @@ def test_join_Abc_nonbatched():
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=None)
 
-    assert np.allclose(A, np.array([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]]))
-    assert np.allclose(b, np.array([5, 6, 12, 13]))
-    assert np.allclose(c, 70)
+    assert math.allclose(A, np.array([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]]))
+    assert math.allclose(b, np.array([5, 6, 12, 13]))
+    assert math.allclose(c, 70)
 
 
 def test_join_Abc_batched_zip():
@@ -155,7 +157,7 @@ def test_join_Abc_batched_zip():
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
 
-    assert np.allclose(
+    assert math.allclose(
         A,
         np.array(
             [
@@ -164,8 +166,8 @@ def test_join_Abc_batched_zip():
             ]
         ),
     )
-    assert np.allclose(b, np.array([[5, 6, 12, 13], [7, 8, 14, 15]]))
-    assert np.allclose(c, np.array([70, 800]))
+    assert math.allclose(b, np.array([[5, 6, 12, 13], [7, 8, 14, 15]]))
+    assert math.allclose(c, np.array([70, 800]))
 
 
 def test_join_Abc_batched_kron():
@@ -180,7 +182,7 @@ def test_join_Abc_batched_kron():
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,j->ij")
 
-    assert np.allclose(
+    assert math.allclose(
         A,
         np.array(
             [
@@ -189,8 +191,8 @@ def test_join_Abc_batched_kron():
             ]
         ),
     )
-    assert np.allclose(b, np.array([[5, 6, 12, 13], [5, 6, 14, 15]]))
-    assert np.allclose(c, np.array([70, 700]))
+    assert math.allclose(b, np.array([[5, 6, 12, 13], [5, 6, 14, 15]]))
+    assert math.allclose(c, np.array([70, 700]))
 
 
 def test_reorder_abc():
@@ -199,18 +201,20 @@ def test_reorder_abc():
     b = np.array([4, 5])
     c = np.array(6)
     same = reorder_abc((A, b, c), (0, 1))
-    assert all(np.allclose(x, y) for x, y in zip(same, (A, b, c)))
+    assert all(math.allclose(x, y) for x, y in zip(same, (A, b, c)))
     flipped = reorder_abc((A, b, c), (1, 0))
-    assert all(np.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c)))
+    assert all(
+        math.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c))
+    )
 
     A = np.array([[[1, 2, 3], [2, 4, 5], [3, 5, 6]]])
     b = np.array([[4, 5, 6]])
     c = np.array([[1, 2, 3]])
     same = reorder_abc((A, b, c), (0, 1))
-    assert all(np.allclose(x, y) for x, y in zip(same, (A, b, c)))
+    assert all(math.allclose(x, y) for x, y in zip(same, (A, b, c)))
     flipped = reorder_abc((A, b, c), (1, 0))
     assert all(
-        np.allclose(x, y)
+        math.allclose(x, y)
         for x, y in zip(flipped, (A[:, [1, 0, 2], :][:, :, [1, 0, 2]], b[:, [1, 0, 2]], c))
     )
 
@@ -222,9 +226,9 @@ def test_complex_gaussian_integral_2_not_batched():
     A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=[0.1, 0.2], y=0.3)
 
     res = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0, 1], [2, 3])
-    assert np.allclose(res[0], A3)
-    assert np.allclose(res[1], b3)
-    assert np.allclose(res[2], c3)
+    assert math.allclose(res[0], A3)
+    assert math.allclose(res[1], b3)
+    assert math.allclose(res[2], c3)
 
 
 def test_complex_gaussian_integral_2_batched():
@@ -247,9 +251,9 @@ def test_complex_gaussian_integral_2_batched():
     c3 = math.astensor([c3a, c3b, c3c])
 
     res = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0], [1], batch_string="i,i->i")
-    assert np.allclose(res[0], A3)
-    assert np.allclose(res[1], b3)
-    assert np.allclose(res[2], c3)
+    assert math.allclose(res[0], A3)
+    assert math.allclose(res[1], b3)
+    assert math.allclose(res[2], c3)
 
 
 def test_complex_gaussian_integral_1_not_batched():
@@ -258,9 +262,9 @@ def test_complex_gaussian_integral_1_not_batched():
     Ar, br, cr = triples.vacuum_state_Abc(0)
 
     res = complex_gaussian_integral_1((A, b, c), [0, 2, 4], [1, 3, 5])
-    assert np.allclose(res[0], Ar)
-    assert np.allclose(res[1], br)
-    assert np.allclose(res[2], cr)
+    assert math.allclose(res[0], Ar)
+    assert math.allclose(res[1], br)
+    assert math.allclose(res[2], cr)
 
     A1, b1, c1 = triples.vacuum_state_Abc(2)
     A2, b2, c2 = triples.displacement_gate_Abc(x=[0.1, 0.2], y=0.3)
@@ -268,9 +272,9 @@ def test_complex_gaussian_integral_1_not_batched():
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
     res = complex_gaussian_integral_1((A, b, c), [0, 1], [4, 5])
-    assert np.allclose(res[0], A3)
-    assert np.allclose(res[1], b3)
-    assert np.allclose(res[2], c3)
+    assert math.allclose(res[0], A3)
+    assert math.allclose(res[1], b3)
+    assert math.allclose(res[2], c3)
 
 
 def test_complex_gaussian_integral_1_batched():
@@ -294,9 +298,9 @@ def test_complex_gaussian_integral_1_batched():
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
     res1 = complex_gaussian_integral_1((A, b, c), [0], [2])
-    assert np.allclose(res1[0], A3)
-    assert np.allclose(res1[1], b3)
-    assert np.allclose(res1[2], c3)
+    assert math.allclose(res1[0], A3)
+    assert math.allclose(res1[1], b3)
+    assert math.allclose(res1[2], c3)
 
 
 def test_complex_gaussian_integral_1_multidim_batched():
@@ -320,9 +324,9 @@ def test_complex_gaussian_integral_1_multidim_batched():
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="ij,ij->ij")
     res1 = complex_gaussian_integral_1((A, b, c), [0], [2])
-    assert np.allclose(res1[0], A3)
-    assert np.allclose(res1[1], b3)
-    assert np.allclose(res1[2], c3)
+    assert math.allclose(res1[0], A3)
+    assert math.allclose(res1[1], b3)
+    assert math.allclose(res1[2], c3)
 
 
 def test_gaussian_integral_poly_batched():
