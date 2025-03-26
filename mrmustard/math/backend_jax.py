@@ -43,7 +43,7 @@ from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cove
     hermite_multidimensional_diagonal_batch,
 )
 
-jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)  # pragma: no cover
 
 # pylint: disable=too-many-public-methods
 class BackendJax(BackendBase):  # pragma: no cover
