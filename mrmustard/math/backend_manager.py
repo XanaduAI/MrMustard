@@ -101,9 +101,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     # the configured Euclidean optimizer.
     _euclidean_opt: type | None = None
 
-    # whether or not the backend can be changed
-    _is_immutable = False
-
     def __init__(self) -> None:
         # binding types and decorators of numpy backend
         self._bind()
@@ -154,7 +151,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         r"""
         The backend that is being used.
         """
-        self._is_immutable = True
         return self._backend
 
     @property
@@ -178,9 +174,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             raise ValueError(msg)
 
         if self.backend_name != name:
-            if self._is_immutable:
-                msg = "Can no longer change the backend in this session."
-                raise ValueError(msg)
 
             module = all_modules[name]["module"]
             object = all_modules[name]["object"]
