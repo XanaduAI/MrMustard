@@ -41,16 +41,16 @@ def generate_batch_str(batch_shape: tuple[int, ...], offset: int = 0) -> str:
     return "".join([chr(i) for i in range(97 + offset, 97 + offset + len(batch_shape))])
 
 
-def outer_product_batch_str(*ndims: int) -> str:
+def outer_product_batch_str(*batch_shapes: tuple[int, ...]) -> str:
     r"""
     Creates the einsum string for the outer product of the given tuple of dimensions.
     E.g. for (2,1,3) it returns ab,c,def->abcdef
     """
     strs = []
     offset = 0
-    for ndim in ndims:
-        strs.append("".join([chr(97 + i + offset) for i in range(ndim)]))
-        offset += ndim
+    for batch_shape in batch_shapes:
+        strs.append(generate_batch_str(batch_shape, offset))
+        offset += len(batch_shape)
     return ",".join(strs) + "->" + "".join(strs)
 
 

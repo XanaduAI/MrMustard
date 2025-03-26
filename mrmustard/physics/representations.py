@@ -127,9 +127,7 @@ class Representation:
                 len(self_ansatz.batch_shape), len(other_ansatz.batch_shape)
             )
         elif mode == "kron":
-            eins_str = outer_product_batch_str(
-                len(self_ansatz.batch_shape), len(other_ansatz.batch_shape)
-            )
+            eins_str = outer_product_batch_str(self_ansatz.batch_shape, other_ansatz.batch_shape)
         ansatz = self_ansatz.contract(other_ansatz, batch_str=eins_str, idx1=idx_z, idx2=idx_zconj)
         ansatz = ansatz.reorder(perm) if perm else ansatz
         return Representation(ansatz, wires_result)

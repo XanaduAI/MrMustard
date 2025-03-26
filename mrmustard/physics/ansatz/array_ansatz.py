@@ -171,7 +171,7 @@ class ArrayAnsatz(Ansatz):
                 raise IndexError(f"Valid indices are 0 to {other.core_dims-1}. Got {j}.")
 
         if batch_str is None:
-            batch_str = outer_product_batch_str(self.batch_dims, other.batch_dims)
+            batch_str = outer_product_batch_str(self.batch_shape, other.batch_shape)
         input_str, output_str = batch_str.split("->")
         input_parts = input_str.split(",")
         if len(input_parts) != 2:

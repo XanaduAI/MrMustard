@@ -20,7 +20,7 @@ from typing import Sequence
 import numpy as np
 from mrmustard import math
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
-from mrmustard.physics.utils import generate_batch_str, verify_batch_triple
+from mrmustard.physics.utils import outer_product_batch_str, verify_batch_triple
 
 
 def real_gaussian_integral(
@@ -232,10 +232,7 @@ def join_Abc(
     batch_dim1, batch_dim2 = len(batch1), len(batch2)
 
     if batch_string is None:
-        str1 = generate_batch_str(batch1)
-        str2 = generate_batch_str(batch2, len(str1))
-        out = generate_batch_str(batch1 + batch2)
-        batch_string = f"{str1},{str2}->{out}"
+        batch_string = outer_product_batch_str(batch1, batch2)
 
     if "->" not in batch_string:
         raise ValueError(
