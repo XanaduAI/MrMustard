@@ -290,7 +290,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
     @Autocast()
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
-        return self.matmul(a, b[:, None])[:, 0]
+        return self.matmul(a, b[..., None])[..., 0]
 
     @Autocast()
     def maximum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
