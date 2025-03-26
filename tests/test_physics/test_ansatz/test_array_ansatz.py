@@ -102,6 +102,15 @@ class TestArrayAnsatz:
         aa2 = ArrayAnsatz(array=array)
         assert aa1 == aa2
 
+    def test_from_function(self):
+        def gen_array(x):
+            return x
+
+        x = math.astensor(np.random.random((5, 8, 8)))
+        fock = ArrayAnsatz.from_function(gen_array, batch_dims=1, x=x)
+        assert fock.array.shape == (5, 8, 8)
+        assert math.allclose(fock.array, x)
+
     def test_multiply_by_scalar(self):
         fock1 = ArrayAnsatz(self.array1578, batch_dims=1)
         fock_test = 1.3 * fock1

@@ -68,11 +68,9 @@ class ArrayAnsatz(Ansatz):
         return self._array
 
     @array.setter
-    def array(self, value):
-        if not math.from_backend(value):
-            value = math.astensor(value)
+    def array(self, value: Tensor):
+        self._array = math.astensor(value)
         self._batch_shape = value.shape[: self.batch_dims]
-        self._array = value
 
     @property
     def batch_dims(self) -> int:
