@@ -57,5 +57,5 @@ class BtoPS(Map):
             ),
         ).representation
         for w in self.representation.wires.output.wires:
-            w.repr = ReprEnum.CHARACTERISTIC
+            w.repr = ReprEnum.PHASESPACE
             w.repr_params_func = lambda: self.parameters.s
