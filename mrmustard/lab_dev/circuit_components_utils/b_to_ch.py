@@ -32,7 +32,7 @@ class BtoCH(Map):
     r"""
     The `s`-parametrized ``Dgate`` as a ``Map``.
 
-    Used internally as a ``Channel`` for transformations between representations.
+    This is an unphysical component whose purpose is to modify the internal representation of another component. In particular it transforms between the Bargmann representation and the s-parametrized Characteristic functions. Note that it can be applied to a subset of modes.
 
     Args:
         modes: The modes of this channel.
