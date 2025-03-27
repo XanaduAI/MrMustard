@@ -103,6 +103,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
         return np.broadcast_to(array, shape)
 
+    def broadcast_arrays(self, *arrays: list[np.ndarray]) -> list[np.ndarray]:
+        return np.broadcast_arrays(*arrays)
+
     def block_diag(self, *blocks: list[np.ndarray]) -> np.ndarray:
         return sp.linalg.block_diag(*blocks)
 
@@ -287,7 +290,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
     @Autocast()
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
-        return self.matmul(a, b[:, None])[:, 0]
+        return self.matmul(a, b[..., None])[..., 0]
 
     @Autocast()
     def maximum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -324,7 +327,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.ones(array.shape, dtype=array.dtype)
 
     def infinity_like(self, array: np.ndarray) -> np.ndarray:
-        return np.full_like(array.shape, np.inf, dtype=array.dtype)
+        return np.full_like(array, np.inf)
 
     def conditional(
         self, cond: np.ndarray, true_fn: Callable, false_fn: Callable, *args

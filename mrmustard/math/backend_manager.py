@@ -386,16 +386,29 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("block", (blocks, axes))
 
-    def broadcast_to(self, array: Tensor, shape: tuple[int]) -> Tensor:
+    def broadcast_arrays(self, *arrays: list[Tensor]) -> list[Tensor]:
+        r"""
+        Broadcast arrays to a common shape.
+
+        Args:
+            *arrays: The arrays to broadcast.
+
+        Returns:
+            A list of broadcasted arrays.
+        """
+        return self._apply("broadcast_arrays", arrays)
+
+    def broadcast_to(self, array: Tensor, shape: tuple[int, ...], dtype=None) -> Tensor:
         r"""Broadcasts an array to a new shape.
 
         Args:
             array: The array to broadcast.
             shape: The shape to broadcast to.
-
+            dtype: The dtype to broadcast to.
         Returns:
             The broadcasted array.
         """
+        array = self.astensor(array, dtype=dtype)
         return self._apply("broadcast_to", (array, shape))
 
     def cast(self, array: Tensor, dtype=None) -> Tensor:
@@ -657,6 +670,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The values of the array at the given indices.
         """
+        array = self.astensor(array)
+        indices = self.astensor(indices, dtype=self.int64)
         return self._apply(
             "gather",
             (
@@ -688,7 +703,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape in case of B is a batched vector with a batched diemnsion on the
+        tensor of given shape in case of B is a batched vector with a batched dimension on the
         last index.
 
         Args:
@@ -1035,6 +1050,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The product of the elements in ``array``.
         """
+        array = self.astensor(array)
         return self._apply("prod", (array, axis))
 
     def real(self, array: Tensor) -> Tensor:
@@ -1192,6 +1208,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The sum of array
         """
+        array = self.astensor(array)
         if axis is not None and not isinstance(axis, int):
             neg = [a for a in axis if a < 0]
             pos = [a for a in axis if a >= 0]
@@ -1371,7 +1388,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("map_fn", (fn, elements))
 
-    def squeeze(self, tensor: Tensor, axis: list[int] | None) -> Tensor:
+    def squeeze(self, tensor: Tensor, axis: list[int] | None = None) -> Tensor:
         """Removes dimensions of size 1 from the shape of a tensor.
 
         Args:
