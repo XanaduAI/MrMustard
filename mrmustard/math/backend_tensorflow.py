@@ -109,6 +109,21 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def broadcast_to(self, array: tf.Tensor, shape: tuple[int]) -> tf.Tensor:
         return tf.broadcast_to(array, shape)
 
+    def broadcast_arrays(self, *arrays: list[tf.Tensor]) -> list[tf.Tensor]:
+        # TensorFlow doesn't have a direct equivalent to numpy's broadcast_arrays
+        # We need to implement it manually
+        if not arrays:
+            return []
+
+        # Get the broadcasted shape
+        shapes = [tf.shape(arr) for arr in arrays]
+        broadcasted_shape = shapes[0]
+        for shape in shapes[1:]:
+            broadcasted_shape = tf.broadcast_dynamic_shape(broadcasted_shape, shape)
+
+        # Broadcast each array to the common shape
+        return [tf.broadcast_to(arr, broadcasted_shape) for arr in arrays]
+
     def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         return tf.boolean_mask(tensor, mask)
 
@@ -169,6 +184,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def diag_part(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag_part(array, k=k)
 
+    @Autocast()
     def einsum(self, string: str, *tensors) -> tf.Tensor:
         if isinstance(string, str):
             return tf.einsum(string, *tensors)
@@ -632,17 +648,20 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return poly0
 
     def hermite_renormalized_1leftoverMode(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self,
+        A: tf.Tensor,
+        b: tf.Tensor,
+        c: tf.Tensor,
+        output_cutoff: int,
+        pnr_cutoffs: tuple[int, ...],
     ) -> tf.Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
+        A, b = self.reorder_AB_bargmann(A, b)
+        cutoffs = (output_cutoff + 1,) + tuple(p + 1 for p in pnr_cutoffs)
+        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, b, c, cutoffs=cutoffs)
 
     @tf.custom_gradient
     def hermite_renormalized_1leftoverMode_reorderedAB(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int, ...]
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -662,7 +681,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             The renormalized Hermite polynomial.
         """
         A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-
         poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
             hermite_multidimensional_1leftoverMode,
             [A, B, C.item(), cutoffs],
