@@ -131,7 +131,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             "hermite_renormalized",
             "hermite_renormalized_binomial",
             "hermite_renormalized_diagonal_reorderedAB",
-            "hermite_renormalized_1leftoverMode_reorderedAB",
         ]:
             setattr(self, name, getattr(self._backend, name))
 
@@ -380,16 +379,29 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("block", (blocks, axes))
 
-    def broadcast_to(self, array: Tensor, shape: tuple[int]) -> Tensor:
+    def broadcast_arrays(self, *arrays: list[Tensor]) -> list[Tensor]:
+        r"""
+        Broadcast arrays to a common shape.
+
+        Args:
+            *arrays: The arrays to broadcast.
+
+        Returns:
+            A list of broadcasted arrays.
+        """
+        return self._apply("broadcast_arrays", arrays)
+
+    def broadcast_to(self, array: Tensor, shape: tuple[int, ...], dtype=None) -> Tensor:
         r"""Broadcasts an array to a new shape.
 
         Args:
             array: The array to broadcast.
             shape: The shape to broadcast to.
-
+            dtype: The dtype to broadcast to.
         Returns:
             The broadcasted array.
         """
+        array = self.astensor(array, dtype=dtype)
         return self._apply("broadcast_to", (array, shape))
 
     def cast(self, array: Tensor, dtype=None) -> Tensor:
@@ -651,6 +663,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The values of the array at the given indices.
         """
+        array = self.astensor(array)
+        indices = self.astensor(indices, dtype=self.int64)
         return self._apply(
             "gather",
             (
@@ -682,7 +696,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape in case of B is a batched vector with a batched diemnsion on the
+        tensor of given shape in case of B is a batched vector with a batched dimension on the
         last index.
 
         Args:
@@ -713,12 +727,25 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
 
     def hermite_renormalized_1leftoverMode(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
+        self, A: Tensor, b: Tensor, c: Tensor, output_cutoff: int, pnr_cutoffs: tuple[int, ...]
     ) -> Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        r"""Compute the conditional density matrix of mode 0, with all the other modes
+        detected with PNR detectors up to the given photon numbers.
+
+        Args:
+            A: The A matrix.
+            b: The b vector.
+            c: The c scalar.
+            output_cutoff: upper boundary of photon numbers in mode 0
+            pnr_cutoffs: upper boundary of photon numbers in the other modes
+
+        Returns:
+            The conditional density matrix of mode 0. The final shape is
+            (output_cutoff + 1, output_cutoff + 1, *pnr_cutoffs + 1)
         """
-        return self._apply("hermite_renormalized_1leftoverMode", (A, B, C, cutoffs))
+        return self._apply(
+            "hermite_renormalized_1leftoverMode", (A, b, c, output_cutoff, pnr_cutoffs)
+        )
 
     def imag(self, array: Tensor) -> Tensor:
         r"""The imaginary part of array.
@@ -1016,6 +1043,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The product of the elements in ``array``.
         """
+        array = self.astensor(array)
         return self._apply("prod", (array, axis))
 
     def real(self, array: Tensor) -> Tensor:
@@ -1173,6 +1201,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The sum of array
         """
+        array = self.astensor(array)
         if axis is not None and not isinstance(axis, int):
             neg = [a for a in axis if a < 0]
             pos = [a for a in axis if a >= 0]
@@ -1352,7 +1381,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("map_fn", (fn, elements))
 
-    def squeeze(self, tensor: Tensor, axis: list[int] | None) -> Tensor:
+    def squeeze(self, tensor: Tensor, axis: list[int] | None = None) -> Tensor:
         """Removes dimensions of size 1 from the shape of a tensor.
 
         Args:

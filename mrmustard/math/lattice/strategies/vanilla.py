@@ -206,7 +206,7 @@ def vanilla_stable(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma:
 
 @njit(parallel=True)
 def vanilla_stable_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
-    """Batched version of the stable vanilla algorithm for calculating the fock representation of a Gaussian tensor.
+    r"""Batched version of the stable vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     See the documentation of ``vanilla_stable`` for more details about the non-batched version.
 
     Args:
