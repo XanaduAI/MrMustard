@@ -407,7 +407,6 @@ class PolyExpAnsatz(Ansatz):
         """
         if self._simplified or self.batch_shape == ():  # tensorflow
             return
-
         to_keep = self._find_unique_terms_sorted()
         A_vectorized = math.reshape(self.A, (-1, self.num_vars, self.num_vars))
         b_vectorized = math.reshape(self.b, (-1, self.num_vars))
@@ -537,6 +536,7 @@ class PolyExpAnsatz(Ansatz):
                 d0r = np.unravel_index(d0, self.batch_shape)
                 dr = np.unravel_index(d, self.batch_shape)
                 c_vectorized = math.update_add_tensor(c_vectorized, [d0r], [c_vectorized[dr]])
+        self._c = math.reshape(c_vectorized, self.batch_shape + self.shape_derived_vars)
         return to_keep
 
     def _generate_ansatz(self):
