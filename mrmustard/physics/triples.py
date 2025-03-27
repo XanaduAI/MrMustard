@@ -814,9 +814,15 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
 
     s = math.broadcast_to(s, batch_shape, dtype=math.complex128)
     Zmat = math.broadcast_to(
-        -math.Zmat(num_modes=n_modes), batch_shape + (2 * n_modes, 2 * n_modes)
+        -math.Zmat(num_modes=n_modes),
+        batch_shape + (2 * n_modes, 2 * n_modes),
+        dtype=math.complex128,
     )
-    Xmat = math.broadcast_to(math.Xmat(num_modes=n_modes), batch_shape + (2 * n_modes, 2 * n_modes))
+    Xmat = math.broadcast_to(
+        math.Xmat(num_modes=n_modes),
+        batch_shape + (2 * n_modes, 2 * n_modes),
+        dtype=math.complex128,
+    )
     A = math.block(
         [[(s[..., None, None] - 1) / 2 * math.Xmat(num_modes=n_modes), Zmat], [Zmat, Xmat]]
     )
