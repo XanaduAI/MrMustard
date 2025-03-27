@@ -91,6 +91,9 @@ class BackendJax(BackendBase):  # pragma: no cover
     def broadcast_to(self, array: jnp.ndarray, shape: tuple[int]) -> jnp.ndarray:
         return jnp.broadcast_to(array, shape)
 
+    def broadcast_arrays(self, *arrays: list[jnp.ndarray]) -> list[jnp.ndarray]:
+        return jnp.broadcast_arrays(*arrays)
+
     @partial(jax.jit, static_argnames=["axis"])
     def prod(self, x: jnp.ndarray, axis: int | None):
         return jnp.prod(x, axis=axis)
@@ -253,7 +256,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     @Autocast()
     @jax.jit
     def matvec(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
-        return jnp.matmul(a, b)
+        return jnp.matmul(a, b[..., None])[..., 0]
 
     @jax.jit
     def cos(self, array: jnp.ndarray) -> jnp.ndarray:

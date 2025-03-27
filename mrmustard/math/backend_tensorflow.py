@@ -109,6 +109,21 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def broadcast_to(self, array: tf.Tensor, shape: tuple[int]) -> tf.Tensor:
         return tf.broadcast_to(array, shape)
 
+    def broadcast_arrays(self, *arrays: list[tf.Tensor]) -> list[tf.Tensor]:
+        # TensorFlow doesn't have a direct equivalent to numpy's broadcast_arrays
+        # We need to implement it manually
+        if not arrays:
+            return []
+
+        # Get the broadcasted shape
+        shapes = [tf.shape(arr) for arr in arrays]
+        broadcasted_shape = shapes[0]
+        for shape in shapes[1:]:
+            broadcasted_shape = tf.broadcast_dynamic_shape(broadcasted_shape, shape)
+
+        # Broadcast each array to the common shape
+        return [tf.broadcast_to(arr, broadcasted_shape) for arr in arrays]
+
     def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         return tf.boolean_mask(tensor, mask)
 
@@ -169,6 +184,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def diag_part(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag_part(array, k=k)
 
+    @Autocast()
     def einsum(self, string: str, *tensors) -> tf.Tensor:
         if isinstance(string, str):
             return tf.einsum(string, *tensors)

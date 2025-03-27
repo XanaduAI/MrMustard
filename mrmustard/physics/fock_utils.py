@@ -864,8 +864,7 @@ def quadrature_basis(
         quad_basis_vecs += [math.cast(q_to_n, "complex128")]
 
     # Convert each dimension to quadrature
-    subscripts = [chr(i) for i in range(98, 98 + dims)]
-    fock_string = "".join(subscripts[:dims])  #'bcd....'
+    fock_string = "".join([chr(i) for i in range(98, 98 + dims)])  #'bcd....'
     q_string = "".join([fock_string[i] + "a," for i in range(dims - 1)] + [fock_string[-1] + "a"])
     quad_array = math.einsum(
         fock_string + "," + q_string + "->" + "a", fock_array, *quad_basis_vecs

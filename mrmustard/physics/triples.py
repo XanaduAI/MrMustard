@@ -71,7 +71,7 @@ def vacuum_state_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
     """
     A = _vacuum_A_matrix(n_modes)
     b = _vacuum_B_vector(n_modes)
-    c = 1.0 + 0j
+    c = math.astensor(1.0 + 0.0j)
 
     return A, b, c
 
