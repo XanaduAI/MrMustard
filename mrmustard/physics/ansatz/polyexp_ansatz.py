@@ -172,7 +172,7 @@ class PolyExpAnsatz(Ansatz):
     def data(
         self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        r"""Returns the triple and the number of derived variables necessary to reinstantiate the ansatz."""
+        r"""Returns the triple, which is necessary to reinstantiate the ansatz."""
         return self.triple
 
     @property
