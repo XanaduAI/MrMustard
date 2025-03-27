@@ -30,7 +30,7 @@ __all__ = ["BtoCH"]
 
 class BtoCH(Map):
     r"""
-    The `s`-parametrized ``Dgate`` as a ``Map``.
+    The `s`-parametrized ``Dgate`` as a ``Map``. Also known as the Fourier transform of the Stratonovich-Weyl kernel. See https://arxiv.org/abs/quant-ph/9707010.
 
     This is an unphysical component whose purpose is to modify the internal representation of another component. In particular it transforms between the Bargmann representation and the s-parametrized Characteristic functions. Note that it can be applied to a subset of modes.
 
