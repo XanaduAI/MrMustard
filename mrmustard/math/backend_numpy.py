@@ -38,9 +38,9 @@ from .lattice.strategies import (
     vanilla_stable,
     vanilla_stable_batch,
     vanilla_batch,
+    fast_diagonal,
 )
 from .lattice.strategies.compactFock.inputValidation import (
-    hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
@@ -655,36 +655,16 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return poly0
 
     def hermite_renormalized_1leftoverMode(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        c: np.ndarray,
+        output_cutoff: int,
+        pnr_cutoffs: tuple[int, ...],
     ) -> np.ndarray:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
-
-    def hermite_renormalized_1leftoverMode_reorderedAB(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
-    ) -> np.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
-        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
-
-        Calculates all possible Fock representations of mode 0,
-        where all other modes are PNR detected.
-        This is done by applying the recursion relation in a selective manner.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial.
-        """
-        poly0, _, _, _, _ = hermite_multidimensional_1leftoverMode(A, B, C, cutoffs)
-        return poly0
+        return fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs).transpose(
+            (-2, -1) + tuple(range(len(pnr_cutoffs)))
+        )
 
     @staticmethod
     def getitem(tensor, *, key):
