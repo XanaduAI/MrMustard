@@ -436,15 +436,10 @@ class DM(State):
         A_tmp = math.transpose(A_tmp, (1, 0, 2, 4, 3, 5))
         A_T = math.reshape(A_tmp, (4 * M, 4 * M))
 
-        b_T = math.block(
-            [
-                bm[:M],
-                math.zeros(M, dtype=math.complex128),
-                bm[M:],
-                math.zeros(M, dtype=math.complex128),
-            ],
-            axes=(0, 0, 0, 0),
-        )
+        b_out_in = math.block([bm, math.zeros(2 * M, dtype=math.complex128)], axes=(0, 0))
+        b_temp = math.reshape(b_out_in, (2, 2, M))
+        b_temp = math.transpose(b_temp, (1, 0, 2))
+        b_T = math.reshape(b_temp, (4 * M,))
         c_T = 1
         phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
         return core, phi
