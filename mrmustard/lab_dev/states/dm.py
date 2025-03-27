@@ -371,9 +371,6 @@ class DM(State):
             core: The core state (`DM`)
             phi: The Gaussian `Map` performing the stellar decomposition (not necessarily CPTP).
 
-        Raises:
-            ValueError: if the state is non-Gaussian.
-
         Note:
             This method pulls out the map ``phi`` from the given state on the given modes, so that
             the remaining state is a core state. Formally, we have
@@ -399,11 +396,6 @@ class DM(State):
         other_indices = self.wires[other_modes].indices
         new_order = core_indices + other_indices
         A, b, c = self.ansatz.reorder(new_order).triple
-
-        # if c.shape != (1,):
-        #     raise ValueError(
-        #         f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
-        #     )
 
         A = A[-1]
         b = b[-1]
@@ -456,7 +448,6 @@ class DM(State):
             phi: The channel acting on the core modes (`Map`)
 
         Raises:
-            ValueError: if the given state is non-Gaussian
             ValueError: if the number of core modes is not half the total number of modes.
 
         Note:
@@ -488,7 +479,7 @@ class DM(State):
         new_order = core_indices + other_indices
         new_order = math.astensor(core_indices + other_indices)
 
-        A, b, c = self.ansatz.reorder(new_order).triple
+        A, b, _ = self.ansatz.reorder(new_order).triple
         A = A[-1]
         b = b[-1]
         m_modes = A.shape[-1] // 2
