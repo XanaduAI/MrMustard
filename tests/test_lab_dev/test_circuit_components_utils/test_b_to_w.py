@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab_dev import BtoW, Dgate, Ket
 from mrmustard.physics.wigner import wigner_discretized
 
@@ -39,8 +39,9 @@ class TestBtoW:
         assert bw.modes == modes
         assert bw.parameters.s.value == s
 
-    def test_application(self):
-
+    @pytest.mark.parametrize("hbar", [1.0, 2.0, 3.0])
+    def test_application(self, hbar):
+        settings.HBAR = hbar
         state = Ket.random((0,)) >> Dgate(0, x=2, y=0.1)
 
         dm = math.sum(state.to_fock(100).dm().ansatz.array, axis=0)
@@ -48,10 +49,10 @@ class TestBtoW:
         wigner, _, _ = wigner_discretized(dm, vec, vec)
 
         Wigner = (state >> BtoW([0], s=0)).ansatz
-        X, Y = np.meshgrid(vec / np.sqrt(2), vec / np.sqrt(2))
+        X, Y = np.meshgrid(vec / np.sqrt(2 * settings.HBAR), vec / np.sqrt(2 * settings.HBAR))
         Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
         assert math.allclose(
-            np.real(Wigner(Z)) / 2,
+            np.real(Wigner(Z)) / (2 * settings.HBAR),
             np.real(wigner.T),
             atol=1e-6,
-        )  # TODO: figure out the re-scaling parameter
+        )
