@@ -438,6 +438,18 @@ class Channel(Map):
         kraus = ansatz.conj.contract(ansatz, range(2 * m), range(2 * m))
         return Channel.from_bargmann(modes, modes, kraus.triple)
 
+    @classmethod
+    def from_kraus(cls, kraus: Operation) -> Channel:
+        r"""
+        Initialize a Channel from its Kraus representation.
+        Args:
+            modes_out: The output modes of the channel.
+            modes_in: The input modes of the channel.
+            kraus: The Kraus operator of the channel.
+        """
+        ch = kraus @ kraus.adjoint
+        return Channel.from_ansatz(kraus.wires.output.modes, kraus.wires.input.modes, ch.ansatz)
+
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when

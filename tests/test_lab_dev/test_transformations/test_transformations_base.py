@@ -237,3 +237,11 @@ class TestChannel:
         assert psi.to_fock((cutoff, cutoff)) == (Coherent(0, 2) >> PhaseNoise(0, sigma)).to_fock(
             (cutoff, cutoff)
         )
+
+    def test_from_kraus(self):
+        U = Unitary.random((0, 1))
+        ch = Channel.from_kraus(U)
+
+        X, _ = ch.XY
+        assert X == U.symplectic[0]
+        assert ch.is_physical
