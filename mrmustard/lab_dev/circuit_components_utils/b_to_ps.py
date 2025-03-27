@@ -30,7 +30,7 @@ __all__ = ["BtoPS"]
 
 class BtoPS(Map):
     r"""
-    The `s`-parametrized Wigner function` as a ``Map``.
+    The `s`-parametrized Stratonovich-Weyl kernel as a ``Map``.
 
     Used internally as a ``Channel`` for transformations between representations.
 
