@@ -360,7 +360,7 @@ class DM(State):
         quad = math.tile(quad, (1, 2))
         return self.quadrature(quad, phi)
 
-    def stellar_decomposition(self, core_modes: Collection[int]):
+    def formal_stellar_decomposition(self, core_modes: Collection[int]):
         r"""
         Computes the formal stellar decomposition for the DM.
 
@@ -386,27 +386,28 @@ class DM(State):
             e.g., being sparse.
 
         .. code-block::
-            >>> from mrmustard.lab_dev import DM
+            >>> from mrmustard.lab_dev import DM, Vacuum
 
             >>> rho = DM.random([0,1])
-            >>> core, phi = rho.stellar_decomposition([0])
+            >>> core, phi = rho.formal_stellar_decomposition([0])
             >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
             >>> assert rho == core >> phi
         """
-        _, _, c = self.bargmann_triple()
 
-        if c.shape != ():
-            raise ValueError(
-                f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
-            )
         other_modes = [m for m in self.modes if m not in core_modes]
         core_indices = self.wires[core_modes].indices
         other_indices = self.wires[other_modes].indices
         new_order = core_indices + other_indices
         A, b, c = self.ansatz.reorder(new_order).triple
 
-        A = A[tuple(-1 for _ in range(A.ndim - 2))]  # handling arbitrary batch
-        b = b[tuple(-1 for _ in range(b.ndim - 1))]
+        # if c.shape != (1,):
+        #     raise ValueError(
+        #         f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
+        #     )
+
+        A = A[-1]
+        b = b[-1]
+        c = c[-1]
 
         M = len(core_modes)
 
@@ -428,32 +429,12 @@ class DM(State):
         b_core = b_core[temp]
         core = DM.from_bargmann(self.modes, (A_core, b_core, c_core))
 
-        # the transformation's Abc
-        A_T = math.block(
-            [
-                [
-                    Am[:M, :M],
-                    math.eye(M, dtype=math.complex128),
-                    Am[:M, M:],
-                    math.zeros((M, M), dtype=math.complex128),
-                ],
-                [
-                    math.eye(M, dtype=math.complex128),
-                    math.zeros((M, 3 * M), dtype=math.complex128),
-                ],
-                [
-                    Am[M:, :M],
-                    math.zeros((M, M), dtype=math.complex128),
-                    Am[M:, M:],
-                    math.eye(M, dtype=math.complex128),
-                ],
-                [
-                    math.zeros((M, 2 * M), dtype=math.complex128),
-                    math.eye(M, dtype=math.complex128),
-                    math.zeros((M, M), dtype=math.complex128),
-                ],
-            ]
-        )
+        I = math.eye_like(Am)
+        O = math.zeros_like(Am)
+        A_out_in = math.block([[Am, I], [I, O]])
+        A_tmp = math.reshape(A_out_in, (2, 2, M, 2, 2, M))
+        A_tmp = math.transpose(A_tmp, (1, 0, 2, 4, 3, 5))
+        A_T = math.reshape(A_tmp, (4 * M, 4 * M))
 
         b_T = math.block(
             [
@@ -500,14 +481,15 @@ class DM(State):
         """
         from .ket import Ket
 
-        A, b, c = self.ansatz.triple
+        other_modes = [m for m in self.modes if m not in core_modes]
+        core_indices = self.wires[core_modes].indices
+        other_indices = self.wires[other_modes].indices
+        new_order = core_indices + other_indices
+        new_order = math.astensor(core_indices + other_indices)
+
+        A, b, c = self.ansatz.reorder(new_order).triple
         A = A[-1]
         b = b[-1]
-        if c.shape != (1,):
-            raise ValueError(
-                f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
-            )
-
         m_modes = A.shape[-1] // 2
 
         if (m_modes % 2) or (m_modes // 2 != len(core_modes)):
@@ -515,42 +497,33 @@ class DM(State):
                 f"The number of modes ({m_modes}) must be twice the number of core modes ({len(core_modes)}) for the physical decomposition to work."
             )
 
-        mode_to_idx = {q.mode: q.index for q in self.wires.quantum_wires}
-        core_bra_indices = [
-            (i - m_modes) if i >= m_modes else i for i in (mode_to_idx[j] for j in core_modes)
-        ]
-        core_ket_indices = [(i + m_modes) for i in core_bra_indices]
-        core_indices = core_bra_indices + core_ket_indices
-        remaining_indices = [i for i in range(2 * m_modes) if i not in core_indices]
-        new_order = math.astensor(core_indices + remaining_indices)
+        M = len(core_modes)
 
-        A_reordered = A[new_order, :]
-        A_reordered = A_reordered[
-            :, new_order
-        ]  # reordering indices of A so that it has the standard form.
-
-        num_core_modes = len(core_modes)
-        core_size = 2 * num_core_modes
-
-        Am = A_reordered[:core_size, :core_size]
-        An = A_reordered[core_size:, core_size:]
-        R = A_reordered[:core_size, core_size:]
+        Am = A[: 2 * M, : 2 * M]
+        An = A[2 * M :, 2 * M :]
+        R = A[2 * M :, : 2 * M]
 
         # computing the core state:
-        reduced_A = An - R.T @ math.inv(Am - math.Xmat(num_core_modes)) @ R
-        r_squared = reduced_A[:num_core_modes, num_core_modes:]
+        reduced_A = An - R @ math.inv(Am - math.Xmat(M)) @ R.T
+        r_squared = reduced_A[:M, M:]
         r_evals, r_evecs = math.eigh(r_squared)
         r_core = (r_evecs * math.sqrt(r_evals) @ math.conj(r_evecs.T)).T
-        a_core = reduced_A[num_core_modes:, num_core_modes:]
+        a_core = reduced_A[M:, M:]
         A_core = math.block(
             [
-                [math.zeros((num_core_modes, num_core_modes), dtype=math.complex128), r_core.T],
+                [math.zeros((M, M), dtype=math.complex128), r_core.T],
                 [r_core, a_core],
             ]
         )
         b_core = math.zeros(self.n_modes, dtype=math.complex128)
         c_core = 1  # to be renormalized
 
+        inverse_order = np.argsort(new_order)
+        inverse_order = [i for i in inverse_order if i < self.n_modes]  # removing double-indices
+        temp = math.astensor(inverse_order)
+        A_core = A_core[temp, :]
+        A_core = A_core[:, temp]
+        b_core = b_core[temp]
         core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
 
         Aphi_out = Am
@@ -560,10 +533,10 @@ class DM(State):
                     [
                         [
                             math.conj(r_core),
-                            math.zeros((num_core_modes, num_core_modes), dtype=math.complex128),
+                            math.zeros((M, M), dtype=math.complex128),
                         ],
                         [
-                            math.zeros((num_core_modes, num_core_modes), dtype=math.complex128),
+                            math.zeros((M, M), dtype=math.complex128),
                             r_core,
                         ],
                     ]
@@ -572,21 +545,14 @@ class DM(State):
             @ R
         )
 
-        Aphi_in = Gamma_phi.T @ math.inv(
-            Aphi_out - math.Xmat(num_core_modes)
-        ) @ Gamma_phi + math.Xmat(num_core_modes)
+        Aphi_in = Gamma_phi @ math.inv(Aphi_out - math.Xmat(M)) @ Gamma_phi.T + math.Xmat(M)
 
-        Aphi = math.block([[Aphi_out, Gamma_phi], [Gamma_phi, Aphi_in]])
-        type_wise_order = (
-            list(range(num_core_modes))
-            + list(range(2 * num_core_modes, 3 * num_core_modes))
-            + list(range(num_core_modes, 2 * num_core_modes))
-            + list(range(3 * num_core_modes, 4 * num_core_modes))
-        )
+        Aphi_oi = math.block([[Aphi_out, Gamma_phi.T], [Gamma_phi, Aphi_in]])
+        A_tmp = math.reshape(Aphi_oi, (2, 2, M, 2, 2, M))
+        A_tmp = math.transpose(A_tmp, (1, 0, 2, 4, 3, 5))
+        Aphi = math.reshape(A_tmp, (4 * M, 4 * M))
 
-        Aphi = Aphi[type_wise_order, :]
-        Aphi = Aphi[:, type_wise_order]
-        bphi = math.zeros(4 * num_core_modes, dtype=math.complex128)
+        bphi = math.zeros(4 * M, dtype=math.complex128)
         phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, 1.0))
         renorm = (core >> phi).probability
         phi = phi / renorm

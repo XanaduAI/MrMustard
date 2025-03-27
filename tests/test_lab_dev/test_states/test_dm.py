@@ -409,9 +409,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
             rho_fock, math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]])
         )
 
-    def test_stellar_decomposition(self):
+    def test_formal_stellar_decomposition(self):
         rho = DM.random([0, 1])
-        sigma, phi = rho.stellar_decomposition([0])
+        sigma, phi = rho.formal_stellar_decomposition([0])
 
         assert sigma.modes == (0, 1)
         assert phi.modes == (0,)
