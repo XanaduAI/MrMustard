@@ -428,6 +428,12 @@ class TestDM:  # pylint:disable=too-many-public-methods
         As, _, _ = sigma.ansatz.triple
         assert As[-1][0, 0] == 0 and As[-1][0, 2] == 0 and As[-1][2, 2] == 0
 
+        # 4-mode example
+        rho = DM.random([0, 1, 2, 3])
+        core, phi = rho.formal_stellar_decomposition([0, 3])
+        assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3)).dm()
+        assert rho == core >> phi
+
     def test_physical_stellar_decomposition(self):
         rho = DM.random([0, 1])
         core, phi = rho.physical_stellar_decomposition([0])
@@ -439,3 +445,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         A, _, _ = core.ansatz.triple
         A = A[-1]
         assert A[0, 0] == 0
+
+        # 4-mode example
+        rho = DM.random([0, 1, 2, 3])
+        core, phi = rho.physical_stellar_decomposition([0, 3])
+        assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3))
+        assert rho == core >> phi
+        assert phi.is_physical

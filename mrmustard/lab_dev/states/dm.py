@@ -482,8 +482,14 @@ class DM(State):
         from .ket import Ket
 
         other_modes = [m for m in self.modes if m not in core_modes]
-        core_indices = self.wires[core_modes].indices
-        other_indices = self.wires[other_modes].indices
+        core_bra_indices = self.wires.bra[core_modes].indices
+        core_ket_indices = self.wires.ket[core_modes].indices
+        core_indices = core_bra_indices + core_ket_indices
+
+        other_bra_indices = self.wires.bra[other_modes].indices
+        other_ket_indices = self.wires.ket[other_modes].indices
+        other_indices = other_bra_indices + other_ket_indices
+
         new_order = core_indices + other_indices
         new_order = math.astensor(core_indices + other_indices)
 
@@ -518,7 +524,7 @@ class DM(State):
         b_core = math.zeros(self.n_modes, dtype=math.complex128)
         c_core = 1  # to be renormalized
 
-        inverse_order = np.argsort(new_order)
+        inverse_order = np.argsort(core_ket_indices + other_ket_indices)
         inverse_order = [i for i in inverse_order if i < self.n_modes]  # removing double-indices
         temp = math.astensor(inverse_order)
         A_core = A_core[temp, :]
