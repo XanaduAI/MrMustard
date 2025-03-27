@@ -443,9 +443,16 @@ class Channel(Map):
         r"""
         Initialize a Channel from its Kraus representation.
         Args:
-            modes_out: The output modes of the channel.
-            modes_in: The input modes of the channel.
             kraus: The Kraus operator of the channel.
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import Channel, Unitrary
+
+            >>> U = Unitary.random((0, 1))
+            >>> ch = Channel.from_kraus(U)
+            >>> X, _ = ch.XY
+
+            >>> assert X == U.symplectic[0]
         """
         ch = kraus @ kraus.adjoint
         return Channel.from_ansatz(kraus.wires.output.modes, kraus.wires.input.modes, ch.ansatz)
