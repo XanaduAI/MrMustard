@@ -58,13 +58,13 @@ class TestBtoQ:
         assert (btoq >> inv_btoq) == Identity((0,))
 
     def testBtoQ_works_correctly_by_applying_it_twice_on_a_state(self):
-        A0 = np.array([[0.5, 0.3], [0.3, 0.5]]) + 0.0j
-        b0 = np.zeros(2, dtype=np.complex128)
-        c0 = 1.0 + 0j
+        A0 = math.astensor([[0.5, 0.3], [0.3, 0.5]]) + 0.0j
+        b0 = math.zeros(2, dtype=np.complex128)
+        c0 = math.astensor(1.0 + 0.0j)
 
         modes = (0, 1)
         BtoQ_CC1 = BtoQ(modes, 0.0)
-        step1A, step1b, step1c = BtoQ_CC1.bargmann_triple(batched=False)
+        step1A, step1b, step1c = BtoQ_CC1.bargmann_triple()
         Ainter, binter, cinter = complex_gaussian_integral_1(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
             idx_z=[0, 1],
@@ -72,10 +72,10 @@ class TestBtoQ:
             measure=-1,
         )
         QtoBMap_CC2 = BtoQ(modes, 0.0).dual
-        step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple(batched=False)
+        step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple()
 
         new_A, new_b, new_c = join_Abc_real(
-            (Ainter[0], binter[0], cinter[0]), (step2A, step2b, step2c), [0, 1], [2, 3]
+            (Ainter, binter, cinter), (step2A, step2b, step2c), [0, 1], [2, 3]
         )
 
         Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0, 1])
@@ -84,13 +84,13 @@ class TestBtoQ:
         assert math.allclose(b0, bf)
         assert math.allclose(c0, cf)
 
-        A0 = np.array([[0.4895454]])
-        b0 = np.zeros(1)
-        c0 = 1.0 + 0j
+        A0 = math.astensor([[0.4895454]])
+        b0 = math.zeros(1)
+        c0 = math.astensor(1.0 + 0.0j)
 
         modes = (0,)
         BtoQ_CC1 = BtoQ(modes, 0.0)
-        step1A, step1b, step1c = BtoQ_CC1.bargmann_triple(batched=False)
+        step1A, step1b, step1c = BtoQ_CC1.bargmann_triple()
         Ainter, binter, cinter = complex_gaussian_integral_1(
             join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
             idx_z=[
@@ -100,10 +100,10 @@ class TestBtoQ:
             measure=-1,
         )
         QtoBMap_CC2 = BtoQ(modes, 0.0).dual
-        step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple(batched=False)
+        step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple()
 
         new_A, new_b, new_c = join_Abc_real(
-            (Ainter[0], binter[0], cinter[0]), (step2A, step2b, step2c), [0], [1]
+            (Ainter, binter, cinter), (step2A, step2b, step2c), [0], [1]
         )
 
         Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0])

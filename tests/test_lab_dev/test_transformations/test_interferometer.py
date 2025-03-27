@@ -31,11 +31,11 @@ class TestInterferometer:
         u_int = Interferometer((0, 1, 2))
         assert u_int.modes == (0, 1, 2)
         assert u_int.name == "Interferometer"
-        assert u_int.symplectic[0].shape == (6, 6)
+        assert u_int.symplectic.shape == (6, 6)
 
         unitary = math.random_unitary(2)
         u_int = Interferometer((0, 1), unitary=unitary)
-        assert u_int.symplectic[0].shape == (4, 4)
+        assert u_int.symplectic.shape == (4, 4)
 
     def test_application(self):
         "Tests the correctness of the application of an Interferometer gate"

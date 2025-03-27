@@ -218,9 +218,9 @@ class HomodyneSampler(Sampler):
         self._phi = phi
 
     def probabilities(self, state, atol=1e-4):
-        probs = state.quadrature_distribution(self.meas_outcomes, self._phi) * self._step ** len(
-            state.modes
-        )
+        probs = state.quadrature_distribution(
+            math.astensor(self.meas_outcomes), phi=self._phi  # TODO: revisit meas_outcomes
+        ) * self._step ** len(state.modes)
         return self._validate_probs(probs, atol)
 
     def sample(self, state: State, n_samples: int = 1000, seed: int | None = None) -> np.ndarray:
@@ -235,9 +235,8 @@ class HomodyneSampler(Sampler):
         )
         ret = []
         for unique_sample, idx, counts in zip(unique_samples, idxs, counts):
-            quad = np.array([[unique_sample] + [None] * (state.n_modes - 1)])
-            quad = quad if isinstance(state, Ket) else math.tile(quad, (1, 2))
-            reduced_ansatz = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz(quad)
+            # Use partial_eval to evaluate the ansatz at the first mode only
+            reduced_ansatz = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz(unique_sample)
             reduced_state = state.from_bargmann(state.modes[1:], reduced_ansatz.triple)
             prob = probs[idx] / self._step
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob
