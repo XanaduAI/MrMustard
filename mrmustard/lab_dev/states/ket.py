@@ -319,9 +319,6 @@ class Ket(State):
             psi_core: The core state (`Ket`)
             U: The Gaussian unitary performing the stellar decomposition.
 
-        Raises:
-            ValueError: if the state is non-Gaussian.
-
         Note:
             This method pulls out the unitary ``U`` from the given state on the given modes, so that
             the remaining state is a core state. Formally, we have
@@ -343,39 +340,29 @@ class Ket(State):
             >>> A_c, _, _ = core.ansatz.triple
             >>> assert A_c[-1][0,0] == 0
         """
-        A, b, c = self.ansatz.triple
+        # bringing A to the ordering of our interest
+
+        other_modes = [m for m in self.modes if m not in core_modes]
+        core_indices = self.wires[core_modes].indices
+        other_indices = self.wires[other_modes].indices
+        new_order = core_indices + other_indices
+
+        A, b, c = self.ansatz.reorder(new_order).triple
+
         A = A[-1]
         b = b[-1]
-        if c.shape != (1,):
-            raise ValueError(
-                f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
-            )
+        c = c[-1]
 
-        m_modes = A.shape[-1]
-
-        # bringing A to the ordering of our interest
-        mode_to_idx = {q.mode: q.index for q in self.wires.quantum_wires}
-        core_indices = [mode_to_idx[i] for i in core_modes]
-
-        remaining_indices = [i for i in range(m_modes) if i not in core_indices]
-        new_order = math.astensor(core_indices + remaining_indices)
-
-        A_reordered = A[new_order, :]
-        A_reordered = A_reordered[
-            :, new_order
-        ]  # reordering indices of A so that it has the standard form.
-        b_reordered = b[new_order]  # reordering b accordingly
-
-        m_core = len(core_modes)
+        M = len(core_modes)
 
         # we pick the blocks according to the naming chosen in the paper
-        Am = A_reordered[:m_core, :m_core]
-        R = A_reordered[m_core:, :m_core]
-        An = A_reordered[m_core:, m_core:]
-        bm = b_reordered[:m_core]
-        bn = b_reordered[m_core:]
+        Am = A[:M, :M]
+        R = A[M:, :M]
+        An = A[M:, M:]
+        bm = b[:M]
+        bn = b[M:]
 
-        gamma_squared = math.eye(m_core, dtype=math.complex128) - Am @ math.conj(Am)
+        gamma_squared = math.eye(M, dtype=math.complex128) - Am @ math.conj(Am)
         gamma_evals, gamma_evecs = math.eigh(gamma_squared)
         gamma = (gamma_evecs * math.sqrt(gamma_evals) @ math.conj(gamma_evecs.T)).T
 
@@ -392,16 +379,14 @@ class Ket(State):
 
         A_core = math.block(
             [
-                [math.zeros((m_core, m_core), dtype=math.complex128), math.inv(gamma.T) @ R.T],
+                [math.zeros((M, M), dtype=math.complex128), math.inv(gamma.T) @ R.T],
                 [R @ math.inv(gamma), An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R.T],
             ]
         )
 
-        b_core = math.block([bm, bn - R @ math.inv(gamma) @ bu[m_core:]], axes=(0, 0))
+        b_core = math.block([bm, bn - R @ math.inv(gamma) @ bu[M:]], axes=(0, 0))
 
-        inverse_order = math.astensor(
-            [orig for orig, _ in sorted(enumerate(new_order), key=lambda x: x[1])]
-        )  # to invert the order
+        inverse_order = np.argsort(new_order)
 
         A_core = A_core[inverse_order, :]
         A_core = A_core[:, inverse_order]
@@ -423,9 +408,6 @@ class Ket(State):
             S: The core state (`Ket`)
             T: The Gaussian `Operation` performing the stellar decomposition.
 
-        Raises:
-            ValueError: if the state is non-Gaussian.
-
         Note:
             This method pulls out the unitary ``U`` from the given state on the given modes, so that
             the remaining state is a core state. Formally, we have
@@ -446,47 +428,30 @@ class Ket(State):
 
             >>> assert A_core[-1][0,0] == 0
         """
+        other_modes = [m for m in self.modes if m not in core_modes]
+        core_indices = self.wires[core_modes].indices
+        other_indices = self.wires[other_modes].indices
+        new_order = core_indices + other_indices
 
-        A, b, c = self.ansatz.triple
+        A, b, c = self.ansatz.reorder(new_order).triple
+
         A = A[-1]
         b = b[-1]
-        if c.shape != (1,):
-            raise ValueError(
-                f"The stellar decomposition only applies to Gaussian states. The given state has a polynomial of size {c.shape}."
-            )
+        c = c[-1]
 
-        m_modes = A.shape[-1]
-
-        # bringing A to the ordering of our interest
-        mode_to_idx = {q.mode: q.index for q in self.wires.quantum_wires}
-        core_indices = [mode_to_idx[i] for i in core_modes]
-
-        remaining_indices = [i for i in range(m_modes) if i not in core_indices]
-        new_order = math.astensor(core_indices + remaining_indices)
-
-        A_reordered = A[new_order, :]
-        A_reordered = A_reordered[
-            :, new_order
-        ]  # reordering indices of A so that it has the standard form.
-        b_reordered = b[new_order]  # reordering b accordingly
-
-        m_core = len(core_modes)
+        M = len(core_modes)
 
         # we pick the blocks according to the naming chosen in the paper
-        Am = A_reordered[:m_core, :m_core]
-        R = A_reordered[m_core:, :m_core]
-        An = A_reordered[m_core:, m_core:]
-        bm = b_reordered[:m_core]
-        bn = b_reordered[m_core:]
-
-        As = math.block([[math.zeros((m_core, m_core), dtype=math.complex128), R.T], [R, An]])
-        bs = math.block([math.zeros(m_core, dtype=math.complex128), bn], axes=(0, 0))
+        Am = A[:M, :M]
+        R = A[M:, :M]
+        An = A[M:, M:]
+        bm = b[:M]
+        bn = b[M:]
+        As = math.block([[math.zeros((M, M), dtype=math.complex128), R.T], [R, An]])
+        bs = math.block([math.zeros(M, dtype=math.complex128), bn], axes=(0, 0))
         cs = c[-1]
 
-        inverse_order = math.astensor(
-            [orig for orig, _ in sorted(enumerate(new_order), key=lambda x: x[1])]
-        )  # to invert the order
-
+        inverse_order = np.argsort(new_order)
         As = As[inverse_order, :]
         As = As[:, inverse_order]
         bs = bs[inverse_order]
@@ -494,14 +459,14 @@ class Ket(State):
 
         At = math.block(
             [
-                [Am, math.eye(m_core, dtype=math.complex128)],
+                [Am, math.eye(M, dtype=math.complex128)],
                 [
-                    math.eye(m_core, dtype=math.complex128),
-                    math.zeros((m_core, m_core), dtype=math.complex128),
+                    math.eye(M, dtype=math.complex128),
+                    math.zeros((M, M), dtype=math.complex128),
                 ],
             ]
         )
-        bt = math.block([bm, math.zeros(m_core, dtype=math.complex128)], axes=(0, 0))
+        bt = math.block([bm, math.zeros(M, dtype=math.complex128)], axes=(0, 0))
         ct = 1
         t = Operation.from_bargmann(core_modes, core_modes, (At, bt, ct))
 
