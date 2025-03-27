@@ -41,31 +41,31 @@ class TestBtoCH:
         assert dsmap.modes == modes
 
     def test_adjoint(self):
-        BtoCH = BtoCH(0, 0)
-        adjoint_BtoCH = BtoCH.adjoint
+        b_to_ch = BtoCH(0, 0)
+        adjoint_BtoCH = b_to_ch.adjoint
 
-        bras = BtoCH.wires.bra.indices
-        kets = BtoCH.wires.ket.indices
-        assert adjoint_BtoCH.ansatz == BtoCH.ansatz.reorder(kets + bras).conj
-        assert adjoint_BtoCH.wires == BtoCH.wires.adjoint
-        assert adjoint_BtoCH.parameters.s == BtoCH.parameters.s
+        bras = b_to_ch.wires.bra.indices
+        kets = b_to_ch.wires.ket.indices
+        assert adjoint_BtoCH.ansatz == b_to_ch.ansatz.reorder(kets + bras).conj
+        assert adjoint_BtoCH.wires == b_to_ch.wires.adjoint
+        assert adjoint_BtoCH.parameters.s == b_to_ch.parameters.s
 
     def test_dual(self):
-        BtoCH = BtoCH(0, 0)
-        dual_BtoCH = BtoCH.dual
+        b_to_ch = BtoCH(0, 0)
+        dual_BtoCH = b_to_ch.dual
 
-        ok = BtoCH.wires.ket.output.indices
-        ik = BtoCH.wires.ket.input.indices
-        ib = BtoCH.wires.bra.input.indices
-        ob = BtoCH.wires.bra.output.indices
-        assert dual_BtoCH.ansatz == BtoCH.ansatz.reorder(ib + ob + ik + ok).conj
-        assert dual_BtoCH.wires == BtoCH.wires.dual
-        assert dual_BtoCH.parameters.s == BtoCH.parameters.s
+        ok = b_to_ch.wires.ket.output.indices
+        ik = b_to_ch.wires.ket.input.indices
+        ib = b_to_ch.wires.bra.input.indices
+        ob = b_to_ch.wires.bra.output.indices
+        assert dual_BtoCH.ansatz == b_to_ch.ansatz.reorder(ib + ob + ik + ok).conj
+        assert dual_BtoCH.wires == b_to_ch.wires.dual
+        assert dual_BtoCH.parameters.s == b_to_ch.parameters.s
 
     def test_inverse(self):
-        BtoCH = BtoCH(0, 0)
-        inv_BtoCH = BtoCH.inverse()
-        assert (BtoCH >> inv_BtoCH).ansatz == (Identity(0) @ Identity(0).adjoint).ansatz
+        b_to_ch = BtoCH(0, 0)
+        inv_BtoCH = b_to_ch.inverse()
+        assert (b_to_ch >> inv_BtoCH).ansatz == (Identity(0) @ Identity(0).adjoint).ansatz
 
     def test_representation(self):
         ansatz = BtoCH(modes=0, s=0).ansatz
