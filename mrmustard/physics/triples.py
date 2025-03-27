@@ -795,7 +795,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
     return math.astensor(A), b, c
 
 
-def bargmann_to_wigner_Abc(s: int, n_modes: int) -> Union[Matrix, Vector, Scalar]:
+def bargmann_to_wigner_Abc(s: float, n_modes: int) -> Union[Matrix, Vector, Scalar]:
     r"""
     The Abc triple of the Bargmann to Wigner/Husimi transformation.
     """
