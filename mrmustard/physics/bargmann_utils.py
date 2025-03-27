@@ -241,7 +241,6 @@ def XY_of_channel(A: ComplexMatrix):
     """
     n = A.shape[-1] // 2
     m = n // 2
-    batch_dim = len(A.shape[:-2])
 
     # here we transform to the other convention for wires i.e. {out-bra, out-ket, in-bra, in-ket}
     A_out = math.block(
