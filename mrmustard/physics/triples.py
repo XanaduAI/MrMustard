@@ -90,7 +90,7 @@ def vacuum_state_Abc(n_modes: int) -> Union[Matrix, Vector, Scalar]:
     """
     A = _vacuum_A_matrix(n_modes)
     b = _vacuum_B_vector(n_modes)
-    c = 1.0 + 0j
+    c = math.astensor(1.0 + 0.0j)
 
     return A, b, c
 
@@ -791,7 +791,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> Union[Matrix, V
 
     A = math.astensor(math.asnumpy(A)[order_list, :][:, order_list])
     b = _vacuum_B_vector(4 * n_modes)
-    c = 1.0
+    c = math.astensor(1.0 + 0.0j)
     return math.astensor(A), b, c
 
 
