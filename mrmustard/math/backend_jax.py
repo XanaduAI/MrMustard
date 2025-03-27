@@ -747,7 +747,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         Returns:
             The renormalized Hermite polynomial.
         """
-        function = partial(hermite_multidimensional_1leftoverMode, cutoffs=tuple(cutoffs))
+        function = partial(hermite_multidimensional_1leftoverMode, output_cutoff = cutoffs[0], pnr_cutoffs=cutoffs[1:])
         poly0 = jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
             jax.ShapeDtypeStruct((cutoffs[0],) + cutoffs, jnp.complex128),
