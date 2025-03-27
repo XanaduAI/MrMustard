@@ -25,23 +25,23 @@ from mrmustard import math
 #  ~~~~~~~~~
 
 
-def compute_batch_size(*args) -> tuple[tuple[int, ...] | None, int]:
+def compute_batch_shape(*args) -> tuple[tuple[int, ...], int]:
     r"""
-    Compute the final batch size of the input arguments.
+    Compute the final batch shape of the input arguments.
 
     Args:
         *args: The input arguments.
 
     Returns:
-        The final batch size and batch dimension of the input arguments.
+        The final batch shape and batch dimension of the input arguments.
     """
-    batch_size = None
+    batch_shape = None
     for arg in args:
         arg = math.astensor(arg)
         if arg.shape:
-            if batch_size is None:
-                batch_size = arg
+            if batch_shape is None:
+                batch_shape = arg
             else:
-                batch_size = batch_size * arg
-    batch_size = batch_size.shape if batch_size is not None else None
-    return batch_size, len(batch_size or (1,))
+                batch_shape = batch_shape * arg
+    batch_shape = batch_shape.shape if batch_shape is not None else ()
+    return batch_shape, len(batch_shape or (1,))
