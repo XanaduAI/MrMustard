@@ -820,33 +820,6 @@ def bargmann_to_wigner_Abc(s: float, n_modes: int) -> Union[Matrix, Vector, Scal
     return A, b, c
 
 
-def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
-    r"""
-    The ``(A, b, c)`` triple of the complex Fourier transform between two pairs of complex variables.
-    Given a function :math:`f(z^*, z)`, the complex Fourier transform is defined as
-    :math:
-        \hat{f} (y^*, y) = \int_{\mathbb{C}} \frac{d^2 z}{\pi} e^{yz^* - y^*z} f(z^*, z).
-    The indices of this triple correspond to the variables :math:`(y^*, z^*, y, z)`.
-
-    Args:
-        n_modes: the number of modes for this map.
-
-    Returns:
-        The ``(A, b, c)`` triple of the complex fourier transform.
-    """
-    O2n = math.zeros((2 * n_modes, 2 * n_modes))
-    Omega = math.J(n_modes)
-    A = math.block([[O2n, -Omega], [Omega, O2n]])
-    b = _vacuum_B_vector(4 * n_modes)
-    c = 1.0 + 0j
-    return A, b, c
-
-
-# ~~~~~~~~~~~~~~~~
-# Kraus operators
-# ~~~~~~~~~~~~~~~~
-
-
 def attenuator_kraus_Abc(eta: float) -> Union[Matrix, Vector, Scalar]:
     r"""
     The entire family of Kraus operators of the attenuator (loss) channel as a single ``(A, b, c)`` triple.
