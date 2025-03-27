@@ -43,6 +43,7 @@ from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cove
     hermite_multidimensional_diagonal_batch,
 )
 
+jax.config.update("jax_enable_x64", True)  # pragma: no cover
 
 # pylint: disable=too-many-public-methods
 class BackendJax(BackendBase):  # pragma: no cover
@@ -718,9 +719,10 @@ class BackendJax(BackendBase):  # pragma: no cover
     # hermite_renormalized_1leftoverMode_reorderedAB
     # ~~~~~~~~~~~~~~~~~
 
-    @partial(jax.jit, static_argnames=["cutoffs"])
-    def hermite_renormalized_1leftoverMode(self, A, B, C, cutoffs):
+    @partial(jax.jit, static_argnames=["output_cutoff", "pnr_cutoffs"])
+    def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
         A, B = self.reorder_AB_bargmann(A, B)
+        cutoffs = (output_cutoff + 1,) + tuple(p + 1 for p in pnr_cutoffs)
         return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     # ~~~~~~~~~~~~~~~~~
@@ -748,10 +750,10 @@ class BackendJax(BackendBase):  # pragma: no cover
         Returns:
             The renormalized Hermite polynomial.
         """
-        function = partial(hermite_multidimensional_1leftoverMode, cutoffs=tuple(cutoffs))
+        function = partial(hermite_multidimensional_1leftoverMode, cutoffs=cutoffs)
         poly0 = jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
-            jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
+            jax.ShapeDtypeStruct((cutoffs[0],) + cutoffs, jnp.complex128),
             A,
             B,
             C,
