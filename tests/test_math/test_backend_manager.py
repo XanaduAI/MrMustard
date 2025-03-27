@@ -262,6 +262,16 @@ class TestBackendManager:
         assert R.shape == (8, 8)
         assert math.allclose(math.block([[I, O], [O, 1j * I]]), R)
 
+    def test_broadcast_arrays(self):
+        r"""
+        Tests the ``broadcast_arrays`` method.
+        """
+        arr1 = math.astensor([[1, 2, 3]])
+        arr2 = math.astensor([[4], [5], [6]])
+        res = math.broadcast_arrays(arr1, arr2)
+        assert math.allclose(res[0], math.astensor([[1, 2, 3], [1, 2, 3], [1, 2, 3]]))
+        assert math.allclose(res[1], math.astensor([[4, 4, 4], [5, 5, 5], [6, 6, 6]]))
+
     def test_broadcast_to(self):
         r"""
         Tests the ``broadcast_to`` method.
