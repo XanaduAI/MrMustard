@@ -337,14 +337,14 @@ class TestPolyExpAnsatz:
             b=[np.array([1]), np.array([0])],
             c=[1, 2],
         )
-        ansatz._order_batch()
+        A, b, c = ansatz._order_batch()
 
-        assert math.allclose(ansatz.A[0], np.array([[1]]))
-        assert math.allclose(ansatz.b[0], np.array([0]))
-        assert ansatz.c[0] == 2
-        assert math.allclose(ansatz.A[1], np.array([[0]]))
-        assert math.allclose(ansatz.b[1], np.array([1]))
-        assert ansatz.c[1] == 1
+        assert math.allclose(A[0], np.array([[1]]))
+        assert math.allclose(b[0], np.array([0]))
+        assert c[0] == 2
+        assert math.allclose(A[1], np.array([[0]]))
+        assert math.allclose(b[1], np.array([1]))
+        assert c[1] == 1
 
     def test_polynomial_shape(self):
         A, b, _ = Abc_triple(4, (1,))
