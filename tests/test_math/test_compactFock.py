@@ -61,28 +61,18 @@ def test_compactFock_1leftover(A_B_G0):
     skip_np()
     skip_jax()
 
-    cutoffs = (5, 5, 5)
-
     A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
-
     # New algorithm
     G_leftover = math.hermite_renormalized_1leftoverMode(
-        math.conj(-A), math.conj(B), math.conj(G0), cutoffs
-    )
-
+        A, B, G0, output_cutoff=3, pnr_cutoffs=(1, 2)
+    )  # shape=(4,4,2,3)
     # Vanilla MM
     G_ref = math.hermite_renormalized(
-        math.conj(-A), math.conj(B), math.conj(G0), shape=list(cutoffs) * 2
-    )  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
-    G_ref = math.asnumpy(G_ref)
-
+        A, B, G0, shape=(4, 2, 3, 4, 2, 3)
+    )  # shape=[C1,C2,C3,...,C1,C2,C3,...]
     # Extract amplitudes of leftover mode from vanilla MM
-    ref_leftover = np.zeros([cutoffs[0]] * 2 + list(cutoffs)[1:], dtype=np.complex128)
-    for inds in np.ndindex(*cutoffs[1:]):
-        ref_leftover[tuple([slice(cutoffs[0]), slice(cutoffs[0])] + list(inds))] = G_ref[
-            tuple([slice(cutoffs[0])] + list(inds) + [slice(cutoffs[0])] + list(inds))
-        ]
-    assert math.allclose(ref_leftover, G_leftover)
+    expected = np.diagonal(np.diagonal(G_ref, axis1=1, axis2=4), axis1=1, axis2=3)
+    assert np.allclose(expected, G_leftover)
 
 
 def test_compactFock_diagonal_gradients():
@@ -126,7 +116,7 @@ def test_compactFock_1leftover_gradients():
         state_opt = Vacuum(2) >> G
         A, B, G0 = wigner_to_bargmann_rho(state_opt.cov, state_opt.means)
         marginal = math.hermite_renormalized_1leftoverMode(
-            math.conj(-A), math.conj(B), math.conj(G0), cutoffs=[2, n2 + 1]
+            math.conj(-A), math.conj(B), math.conj(G0), output_cutoff=2, pnr_cutoffs=[n2 + 1]
         )
         conditional_state = normalize(State(dm=marginal[..., n2]))
         return -fidelity(conditional_state, SqueezedVacuum(r=1))
