@@ -407,16 +407,13 @@ class PolyExpAnsatz(Ansatz):
         """
         if self._simplified or self.batch_shape == ():  # tensorflow
             return
-        to_keep = self._find_unique_terms_sorted()
-        A_vectorized = math.reshape(self.A, (-1, self.num_vars, self.num_vars))
-        b_vectorized = math.reshape(self.b, (-1, self.num_vars))
-        c_vectorized = math.reshape(self.c, (-1, *self.shape_derived_vars))
-        _A = math.gather(A_vectorized, to_keep, axis=0)
-        _b = math.gather(b_vectorized, to_keep, axis=0)
-        _c = math.gather(c_vectorized, to_keep, axis=0)  # already added
-        self._A = math.reshape(_A, (len(to_keep),) + (self.num_vars, self.num_vars))
-        self._b = math.reshape(_b, (len(to_keep),) + (self.num_vars,))
-        self._c = math.reshape(_c, (len(to_keep),) + self.shape_derived_vars)
+        (A, b, c), to_keep = self._find_unique_terms_sorted()
+        A = math.gather(A, to_keep, axis=0)
+        b = math.gather(b, to_keep, axis=0)
+        c = math.gather(c, to_keep, axis=0)  # already added
+        self._A = math.reshape(A, (len(to_keep),) + (self.num_vars, self.num_vars))
+        self._b = math.reshape(b, (len(to_keep),) + (self.num_vars,))
+        self._c = math.reshape(c, (len(to_keep),) + self.shape_derived_vars)
         self._batch_shape = (len(to_keep),)
         self._simplified = True
 
@@ -501,43 +498,30 @@ class PolyExpAnsatz(Ansatz):
         other.simplify()
         return np.allclose(self.b, other.b) and np.allclose(self.A, other.A)
 
-    def _find_unique_terms_sorted(self) -> list[int]:
+    def _find_unique_terms_sorted(
+        self,
+    ) -> tuple[tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]], list[int]]:
         r"""
         Finds unique terms by first sorting the batch dimension and adds the corresponding c values.
         Needed in ``simplify``.
 
         Returns:
-            List of indices to keep after simplification.
+            The updated vectorized (A,b,c) triple and a list of indices to keep after simplification.
         """
-        self._order_batch()
-        A_vectorized = (
-            math.reshape(self.A, (-1, self.num_vars, self.num_vars))
-            if self.batch_shape != ()
-            else self.A  # tensorflow
-        )
-        b_vectorized = (
-            math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape != () else self.b
-        )  # tensorflow
-        c_vectorized = (
-            math.reshape(self.c, (-1, *self.shape_derived_vars))
-            if self.batch_shape != ()
-            else self.c  # tensorflow
-        )
-
+        A, b, c = self._order_batch()
         to_keep = [d0 := 0]
-        mat, vec = A_vectorized[d0], b_vectorized[d0]
+        mat, vec = A[d0], b[d0]
 
         for d in range(1, self.batch_size):
-            if not (np.allclose(mat, A_vectorized[d]) and np.allclose(vec, b_vectorized[d])):
+            if not (np.allclose(mat, A[d]) and np.allclose(vec, b[d])):
                 to_keep.append(d)
                 d0 = d
-                mat, vec = A_vectorized[d0], b_vectorized[d0]
+                mat, vec = A[d0], b[d0]
             else:
                 d0r = np.unravel_index(d0, self.batch_shape)
                 dr = np.unravel_index(d, self.batch_shape)
-                c_vectorized = math.update_add_tensor(c_vectorized, [d0r], [c_vectorized[dr]])
-        self._c = math.reshape(c_vectorized, self.batch_shape + self.shape_derived_vars)
-        return to_keep
+                c = math.update_add_tensor(c, [d0r], [c[dr]])
+        return (A, b, c), to_keep
 
     def _generate_ansatz(self):
         r"""
@@ -564,12 +548,17 @@ class PolyExpAnsatz(Ansatz):
             return
         display(widgets.bargmann(self))
 
-    def _order_batch(self):
+    def _order_batch(
+        self,
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
         This method orders the batch dimension by the lexicographical order of the
         flattened arrays (A, b, c). This is a very cheap way to enforce
         an ordering of the batch dimension, which is useful for simplification and for
         determining (in)equality between two PolyExp ansatz.
+
+        Returns:
+            The ordered vectorized (A, b, c) triple.
         """
         A_vectorized = (
             math.reshape(self.A, (-1, self.num_vars, self.num_vars))
@@ -593,14 +582,10 @@ class PolyExpAnsatz(Ansatz):
             for i in range(self.batch_size)
         ]
         sorted_indices = argsort_gen(generators)
-        _A = math.gather(A_vectorized, sorted_indices, axis=0)
-        _b = math.gather(b_vectorized, sorted_indices, axis=0)
-        _c = math.gather(c_vectorized, sorted_indices, axis=0)
-        self._A = math.reshape(_A, self.batch_shape + (self.num_vars, self.num_vars))
-        self._b = math.reshape(_b, self.batch_shape + (self.num_vars,))
-        self._c = math.reshape(
-            _c, self.batch_shape + self.shape_derived_vars + self.shape_derived_vars
-        )
+        A = math.gather(A_vectorized, sorted_indices, axis=0)
+        b = math.gather(b_vectorized, sorted_indices, axis=0)
+        c = math.gather(c_vectorized, sorted_indices, axis=0)
+        return A, b, c
 
     def _partial_eval(self, z: ArrayLike, indices: tuple[int, ...]) -> PolyExpAnsatz:
         r"""
