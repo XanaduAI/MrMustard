@@ -46,7 +46,7 @@ class TestNumber:
     def test_representation(self, n, cutoffs):
         rep1 = Number(0, n, cutoffs).ansatz.array
         exp1 = fock_state(n, cutoffs)
-        assert math.allclose(rep1[0], exp1)
+        assert math.allclose(rep1, exp1)
 
         rep2 = Number(0, n, cutoffs).to_fock().ansatz.array
         assert math.allclose(rep2, rep1)
