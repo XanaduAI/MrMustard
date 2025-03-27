@@ -363,23 +363,22 @@ class TestPolyExpAnsatz:
         assert math.allclose(bargmann.A, triple[0][:, [0, 2, 1], :][:, :, [0, 2, 1]])
         assert math.allclose(bargmann.b, triple[1][:, [0, 2, 1]])
 
-    # # TODO: move when simplify is moved
-    # def test_simplify(self):
-    #     A, b, c = Abc_triple(5)
+    def test_simplify(self):
+        A, b, c = Abc_triple(5)
 
-    #     ansatz = PolyExpAnsatz(A, b, c)
+        ansatz = PolyExpAnsatz(A, b, c)
 
-    #     ansatz = ansatz + ansatz
+        ansatz = ansatz + ansatz
 
-    #     assert math.allclose(ansatz.A[0], ansatz.A[1])
-    #     assert math.allclose(ansatz.A[0], A)
-    #     assert math.allclose(ansatz.b[0], ansatz.b[1])
-    #     assert math.allclose(ansatz.b[0], b)
+        assert math.allclose(ansatz.A[0], ansatz.A[1])
+        assert math.allclose(ansatz.A[0], A)
+        assert math.allclose(ansatz.b[0], ansatz.b[1])
+        assert math.allclose(ansatz.b[0], b)
 
-    #     ansatz.simplify()
-    #     assert len(ansatz.A) == 1
-    #     assert len(ansatz.b) == 1
-    #     assert ansatz.c == 2 * c
+        ansatz.simplify()
+        assert len(ansatz.A) == 1
+        assert len(ansatz.b) == 1
+        assert ansatz.c == 2 * c
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_sub(self, n):

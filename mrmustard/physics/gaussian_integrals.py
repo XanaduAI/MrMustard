@@ -504,7 +504,7 @@ def complex_gaussian_integral_1(
     n_plus_N = A.shape[-1]
     if b.shape[-1] != n_plus_N:
         raise ValueError(f"A and b must have compatible shapes, got {A.shape} and {b.shape}")
-    N = len(c.shape[batch_dim:])  # number of beta variables
+    N = len(c.shape[batch_dim:])  # number of derived variables
     n = n_plus_N - N  # number of z variables
     m = len(idx_z)  # number of pairs to integrate over
     idx = tuple(idx_z) + tuple(idx_zconj)

@@ -130,7 +130,7 @@ class ArrayAnsatz(Ansatz):
 
     @classmethod
     def from_dict(cls, data: dict[str, ArrayLike]) -> ArrayAnsatz:
-        return cls(data["array"], batch_dims=data["batch_dims"])
+        return cls(**data)
 
     @classmethod
     def from_function(cls, fn: Callable, batch_dims: int = 0, **kwargs: Any) -> ArrayAnsatz:
@@ -192,10 +192,9 @@ class ArrayAnsatz(Ansatz):
 
         # Start variable indices after batch indices
         start_idx = max(len(input_parts[0]), len(input_parts[1]), len(output_str))
-        var_idx1 = [chr(i + ord("a") + start_idx) for i in range(reduced_self.core_dims)]
+        var_idx1 = [chr(i + 97 + start_idx) for i in range(reduced_self.core_dims)]
         var_idx2 = [
-            chr(i + ord("a") + start_idx + reduced_self.core_dims)
-            for i in range(reduced_other.core_dims)
+            chr(i + 97 + start_idx + reduced_self.core_dims) for i in range(reduced_other.core_dims)
         ]
 
         # Replace contracted indices in second array with corresponding indices from first

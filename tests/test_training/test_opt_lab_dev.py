@@ -479,7 +479,6 @@ class TestOptimizer:
         cov = S @ S.T
         assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))
 
-    # TODO: fix
     def test_opt_backend_param(self):
         """Test the optimization of a backend parameter defined outside a gate."""
         skip_np()
