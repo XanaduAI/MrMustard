@@ -104,13 +104,14 @@ class Representation:
         except AttributeError as e:
             raise AttributeError("No Bargmann data for this component.") from e
 
-    def contract(self, other: Representation, mode: Literal["zip", "kron"] = "kron"):
+    def contract(self, other: Representation, mode: str = "kron"):
         r"""
         Contracts two representations.
 
         Args:
             other: The other representation to contract with.
-            mode: "zip" the batch dimensions or "kron" the batch dimensions.
+            mode: "zip" the batch dimensions, "kron" the batch dimensions
+                or pass a custom batch string.
         """
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
