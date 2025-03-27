@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for BtoW."""
+"""Tests for BtoPS."""
 
 # pylint: disable=fixme, missing-function-docstring, pointless-statement
 
@@ -20,13 +20,13 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.lab_dev import BtoW, Dgate, Ket
+from mrmustard.lab_dev import BtoPS, Dgate, Ket
 from mrmustard.physics.wigner import wigner_discretized
 
 
-class TestBtoW:
+class TestBtoPS:
     r"""
-    Tests for the ``BtoW`` class.
+    Tests for the ``BtoPS`` class.
     """
 
     modes = [(0,), (1, 2), (7, 9)]
@@ -34,8 +34,8 @@ class TestBtoW:
 
     @pytest.mark.parametrize("modes,s", zip(modes, s))
     def test_init(self, modes, s):
-        bw = BtoW(modes, s)
-        assert bw.name == "BtoW"
+        bw = BtoPS(modes, s)
+        assert bw.name == "BtoPS"
         assert bw.modes == modes
         assert bw.parameters.s.value == s
 
@@ -48,7 +48,7 @@ class TestBtoW:
         vec = np.linspace(-5, 5, 100)
         wigner, _, _ = wigner_discretized(dm, vec, vec)
 
-        Wigner = (state >> BtoW([0], s=0)).ansatz
+        Wigner = (state >> BtoPS([0], s=0)).ansatz
         X, Y = np.meshgrid(vec / np.sqrt(2 * settings.HBAR), vec / np.sqrt(2 * settings.HBAR))
         Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
         assert math.allclose(

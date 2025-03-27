@@ -1,4 +1,4 @@
-# Copyright 2024 Xanadu Quantum Technologies Inc.
+# Copyright 2025 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,13 +30,13 @@ __all__ = ["BtoPS"]
 
 class BtoPS(Map):
     r"""
-    The `s`-parametrized ``Dgate`` as a ``Map``.
+    The `s`-parametrized Wigner function` as a ``Map``.
 
     Used internally as a ``Channel`` for transformations between representations.
 
     Args:
         modes: The modes of this channel.
-        s: The `s` parameter of this channel.
+        s: The `s` parameter of this channel. The case `s=-1`  corresponds to Husimi, `s=0` to Wigner, and `s=1` to Glauber P function.
     """
 
     def __init__(
@@ -51,7 +51,7 @@ class BtoPS(Map):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_map_s_parametrized_Abc,
+                fn=triples.bargmann_to_wigner_Abc,
                 s=self.parameters.s,
                 n_modes=len(modes),
             ),
@@ -59,9 +59,3 @@ class BtoPS(Map):
         for w in self.representation.wires.output.wires:
             w.repr = ReprEnum.CHARACTERISTIC
             w.repr_params_func = lambda: self.parameters.s
-
-    def inverse(self):
-        ret = BtoPS(self.modes, self.parameters.s)
-        ret._representation = super().inverse().representation
-        ret._representation._wires = ret.representation.wires.dual
-        return ret

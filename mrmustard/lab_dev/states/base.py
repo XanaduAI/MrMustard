@@ -50,7 +50,7 @@ from mrmustard.utils.typing import (
 )
 
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoPS, BtoQ
+from ..circuit_components_utils import BtoCH, BtoQ
 
 
 __all__ = ["State"]
@@ -338,7 +338,7 @@ class State(CircuitComponent):
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
-        new_state = self >> BtoPS(self.modes, s=s)
+        new_state = self >> BtoCH(self.modes, s=s)
         return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple(batched=True))
 
     def visualize_2d(
