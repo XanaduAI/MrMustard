@@ -19,7 +19,6 @@ This module contains the defintion of the density matrix class ``DM``.
 from __future__ import annotations
 from typing import Collection, Sequence
 
-from itertools import product
 import warnings
 import numpy as np
 from IPython.display import display
@@ -50,7 +49,7 @@ class DM(State):
     short_name = "DM"
 
     @property
-    def is_positive(self) -> bool:
+    def is_positive(self) -> bool:  # TODO: revisit this
         r"""
         Whether this DM is a positive operator.
         """
@@ -59,9 +58,11 @@ class DM(State):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-        A = self.ansatz.A[0]
+        if self.ansatz.num_derived_vars > 0:
+            raise ValueError("Physicality conditions are not implemented for derived variables.")
+        A = self.ansatz.A
         m = A.shape[-1] // 2
-        gamma_A = A[:m, m:]
+        gamma_A = A[..., :m, m:]
 
         if (
             math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
@@ -161,12 +162,12 @@ class DM(State):
     @classmethod
     def random(cls, modes: Collection[int], m: int | None = None, max_r: float = 1.0) -> DM:
         r"""
-        Samples a random density matrix. The final state has zero displacement.
+        Returns a random ``DM`` with zero displacement.
 
         Args:
-        modes: the modes where the state is defined over
-        m: is the number modes to be considered for tracing out from a random pure state (Ket)
-        if not specified, m is considered to be len(modes)
+            modes: The modes of the ``DM``.
+            m: The number modes to be considered for tracing out from a random pure state (Ket)
+                if not specified, m is considered to be len(modes)
         """
         if m is None:
             m = len(modes)
@@ -183,8 +184,8 @@ class DM(State):
         A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
         b = math.zeros(m, dtype=A.dtype)
         A, b, c = complex_gaussian_integral_2(
-            (math.conj(A), math.conj(b), complex(1)),
-            (A, b, complex(1)),
+            (math.conj(A), math.conj(b), math.astensor(complex(1))),
+            (A, b, math.astensor(complex(1))),
             range(len(modes)),
             range(len(modes)),
         )
@@ -194,7 +195,7 @@ class DM(State):
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:
+    ) -> tuple[int, ...]:  # TODO: revisit
         r"""
         A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -209,13 +210,17 @@ class DM(State):
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
         # experimental:
-        if self.ansatz.batch_size == 1:
+        if self.ansatz.batch_size <= 1:
             try:  # fock
-                shape = self.ansatz.array.shape[1:]
+                shape = self.ansatz.core_shape
             except AttributeError:  # bargmann
-                if self.ansatz.polynomial_shape[0] == 0:
+                if self.ansatz.num_derived_vars == 0:
                     ansatz = self.ansatz
-                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    A, b, c = (
+                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
+                        if ansatz.batch_shape != ()  # tensorflow
+                        else ansatz.triple
+                    )
                     ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
@@ -280,31 +285,36 @@ class DM(State):
             if leftover_modes:
                 result >>= TraceOut(leftover_modes)
         else:
-            result = (self @ operator) >> TraceOut(self.modes)
+            result = (self.contract(operator)) >> TraceOut(self.modes)
 
         return result
 
     def fock_array(
-        self, shape: int | Sequence[int] | None = None, batched=False, standard_order: bool = False
+        self, shape: int | Sequence[int] | None = None, standard_order: bool = False
     ) -> ComplexTensor:
         r"""
-                Returns an array representation of this component in the Fock basis with the given shape.
-                If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
-                available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
-        The ``standard_order`` boolean argument lets one choose the standard convention for the index ordering of the density matrix. For a single mode, if ``standard_order=True`` the returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket) side of the matrix and the second index to the "right" (bra) side. Otherwise, MrMustard's convention is that the bra index comes before the ket index. In other words, for a single mode, the array returned by ``fock_array`` with ``standard_order=False`` (false by default) is the transpose of the standard density matrix. For multiple modes, the same applies to each pair of indices of each mode.
+        Returns an array representation of this component in the Fock basis with the given shape.
+        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
+        available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+        The ``standard_order`` boolean argument lets one choose the standard convention for the
+        index ordering of the density matrix. For a single mode, if ``standard_order=True`` the
+        returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket)
+        side of the matrix and the second index to the "right" (bra) side. Otherwise, MrMustard's
+        convention is that the bra index comes before the ket index. In other words, for a single
+        mode, the array returned by ``fock_array`` with ``standard_order=False`` (false by default)
+        is the transpose of the standard density matrix. For multiple modes, the same applies to
+        each pair of indices of each mode.
 
-                Args:
-                    shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
-                        it is broadcasted to all the dimensions. If not given, it is estimated.
-                    batched: Whether the returned representation is batched or not. If ``False`` (default)
-                        it will squeeze the batch dimension if it is 1.
-                    standard_order: The ordering of the wires. If ``standard_order = False``, then the conventional ordering
-                    of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
-                    standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
-                Returns:
-                    array: The Fock representation of this component.
+        Args:
+            shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
+                it is broadcasted to all the dimensions. If not given, it is estimated.
+            standard_order: The ordering of the wires. If ``standard_order = False``, then the conventional ordering
+            of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
+            standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
+        Returns:
+            array: The Fock representation of this component.
         """
-        array = super().fock_array(shape or self.auto_shape(), batched)
+        array = super().fock_array(shape or self.auto_shape())
         if standard_order:
             m = self.n_modes
             axes = tuple(range(m, 2 * m)) + tuple(
@@ -313,51 +323,11 @@ class DM(State):
             array = math.transpose(array, perm=axes)
         return array
 
-    def fock_distribution(self, cutoff: int) -> ComplexTensor:
-        r"""
-        Returns the Fock distribution of the state up to some cutoff.
-
-        Args:
-            cutoff: The photon cutoff.
-
-        Returns:
-            The Fock distribution.
-        """
-        fock_array = self.fock_array(cutoff)
-        return math.astensor(
-            [fock_array[ns * 2] for ns in product(list(range(cutoff)), repeat=self.n_modes)]
-        )
-
     def normalize(self) -> DM:
         r"""
         Returns a rescaled version of the state such that its probability is 1.
         """
         return self / self.probability
-
-    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> ComplexTensor:
-        r"""
-        The (discretized) quadrature distribution of the State.
-
-        Args:
-            quad: the discretized quadrature axis over which the distribution is computed.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            The quadrature distribution.
-        """
-        quad = np.array(quad)
-        if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
-            raise ValueError(
-                "The dimensionality of quad should be 1, or match the number of modes."
-            )
-
-        if len(quad.shape) == 1:
-            quad = math.astensor(np.meshgrid(*[quad] * len(self.modes))).T.reshape(
-                -1, len(self.modes)
-            )
-
-        quad = math.tile(quad, (1, 2))
-        return self.quadrature(quad, phi)
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
