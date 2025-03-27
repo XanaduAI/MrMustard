@@ -449,7 +449,7 @@ class Ket(State):
         bn = b[M:]
         As = math.block([[math.zeros((M, M), dtype=math.complex128), R.T], [R, An]])
         bs = math.block([math.zeros(M, dtype=math.complex128), bn], axes=(0, 0))
-        cs = c[-1]
+        cs = c
 
         inverse_order = np.argsort(new_order)
         As = As[inverse_order, :]
