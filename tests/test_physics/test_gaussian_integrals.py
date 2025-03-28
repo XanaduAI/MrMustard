@@ -31,27 +31,25 @@ from mrmustard.physics.gaussian_integrals import (
 def test_real_gaussian_integral():
     """Tests the ``real_gaussian_integral`` method with a hard-coded A matric from a Gaussian(3) state."""
     A = math.astensor(
-        np.array(
+        [
             [
-                [
-                    0.35307718 - 0.09738001j,
-                    -0.01297994 + 0.26050244j,
-                    0.05349344 - 0.13728068j,
-                ],
-                [
-                    -0.01297994 + 0.26050244j,
-                    0.05696707 - 0.2351408j,
-                    0.18954838 - 0.42959383j,
-                ],
-                [
-                    0.05349344 - 0.13728068j,
-                    0.18954838 - 0.42959383j,
-                    -0.16931712 - 0.09205837j,
-                ],
-            ]
-        )
+                0.35307718 - 0.09738001j,
+                -0.01297994 + 0.26050244j,
+                0.05349344 - 0.13728068j,
+            ],
+            [
+                -0.01297994 + 0.26050244j,
+                0.05696707 - 0.2351408j,
+                0.18954838 - 0.42959383j,
+            ],
+            [
+                0.05349344 - 0.13728068j,
+                0.18954838 - 0.42959383j,
+                -0.16931712 - 0.09205837j,
+            ],
+        ]
     )
-    b = math.astensor(np.arange(3) + 0j)
+    b = math.cast(math.arange(3), dtype=math.complex128)  # tensorflow does not support complex
     c = 1.0 + 0j
     res = real_gaussian_integral((A, b, c), idx=[0, 1])
     assert math.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
@@ -71,14 +69,12 @@ def test_real_gaussian_integral():
     assert math.allclose(res2[2], c)
 
     A2 = math.astensor(
-        np.array(
-            [
-                [0.35307718 - 0.09738001j, -0.01297994 + 0.26050244j],
-                [-0.01297994 + 0.26050244j, 0.05696707 - 0.2351408j],
-            ]
-        )
+        [
+            [0.35307718 - 0.09738001j, -0.01297994 + 0.26050244j],
+            [-0.01297994 + 0.26050244j, 0.05696707 - 0.2351408j],
+        ]
     )
-    b2 = math.astensor(np.arange(2) + 0j)
+    b2 = math.cast(math.arange(2), dtype=math.complex128)  # tensorflow does not support complex
     c2 = 1.0 + 0j
     res3 = real_gaussian_integral((A2, b2, c2), idx=[0, 1])
     assert math.allclose(res3[0], math.astensor([]))
@@ -112,69 +108,71 @@ def test_join_Abc_real():
 
 def test_join_Abc_nonbatched():
     """Tests the ``join_Abc`` method for non-batched inputs."""
-    A1 = np.array([[1, 2], [3, 4]])
-    b1 = np.array([5, 6])
-    c1 = np.array(7)
+    A1 = math.astensor([[1, 2], [3, 4]])
+    b1 = math.astensor([5, 6])
+    c1 = math.astensor(7)
 
-    A2 = np.array([[8, 9], [10, 11]])
-    b2 = np.array([12, 13])
-    c2 = np.array(10)
+    A2 = math.astensor([[8, 9], [10, 11]])
+    b2 = math.astensor([12, 13])
+    c2 = math.astensor(10)
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=None)
 
-    assert math.allclose(A, np.array([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]]))
-    assert math.allclose(b, np.array([5, 6, 12, 13]))
+    assert math.allclose(
+        A, math.astensor([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]])
+    )
+    assert math.allclose(b, math.astensor([5, 6, 12, 13]))
     assert math.allclose(c, 70)
 
 
 def test_join_Abc_batched_zip():
     """Tests the ``join_Abc`` method for batched inputs in zip mode (and with polynomial c)."""
-    A1 = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
-    b1 = np.array([[5, 6], [7, 8]])
-    c1 = np.array([7, 8])
+    A1 = math.astensor([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+    b1 = math.astensor([[5, 6], [7, 8]])
+    c1 = math.astensor([7, 8])
 
-    A2 = np.array([[[8, 9], [10, 11]], [[12, 13], [14, 15]]])
-    b2 = np.array([[12, 13], [14, 15]])
-    c2 = np.array([10, 100])
+    A2 = math.astensor([[[8, 9], [10, 11]], [[12, 13], [14, 15]]])
+    b2 = math.astensor([[12, 13], [14, 15]])
+    c2 = math.astensor([10, 100])
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
 
     assert math.allclose(
         A,
-        np.array(
+        math.astensor(
             [
                 [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]],
                 [[5, 6, 0, 0], [7, 8, 0, 0], [0, 0, 12, 13], [0, 0, 14, 15]],
             ]
         ),
     )
-    assert math.allclose(b, np.array([[5, 6, 12, 13], [7, 8, 14, 15]]))
-    assert math.allclose(c, np.array([70, 800]))
+    assert math.allclose(b, math.astensor([[5, 6, 12, 13], [7, 8, 14, 15]]))
+    assert math.allclose(c, math.astensor([70, 800]))
 
 
 def test_join_Abc_batched_kron():
     """Tests the ``join_Abc`` method for batched inputs in kron mode (and with polynomial c)."""
-    A1 = np.array([[[1, 2], [3, 4]]])
-    b1 = np.array([[5, 6]])
-    c1 = np.array([7])
+    A1 = math.astensor([[[1, 2], [3, 4]]])
+    b1 = math.astensor([[5, 6]])
+    c1 = math.astensor([7])
 
-    A2 = np.array([[[8, 9], [10, 11]], [[12, 13], [14, 15]]])
-    b2 = np.array([[12, 13], [14, 15]])
-    c2 = np.array([10, 100])
+    A2 = math.astensor([[[8, 9], [10, 11]], [[12, 13], [14, 15]]])
+    b2 = math.astensor([[12, 13], [14, 15]])
+    c2 = math.astensor([10, 100])
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,j->ij")
 
     assert math.allclose(
         A,
-        np.array(
+        math.astensor(
             [
                 [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]],
                 [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 12, 13], [0, 0, 14, 15]],
             ]
         ),
     )
-    assert math.allclose(b, np.array([[5, 6, 12, 13], [5, 6, 14, 15]]))
-    assert math.allclose(c, np.array([70, 700]))
+    assert math.allclose(b, math.astensor([[5, 6, 12, 13], [5, 6, 14, 15]]))
+    assert math.allclose(c, math.astensor([70, 700]))
 
 
 def test_reorder_abc():
