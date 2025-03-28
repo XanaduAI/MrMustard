@@ -451,6 +451,7 @@ class Channel(Map):
     def from_kraus(cls, kraus: Operation) -> Channel:
         r"""
         Initialize a Channel from its Kraus representation.
+        
         Args:
             kraus: The Kraus operator of the channel.
 
