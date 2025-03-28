@@ -85,11 +85,13 @@ def bargmann_eigenstate_Abc(alpha: complex | Iterable[complex]) -> tuple[Matrix,
     Returns:
         The ``(A, b, c)`` triple of the Bargmann eigenstate.
     """
-    (alpha,) = math.broadcast_arrays(alpha)
+    (alpha,) = math.broadcast_arrays(math.astensor(alpha))
     batch_shape = alpha.shape
+
     A = math.broadcast_to(_vacuum_A_matrix(1), batch_shape + (1, 1))
     b = math.cast(math.reshape(alpha, batch_shape + (1,)), math.complex128)
     c = math.ones(batch_shape, math.complex128)
+
     return A, b, c
 
 
@@ -106,11 +108,13 @@ def coherent_state_Abc(
     Returns:
         The ``(A, b, c)`` triple of the pure coherent state.
     """
-    x, y = math.broadcast_arrays(x, y)
+    x, y = math.broadcast_arrays(math.astensor(x), math.astensor(y))
     batch_shape = x.shape
+
     A = math.broadcast_to(_vacuum_A_matrix(1), batch_shape + (1, 1))
     b = math.reshape(x + 1j * y, batch_shape + (1,))
     c = math.cast(math.exp(-0.5 * (x**2 + y**2)), math.complex128)
+
     return A, b, c
 
 
@@ -127,7 +131,7 @@ def squeezed_vacuum_state_Abc(
     Returns:
         The ``(A, b, c)`` triple of a squeezed vacuum state.
     """
-    r, phi = math.broadcast_arrays(r, phi)
+    r, phi = math.broadcast_arrays(math.astensor(r), math.astensor(phi))
     batch_shape = r.shape
 
     A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
@@ -155,7 +159,9 @@ def displaced_squeezed_vacuum_state_Abc(
     Returns:
         The ``(A, b, c)`` triple of the squeezed vacuum state.
     """
-    x, y, r, phi = math.broadcast_arrays(x, y, r, phi)
+    x, y, r, phi = math.broadcast_arrays(
+        math.astensor(x), math.astensor(y), math.astensor(r), math.astensor(phi)
+    )
     batch_shape = x.shape
 
     A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
@@ -166,8 +172,7 @@ def displaced_squeezed_vacuum_state_Abc(
     c = math.exp(
         -0.5 * (x**2 + y**2)
         - 0.5 * (x - 1j * y) ** 2 * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
-    )
-    c = c / math.sqrt(math.cosh(r))
+    ) / math.sqrt(math.cosh(r))
 
     return A, b, c
 
@@ -185,7 +190,7 @@ def two_mode_squeezed_vacuum_state_Abc(
     Returns:
         The ``(A, b, c)`` triple of the squeezed vacuum state.
     """
-    r, phi = math.broadcast_arrays(r, phi)
+    r, phi = math.broadcast_arrays(math.astensor(r), math.astensor(phi))
     batch_shape = r.shape
     batch_dim = len(batch_shape)
 
@@ -304,13 +309,14 @@ def quadrature_eigenstates_Abc(
     Returns:
         The ``(A, b, c)`` triple of the squeezed vacuum state.
     """
-    hbar = settings.HBAR
-    x, phi = math.broadcast_arrays(x, phi)
+    x, phi = math.broadcast_arrays(math.astensor(x), math.astensor(phi))
     batch_shape = x.shape
 
+    hbar = settings.HBAR
     A = math.reshape(-math.exp(1j * 2 * phi), batch_shape + (1, 1))
     b = math.reshape(x * math.exp(1j * phi) * math.sqrt(2 / hbar), batch_shape + (1,))
     c = math.cast(1 / (np.pi) ** (1 / 4) * math.exp(-(x**2) / (2 * hbar)), math.complex128)
+
     return A, b, c
 
 
@@ -329,7 +335,7 @@ def thermal_state_Abc(nbar: int | Iterable[int]) -> tuple[Matrix, Vector, Scalar
     Returns:
         The ``(A, b, c)`` triple of the thermal state.
     """
-    (nbar,) = math.broadcast_arrays(nbar)
+    (nbar,) = math.broadcast_arrays(math.astensor(nbar))
     batch_shape = nbar.shape
     batch_dim = len(batch_shape)
 
@@ -344,6 +350,7 @@ def thermal_state_Abc(nbar: int | Iterable[int]) -> tuple[Matrix, Vector, Scalar
     )
     b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.cast(1 / (nbar + 1), math.complex128)
+
     return A, b, c
 
 
@@ -364,7 +371,7 @@ def rotation_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the rotation gate.
     """
-    theta = math.astensor(theta)
+    (theta,) = math.broadcast_arrays(math.astensor(theta))
     batch_shape = theta.shape
     batch_dim = len(batch_shape)
 
@@ -396,7 +403,7 @@ def displacement_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the displacement gate.
     """
-    x, y = math.broadcast_arrays(x, y)
+    x, y = math.broadcast_arrays(math.astensor(x), math.astensor(y))
     batch_shape = x.shape
     batch_dim = len(batch_shape)
 
@@ -420,7 +427,7 @@ def squeezing_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the squeezing gate.
     """
-    r, phi = math.broadcast_arrays(r, phi)
+    r, phi = math.broadcast_arrays(math.astensor(r), math.astensor(phi))
     batch_shape = r.shape
     batch_dim = len(batch_shape)
 
@@ -453,12 +460,9 @@ def beamsplitter_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the beamsplitter gate.
     """
-    theta, phi = math.broadcast_arrays(theta, phi)
+    theta, phi = math.broadcast_arrays(math.astensor(theta), math.astensor(phi))
     batch_shape = theta.shape
     batch_dim = len(batch_shape)
-
-    theta = math.broadcast_to(theta, batch_shape, dtype=math.complex128)
-    phi = math.broadcast_to(phi, batch_shape, dtype=math.complex128)
 
     O_matrix = math.zeros(batch_shape + (2, 2), math.complex128)
     costheta = math.cos(theta)
@@ -472,14 +476,16 @@ def beamsplitter_gate_Abc(
         batch_dim,
     )
 
-    perm = tuple(range(len(V.shape)))
-    perm = perm[:batch_dim] + perm[batch_dim:][::-1]
-
     A = math.concat(
-        [math.concat([O_matrix, V], -1), math.concat([math.transpose(V, perm), O_matrix], -1)], -2
+        [
+            math.concat([O_matrix, V], -1),
+            math.concat([math.einsum("...ij->...ji", V), O_matrix], -1),
+        ],
+        -2,
     )
     b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.ones(batch_shape, math.complex128)
+
     return A, b, c
 
 
@@ -496,7 +502,7 @@ def twomode_squeezing_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the two mode squeezing gate.
     """
-    r, phi = math.broadcast_arrays(r, phi)
+    r, phi = math.broadcast_arrays(math.astensor(r), math.astensor(phi))
     batch_shape = r.shape
     batch_dim = len(batch_shape)
 
@@ -564,7 +570,7 @@ def attenuator_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar
     Raises:
         ValueError: If ``eta`` is larger than `1` or smaller than `0`.
     """
-    (eta,) = math.broadcast_arrays(eta)
+    (eta,) = math.broadcast_arrays(math.astensor(eta))
     batch_shape = eta.shape
     batch_dim = len(batch_shape)
 
@@ -603,7 +609,7 @@ def amplifier_Abc(g: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
     Raises:
         ValueError: If ``g`` is smaller than `1`.
     """
-    (g,) = math.broadcast_arrays(g)
+    (g,) = math.broadcast_arrays(math.astensor(g))
     batch_shape = g.shape
     batch_dim = len(batch_shape)
 
@@ -641,7 +647,7 @@ def fock_damping_Abc(
     Returns:
         The ``(A, b, c)`` triple of the Fock damping operator.
     """
-    (beta,) = math.broadcast_arrays(beta)
+    (beta,) = math.broadcast_arrays(math.astensor(beta))
     batch_shape = beta.shape
     batch_dim = len(batch_shape)
 
@@ -727,7 +733,7 @@ def bargmann_to_quadrature_Abc(
     Returns:
         The ``(A, b, c)`` triple of the map from bargmann representation with ABC Ansatz to quadrature representation with ABC Ansatz.
     """
-    (phi,) = math.broadcast_arrays(phi)
+    (phi,) = math.broadcast_arrays(math.astensor(phi))
     batch_shape = phi.shape
     batch_dim = len(batch_shape)
 
@@ -749,6 +755,7 @@ def bargmann_to_quadrature_Abc(
     )
     b = math.broadcast_to(_vacuum_B_vector(2 * n_modes), batch_shape + (2 * n_modes,))
     c = math.ones(batch_shape, math.complex128) / (np.pi * hbar) ** (0.25 * n_modes)
+
     return A, b, c
 
 
@@ -771,10 +778,9 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     Returns:
         The ``(A, b, c)`` triple of the multi-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
     """
-    (s,) = math.broadcast_arrays(s)
+    (s,) = math.broadcast_arrays(math.astensor(s))
     batch_shape = s.shape
 
-    s = math.broadcast_to(s, batch_shape, dtype=math.complex128)
     Zmat = math.broadcast_to(
         -math.Zmat(num_modes=n_modes),
         batch_shape + (2 * n_modes, 2 * n_modes),
@@ -805,6 +811,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     A = math.astensor(math.asnumpy(A)[..., order_list, :][..., :, order_list])
     b = math.broadcast_to(_vacuum_B_vector(4 * n_modes), batch_shape + (4 * n_modes,))
     c = math.ones(batch_shape, math.complex128)
+
     return A, b, c
 
 
@@ -827,6 +834,7 @@ def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]
     A = math.block([[O2n, -Omega], [Omega, O2n]])
     b = _vacuum_B_vector(4 * n_modes)
     c = 1.0 + 0j
+
     return A, b, c
 
 
@@ -846,7 +854,7 @@ def attenuator_kraus_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, 
     Returns:
         The ``(A, b, c)`` triple of the kraus operators of the attenuator (loss) channel.
     """
-    (eta,) = math.broadcast_arrays(eta)
+    (eta,) = math.broadcast_arrays(math.astensor(eta))
     batch_shape = eta.shape
     batch_dim = len(batch_shape)
 
@@ -865,6 +873,7 @@ def attenuator_kraus_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, 
     )
     b = math.broadcast_to(_vacuum_B_vector(3), batch_shape + (3,))
     c = math.ones(batch_shape, math.complex128)
+
     return A, b, c
 
 
@@ -878,7 +887,6 @@ def XY_to_channel_Abc(
         Y: The Y matrix of the channel
         d: The d (displacement) vector of the channel -- if None, we consider it as 0
     """
-
     m = Y.shape[-1] // 2
     # considering no displacement if d is None
     d = d if d else math.zeros(2 * m)
