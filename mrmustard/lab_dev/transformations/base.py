@@ -460,7 +460,7 @@ class Channel(Map):
             >>> ch = Channel.from_kraus(U)
             >>> X, _ = ch.XY
 
-            >>> assert X == U.symplectic[0]
+            >>> assert math.allclose(X, U.symplectic)
         """
         ch = kraus.contract(kraus.adjoint)
         return Channel.from_ansatz(kraus.wires.output.modes, kraus.wires.input.modes, ch.ansatz)
