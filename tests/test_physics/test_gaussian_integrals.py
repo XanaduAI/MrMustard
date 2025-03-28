@@ -31,7 +31,7 @@ from mrmustard.physics.gaussian_integrals import (
 def test_real_gaussian_integral():
     """Tests the ``real_gaussian_integral`` method with a hard-coded A matric from a Gaussian(3) state."""
     A = math.astensor(
-        math.astensor(
+        np.array(
             [
                 [
                     0.35307718 - 0.09738001j,
@@ -51,7 +51,7 @@ def test_real_gaussian_integral():
             ]
         )
     )
-    b = math.astensor(math.arange(3) + 0j)
+    b = math.astensor(np.arange(3) + 0j)
     c = 1.0 + 0j
     res = real_gaussian_integral((A, b, c), idx=[0, 1])
     assert math.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
@@ -71,14 +71,14 @@ def test_real_gaussian_integral():
     assert math.allclose(res2[2], c)
 
     A2 = math.astensor(
-        math.astensor(
+        np.array(
             [
                 [0.35307718 - 0.09738001j, -0.01297994 + 0.26050244j],
                 [-0.01297994 + 0.26050244j, 0.05696707 - 0.2351408j],
             ]
         )
     )
-    b2 = math.astensor(math.arange(2) + 0j)
+    b2 = math.astensor(np.arange(2) + 0j)
     c2 = 1.0 + 0j
     res3 = real_gaussian_integral((A2, b2, c2), idx=[0, 1])
     assert math.allclose(res3[0], math.astensor([]))
@@ -96,7 +96,6 @@ def test_join_Abc_real():
     """Tests the ``join_Abc_real`` method."""
     A1, b1, c1 = triples.vacuum_state_Abc(1)
     A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
-
     idx1 = [0]
     idx2 = [0]
 
@@ -113,94 +112,92 @@ def test_join_Abc_real():
 
 def test_join_Abc_nonbatched():
     """Tests the ``join_Abc`` method for non-batched inputs."""
-    A1 = math.astensor([[1, 2], [3, 4]])
-    b1 = math.astensor([5, 6])
-    c1 = math.astensor(7)
+    A1 = np.array([[1, 2], [3, 4]])
+    b1 = np.array([5, 6])
+    c1 = np.array(7)
 
-    A2 = math.astensor([[8, 9], [10, 11]])
-    b2 = math.astensor([12, 13])
-    c2 = math.astensor(10)
+    A2 = np.array([[8, 9], [10, 11]])
+    b2 = np.array([12, 13])
+    c2 = np.array(10)
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=None)
 
-    assert math.allclose(
-        A, math.astensor([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]])
-    )
-    assert math.allclose(b, math.astensor([5, 6, 12, 13]))
+    assert math.allclose(A, np.array([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]]))
+    assert math.allclose(b, np.array([5, 6, 12, 13]))
     assert math.allclose(c, 70)
 
 
 def test_join_Abc_batched_zip():
     """Tests the ``join_Abc`` method for batched inputs in zip mode (and with polynomial c)."""
-    A1 = math.astensor([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
-    b1 = math.astensor([[5, 6], [7, 8]])
-    c1 = math.astensor([7, 8])
+    A1 = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+    b1 = np.array([[5, 6], [7, 8]])
+    c1 = np.array([7, 8])
 
-    A2 = math.astensor([[[8, 9], [10, 11]], [[12, 13], [14, 15]]])
-    b2 = math.astensor([[12, 13], [14, 15]])
-    c2 = math.astensor([10, 100])
+    A2 = np.array([[[8, 9], [10, 11]], [[12, 13], [14, 15]]])
+    b2 = np.array([[12, 13], [14, 15]])
+    c2 = np.array([10, 100])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="zip")
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
 
     assert math.allclose(
         A,
-        math.astensor(
+        np.array(
             [
                 [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]],
                 [[5, 6, 0, 0], [7, 8, 0, 0], [0, 0, 12, 13], [0, 0, 14, 15]],
             ]
         ),
     )
-    assert math.allclose(b, math.astensor([[5, 6, 12, 13], [7, 8, 14, 15]]))
-    assert math.allclose(c, math.astensor([70, 800]))
+    assert math.allclose(b, np.array([[5, 6, 12, 13], [7, 8, 14, 15]]))
+    assert math.allclose(c, np.array([70, 800]))
 
 
 def test_join_Abc_batched_kron():
     """Tests the ``join_Abc`` method for batched inputs in kron mode (and with polynomial c)."""
-    A1 = math.astensor([[[1, 2], [3, 4]]])
-    b1 = math.astensor([[5, 6]])
-    c1 = math.astensor([7])
+    A1 = np.array([[[1, 2], [3, 4]]])
+    b1 = np.array([[5, 6]])
+    c1 = np.array([7])
 
-    A2 = math.astensor([[[8, 9], [10, 11]], [[12, 13], [14, 15]]])
-    b2 = math.astensor([[12, 13], [14, 15]])
-    c2 = math.astensor([10, 100])
+    A2 = np.array([[[8, 9], [10, 11]], [[12, 13], [14, 15]]])
+    b2 = np.array([[12, 13], [14, 15]])
+    c2 = np.array([10, 100])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="kron")
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,j->ij")
 
     assert math.allclose(
         A,
-        math.astensor(
+        np.array(
             [
                 [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]],
                 [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 12, 13], [0, 0, 14, 15]],
             ]
         ),
     )
-    assert math.allclose(b, math.astensor([[5, 6, 12, 13], [5, 6, 14, 15]]))
-    assert math.allclose(c, math.astensor([70, 700]))
+    assert math.allclose(b, np.array([[5, 6, 12, 13], [5, 6, 14, 15]]))
+    assert math.allclose(c, np.array([70, 700]))
 
 
 def test_reorder_abc():
     """Test that the reorder_abc function works correctly"""
-    A = math.astensor([[1, 2], [2, 3]])
-    b = math.astensor([4, 5])
-    c = math.astensor(6)
-
-    idx = math.astensor([0, 1])
-    same = reorder_abc((A, b, c), idx)
-    assert all(math.allclose(x, y) for x, y in zip(same, (A, b, c)))
-    flipped = reorder_abc((A, b, c), idx)
-    assert all(math.allclose(x, y) for x, y in zip(flipped, (A[idx, :][:, idx], b[idx], c)))
-
-    A = math.astensor([[[1, 2, 3], [2, 4, 5], [3, 5, 6]]])
-    b = math.astensor([[4, 5, 6]])
-    c = math.astensor([[1, 2, 3]])
+    A = np.array([[1, 2], [2, 3]])
+    b = np.array([4, 5])
+    c = np.array(6)
     same = reorder_abc((A, b, c), (0, 1))
     assert all(math.allclose(x, y) for x, y in zip(same, (A, b, c)))
     flipped = reorder_abc((A, b, c), (1, 0))
-    idx = math.astensor([1, 0, 2])
     assert all(
-        math.allclose(x, y) for x, y in zip(flipped, (A[:, idx, :][:, :, idx], b[:, idx], c))
+        math.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c))
+    )
+
+    A = np.array([[[1, 2, 3], [2, 4, 5], [3, 5, 6]]])
+    b = np.array([[4, 5, 6]])
+    c = np.array([[1, 2, 3]])
+    same = reorder_abc((A, b, c), (0, 1))
+    assert all(math.allclose(x, y) for x, y in zip(same, (A, b, c)))
+    flipped = reorder_abc((A, b, c), (1, 0))
+    assert all(
+        math.allclose(x, y)
+        for x, y in zip(flipped, (A[:, [1, 0, 2], :][:, :, [1, 0, 2]], b[:, [1, 0, 2]], c))
     )
 
 
@@ -235,7 +232,7 @@ def test_complex_gaussian_integral_2_batched():
     c2 = math.astensor([c2a, c2b, c2c])
     c3 = math.astensor([c3a, c3b, c3c])
 
-    res = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0], [1], mode="zip")
+    res = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0], [1], batch_string="i,i->i")
     assert math.allclose(res[0], A3)
     assert math.allclose(res[1], b3)
     assert math.allclose(res[2], c3)
@@ -255,7 +252,7 @@ def test_complex_gaussian_integral_1_not_batched():
     A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
     A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=0.1, y=0.3)
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="zip")
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
 
     res = complex_gaussian_integral_1((A, b, c), [0, 1], [2, 3])
     assert math.allclose(res[0], A3)
@@ -282,7 +279,33 @@ def test_complex_gaussian_integral_1_batched():
     c2 = math.astensor([c2a, c2b, c2c])
     c3 = math.astensor([c3a, c3b, c3c])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), mode="zip")
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
+    res1 = complex_gaussian_integral_1((A, b, c), [0], [2])
+    assert math.allclose(res1[0], A3)
+    assert math.allclose(res1[1], b3)
+    assert math.allclose(res1[2], c3)
+
+
+def test_complex_gaussian_integral_1_multidim_batched():
+    """tests that the ``complex_gaussian_integral_2`` method works for multi-dimensional batched inputs."""
+    A1, b1, c1 = triples.vacuum_state_Abc(1)
+    A2a, b2a, c2a = triples.squeezing_gate_Abc(r=0.1, phi=0.3)
+    A2b, b2b, c2b = triples.squeezing_gate_Abc(r=0.2, phi=0.4)
+    A2c, b2c, c2c = triples.squeezing_gate_Abc(r=0.3, phi=0.5)
+    A3a, b3a, c3a = triples.squeezed_vacuum_state_Abc(r=0.1, phi=0.3)
+    A3b, b3b, c3b = triples.squeezed_vacuum_state_Abc(r=0.2, phi=0.4)
+    A3c, b3c, c3c = triples.squeezed_vacuum_state_Abc(r=0.3, phi=0.5)
+    A1 = math.astensor([[A1, A1, A1], [A1, A1, A1]])
+    A2 = math.astensor([[A2a, A2b, A2c], [A2a, A2b, A2c]])
+    A3 = math.astensor([[A3a, A3b, A3c], [A3a, A3b, A3c]])
+    b1 = math.astensor([[b1, b1, b1], [b1, b1, b1]])
+    b2 = math.astensor([[b2a, b2b, b2c], [b2a, b2b, b2c]])
+    b3 = math.astensor([[b3a, b3b, b3c], [b3a, b3b, b3c]])
+    c1 = math.astensor([[c1, c1, c1], [c1, c1, c1]])
+    c2 = math.astensor([[c2a, c2b, c2c], [c2a, c2b, c2c]])
+    c3 = math.astensor([[c3a, c3b, c3c], [c3a, c3b, c3c]])
+
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="ij,ij->ij")
     res1 = complex_gaussian_integral_1((A, b, c), [0], [2])
     assert math.allclose(res1[0], A3)
     assert math.allclose(res1[1], b3)

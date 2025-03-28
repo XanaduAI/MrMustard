@@ -26,7 +26,6 @@ from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Vector, Scalar, RealMatrix
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from .bargmann_utils import symplectic2Au
-from .utils import compute_batch_shape
 
 #  ~~~~~~~~~
 #  Utilities
@@ -497,11 +496,9 @@ def twomode_squeezing_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the two mode squeezing gate.
     """
-    batch_size, batch_dim = compute_batch_shape(r, phi)
-    batch_shape = batch_size or (1,)
-
-    r = math.broadcast_to(r, batch_shape, dtype=math.complex128)
-    phi = math.broadcast_to(phi, batch_shape, dtype=math.complex128)
+    r, phi = math.broadcast_arrays(r, phi)
+    batch_shape = r.shape
+    batch_dim = len(batch_shape)
 
     O_matrix = math.zeros(batch_shape, math.complex128)
     tanhr = math.exp(1j * phi) * math.sinh(r) / math.cosh(r)
@@ -526,7 +523,7 @@ def twomode_squeezing_gate_Abc(
     b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.cast(1 / math.cosh(r), math.complex128)
 
-    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
+    return A, b, c
 
 
 def identity_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
@@ -567,10 +564,9 @@ def attenuator_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar
     Raises:
         ValueError: If ``eta`` is larger than `1` or smaller than `0`.
     """
-    batch_size, batch_dim = compute_batch_shape(eta)
-    batch_shape = batch_size or (1,)
-
-    eta = math.broadcast_to(eta, batch_shape, dtype=math.complex128)
+    (eta,) = math.broadcast_arrays(eta)
+    batch_shape = eta.shape
+    batch_dim = len(batch_shape)
 
     math.error_if(eta, math.any(math.real(eta) > 1), "Found transmissivity greater than `1`.")
     math.error_if(eta, math.any(math.real(eta) < 0), "Found transmissivity less than `0`.")
@@ -591,7 +587,7 @@ def attenuator_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar
     b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.ones(batch_shape, math.complex128)
 
-    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
+    return A, b, c
 
 
 def amplifier_Abc(g: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
@@ -607,10 +603,9 @@ def amplifier_Abc(g: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
     Raises:
         ValueError: If ``g`` is smaller than `1`.
     """
-    batch_size, batch_dim = compute_batch_shape(g)
-    batch_shape = batch_size or (1,)
-
-    g = math.broadcast_to(g, batch_shape, dtype=math.complex128)
+    (g,) = math.broadcast_arrays(g)
+    batch_shape = g.shape
+    batch_dim = len(batch_shape)
 
     math.error_if(
         g, math.any(math.real(g) < 1), "Found amplifier with gain ``g`` smaller than `1`."
@@ -631,7 +626,7 @@ def amplifier_Abc(g: float | Iterable[float]) -> tuple[Matrix, Vector, Scalar]:
     b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
     c = math.cast(1 / g, math.complex128)
 
-    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
+    return A, b, c
 
 
 def fock_damping_Abc(
@@ -646,10 +641,9 @@ def fock_damping_Abc(
     Returns:
         The ``(A, b, c)`` triple of the Fock damping operator.
     """
-    batch_size, batch_dim = compute_batch_shape(beta)
-    batch_shape = batch_size or (1,)
-
-    beta = math.broadcast_to(beta, batch_shape, dtype=math.complex128)
+    (beta,) = math.broadcast_arrays(beta)
+    batch_shape = beta.shape
+    batch_dim = len(batch_shape)
 
     O_matrix = math.zeros(batch_shape, math.complex128)
     B_n = math.exp(-beta)
@@ -660,7 +654,7 @@ def fock_damping_Abc(
     b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
     c = math.ones(batch_shape, math.complex128)
 
-    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
+    return A, b, c
 
 
 def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[Matrix, Vector, Scalar]:
@@ -673,10 +667,7 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[Matrix, Vector, Scalar]:
     Returns:
         The ``(A, b, c)`` triple of the Gaussian random noise channel.
     """
-    batch_size = Y.shape[:-2]
-    batch_shape = batch_size or (1,)
-
-    Y = math.broadcast_to(Y, batch_shape + Y.shape[-2:], dtype=math.complex128)
+    batch_shape = Y.shape[:-2]
 
     m = Y.shape[-1] // 2
     xi = math.eye(2 * m, dtype=math.complex128) + Y / settings.HBAR
@@ -717,7 +708,7 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[Matrix, Vector, Scalar]:
     b = math.zeros(batch_shape + (4 * m,))
     c = 1 / math.sqrt(math.det(xi))
 
-    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
+    return A, b, c
 
 
 def bargmann_to_quadrature_Abc(
@@ -736,10 +727,9 @@ def bargmann_to_quadrature_Abc(
     Returns:
         The ``(A, b, c)`` triple of the map from bargmann representation with ABC Ansatz to quadrature representation with ABC Ansatz.
     """
-    batch_size, batch_dim = compute_batch_shape(phi)
-    batch_shape = batch_size or (1,)
-
-    phi = math.broadcast_to(phi, batch_shape, dtype=math.complex128)
+    (phi,) = math.broadcast_arrays(phi)
+    batch_shape = phi.shape
+    batch_dim = len(batch_shape)
 
     hbar = settings.HBAR
     Id = math.eye(n_modes, dtype=math.complex128)
@@ -759,7 +749,7 @@ def bargmann_to_quadrature_Abc(
     )
     b = math.broadcast_to(_vacuum_B_vector(2 * n_modes), batch_shape + (2 * n_modes,))
     c = math.ones(batch_shape, math.complex128) / (np.pi * hbar) ** (0.25 * n_modes)
-    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
+    return A, b, c
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -781,8 +771,8 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     Returns:
         The ``(A, b, c)`` triple of the multi-mode ``s``-parametrized dispalcement map :math:`D_s(\gamma)`.
     """
-    batch_size, _ = compute_batch_shape(s)
-    batch_shape = batch_size or (1,)
+    (s,) = math.broadcast_arrays(s)
+    batch_shape = s.shape
 
     s = math.broadcast_to(s, batch_shape, dtype=math.complex128)
     Zmat = math.broadcast_to(
@@ -815,7 +805,7 @@ def displacement_map_s_parametrized_Abc(s: int, n_modes: int) -> tuple[Matrix, V
     A = math.astensor(math.asnumpy(A)[..., order_list, :][..., :, order_list])
     b = math.broadcast_to(_vacuum_B_vector(4 * n_modes), batch_shape + (4 * n_modes,))
     c = math.ones(batch_shape, math.complex128)
-    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
+    return A, b, c
 
 
 def complex_fourier_transform_Abc(n_modes: int) -> tuple[Matrix, Vector, Scalar]:
@@ -856,10 +846,9 @@ def attenuator_kraus_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, 
     Returns:
         The ``(A, b, c)`` triple of the kraus operators of the attenuator (loss) channel.
     """
-    batch_size, batch_dim = compute_batch_shape(eta)
-    batch_shape = batch_size or (1,)
-
-    eta = math.broadcast_to(eta, batch_shape, dtype=math.complex128)
+    (eta,) = math.broadcast_arrays(eta)
+    batch_shape = eta.shape
+    batch_dim = len(batch_shape)
 
     costheta = math.sqrt(eta)
     sintheta = math.sqrt(1 - eta)
@@ -876,7 +865,7 @@ def attenuator_kraus_Abc(eta: float | Iterable[float]) -> tuple[Matrix, Vector, 
     )
     b = math.broadcast_to(_vacuum_B_vector(3), batch_shape + (3,))
     c = math.ones(batch_shape, math.complex128)
-    return A if batch_size else A[0], b if batch_size else b[0], c if batch_size else c[0]
+    return A, b, c
 
 
 def XY_to_channel_Abc(

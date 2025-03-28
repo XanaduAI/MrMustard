@@ -46,6 +46,20 @@ class Ansatz(ABC):
 
     @property
     @abstractmethod
+    def batch_dims(self) -> tuple[int, ...]:
+        r"""
+        The number of batch dimensions of the ansatz.
+        """
+
+    @property
+    @abstractmethod
+    def batch_shape(self) -> tuple[int, ...]:
+        r"""
+        The batch shape of the ansatz.
+        """
+
+    @property
+    @abstractmethod
     def batch_size(self) -> int:
         r"""
         The batch size of the ansatz.
@@ -70,7 +84,7 @@ class Ansatz(ABC):
     @abstractmethod
     def num_vars(self) -> int:
         r"""
-        The number of variables in the ansatz.
+        The number of variables of this ansatz.
         """
 
     @property
@@ -110,6 +124,7 @@ class Ansatz(ABC):
         other: Ansatz,
         idx1: int | tuple[int, ...] = tuple(),
         idx2: int | tuple[int, ...] = tuple(),
+        batch_str: str | None = None,
     ) -> Ansatz:
         r"""
         Contract two ansatz together.
@@ -117,6 +132,9 @@ class Ansatz(ABC):
             other: Another ansatz.
             idx1: The (optional) index of the first ansatz to contract.
             idx2: The (optional) index of the second ansatz to contract.
+            batch_str: The (optional) batch dimensions to contract over with the
+                same syntax as in ``np.einsum``. If not indicated, the batch dimensions
+                are taken in outer product.
         Returns:
             The resulting contracted ansatz.
         """

@@ -20,8 +20,9 @@ import plotly.graph_objs as go
 from IPython import get_ipython
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
 
-from .css import FOCK, WIRES, TABLE, STATE
+from mrmustard import math
 
+from .css import FOCK, WIRES, TABLE, STATE
 
 NO_MARGIN = {"l": 0, "r": 0, "t": 0, "b": 0}
 IN_INTERACTIVE_SHELL = isinstance(get_ipython(), TerminalInteractiveShell)
@@ -59,15 +60,16 @@ def fock_2d(array):
 
 def fock(rep):
     """Create a widget to display a Fock representation."""
-    shape = rep.array.shape
-    if shape[0] != 1:  # pragma: no cover
+    if rep.batch_size > 1:  # pragma: no cover
         # the batch dimension should be trivial for Fock representations
         return None
 
-    if len(shape) == 2:
-        plot_widget = fock_1d(rep.array[0])
-    elif len(shape) == 3:
-        plot_widget = fock_2d(rep.array[0])
+    shape = rep.core_shape
+    rep_array = rep.array[0] if rep.batch_shape != () else rep.array  # tensorflow
+    if len(shape) == 1:
+        plot_widget = fock_1d(rep_array)
+    elif len(shape) == 2:
+        plot_widget = fock_2d(rep_array)
     else:  # TODO: add multi-dimensional visualization
         return None
 
@@ -85,14 +87,17 @@ def fock(rep):
     )
 
 
-def bargmann(rep, batch_idx=None):
+def bargmann(rep, batch_idx: int | None = None):
     """Create a widget to display a Bargmann representation."""
-    if batch_idx is None:
-        return _batch_widget(rep, rep.A.shape[0], bargmann)
+    if batch_idx is None and rep.batch_shape != ():  # tensorflow
+        return _batch_widget(rep, rep.batch_size, bargmann)
 
-    A = rep.A[batch_idx]
-    b = rep.b[batch_idx]
-    c = rep.c[batch_idx]
+    if rep.batch_shape != ():  # tensorflow
+        A = math.reshape(rep.A, (-1, *rep.A.shape[-2:]))[batch_idx]
+        b = math.reshape(rep.b, (-1, *rep.b.shape[-1:]))[batch_idx]
+        c = math.reshape(rep.c, (-1, *rep.c.shape[rep.batch_dims :]))[batch_idx]
+    else:
+        A, b, c = rep.triple
 
     def get_abc_str(A, b, c, round_val):
         if round_val >= 0:
