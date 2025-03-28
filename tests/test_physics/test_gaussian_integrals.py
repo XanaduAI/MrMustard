@@ -177,25 +177,23 @@ def test_join_Abc_batched_kron():
 
 def test_reorder_abc():
     """Test that the reorder_abc function works correctly"""
-    A = np.array([[1, 2], [2, 3]])
-    b = np.array([4, 5])
-    c = np.array(6)
+    A = math.astensor([[1, 2], [2, 3]])
+    b = math.astensor([4, 5])
+    c = math.astensor(6)
     same = reorder_abc((A, b, c), (0, 1))
     assert all(math.allclose(x, y) for x, y in zip(same, (A, b, c)))
     flipped = reorder_abc((A, b, c), (1, 0))
-    assert all(
-        math.allclose(x, y) for x, y in zip(flipped, (A[[1, 0], :][:, [1, 0]], b[[1, 0]], c))
-    )
+    assert all(math.allclose(x, y) for x, y in zip(flipped, (A[::-1, :][:, ::-1], b[::-1], c)))
 
-    A = np.array([[[1, 2, 3], [2, 4, 5], [3, 5, 6]]])
-    b = np.array([[4, 5, 6]])
-    c = np.array([[1, 2, 3]])
+    A = math.astensor([[[1, 2, 3], [2, 4, 5], [3, 5, 6]]])
+    b = math.astensor([[4, 5, 6]])
+    c = math.astensor([[1, 2, 3]])
     same = reorder_abc((A, b, c), (0, 1))
     assert all(math.allclose(x, y) for x, y in zip(same, (A, b, c)))
     flipped = reorder_abc((A, b, c), (1, 0))
     assert all(
         math.allclose(x, y)
-        for x, y in zip(flipped, (A[:, [1, 0, 2], :][:, :, [1, 0, 2]], b[:, [1, 0, 2]], c))
+        for x, y in zip(flipped, (A[:, (1, 0, 2), :][:, :, (1, 0, 2)], b[:, (1, 0, 2)], c))
     )
 
 
