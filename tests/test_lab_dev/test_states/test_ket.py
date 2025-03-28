@@ -131,7 +131,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
                 >> SqueezedVacuum(mode=1, r=-0.75)
                 >> BSgate(modes=(0, 1), theta=0.9)
             ) >> Number(mode=0, n=20).dual
-        state = state.normalize()
+
+        state = state.to_bargmann().normalize()
 
         # # Breed 1st round
         state2 = (
