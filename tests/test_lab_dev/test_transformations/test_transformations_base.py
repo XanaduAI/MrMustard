@@ -243,5 +243,5 @@ class TestChannel:
         ch = Channel.from_kraus(U)
 
         X, _ = ch.XY
-        assert X == U.symplectic[0]
+        assert math.allclose(X, U.symplectic)
         assert ch.is_physical

@@ -462,7 +462,7 @@ class Channel(Map):
 
             >>> assert X == U.symplectic[0]
         """
-        ch = kraus @ kraus.adjoint
+        ch = kraus.contract(kraus.adjoint)
         return Channel.from_ansatz(kraus.wires.output.modes, kraus.wires.input.modes, ch.ansatz)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
