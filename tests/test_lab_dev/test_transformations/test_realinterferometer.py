@@ -31,12 +31,12 @@ class TestRealInterferometer:
         u_int = RealInterferometer((0, 1, 2))
         assert u_int.modes == (0, 1, 2)
         assert u_int.name == "RealInterferometer"
-        assert u_int.symplectic[0].shape == (6, 6)
+        assert u_int.symplectic.shape == (6, 6)
 
         orth = math.random_orthogonal(2)
         u_int = RealInterferometer((0, 1), orthogonal=orth)
-        assert u_int.symplectic[0].shape == (4, 4)
-        assert math.allclose(u_int.symplectic[0][:2, 2:], math.zeros((2, 2)))
+        assert u_int.symplectic.shape == (4, 4)
+        assert math.allclose(u_int.symplectic[:2, 2:], math.zeros((2, 2)))
 
     def test_application(self):
         "Tests the correctness of the application of a RealInterferometer gate"

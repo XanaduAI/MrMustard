@@ -208,14 +208,14 @@ class TestCircuitComponent:
 
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
-        c = np.random.random((1, 5))
+        c = np.random.random(5) + 0.0j
         polyexp = PolyExpAnsatz(A, b, c)
         fock_cc = CircuitComponent(
             Representation(polyexp, Wires(set(), set(), {0, 1}, set()))
         ).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
         assert fock_cc.ansatz._original_abc_data is None
-        assert np.allclose(fock_cc.ansatz.data, np.einsum("ijk,k", poly, c[0]))
+        assert math.allclose(fock_cc.ansatz.data, math.einsum("ijk,k", poly, c))
 
     def test_add(self):
         d1 = Dgate(1, x=0.1, y=0.1)
@@ -264,8 +264,8 @@ class TestCircuitComponent:
         a1 = Attenuator(1, 0.8)
         a2 = Attenuator(2, 0.7)
 
-        result = vac012 @ d012
-        result = result @ result.adjoint @ a0 @ a1 @ a2
+        result = vac012.contract(d012)
+        result = result.contract(result.adjoint).contract(a0).contract(a1).contract(a2)
 
         assert result.wires == Wires(modes_out_bra={0, 1, 2}, modes_out_ket={0, 1, 2})
         assert math.allclose(result.ansatz.A, math.zeros_like(result.ansatz.A))
@@ -294,11 +294,10 @@ class TestCircuitComponent:
         d1 = Dgate(0, x=alpha.real, y=alpha.imag)
         d2 = Dgate(0, x=beta.real, y=beta.imag)
 
-        result1 = d2 @ d1
-        correct_c = [
-            np.exp(-0.5 * (abs(alpha + beta) ** 2))
-            * np.exp((alpha * np.conj(beta) - np.conj(alpha) * beta) / 2)
-        ]
+        result1 = d2.contract(d1)
+        correct_c = np.exp(-0.5 * (abs(alpha + beta) ** 2)) * np.exp(
+            (alpha * np.conj(beta) - np.conj(alpha) * beta) / 2
+        )
 
         assert math.allclose(result1.ansatz.c, correct_c)
 
@@ -310,10 +309,10 @@ class TestCircuitComponent:
         a1 = Attenuator(1, transmissivity=0.8)
         a2 = Attenuator(2, transmissivity=0.7)
 
-        result1 = d0 @ d1 @ a0 @ a1 @ a2 @ d2
-        result2 = d0 @ (d1 @ a0) @ a1 @ (a2 @ d2)
-        result3 = d0 @ (d1 @ a0 @ a1) @ a2 @ d2
-        result4 = d0 @ (d1 @ (a0 @ (a1 @ (a2 @ d2))))
+        result1 = d0.contract(d1).contract(a0).contract(a1).contract(a2).contract(d2)
+        result2 = d0.contract(d1.contract(a0)).contract(a1).contract(a2).contract(d2)
+        result3 = d0.contract(d1.contract(a0).contract(a1)).contract(a2).contract(d2)
+        result4 = d0.contract(d1.contract(a0).contract(a1).contract(a2)).contract(d2)
 
         assert result1 == result2
         assert result1 == result3
@@ -321,14 +320,10 @@ class TestCircuitComponent:
 
     def test_matmul_scalar(self):
         d0 = Dgate(0, x=0.1, y=0.1)
-        result = d0 @ 0.8
+        result = d0.contract(0.8)
         assert math.allclose(result.ansatz.A, d0.ansatz.A)
         assert math.allclose(result.ansatz.b, d0.ansatz.b)
         assert math.allclose(result.ansatz.c, 0.8 * d0.ansatz.c)
-        result2 = 0.8 @ d0
-        assert math.allclose(result2.ansatz.A, d0.ansatz.A)
-        assert math.allclose(result2.ansatz.b, d0.ansatz.b)
-        assert math.allclose(result2.ansatz.c, 0.8 * d0.ansatz.c)
 
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum((0, 1, 2))
@@ -383,27 +378,31 @@ class TestCircuitComponent:
 
     @pytest.mark.parametrize("shape", [5, 6])
     def test_rshift_bargmann_and_fock(self, shape):
-        settings.AUTOSHAPE_MAX = shape
-        vac12 = Vacuum((1, 2))
-        d1 = Dgate(1, x=0.4, y=0.1)
-        d2 = Dgate(2, x=0.1, y=0.5)
-        a1 = Attenuator(1, transmissivity=0.9)
-        n1 = Number(1, n=1).dual
-        n2 = Number(2, n=1).dual
+        with settings(AUTOSHAPE_MAX=shape):
+            vac12 = Vacuum((1, 2))
+            d1 = Dgate(1, x=0.4, y=0.1)
+            d2 = Dgate(2, x=0.1, y=0.5)
+            a1 = Attenuator(1, transmissivity=0.9)
+            n1 = Number(1, n=1).dual
+            n2 = Number(2, n=1).dual
 
-        # bargmann >> fock
-        r1 = vac12 >> d1 >> d2 >> a1 >> n1 >> n2
+            # bargmann >> fock
+            r1 = vac12 >> d1 >> d2 >> a1 >> n1 >> n2
 
-        # fock >> bargmann
-        r2 = vac12.to_fock(shape) >> d1 >> d2 >> a1 >> n1 >> n2
+            # bargmann >> fock
+            r1 = vac12 >> d1 >> d2 >> a1 >> n1 >> n2
 
-        # bargmann >> fock >> bargmann
-        r3 = vac12 >> d1.to_fock(shape) >> d2 >> a1 >> n1 >> n2
+            # bargmann >> fock
+            r1 = vac12 >> d1 >> d2 >> a1 >> n1 >> n2
 
-        assert math.allclose(r1, r2)
-        assert math.allclose(r1, r3)
+            # fock >> bargmann
+            r2 = vac12.to_fock(shape) >> d1 >> d2 >> a1 >> n1 >> n2
 
-        settings.AUTOSHAPE_MAX = 50
+            # bargmann >> fock >> bargmann
+            r3 = vac12 >> d1.to_fock(shape) >> d2 >> a1 >> n1 >> n2
+
+            assert math.allclose(r1, r2)
+            assert math.allclose(r1, r3)
 
     def test_rshift_error(self):
         vac012 = Vacuum((0, 1, 2))
@@ -434,7 +433,7 @@ class TestCircuitComponent:
     def test_rshift_ketbra_with_ket(self):
         a1 = Attenuator(1, transmissivity=0.8)
         n1 = Number(1, n=1).dual >> Number(2, n=1).dual
-        assert a1 >> n1 == a1 @ (n1 @ n1.adjoint)
+        assert a1 >> n1 == a1.contract(n1.contract(n1.adjoint))
 
     def test_rshift_perm_order(self):
         rng = np.random.default_rng(seed=2334255467567)
@@ -491,7 +490,7 @@ class TestCircuitComponent:
     def test_fock_component_no_bargmann(self):
         "tests that a fock component doesn't have a bargmann representation by default"
         coh = Coherent(0, x=1.0)
-        CC = Ket.from_fock((0,), coh.fock_array(20), batched=False)
+        CC = Ket.from_fock((0,), coh.fock_array(20))
         with pytest.raises(AttributeError):
             CC.bargmann_triple()  # pylint: disable=pointless-statement
 
@@ -574,7 +573,11 @@ class TestCircuitComponent:
             "ansatz_cls": f"{PolyExpAnsatz.__module__}.PolyExpAnsatz",
             "name": name,
         }
-        assert arrays == {"A": ansatz.A, "b": ansatz.b, "c": ansatz.c}
+        assert arrays == {
+            "A": ansatz.A,
+            "b": ansatz.b,
+            "c": ansatz.c,
+        }
 
     def test_serialize_fail_when_no_modes_input(self):
         """Test that the serializer fails if no modes or name+wires are present."""

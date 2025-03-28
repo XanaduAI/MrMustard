@@ -28,6 +28,7 @@ from mrmustard.utils.typing import (
 
 from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from .triples import identity_Abc
+from .utils import outer_product_batch_str, zip_batch_strings
 from .wires import Wires, ReprEnum
 
 __all__ = ["Representation"]
@@ -91,75 +92,105 @@ class Representation:
         return self._wires
 
     def bargmann_triple(
-        self, batched: bool = False
+        self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
         The Bargmann parametrization of this representation, if available.
         It returns a triple (A, b, c) such that the Bargmann function of this is
-        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`
-
-        If ``batched`` is ``False`` (default), it removes the batch dimension if it is of size 1.
-
-        Args:
-            batched: Whether to return the triple batched.
+        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right).
         """
         try:
-            A, b, c = self.ansatz.triple
-            if not batched and self.ansatz.batch_size == 1:
-                return A[0], b[0], c[0]
-            else:
-                return A, b, c
+            return self.ansatz.triple
         except AttributeError as e:
             raise AttributeError("No Bargmann data for this component.") from e
 
-    def fock_array(self, shape: int | Sequence[int], batched=False) -> ComplexTensor:
+    def contract(self, other: Representation, mode: str = "kron"):
+        r"""
+        Contracts two representations.
+
+        Args:
+            other: The other representation to contract with.
+            mode: "zip" the batch dimensions, "kron" the batch dimensions
+                or pass a custom batch string.
+        Raises:
+            ValueError: If the ansatz types are not the same.
+        """
+        if type(self.ansatz) is not type(other.ansatz):
+            raise ValueError(
+                f"Cannot contract ansatz of type {type(self.ansatz)} with ansatz ",
+                f"of type {type(other.ansatz)}. Please call either `to_fock` or `to_bargmann` ",
+                "on one of the representations.",
+            )
+        wires_result, perm = self.wires @ other.wires
+        idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
+        if mode == "zip":
+            eins_str = zip_batch_strings(
+                len(self.ansatz.batch_shape), len(other.ansatz.batch_shape)
+            )
+        elif mode == "kron":
+            eins_str = outer_product_batch_str(self.ansatz.batch_shape, other.ansatz.batch_shape)
+        ansatz = self.ansatz.contract(other.ansatz, batch_str=eins_str, idx1=idx_z, idx2=idx_zconj)
+        ansatz = ansatz.reorder(perm) if perm else ansatz
+        return Representation(ansatz, wires_result)
+
+    def fock_array(self, shape: int | Sequence[int]) -> ComplexTensor:
         r"""
         Returns an array of this representation in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
         available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
 
         Args:
-            shape: The shape of the returned array. If ``shape`` is given as an ``int``,
-                it is broadcasted to all the dimensions. If not given, it is estimated.
-            batched: Whether the returned array is batched or not. If ``False`` (default)
-                it will squeeze the batch dimension if it is 1.
+            shape: The shape of the returned array, not including batch dimensions. If ``shape`` is
+            given as an ``int``, it is broadcast to all the dimensions. If not given, it is estimated.
         Returns:
             array: The Fock array of this representation.
         """
-        num_vars = self.ansatz.num_vars
+        num_vars = (
+            self.ansatz.num_CV_vars
+            if isinstance(self.ansatz, PolyExpAnsatz)
+            else self.ansatz.num_vars
+        )
         if isinstance(shape, int):
             shape = (shape,) * num_vars
         shape = tuple(shape)
+        if len(shape) != num_vars:
+            raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
         try:
-            As, bs, cs = self.bargmann_triple(batched=True)
-            if len(shape) != num_vars:
-                raise ValueError(
-                    f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
+            A, b, c = self.ansatz.triple
+
+            As = (
+                math.reshape(A, (-1, *A.shape[-2:])) if self.ansatz.batch_shape != () else A
+            )  # tensorflow
+            bs = (
+                math.reshape(b, (-1, *A.shape[-1:])) if self.ansatz.batch_shape != () else b
+            )  # tensorflow
+            cs = (
+                math.reshape(c, (-1, *c.shape[self.ansatz.batch_dims :]))
+                if self.ansatz.batch_shape != ()  # tensorflow
+                else c
+            )
+
+            batch = (self.ansatz.batch_size,) if self.ansatz.batch_shape != () else ()  # tensorflow
+
+            if self.ansatz.batch_shape != ():  # tensorflow
+                G = math.astensor(
+                    [
+                        math.hermite_renormalized(A, b, complex(1), shape=shape + cs.shape[1:])
+                        for A, b in zip(As, bs)
+                    ]
                 )
-            if self.ansatz.polynomial_shape[0] == 0:
-                arrays = [
-                    math.hermite_renormalized(A, b, c, shape=shape) for A, b, c in zip(As, bs, cs)
-                ]
             else:
-                arrays = [
-                    math.sum(
-                        math.hermite_renormalized(A, b, 1, shape=shape + c.shape) * c,
-                        axis=math.arange(
-                            num_vars, num_vars + len(c.shape), dtype=math.int32
-                        ).tolist(),
-                    )
-                    for A, b, c in zip(As, bs, cs)
-                ]
-        except AttributeError as e:
-            if len(shape) != num_vars:
-                raise ValueError(
-                    f"Expected Fock shape of length {num_vars}, got length {len(shape)}"
-                ) from e
-            arrays = self.ansatz.reduce(shape).array
-        arrays = math.astensor(arrays)
-        array = math.sum(arrays, axis=0)
-        arrays = math.expand_dims(array, 0) if batched else array
-        return arrays
+                G = math.hermite_renormalized(As, bs, complex(1), shape=shape + cs.shape)
+
+            G = math.reshape(G, batch + shape + (-1,))
+            cs = math.reshape(cs, batch + (-1,))
+            core_str = "".join(
+                [chr(i) for i in range(97, 97 + len(G.shape[1:] if batch else G.shape))]
+            )
+            ret = math.einsum(f"...{core_str},...{core_str[-1]}->...{core_str[:-1]}", G, cs)
+        except AttributeError:
+            ret = self.ansatz.reduce(shape).array
+        return math.reshape(ret, self.ansatz.batch_shape + shape)
 
     def to_bargmann(self) -> Representation:
         r"""
@@ -187,9 +218,9 @@ class Representation:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        fock = ArrayAnsatz(self.fock_array(shape, batched=True), batched=True)
+        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=self.ansatz.batch_dims)
         try:
-            if self.ansatz.polynomial_shape[0] == 0:
+            if self.ansatz.num_derived_vars == 0:
                 fock._original_abc_data = self.ansatz.triple
         except AttributeError:
             fock._original_abc_data = None
@@ -202,16 +233,3 @@ class Representation:
         if isinstance(other, Representation):
             return self.ansatz == other.ansatz and self.wires == other.wires
         return False
-
-    def __matmul__(self, other: Representation):
-        wires_result, perm = self.wires @ other.wires
-        idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
-
-        if type(self.ansatz) is not type(other.ansatz):
-            raise ValueError(
-                f"Cannot contract ansatz of type {type(self.ansatz)} with ansatz of type {type(other.ansatz)}."
-            )
-
-        rep = self.ansatz.contract(other.ansatz, idx_z, idx_zconj)
-        rep = rep.reorder(perm) if perm else rep
-        return Representation(rep, wires_result)

@@ -89,7 +89,7 @@ class Transformation(CircuitComponent):
         modes_out: Sequence[int],
         modes_in: Sequence[int],
         array: ComplexTensor,
-        batched: bool = False,
+        batch_dims: int = 0,
         name: str | None = None,
     ) -> Transformation:
         r"""
@@ -99,13 +99,13 @@ class Transformation(CircuitComponent):
             modes_out: The output modes of this transformation.
             modes_in: The input modes of this transformation.
             array: The fock array of this transformation.
-            batched: Whether the fock array is batched.
+            batch_dims: The number of batch dimensions in the given array.
             name: The name of this transformation.
 
         Returns:
             A transformation in the Fock representation.
         """
-        return cls.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batched), name)
+        return cls.from_ansatz(modes_in, modes_out, ArrayAnsatz(array, batch_dims), name)
 
     @classmethod
     def from_quadrature(
@@ -135,10 +135,11 @@ class Transformation(CircuitComponent):
         Note that it can be unphysical, for example when the original is not unitary.
 
         Returns:
-            Transformation: the inverse of the transformation.
+            The inverse of the transformation.
 
         Raises:
-            NotImplementedError: if the inverse of this transformation is not supported.
+            NotImplementedError: If the input and output wires have different lengths.
+            NotImplementedError: If the transformation is not in the Bargmann representation.
         """
         if not len(self.wires.input) == len(self.wires.output):
             raise NotImplementedError(
@@ -146,22 +147,23 @@ class Transformation(CircuitComponent):
             )
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise NotImplementedError("Only Bargmann representation is supported.")
-        if self.ansatz.batch_size > 1:
-            raise NotImplementedError("Batched transformations are not supported.")
 
-        # compute the inverse
-        A, b, _ = self.dual.ansatz.conj.triple  # apply X(.)X
+        A, b, _ = self.dual.ansatz.conj.triple
         almost_inverse = self._from_attributes(
             Representation(
-                PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 + 0j),
+                PolyExpAnsatz(
+                    math.inv(A),
+                    -math.inv(A) @ b,
+                    math.ones(self.ansatz.batch_shape, dtype=math.complex128),
+                ),
                 self.wires.copy(new_ids=True),
             )
         )
-        almost_identity = self @ almost_inverse
+        almost_identity = self.contract(almost_inverse)
         invert_this_c = almost_identity.ansatz.c
         actual_inverse = self._from_attributes(
             Representation(
-                PolyExpAnsatz(math.inv(A[0]), -math.inv(A[0]) @ b[0], 1 / invert_this_c),
+                PolyExpAnsatz(math.inv(A), -math.inv(A) @ b, 1 / invert_this_c),
                 self.wires.copy(new_ids=True),
             ),
             self.name + "_inv",
@@ -209,10 +211,7 @@ class Unitary(Operation):
         r"""
         Returns the symplectic matrix that corresponds to this unitary
         """
-        batch_size = self.ansatz.batch_size
-        return math.astensor(
-            [au2Symplectic(self.ansatz.A[batch, :, :]) for batch in range(batch_size)]
-        )
+        return au2Symplectic(self.ansatz.A)
 
     @classmethod
     def from_ansatz(
@@ -241,11 +240,12 @@ class Unitary(Operation):
         S: the symplectic representation (in XXPP order)
         """
         m = len(modes)
+        batch_shape = S.shape[:-2]
         A = symplectic2Au(S)
-        b = math.zeros(2 * m, dtype="complex128")
-        A_inin = math.atleast_2d(A[m:, m:])
+        b = math.zeros(batch_shape + (2 * m,), dtype="complex128")
+        A_inin = A[..., m:, m:]
         c = ((-1) ** m * math.det(A_inin @ math.conj(A_inin) - math.eye_like(A_inin))) ** 0.25
-        return Unitary.from_bargmann(modes, modes, [A, b, c])
+        return Unitary.from_bargmann(modes, modes, (A, b, c))
 
     @classmethod
     def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Unitary:
@@ -323,7 +323,7 @@ class Channel(Map):
     short_name = "Ch"
 
     @property
-    def is_CP(self) -> bool:
+    def is_CP(self) -> bool:  # TODO: revisit this
         r"""
         Whether this channel is completely positive (CP).
         """
@@ -332,9 +332,11 @@ class Channel(Map):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-        A = self.ansatz.A
+        if self.ansatz.num_derived_vars > 0:
+            raise ValueError("Physicality conditions are not implemented for derived variables.")
+        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
         m = A.shape[-1] // 2
-        gamma_A = A[0, :m, m:]
+        gamma_A = A[:m, m:]
 
         if (
             math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
@@ -344,14 +346,21 @@ class Channel(Map):
         return all(math.real(math.eigvals(gamma_A)) > -settings.ATOL)
 
     @property
-    def is_TP(self) -> bool:
+    def is_TP(self) -> bool:  # TODO: revisit this
         r"""
         Whether this channel is trace preserving (TP).
         """
-        A = self.ansatz.A
+        batch_dim = self.ansatz.batch_size
+        if batch_dim > 1:
+            raise ValueError(
+                "Physicality conditions are not implemented for batch dimension larger than 1."
+            )
+        if self.ansatz.num_derived_vars > 0:
+            raise ValueError("Physicality conditions are not implemented for derived variables.")
+        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
         m = A.shape[-1] // 2
-        gamma_A = A[0, :m, m:]
-        lambda_A = A[0, m:, m:]
+        gamma_A = A[:m, m:]
+        lambda_A = A[m:, m:]
         temp_A = gamma_A + math.conj(lambda_A.T) @ math.inv(math.eye(m) - gamma_A.T) @ lambda_A
         return math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL
 
@@ -367,7 +376,7 @@ class Channel(Map):
         r"""
         Returns the X and Y matrix corresponding to the channel.
         """
-        return XY_of_channel(self.ansatz.A[0])
+        return XY_of_channel(self.ansatz.A)
 
     @classmethod
     def from_ansatz(

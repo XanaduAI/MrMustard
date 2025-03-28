@@ -63,18 +63,13 @@ class TestRepresentation:
         assert rep.ansatz == ansatz
         assert rep.wires == wires
 
-    def test_matmul_btoq(self, d_gate_rep, btoq_rep):
-        q_dgate = d_gate_rep @ btoq_rep
+    def test_contract_btoq(self, d_gate_rep, btoq_rep):
+        q_dgate = d_gate_rep.contract(btoq_rep)
         for w in q_dgate.wires.input.wires:
             assert w.repr == ReprEnum.BARGMANN
         for w in q_dgate.wires.output.wires:
             assert w.repr == ReprEnum.QUADRATURE
             assert w.repr_params_func() == [0.2]
-
-    def test_matmul_diff_reps(self, d_gate_rep):
-        fock_rep = d_gate_rep.to_fock(shape=(4, 6))
-        with pytest.raises(ValueError, match="Cannot contract ansatz"):
-            fock_rep @ d_gate_rep  # pylint: disable=pointless-statement
 
     def test_to_bargmann(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))

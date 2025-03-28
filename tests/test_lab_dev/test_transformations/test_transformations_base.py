@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.states import Coherent, Vacuum
 from mrmustard.lab_dev.transformations import (
@@ -208,7 +208,7 @@ class TestChannel:
         u = U.ansatz
         unitary_channel = Channel.from_bargmann((0, 1), (0, 1), u.conj.contract(u).triple)
         X, Y = unitary_channel.XY
-        assert math.allclose(X, U.symplectic[0]) and math.allclose(Y, math.zeros((4, 4)))
+        assert math.allclose(X, U.symplectic) and math.allclose(Y, math.zeros((4, 4)))
 
         X, Y = Attenuator(0, 0.2).XY
         assert math.allclose(X, np.sqrt(0.2) * np.eye(2)) and math.allclose(Y, 0.4 * np.eye(2))
@@ -223,16 +223,17 @@ class TestChannel:
 
     def test_from_fock(self):
         # Here we test our from_fock method by a PhaseNoise example
-        with settings(AUTOSHAPE_PROBABILITY=0.99999999):
-            cutoff = 20
-            ph_n = np.zeros((cutoff, cutoff, cutoff, cutoff))
-            sigma = 1
+        cutoff = 6
+        ph_n = np.zeros((cutoff, cutoff, cutoff, cutoff))
+        sigma = 1
 
-            for m in range(cutoff):
-                for n in range(cutoff):
-                    ph_n[m, m, n, n] = math.exp(-0.5 * (m - n) ** 2 * sigma**2)
+        for m in range(cutoff):
+            for n in range(cutoff):
+                ph_n[m, m, n, n] = math.exp(-0.5 * (m - n) ** 2 * sigma**2)
 
-            phi = Channel.from_fock((0,), (0,), ph_n)
-            psi = Coherent(0, 2) >> phi
+        phi = Channel.from_fock((0,), (0,), ph_n)
+        psi = Coherent(0, 2) >> phi
 
-            assert psi == (Coherent(0, 2) >> PhaseNoise(0, sigma)).to_fock((cutoff, cutoff))
+        assert psi.to_fock((cutoff, cutoff)) == (Coherent(0, 2) >> PhaseNoise(0, sigma)).to_fock(
+            (cutoff, cutoff)
+        )

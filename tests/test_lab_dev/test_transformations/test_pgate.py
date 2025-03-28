@@ -42,4 +42,4 @@ class TestPgate:
         rho = Vacuum(0) >> up
         cov, _, _ = rho.phase_space(s=0)
         temp = math.astensor([[1, 0], [s, 1]], dtype="complex128")
-        assert math.allclose(cov[0], temp @ math.eye(2) @ temp.T / 2)
+        assert math.allclose(cov, temp @ math.eye(2) @ temp.T / 2)
