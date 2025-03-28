@@ -451,9 +451,12 @@ class Channel(Map):
     def from_kraus(cls, kraus: Operation) -> Channel:
         r"""
         Initialize a Channel from its Kraus representation.
-        
+
         Args:
             kraus: The Kraus operator of the channel.
+
+        Note:
+            Passing a non-Unitary Kraus operator gives an unphysical channel.
 
         .. code-block::
             >>> from mrmustard.lab_dev import Channel, Unitary
