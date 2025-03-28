@@ -455,8 +455,7 @@ class Channel(Map):
             kraus: The Kraus operator of the channel.
 
         .. code-block::
-            >>> from mrmustard.lab_dev import Channel, Unitrary
-
+            >>> from mrmustard.lab_dev import Channel, Unitary
             >>> U = Unitary.random((0, 1))
             >>> ch = Channel.from_kraus(U)
             >>> X, _ = ch.XY
