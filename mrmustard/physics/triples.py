@@ -241,7 +241,6 @@ def gket_state_Abc(symplectic: RealMatrix):
     return A, b, c
 
 
-# TODO: update after complex_gaussian_integral_2 is updated
 def gdm_state_Abc(betas: ComplexVector, symplectic: RealMatrix):
     r"""
     The A,b,c parameters of a Gaussian mixed state that is defined by the action of a Guassian on a thermal state
@@ -253,7 +252,7 @@ def gdm_state_Abc(betas: ComplexVector, symplectic: RealMatrix):
     Returns:
         The ``(A,b,c)`` triple of the resulting Gaussian DM state.
     """
-    betas = math.atleast_1d(betas)  # makes it work
+    betas = math.atleast_1d(betas, dtype=math.complex128)
     m = len(betas)
     Au = symplectic2Au(symplectic)
     A_udagger_u = math.block(
@@ -276,7 +275,6 @@ def gdm_state_Abc(betas: ComplexVector, symplectic: RealMatrix):
     )
 
 
-# TODO: update after complex_gaussian_integral_2 is updated
 def sauron_state_Abc(n: int, epsilon: float) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The A,b,c parametrization of Sauron states. These are Fock states written as a linear superposition of a
