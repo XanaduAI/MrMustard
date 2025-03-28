@@ -169,7 +169,7 @@ def test_XY_of_channel():
     Tests the function X_of_channel.
     """
 
-    X, Y = XY_of_channel(Channel.random([0]).ansatz.A[0])
+    X, Y = XY_of_channel(Channel.random([0]).ansatz.A)
     omega = np.array([[0, 1j], [-1j, 0]])
     channel_check = X @ omega @ X.T / 2 - omega / 2 + Y
     assert np.all([mu > 0 for mu in np.linalg.eigvals(channel_check)])

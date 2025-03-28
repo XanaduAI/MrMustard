@@ -208,7 +208,7 @@ class TestChannel:
         u = U.ansatz
         unitary_channel = Channel.from_bargmann((0, 1), (0, 1), u.conj.contract(u).triple)
         X, Y = unitary_channel.XY
-        assert math.allclose(X, U.symplectic[0]) and math.allclose(Y, math.zeros((4, 4)))
+        assert math.allclose(X, U.symplectic) and math.allclose(Y, math.zeros((4, 4)))
 
         X, Y = Attenuator(0, 0.2).XY
         assert math.allclose(X, np.sqrt(0.2) * np.eye(2)) and math.allclose(Y, 0.4 * np.eye(2))
@@ -223,7 +223,7 @@ class TestChannel:
 
     def test_from_fock(self):
         # Here we test our from_fock method by a PhaseNoise example
-        cutoff = 20
+        cutoff = 6
         ph_n = np.zeros((cutoff, cutoff, cutoff, cutoff))
         sigma = 1
 
