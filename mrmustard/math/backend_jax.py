@@ -399,7 +399,8 @@ class BackendJax(BackendBase):  # pragma: no cover
     def real(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.real(array)
 
-    def reshape(self, array: jnp.ndarray, shape: Sequence[int]) -> jnp.ndarray:
+    @partial(jax.jit, static_argnames=["shape"])
+    def reshape(self, array: jnp.ndarray, shape: tuple[int, ...]) -> jnp.ndarray:
         return jnp.reshape(array, shape)
 
     @partial(jax.jit, static_argnames=["decimals"])

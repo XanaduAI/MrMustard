@@ -1088,6 +1088,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The reshaped array
         """
+        shape = (shape,) if isinstance(shape, int) else tuple(shape)
         return self._apply("reshape", (array, shape))
 
     def round(self, array: Tensor, decimals: int) -> Tensor:
