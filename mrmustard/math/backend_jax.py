@@ -233,9 +233,8 @@ class BackendJax(BackendBase):  # pragma: no cover
         padding = padding or "VALID"
         return jax.lax.conv(array, filters, (1, 1), padding)
 
+    @partial(jax.jit, static_argnames=["repeats"])
     def tile(self, array: jnp.ndarray, repeats: Sequence[int]) -> jnp.ndarray:
-        repeats = tuple(repeats)
-        array = jnp.array(array)
         return jnp.tile(array, repeats)
 
     @Autocast()
@@ -363,6 +362,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     ) -> jnp.ndarray:
         return jnp.moveaxis(array, old, new)
 
+    @partial(jax.jit, static_argnames=["shape", "dtype"])
     def ones(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.ones(shape, dtype=dtype)

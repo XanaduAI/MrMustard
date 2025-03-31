@@ -960,6 +960,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array of ones
         """
         # NOTE : should be float64 by default
+
+        shape = shape if isinstance(shape, int) else tuple(shape)
         return self._apply("ones", (shape, dtype))
 
     def ones_like(self, array: Tensor) -> Tensor:
@@ -1240,6 +1242,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tiled array
         """
+        repeats = tuple(repeats)
         return self._apply("tile", (array, repeats))
 
     def trace(self, array: Tensor, dtype=None) -> Tensor:
@@ -1538,7 +1541,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if vec.shape[-1] != 2:
             raise ValueError("vec must be 2-dimensional (i.e. single-mode)")
         x, y = vec[..., -2], vec[..., -1]
-        vec = self.concat([self.tile([x], [num_modes]), self.tile([y], [num_modes])], axis=-1)
+        vec = self.concat(
+            [
+                self.tile(self.astensor([x]), (num_modes,)),
+                self.tile(self.astensor([y]), (num_modes,)),
+            ],
+            axis=-1,
+        )
         return vec
 
     def single_mode_to_multimode_mat(self, mat: Tensor, num_modes: int):
