@@ -112,24 +112,24 @@ class Representation:
             other: The other representation to contract with.
             mode: "zip" the batch dimensions, "kron" the batch dimensions
                 or pass a custom batch string.
+        Raises:
+            ValueError: If the ansatz types are not the same.
         """
+        if type(self.ansatz) is not type(other.ansatz):
+            raise ValueError(
+                f"Cannot contract ansatz of type {type(self.ansatz)} with ansatz ",
+                f"of type {type(other.ansatz)}. Please call either `to_fock` or `to_bargmann` ",
+                "on one of the representations.",
+            )
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
-
-        if type(self.ansatz) is type(other.ansatz):
-            self_ansatz = self.ansatz
-            other_ansatz = other.ansatz
-        else:
-            self_ansatz = self.to_bargmann().ansatz
-            other_ansatz = other.to_bargmann().ansatz
-
         if mode == "zip":
             eins_str = zip_batch_strings(
-                len(self_ansatz.batch_shape), len(other_ansatz.batch_shape)
+                len(self.ansatz.batch_shape), len(other.ansatz.batch_shape)
             )
         elif mode == "kron":
-            eins_str = outer_product_batch_str(self_ansatz.batch_shape, other_ansatz.batch_shape)
-        ansatz = self_ansatz.contract(other_ansatz, batch_str=eins_str, idx1=idx_z, idx2=idx_zconj)
+            eins_str = outer_product_batch_str(self.ansatz.batch_shape, other.ansatz.batch_shape)
+        ansatz = self.ansatz.contract(other.ansatz, batch_str=eins_str, idx1=idx_z, idx2=idx_zconj)
         ansatz = ansatz.reorder(perm) if perm else ansatz
         return Representation(ansatz, wires_result)
 

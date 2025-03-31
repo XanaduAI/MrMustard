@@ -25,13 +25,16 @@ from mrmustard import math, settings
 
 from mrmustard.lab_dev import (
     Attenuator,
+    BSgate,
     CircuitComponent,
     Coherent,
     Dgate,
     DM,
     Ket,
     Number,
+    QuadratureEigenstate,
     Sgate,
+    SqueezedVacuum,
     TraceOut,
     Vacuum,
 )
@@ -82,7 +85,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert ket.auto_shape() == (19,)
 
         ket = Coherent(0, x=1) >> Number(1, 10).dual
-        assert ket.auto_shape() == (settings.AUTOSHAPE_MAX, settings.AUTOSHAPE_MAX)
+        assert ket.auto_shape() == (8, 11)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
     def test_to_from_bargmann(self, modes):
@@ -119,6 +122,33 @@ class TestKet:  # pylint: disable=too-many-public-methods
         state = state.to_fock(5)  # truncated
         normalized = state.normalize()
         assert np.isclose(normalized.probability, 1.0)
+
+    def test_normalize_poly_dim(self):
+        # https://github.com/XanaduAI/MrMustard/issues/481
+        with settings(AUTOSHAPE_PROBABILITY=0.99999999):
+            state = (
+                SqueezedVacuum(mode=0, r=0.75)
+                >> SqueezedVacuum(mode=1, r=-0.75)
+                >> BSgate(modes=(0, 1), theta=0.9)
+            ) >> Number(mode=0, n=20).dual
+
+        state = state.to_bargmann().normalize()
+
+        # # Breed 1st round
+        state2 = (
+            (state.on(0) >> state.on(1))
+            >> BSgate(modes=(0, 1), theta=np.pi / 4)
+            >> QuadratureEigenstate(mode=1, phi=np.pi / 2).dual
+        )
+
+        # # Breed 2nd round
+        state3 = (
+            (state2.on(0) >> state2.on(1))
+            >> BSgate(modes=(0, 1), theta=np.pi / 4)
+            >> QuadratureEigenstate(mode=1, phi=np.pi / 2).dual
+        )
+        state3 = state3.normalize()
+        assert math.allclose(state3.probability, 1.0)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
     def test_to_from_fock(self, modes):

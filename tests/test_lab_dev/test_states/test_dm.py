@@ -76,12 +76,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert dm.auto_shape() == (1, 8)
 
         dm = Coherent(0, x=1).dm() >> Number(1, 10).dual
-        assert dm.auto_shape() == (
-            settings.AUTOSHAPE_MAX,
-            settings.AUTOSHAPE_MAX,
-            settings.AUTOSHAPE_MAX,
-            settings.AUTOSHAPE_MAX,
-        )
+        assert dm.auto_shape() == (8, 11, 8, 11)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
     def test_to_from_bargmann(self, modes):
