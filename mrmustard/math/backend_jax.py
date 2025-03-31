@@ -77,7 +77,6 @@ class BackendJax(BackendBase):  # pragma: no cover
     def any(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.any(array)
 
-    @partial(jax.jit, static_argnames=["start", "limit", "delta", "dtype"])
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.arange(start, limit, delta, dtype=dtype)
