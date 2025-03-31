@@ -77,6 +77,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def any(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.any(array)
 
+    @partial(jax.jit, static_argnames=["start", "limit", "delta", "dtype"])
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.arange(start, limit, delta, dtype=dtype)
@@ -316,6 +317,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def expm(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jsp.linalg.expm(matrix)
 
+    @partial(jax.jit, static_argnames=["size", "dtype"])
     def eye(self, size: int, dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.eye(size, dtype=dtype)
@@ -383,6 +385,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def error_if(self, array: jnp.ndarray, condition: jnp.ndarray, msg: str):
         eqx.error_if(array, condition, msg)
 
+    @partial(jax.jit, static_argnames=["paddings", "mode", "constant_values"])
     def pad(
         self,
         array: jnp.ndarray,

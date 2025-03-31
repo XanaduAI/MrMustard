@@ -1005,6 +1005,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The padded array
         """
+        paddings = tuple(paddings)
         return self._apply("pad", (array, paddings, mode, constant_values))
 
     def pinv(self, matrix: Tensor) -> Tensor:
