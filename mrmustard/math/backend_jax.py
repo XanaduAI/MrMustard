@@ -102,6 +102,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         tensor = value
         return tensor
 
+    @partial(jax.jit, static_argnames=["dtype"])
     def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.asarray(array, dtype=dtype)
 
@@ -176,6 +177,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         return jnp.conj(array)
 
     @Autocast()
+    @jax.jit
     def pow(self, x: jnp.ndarray, y: float) -> jnp.ndarray:
         return jnp.power(x, y)
 
