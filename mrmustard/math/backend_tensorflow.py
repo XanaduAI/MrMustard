@@ -102,10 +102,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             axis=-2,
         )
 
-    def block(self, blocks: list[list[tf.Tensor]], axes=(-2, -1)) -> tf.Tensor:
-        rows = [self.concat(row, axis=axes[1]) for row in blocks]
-        return self.concat(rows, axis=axes[0])
-
     def broadcast_to(self, array: tf.Tensor, shape: tuple[int]) -> tf.Tensor:
         return tf.broadcast_to(array, shape)
 

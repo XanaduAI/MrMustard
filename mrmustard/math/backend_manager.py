@@ -375,7 +375,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("boolean_mask", (tensor, mask))
 
     def block(self, blocks: list[list[Tensor]], axes=(-2, -1)) -> Tensor:
-        r"""Returns a matrix made from the given blocks.
+        r"""
+        Returns a matrix made from the given blocks.
 
         Args:
             blocks: A list of lists of compatible blocks.
@@ -384,7 +385,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The matrix made of blocks.
         """
-        return self._apply("block", (blocks, axes))
+        rows = [self.concat(row, axis=axes[1]) for row in blocks]
+        return self.concat(rows, axis=axes[0])
 
     def broadcast_arrays(self, *arrays: list[Tensor]) -> list[Tensor]:
         r"""
