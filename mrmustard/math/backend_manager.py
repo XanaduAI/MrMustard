@@ -1005,8 +1005,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The padded array
         """
-        paddings = tuple(paddings)
-        return self._apply("pad", (array, paddings, mode, constant_values))
+        return self._apply("pad", (array, tuple(paddings), mode, constant_values))
 
     def pinv(self, matrix: Tensor) -> Tensor:
         r"""The pseudo-inverse of matrix.
@@ -1243,8 +1242,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tiled array
         """
-        repeats = tuple(repeats)
-        return self._apply("tile", (array, repeats))
+        return self._apply("tile", (array, tuple(repeats)))
 
     def trace(self, array: Tensor, dtype=None) -> Tensor:
         r"""The trace of array.
