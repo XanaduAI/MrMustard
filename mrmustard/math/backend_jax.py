@@ -111,6 +111,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def log(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.log(array)
 
+    @partial(jax.jit, static_argnames=["n", "dtype"])
     def atleast_nd(self, array: jnp.ndarray, n: int, dtype=None) -> jnp.ndarray:
         return jnp.array(array, ndmin=n, dtype=dtype)
 
