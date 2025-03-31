@@ -372,9 +372,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def trace(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return self.cast(tf.linalg.trace(array), dtype)
 
-    def transpose(self, a: tf.Tensor, perm: Sequence[int] = None) -> tf.Tensor:
-        if a is None:
-            return None  # TODO: remove and address None inputs where tranpose is used
+    def transpose(self, a: tf.Tensor, perm: Sequence[int] | None = None) -> tf.Tensor:
         return tf.transpose(a, perm)
 
     @Autocast()

@@ -414,9 +414,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def trace(self, array: np.ndarray, dtype=None) -> np.ndarray:
         return self.cast(np.trace(array, axis1=-1, axis2=-2), dtype)
 
-    def transpose(self, a: np.ndarray, perm: Sequence[int] = None) -> np.ndarray | None:
-        if a is None:
-            return None  # TODO: remove and address None inputs where tranpose is used
+    def transpose(self, a: np.ndarray, perm: Sequence[int] | None = None) -> np.ndarray | None:
         return np.transpose(a, axes=perm)
 
     @Autocast()

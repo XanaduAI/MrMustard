@@ -474,9 +474,8 @@ class BackendJax(BackendBase):  # pragma: no cover
     def trace(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return self.cast(jnp.trace(array, axis1=-1, axis2=-2), dtype)
 
-    def transpose(self, a: jnp.ndarray, perm: Sequence[int] = None) -> jnp.ndarray:
-        if a is None:
-            return None
+    @partial(jax.jit, static_argnames=["perm"])
+    def transpose(self, a: jnp.ndarray, perm: Sequence[int] | None = None) -> jnp.ndarray:
         return jnp.transpose(a, perm)
 
     def zeros(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:

@@ -1267,6 +1267,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The transposed array
         """
+        if a is None:
+            return None  # TODO: remove and address None inputs where tranpose is used
+        perm = tuple(perm) if perm is not None else None
         return self._apply("transpose", (a, perm))
 
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
