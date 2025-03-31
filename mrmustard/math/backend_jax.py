@@ -270,6 +270,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def det(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.det(matrix)
 
+    @partial(jax.jit, static_argnames=["k"])
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
         if array.ndim == 0:
             return array
@@ -277,9 +278,9 @@ class BackendJax(BackendBase):  # pragma: no cover
             return jnp.diag(array, k=k)
         else:
             # fallback into more complex algorithm
-            original_sh = jnp.array(array.shape)
+            original_sh = np.array(array.shape)
 
-            ravelled_sh = (jnp.prod(original_sh[:-1]), original_sh[-1])
+            ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
             array = array.ravel().reshape(*ravelled_sh)
 
             ret = []
