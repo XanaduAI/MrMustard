@@ -250,13 +250,17 @@ class Ket(State):
             >>> assert np.allclose(Vacuum([0]).fock_array(), np.array([1]))
         """
         # experimental:
-        if self.ansatz.batch_size == 1:
+        if self.ansatz.batch_size <= 1:
             try:  # fock
-                shape = self.ansatz.array.shape[1:]
+                shape = self.ansatz.core_shape
             except AttributeError:  # bargmann
-                if self.ansatz.polynomial_shape[0] == 0:
+                if self.ansatz.num_derived_vars == 0:
                     ansatz = self.ansatz.conj & self.ansatz
-                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    A, b, c = (
+                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
+                        if ansatz.batch_shape != ()  # tensorflow
+                        else ansatz.triple
+                    )
                     ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
