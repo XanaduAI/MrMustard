@@ -37,11 +37,13 @@ class Sauron(Ket):
         to zero where vacuum (= darkness) is.
         The formula for the Sauron state as a superposition of coherent states on a ring
         is given in https://arxiv.org/abs/2305.17099:
+
         .. math::
+
             |\text{Sauron}(n)\rangle = \frac{1}{\mathcal{N}}\sum_{k=0}^{n} e^{i 2\pi k/(n+1)} |\epsilon e^{2\pi k/(n+1)}\rangle_c,
 
-    Example:
     .. code-block::
+
         >>> from mrmustard.lab_dev import Sauron
 
         >>> psi = Sauron([0], 1)
