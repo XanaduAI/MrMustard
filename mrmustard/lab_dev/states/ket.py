@@ -77,11 +77,6 @@ class Ket(State):
     def purity(self) -> float:
         return 1.0
 
-    @property
-    def _probabilities(self) -> RealVector:
-        r"""Element-wise L2 norm squared along the batch dimension of this Ket."""
-        return self._L2_norms
-
     @classmethod
     def from_ansatz(
         cls,

@@ -153,14 +153,6 @@ class State(CircuitComponent):
         The purity of this state.
         """
 
-    @property
-    def _L2_norms(self) -> RealVector:
-        r"""
-        The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
-        element-wise along the batch dimension.
-        """
-        return self._compute_L2_norms(mode="zip")
-
     @classmethod
     def from_bargmann(
         cls,

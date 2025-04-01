@@ -91,6 +91,14 @@ class DM(State):
         return self.L2_norm
 
     @property
+    def _L2_norms(self) -> RealVector:
+        r"""
+        The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
+        element-wise along the batch dimension.
+        """
+        return self._compute_L2_norms(mode="zip")  # TODO: this is equivalent to lin_sup = None
+
+    @property
     def _probabilities(self) -> RealVector:
         r"""
         Element-wise probabilities along the batch dimension of this DM.
