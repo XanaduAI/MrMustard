@@ -18,7 +18,7 @@ This module contains the base ansatz class.
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Any, Callable
+from typing import Any, Callable, Sequence
 
 from numpy.typing import ArrayLike
 
@@ -143,6 +143,20 @@ class Ansatz(ABC):
     def reorder(self, order: tuple[int, ...] | list[int]) -> Ansatz:
         r"""
         Reorders the ansatz indices.
+        """
+
+    @abstractmethod
+    def reorder_batch(self, order: Sequence[int]):
+        r"""
+        Reorders the batch dimensions of the ansatz.
+        The length of ``order`` must equal the number of batch dimensions.
+        This method returns a new ansatz object.
+
+        Args:
+            order: The desired order of the batch dimensions.
+
+        Returns:
+            A new Ansatz with reordered batch dimensions.
         """
 
     @abstractmethod

@@ -255,6 +255,16 @@ class ArrayAnsatz(Ansatz):
         order = list(range(self.batch_dims)) + [i + self.batch_dims for i in order]
         return ArrayAnsatz(math.transpose(self.array, order), self.batch_dims)
 
+    def reorder_batch(self, order: Sequence[int]):
+        if len(order) != self.batch_dims:
+            raise ValueError(
+                f"order must have length {self.batch_dims} (number of batch dimensions), got {len(order)}"
+            )
+
+        core_dims_indices = range(self.batch_dims, self.batch_dims + self.core_dims)
+        new_array = math.transpose(self.array, list(order) + list(core_dims_indices))
+        return ArrayAnsatz(new_array, self.batch_dims)
+
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"array": self.data, "batch_dims": self.batch_dims}
 

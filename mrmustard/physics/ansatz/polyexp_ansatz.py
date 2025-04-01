@@ -396,6 +396,21 @@ class PolyExpAnsatz(Ansatz):
         b = math.gather(self.b, order, axis=-1)
         return PolyExpAnsatz(A, b, self.c)
 
+    def reorder_batch(self, order: Sequence[int]):
+        if len(order) != self.batch_dims:
+            raise ValueError(
+                f"order must have length {self.batch_dims} (number of batch dimensions), got {len(order)}"
+            )
+
+        core_dims_indices = range(self.batch_dims, self.batch_dims + self.num_vars)
+        core_dims_indices_c = range(self.batch_dims, self.batch_dims + self.num_derived_vars)
+
+        new_A = math.transpose(self.A, list(order) + list(core_dims_indices))
+        new_b = math.transpose(self.b, list(order) + list(core_dims_indices))
+        new_c = math.transpose(self.c, list(order) + list(core_dims_indices_c))
+
+        return PolyExpAnsatz(new_A, new_b, new_c)
+
     # TODO: this should be moved to classes responsible for interpreting a batch dimension as a sum
     def simplify(self) -> None:
         r"""
