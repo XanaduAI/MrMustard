@@ -35,6 +35,7 @@ from .backend_base import BackendBase
 from .lattice.strategies import (
     binomial,
     vanilla,
+    vanilla_full_batch,
     vanilla_stable,
     vanilla_stable_batch,
     vanilla_batch,
@@ -678,3 +679,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         _tensor[key] = value
 
         return _tensor
+
+    def hermite_renormalized_full_batch(
+        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: tuple[int]
+    ) -> np.ndarray:
+        return vanilla_full_batch(shape, A, B, C)
