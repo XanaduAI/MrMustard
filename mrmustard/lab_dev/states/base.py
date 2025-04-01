@@ -26,7 +26,7 @@ representation.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Sequence
+from typing import Literal, Sequence
 
 from enum import Enum
 
@@ -130,7 +130,7 @@ class State(CircuitComponent):
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
-        return math.sum(math.real(self >> self.dual))
+        return math.sum(self._compute_L2_norms(mode="kron"))
 
     @property
     @abstractmethod
@@ -153,9 +153,7 @@ class State(CircuitComponent):
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
         element-wise along the batch dimension.
         """
-        return math.real(
-            self.representation.contract(self.dual.representation, mode="zip").ansatz.c
-        )
+        return self._compute_L2_norms(mode="zip")
 
     @classmethod
     def from_bargmann(
@@ -321,6 +319,21 @@ class State(CircuitComponent):
         QtoB = BtoQ(modes, phi).inverse()
         Q = cls.from_ansatz(modes, PolyExpAnsatz(*triple))
         return cls.from_ansatz(modes, (Q >> QtoB).ansatz, name)
+
+    def _compute_L2_norms(self, mode: Literal["zip", "kron"] = "kron") -> RealVector:
+        r"""
+        Computes the L2 norms of the state.
+
+        Args:
+            mode: The contraction mode to compute the L2 norms in. Either ``"zip"`` or ``"kron"``.
+
+        Returns:
+            The L2 norms.
+        """
+        if isinstance(self.ansatz, PolyExpAnsatz) and self.ansatz.num_derived_vars > 0:
+            fock_state = self.to_fock()
+            return math.real(fock_state.contract(fock_state.dual, mode=mode).ansatz.scalar)
+        return math.real(self.contract(self.dual, mode=mode).ansatz.scalar)
 
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""

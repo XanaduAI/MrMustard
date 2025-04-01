@@ -468,7 +468,15 @@ class CircuitComponent:
         """
         if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
-        result = self._representation.contract(other._representation, mode=mode)
+
+        if type(self.ansatz) is type(other.ansatz):
+            self_rep = self.representation
+            other_rep = other.representation
+        else:
+            self_rep = self.to_fock().representation
+            other_rep = other.to_fock().representation
+
+        result = self_rep.contract(other_rep, mode=mode)
         return CircuitComponent(result, None)
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
