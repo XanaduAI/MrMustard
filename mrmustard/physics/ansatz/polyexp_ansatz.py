@@ -720,12 +720,13 @@ class PolyExpAnsatz(Ansatz):
             math.atleast_nd(c_self, n_derived_vars + 1),
             math.atleast_nd(c_other, n_derived_vars + 1),
         )
-
-        return PolyExpAnsatz(
+        ret = PolyExpAnsatz(
             combined_matrices,
             combined_vectors,
             combined_arrays,
         )
+        ret._lin_sup = -1
+        return ret
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""

@@ -41,6 +41,7 @@ from mrmustard.physics.bargmann_utils import (
     bargmann_Abc_to_phasespace_cov_means,
 )
 from mrmustard.physics.fock_utils import quadrature_distribution
+from mrmustard.physics.utils import generate_batch_str
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
     ComplexMatrix,
@@ -51,7 +52,6 @@ from mrmustard.utils.typing import (
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import BtoPS, BtoQ
-
 
 __all__ = ["State"]
 
@@ -130,7 +130,13 @@ class State(CircuitComponent):
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
-        return math.sum(self._compute_L2_norms(mode="kron"))
+        return (
+            math.sum(
+                math.sum(self._compute_L2_norms(mode="kron"), axis=self.ansatz._lin_sup), axis=-1
+            )
+            if self.ansatz._lin_sup is not None
+            else self._compute_L2_norms(mode="zip")
+        )
 
     @property
     @abstractmethod
@@ -330,6 +336,11 @@ class State(CircuitComponent):
         Returns:
             The L2 norms.
         """
+        # TODO: this is assuming the last batch dimension is the one to sum over
+        if self.ansatz._lin_sup is not None and mode == "kron":
+            str1 = generate_batch_str(self.ansatz.batch_shape)
+            str2 = str1[:-1] + chr(ord(str1[-1]) + 1)
+            mode = f"{str1},{str2}->{str1}{str2[self.ansatz._lin_sup]}"
         if isinstance(self.ansatz, PolyExpAnsatz) and self.ansatz.num_derived_vars > 0:
             fock_state = self.to_fock()
             return math.real(fock_state.contract(fock_state.dual, mode=mode).ansatz.scalar)
