@@ -35,9 +35,9 @@ from .backend_base import BackendBase
 from .lattice.strategies import (
     binomial,
     vanilla,
-    vanilla_full_batch,
     vanilla_stable,
     vanilla_stable_batch,
+    vanilla_full_batch,
     vanilla_batch,
     fast_diagonal,
 )
@@ -667,6 +667,11 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             (-2, -1) + tuple(range(len(pnr_cutoffs)))
         )
 
+    def hermite_renormalized_full_batch(
+        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: tuple[int]
+    ) -> np.ndarray:
+        return vanilla_full_batch(shape, A, B, C)
+
     @staticmethod
     def getitem(tensor, *, key):
         value = np.array(tensor)[key]
@@ -679,8 +684,3 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         _tensor[key] = value
 
         return _tensor
-
-    def hermite_renormalized_full_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: tuple[int]
-    ) -> np.ndarray:
-        return vanilla_full_batch(shape, A, B, C)

@@ -719,21 +719,27 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("hermite_renormalized_batch", (A, B, C, shape))
 
     def hermite_renormalized_full_batch(
-        self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
+        self, A: Tensor, b: Tensor, c: Tensor, shape: tuple[int]
     ) -> Tensor:
         r"""Computes the renormalized Hermite polynomials for a batch of A, B, and C.
         This uses the vanilla algorithm and allows for arbitrary batch dimensions.
 
         Args:
             A: The batched A matrix of the Bargmann representation.
-            B: The batched B vector of the Bargmann representation.
-            C: The batched C scalar of the Bargmann representation.
+            b: The batched b vector of the Bargmann representation.
+            c: The batched c scalar of the Bargmann representation.
             shape: The shape of the output tensor per batch element.
 
         Returns:
             The renormalized Hermite polynomials with arbitrary batch dimensions.
         """
-        return self._apply("hermite_renormalized_full_batch", (A, B, C, shape))
+        batch_shape = A.shape[:-2]
+        D = int(np.prod(batch_shape))
+        A = self.reshape(A, (D,) + A.shape[-2:])
+        b = self.reshape(b, (D,) + b.shape[-1:])
+        c = self.reshape(c, (D,))
+        result = self._apply("hermite_renormalized_full_batch", (A, b, c, tuple(shape)))
+        return self.reshape(result, batch_shape + tuple(shape))
 
     def hermite_renormalized_diagonal(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
