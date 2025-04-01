@@ -252,15 +252,11 @@ class Ket(State):
         # experimental:
         if self.ansatz.batch_size == 1:
             try:  # fock
-                shape = self.ansatz.core_shape
+                shape = self.ansatz.array.shape[1:]
             except AttributeError:  # bargmann
-                if self.ansatz.num_derived_vars == 0:
+                if self.ansatz.polynomial_shape[0] == 0:
                     ansatz = self.ansatz.conj & self.ansatz
-                    A, b, c = (
-                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
-                        if ansatz.batch_shape != ()  # tensorflow
-                        else ansatz.triple
-                    )
+                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
                     ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
