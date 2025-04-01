@@ -22,7 +22,7 @@ from mrmustard.physics.ansatz.base import Ansatz
 
 def mm_einsum(
     *args: list[PolyExpAnsatz | ArrayAnsatz | list[int | str]],
-    contraction_order: list[int],
+    contraction_order: list[tuple[int, ...]],
     shapes: dict[int, int],
 ):
     r"""Performs tensor contractions between multiple Ansatze using their indices.
@@ -43,7 +43,8 @@ def mm_einsum(
         *args: Alternating sequence of Ansatze and their corresponding index lists,
             followed by a final output index list. The format should be:
             [ansatz1, indices1, ansatz2, indices2, ..., ansatzN, indicesN, output_indices]
-        contraction_order: list of integers specifying the order in which to perform the contractions.
+        contraction_order: list of tuples of integers specifying the wires to contract together at
+            each step.
         shapes: dict mapping Hilbert space indices to their Fock space dimensions.
 
     Returns:
@@ -51,7 +52,6 @@ def mm_einsum(
     """
     all_strings = [s for idx in args[1:-2:2] for s in idx if isinstance(s, str)]
     strings_to_chars = _map_descriptive_strings_to_chars(all_strings)
-
     indices = {}
     batch_strings = {}
     ansatze = {}
@@ -62,8 +62,8 @@ def mm_einsum(
         ansatze[k] = ans
     output_indices = args[-1]
 
-    for k in contraction_order:
-        a, b = [i for i, idx in indices.items() if k in idx]
+    for wires in contraction_order:
+        a, b = [i for i, idx in indices.items() if set(wires).issubset(idx)]
         convert = type(ansatze[a]) is not type(ansatze[b])
         ansatz_a = to_fock(ansatze[a], [shapes[i] for i in indices[a]]) if convert else ansatze[a]
         ansatz_b = to_fock(ansatze[b], [shapes[i] for i in indices[b]]) if convert else ansatze[b]
@@ -73,15 +73,22 @@ def mm_einsum(
         ansatze[a] = new_ansatz
         indices[a] = new_indices
         batch_strings[a] = new_batch
-        del indices[b]
-        del batch_strings[b]
-        del ansatze[b]
+        del indices[b], batch_strings[b], ansatze[b]
 
-    if len(indices) > 1:
-        raise ValueError("More than one ansatz left after contraction")
-    index_perm = [indices.pop(0).index(i) for i in output_indices if isinstance(i, int)]
-    batch_perm = [batch_strings.pop(0).index(i) for i in output_indices if isinstance(i, str)]
-    return ansatze.pop(0).reorder(index_perm).reorder_batch(batch_perm)
+    print(indices)
+
+    if len(indices) > 1 or len(batch_strings) > 1 or len(ansatze) > 1:
+        raise ValueError("More than one ansatz left after contraction.")
+    result = ansatze.pop(0)
+    if any(isinstance(i, int) for i in output_indices):
+        final_indices = indices.pop(0)
+        index_perm = [final_indices.index(i) for i in output_indices if isinstance(i, int)]
+        result = result.reorder(index_perm)
+    if any(isinstance(i, str) for i in output_indices):
+        final_strings = batch_strings.pop(0)
+        batch_perm = [final_strings.index(i) for i in output_indices if isinstance(i, str)]
+        result = result.reorder_batch(batch_perm)
+    return result
 
 
 def _prepare_idx(a, b, indices, batch_strings):
