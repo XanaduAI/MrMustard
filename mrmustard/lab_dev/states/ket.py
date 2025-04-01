@@ -18,10 +18,11 @@ This module contains the defintion of the ket class ``Ket``.
 
 from __future__ import annotations
 
-import numpy as np
-from itertools import product
 from typing import Collection, Sequence
+from itertools import product
 import warnings
+
+import numpy as np
 from IPython.display import display
 
 from mrmustard import math, settings, widgets
