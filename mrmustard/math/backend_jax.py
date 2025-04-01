@@ -760,6 +760,14 @@ class BackendJax(BackendBase):  # pragma: no cover
         )
         return poly0
 
+    @partial(jax.jit, static_argnames=["shape"])
+    def hermite_renormalized_full_batch(
+        self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
+    ) -> jnp.ndarray:
+        batch_shape = A.shape[:-2]
+        result_shape_dtype = jax.ShapeDtypeStruct(tuple(batch_shape) + shape, A.dtype)
+        return jax.pure_callback(vanilla.vanilla_full_batch, result_shape_dtype, shape, A, b, c)
+
 
 # defining the pytree node for the JaxBackend.
 # This allows to skip specifying `self` in static_argnames.
