@@ -22,7 +22,7 @@ __all__ = [
     "vanilla",
     "vanilla_stable",
     "vanilla_stable_batch",
-    "vanilla_full_batch",
+    "vanilla_full_batch_numba",
     "vanilla_batch",
     "vanilla_jacobian",
     "vanilla_vjp",

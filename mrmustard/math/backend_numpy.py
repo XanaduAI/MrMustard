@@ -37,7 +37,7 @@ from .lattice.strategies import (
     vanilla,
     vanilla_stable,
     vanilla_stable_batch,
-    vanilla_full_batch,
+    vanilla_full_batch_numba,
     vanilla_batch,
     fast_diagonal,
 )
@@ -670,7 +670,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def hermite_renormalized_full_batch(
         self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: tuple[int]
     ) -> np.ndarray:
-        return vanilla_full_batch(shape, A, B, C)
+        return vanilla_full_batch_numba(shape, A, B, C)
 
     @staticmethod
     def getitem(tensor, *, key):

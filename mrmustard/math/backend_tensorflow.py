@@ -743,7 +743,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
     ) -> tf.Tensor:
         return tf.py_function(
-            func=strategies.vanilla.vanilla_full_batch,
+            func=strategies.vanilla.vanilla_full_batch_numba,
             inp=[shape, A, b, c],
             Tout=A.dtype,
         )

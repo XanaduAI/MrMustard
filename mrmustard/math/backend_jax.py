@@ -766,7 +766,9 @@ class BackendJax(BackendBase):  # pragma: no cover
     ) -> jnp.ndarray:
         batch_shape = A.shape[:-2]
         result_shape_dtype = jax.ShapeDtypeStruct(tuple(batch_shape) + shape, A.dtype)
-        return jax.pure_callback(vanilla.vanilla_full_batch, result_shape_dtype, shape, A, b, c)
+        return jax.pure_callback(
+            vanilla.vanilla_full_batch_numba, result_shape_dtype, shape, A, b, c
+        )
 
 
 # defining the pytree node for the JaxBackend.
