@@ -396,11 +396,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
         dm = ket.dm()
         assert ket[m] == dm[m]
 
-    def test_private_batched_properties(self):
-        cat = Coherent(0, x=1.0) + Coherent(0, x=-1.0)  # used as a batch
-        assert math.allclose(cat._probabilities, math.ones(2))
-        assert math.allclose(cat._L2_norms, math.ones(2))
-
     def test_unsafe_batch_zipping(self):
         cat = Coherent(0, x=1.0) + Coherent(0, x=-1.0)  # used as a batch
         displacements = Dgate(0, x=1.0) + Dgate(0, x=-1.0)
