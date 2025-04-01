@@ -63,7 +63,6 @@ def mm_einsum(
     output_indices = args[-1]
 
     for k in contraction_order:
-        print(indices)
         a, b = [i for i, idx in indices.items() if k in idx]
         convert = type(ansatze[a]) is not type(ansatze[b])
         ansatz_a = to_fock(ansatze[a], [shapes[i] for i in indices[a]]) if convert else ansatze[a]
@@ -78,7 +77,8 @@ def mm_einsum(
         del batch_strings[b]
         del ansatze[b]
 
-    print(indices)
+    if len(indices) > 1:
+        raise ValueError("More than one ansatz left after contraction")
     index_perm = [indices.pop(0).index(i) for i in output_indices if isinstance(i, int)]
     batch_perm = [batch_strings.pop(0).index(i) for i in output_indices if isinstance(i, str)]
     return ansatze.pop(0).reorder(index_perm).reorder_batch(batch_perm)
