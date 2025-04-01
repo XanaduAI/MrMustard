@@ -740,16 +740,10 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return _tensor, grad
 
     def hermite_renormalized_full_batch(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: tuple[int]
+        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
     ) -> tf.Tensor:
-        output_dtype = A.dtype  # Assume A, B, C have compatible dtypes
-        result = tf.py_function(
+        return tf.py_function(
             func=strategies.vanilla.vanilla_full_batch,
-            inp=[shape, A, B, C],
-            Tout=output_dtype,
+            inp=[shape, A, b, c],
+            Tout=A.dtype,
         )
-        # Ensure the shape is correctly set, as py_function might lose it
-        batch_shape = tf.shape(A)[:-2]
-        output_shape = tf.concat([batch_shape, tf.constant(shape, dtype=tf.int32)], axis=0)
-        result = tf.reshape(result, output_shape)
-        return result
