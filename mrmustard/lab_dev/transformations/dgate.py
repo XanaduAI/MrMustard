@@ -28,7 +28,7 @@ from .base import Unitary
 from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from ...physics import triples, fock_utils
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 
 __all__ = ["Dgate"]
@@ -38,27 +38,25 @@ class Dgate(Unitary):
     r"""
     The displacement gate.
 
-    If ``x`` and/or ``y`` are iterables, their length must be equal to `1` or `N`. If their length is equal to `1`,
-    all the modes share the same parameters.
-
     .. code-block ::
 
         >>> import numpy as np
         >>> from mrmustard.lab_dev import Dgate
 
-        >>> unitary = Dgate(modes=[1, 2], x=0.1, y=[0.2, 0.3])
-        >>> assert unitary.modes == [1, 2]
-        >>> assert np.allclose(unitary.parameters.x.value, [0.1, 0.1])
-        >>> assert np.allclose(unitary.parameters.y.value, [0.2, 0.3])
+        >>> unitary = Dgate(mode=1, x=0.1, y=0.2)
+        >>> assert unitary.modes == (1,)
+        >>> assert unitary.parameters.x.value == 0.1
+        >>> assert unitary.parameters.y.value == 0.2
 
     Args:
-        modes: The modes this gate is applied to.
-        x: The displacements along the `x` axis, which represents position axis in phase space.
-        y: The displacements along the `y` axis.
-        x_bounds: The bounds for the displacement along the `x` axis.
-        y_bounds: The bounds for the displacement along the `y` axis, which represents momentum axis in phase space.
-        x_trainable: Whether `x` is a trainable variable.
-        y_trainable: Whether `y` is a trainable variable.
+        mode: The mode this gate is applied to.
+        x: The displacements along the ``x`` axis, which represents the position axis in phase space.
+        y: The displacements along the ``y`` axis, which represents the momentum axis in phase space.
+        x_trainable: Whether ``x`` is a trainable variable.
+        y_trainable: Whether ``y`` is a trainable variable.
+        x_bounds: The bounds for ``x``.
+        y_bounds: The bounds for ``y``.
+
 
     .. details::
 
@@ -85,27 +83,28 @@ class Dgate(Unitary):
 
     def __init__(
         self,
-        modes: Sequence[int] = None,
-        x: float | Sequence[float] = 0.0,
-        y: float | Sequence[float] = 0.0,
+        mode: int,
+        x: float = 0.0,
+        y: float = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: tuple[float | None, float | None] = (None, None),
         y_bounds: tuple[float | None, float | None] = (None, None),
     ) -> None:
         super().__init__(name="Dgate")
-        xs, ys = list(reshape_params(len(modes), x=x, y=y))
-        self.parameters.add_parameter(make_parameter(x_trainable, xs, "x", x_bounds))
-        self.parameters.add_parameter(make_parameter(y_trainable, ys, "y", y_bounds))
+        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
+        self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
         self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=(mode,),
+            modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.displacement_gate_Abc, x=self.parameters.x, y=self.parameters.y
             ),
         ).representation
 
-    def fock_array(self, shape: int | Sequence[int] = None, batched=False) -> ComplexTensor:
+    def fock_array(
+        self, shape: int | Sequence[int] = None, batched=False
+    ) -> ComplexTensor:  # TODO: fix for batch
         r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -150,9 +149,9 @@ class Dgate(Unitary):
         return arrays
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
-        fock = ArrayAnsatz(self.fock_array(shape, batched=True), batched=True)
+        fock = ArrayAnsatz(self.fock_array(shape, batched=False), batch_dims=0)
         fock._original_abc_data = self.ansatz.triple
-        ret = self._getitem_builtin(self.modes)
+        ret = self.__class__(self.modes[0], **self.parameters.to_dict())
         wires = Wires.from_wires(
             quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
             classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},

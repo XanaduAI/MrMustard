@@ -68,7 +68,7 @@ complex_number = st.complex_numbers(
 size = st.integers(min_value=1, max_value=9)
 
 
-def Abc_triple(n: int):
+def Abc_triple(n: int, batch: tuple[int, ...] = ()):
     r"""
     Produces a random ``(A, b, c)`` triple for ``n`` modes.
     """
@@ -76,19 +76,19 @@ def Abc_triple(n: int):
     max_magnitude = 1
 
     # complex symmetric matrix A
-    A = np.random.uniform(min_magnitude, max_magnitude, (n, n)) + 1.0j * np.random.uniform(
-        min_magnitude, max_magnitude, (n, n)
+    A = np.random.uniform(min_magnitude, max_magnitude, batch + (n, n)) + 1.0j * np.random.uniform(
+        min_magnitude, max_magnitude, batch + (n, n)
     )
-    A = 0.5 * (A + A.T)  # make it symmetric
+    A = 0.5 * (A + np.swapaxes(A, -2, -1))  # make it symmetric
 
     # complex vector b
-    b = np.random.uniform(min_magnitude, max_magnitude, (n,)) + 1.0j * np.random.uniform(
-        min_magnitude, max_magnitude, (n,)
+    b = np.random.uniform(min_magnitude, max_magnitude, batch + (n,)) + 1.0j * np.random.uniform(
+        min_magnitude, max_magnitude, batch + (n,)
     )
 
     # complex scalar c
-    c = np.random.uniform(min_magnitude, max_magnitude, (1,)) + 1.0j * np.random.uniform(
-        min_magnitude, max_magnitude, (1,)
+    c = np.random.uniform(min_magnitude, max_magnitude, batch + ()) + 1.0j * np.random.uniform(
+        min_magnitude, max_magnitude, batch + ()
     )
 
     return A, b, c

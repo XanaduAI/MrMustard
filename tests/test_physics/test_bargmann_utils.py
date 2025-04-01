@@ -79,14 +79,14 @@ def test_bargmann_numpy_transformation():
 def test_norm_ket():
     """Test that the norm of a ket is calculated correctly"""
 
-    ket = Vacuum([0, 1]) >> Unitary.from_symplectic([0, 1], math.random_symplectic(2))
+    ket = Vacuum((0, 1)) >> Unitary.from_symplectic((0, 1), math.random_symplectic(2))
     A, b, c = ket.bargmann_triple()
     assert np.isclose(norm_ket(A, b, c), ket.probability)
 
 
 def test_trace_dm():
     """Test that the trace of a density matrix is calculated correctly"""
-    ket = Vacuum([0, 1, 2, 3]) >> Unitary.from_symplectic([0, 1, 2, 3], math.random_symplectic(4))
+    ket = Vacuum((0, 1, 2, 3)) >> Unitary.from_symplectic((0, 1, 2, 3), math.random_symplectic(4))
     dm = ket[0, 1]
     A, b, c = dm.bargmann_triple()
     assert np.allclose(trace_dm(A, b, c), dm.probability)
@@ -169,7 +169,7 @@ def test_XY_of_channel():
     Tests the function X_of_channel.
     """
 
-    X, Y = XY_of_channel(Channel.random([0]).ansatz.A[0])
+    X, Y = XY_of_channel(Channel.random([0]).ansatz.A)
     omega = np.array([[0, 1j], [-1j, 0]])
     channel_check = X @ omega @ X.T / 2 - omega / 2 + Y
     assert np.all([mu > 0 for mu in np.linalg.eigvals(channel_check)])

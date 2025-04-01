@@ -19,7 +19,6 @@ This module contains the defintion of the density matrix class ``DM``.
 from __future__ import annotations
 from typing import Collection, Sequence
 
-from itertools import product
 import warnings
 import numpy as np
 from IPython.display import display
@@ -56,7 +55,7 @@ class DM(State):
     short_name = "DM"
 
     @property
-    def is_positive(self) -> bool:
+    def is_positive(self) -> bool:  # TODO: revisit this
         r"""
         Whether this DM corresponds to a positive operator.
 
@@ -73,9 +72,11 @@ class DM(State):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-        A = self.ansatz.A[0]
+        if self.ansatz.num_derived_vars > 0:
+            raise ValueError("Physicality conditions are not implemented for derived variables.")
+        A = self.ansatz.A
         m = A.shape[-1] // 2
-        gamma_A = A[:m, m:]
+        gamma_A = A[..., :m, m:]
 
         if (
             math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
@@ -216,28 +217,12 @@ class DM(State):
     @classmethod
     def random(cls, modes: Collection[int], m: int | None = None, max_r: float = 1.0) -> DM:
         r"""
-        Samples a random density matrix with no displacement.
+        Returns a random ``DM`` with zero displacement.
 
         Args:
-            modes: the modes where the state is defined over
-            m: is the number modes to be considered for tracing out from a random pure state (Ket)
-            if not specified, m is considered to be len(modes)
-            max_r: maximum squeezing chosen for the generation of the random state.
-
-        Returns:
-            A ``DM``.
-
-
-        .. code-block::
-
-            >>> from mrmustard.lab_dev import DM
-            >>> assert isinstance(DM.random([0,1]), DM)
-
-        .. details::
-
-            Using a random Gaussian unitary, :math:`U`, on :math:`len(modes)+m`, the code outputs
-            :math:`\mathrm{tr}_{m}(U|0\rangle)`. The random unitary :math:`U` is chosen with maximum
-            squeezing determined by `max_r`.
+            modes: The modes of the ``DM``.
+            m: The number modes to be considered for tracing out from a random pure state (Ket)
+                if not specified, m is considered to be len(modes)
         """
         if m is None:
             m = len(modes)
@@ -254,8 +239,8 @@ class DM(State):
         A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
         b = math.zeros(m, dtype=A.dtype)
         A, b, c = complex_gaussian_integral_2(
-            (math.conj(A), math.conj(b), complex(1)),
-            (A, b, complex(1)),
+            (math.conj(A), math.conj(b), math.astensor(complex(1))),
+            (A, b, math.astensor(complex(1))),
             range(len(modes)),
             range(len(modes)),
         )
@@ -265,7 +250,7 @@ class DM(State):
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:
+    ) -> tuple[int, ...]:  # TODO: revisit
         r"""
         A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -294,13 +279,17 @@ class DM(State):
             >>> assert Vacuum([0]).dm().auto_shape() == (1,1)
         """
         # experimental:
-        if self.ansatz.batch_size == 1:
+        if self.ansatz.batch_size <= 1:
             try:  # fock
-                shape = self.ansatz.array.shape[1:]
+                shape = self.ansatz.core_shape
             except AttributeError:  # bargmann
-                if self.ansatz.polynomial_shape[0] == 0:
+                if self.ansatz.num_derived_vars == 0:
                     ansatz = self.ansatz
-                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    A, b, c = (
+                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
+                        if ansatz.batch_shape != ()  # tensorflow
+                        else ansatz.triple
+                    )
                     ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
@@ -388,23 +377,30 @@ class DM(State):
             if leftover_modes:
                 result >>= TraceOut(leftover_modes)
         else:
-            result = (self @ operator) >> TraceOut(self.modes)
+            result = (self.contract(operator)) >> TraceOut(self.modes)
 
         return result
 
     def fock_array(
-        self, shape: int | Sequence[int] | None = None, batched=False, standard_order: bool = False
+        self, shape: int | Sequence[int] | None = None, standard_order: bool = False
     ) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
         available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+        The ``standard_order`` boolean argument lets one choose the standard convention for the
+        index ordering of the density matrix. For a single mode, if ``standard_order=True`` the
+        returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket)
+        side of the matrix and the second index to the "right" (bra) side. Otherwise, MrMustard's
+        convention is that the bra index comes before the ket index. In other words, for a single
+        mode, the array returned by ``fock_array`` with ``standard_order=False`` (false by default)
+        is the transpose of the standard density matrix. For multiple modes, the same applies to
+        each pair of indices of each mode.
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is estimated.
-            batched: Whether the returned representation is batched or not. If ``False`` (default)
-                it will squeeze the batch dimension if it is 1.
+
             standard_order: The ordering of the wires. If ``standard_order = False``, then the conventional ordering
             of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
             standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
@@ -429,7 +425,7 @@ class DM(State):
 
             >>> assert np.allclose(Vacuum([0]).dm().fock_array(), np.array([[1]]))
         """
-        array = super().fock_array(shape or self.auto_shape(), batched)
+        array = super().fock_array(shape or self.auto_shape())
         if standard_order:
             m = self.n_modes
             axes = tuple(range(m, 2 * m)) + tuple(
@@ -437,31 +433,6 @@ class DM(State):
             )  # to take care of multi-mode case, otherwise, for a single mode we could just use a simple transpose method
             array = math.transpose(array, perm=axes)
         return array
-
-    def fock_distribution(self, cutoff: int) -> RealTensor:
-        r"""
-        Returns the Fock distribution of the state up to some cutoff.
-
-        Args:
-            cutoff: The photon cutoff.
-
-        Returns:
-            The Fock distribution.
-
-        .. code-block::
-
-            >>> import numpy as np
-            >>> from mrmustard.lab_dev import Vacuum, DM
-
-            >>> assert np.allclose(Vacuum([0]).dm().fock_distribution(2), np.array([1, 0]))
-        """
-        fock_array = self.fock_array(cutoff)
-        return math.astensor(
-            [
-                math.real(fock_array[ns * 2])
-                for ns in product(list(range(cutoff)), repeat=self.n_modes)
-            ]
-        )
 
     def normalize(self) -> DM:
         r"""
@@ -482,38 +453,6 @@ class DM(State):
         """
         return self / self.probability
 
-    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> RealTensor:
-        r"""
-        The (discretized) quadrature distribution of the State.
-
-        Args:
-            quad: the discretized quadrature axis over which the distribution is computed.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            The quadrature distribution.
-
-        .. code-block::
-
-            >>> from mrmustard.lab_dev import DM
-
-            >>> dist = DM.random([0]).dm().quadrature_distribution(np.linspace(-2,2,20))
-            >>> assert all(dist >= 0)
-        """
-        quad = np.array(quad)
-        if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
-            raise ValueError(
-                "The dimensionality of quad should be 1, or match the number of modes."
-            )
-
-        if len(quad.shape) == 1:
-            quad = math.astensor(np.meshgrid(*[quad] * len(self.modes))).T.reshape(
-                -1, len(self.modes)
-            )
-
-        quad = math.tile(quad, (1, 2))
-        return self.quadrature(quad, phi)
-
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
             print(self)
@@ -521,32 +460,25 @@ class DM(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=False, is_fock=is_fock))
 
-    def __getitem__(self, modes: int | Collection[int]) -> State:
+    def __getitem__(self, idx: int | Sequence[int]) -> State:
         r"""
         Traces out all the modes except those given.
         The result is returned with modes in increasing order.
+
+        Args:
+            idx: The modes to keep.
+
+        Returns:
+            A new DM with the modes indexed by `idx`.
         """
-        if isinstance(modes, int):
-            modes = {modes}
-        modes = set(modes)
-
+        idx = (idx,) if isinstance(idx, int) else idx
+        modes = set(idx)
         if not modes.issubset(self.modes):
-            msg = f"Expected a subset of `{self.modes}, found `{list(modes)}`."
-            raise ValueError(msg)
-
-        if self._parameters:
-            # if ``self`` has a parameter set it means it is a built-in state,
-            # in which case we slice the parameters
-            return self._getitem_builtin(modes)
-
-        # if ``self`` has no parameter set it is not a built-in state,
-        # in which case we trace the representation
+            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
         wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
-
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
         idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
         ansatz = self.ansatz.trace(idxz, idxz_conj)
-
         return DM(Representation(ansatz, wires), self.name)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:

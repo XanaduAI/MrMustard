@@ -17,7 +17,6 @@ The class representing an operation that changes Bargmann into phase space.
 """
 
 from __future__ import annotations
-from typing import Sequence
 
 from mrmustard.physics import triples
 
@@ -31,6 +30,8 @@ __all__ = ["BtoPS"]
 
 class BtoPS(Map):
     r"""The `s`-parametrized ``Dgate`` as a ``Map``.
+    The `s`-parametrized ``Dgate`` as a ``Map``.
+
     Used internally as a ``Channel`` for transformations between representations.
 
 
@@ -49,9 +50,11 @@ class BtoPS(Map):
 
         Any operator, say O can be expressed in the displacement basis. Formally, we have that
         the s-parametrized phase space basis is characterized by the following operators
+
         ..math:
             D_s(\alpha) = exp(s|\alpha|^2/2) D(\alpha).
         The s-parametrized phase space representation of an object O, would therefore be
+
         ..math:
             mathrm{tr}(D_s(\alpha) O).
 
@@ -64,7 +67,6 @@ class BtoPS(Map):
 
         - s=-1: returns the complex Fourier transform of the Q function.
 
-    Example:
     .. code-block::
 
         >>> from mrmustard.lab_dev import BtoPS, Ket
@@ -76,9 +78,10 @@ class BtoPS(Map):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: int | tuple[int, ...],
         s: float,
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="BtoPS")
         self.parameters.add_parameter(make_parameter(False, s, "s", (None, None)))
         self._representation = self.from_ansatz(

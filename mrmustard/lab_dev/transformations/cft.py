@@ -15,8 +15,8 @@
 """
 The class representing a complex fourier transform.
 """
+from __future__ import annotations
 
-from typing import Sequence
 from mrmustard.lab_dev.transformations.base import Map
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
@@ -25,11 +25,12 @@ __all__ = ["CFT"]
 
 
 class CFT(Map):
-    r"""The Complex Fourier Transformation as a channel.
-    The main use is to convert between Characteristic functions and phase space functions.
+    r"""
+    The Complex Fourier Transformation as a channel.
+    The main use is to convert between characteristic functions and phase space functions.
 
     Args:
-        num_modes: number of modes of this channel.
+        modes: The modes of this channel.
 
     .. details::
         For a function f defined on the complex domain, we can define the following Complex Fourier Transform (aka symplectic Fourier Transform):
@@ -40,8 +41,9 @@ class CFT(Map):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: int | tuple[int, ...],
     ):
+        modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="CFT")
         self._representation = self.from_ansatz(
             modes_in=modes,

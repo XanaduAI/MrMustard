@@ -32,18 +32,18 @@ class TestPNRSampler:
     def test_init(self):
         sampler = PNRSampler(cutoff=10)
         assert sampler.meas_outcomes == list(range(10))
-        assert sampler.povms == Number([0], 0)
+        assert sampler.povms == Number(0, 0)
 
     def test_probabilities(self):
         atol = 1e-4
 
         sampler = PNRSampler(cutoff=10)
         vac_prob = [1.0] + [0.0] * 99
-        assert math.allclose(sampler.probabilities(Vacuum([0, 1])), vac_prob)
+        assert math.allclose(sampler.probabilities(Vacuum((0, 1))), vac_prob)
 
-        coh_state = Coherent([0, 1], x=[0.5, 1])
+        coh_state = Coherent(0, x=0.5) >> Coherent(1, x=1)
         exp_probs = [
-            (coh_state >> Number([0], n0).dual >> Number([1], n1).dual) ** 2
+            (coh_state >> Number(0, n0).dual >> Number(1, n1).dual) ** 2
             for n0 in range(10)
             for n1 in range(10)
         ]
@@ -53,12 +53,12 @@ class TestPNRSampler:
         n_samples = 1000
         sampler = PNRSampler(cutoff=10)
 
-        assert not np.any(sampler.sample(Vacuum([0])))
-        assert not np.any(sampler.sample_prob_dist(Vacuum([0]))[0])
-        assert not np.any(sampler.sample(Vacuum([0, 1])))
-        assert not np.any(sampler.sample_prob_dist(Vacuum([0, 1]))[0])
+        assert not np.any(sampler.sample(Vacuum(0)))
+        assert not np.any(sampler.sample_prob_dist(Vacuum(0))[0])
+        assert not np.any(sampler.sample(Vacuum((0, 1))))
+        assert not np.any(sampler.sample_prob_dist(Vacuum((0, 1)))[0])
 
-        state = Coherent([0], x=[0.1])
+        state = Coherent(0, x=0.1)
         samples = sampler.sample(state, n_samples)
 
         count = np.zeros_like(sampler.meas_outcomes)
@@ -89,15 +89,18 @@ class TestHomodyneSampler:
     def test_probabilties(self):
         sampler = HomodyneSampler()
 
-        state = Coherent([0], x=[0.1])
+        state = Coherent(0, x=0.1)
 
-        exp_probs = state.quadrature_distribution(sampler.meas_outcomes) * sampler._step
+        exp_probs = (
+            state.quadrature_distribution(math.astensor(sampler.meas_outcomes)) * sampler._step
+        )
         assert math.allclose(sampler.probabilities(state), exp_probs)
 
         sampler2 = HomodyneSampler(phi=np.pi / 2)
 
         exp_probs = (
-            state.quadrature_distribution(sampler2.meas_outcomes, sampler2._phi) * sampler2._step
+            state.quadrature_distribution(math.astensor(sampler2.meas_outcomes), phi=sampler2._phi)
+            * sampler2._step
         )
         assert math.allclose(sampler2.probabilities(state), exp_probs)
 
@@ -109,15 +112,19 @@ class TestHomodyneSampler:
         N_MEAS = 300
         NUM_STDS = 10.0
         std_10 = NUM_STDS / np.sqrt(N_MEAS)
-        alpha = [1.0 + 1.0j, 1.0 + 1.0j]
+        alpha = 1.0 + 1.0j
         tol = settings.ATOL
 
-        state = Coherent([0, 1], x=math.real(alpha), y=math.imag(alpha))
+        state = Coherent(0, x=math.real(alpha), y=math.imag(alpha)) >> Coherent(
+            1, x=math.real(alpha), y=math.imag(alpha)
+        )
         sampler = HomodyneSampler()
 
         meas_result = sampler.sample(state, N_MEAS)
         assert math.allclose(
-            meas_result.mean(axis=0), settings.HBAR * math.real(alpha), atol=std_10 + tol
+            meas_result.mean(axis=0),
+            settings.HBAR * math.real(math.astensor([alpha, alpha])),
+            atol=std_10 + tol,
         )
 
     def test_sample_mean_and_std_vacuum(self):
@@ -130,7 +137,7 @@ class TestHomodyneSampler:
         std_10 = NUM_STDS / np.sqrt(N_MEAS)
         tol = settings.ATOL
 
-        state = Vacuum([0, 1])
+        state = Vacuum((0, 1))
         sampler = HomodyneSampler()
 
         meas_result = sampler.sample(state, N_MEAS)

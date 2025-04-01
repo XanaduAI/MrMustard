@@ -31,17 +31,17 @@ class TestBtoPS:
     Tests for the ``BtoPS`` class.
     """
 
-    modes = [[0], [1, 2], [7, 9]]
+    modes = [(0,), (1, 2), (7, 9)]
     s = [0, -1, 1]
 
     @pytest.mark.parametrize("modes,s", zip(modes, s))
     def test_init(self, modes, s):
         dsmap = BtoPS(modes, s)
         assert dsmap.name == "BtoPS"
-        assert dsmap.modes == [modes] if not isinstance(modes, list) else sorted(modes)
+        assert dsmap.modes == modes
 
     def test_adjoint(self):
-        btops = BtoPS([0], 0)
+        btops = BtoPS(0, 0)
         adjoint_btops = btops.adjoint
 
         bras = btops.wires.bra.indices
@@ -51,7 +51,7 @@ class TestBtoPS:
         assert adjoint_btops.parameters.s == btops.parameters.s
 
     def test_dual(self):
-        btops = BtoPS([0], 0)
+        btops = BtoPS(0, 0)
         dual_btops = btops.dual
 
         ok = btops.wires.ket.output.indices
@@ -63,34 +63,34 @@ class TestBtoPS:
         assert dual_btops.parameters.s == btops.parameters.s
 
     def test_inverse(self):
-        btops = BtoPS([0], 0)
+        btops = BtoPS(0, 0)
         inv_btops = btops.inverse()
-        assert (btops >> inv_btops).ansatz == (Identity([0]) @ Identity([0]).adjoint).ansatz
+        assert (btops >> inv_btops).ansatz == (Identity(0).contract(Identity(0).adjoint)).ansatz
 
     def test_representation(self):
-        ansatz = BtoPS(modes=[0], s=0).ansatz
+        ansatz = BtoPS(modes=0, s=0).ansatz
         A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
-        assert math.allclose(ansatz.A[0], A_correct)
-        assert math.allclose(ansatz.b[0], b_correct)
-        assert math.allclose(ansatz.c[0], c_correct)
+        assert math.allclose(ansatz.A, A_correct)
+        assert math.allclose(ansatz.b, b_correct)
+        assert math.allclose(ansatz.c, c_correct)
 
-        ansatz2 = BtoPS(modes=[5, 10], s=1).ansatz
+        ansatz2 = BtoPS(modes=(5, 10), s=1).ansatz
         A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=1, n_modes=2)
-        assert math.allclose(ansatz2.A[0], A_correct)
-        assert math.allclose(ansatz2.b[0], b_correct)
-        assert math.allclose(ansatz2.c[0], c_correct)
+        assert math.allclose(ansatz2.A, A_correct)
+        assert math.allclose(ansatz2.b, b_correct)
+        assert math.allclose(ansatz2.c, c_correct)
 
     def testBtoPS_contraction_with_state(self):
         # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
         state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
         state_means = np.array([0.4, 0.6])
         A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
-        state = DM.from_bargmann(modes=[0], triple=(A, b, c))
+        state = DM.from_bargmann(modes=(0,), triple=(A, b, c))
         state_bargmann_triple = state.bargmann_triple()
 
         # get new triple by right shift
-        state_after = state >> BtoPS(modes=[0], s=0)
-        A1, b1, c1 = state_after.bargmann_triple(batched=True)
+        state_after = state >> BtoPS(modes=(0,), s=0)
+        A1, b1, c1 = state_after.bargmann_triple()
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
@@ -113,12 +113,12 @@ class TestBtoPS:
         )
         state_means = np.array([0.28284271, 0.0, 0.42426407, 0.0])
         A, b, c = wigner_to_bargmann_rho(state_cov, state_means)
-        state = DM.from_bargmann(modes=[0, 1], triple=(A, b, c))
+        state = DM.from_bargmann(modes=(0, 1), triple=(A, b, c))
         state_bargmann_triple = state.bargmann_triple()
 
         # get new triple by right shift
-        state_after = state >> BtoPS(modes=[0, 1], s=0)
-        A1, b1, c1 = state_after.bargmann_triple(batched=True)
+        state_after = state >> BtoPS(modes=(0, 1), s=0)
+        A1, b1, c1 = state_after.bargmann_triple()
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=2)
@@ -134,4 +134,4 @@ class TestBtoPS:
         assert math.allclose(c1, c2)
 
         psi = Ket.random([0])
-        assert math.allclose((psi >> BtoPS([0], 1)).ansatz([0, 0]), [1.0])
+        assert math.allclose((psi >> BtoPS(0, 1)).ansatz(0, 0), 1.0)

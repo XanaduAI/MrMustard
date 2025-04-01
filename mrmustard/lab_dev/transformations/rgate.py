@@ -18,12 +18,10 @@ The class representing a rotation gate.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["Rgate"]
 
@@ -32,41 +30,34 @@ class Rgate(Unitary):
     r"""
     The rotation gate.
 
-    If ``theta`` is an iterable, its length must be equal to `1` or `N`. If its length is equal to `1`,
-    all the modes share the same ``theta``.
-
     .. code-block ::
 
-        >>> import numpy as np
         >>> from mrmustard.lab_dev import Rgate
 
-        >>> unitary = Rgate(modes=[1, 2], theta=0.1)
-        >>> assert unitary.modes == [1, 2]
+        >>> unitary = Rgate(mode=1, theta=0.1)
+        >>> assert unitary.modes == (1,)
 
     Args:
-        modes: The modes this gate is applied to.
-        theta: The rotation angles.
+        mode: The mode this gate is applied to.
+        theta: The rotation angle.
+        theta_trainable: Whether ``theta`` is trainable.
         theta_bounds: The bounds for ``theta``.
-        theta_trainable: Whether ``theta`` is a trainable variable.
     """
 
     short_name = "R"
 
     def __init__(
         self,
-        modes: Sequence[int],
-        theta: float | Sequence[float] = 0.0,
+        mode: int,
+        theta: float = 0.0,
         theta_trainable: bool = False,
         theta_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
         super().__init__(name="Rgate")
-        (thetas,) = list(reshape_params(len(modes), theta=theta))
-        self.parameters.add_parameter(
-            make_parameter(theta_trainable, thetas, "theta", theta_bounds)
-        )
+        self.parameters.add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
         self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=(mode,),
+            modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.rotation_gate_Abc, theta=self.parameters.theta
             ),

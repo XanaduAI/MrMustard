@@ -18,10 +18,8 @@ This module contains the defintion of the ket class ``Ket``.
 
 from __future__ import annotations
 
-from typing import Collection
-from itertools import product
+from typing import Collection, Sequence
 import warnings
-import numpy as np
 from IPython.display import display
 
 from mrmustard import math, settings, widgets
@@ -57,7 +55,7 @@ class Ket(State):
     short_name = "Ket"
 
     @property
-    def is_physical(self) -> bool:
+    def is_physical(self) -> bool:  # TODO: revisit this
         r"""
         Whether the ket object is a physical one.
 
@@ -80,9 +78,9 @@ class Ket(State):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-
-        A = self.ansatz.A[0]
-
+        if self.ansatz.num_derived_vars > 0:
+            raise ValueError("Physicality conditions are not implemented for derived variables.")
+        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
         return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
             self.probability, 1, settings.ATOL
         )
@@ -160,9 +158,11 @@ class Ket(State):
         shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
             p = purity(cov)
-            if p < 1.0 - atol_purity:
-                msg = f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity})."
-                raise ValueError(msg)
+            math.error_if(
+                p,
+                p < 1.0 - atol_purity,
+                f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity}).",
+            )
         return Ket.from_ansatz(
             modes,
             coeff * PolyExpAnsatz.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
@@ -220,7 +220,7 @@ class Ket(State):
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:
+    ) -> tuple[int, ...]:  # TODO: revisit
         r"""
         A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -249,11 +249,15 @@ class Ket(State):
         # experimental:
         if self.ansatz.batch_size == 1:
             try:  # fock
-                shape = self.ansatz.array.shape[1:]
+                shape = self.ansatz.core_shape
             except AttributeError:  # bargmann
-                if self.ansatz.polynomial_shape[0] == 0:
+                if self.ansatz.num_derived_vars == 0:
                     ansatz = self.ansatz.conj & self.ansatz
-                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    A, b, c = (
+                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
+                        if ansatz.batch_shape != ()  # tensorflow
+                        else ansatz.triple
+                    )
                     ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
@@ -283,8 +287,8 @@ class Ket(State):
             >>> from mrmustard.lab_dev import Vacuum, DM
             >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
-        dm = self @ self.adjoint
-        ret = DM(dm.representation, self.name)
+        repr = self.representation.contract(self.adjoint.representation, mode="zip")
+        ret = DM(repr, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 
@@ -337,15 +341,17 @@ class Ket(State):
 
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
-            result = self @ operator.dual
-            result @= result.adjoint
+            result = self.contract(operator.dual)
+            result = result.contract(result.adjoint)
             result >>= TraceOut(leftover_modes)
 
         elif op_type is OperatorType.DM_LIKE:
-            result = (self.adjoint @ (self @ operator.dual)) >> TraceOut(leftover_modes)
+            result = (self.adjoint.contract(self.contract(operator.dual))) >> TraceOut(
+                leftover_modes
+            )
 
         else:
-            result = (self @ operator) >> self.dual
+            result = (self.contract(operator)) >> self.dual
 
         return result
 
@@ -437,26 +443,18 @@ class Ket(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=True, is_fock=is_fock))
 
-    def __getitem__(self, modes: int | Collection[int]) -> State:
+    def __getitem__(self, idx: int | Sequence[int]) -> State:
         r"""
-        Reduced density matrix obtained by tracing out all the modes except those in the given
-        ``modes``. Note that the result is returned with modes in increasing order.
+        Reduced density matrix obtained by tracing out all the modes except those in
+        ``idx``. Note that the result is returned with modes in increasing order.
+
+        Args:
+            idx: The modes to keep.
+
+        Returns:
+            A ``DM`` object with the remaining modes.
         """
-        if isinstance(modes, int):
-            modes = [modes]
-        modes = set(modes)
-
-        if not modes.issubset(self.modes):
-            raise ValueError(f"Expected a subset of `{self.modes}, found `{list(modes)}`.")
-
-        if self._parameters:
-            # if ``self`` has a parameter set, it is a built-in state, and we slice the
-            # parameters
-            return self._getitem_builtin(modes)
-
-        # if ``self`` has no parameter set, it is not a built-in state.
-        # we must turn it into a density matrix and slice the representation
-        return self.dm()[modes]
+        return self.dm()[idx]
 
     def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
         r"""

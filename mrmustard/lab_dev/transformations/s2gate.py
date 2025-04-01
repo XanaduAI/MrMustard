@@ -18,8 +18,6 @@ The class representing a two-mode squeezing gate.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
@@ -32,29 +30,24 @@ class S2gate(Unitary):
     r"""
     The two-mode squeezing gate.
 
-    It applies to a single pair of modes.
-
     .. code-block ::
 
         >>> import numpy as np
         >>> from mrmustard.lab_dev import S2gate
 
-        >>> unitary = S2gate(modes=[1, 2], r=1)
-        >>> assert unitary.modes == [1, 2]
-        >>> assert np.allclose(unitary.parameters.r.value, 1)
-        >>> assert np.allclose(unitary.parameters.phi.value, 0.0)
+        >>> unitary = S2gate(modes=(1, 2), r=1)
+        >>> assert unitary.modes == (1, 2)
+        >>> assert unitary.parameters.r.value == 1
+        >>> assert unitary.parameters.phi.value == 0.0
 
     Args:
-        modes: The modes this gate is applied to.
+        modes: The pair of modes of the two-mode squeezing gate.
         r: The squeezing amplitude.
-        r_bounds: The bounds for the squeezing amplitude.
-        r_trainable: Whether r is a trainable variable.
         phi: The phase angle.
-        phi_bounds: The bounds for the phase angle.
-        phi_trainable: Whether phi is a trainable variable.
-
-    Raises:
-        ValueError: If ``modes`` is not a pair of modes.
+        r_trainable: Whether ``r`` is trainable.
+        phi_trainable: Whether ``phi`` is trainable.
+        r_bounds: The bounds for ``r``.
+        phi_bounds: The bounds for ``phi``.
 
     .. details::
 
@@ -73,7 +66,7 @@ class S2gate(Unitary):
 
     def __init__(
         self,
-        modes: Sequence[int],
+        modes: tuple[int, int],
         r: float = 0.0,
         phi: float = 0.0,
         r_trainable: bool = False,
@@ -81,9 +74,6 @@ class S2gate(Unitary):
         r_bounds: tuple[float | None, float | None] = (0, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        if len(modes) != 2:
-            raise ValueError(f"Expected a pair of modes, found {modes}.")
-
         super().__init__(name="S2gate")
         self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))

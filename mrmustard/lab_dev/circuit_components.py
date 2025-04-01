@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from inspect import signature
 from pydoc import locate
-from typing import Any, Sequence
+from typing import Any, Sequence, Literal
 import numbers
 from functools import cached_property
 
@@ -36,14 +36,14 @@ from mrmustard.utils.typing import (
     ComplexTensor,
     ComplexMatrix,
     ComplexVector,
-    Vector,
+    RealVector,
     Batch,
 )
-from mrmustard.physics.ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
-from mrmustard.physics.fock_utils import quadrature_basis
 from mrmustard.math.parameter_set import ParameterSet
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
+from mrmustard.physics.fock_utils import oscillator_eigenstate
 from mrmustard.physics.representations import Representation
+from mrmustard.physics.wires import Wires
 
 __all__ = ["CircuitComponent"]
 
@@ -90,6 +90,8 @@ class CircuitComponent:
         # handle modes parameter
         if "modes" in params:
             serializable["modes"] = tuple(self.wires.modes)
+        elif "mode" in params:
+            serializable["mode"] = tuple(self.wires.modes)[0]
         elif "modes_out" in params and "modes_in" in params:
             serializable["modes_out"] = tuple(self.wires.output.modes)
             serializable["modes_in"] = tuple(self.wires.input.modes)
@@ -157,7 +159,7 @@ class CircuitComponent:
         in the `.wires` attribute.
         """
         try:  # to read it from array ansatz
-            return list(self.ansatz.array.shape[1:])
+            return list(self.ansatz.array.shape[self.ansatz.batch_dims :])
         except AttributeError:  # bargmann
             return [None] * len(self.wires)
 
@@ -166,7 +168,7 @@ class CircuitComponent:
         r"""
         The sorted list of modes of this component.
         """
-        return sorted(self.wires.modes)
+        return tuple(sorted(self.wires.modes))
 
     @property
     def name(self) -> str:
@@ -278,7 +280,7 @@ class CircuitComponent:
         QtoB_ik = BtoQ(modes_in_ket, phi).inverse().dual  # input ket
         # NOTE: the representation is Bargmann here because we use the inverse of BtoQ on the B side
         QQQQ = CircuitComponent(Representation(PolyExpAnsatz(*triple), wires))
-        BBBB = QtoB_ib @ (QtoB_ik @ QQQQ @ QtoB_ok) @ QtoB_ob
+        BBBB = QtoB_ib.contract(QtoB_ik.contract(QQQQ).contract(QtoB_ok)).contract(QtoB_ob)
         return cls._from_attributes(Representation(BBBB.ansatz, wires), name)
 
     def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
@@ -303,7 +305,9 @@ class CircuitComponent:
         if isinstance(self.ansatz, ArrayAnsatz):
             object_to_convert = self.to_bargmann()
 
-        QQQQ = BtoQ_ib @ (BtoQ_ik @ object_to_convert @ BtoQ_ok) @ BtoQ_ob
+        QQQQ = BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
+            BtoQ_ob
+        )
         return QQQQ
 
     def quadrature_triple(
@@ -318,31 +322,68 @@ class CircuitComponent:
         Returns:
             A,b,c triple of the quadrature representation
         """
-        return self.to_quadrature(phi=phi).ansatz.data
+        return self.to_quadrature(phi=phi).ansatz.triple
 
-    def quadrature(self, quad: Batch[Vector], phi: float = 0.0) -> ComplexTensor:
+    def quadrature(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
         r"""
         The (discretized) quadrature basis representation of the circuit component.
+        This method considers the same basis in all the wires. For more fine-grained control,
+        use the BtoQ transformation or a combination of transformations.
+
         Args:
             quad: discretized quadrature points to evaluate over in the
-                quadrature representation
+                quadrature representation. One vector of points per wire.
             phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
                     ``phi=pi/2`` to the p quadrature. The default value is ``0``.
         Returns:
             A circuit component with the given quadrature representation.
         """
-
         if isinstance(self.ansatz, ArrayAnsatz):
-            fock_arrays = self.ansatz.array
-            # Find where all the bras and kets are so they can be conjugated appropriately
             conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
-            quad_basis = math.sum(
-                [quadrature_basis(array, quad, conjugates, phi) for array in fock_arrays], axis=0
-            )
-            return quad_basis
+            dims = self.ansatz.core_dims
 
-        QQQQ = self.to_quadrature(phi=phi)
-        return QQQQ.ansatz(quad)
+            if len(quad) != dims:
+                raise ValueError(
+                    f"The fock array has dimension {dims} whereas ``quad`` has {len(quad)}."
+                )
+            # construct quadrature basis vectors
+            shapes = self.ansatz.core_shape
+            quad_basis_vecs = []
+            for dim in range(dims):
+                q_to_n = oscillator_eigenstate(quad[dim], shapes[dim])
+                if not math.allclose(phi, 0.0):
+                    theta = -math.arange(shapes[dim]) * phi
+                    Ur = math.make_complex(math.cos(theta), math.sin(theta))
+                    q_to_n = math.einsum("n,nq->nq", Ur, q_to_n)
+                if conjugates[dim]:
+                    q_to_n = math.conj(q_to_n)
+                quad_basis_vecs += [math.cast(q_to_n, "complex128")]
+
+            # Convert each dimension to quadrature
+            fock_string = "".join([chr(97 + self.n_modes + dim) for dim in range(dims)])
+            q_string = "".join(
+                [f"{fock_string[idx]}{chr(97 + wire.mode)}," for idx, wire in enumerate(self.wires)]
+            )[:-1]
+            out_string = "".join([chr(97 + mode) for mode in self.modes])
+            ret = np.einsum(
+                "..." + fock_string + "," + q_string + "->" + out_string + "...",
+                self.ansatz.array,
+                *quad_basis_vecs,
+                optimize=True,
+            )
+        else:
+            batch_str = (
+                "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1]
+                + "->"
+                + "".join([chr(97 + mode) for mode in self.modes])
+            )
+            ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
+        size = int(
+            math.prod(
+                ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape != () else ret.shape
+            )
+        )  # tensorflow
+        return math.reshape(ret, (size,) + self.ansatz.batch_shape)
 
     @classmethod
     def _from_attributes(
@@ -360,7 +401,7 @@ class CircuitComponent:
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Ket
-            >>> cat = Coherent(modes=[0], x=2.0) + Coherent(modes=[0], x=-2.0)
+            >>> cat = Coherent(mode=0, x=2.0) + Coherent(mode=0, x=-2.0)
             >>> assert isinstance(cat, Ket)
 
         Args:
@@ -387,7 +428,7 @@ class CircuitComponent:
         return tuple(s or settings.AUTOSHAPE_MAX for s in self.manual_shape)
 
     def bargmann_triple(
-        self, batched: bool = False
+        self,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
         The Bargmann parametrization of this component, if available.
@@ -399,14 +440,46 @@ class CircuitComponent:
         .. code-block:: pycon
 
             >>> from mrmustard.lab_dev import CircuitComponent, Coherent
-            >>> coh = Coherent(modes=[0], x=1.0)
-            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=[0])
+            >>> coh = Coherent(mode=0, x=1.0)
+            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=(0,))
             >>> assert isinstance(coh_cc, CircuitComponent)
             >>> assert coh == coh_cc  # equality looks at representation and wires
         """
-        return self._representation.bargmann_triple(batched)
+        return self._representation.bargmann_triple()
 
-    def fock_array(self, shape: int | Sequence[int] | None = None, batched=False) -> ComplexTensor:
+    def contract(
+        self, other: CircuitComponent | Scalar, mode: Literal["zip", "kron"] = "kron"
+    ) -> CircuitComponent:
+        r"""
+        Contracts ``self`` and ``other`` without adding adjoints.
+        It allows for contracting components exactly as specified.
+
+        For example, a coherent state can be input to an attenuator, but
+        the attenuator has two inputs: on the ket and the bra side.
+        The ``>>`` operator would automatically add the adjoint of the coherent
+        state on the bra side of the input of the attenuator, but the ``@`` operator
+        instead does not:
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import Coherent, Attenuator
+            >>> coh = Coherent(0, 1.0)
+            >>> att = Attenuator(0, 0.5)
+            >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
+        """
+        if isinstance(other, (numbers.Number, np.ndarray)):
+            return self * other
+
+        if type(self.ansatz) is type(other.ansatz):
+            self_rep = self.representation
+            other_rep = other.representation
+        else:
+            self_rep = self.to_fock().representation
+            other_rep = other.to_fock().representation
+
+        result = self_rep.contract(other_rep, mode=mode)
+        return CircuitComponent(result, None)
+
+    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -415,14 +488,12 @@ class CircuitComponent:
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is estimated.
-            batched: Whether the returned representation is batched or not. If ``False`` (default)
-                it will squeeze the batch dimension if it is 1.
         Returns:
             array: The Fock representation of this component.
         """
-        return self._representation.fock_array(shape or self.auto_shape(), batched)
+        return self._representation.fock_array(shape or self.auto_shape())
 
-    def on(self, modes: Sequence[int]) -> CircuitComponent:
+    def on(self, modes: int | Sequence[int]) -> CircuitComponent:
         r"""
         Creates a light copy of this component that acts on the given ``modes`` instead of the
         original modes. It only works if the component's wires are all defined on the same modes.
@@ -441,6 +512,7 @@ class CircuitComponent:
             ValueError: If the component's wires are not all defined on the same modes or if the
             length of the given modes is different from the length of the original modes.
         """
+        modes = (modes,) if isinstance(modes, int) else modes
         ob = self.wires.output.bra.modes
         ib = self.wires.input.bra.modes
         ok = self.wires.output.ket.modes
@@ -471,7 +543,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
-            >>> d = Dgate([1], x=0.1, y=0.1)
+            >>> d = Dgate(1, x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
             >>> d_bargmann = d_fock.to_bargmann()
 
@@ -481,7 +553,7 @@ class CircuitComponent:
         """
         rep = self._representation.to_bargmann()
         try:
-            ret = self._getitem_builtin(self.modes)
+            ret = self.__class__(0, **self.parameters.to_dict())
             ret._representation = rep
         except TypeError:
             ret = self._from_attributes(rep, self.name)
@@ -498,7 +570,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Dgate
             >>> from mrmustard.physics.ansatz import ArrayAnsatz
 
-            >>> d = Dgate([1], x=0.1, y=0.1)
+            >>> d = Dgate(1, x=0.1, y=0.1)
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
@@ -511,27 +583,14 @@ class CircuitComponent:
         """
         rep = self._representation.to_fock(shape or self.auto_shape())
         try:
-            ret = self._getitem_builtin(self.modes)
+            ret = self.__class__(0, **self.parameters.to_dict())
             ret._representation = rep
+            ret._name = self.name
         except TypeError:
             ret = self._from_attributes(rep, self.name)
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
         return ret
-
-    def _getitem_builtin(self, modes: set[int]):
-        r"""
-        A convenience function to slice built-in circuit components (CCs).
-
-        Built-in CCs come with a parameter set. To slice them, we simply slice the parameter
-        set, and then used the sliced parameter set to re-initialize them.
-
-        This approach avoids computing the representation, which may be expensive. Additionally,
-        it allows returning trainable CCs.
-        """
-        items = [i for i, m in enumerate(self.modes) if m in modes]
-        kwargs = self.parameters[items].to_dict()
-        return self.__class__(modes=modes, **kwargs)
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
         r"""
@@ -575,28 +634,6 @@ class CircuitComponent:
         if isinstance(other, CircuitComponent):
             return self._representation == other._representation
         return False
-
-    def __matmul__(self, other: CircuitComponent | Scalar) -> CircuitComponent:
-        r"""
-        Contracts ``self`` and ``other`` without adding adjoints.
-        It allows for contracting components exactly as specified.
-
-        For example, a coherent state can be input to an attenuator, but
-        the attenuator has two inputs: on the ket and the bra side.
-        The ``>>`` operator would automatically add the adjoint of the coherent
-        state on the bra side of the input of the attenuator, but the ``@`` operator
-        instead does not:
-
-        .. code-block::
-            >>> from mrmustard.lab_dev import Coherent, Attenuator
-            >>> coh = Coherent([0], 1.0)
-            >>> att = Attenuator([0], 0.5)
-            >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
-        """
-        if isinstance(other, (numbers.Number, np.ndarray)):
-            return self * other
-        result = self._representation @ other._representation
-        return CircuitComponent(result, None)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -657,8 +694,8 @@ class CircuitComponent:
             >>> import numpy as np
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
-            >>> assert isinstance(Coherent([0], 1.0) >> Attenuator([0], 0.5), DM)
-            >>> assert isinstance(Coherent([0], 1.0) >> Coherent([0], 1.0).dual, complex)
+            >>> assert isinstance(Coherent(0, 1.0) >> Attenuator(0, 0.5), DM)
+            >>> assert isinstance(Coherent(0, 1.0) >> Coherent(0, 1.0).dual, complex)
         """
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)
@@ -682,11 +719,11 @@ class CircuitComponent:
         other_needs_ket = (s_b and s_k) and (not o_k and o_b)
 
         if only_ket or only_bra or both_sides:
-            ret = self @ other
+            ret = self.contract(other)
         elif self_needs_bra or self_needs_ket:
-            ret = self.adjoint @ (self @ other)
+            ret = self.adjoint.contract(self.contract(other))
         elif other_needs_bra or other_needs_ket:
-            ret = (self @ other.adjoint) @ other
+            ret = self.contract(other.adjoint).contract(other)
         else:
             msg = f"``>>`` not supported between {self} and {other} because it's not clear "
             msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."

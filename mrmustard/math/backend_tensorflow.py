@@ -54,6 +54,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     """
 
     int32 = tf.int32
+    int64 = tf.int64
     float32 = tf.float32
     float64 = tf.float64
     complex64 = tf.complex64
@@ -69,12 +70,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
 
-    def allclose(self, array1: np.array, array2: np.array, atol: float) -> bool:
-        array1 = self.astensor(array1)
-        array2 = self.astensor(array2)
-        if array1.shape != array2.shape:
-            raise ValueError("Cannot compare arrays of different shapes.")
-        return tf.experimental.numpy.allclose(array1, array2, atol=atol)
+    def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
+        return tf.experimental.numpy.allclose(array1, array2, atol=atol, rtol=rtol)
 
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
@@ -94,17 +91,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         dtype = dtype or np.array(array).dtype.name
         return tf.cast(tf.convert_to_tensor(array, dtype_hint=dtype), dtype)
 
-    def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_1d(self.cast(self.astensor(array), dtype))
-
-    def atleast_2d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return tf.experimental.numpy.atleast_2d(self.cast(self.astensor(array), dtype))
-
-    def atleast_3d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        array = self.atleast_2d(self.atleast_1d(self.cast(self.astensor(array), dtype)))
-        if len(array.shape) == 2:
-            array = self.expand_dims(array, 0)
-        return array
+    def atleast_nd(self, array: tf.Tensor, n: int, dtype=None) -> tf.Tensor:
+        return tf.experimental.numpy.array(array, ndmin=n, dtype=dtype)
 
     def block_diag(self, mat1: tf.Tensor, mat2: tf.Tensor) -> tf.Tensor:
         Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
@@ -117,6 +105,24 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def block(self, blocks: list[list[tf.Tensor]], axes=(-2, -1)) -> tf.Tensor:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
+
+    def broadcast_to(self, array: tf.Tensor, shape: tuple[int]) -> tf.Tensor:
+        return tf.broadcast_to(array, shape)
+
+    def broadcast_arrays(self, *arrays: list[tf.Tensor]) -> list[tf.Tensor]:
+        # TensorFlow doesn't have a direct equivalent to numpy's broadcast_arrays
+        # We need to implement it manually
+        if not arrays:
+            return []
+
+        # Get the broadcasted shape
+        shapes = [tf.shape(arr) for arr in arrays]
+        broadcasted_shape = shapes[0]
+        for shape in shapes[1:]:
+            broadcasted_shape = tf.broadcast_dynamic_shape(broadcasted_shape, shape)
+
+        # Broadcast each array to the common shape
+        return [tf.broadcast_to(arr, broadcasted_shape) for arr in arrays]
 
     def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         return tf.boolean_mask(tensor, mask)
@@ -178,6 +184,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def diag_part(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag_part(array, k=k)
 
+    @Autocast()
     def einsum(self, string: str, *tensors) -> tf.Tensor:
         if isinstance(string, str):
             return tf.einsum(string, *tensors)
@@ -203,8 +210,22 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return isinstance(value, (tf.Tensor, tf.Variable))
 
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
-        indices = tf.convert_to_tensor(indices, dtype=tf.int32)
+        indices = tf.cast(tf.convert_to_tensor(indices), dtype=tf.int32)
         return tf.gather(array, indices, axis=axis)
+
+    def conditional(
+        self, cond: tf.Tensor, true_fn: Callable, false_fn: Callable, *args
+    ) -> tf.Tensor:
+        if tf.reduce_all(cond):
+            return true_fn(*args)
+        else:
+            return false_fn(*args)
+
+    def error_if(
+        self, array: tf.Tensor, condition: tf.Tensor, msg: str
+    ):  # pylint: disable=unused-argument
+        if tf.reduce_any(condition):
+            raise ValueError(msg)
 
     def imag(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.imag(array)
@@ -276,6 +297,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def ones_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.ones_like(array)
 
+    def infinity_like(self, array: np.ndarray) -> np.ndarray:
+        return tf.fill(array.shape, np.inf)
+
     @Autocast()
     def outer(self, array1: tf.Tensor, array2: tf.Tensor) -> tf.Tensor:
         return tf.tensordot(array1, array2, [[], []])
@@ -335,6 +359,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
+
+    def stack(self, arrays: tf.Tensor, axis: int = 0) -> tf.Tensor:
+        return tf.stack(arrays, axis=axis)
 
     def sum(self, array: tf.Tensor, axis: int | tuple[int] | None = None):
         return tf.reduce_sum(array, axis)
@@ -621,17 +648,20 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return poly0
 
     def hermite_renormalized_1leftoverMode(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self,
+        A: tf.Tensor,
+        b: tf.Tensor,
+        c: tf.Tensor,
+        output_cutoff: int,
+        pnr_cutoffs: tuple[int, ...],
     ) -> tf.Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
+        A, b = self.reorder_AB_bargmann(A, b)
+        cutoffs = (output_cutoff + 1,) + tuple(p + 1 for p in pnr_cutoffs)
+        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, b, c, cutoffs=cutoffs)
 
     @tf.custom_gradient
     def hermite_renormalized_1leftoverMode_reorderedAB(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int, ...]
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -651,7 +681,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             The renormalized Hermite polynomial.
         """
         A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-
         poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
             hermite_multidimensional_1leftoverMode,
             [A, B, C.item(), cutoffs],

@@ -17,12 +17,12 @@ The class representing a Phase noise channel.
 """
 
 from __future__ import annotations
-from typing import Sequence
+
+import numpy as np
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.representations import Representation
 from mrmustard import math
-import numpy as np
 from .base import Channel
 from ..utils import make_parameter
 
@@ -37,8 +37,10 @@ class PhaseNoise(Channel):
     is assumed to be a Gaussian with mean zero, and standard deviation `phase_stdev`.
 
     Args:
-        modes: The modes the channel is applied to
+        mode: The mode the channel is applied to.
         phase_stdev: The standard deviation of the random phase noise.
+        phase_stdev_trainable: Whether ``phase_stdev`` is trainable.
+        phase_stdev_bounds: The bounds for ``phase_stdev``.
 
     .. details::
         The Fock representation is connected to the Fourier coefficients of the distribution.
@@ -48,8 +50,8 @@ class PhaseNoise(Channel):
 
     def __init__(
         self,
-        modes: Sequence[int],
-        phase_stdev: float | Sequence[float],
+        mode: int,
+        phase_stdev: float,
         phase_stdev_trainable: bool = False,
         phase_stdev_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
@@ -58,7 +60,7 @@ class PhaseNoise(Channel):
             make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds)
         )
         self._representation = self.from_ansatz(
-            modes_in=modes, modes_out=modes, ansatz=None
+            modes_in=(mode,), modes_out=(mode,), ansatz=None
         ).representation
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -73,9 +75,10 @@ class PhaseNoise(Channel):
         """
 
         if not other.wires.bra or not other.wires.ket:
-            other = other @ other.adjoint
-        array = math.asnumpy(other.fock_array())
-        mode_indices = np.indices(array.shape)
+            other = other.contract(other.adjoint)
+        other = other.to_fock()
+        array = other.fock_array()
+        mode_indices = np.indices(other.ansatz.core_shape)
         for mode in self.modes:
             phase_factors = math.exp(
                 -0.5
@@ -83,4 +86,7 @@ class PhaseNoise(Channel):
                 * self.parameters.phase_stdev.value**2
             )
             array *= phase_factors
-        return CircuitComponent(Representation(ArrayAnsatz(array, False), other.wires), self.name)
+        return CircuitComponent(
+            Representation(ArrayAnsatz(array, batch_dims=other.ansatz.batch_dims), other.wires),
+            self.name,
+        )

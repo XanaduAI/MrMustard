@@ -18,8 +18,6 @@ The class representing a Bargmann eigenstate.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .ket import Ket
@@ -45,8 +43,8 @@ class BargmannEigenstate(Ket):
 
         >>> from mrmustard.lab_dev import BargmannEigenstate
 
-        >>> state = BargmannEigenstate([1, 2], [0.1, 0.5j])
-        >>> assert state.modes == [1, 2]
+        >>> state = BargmannEigenstate(1, 0.1 + 0.5j)
+        >>> assert state.modes == (1,)
 
     .. details::
 
@@ -61,8 +59,8 @@ class BargmannEigenstate(Ket):
 
     def __init__(
         self,
-        modes: Sequence[int],
-        alpha: float | Sequence[float] = 0.0,
+        mode: int,
+        alpha: float = 0.0,
         alpha_trainable: bool = False,
         alpha_bounds: tuple[float | None, float | None] = (None, None),
     ):
@@ -70,7 +68,7 @@ class BargmannEigenstate(Ket):
 
         self.parameters.add_parameter(make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds))
         self._representation = self.from_ansatz(
-            modes=modes,
+            modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 fn=triples.bargmann_eigenstate_Abc, x=self.parameters.alpha
             ),

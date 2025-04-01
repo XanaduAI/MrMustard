@@ -18,12 +18,10 @@ The class representing a noisy amplifier channel.
 
 from __future__ import annotations
 
-from typing import Sequence
-
 from .base import Channel
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
-from ..utils import make_parameter, reshape_params
+from ..utils import make_parameter
 
 __all__ = ["Amplifier"]
 
@@ -32,25 +30,22 @@ class Amplifier(Channel):
     r"""
     The noisy amplifier channel.
 
-    If ``gain`` is an iterable, its length must be equal to `1` or `N`. If it length is equal to `1`,
-    all the modes share the same gain.
-
     .. code-block ::
 
         >>> import numpy as np
         >>> from mrmustard.lab_dev import Amplifier, Coherent
         >>> from mrmustard import settings
 
-        >>> amp = Amplifier([0], gain=4)
-        >>> coh = Coherent([0], x=1.0, y=2.0)
+        >>> amp = Amplifier(0, gain=4)
+        >>> coh = Coherent(0, x=1.0, y=2.0)
         >>> _, mu, _ = (coh >> amp).phase_space(0)
-        >>> assert np.allclose(mu[0]*np.sqrt(2/settings.HBAR), np.array([4.0, 8.0]))
+        >>> assert np.allclose(mu*np.sqrt(2/settings.HBAR), np.array([4.0, 8.0]))
 
     Args:
-        modes: The modes this gate is applied to.
+        mode: The mode this gate is applied to.
         gain: The gain.
-        gain_trainable: Whether the gain is a trainable variable.
-        gain_bounds: The bounds for the gain.
+        gain_trainable: Whether ``gain`` is trainable.
+        gain_bounds: The bounds for ``gain``.
 
     .. details::
 
@@ -79,24 +74,23 @@ class Amplifier(Channel):
 
     def __init__(
         self,
-        modes: Sequence[int],
-        gain: float | Sequence[float] | None = 1.0,
+        mode: int,
+        gain: float = 1.0,
         gain_trainable: bool = False,
         gain_bounds: tuple[float | None, float | None] = (1.0, None),
     ):
         super().__init__(name="Amp~")
-        (gs,) = list(reshape_params(len(modes), gain=gain))
         self.parameters.add_parameter(
             make_parameter(
                 gain_trainable,
-                gs,
+                gain,
                 "gain",
                 gain_bounds,
                 None,
             )
         )
         self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=(mode,),
+            modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain),
         ).representation

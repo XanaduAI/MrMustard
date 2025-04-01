@@ -21,5 +21,6 @@ doc/code/api/*
 coverage.xml
 .coverage
 /.serialize_cache/
+notebooks/*
 
 .venv*

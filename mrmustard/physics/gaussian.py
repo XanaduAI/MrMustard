@@ -450,8 +450,8 @@ def loss_XYd(transmissivity: Scalar | Vector, nbar: Scalar | Vector) -> tuple[Ma
         Tuple[Matrix, Matrix, None]: the ``X``, ``Y`` matrices and the ``d`` vector for the noisy
         loss channel
     """
-    if math.any(transmissivity < 0) or math.any(transmissivity > 1):
-        raise ValueError("transmissivity must be between 0 and 1")
+    math.error_if(transmissivity, math.any(transmissivity < 0), "transmissivity must be >= 0")
+    math.error_if(transmissivity, math.any(transmissivity > 1), "transmissivity must be <= 1")
     x = math.sqrt(transmissivity)
     X = math.diag(math.concat([x, x], axis=0))
     y = (1 - transmissivity) * (2 * nbar + 1) * settings.HBAR / 2
@@ -480,8 +480,7 @@ def amp_XYd(gain: Scalar | Vector, nbar: Scalar | Vector) -> Matrix:
         Tuple[Matrix, Vector]: the ``X``, ``Y`` matrices and the ``d`` vector for the noisy
         amplifier channel.
     """
-    if math.any(gain < 1):
-        raise ValueError("Gain must be larger than 1")
+    math.error_if(gain, math.any(gain < 1), "Gain must be larger than 1")
     x = math.sqrt(gain)
     X = math.diag(math.concat([x, x], axis=0))
     y = (gain - 1) * (2 * nbar + 1) * settings.HBAR / 2
@@ -582,7 +581,10 @@ def general_dyne(
     # covariances are divided by 2 to match tensorflow and MrMustard conventions
     # (MrMustard uses Serafini convention where `sigma_MM = 2 sigma_TF`)
     if proj_means is None:
-        pdf = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(reduced_cov / 2))
+        pdf = math.MultivariateNormalTriL(
+            loc=math.cast(b, "float64"),
+            scale_tril=math.cast(math.cholesky(reduced_cov / 2), "float64"),
+        )
         outcome = (
             pdf.sample(dtype=cov.dtype) if proj_means is None else math.cast(proj_means, cov.dtype)
         )
