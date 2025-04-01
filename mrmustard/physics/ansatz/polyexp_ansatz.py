@@ -114,16 +114,17 @@ class PolyExpAnsatz(Ansatz):
         b: ComplexVector | Batch[ComplexVector] | None,
         c: ComplexTensor | Batch[ComplexTensor] | None,
         name: str = "",
+        lin_sup: int | None = None,
     ):
         super().__init__()
         self._A = math.astensor(A) if A is not None else None
         self._b = math.astensor(b) if b is not None else None
         self._c = math.astensor(c) if c is not None else None
-
         verify_batch_triple(self._A, self._b, self._c)
         self._batch_shape = self._A.shape[:-2] if A is not None else ()
 
         self.name = name
+        self._lin_sup = lin_sup
         self._simplified = False
         self._fn = None
         self._fn_kwargs = {}
@@ -720,13 +721,12 @@ class PolyExpAnsatz(Ansatz):
             math.atleast_nd(c_self, n_derived_vars + 1),
             math.atleast_nd(c_other, n_derived_vars + 1),
         )
-        ret = PolyExpAnsatz(
+        return PolyExpAnsatz(
             combined_matrices,
             combined_vectors,
             combined_arrays,
+            lin_sup=-1,
         )
-        ret._lin_sup = -1
-        return ret
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
