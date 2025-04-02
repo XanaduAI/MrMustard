@@ -27,6 +27,7 @@ from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
+from mrmustard.physics.utils import generate_batch_str
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
@@ -207,7 +208,26 @@ class Ket(State):
         r"""
         The ``DM`` object obtained from this ``Ket``.
         """
-        repr = self.representation.contract(self.adjoint.representation, mode="zip")
+
+        if self.ansatz._lin_sup is not None:
+            str1 = generate_batch_str(self.ansatz.batch_shape)
+            str2 = str1[:-1] + chr(ord(str1[-1]) + 1)
+            mode = f"{str1},{str2}->{str1}{str2[self.ansatz._lin_sup]}"
+        else:
+            mode = "zip"
+        repr = self.representation.contract(self.adjoint.representation, mode=mode)
+
+        # if lin_sup then reshape to (batch, 2 * lin_sup)
+        if self.ansatz._lin_sup is not None:
+            A, b, c = repr.ansatz.triple
+            batch_shape = self.ansatz.batch_shape[:-1]  # TODO: assume first batch dim is lin_sup
+
+            new_A = math.reshape(A, batch_shape + (-1,) + A.shape[-2:])
+            new_b = math.reshape(b, batch_shape + (-1,) + b.shape[-1:])
+            new_c = math.reshape(c, batch_shape + (-1,) + self.ansatz.shape_derived_vars)
+            new_ansatz = PolyExpAnsatz(new_A, new_b, new_c, lin_sup=-1)
+            repr._ansatz = new_ansatz
+
         ret = DM(repr, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
