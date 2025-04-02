@@ -437,11 +437,7 @@ class State(CircuitComponent):
 
         shape = [max(min_shape, d) for d in self.auto_shape()]
         state = self.to_fock(tuple(shape)).dm()
-        dm = (
-            math.sum(state.ansatz.array, axis=0)
-            if state.ansatz.batch_dims == 1
-            else state.ansatz.array
-        )
+        dm = math.sum(state.ansatz.array, axis=0) if state._lin_sup else state.ansatz.array
 
         x, prob_x = quadrature_distribution(dm)
         p, prob_p = quadrature_distribution(dm, np.pi / 2)
@@ -558,11 +554,7 @@ class State(CircuitComponent):
             raise NotImplementedError("3D visualization not implemented for batched states.")
         shape = [max(min_shape, d) for d in self.auto_shape()]
         state = self.to_fock(tuple(shape)).dm()
-        dm = (
-            math.sum(state.ansatz.array, axis=0)
-            if state.ansatz.batch_dims == 1
-            else state.ansatz.array
-        )
+        dm = math.sum(state.ansatz.array, axis=0) if state._lin_sup else state.ansatz.array
 
         xvec = np.linspace(*xbounds, resolution)
         pvec = np.linspace(*pbounds, resolution)
@@ -637,11 +629,7 @@ class State(CircuitComponent):
         if self.ansatz.batch_dims > 1:
             raise NotImplementedError("DM visualization not implemented for batched states.")
         state = self.to_fock(cutoff).dm()
-        dm = (
-            math.sum(state.ansatz.array, axis=0)
-            if state.ansatz.batch_dims == 1
-            else state.ansatz.array
-        )
+        dm = math.sum(state.ansatz.array, axis=0) if state._lin_sup else state.ansatz.array
 
         fig = go.Figure(
             data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
