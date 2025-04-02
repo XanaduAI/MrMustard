@@ -208,7 +208,7 @@ class Ket(State):
         r"""
         The ``DM`` object obtained from this ``Ket``.
         """
-
+        # TODO: assuming first batch dim is lin_sup
         if self.ansatz._lin_sup is not None:
             str1 = generate_batch_str(self.ansatz.batch_shape)
             str2 = str1[:-1] + chr(ord(str1[-1]) + 1)
@@ -217,11 +217,10 @@ class Ket(State):
             mode = "zip"
         repr = self.representation.contract(self.adjoint.representation, mode=mode)
 
-        # if lin_sup then reshape to (batch, 2 * lin_sup)
+        # TODO: assuming first batch dim is lin_sup
         if self.ansatz._lin_sup is not None:
             A, b, c = repr.ansatz.triple
-            batch_shape = self.ansatz.batch_shape[:-1]  # TODO: assume first batch dim is lin_sup
-
+            batch_shape = self.ansatz.batch_shape[:-1]
             new_A = math.reshape(A, batch_shape + (-1,) + A.shape[-2:])
             new_b = math.reshape(b, batch_shape + (-1,) + b.shape[-1:])
             new_c = math.reshape(c, batch_shape + (-1,) + self.ansatz.shape_derived_vars)

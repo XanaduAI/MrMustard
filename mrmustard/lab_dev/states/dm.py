@@ -84,7 +84,11 @@ class DM(State):
         Probability (trace) of this DM, using the batch dimension of the Ansatz
         as a convex combination of states.
         """
-        return math.sum(self._probabilities)
+        return (
+            math.sum(self._probabilities, axis=self.ansatz._lin_sup)
+            if self.ansatz._lin_sup
+            else self._probabilities
+        )
 
     @property
     def purity(self) -> float:
@@ -107,7 +111,7 @@ class DM(State):
         idx_ket = self.wires.output.ket.indices
         idx_bra = self.wires.output.bra.indices
         rep = self.ansatz.trace(idx_ket, idx_bra)
-        return math.real(math.sum(rep.scalar))
+        return math.real(rep.scalar)
 
     @property
     def _purities(self) -> RealVector:
