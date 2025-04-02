@@ -84,11 +84,7 @@ class DM(State):
         Probability (trace) of this DM, using the batch dimension of the Ansatz
         as a convex combination of states.
         """
-        return (
-            math.sum(self._probabilities, axis=self.ansatz._lin_sup)
-            if self.ansatz._lin_sup
-            else self._probabilities
-        )
+        return math.sum(self._probabilities, axis=-1) if self._lin_sup else self._probabilities
 
     @property
     def purity(self) -> float:
@@ -339,7 +335,9 @@ class DM(State):
         r"""
         Returns a rescaled version of the state such that its probability is 1.
         """
-        return self / self.probability
+        ret = self / self.probability
+        ret._lin_sup = self._lin_sup
+        return ret
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:

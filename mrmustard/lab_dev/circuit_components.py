@@ -69,6 +69,7 @@ class CircuitComponent:
         self._name = name
         self._parameters = ParameterSet()
         self._representation = representation or Representation()
+        self._lin_sup = False
 
     def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
         """
@@ -622,7 +623,9 @@ class CircuitComponent:
             raise ValueError("Cannot add components with different wires.")
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(Representation(ansatz, self.wires), name)
+        ret = self._from_attributes(Representation(ansatz, self.wires), name)
+        ret._lin_sup = True
+        return ret
 
     def __eq__(self, other) -> bool:
         r"""

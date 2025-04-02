@@ -31,7 +31,6 @@ from mrmustard.physics.utils import generate_batch_str
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
-    RealVector,
     Scalar,
     Batch,
 )
@@ -76,7 +75,7 @@ class Ket(State):
 
     @property
     def purity(self) -> float:
-        return 1.0
+        return math.ones(self.ansatz.batch_shape[:-1] if self._lin_sup else self.ansatz.batch_shape)
 
     @classmethod
     def from_ansatz(
@@ -209,26 +208,27 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         # TODO: assuming first batch dim is lin_sup
-        if self.ansatz._lin_sup is not None:
+        if self._lin_sup:
             str1 = generate_batch_str(self.ansatz.batch_shape)
             str2 = str1[:-1] + chr(ord(str1[-1]) + 1)
-            mode = f"{str1},{str2}->{str1}{str2[self.ansatz._lin_sup]}"
+            mode = f"{str1},{str2}->{str1}{str2[-1]}"
         else:
             mode = "zip"
         repr = self.representation.contract(self.adjoint.representation, mode=mode)
 
         # TODO: assuming first batch dim is lin_sup
-        if self.ansatz._lin_sup is not None:
+        if self._lin_sup:
             A, b, c = repr.ansatz.triple
             batch_shape = self.ansatz.batch_shape[:-1]
             new_A = math.reshape(A, batch_shape + (-1,) + A.shape[-2:])
             new_b = math.reshape(b, batch_shape + (-1,) + b.shape[-1:])
             new_c = math.reshape(c, batch_shape + (-1,) + self.ansatz.shape_derived_vars)
-            new_ansatz = PolyExpAnsatz(new_A, new_b, new_c, lin_sup=-1)
+            new_ansatz = PolyExpAnsatz(new_A, new_b, new_c)
             repr._ansatz = new_ansatz
 
         ret = DM(repr, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
+        ret._lin_sup = True
         return ret
 
     def expectation(self, operator: CircuitComponent):
@@ -281,7 +281,9 @@ class Ket(State):
         r"""
         Returns a rescaled version of the state such that its probability is 1
         """
-        return self / math.sqrt(self.probability)
+        ret = self / math.sqrt(self.probability)
+        ret._lin_sup = self._lin_sup
+        return ret
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:

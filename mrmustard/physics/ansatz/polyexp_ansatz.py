@@ -114,7 +114,6 @@ class PolyExpAnsatz(Ansatz):
         b: ComplexVector | Batch[ComplexVector] | None,
         c: ComplexTensor | Batch[ComplexTensor] | None,
         name: str = "",
-        lin_sup: int | None = None,
     ):
         super().__init__()
         self._A = math.astensor(A) if A is not None else None
@@ -124,7 +123,6 @@ class PolyExpAnsatz(Ansatz):
         self._batch_shape = self._A.shape[:-2] if A is not None else ()
 
         self.name = name
-        self._lin_sup = lin_sup
         self._simplified = False
         self._fn = None
         self._fn_kwargs = {}
@@ -725,7 +723,6 @@ class PolyExpAnsatz(Ansatz):
             combined_matrices,
             combined_vectors,
             combined_arrays,
-            lin_sup=-1,
         )
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
