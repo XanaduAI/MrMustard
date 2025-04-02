@@ -352,6 +352,15 @@ class State(CircuitComponent):
         else:
             return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
 
+    def normalize(self) -> State:
+        r"""
+        Returns a rescaled version of the state such that its probability is 1.
+        """
+        if self.wires.ket and not self.wires.bra:
+            return self / math.sqrt(self.probability)
+        else:
+            return self / self.probability
+
     def phase_space(self, s: float) -> tuple:
         r"""
         Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means and a scaling coefficient. When a state is a linear superposition of Gaussians, each of cov, means, coeff are arranged in a batch.

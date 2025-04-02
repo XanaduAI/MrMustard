@@ -288,14 +288,6 @@ class Ket(State):
 
         return result
 
-    def normalize(self) -> Ket:
-        r"""
-        Returns a rescaled version of the state such that its probability is 1
-        """
-        ret = self / math.sqrt(self.probability)
-        ret._lin_sup = self._lin_sup
-        return ret
-
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
             print(self)
