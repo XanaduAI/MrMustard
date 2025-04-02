@@ -302,7 +302,7 @@ class Ket(State):
             >>> assert psi == core >> U
 
             >>> A_c, _, _ = core.ansatz.triple
-            >>> assert A_c[-1][0,0] == 0
+            >>> assert A_c[0,0] == 0
         """
         # bringing A to the ordering of our interest
 
@@ -386,7 +386,7 @@ class Ket(State):
             >>> core, t = psi.formal_stellar_decomposition([0])
             >>> A_core, _, _ = core.ansatz.triple
 
-            >>> assert A_core[-1][0,0] == 0
+            >>> assert A_core[0,0] == 0
         """
         other_modes = [m for m in self.modes if m not in core_modes]
         core_indices = self.wires[core_modes].indices

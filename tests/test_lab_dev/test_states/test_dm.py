@@ -455,6 +455,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert rho == core >> phi
         assert phi.is_physical
+        assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3))
 
     def test_stellar_decomposition_2(self):
         rho = DM.random([0, 1])
@@ -473,3 +474,4 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert rho == core >> phi
         assert phi.is_physical
+        assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3)).dm()

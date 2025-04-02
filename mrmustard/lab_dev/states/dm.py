@@ -359,6 +359,7 @@ class DM(State):
             >>> core, phi = rho.formal_stellar_decomposition([0])
             >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
             >>> assert rho == core >> phi
+            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
         """
 
         other_modes = [m for m in self.modes if m not in core_modes]
@@ -430,6 +431,7 @@ class DM(State):
 
             >>> assert isinstance(core, Ket)
             >>> assert rho == core >> phi
+            >>> assert (core >> Vacuum(1).dual) == Vacuum(0)
         """
         from .ket import Ket
 
@@ -537,6 +539,7 @@ class DM(State):
 
             >>> assert rho == core >> phi
             >>> assert core.is_physical
+            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
         """
         other_modes = [m for m in self.modes if m not in core_modes]
         core_bra_indices = self.wires.bra[core_modes].indices

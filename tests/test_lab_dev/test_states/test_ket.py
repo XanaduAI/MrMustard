@@ -463,6 +463,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         phi = Ket.random(list(range(5)))
         core, U = phi.physical_stellar_decomposition([0, 2])
         assert phi == core >> U
+        assert (core >> Vacuum((1, 3, 4)).dual).normalize() == Vacuum((0, 2))
 
         A_c, _, _ = core.ansatz.triple
         A_c = A_c
@@ -480,7 +481,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(A1[1, 1], 0.0)
 
         A12, _, _ = phi12.ansatz.triple
-        assert math.allclose(A12[1:, 1:], math.zeros((2, 2), dtype=math.complex128))
+        assert math.allclose(A12[2:, 2:], math.zeros((2, 2), dtype=math.complex128))
 
         assert psi == core1 >> phi1
         assert psi == core12 >> phi12
+        assert (core12 >> Vacuum((0)).dual).normalize() == Vacuum((1, 2))
