@@ -24,7 +24,6 @@ from ipywidgets import HTML, Box, IntSlider, IntText, Stack, VBox
 from plotly.graph_objs import FigureWidget
 
 from mrmustard import math
-from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.ansatz.polyexp_ansatz import PolyExpAnsatz
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
@@ -39,18 +38,14 @@ class TestPolyExpAnsatz:
     Tests the polyexp ansatz.
     """
 
-    Abc_n1 = Abc_triple(1)
-    Abc_n2 = Abc_triple(2)
-    Abc_n3 = Abc_triple(3)
+    @pytest.mark.parametrize("n", [1, 2, 3])
+    def test_init_non_batched(self, n):
+        A, b, c = Abc_triple(n)
+        bargmann = PolyExpAnsatz(A, b, c)
 
-    @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
-    def test_init_non_batched(self, triple):
-        A, b, c = triple
-        bargmann = PolyExpAnsatz(*triple)
-
-        assert np.allclose(bargmann.A, A)
-        assert np.allclose(bargmann.b, b)
-        assert np.allclose(bargmann.c, c)
+        assert math.allclose(bargmann.A, A)
+        assert math.allclose(bargmann.b, b)
+        assert math.allclose(bargmann.c, c)
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_add(self, n):
@@ -61,26 +56,26 @@ class TestPolyExpAnsatz:
         bargmann2 = PolyExpAnsatz(*triple2)
         bargmann_add = bargmann1 + bargmann2
 
-        assert np.allclose(bargmann_add.A, math.concat([bargmann1.A, bargmann2.A], axis=0))
-        assert np.allclose(bargmann_add.b, math.concat([bargmann1.b, bargmann2.b], axis=0))
-        assert np.allclose(bargmann_add.c, math.concat([bargmann1.c, bargmann2.c], axis=0))
+        assert math.allclose(bargmann_add.A, math.stack([bargmann1.A, bargmann2.A], axis=0))
+        assert math.allclose(bargmann_add.b, math.stack([bargmann1.b, bargmann2.b], axis=0))
+        assert math.allclose(bargmann_add.c, math.stack([bargmann1.c, bargmann2.c], axis=0))
 
         A1, b1, _ = Abc_triple(5)
-        c1 = np.random.random(size=(1, 3, 3))
+        c1 = np.random.random(size=(3, 3))
         A2, b2, _ = Abc_triple(5)
-        c2 = np.random.random(size=(1, 2, 2))
+        c2 = np.random.random(size=(2, 2))
 
         bargmann3 = PolyExpAnsatz(A1, b1, c1)
         bargmann4 = PolyExpAnsatz(A2, b2, c2)
 
         bargmann_add2 = bargmann3 + bargmann4
 
-        assert np.allclose(bargmann_add2.A[0], A1)
-        assert np.allclose(bargmann_add2.b[0], b1)
-        assert np.allclose(bargmann_add2.c[0], c1[0])
-        assert np.allclose(bargmann_add2.A[1], A2)
-        assert np.allclose(bargmann_add2.b[1], b2)
-        assert np.allclose(bargmann_add2.c[1][:2, :2], c2[0])
+        assert math.allclose(bargmann_add2.A[0], A1)
+        assert math.allclose(bargmann_add2.b[0], b1)
+        assert math.allclose(bargmann_add2.c[0], c1)
+        assert math.allclose(bargmann_add2.A[1], A2)
+        assert math.allclose(bargmann_add2.b[1], b2)
+        assert math.allclose(bargmann_add2.c[1][:2, :2], c2)
 
     def test_add_different_poly_wires(self):
         "tests that A and b are padded correctly"
@@ -96,17 +91,13 @@ class TestPolyExpAnsatz:
         assert ansatz_sum.A.shape == (2, 3, 3)
         assert ansatz_sum.b.shape == (2, 3)
         assert ansatz_sum.c.shape == (2, 11)
-        ansatz_sum = ansatz2 + ansatz1
-        assert ansatz_sum.A.shape == (2, 3, 3)
-        assert ansatz_sum.b.shape == (2, 3)
-        assert ansatz_sum.c.shape == (2, 11)
 
     def test_add_error(self):
-        bargmann = PolyExpAnsatz(*Abc_triple(3))
-        fock = ArrayAnsatz(np.random.random((1, 4, 4, 4)), batched=True)
+        ans1 = PolyExpAnsatz(*Abc_triple(3))
+        ans2 = PolyExpAnsatz(*Abc_triple(4))
 
-        with pytest.raises(TypeError, match="Cannot add"):
-            bargmann + fock  # pylint: disable=pointless-statement
+        with pytest.raises(ValueError):
+            ans1 + ans2  # pylint: disable=pointless-statement
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_and(self, n):
@@ -115,76 +106,78 @@ class TestPolyExpAnsatz:
 
         bargmann = PolyExpAnsatz(*triple1) & PolyExpAnsatz(*triple2)
 
-        assert bargmann.A.shape == (1, 2 * n, 2 * n)
-        assert bargmann.b.shape == (1, 2 * n)
-        assert bargmann.c.shape == (1,)
+        assert bargmann.A.shape == (2 * n, 2 * n)
+        assert bargmann.b.shape == (2 * n,)
+        assert bargmann.c.shape == ()
+
+    def test_and_batched(self):
+        triple1 = Abc_triple(3, (2,))
+        triple2 = Abc_triple(3, (1,))
+        bargmann1 = PolyExpAnsatz(*triple1)
+        bargmann2 = PolyExpAnsatz(*triple2)
+        bargmann = bargmann1 & bargmann2
+        assert bargmann.A.shape == (2, 1, 6, 6)
+        assert bargmann.b.shape == (2, 1, 6)
+        assert bargmann.c.shape == (2, 1)
 
     def test_call(self):
         A, b, c = Abc_triple(5)
         ansatz = PolyExpAnsatz(A, b, c)
 
-        assert np.allclose(ansatz(z=math.zeros_like(b)), c)
+        assert math.allclose(ansatz(*math.zeros_like(b)), c)
 
         A, b, _ = Abc_triple(4)
-        c = np.random.random(size=(1, 3, 3, 3))
+        c = np.random.random(size=(1, 3, 3, 3)) + 0.0j
         ansatz = PolyExpAnsatz(A, b, c)
         z = np.random.uniform(-10, 10, size=(7, 2))
-        with pytest.raises(
-            Exception, match="The sum of the dimension of the argument and polynomial"
-        ):
-            ansatz(z)
+        with pytest.raises(Exception):
+            ansatz(*z)
 
-        A = np.array([[0, 1], [1, 0]])
-        b = np.zeros(2)
-        c = c = np.zeros(10, dtype=complex).reshape(1, -1)
-        c[0, -1] = 1
-        obj1 = PolyExpAnsatz(A, b, c)
+        A = math.astensor([np.array([[0.0, 1.0], [1.0, 0.0]]) + 0.0j])
+        b = math.astensor([np.zeros(2) + 0.0j])
+        c = np.zeros(10, dtype=complex).reshape(1, -1) + 0.0j
+        c[..., -1] = 1
+        ans = PolyExpAnsatz(A, b, c)
 
-        nine_factorial = np.prod(np.arange(1, 9))
-        assert np.allclose(obj1(np.array([[0.1]])), 0.1**9 / np.sqrt(nine_factorial))
+        nine_factorial = math.prod(np.arange(1, 9))
+        assert math.allclose(ans(0.1 + 0.0j), 0.1**9 / np.sqrt(nine_factorial))
 
-    def test_call_none(self):
-        A1, b1, _ = Abc_triple(7)
-        A2, b2, _ = Abc_triple(7)
-        A3, b3, _ = Abc_triple(7)
-
+    def test_partial_eval(self):
         batch = 3
-        c = np.random.random(size=(batch, 5, 5, 5)) / 1000
+        A, b, _ = Abc_triple(4, (batch,))
 
-        obj = PolyExpAnsatz([A1, A2, A3], [b1, b2, b3], c)
-        z0 = np.array([[None, 2, None, 5]])
-        z1 = np.array([[1, 2, 4, 5]])
-        z2 = np.array([[1, 4]])
-        obj_none = obj(z0)
-        val1 = obj(z1)
-        val2 = obj_none(z2)
-        assert np.allclose(val1, val2)
+        c = np.random.random(size=(batch, 5, 5)) / 1000 + 0.0j
 
-        obj1 = PolyExpAnsatz(A1, b1, c[0].reshape(1, 5, 5, 5))
-        z0 = np.array([[None, 2, None, 5], [None, 1, None, 4]])
-        z1 = np.array([[1, 2, 4, 5], [2, 1, 4, 4]])
-        z2 = np.array([[1, 4], [2, 4]])
-        obj1_none = obj1(z0)
-        obj1_none0 = PolyExpAnsatz(
-            obj1_none.A[0], obj1_none.b[0], obj1_none.c[0].reshape(1, 5, 5, 5)
-        )
-        obj1_none1 = PolyExpAnsatz(
-            obj1_none.A[1], obj1_none.b[1], obj1_none.c[1].reshape(1, 5, 5, 5)
-        )
-        val1 = obj1(z1)
-        val2 = np.array(
-            (obj1_none0(z2[0].reshape(1, -1)), obj1_none1(z2[1].reshape(1, -1)))
-        ).reshape(-1)
-        assert np.allclose(val1, val2)
+        obj = PolyExpAnsatz(A, b, c)
+        z0 = [None, 2.0 + 0.0j]
+        z1 = [1.0 + 0.0j]
+        z2 = [1.0 + 0.0j, 2.0 + 0.0j]
+        val_full = obj(*z2)
+        partial = obj(*z0)
+        val_partial = partial(*z1)
+        assert math.allclose(val_partial, val_full)
 
-    @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
+        batch = 2
+        A, b, _ = Abc_triple(4, (batch,))
+        c = np.random.random(size=(2, 5)) / 1000 + 0.0j
+
+        obj = PolyExpAnsatz(A, b, c)
+        z0 = [None, 2.0 + 0.0j, None]
+        z1 = [1.0 + 0.0j, 3.0 + 0.0j]
+        z2 = [1.0 + 0.0j, 2.0 + 0.0j, 3.0 + 0.0j]
+        val_full = obj(*z2)
+        partial = obj(*z0)
+        val_partial = partial(*z1)
+        assert math.allclose(val_partial, val_full)
+
+    @pytest.mark.parametrize("triple", [1, 2, 3])
     def test_conj(self, triple):
-        A, b, c = triple
-        bargmann = PolyExpAnsatz(*triple).conj
+        A, b, c = Abc_triple(triple)
+        bargmann = PolyExpAnsatz(A, b, c).conj
 
-        assert np.allclose(bargmann.A, math.conj(A))
-        assert np.allclose(bargmann.b, math.conj(b))
-        assert np.allclose(bargmann.c, math.conj(c))
+        assert math.allclose(bargmann.A, math.conj(A))
+        assert math.allclose(bargmann.b, math.conj(b))
+        assert math.allclose(bargmann.c, math.conj(c))
 
     def test_contract_barg_barg(self):
         triple1 = Abc_triple(3)
@@ -192,83 +185,66 @@ class TestPolyExpAnsatz:
 
         res1 = PolyExpAnsatz(*triple1).contract(PolyExpAnsatz(*triple2))
         exp1 = complex_gaussian_integral_2(triple1, triple2, [], [])
-        assert np.allclose(res1.A, exp1[0])
-        assert np.allclose(res1.b, exp1[1])
-        assert np.allclose(res1.c, exp1[2])
+        assert math.allclose(res1.A, exp1[0])
+        assert math.allclose(res1.b, exp1[1])
+        assert math.allclose(res1.c, exp1[2])
 
         res2 = PolyExpAnsatz(*triple1).contract(PolyExpAnsatz(*triple2), idx1=0, idx2=0)
         exp2 = complex_gaussian_integral_2(triple1, triple2, [0], [0])
-        assert np.allclose(res2.A, exp2[0])
-        assert np.allclose(res2.b, exp2[1])
-        assert np.allclose(res2.c, exp2[2])
+        assert math.allclose(res2.A, exp2[0])
+        assert math.allclose(res2.b, exp2[1])
+        assert math.allclose(res2.c, exp2[2])
 
-    def test_decompose_ansatz(self):
-        A, b, _ = Abc_triple(4)
-        c = np.random.uniform(-10, 10, size=(1, 3, 3, 3))
+    @pytest.mark.parametrize("batch_shape", [(), (1,), (2, 3)])
+    def test_decompose_ansatz(self, batch_shape):
+        A, b, _ = Abc_triple(4, batch_shape)
+        c = np.random.uniform(-1, 1, size=batch_shape + (3, 3, 3)) + 0.0j
         ansatz = PolyExpAnsatz(A, b, c)
-
         decomp_ansatz = ansatz.decompose_ansatz()
-        z = np.random.uniform(-10, 10, size=(1, 1))
-        assert np.allclose(ansatz(z), decomp_ansatz(z))
-        assert np.allclose(decomp_ansatz.A.shape, (1, 2, 2))
+        z = np.random.uniform(-1, 1, size=batch_shape) + 0.0j
+        assert math.allclose(ansatz(z), decomp_ansatz(z))
+        assert math.allclose(decomp_ansatz.A.shape, batch_shape + (2, 2))
 
-        c2 = np.random.uniform(-10, 10, size=(1, 4))
+        c2 = np.random.uniform(-1, 1, size=batch_shape + (4,)) + 0.0j
         ansatz2 = PolyExpAnsatz(A, b, c2)
         decomp_ansatz2 = ansatz2.decompose_ansatz()
-        assert np.allclose(decomp_ansatz2.A, ansatz2.A)
+        assert math.allclose(decomp_ansatz2.A, ansatz2.A)
 
     def test_decompose_ansatz_batch(self):
         """
         In this test the batch dimension of both ``z`` and ``Abc`` is tested.
         """
-        A1, b1, _ = Abc_triple(4)
-        c1 = np.random.uniform(-10, 10, size=(3, 3, 3))
-        A2, b2, _ = Abc_triple(4)
-        c2 = np.random.uniform(-10, 10, size=(3, 3, 3))
-        ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2])
+        A, b, _ = Abc_triple(4, (2,))
+        c = np.random.random((2, 3, 3, 3))
+        ansatz = PolyExpAnsatz(A, b, c)
 
         decomp_ansatz = ansatz.decompose_ansatz()
-        z = np.random.uniform(-10, 10, size=(3, 1))
-        assert np.allclose(ansatz(z), decomp_ansatz(z))
-        assert np.allclose(decomp_ansatz.A.shape, (2, 2, 2))
-        assert np.allclose(decomp_ansatz.b.shape, (2, 2))
-        assert np.allclose(decomp_ansatz.c.shape, (2, 9))
+        z = np.random.random((1,))
+        assert math.allclose(ansatz(z), decomp_ansatz(z))
+        assert math.allclose(decomp_ansatz.A.shape, (2, 2, 2))
+        assert math.allclose(decomp_ansatz.b.shape, (2, 2))
+        assert math.allclose(decomp_ansatz.c.shape, (2, 9))
 
-        A1, b1, _ = Abc_triple(5)
-        c1 = np.random.uniform(-10, 10, size=(3, 3, 3))
-        A2, b2, _ = Abc_triple(5)
-        c2 = np.random.uniform(-10, 10, size=(3, 3, 3))
-        ansatz = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2])
+        A, b, _ = Abc_triple(5, (2,))
+        c = np.random.random((2, 3, 3, 3))
+        ansatz = PolyExpAnsatz(A, b, c)
 
         decomp_ansatz = ansatz.decompose_ansatz()
-        z = np.random.uniform(-10, 10, size=(3, 2))
-        assert np.allclose(ansatz(z), decomp_ansatz(z))
-        assert np.allclose(decomp_ansatz.A.shape, (2, 4, 4))
-        assert np.allclose(decomp_ansatz.b.shape, (2, 4))
-        assert np.allclose(decomp_ansatz.c.shape, (2, 9, 9))
-
-    @pytest.mark.parametrize("n", [1, 2, 3])
-    def test_div(self, n):
-        triple1 = Abc_triple(n)
-        triple2 = Abc_triple(n)
-
-        bargmann1 = PolyExpAnsatz(*triple1)
-        bargmann2 = PolyExpAnsatz(*triple2)
-        bargmann_div = bargmann1 / bargmann2
-
-        assert np.allclose(bargmann_div.A, bargmann1.A - bargmann2.A)
-        assert np.allclose(bargmann_div.b, bargmann1.b - bargmann2.b)
-        assert np.allclose(bargmann_div.c, bargmann1.c / bargmann2.c)
+        z = np.random.random((4,))
+        assert math.allclose(ansatz(z, z), decomp_ansatz(z, z))
+        assert math.allclose(decomp_ansatz.A.shape, (2, 4, 4))
+        assert math.allclose(decomp_ansatz.b.shape, (2, 4))
+        assert math.allclose(decomp_ansatz.c.shape, (2, 9, 9))
 
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
-    @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
+    @pytest.mark.parametrize("triple", [1, 2, 3])
     def test_div_with_scalar(self, scalar, triple):
-        bargmann1 = PolyExpAnsatz(*triple)
+        bargmann1 = PolyExpAnsatz(*Abc_triple(triple))
         bargmann_div = bargmann1 / scalar
 
-        assert np.allclose(bargmann1.A, bargmann_div.A)
-        assert np.allclose(bargmann1.b, bargmann_div.b)
-        assert np.allclose(bargmann1.c / scalar, bargmann_div.c)
+        assert math.allclose(bargmann1.A, bargmann_div.A)
+        assert math.allclose(bargmann1.b, bargmann_div.b)
+        assert math.allclose(bargmann1.c / scalar, bargmann_div.c)
 
     def test_eq(self):
         A, b, c = Abc_triple(5)
@@ -323,7 +299,7 @@ class TestPolyExpAnsatz:
         """Test the IPython repr function for a batched repr."""
         A1, b1, c1 = Abc_triple(2)
         A2, b2, c2 = Abc_triple(2)
-        rep = PolyExpAnsatz(np.array([A1, A2]), np.array([b1, b2]), np.array([c1, c2]))
+        rep = PolyExpAnsatz([A1, A2], [b1, b2], [c1, c2])
         rep._ipython_display_()
         [vbox] = mock_display.call_args.args
         assert isinstance(vbox, VBox)
@@ -345,28 +321,15 @@ class TestPolyExpAnsatz:
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(rep)
 
-    @pytest.mark.parametrize("n", [1, 2, 3])
-    def test_mul(self, n):
-        triple1 = Abc_triple(n)
-        triple2 = Abc_triple(n)
-
-        bargmann1 = PolyExpAnsatz(*triple1)
-        bargmann2 = PolyExpAnsatz(*triple2)
-        bargmann_mul = bargmann1 * bargmann2
-
-        assert np.allclose(bargmann_mul.A, bargmann1.A + bargmann2.A)
-        assert np.allclose(bargmann_mul.b, bargmann1.b + bargmann2.b)
-        assert np.allclose(bargmann_mul.c, bargmann1.c * bargmann2.c)
-
     @pytest.mark.parametrize("scalar", [0.5, 1.2])
-    @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
+    @pytest.mark.parametrize("triple", [1, 2, 3])
     def test_mul_with_scalar(self, scalar, triple):
-        bargmann1 = PolyExpAnsatz(*triple)
+        bargmann1 = PolyExpAnsatz(*Abc_triple(triple))
         bargmann_mul = bargmann1 * scalar
 
-        assert np.allclose(bargmann1.A, bargmann_mul.A)
-        assert np.allclose(bargmann1.b, bargmann_mul.b)
-        assert np.allclose(bargmann1.c * scalar, bargmann_mul.c)
+        assert math.allclose(bargmann1.A, bargmann_mul.A)
+        assert math.allclose(bargmann1.b, bargmann_mul.b)
+        assert math.allclose(bargmann1.c * scalar, bargmann_mul.c)
 
     def test_order_batch(self):
         ansatz = PolyExpAnsatz(
@@ -374,63 +337,33 @@ class TestPolyExpAnsatz:
             b=[np.array([1]), np.array([0])],
             c=[1, 2],
         )
-        ansatz._order_batch()
+        A, b, c = ansatz._order_batch()
 
-        assert np.allclose(ansatz.A[0], np.array([[1]]))
-        assert np.allclose(ansatz.b[0], np.array([0]))
-        assert ansatz.c[0] == 2
-        assert np.allclose(ansatz.A[1], np.array([[0]]))
-        assert np.allclose(ansatz.b[1], np.array([1]))
-        assert ansatz.c[1] == 1
+        assert math.allclose(A[0], np.array([[1]]))
+        assert math.allclose(b[0], np.array([0]))
+        assert c[0] == 2
+        assert math.allclose(A[1], np.array([[0]]))
+        assert math.allclose(b[1], np.array([1]))
+        assert c[1] == 1
 
     def test_polynomial_shape(self):
-        A, b, _ = Abc_triple(4)
-        c = np.array([[1, 2, 3]])
+        A, b, _ = Abc_triple(4, (1,))
+        c = np.random.random((1, 3))
         ansatz = PolyExpAnsatz(A, b, c)
 
-        poly_dim, poly_shape = ansatz.polynomial_shape
-        assert np.allclose(poly_dim, 1)
-        assert np.allclose(poly_shape, (3,))
-
-        A1, b1, _ = Abc_triple(4)
-        c1 = np.array([[1, 2, 3]])
-        ansatz1 = PolyExpAnsatz(A1, b1, c1)
-
-        A2, b2, _ = Abc_triple(4)
-        c2 = np.array([[1, 2, 3]])
-        ansatz2 = PolyExpAnsatz(A2, b2, c2)
-
-        ansatz3 = ansatz1 * ansatz2
-
-        poly_dim, poly_shape = ansatz3.polynomial_shape
-        assert np.allclose(poly_dim, 2)
-        assert np.allclose(poly_shape, (3, 3))
+        poly_dim = ansatz.num_derived_vars
+        poly_shape = ansatz.shape_derived_vars
+        assert math.allclose(poly_dim, 1)
+        assert math.allclose(poly_shape, (3,))
 
     def test_reorder(self):
-        triple = Abc_triple(3)
+        triple = Abc_triple(3, (2,))
         bargmann = PolyExpAnsatz(*triple).reorder((0, 2, 1))
 
-        assert np.allclose(bargmann.A[0], triple[0][[0, 2, 1], :][:, [0, 2, 1]])
-        assert np.allclose(bargmann.b[0], triple[1][[0, 2, 1]])
+        assert math.allclose(bargmann.A, triple[0][:, [0, 2, 1], :][:, :, [0, 2, 1]])
+        assert math.allclose(bargmann.b, triple[1][:, [0, 2, 1]])
 
     def test_simplify(self):
-        A, b, c = Abc_triple(5)
-
-        ansatz = PolyExpAnsatz(A, b, c)
-
-        ansatz = ansatz + ansatz
-
-        assert np.allclose(ansatz.A[0], ansatz.A[1])
-        assert np.allclose(ansatz.A[0], A)
-        assert np.allclose(ansatz.b[0], ansatz.b[1])
-        assert np.allclose(ansatz.b[0], b)
-
-        ansatz.simplify()
-        assert len(ansatz.A) == 1
-        assert len(ansatz.b) == 1
-        assert ansatz.c == 2 * c
-
-    def test_simplify_v2(self):
         A, b, c = Abc_triple(5)
 
         ansatz = PolyExpAnsatz(A, b, c)
@@ -442,17 +375,10 @@ class TestPolyExpAnsatz:
         assert math.allclose(ansatz.b[0], ansatz.b[1])
         assert math.allclose(ansatz.b[0], b)
 
-        ansatz.simplify_v2()
+        ansatz.simplify()
         assert len(ansatz.A) == 1
         assert len(ansatz.b) == 1
-        assert math.allclose(ansatz.c, 2 * c)
-
-        A, b, c = ansatz.triple
-
-        ansatz.simplify_v2()
-        assert math.allclose(ansatz.A, A)
-        assert math.allclose(ansatz.b, b)
-        assert math.allclose(ansatz.c, c)
+        assert ansatz.c == 2 * c
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_sub(self, n):
@@ -463,15 +389,201 @@ class TestPolyExpAnsatz:
         bargmann2 = PolyExpAnsatz(*triple2)
         bargmann_add = bargmann1 - bargmann2
 
-        assert np.allclose(bargmann_add.A, math.concat([bargmann1.A, bargmann2.A], axis=0))
-        assert np.allclose(bargmann_add.b, math.concat([bargmann1.b, bargmann2.b], axis=0))
-        assert np.allclose(bargmann_add.c, math.concat([bargmann1.c, -bargmann2.c], axis=0))
+        assert math.allclose(bargmann_add.A, math.stack([bargmann1.A, bargmann2.A], axis=0))
+        assert math.allclose(bargmann_add.b, math.stack([bargmann1.b, bargmann2.b], axis=0))
+        assert math.allclose(bargmann_add.c, math.stack([bargmann1.c, -bargmann2.c], axis=0))
 
     def test_trace(self):
         triple = Abc_triple(4)
         bargmann = PolyExpAnsatz(*triple).trace([0], [2])
         A, b, c = complex_gaussian_integral_1(triple, [0], [2])
 
-        assert np.allclose(bargmann.A, A)
-        assert np.allclose(bargmann.b, b)
-        assert np.allclose(bargmann.c, c)
+        assert math.allclose(bargmann.A, A)
+        assert math.allclose(bargmann.b, b)
+        assert math.allclose(bargmann.c, c)
+
+    def test_eval_with_scalar_inputs(self):
+        """Test evaluation with scalar inputs."""
+        A = np.random.random((3, 3))
+        b = np.random.random(3)
+        c = np.random.random(())
+        F = PolyExpAnsatz(A, b, c, name="F")
+
+        # Scalar inputs
+        z0, z1, z2 = 0.4, 0.5, 0.2
+
+        # Test eval method
+        val = F.eval(z0, z1, z2)
+        assert val.shape == ()
+
+        # Test __call__ method
+        val_call = F(z0, z1, z2)
+        assert val_call.shape == ()
+
+        # Verify both methods give the same result
+        assert math.allclose(val, val_call)
+
+    def test_eval_with_batched_inputs(self):
+        """Test evaluation with batched inputs."""
+        A = np.random.random((3, 3))
+        b = np.random.random(3)
+        c = np.random.random(())
+        F = PolyExpAnsatz(A, b, c, name="F")
+
+        # Batched inputs with different shapes
+        z0 = math.astensor([0.4, 0.2])
+        z1 = math.astensor(0.5)
+        z2 = math.astensor([[0.3, 0.3]])
+
+        # Test eval method
+        val = F.eval(z0, z1, z2)
+        assert val.shape == (2, 1, 2)
+
+        # Test with custom batch string
+        val_custom = F.eval(z0, z1, z2, batch_string="a,,ba->ab")
+        assert val_custom.shape == (2, 1)
+
+    def test_batched_ansatz_with_scalar_inputs(self):
+        """Test batched ansatz with scalar inputs."""
+        # Create a batched ansatz
+        A = np.random.random((4, 7, 3, 3))
+        b = np.random.random((4, 7, 3))
+        c = np.random.random((4, 7))
+        F = PolyExpAnsatz(A, b, c, name="batched")
+
+        # Scalar inputs
+        z0, z1, z2 = 0.4, 0.5, 0.2
+
+        # Test eval method
+        val = F.eval(z0, z1, z2)
+        assert val.shape == (4, 7)
+
+        # Test __call__ method
+        val_call = F(z0, z1, z2)
+        assert val_call.shape == (4, 7)
+
+        # Verify both methods give the same result
+        assert math.allclose(val, val_call)
+
+    def test_batched_ansatz_with_batched_inputs(self):
+        """Test batched ansatz with batched inputs."""
+        # Create a batched ansatz
+        A = np.random.random((4, 7, 3, 3))
+        b = np.random.random((4, 7, 3))
+        c = np.random.random((4, 7))
+        F = PolyExpAnsatz(A, b, c, name="batched")
+
+        # Batched inputs
+        z1 = math.astensor([0.4, 0.2])
+        z2 = math.astensor(0.5)
+        z3 = math.astensor([[0.3, 0.3]])
+
+        # Test eval method
+        val = F.eval(z1, z2, z3)
+        assert val.shape == (2, 1, 2, 4, 7)
+
+        # Test with custom batch string
+        val_custom = F.eval(z1, z2, z3, batch_string="a,,ba->ab")
+        assert val_custom.shape == (2, 1, 4, 7)
+
+    def test_derived_variables_with_scalar_inputs(self):
+        """Test ansatz with derived variables using scalar inputs."""
+        # Create ansatz with derived variables
+        A = np.random.random((4, 7, 3, 3))
+        b = np.random.random((4, 7, 3))
+        c = np.random.random((4, 7, 5))
+        F = PolyExpAnsatz(A, b, c, name="derived+batched")
+
+        # Scalar inputs (only 2 inputs needed for 2 CV + 1 derived = 3 total variables)
+        z0, z1 = 0.4, 0.5
+
+        # Test eval method
+        val = F.eval(z0, z1)
+        assert val.shape == (4, 7)
+
+        # Test __call__ method
+        val_call = F(z0, z1)
+        assert val_call.shape == (4, 7)
+
+        # Verify both methods give the same result
+        assert math.allclose(val, val_call)
+
+    def test_derived_variables_with_batched_inputs(self):
+        """Test ansatz with derived variables using batched inputs."""
+        # Create ansatz with derived variables
+        A = np.random.random((4, 7, 3, 3))
+        b = np.random.random((4, 7, 3))
+        c = np.random.random((4, 7, 5))
+        F = PolyExpAnsatz(A, b, c, name="derived+batched")
+
+        # Batched inputs
+        z0 = math.astensor([0.5, 0.9])
+        z1 = math.astensor([[0.3, 0.3]])
+
+        # Test eval method
+        val = F.eval(z0, z1)
+        assert val.shape == (2, 1, 2, 4, 7)
+
+        # Test with custom batch string
+        val_custom = F.eval(z0, z1, batch_string="a,ba->ab")
+        assert val_custom.shape == (2, 1, 4, 7)
+
+    def test_singleton_dimensions(self):
+        """Test ansatz with singleton dimensions in inputs."""
+        # Create ansatz with derived variables
+        A = np.random.random((4, 7, 3, 3))
+        b = np.random.random((4, 7, 3))
+        c = np.random.random((4, 7, 5))
+        F = PolyExpAnsatz(A, b, c, name="derived+batched")
+
+        # Inputs with singleton dimensions
+        z0 = math.astensor([0.4, 0.2])[:, None]  # Shape (2, 1)
+        z1 = math.astensor([0.5, 0.2, 0.2])[None, :]  # Shape (1, 3)
+
+        # Test __call__ method
+        val = F(z0, z1)
+        assert val.shape == (2, 3, 4, 7)
+
+    def test_partial_evaluation_with_scalar_input(self):
+        """Test partial evaluation with scalar inputs."""
+        # Create ansatz with derived variables
+        A, b, c = Abc_triple(3, (4, 7))
+        c = np.random.random((4, 7, 5))
+        F = PolyExpAnsatz(A, b, c, name="derived+batched")
+
+        # Partial evaluation with scalar input
+        z0 = math.astensor(0.5 + 0.0j)
+        partial_F = F(z0, None)
+
+        # Verify partial_F is still a PolyExpAnsatz
+        assert isinstance(partial_F, PolyExpAnsatz)
+
+        # Complete the evaluation
+        z1 = 0.3 + 0.0j
+        result = partial_F(z1)
+
+        # Verify the result matches direct evaluation
+        direct_result = F(z0, z1)
+        assert math.allclose(result, direct_result)
+
+    def test_partial_evaluation_with_batched_input(self):
+        """Test partial evaluation with batched inputs."""
+        # Create ansatz with derived variables
+        A, b, c = Abc_triple(3, (4, 7))
+        c = np.random.random((4, 7, 5))
+        F = PolyExpAnsatz(A, b, c, name="derived+batched")
+
+        # Partial evaluation with scalar input
+        z0 = math.astensor([0.5, 0.6]) + 0.0j
+        partial_F = F(z0, None)
+
+        # Verify partial_F is still a PolyExpAnsatz
+        assert isinstance(partial_F, PolyExpAnsatz)
+
+        # Complete the evaluation
+        z1 = 0.3 + 0.0j
+        result = partial_F(z1)
+
+        # Verify the result matches direct evaluation
+        direct_result = F(z0, z1)
+        assert math.allclose(result, direct_result)

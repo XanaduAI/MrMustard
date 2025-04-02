@@ -19,9 +19,7 @@ This module contains the defintion of the ket class ``Ket``.
 from __future__ import annotations
 
 from typing import Collection, Sequence
-from itertools import product
 import warnings
-import numpy as np
 from IPython.display import display
 
 from mrmustard import math, settings, widgets
@@ -32,7 +30,6 @@ from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
-    ComplexTensor,
     RealVector,
     Scalar,
     Batch,
@@ -56,7 +53,7 @@ class Ket(State):
     short_name = "Ket"
 
     @property
-    def is_physical(self) -> bool:
+    def is_physical(self) -> bool:  # TODO: revisit this
         r"""
         Whether the ket object is a physical one.
         """
@@ -65,9 +62,9 @@ class Ket(State):
             raise ValueError(
                 "Physicality conditions are not implemented for batch dimension larger than 1."
             )
-
-        A = self.ansatz.A[0]
-
+        if self.ansatz.num_derived_vars > 0:
+            raise ValueError("Physicality conditions are not implemented for derived variables.")
+        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
         return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
             self.probability, 1, settings.ATOL
         )
@@ -170,7 +167,7 @@ class Ket(State):
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:
+    ) -> tuple[int, ...]:  # TODO: revisit
         r"""
         A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -184,14 +181,17 @@ class Ket(State):
             max_shape: The maximum shape to compute (default from ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
-        # experimental:
-        if self.ansatz.batch_size == 1:
+        if self.ansatz.batch_size <= 1:
             try:  # fock
-                shape = self.ansatz.array.shape[1:]
+                shape = self.ansatz.core_shape
             except AttributeError:  # bargmann
-                if self.ansatz.polynomial_shape[0] == 0:
+                if self.ansatz.num_derived_vars == 0:
                     ansatz = self.ansatz.conj & self.ansatz
-                    A, b, c = ansatz.A[0], ansatz.b[0], ansatz.c[0]
+                    A, b, c = (
+                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
+                        if ansatz.batch_shape != ()  # tensorflow
+                        else ansatz.triple
+                    )
                     ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
@@ -213,8 +213,8 @@ class Ket(State):
         r"""
         The ``DM`` object obtained from this ``Ket``.
         """
-        dm = self @ self.adjoint
-        ret = DM(dm.representation, self.name)
+        repr = self.representation.contract(self.adjoint.representation, mode="zip")
+        ret = DM(repr, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 
@@ -250,63 +250,25 @@ class Ket(State):
 
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
-            result = self @ operator.dual
-            result @= result.adjoint
+            result = self.contract(operator.dual)
+            result = result.contract(result.adjoint)
             result >>= TraceOut(leftover_modes)
 
         elif op_type is OperatorType.DM_LIKE:
-            result = (self.adjoint @ (self @ operator.dual)) >> TraceOut(leftover_modes)
+            result = (self.adjoint.contract(self.contract(operator.dual))) >> TraceOut(
+                leftover_modes
+            )
 
         else:
-            result = (self @ operator) >> self.dual
+            result = (self.contract(operator)) >> self.dual
 
         return result
-
-    def fock_distribution(self, cutoff: int) -> ComplexTensor:
-        r"""
-        Returns the Fock distribution of the state up to some cutoff.
-        Args:
-            cutoff: The photon cutoff.
-        Returns:
-            The Fock distribution.
-        """
-        fock_array = self.fock_array(cutoff)
-        return (
-            math.astensor(
-                [fock_array[ns] for ns in product(list(range(cutoff)), repeat=self.n_modes)]
-            )
-            ** 2
-        )
 
     def normalize(self) -> Ket:
         r"""
         Returns a rescaled version of the state such that its probability is 1
         """
         return self / math.sqrt(self.probability)
-
-    def quadrature_distribution(self, quad: RealVector, phi: float = 0.0) -> ComplexTensor:
-        r"""
-        The (discretized) quadrature distribution of the Ket.
-
-        Args:
-            quad: the discretized quadrature axis over which the distribution is computed.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            The quadrature distribution.
-        """
-        quad = np.array(quad)
-        if len(quad.shape) != 1 and len(quad.shape) != self.n_modes:
-            raise ValueError(
-                "The dimensionality of quad should be 1, or match the number of modes."
-            )
-
-        if len(quad.shape) == 1:
-            quad = math.astensor(np.meshgrid(*[quad] * len(self.modes))).T.reshape(
-                -1, len(self.modes)
-            )
-
-        return math.abs(self.quadrature(quad, phi)) ** 2
 
     def physical_stellar_decomposition(self, core_modes: Collection[int]):
         r"""

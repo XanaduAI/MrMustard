@@ -75,9 +75,10 @@ class PhaseNoise(Channel):
         """
 
         if not other.wires.bra or not other.wires.ket:
-            other = other @ other.adjoint
-        array = math.asnumpy(other.fock_array())
-        mode_indices = np.indices(array.shape)
+            other = other.contract(other.adjoint)
+        other = other.to_fock()
+        array = other.fock_array()
+        mode_indices = np.indices(other.ansatz.core_shape)
         for mode in self.modes:
             phase_factors = math.exp(
                 -0.5
@@ -85,4 +86,7 @@ class PhaseNoise(Channel):
                 * self.parameters.phase_stdev.value**2
             )
             array *= phase_factors
-        return CircuitComponent(Representation(ArrayAnsatz(array, False), other.wires), self.name)
+        return CircuitComponent(
+            Representation(ArrayAnsatz(array, batch_dims=other.ansatz.batch_dims), other.wires),
+            self.name,
+        )
