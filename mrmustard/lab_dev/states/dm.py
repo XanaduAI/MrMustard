@@ -532,6 +532,17 @@ class DM(State):
 
         Raises:
             ValueError: if the rank condition is not satisfied.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import DM
+
+            >>> rho = DM.random([0,1])
+            >>> core, phi = rho.physical_stellar_decomposition_2([0])
+
+            >>> assert rho == core >> phi
+            >>> assert core.is_physical
+            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
         """
         other_modes = [m for m in self.modes if m not in core_modes]
         core_bra_indices = self.wires.bra[core_modes].indices
