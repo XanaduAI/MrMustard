@@ -22,6 +22,8 @@ from typing import Collection, Sequence
 import warnings
 from IPython.display import display
 
+import numpy as np
+
 from mrmustard import math, settings, widgets
 from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
