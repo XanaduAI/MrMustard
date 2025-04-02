@@ -15,97 +15,105 @@
 """Implementation of the mm_einsum function."""
 
 from __future__ import annotations
+from dataclasses import dataclass
 from mrmustard import math
+from mrmustard.physics import ansatz
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.ansatz.base import Ansatz
 
 
+def _ints(seq: list[int | str]) -> list[int]:
+    return [i for i in seq if isinstance(i, int)]
+
+
+def _strings(seq: list[int | str]) -> list[str]:
+    return [i for i in seq if isinstance(i, str)]
+
+
+@dataclass
+class Node:
+    ansatz: PolyExpAnsatz | ArrayAnsatz
+    batch_strings: list[str]
+    wires_ints: list[int]
+    shape: tuple[int, ...]
+    id: int | tuple[int, ...]
+
+    def __post_init__(self):
+        if isinstance(self.id, int):
+            self.id = (self.id,)
+
+
 def mm_einsum(
-    *args: list[PolyExpAnsatz | ArrayAnsatz | list[int | str]],
-    contraction_order: list[tuple[int, ...]],
-    shapes: dict[int, int],
-):
-    r"""Performs tensor contractions between multiple Ansatze using their indices.
-
+    nodes: list[Node],
+    output_batch_strings: list[str],
+    output_wires_ints: list[int],
+    contraction_order: list[tuple[int, int]],
+) -> PolyExpAnsatz | ArrayAnsatz:
+    r"""
+    Contracts a network of Ansatze using a custom contraction order.
     This function is analogous to numpy's einsum but specialized for MrMustard's Ansatze.
-    It automatically determines the optimal contraction order and handles both continuous-variable
-    (CV) and Fock-space representations.
-
-    The arguments are passed as an alternating sequence of Ansatze and their corresponding index lists,
-    followed by a final output index list. The index lists can contain strings and integers.
-    The strings (which come before the integers) are used to label the batch dimensions.
-    The integers are used to label the Hilbert space variables/indices.
-
-    The rule is that equal strings or equal integers will be contracted together. The surviving (or
-    copied) strings and integers have to appear in the output index list.
+    It handles both continuous-variable (CV) and Fock-space representations.
 
     Args:
-        *args: Alternating sequence of Ansatze and their corresponding index lists,
-            followed by a final output index list. The format should be:
-            [ansatz1, indices1, ansatz2, indices2, ..., ansatzN, indicesN, output_indices]
-        contraction_order: list of tuples of integers specifying the wires to contract together at
-            each step.
-        shapes: dict mapping Hilbert space indices to their Fock space dimensions.
 
     Returns:
         Ansatz: The resulting Ansatz after performing all the contractions.
     """
-    all_strings = [s for idx in args[1:-2:2] for s in idx if isinstance(s, str)]
-    strings_to_chars = _map_descriptive_strings_to_chars(all_strings)
-    indices = {}
-    batch_strings = {}
-    ansatze = {}
-    it = iter(args[:-1])
-    for k, (ans, idx) in enumerate(zip(it, it)):
-        indices[k] = [i for i in idx if isinstance(i, int)]
-        batch_strings[k] = [strings_to_chars[s] for s in idx if isinstance(s, str)]
-        ansatze[k] = ans
-    output_indices = args[-1]
+    for a, b in contraction_order:
+        nodes = _perform_contraction(nodes, a, b)
 
-    for wires in contraction_order:
-        a, b = [i for i, idx in indices.items() if set(wires).issubset(idx)]
-        convert = type(ansatze[a]) is not type(ansatze[b])
-        ansatz_a = to_fock(ansatze[a], [shapes[i] for i in indices[a]]) if convert else ansatze[a]
-        ansatz_b = to_fock(ansatze[b], [shapes[i] for i in indices[b]]) if convert else ansatze[b]
-        idx_a, idx_b, new_batch, new_indices = _prepare_idx(a, b, indices, batch_strings)
-        einsum_string = _batch_einsum_string(batch_strings[a], batch_strings[b], new_batch)
-        new_ansatz = ansatz_a.contract(ansatz_b, idx_a, idx_b, einsum_string)
-        ansatze[a] = new_ansatz
-        indices[a] = new_indices
-        batch_strings[a] = new_batch
-        del indices[b], batch_strings[b], ansatze[b]
-
-    print(indices)
-
-    if len(indices) > 1 or len(batch_strings) > 1 or len(ansatze) > 1:
+    if len(nodes) > 1:
         raise ValueError("More than one ansatz left after contraction.")
-    result = ansatze.pop(0)
-    if any(isinstance(i, int) for i in output_indices):
-        final_indices = indices.pop(0)
-        index_perm = [final_indices.index(i) for i in output_indices if isinstance(i, int)]
+
+    resuansatzodes[0]
+    output_idx_str = _strings(output_batch_string)
+    output_idx_int = _ints(output_index_ints)
+    final_idx = output_index_ints
+    if len(output_idx_int) > 1:
+        final_idx = _ints(final_idx)
+        index_perm = [final_idx.index(i) for i in output_idx_int]
         result = result.reorder(index_perm)
-    if any(isinstance(i, str) for i in output_indices):
-        final_strings = batch_strings.pop(0)
-        batch_perm = [final_strings.index(i) for i in output_indices if isinstance(i, str)]
+    if len(output_idx_str) > 1:
+        final_strings = _strings(final_idx)
+        batch_perm = [final_strings.index(i) for i in output_idx_str]
         result = result.reorder_batch(batch_perm)
     return result
 
 
-def _prepare_idx(a, b, indices, batch_strings):
+def _perform_contraction(nodes, a, b):
+    ansatz_a, ansatz_b = [ansatz for ansatz in nodes if a in ansatz.id or b in ansatz.id]
+    if type(ansatz_a) is not type(ansatz_b):
+        ansatz_a = to_fock(ansatz_a, ansatz_a._shape)
+        ansatz_b = to_fock(ansatz_b, ansatz_b._shape)
+    idx_a, idx_b, new_batch, new_int, new_shape = _prepare_idx(ansatz_a, ansatz_b)
+    einsum_string = _batch_einsum_string(ansatz_a._batch_string, ansatz_b._batch_string, new_batch)
+    new_ansatz = ansatz_a.contract(ansatz_b, idx_a, idx_b, einsum_string)
+    new_ansatz._batch_string = new_batch
+    new_ansatz._int_idx = new_int
+    new_ansatz._shape = new_shape
+    del ansatze[ta], ansatze[tb]
+    ansatze[ta + tb] = new_ansatz
+    return ansatze
+
+
+def _prepare_idx(ansatz_a, ansatz_b):
     r"""Prepares the indices for the contraction."""
-    common_batch = [i for i in batch_strings[a] if i in batch_strings[b]]
-    common_indices = [i for i in indices[a] if i in indices[b]]
-    new_batch = [i for i in batch_strings[a] + batch_strings[b] if i not in common_batch]
-    new_indices = [i for i in indices[a] + indices[b] if i not in common_indices]
-    idx_a = [indices[a].index(i) for i in common_indices]
-    idx_b = [indices[b].index(i) for i in common_indices]
-    return idx_a, idx_b, new_batch, new_indices
+    common_batch = [i for i in ansatz_a._batch_string if i in ansatz_b._batch_string]
+    common_int = [i for i in ansatz_a._int_idx if i in ansatz_b._int_idx]
+    new_batch = [
+        i for i in ansatz_a._batch_string + ansatz_b._batch_string if i not in common_batch
+    ]
+    new_int = [i for i in ansatz_a._int_idx + ansatz_b._int_idx if i not in common_int]
+    idx_a = [ansatz_a._int_idx.index(i) for i in common_int]
+    idx_b = [ansatz_b._int_idx.index(i) for i in common_int]
+    new_shape = tuple(ansatz_a._shape[i] for i in idx_a) + tuple(ansatz_b._shape[i] for i in idx_b)
+    return idx_a, idx_b, new_batch, new_int
 
 
 def _batch_einsum_string(
-    indices_a: list[int | str],
-    indices_b: list[int | str],
-    remaining_indices: list[int | str],
+    idx_a: list[int | str],
+    idx_b: list[int | str],
+    new_idx: list[int | str],
 ) -> str:
     r"""Creates an einsum-style string for batch dimension contractions.
 
@@ -117,31 +125,10 @@ def _batch_einsum_string(
     Returns:
         str: Einsum-style string for batch contractions (e.g., "a,ab->b")
     """
-    batch_a = [i for i in indices_a if isinstance(i, str)]
-    batch_b = [i for i in indices_b if isinstance(i, str)]
-    batch_out = [i for i in remaining_indices if isinstance(i, str)]
-
-    a_str = "".join(batch_a)
-    b_str = "".join(batch_b)
-    out_str = "".join(batch_out)
-
+    a_str = "".join(_strings(idx_a))
+    b_str = "".join(_strings(idx_b))
+    out_str = "".join(_strings(new_idx))
     return f"{a_str},{b_str}->{out_str}"
-
-
-def _map_descriptive_strings_to_chars(indices: list[list[int | str]]) -> dict[str, str]:
-    r"""Creates a mapping from descriptive strings to single letters.
-
-    Args:
-        indices: List of lists of indices
-
-    Returns:
-        dict: Mapping from descriptive strings to single letters
-
-    >>> _map_descriptive_strings_to_chars([["foo", "bar", "baz"]])
-    {'foo': 'a', 'bar': 'b', 'baz': 'c'}
-    """
-    all_strings = [i for idx in indices for i in idx if isinstance(i, str)]
-    return {string: chr(97 + i) for i, string in enumerate(all_strings)}
 
 
 def to_fock(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
