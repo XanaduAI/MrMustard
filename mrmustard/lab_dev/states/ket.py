@@ -335,7 +335,7 @@ class Ket(State):
 
         U = Unitary.from_bargmann(core_modes, core_modes, (Au, bu, cu))
         _, _, U_normalization = (U >> U.dual).ansatz.triple
-        U /= math.sqrt(U_normalization[-1])
+        U /= math.sqrt(U_normalization)
 
         A_core = math.block(
             [
