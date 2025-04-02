@@ -367,10 +367,6 @@ class DM(State):
         new_order = core_indices + other_indices
         A, b, c = self.ansatz.reorder(new_order).triple
 
-        A = A
-        b = b
-        c = c
-
         M = len(core_modes)
 
         Am = A[: 2 * M, : 2 * M]
@@ -450,8 +446,7 @@ class DM(State):
         new_order = math.astensor(core_indices + other_indices)
 
         A, b, _ = self.ansatz.reorder(new_order).triple
-        A = A
-        b = b
+
         m_modes = A.shape[-1] // 2
 
         if (m_modes % 2) or (m_modes // 2 != len(core_modes)):
@@ -557,8 +552,6 @@ class DM(State):
         new_order = math.astensor(core_indices + other_indices)
 
         A, b, _ = self.ansatz.reorder(new_order).triple
-        A = A
-        b = b
 
         M = len(core_modes)
         N = self.n_modes - M

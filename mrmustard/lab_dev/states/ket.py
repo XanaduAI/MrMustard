@@ -311,10 +311,6 @@ class Ket(State):
 
         A, b, c = self.ansatz.reorder(new_order).triple
 
-        A = A
-        b = b
-        c = c
-
         M = len(core_modes)
 
         # we pick the blocks according to the naming chosen in the paper
@@ -396,10 +392,6 @@ class Ket(State):
         new_order = core_indices + other_indices
 
         A, b, c = self.ansatz.reorder(new_order).triple
-
-        A = A
-        b = b
-        c = c
 
         M = len(core_modes)
 
