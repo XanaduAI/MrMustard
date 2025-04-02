@@ -119,7 +119,7 @@ class DM(State):
         Element-wise purities along the batch dimension of this DM.
         Useful for cases where the batch dimension does not mean a convex combination of states.
         """
-        return self._L2_norms / self._probabilities
+        return self._L2_norms / self.probability
 
     @classmethod
     def from_ansatz(
