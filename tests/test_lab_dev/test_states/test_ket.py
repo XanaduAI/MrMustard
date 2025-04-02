@@ -88,18 +88,20 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert ket.auto_shape() == (8, 11)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
-    def test_to_from_bargmann(self, modes):
-        x = 1
-        y = 2
+    @pytest.mark.parametrize(
+        "x, y", [(1, 2), ([1, 2], [3, 4]), ([[1, 2], [1, 2]], [[3, 4], [3, 4]])]
+    )
+    def test_to_from_bargmann(self, modes, x, y):
 
         state_in = Coherent(modes, x, y)
-        triple_in = state_in.bargmann_triple()  # automatically batched
+        A, b, c = state_in.bargmann_triple()
+        A_expected, b_expected, c_expected = coherent_state_Abc(x, y)
 
-        assert np.allclose(triple_in[0], coherent_state_Abc(x, y)[0])
-        assert np.allclose(triple_in[1], coherent_state_Abc(x, y)[1])
-        assert np.allclose(triple_in[2], coherent_state_Abc(x, y)[2])
+        assert math.allclose(A, A_expected)
+        assert math.allclose(b, b_expected)
+        assert math.allclose(c, c_expected)
 
-        state_out = Ket.from_bargmann((modes,), triple_in, "my_ket")
+        state_out = Ket.from_bargmann((modes,), (A, b, c), "my_ket")
         assert state_in == state_out
 
     def test_from_bargmann_error(self):
@@ -111,17 +113,17 @@ class TestKet:  # pylint: disable=too-many-public-methods
         with pytest.raises(AttributeError):
             Number(0, n=10).bargmann_triple()
 
-    # @pytest.mark.parametrize("coeff", [0.5, 0.3]) #TODO
-    # def test_normalize(self, coeff):
-    #     state = Coherent(0, 1, 1) + Coherent(0, -1, -1)
-    #     state = coeff * state
-    #     # Bargmann
-    #     normalized = state.normalize()
-    #     assert np.isclose(normalized.probability, 1.0)
-    #     # Fock
-    #     state = state.to_fock(5)  # truncated
-    #     normalized = state.normalize()
-    #     assert np.isclose(normalized.probability, 1.0)
+    @pytest.mark.parametrize("coeff", [0.5, 0.3])
+    def test_normalize(self, coeff):
+        state = Coherent(0, 1, 1) + Coherent(0, -1, -1)
+        state = coeff * state
+        # Bargmann
+        normalized = state.normalize()
+        assert np.isclose(normalized.probability, 1.0)
+        # Fock
+        state = state.to_fock(5)  # truncated
+        normalized = state.normalize()
+        assert np.isclose(normalized.probability, 1.0)
 
     def test_normalize_poly_dim(self):
         # https://github.com/XanaduAI/MrMustard/issues/481

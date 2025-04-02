@@ -492,11 +492,6 @@ class PolyExpAnsatz(Ansatz):
         )
         return math.reshape(ret, batch_shape + self.shape_derived_vars)
 
-    def _equal_no_array(self, other: PolyExpAnsatz) -> bool:
-        self.simplify()
-        other.simplify()
-        return np.allclose(self.b, other.b) and np.allclose(self.A, other.A)
-
     def _find_unique_terms_sorted(
         self,
     ) -> tuple[tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]], list[int]]:
@@ -798,10 +793,14 @@ class PolyExpAnsatz(Ansatz):
             poly = self._compute_polynomial_part(z, A, b)
             return self._combine_exp_and_poly(exp_sum, poly, c)
 
-    def __eq__(self, other: PolyExpAnsatz) -> bool:
+    def __eq__(self, other) -> bool:
         if not isinstance(other, PolyExpAnsatz):
             return False
-        return self._equal_no_array(other) and np.allclose(self.c, other.c)
+        return (
+            math.allclose(self.A, other.A)
+            and math.allclose(self.b, other.b)
+            and math.allclose(self.c, other.c)
+        )
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
