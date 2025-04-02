@@ -309,7 +309,7 @@ class Ket(State):
         other_indices = self.wires[other_modes].indices
         new_order = core_indices + other_indices
 
-        A, b, c = self.ansatz.reorder(new_order).triple
+        A, b, _ = self.ansatz.reorder(new_order).triple
 
         M = len(core_modes)
 
