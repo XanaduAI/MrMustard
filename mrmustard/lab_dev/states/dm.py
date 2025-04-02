@@ -450,8 +450,8 @@ class DM(State):
         new_order = math.astensor(core_indices + other_indices)
 
         A, b, _ = self.ansatz.reorder(new_order).triple
-        A = A[-1]
-        b = b[-1]
+        A = A
+        b = b
         m_modes = A.shape[-1] // 2
 
         if (m_modes % 2) or (m_modes // 2 != len(core_modes)):
@@ -460,7 +460,6 @@ class DM(State):
             )
 
         M = len(core_modes)
-
         Am = A[: 2 * M, : 2 * M]
         An = A[2 * M :, 2 * M :]
         R = A[2 * M :, : 2 * M]
@@ -547,8 +546,8 @@ class DM(State):
         new_order = math.astensor(core_indices + other_indices)
 
         A, b, _ = self.ansatz.reorder(new_order).triple
-        A = A[-1]
-        b = b[-1]
+        A = A
+        b = b
 
         M = len(core_modes)
         N = self.n_modes - M
@@ -575,14 +574,15 @@ class DM(State):
         idx = np.argsort(r_c_evals)[::-1]
         r_c_evals = r_c_evals[idx]
         r_c_evecs = r_c_evecs[:, idx]
-        r_c = r_c_evecs[:, :M] * math.sqrt(r_c_evals[:M])
+        print(r_c_evals)
+        r_c = r_c_evecs[:, :M] * math.sqrt(math.real(r_c_evals[:M]))
         R_c = math.block(
             [
                 [math.conj(r_c), math.zeros((N, M), dtype=math.complex128)],
                 [math.zeros((M, N), dtype=math.complex128), r_c],
             ]
         )
-
+        print(R_c)
         alpha_n_c = alpha_n - sigma @ math.inv(alpha_m) @ math.conj(sigma.T)
         a_n_c = a_n + reduced_A[N:, N:]
         An_c = math.block([[math.conj(a_n_c), math.conj(alpha_n_c)], [alpha_n_c, a_n_c]])
