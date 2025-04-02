@@ -455,7 +455,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert psi == core >> U
 
         A_c, _, _ = core.ansatz.triple
-        assert A_c[-1][0, 0] == 0
+        assert A_c[0, 0] == 0
 
         assert U >> U.dual == Identity([0])
 
@@ -465,7 +465,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert phi == core >> U
 
         A_c, _, _ = core.ansatz.triple
-        A_c = A_c[-1]
+        A_c = A_c
         A_c_reordered = A_c[[0, 2], :]
         A_c_reordered = A_c_reordered[:, [0, 2]]
         assert math.allclose(A_c_reordered, math.zeros((2, 2)))
@@ -476,12 +476,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
         core12, phi12 = psi.formal_stellar_decomposition([1, 2])
 
         A1, _, _ = phi1.ansatz.triple
-        A1 = A1[-1]
+        A1 = A1
         assert math.allclose(A1[1, 1], 0.0)
 
         A12, _, _ = phi12.ansatz.triple
-        A12 = A12[-1]
-        assert math.allclose(A1[1:, 1:], math.zeros((2, 2), dtype=math.complex128))
+        assert math.allclose(A12[1:, 1:], math.zeros((2, 2), dtype=math.complex128))
 
         assert psi == core1 >> phi1
         assert psi == core12 >> phi12
