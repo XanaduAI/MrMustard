@@ -404,7 +404,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert not rho.is_physical
         assert Ket.random(modes).dm().is_physical
 
-    def test_fock_array_ordering(self):  # TODO: linear superpositions
+    def test_fock_array_ordering(self):
         rho = Number(0, 0) + 1j * Number(0, 1)
         rho = (Number(0, 0) + 1j * Number(0, 1)).dm()
         rho_fock = rho.fock_array(standard_order=True)

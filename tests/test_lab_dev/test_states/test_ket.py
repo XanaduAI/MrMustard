@@ -207,7 +207,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         state2 = Coherent(0, x=1) / 2**0.5 + Coherent(0, x=-1) / 2**0.5
         assert math.allclose(state2.probability, 1.13533528)
-        # assert math.allclose(state2.to_fock(20).probability, 1.13533528) # TODO
+        assert math.allclose(state2.to_fock(20).probability, 1.13533528)
 
         state3 = Number(0, n=1, cutoff=2) / 2**0.5 + Number(0, n=2) / 2**0.5
         assert math.allclose(state3.probability, 1)

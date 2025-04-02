@@ -591,6 +591,7 @@ class CircuitComponent:
             ret = self._from_attributes(rep, self.name)
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
+        ret._lin_sup = self._lin_sup
         return ret
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
@@ -624,7 +625,7 @@ class CircuitComponent:
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
         ret = self._from_attributes(Representation(ansatz, self.wires), name)
-        ret._lin_sup = True
+        ret._lin_sup = True if isinstance(ansatz, PolyExpAnsatz) else False
         return ret
 
     def __eq__(self, other) -> bool:
@@ -642,7 +643,9 @@ class CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the right.
         """
-        return self._from_attributes(Representation(self.ansatz * other, self.wires), self.name)
+        ret = self._from_attributes(Representation(self.ansatz * other, self.wires), self.name)
+        ret._lin_sup = self._lin_sup
+        return ret
 
     def __repr__(self) -> str:
         ansatz = self.ansatz
@@ -747,7 +750,9 @@ class CircuitComponent:
         r"""
         Implements the division by a scalar for circuit components.
         """
-        return self._from_attributes(Representation(self.ansatz / other, self.wires), self.name)
+        ret = self._from_attributes(Representation(self.ansatz / other, self.wires), self.name)
+        ret._lin_sup = self._lin_sup
+        return ret
 
     def _ipython_display_(self):
         if mmwidgets.IN_INTERACTIVE_SHELL:

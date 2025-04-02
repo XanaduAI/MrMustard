@@ -75,7 +75,9 @@ class Ket(State):
 
     @property
     def purity(self) -> float:
-        return math.ones(self.ansatz.batch_shape[:-1] if self._lin_sup else self.ansatz.batch_shape)
+        shape = self.ansatz.batch_shape if self.ansatz else ()
+        shape = shape[:-1] if self._lin_sup else shape
+        return math.ones(shape)
 
     @classmethod
     def from_ansatz(
@@ -218,17 +220,26 @@ class Ket(State):
 
         # TODO: assuming first batch dim is lin_sup
         if self._lin_sup:
-            A, b, c = repr.ansatz.triple
-            batch_shape = self.ansatz.batch_shape[:-1]
-            new_A = math.reshape(A, batch_shape + (-1,) + A.shape[-2:])
-            new_b = math.reshape(b, batch_shape + (-1,) + b.shape[-1:])
-            new_c = math.reshape(c, batch_shape + (-1,) + self.ansatz.shape_derived_vars)
-            new_ansatz = PolyExpAnsatz(new_A, new_b, new_c)
-            repr._ansatz = new_ansatz
+            if isinstance(self.ansatz, PolyExpAnsatz):
+                A, b, c = repr.ansatz.triple
+                batch_shape = self.ansatz.batch_shape[:-1]
+                new_A = math.reshape(A, batch_shape + (-1,) + A.shape[-2:])
+                new_b = math.reshape(b, batch_shape + (-1,) + b.shape[-1:])
+                new_c = math.reshape(c, batch_shape + (-1,) + self.ansatz.shape_derived_vars)
+                new_ansatz = PolyExpAnsatz(new_A, new_b, new_c)
+                repr._ansatz = new_ansatz
+            else:
+                fock_array = repr.ansatz.array
+                batch_shape = self.ansatz.batch_shape[:-1]
+                new_fock_array = math.reshape(
+                    fock_array, batch_shape + (-1,) + repr.ansatz.core_shape
+                )
+                new_ansatz = ArrayAnsatz(new_fock_array, batch_dims=self.ansatz.batch_dims)
+                repr._ansatz = new_ansatz
 
         ret = DM(repr, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
-        ret._lin_sup = True
+        ret._lin_sup = self._lin_sup
         return ret
 
     def expectation(self, operator: CircuitComponent):
