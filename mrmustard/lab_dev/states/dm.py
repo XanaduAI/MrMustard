@@ -431,7 +431,7 @@ class DM(State):
 
             >>> assert isinstance(core, Ket)
             >>> assert rho == core >> phi
-            >>> assert (core >> Vacuum(1).dual) == Vacuum(0)
+            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0)
         """
         from .ket import Ket
 
