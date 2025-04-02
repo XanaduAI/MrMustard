@@ -566,15 +566,14 @@ class DM(State):
         if rank > M:
             raise ValueError(f"The rank {rank} is larger than the number of core modes {M}.")
 
-        reduced_A = R @ math.inv(Am - math.Xmat(M)) @ R.T
+        reduced_A = R @ math.inv(math.eye(2 * M) - math.Xmat(M) @ Am) @ math.conj(R.T)
 
         # computing a low-rank r_c:
-        r_c_squared = reduced_A[N:, :N] + sigma @ math.inv(alpha_m) @ math.conj(sigma.T)
+        r_c_squared = reduced_A[N:, N:] + sigma @ math.inv(alpha_m) @ math.conj(sigma.T)
         r_c_evals, r_c_evecs = math.eigh(r_c_squared)
         idx = np.argsort(r_c_evals)[::-1]
         r_c_evals = r_c_evals[idx]
         r_c_evecs = r_c_evecs[:, idx]
-        print(r_c_evals)
         r_c = r_c_evecs[:, :M] * math.sqrt(math.real(r_c_evals[:M]))
         R_c = math.block(
             [
@@ -582,9 +581,8 @@ class DM(State):
                 [math.zeros((M, N), dtype=math.complex128), r_c],
             ]
         )
-        print(R_c)
         alpha_n_c = alpha_n - sigma @ math.inv(alpha_m) @ math.conj(sigma.T)
-        a_n_c = a_n + reduced_A[N:, N:]
+        a_n_c = a_n + reduced_A[N:, :N]
         An_c = math.block([[math.conj(a_n_c), math.conj(alpha_n_c)], [alpha_n_c, a_n_c]])
         A_core = math.block(
             [[math.zeros((2 * M, 2 * M), dtype=math.complex128), R_c.T], [R_c, An_c]]
