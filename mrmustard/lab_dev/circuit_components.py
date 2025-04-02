@@ -22,7 +22,6 @@ from __future__ import annotations
 from inspect import signature
 from pydoc import locate
 from typing import Any, Sequence, Literal
-import itertools
 import numbers
 from functools import cached_property
 
@@ -32,7 +31,6 @@ import ipywidgets as widgets
 from IPython.display import display
 
 from mrmustard import settings, math, widgets as mmwidgets
-from mrmustard.utils.argsort import argsort_gen
 from mrmustard.utils.typing import (
     Scalar,
     ComplexTensor,
@@ -652,7 +650,7 @@ class CircuitComponent:
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
         ret = self._from_attributes(Representation(ansatz, self.wires), name)
-        ret._lin_sup = True if isinstance(ansatz, PolyExpAnsatz) else False
+        ret._lin_sup = isinstance(ansatz, PolyExpAnsatz)
         return ret
 
     def __eq__(self, other) -> bool:
@@ -664,8 +662,8 @@ class CircuitComponent:
         """
         if not isinstance(other, CircuitComponent):
             return False
-        # self.simplify_ansatz()
-        # other.simplify_ansatz()
+        # simplified_self = self.simplify_ansatz()
+        # simplified_other = other.simplify_ansatz()
         return self._representation == other._representation
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
