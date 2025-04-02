@@ -550,6 +550,101 @@ class DM(State):
         phi = phi / renorm
         return core, phi
 
+    def physical_stellar_decomposition_2(self, core_modes: Collection[int]):
+        r"""
+        Applies the physical stellar decomposition based on the rank condition.
+
+        Args:
+            core_modes: the core modes defining the core variables.
+
+        Returns:
+            core: The core state (`DM`)
+            phi: The channel acting on the core modes (`Channel`)
+
+        Raises:
+            ValueError: if the rank condition is not satisfied.
+        """
+        other_modes = [m for m in self.modes if m not in core_modes]
+        core_bra_indices = self.wires.bra[core_modes].indices
+        core_ket_indices = self.wires.ket[core_modes].indices
+        core_indices = core_bra_indices + core_ket_indices
+
+        other_bra_indices = self.wires.bra[other_modes].indices
+        other_ket_indices = self.wires.ket[other_modes].indices
+        other_indices = other_bra_indices + other_ket_indices
+
+        new_order = core_indices + other_indices
+        new_order = math.astensor(core_indices + other_indices)
+
+        A, b, _ = self.ansatz.reorder(new_order).triple
+        A = A[-1]
+        b = b[-1]
+
+        M = len(core_modes)
+        N = self.n_modes - M
+
+        Am = A[: 2 * M, : 2 * M]
+        An = A[2 * M :, 2 * M :]
+        R = A[2 * M :, : 2 * M]
+
+        sigma = R[M:, :M]
+        r = R[M:, M:]
+        alpha_m = Am[M:, :M]
+        alpha_n = An[N:, :N]
+        a_n = An[N:, N:]
+
+        rank = np.linalg.matrix_rank(r @ math.conj(r).T + sigma @ math.conj(sigma.T))
+        if rank > M:
+            raise ValueError(f"The rank {rank} is larger than the number of core modes {M}.")
+
+        reduced_A = R @ math.inv(Am - math.Xmat(M)) @ R.T
+
+        # computing a low-rank r_c:
+        r_c_squared = reduced_A[N:, :N] + sigma @ math.inv(alpha_m) @ math.conj(sigma.T)
+        r_c_evals, r_c_evecs = math.eigh(r_c_squared)
+        idx = np.argsort(r_c_evals)[::-1]
+        r_c_evals = r_c_evals[idx]
+        r_c_evecs = r_c_evecs[:, idx]
+        r_c = r_c_evecs[:, :M] * math.sqrt(r_c_evals[:M])
+        R_c = math.block(
+            [
+                [math.conj(r_c), math.zeros((N, M), dtype=math.complex128)],
+                [math.zeros((M, N), dtype=math.complex128), r_c],
+            ]
+        )
+
+        alpha_n_c = alpha_n - sigma @ math.inv(alpha_m) @ math.conj(sigma.T)
+        a_n_c = a_n + reduced_A[N:, N:]
+        An_c = math.block([[math.conj(a_n_c), math.conj(alpha_n_c)], [alpha_n_c, a_n_c]])
+        A_core = math.block(
+            [[math.zeros((2 * M, 2 * M), dtype=math.complex128), R_c.T], [R_c, An_c]]
+        )
+        b_core = math.zeros(2 * self.n_modes, dtype=math.complex128)
+        c_core = 1
+
+        inverse_order = np.argsort(new_order)
+
+        temp = math.astensor(inverse_order)
+        A_core = A_core[temp, :]
+        A_core = A_core[:, temp]
+        b_core = b_core[temp]
+        core = DM.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
+
+        Aphi_out = Am
+        gamma = math.pinv(R_c) @ R
+        Aphi_in = gamma @ math.inv(Aphi_out - math.Xmat(M)) @ gamma.T + math.Xmat(M)
+
+        Aphi_oi = math.block([[Aphi_out, gamma.T], [gamma, Aphi_in]])
+        A_tmp = math.reshape(Aphi_oi, (2, 2, M, 2, 2, M))
+        A_tmp = math.transpose(A_tmp, (1, 0, 2, 4, 3, 5))
+        Aphi = math.reshape(A_tmp, (4 * M, 4 * M))
+        bphi = math.zeros(4 * M, dtype=math.complex128)
+        phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, 1.0))
+        renorm = (core >> phi).probability
+        phi = phi / renorm
+
+        return core, phi
+
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
             print(self)
