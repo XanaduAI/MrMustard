@@ -367,9 +367,9 @@ class DM(State):
         new_order = core_indices + other_indices
         A, b, c = self.ansatz.reorder(new_order).triple
 
-        A = A[-1]
-        b = b[-1]
-        c = c[-1]
+        A = A
+        b = b
+        c = c
 
         M = len(core_modes)
 
