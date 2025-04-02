@@ -100,7 +100,7 @@ class DM(State):
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
         element-wise along the batch dimension.
         """
-        return self._compute_L2_norms(mode="zip")  # TODO: this is equivalent to lin_sup = None
+        return self._compute_L2_norms(mode="zip")
 
     @property
     def _probabilities(self) -> RealVector:
@@ -119,7 +119,7 @@ class DM(State):
         Element-wise purities along the batch dimension of this DM.
         Useful for cases where the batch dimension does not mean a convex combination of states.
         """
-        return self._L2_norms / self.probability
+        return self._L2_norms / self.probability[..., None]
 
     @classmethod
     def from_ansatz(
