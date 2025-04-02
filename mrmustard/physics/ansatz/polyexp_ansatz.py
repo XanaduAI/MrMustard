@@ -395,27 +395,6 @@ class PolyExpAnsatz(Ansatz):
         b = math.gather(self.b, order, axis=-1)
         return PolyExpAnsatz(A, b, self.c)
 
-    # TODO: this should be moved to classes responsible for interpreting a batch dimension as a sum
-    def simplify(self) -> None:
-        r"""
-        Simplifies an ansatz by combining terms that have the same exponential part, i.e. two components
-        of the batch are considered equal if their ``A`` and ``b`` are equal. In this case only one
-        is kept and the corresponding ``c`` are added.
-
-        Will return immediately if the ansatz has already been simplified, so it is safe to re-call.
-        """
-        if self._simplified or self.batch_shape == ():  # tensorflow
-            return
-        (A, b, c), to_keep = self._find_unique_terms_sorted()
-        A = math.gather(A, to_keep, axis=0)
-        b = math.gather(b, to_keep, axis=0)
-        c = math.gather(c, to_keep, axis=0)  # already added
-        self._A = math.reshape(A, (len(to_keep),) + (self.num_vars, self.num_vars))
-        self._b = math.reshape(b, (len(to_keep),) + (self.num_vars,))
-        self._c = math.reshape(c, (len(to_keep),) + self.shape_derived_vars)
-        self._batch_shape = (len(to_keep),)
-        self._simplified = True
-
     def to_dict(self) -> dict[str, ArrayLike]:
         r"""Returns a dictionary representation of the ansatz. For serialization purposes."""
         return {"A": self.A, "b": self.b, "c": self.c}
@@ -497,7 +476,6 @@ class PolyExpAnsatz(Ansatz):
     ) -> tuple[tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]], list[int]]:
         r"""
         Finds unique terms by first sorting the batch dimension and adds the corresponding c values.
-        Needed in ``simplify``.
 
         Returns:
             The updated vectorized (A,b,c) triple and a list of indices to keep after simplification.
@@ -554,19 +532,11 @@ class PolyExpAnsatz(Ansatz):
         Returns:
             The ordered vectorized (A, b, c) triple.
         """
-        A_vectorized = (
-            math.reshape(self.A, (-1, self.num_vars, self.num_vars))
-            if self.batch_shape != ()
-            else self.A  # tensorflow
-        )
-        b_vectorized = (
-            math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape != () else self.b
-        )  # tensorflow
-        c_vectorized = (
-            math.reshape(self.c, (-1, *self.shape_derived_vars))
-            if self.batch_shape != ()
-            else self.c  # tensorflow
-        )
+        if self.batch_shape == ():
+            return self.A, self.b, self.c
+        A_vectorized = math.reshape(self.A, (-1, self.num_vars, self.num_vars))
+        b_vectorized = math.reshape(self.b, (-1, self.num_vars))
+        c_vectorized = math.reshape(self.c, (-1, *self.shape_derived_vars))
         generators = [
             itertools.chain(
                 math.asnumpy(b_vectorized[i]).flat,
@@ -796,10 +766,12 @@ class PolyExpAnsatz(Ansatz):
     def __eq__(self, other) -> bool:
         if not isinstance(other, PolyExpAnsatz):
             return False
+        self_A, self_b, self_c = self._order_batch()
+        other_A, other_b, other_c = other._order_batch()
         return (
-            math.allclose(self.A, other.A)
-            and math.allclose(self.b, other.b)
-            and math.allclose(self.c, other.c)
+            math.allclose(self_A, other_A)
+            and math.allclose(self_b, other_b)
+            and math.allclose(self_c, other_c)
         )
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
