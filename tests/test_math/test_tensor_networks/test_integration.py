@@ -34,18 +34,15 @@ class TestTransformations:
         r"""
         Tests that a sequence of one-mode unitaries can be contracted correctly.
         """
-        s_tens = Sgate(modes, r=0.1)
-        r_tens = Rgate(modes, theta=0.2)
-        d_tens = Dgate(modes, x=0.3)
+        s_tens = Sgate(modes, r=0.1).fock_array(shape=(default_dim, dim))
+        r_tens = Rgate(modes, theta=0.2).fock_array(dim)
+        d_tens = Dgate(modes, x=0.3).fock_array(shape=(dim, default_dim))
 
-        for mode in modes:
-            connect(s_tens.output.ket[mode], r_tens.input.ket[mode], dim)
-            connect(r_tens.output.ket[mode], d_tens.input.ket[mode], dim)
         contraction = contract([s_tens, r_tens, d_tens], default_dim)
 
-        s_mat = Sgate(0.1).U(shape=(default_dim, dim))
-        r_mat = Rgate(0.2).U(shape=(dim, dim, dim, dim))
-        d_mat = Dgate(0.3).U(shape=(dim, default_dim))
+        s_mat = Sgate(0, 0.1).fock_array(shape=(default_dim, dim))
+        r_mat = Rgate(0.2).fock_array(dim)
+        d_mat = Dgate(0.3).fock_array(shape=(dim, default_dim))
         expected = np.dot(s_mat, r_mat)
         expected = np.dot(expected, d_mat)
         if len(modes) == 2:
