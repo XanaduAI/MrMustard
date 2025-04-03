@@ -64,7 +64,7 @@ class TestBtoChar:
 
     def test_inverse(self):
         btochar = BtoChar(0, 0)
-        inv_btochar = BtoChar.inverse()
+        inv_btochar = btochar.inverse()
         assert (btochar >> inv_btochar).ansatz == (Identity(0).contract(Identity(0).adjoint)).ansatz
 
     def test_representation(self):
