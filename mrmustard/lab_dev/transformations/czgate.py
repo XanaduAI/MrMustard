@@ -31,20 +31,27 @@ class CZgate(Unitary):
     r"""
     Controlled Z gate.
 
-    .. math::
-
-        C_Z = \exp(is q_1 \otimes q_2 / \hbar).
-
-
-    Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 8.
-    https://arxiv.org/pdf/1110.3234.pdf, Equation 161.
-
-
     Args:
         modes: The pair of modes of the controlled-Z gate.
         s: The control parameter.
         s_trainable: Whether ``s`` is trainable.
         s_bounds: The bounds for ``s``.
+
+    .. code-block ::
+        >>> from mrmustard.lab_dev import CZgate
+        >>> gate = CZgate((0, 1), s=0.5)
+        >>> assert gate.modes == (0, 1)
+        >>> assert gate.parameters.s.value == 0.5
+
+    .. details::
+        We have that the controlled-Z gate is defined as
+
+        .. math::
+
+            C_Z = \exp(is q_1 \otimes q_2 / \hbar).
+
+        Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 8.
+        https://arxiv.org/pdf/1110.3234.pdf, Equation 161.
     """
 
     short_name = "CZ"
