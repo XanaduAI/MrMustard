@@ -510,6 +510,12 @@ class Channel(Map):
         Args:
             modes: The modes of the channel.
             max_r: The maximum squeezing parameter.
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import Channel
+
+            >>> channel = Channel.random((0, 1, 2), max_r=1.2)
+            >>> assert channel.modes == (0, 1, 2)
         """
         from mrmustard.lab_dev.states import Vacuum
 
