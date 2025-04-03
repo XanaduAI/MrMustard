@@ -46,7 +46,9 @@ def mm_einsum(
     """
     ansatze = {(i,): ansatz for i, ansatz in enumerate(args[::2])}
     indices = {(i,): index for i, index in enumerate(args[1::2])}
-    all_batch_names = set(name for index in indices for name in _strings(index))
+    all_batch_names = set(name for index in indices for name in _strings(index)) | set(
+        _strings(output)
+    )
     names_to_chars = {name: chr(97 + i) for i, name in enumerate(all_batch_names)}
     indices = {
         k: [names_to_chars[s] for s in _strings(index)] + _ints(index)
@@ -84,9 +86,10 @@ def mm_einsum(
     if len(ansatze) > 1:
         raise ValueError("More than one ansatz left after contraction.")
 
-    result = ansatze.pop()
-    final_idx = indices.pop()
-    output_idx_str = _strings(output)
+    # Get the only element from the dictionaries
+    result = list(ansatze.values())[0]
+    final_idx = list(indices.values())[0]
+    output_idx_str = [names_to_chars[s] for s in _strings(output)]
     output_idx_int = _ints(output)
 
     if len(output_idx_str) > 1:
