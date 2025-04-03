@@ -144,7 +144,8 @@ class GDM(DM):
 
         For a given Gaussian unitary U (that is determined by its symplectic
         representation), and a set of temperatures, produces the state
-        ..math:
+        .. math:
+
             \rho = U (\bigotimes_i \rho_t(\beta_i))
         where rho_t are thermal states with temperatures determined by beta.
     """
