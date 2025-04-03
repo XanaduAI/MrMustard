@@ -282,8 +282,9 @@ class Ket(State):
         Returns:
             A ``DM``.
 
-        Example:
-        .. code-block:
+
+        .. code-block::
+
             >>> from mrmustard.lab_dev import Vacuum, DM
             >>> assert isinstance(Vacuum([0]).dm(), DM)
         """

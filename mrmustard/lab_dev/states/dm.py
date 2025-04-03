@@ -314,7 +314,7 @@ class DM(State):
         Returns:
             A ``DM``.
 
-        .. code-block:
+        .. code-block::
 
             >>> from mrmustard.lab_dev import Vacuum, DM
             >>> assert isinstance(Vacuum([0]).dm(), DM)

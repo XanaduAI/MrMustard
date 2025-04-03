@@ -129,7 +129,7 @@ class GDM(DM):
         symplectic_trainable: determines if the symplectic matrix can be trained.
 
     Returns:
-    A ``DM``.
+        A ``DM``.
 
 
     .. code-block::
