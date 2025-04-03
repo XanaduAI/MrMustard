@@ -42,7 +42,7 @@ class RealInterferometer(Unitary):
 
     .. code-block::
         >>> import numpy as np
-        >>> from mrmustard.lab_dev import RealInterferometer
+        >>> from mrmustard.lab_dev import RealInterferometer, Identity
         >>> ri = RealInterferometer([0, 1], orthogonal = np.eye(2))
         >>> assert ri == Identity((0,1))
     """

@@ -46,12 +46,12 @@ class MZgate(Unitary):
         internal: Whether phases are both in the internal arms.
 
     .. code-block ::
-        >>> import numpy as np
         >>> from mrmustard.lab_dev import MZgate
+
         >>> mz = MZgate((0, 1), phi_a=0.1, phi_b=0.2)
         >>> assert mz.modes == (0, 1)
-        >>> assert np.isclose(mz.parameters.phi_a, 0.1)
-        >>> assert np.isclose(mz.parameters.phi_b, 0.2)
+        >>> assert mz.parameters.phi_a.value == 0.1
+        >>> assert mz.parameters.phi_b.value == 0.2
     """
 
     short_name = "MZ"

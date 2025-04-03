@@ -470,6 +470,7 @@ class Channel(Map):
     ) -> Channel:
         r"""
         Initialize a Channel from its XY representation.
+
         Args:
             modes: The modes the channel is defined on.
             X: The X matrix of the channel.
@@ -481,14 +482,14 @@ class Channel(Map):
 
             >>> from mrmustard.lab_dev import Channel, DM
 
-            >>> X = math.eye(4)
-            >>> Y = math.zeros((4,4))
-            >>> channel = Channel.from_XY([0,1], [0,1], X,Y)
+            >>> X = math.eye(2)
+            >>> Y = math.zeros((2,2))
+            >>> channel = Channel.from_XY([0], [0], X,Y)
 
-            >>> rho = DM.random([0,1])
-            >>> assert rho >> channel == rho
+            >>> assert channel == Attenuator(0, transmissivity=1)
 
         .. details::
+
             Each Gaussian channel transforms a state with covarince matrix :math:`\Sigma` and mean :math:`\mu`
             into a state with covariance matrix :math:`X \Sigma X^T + Y` and vector of means :math:`X\mu + d`.
             This channel has a Bargmann triple that is computed in https://arxiv.org/pdf/2209.06069. We borrow

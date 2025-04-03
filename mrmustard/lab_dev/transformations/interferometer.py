@@ -50,7 +50,7 @@ class Interferometer(Unitary):
 
         >>> unitary = Interferometer(modes=(1, 2), unitary=np.eye(2))
         >>> assert unitary.modes == (1, 2)
-        >>> assert math.allclose(unitary.symplectic, np.eye(2))
+        >>> assert math.allclose(unitary.symplectic, np.eye(4))
     """
 
     short_name = "I"
