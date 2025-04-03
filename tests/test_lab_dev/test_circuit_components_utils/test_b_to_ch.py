@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for BtoCH."""
+"""Tests for BtoChar."""
 
 # pylint: disable=fixme, missing-function-docstring, pointless-statement
 
@@ -20,15 +20,15 @@ import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.lab_dev import DM, BtoCH, Identity, Ket
+from mrmustard.lab_dev import DM, BtoChar, Identity, Ket
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.triples import displacement_map_s_parametrized_Abc
 
 
-class TestBtoCH:
+class TestBtoChar:
     r"""
-    Tests for the ``BtoCH`` class.
+    Tests for the ``BtoChar`` class.
     """
 
     modes = [(0,), (1, 2), (7, 9)]
@@ -36,51 +36,51 @@ class TestBtoCH:
 
     @pytest.mark.parametrize("modes,s", zip(modes, s))
     def test_init(self, modes, s):
-        dsmap = BtoCH(modes, s)
-        assert dsmap.name == "BtoCH"
+        dsmap = BtoChar(modes, s)
+        assert dsmap.name == "BtoChar"
         assert dsmap.modes == modes
 
     def test_adjoint(self):
-        b_to_ch = BtoCH(0, 0)
-        adjoint_BtoCH = b_to_ch.adjoint
+        btochar = BtoChar(0, 0)
+        adjoint_btochar = btochar.adjoint
 
-        bras = b_to_ch.wires.bra.indices
-        kets = b_to_ch.wires.ket.indices
-        assert adjoint_BtoCH.ansatz == b_to_ch.ansatz.reorder(kets + bras).conj
-        assert adjoint_BtoCH.wires == b_to_ch.wires.adjoint
-        assert adjoint_BtoCH.parameters.s == b_to_ch.parameters.s
+        bras = BtoChar.wires.bra.indices
+        kets = BtoChar.wires.ket.indices
+        assert adjoint_BtoChar.ansatz == BtoChar.ansatz.reorder(kets + bras).conj
+        assert adjoint_BtoChar.wires == BtoChar.wires.adjoint
+        assert adjoint_BtoChar.parameters.s == BtoChar.parameters.s
 
     def test_dual(self):
-        b_to_ch = BtoCH(0, 0)
-        dual_BtoCH = b_to_ch.dual
+        btochar = BtoChar(0, 0)
+        dual_btochar = btochar.dual
 
-        ok = b_to_ch.wires.ket.output.indices
-        ik = b_to_ch.wires.ket.input.indices
-        ib = b_to_ch.wires.bra.input.indices
-        ob = b_to_ch.wires.bra.output.indices
-        assert dual_BtoCH.ansatz == b_to_ch.ansatz.reorder(ib + ob + ik + ok).conj
-        assert dual_BtoCH.wires == b_to_ch.wires.dual
-        assert dual_BtoCH.parameters.s == b_to_ch.parameters.s
+        ok = btochar.wires.ket.output.indices
+        ik = btochar.wires.ket.input.indices
+        ib = btochar.wires.bra.input.indices
+        ob = btochar.wires.bra.output.indices
+        assert dual_btochar.ansatz == btochar.ansatz.reorder(ib + ob + ik + ok).conj
+        assert dual_btochar.wires == btochar.wires.dual
+        assert dual_btochar.parameters.s == btochar.parameters.s
 
     def test_inverse(self):
-        b_to_ch = BtoCH(0, 0)
-        inv_BtoCH = b_to_ch.inverse()
-        assert (b_to_ch >> inv_BtoCH).ansatz == (Identity(0) @ Identity(0).adjoint).ansatz
+        btochar = BtoChar(0, 0)
+        inv_btochar = BtoChar.inverse()
+        assert (btochar >> inv_btochar).ansatz == (Identity(0).contract(Identity(0).adjoint)).ansatz
 
     def test_representation(self):
-        ansatz = BtoCH(modes=0, s=0).ansatz
+        ansatz = BtoChar(modes=0, s=0).ansatz
         A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
-        assert math.allclose(ansatz.A[0], A_correct)
-        assert math.allclose(ansatz.b[0], b_correct)
-        assert math.allclose(ansatz.c[0], c_correct)
+        assert math.allclose(ansatz.A, A_correct)
+        assert math.allclose(ansatz.b, b_correct)
+        assert math.allclose(ansatz.c, c_correct)
 
-        ansatz2 = BtoCH(modes=(5, 10), s=1).ansatz
+        ansatz2 = BtoChar(modes=(5, 10), s=1).ansatz
         A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=1, n_modes=2)
-        assert math.allclose(ansatz2.A[0], A_correct)
-        assert math.allclose(ansatz2.b[0], b_correct)
-        assert math.allclose(ansatz2.c[0], c_correct)
+        assert math.allclose(ansatz2.A, A_correct)
+        assert math.allclose(ansatz2.b, b_correct)
+        assert math.allclose(ansatz2.c, c_correct)
 
-    def testBtoCH_contraction_with_state(self):
+    def testBtoChar_contraction_with_state(self):
         # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
         state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
         state_means = np.array([0.4, 0.6])
@@ -89,8 +89,8 @@ class TestBtoCH:
         state_bargmann_triple = state.bargmann_triple()
 
         # get new triple by right shift
-        state_after = state >> BtoCH(modes=(0,), s=0)
-        A1, b1, c1 = state_after.bargmann_triple(batched=True)
+        state_after = state >> BtoChar(modes=(0,), s=0)
+        A1, b1, c1 = state_after.bargmann_triple()
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
@@ -117,8 +117,8 @@ class TestBtoCH:
         state_bargmann_triple = state.bargmann_triple()
 
         # get new triple by right shift
-        state_after = state >> BtoCH(modes=(0, 1), s=0)
-        A1, b1, c1 = state_after.bargmann_triple(batched=True)
+        state_after = state >> BtoChar(modes=(0, 1), s=0)
+        A1, b1, c1 = state_after.bargmann_triple()
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=2)
@@ -134,4 +134,4 @@ class TestBtoCH:
         assert math.allclose(c1, c2)
 
         psi = Ket.random([0])
-        assert math.allclose((psi >> BtoCH(0, 1)).ansatz([0, 0]), [1.0])
+        assert math.allclose((psi >> BtoChar(0, 1)).ansatz(0, 0), 1.0)

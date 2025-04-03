@@ -25,10 +25,10 @@ from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
 from ..utils import make_parameter
 
-__all__ = ["BtoCH"]
+__all__ = ["BtoChar"]
 
 
-class BtoCH(Map):
+class BtoChar(Map):
     r"""
     The `s`-parametrized ``Dgate`` as a ``Map``. Also known as the Fourier transform of the Stratonovich-Weyl kernel. See https://arxiv.org/abs/quant-ph/9707010.
 
@@ -45,7 +45,7 @@ class BtoCH(Map):
         s: float,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="BtoCH")
+        super().__init__(name="BtoChar")
         self.parameters.add_parameter(make_parameter(False, s, "s", (None, None)))
         self._representation = self.from_ansatz(
             modes_in=modes,
@@ -61,7 +61,7 @@ class BtoCH(Map):
             w.repr_params_func = lambda: self.parameters.s
 
     def inverse(self):
-        ret = BtoCH(self.modes, self.parameters.s)
+        ret = BtoChar(self.modes, self.parameters.s)
         ret._representation = super().inverse().representation
         ret._representation._wires = ret.representation.wires.dual
         return ret

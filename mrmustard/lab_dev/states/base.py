@@ -50,7 +50,7 @@ from mrmustard.utils.typing import (
 )
 
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoCH, BtoQ
+from ..circuit_components_utils import BtoChar, BtoQ
 
 
 __all__ = ["State"]
@@ -367,7 +367,7 @@ class State(CircuitComponent):
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
-        new_state = self >> BtoCH(self.modes, s=s)
+        new_state = self >> BtoChar(self.modes, s=s)
         return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple())
 
     def quadrature_distribution(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
