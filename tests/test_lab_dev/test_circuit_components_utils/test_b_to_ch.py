@@ -44,11 +44,11 @@ class TestBtoChar:
         btochar = BtoChar(0, 0)
         adjoint_btochar = btochar.adjoint
 
-        bras = BtoChar.wires.bra.indices
-        kets = BtoChar.wires.ket.indices
-        assert adjoint_BtoChar.ansatz == BtoChar.ansatz.reorder(kets + bras).conj
-        assert adjoint_BtoChar.wires == BtoChar.wires.adjoint
-        assert adjoint_BtoChar.parameters.s == BtoChar.parameters.s
+        bras = btochar.wires.bra.indices
+        kets = btochar.wires.ket.indices
+        assert adjoint_btochar.ansatz == btochar.ansatz.reorder(kets + bras).conj
+        assert adjoint_btochar.wires == btochar.wires.adjoint
+        assert adjoint_btochar.parameters.s == btochar.parameters.s
 
     def test_dual(self):
         btochar = BtoChar(0, 0)
