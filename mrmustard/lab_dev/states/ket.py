@@ -357,36 +357,6 @@ class Ket(State):
 
         return result
 
-    def fock_distribution(self, cutoff: int) -> RealTensor:
-        r"""
-        The Fock distribution of the state up to some cutoff.
-
-        Args:
-            cutoff: The photon cutoff.
-
-        Returns:
-            The Fock distribution.
-
-        .. code-block::
-
-            >>> from mrmustard.lab_dev import Ket
-
-            >>> psi = Ket.random([0])
-            >>> dist = psi.fock_distribution(20)
-
-            >>> assert all(dist >= 0)
-        """
-        fock_array = self.fock_array(cutoff)
-        return (
-            math.astensor(
-                [
-                    math.real(fock_array[ns])
-                    for ns in product(list(range(cutoff)), repeat=self.n_modes)
-                ]
-            )
-            ** 2
-        )
-
     def normalize(self) -> Ket:
         r"""
         Scales the state so that it has unit L2 norm.
