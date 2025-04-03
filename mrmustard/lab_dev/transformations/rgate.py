@@ -30,18 +30,19 @@ class Rgate(Unitary):
     r"""
     The rotation gate.
 
-    .. code-block ::
-
-        >>> from mrmustard.lab_dev import Rgate
-
-        >>> unitary = Rgate(mode=1, theta=0.1)
-        >>> assert unitary.modes == (1,)
 
     Args:
         mode: The mode this gate is applied to.
         theta: The rotation angle.
         theta_trainable: Whether ``theta`` is trainable.
         theta_bounds: The bounds for ``theta``.
+
+    .. code-block ::
+
+        >>> from mrmustard.lab_dev import Rgate
+
+        >>> unitary = Rgate(mode=1, theta=0.1)
+        >>> assert unitary.modes == (1,)
     """
 
     short_name = "R"
