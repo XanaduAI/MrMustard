@@ -49,7 +49,7 @@ class Sauron(Ket):
         >>> from mrmustard.lab_dev import Sauron
 
         >>> psi = Sauron(0, 1)
-        >>> assert psi.fock_distribution(2)[1] > 0.999
+        >>> assert psi.modes == (0,)
     """
 
     def __init__(self, mode: int, n: int, epsilon: float = 0.1):

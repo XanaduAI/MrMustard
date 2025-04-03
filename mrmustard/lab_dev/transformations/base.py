@@ -480,7 +480,7 @@ class Channel(Map):
 
         .. code-block::
 
-            >>> from mrmustard.lab_dev import Channel, DM
+            >>> from mrmustard.lab_dev import Attenuator, Channel
 
             >>> X = math.eye(2)
             >>> Y = math.zeros((2,2))
