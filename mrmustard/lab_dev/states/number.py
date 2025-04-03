@@ -38,6 +38,14 @@ class Number(Ket):
         cutoffs: The cutoffs. If ``cutoffs`` is ``None``, it
             defaults to ``n+1``.
 
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import Number
+        >>> from mrmustard.physics.ansatz import ArrayAnsatz
+
+        >>> state = Number(mode=0, n=10)
+        >>> assert isinstance(state.ansatz, ArrayAnsatz)
+
     .. details::
 
         For any :math:`\bar{n} = (n_1,\:\ldots,\:n_N)`, the :math:`N`-mode number state is defined
@@ -49,13 +57,6 @@ class Number(Ket):
         where :math:`\ket{n_j}` is the eigenstate of the number operator on mode `j` with eigenvalue
         :math:`n_j`.
 
-    .. code-block::
-
-        >>> from mrmustard.lab_dev import Number
-        >>> from mrmustard.physics.ansatz import ArrayAnsatz
-
-        >>> state = Number(mode=0, n=10)
-        >>> assert isinstance(state.ansatz, ArrayAnsatz)
     """
 
     def __init__(
