@@ -73,7 +73,7 @@ class BtoPS(Map):
         >>> from mrmustard import math
 
         >>> chi = (Ket.random([0]) >> BtoPS([0], s=0)).ansatz
-        >>> assert math.allclose(chi([0,0]), math.astensor([1]))
+        >>> assert math.allclose(chi(0,0), 1.0)
     """
 
     def __init__(

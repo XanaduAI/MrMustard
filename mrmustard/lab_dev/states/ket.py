@@ -325,11 +325,11 @@ class Ket(State):
             >>> import numpy as np
             >>> from mrmustard.lab_dev import Number, Rgate
 
-            >>> psi = Number([0], 1)
+            >>> psi = Number(0, 1)
             >>> theta = np.random.random()
             >>> answer = np.exp(1j*theta)
 
-            >>> assert np.isclose(psi.expectation(Rgate([0], theta)), answer)
+            >>> assert np.isclose(psi.expectation(Rgate(0, theta)), answer)
         """
 
         op_type, msg = _validate_operator(operator)
@@ -452,8 +452,8 @@ class Ket(State):
             >>> from mrmustard.lab_dev import Ket, DM, Attenuator, Dgate
 
             >>> psi = Ket.random([0,1])
-            >>> U = Dgate([0], x=1, y=0)
-            >>> channel = Attenuator([0], .5)
+            >>> U = Dgate(0, x=1, y=0)
+            >>> channel = Attenuator(0, .5)
 
             >>> assert isinstance(psi >> U, Ket)
             >>> assert isinstance(psi >> channel, DM)

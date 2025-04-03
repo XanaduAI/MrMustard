@@ -354,7 +354,7 @@ class DM(State):
             >>> rho = GDM([0], beta, symplectic)
             >>> answer = (1-np.exp(-beta))/(1+np.exp(-beta))
 
-            >>> assert np.isclose(rho.expectation(Rgate([0], np.pi)), answer)
+            >>> assert np.isclose(rho.expectation(Rgate(0, np.pi)), answer)
         """
 
         op_type, msg = _validate_operator(operator)

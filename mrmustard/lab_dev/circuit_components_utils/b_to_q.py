@@ -49,7 +49,7 @@ class BtoQ(Operation):
             >>> import numpy as np
             >>> from mrmustard.lab_dev import BtoQ, Ket, QuadratureEigenstate
             >>> psi = Ket.random([0])
-            >>> assert np.isclose(psi >> QuadratureEigenstate([0], x=1).dual, (psi >> BtoQ([0])).ansatz([1])[0])
+            >>> assert np.isclose(psi >> QuadratureEigenstate(0, x=1).dual, (psi >> BtoQ(0)).ansatz(1))
     """
 
     def __init__(
