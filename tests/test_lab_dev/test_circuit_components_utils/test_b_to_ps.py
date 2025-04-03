@@ -48,11 +48,10 @@ class TestBtoPS:
         vec = np.linspace(-5, 5, 100)
         wigner, _, _ = wigner_discretized(dm, vec, vec)
 
-        Wigner = (state >> BtoPS([0], s=0)).ansatz
+        Wigner = (state >> BtoPS(0, s=0)).ansatz
         X, Y = np.meshgrid(vec / np.sqrt(2 * settings.HBAR), vec / np.sqrt(2 * settings.HBAR))
-        Z = np.array([X - 1j * Y, X + 1j * Y]).transpose((1, 2, 0))
         assert math.allclose(
-            np.real(Wigner(Z)) / (2 * settings.HBAR),
+            np.real(Wigner(X - 1j * Y, X + 1j * Y)) / (2 * settings.HBAR),
             np.real(wigner.T),
             atol=1e-6,
         )
