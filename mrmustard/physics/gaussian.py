@@ -42,13 +42,13 @@ def vacuum_cov(num_modes: int) -> Matrix:
 
 
 def vacuum_means(num_modes: int) -> tuple[Matrix, Vector]:
-    r"""Returns the real covariance matrix and real means vector of the vacuum state.
+    r"""Returns the means vector of the vacuum state.
 
     Args:
         num_modes (int): number of modes
 
     Returns:
-        Matrix, Vector: thermal state covariance matrix or means vector
+        Vector: means vector
     """
     return displacement(
         math.zeros(num_modes, dtype="float64"),
