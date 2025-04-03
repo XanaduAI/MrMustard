@@ -433,7 +433,7 @@ class DM(State):
             >>> assert rho == core >> phi
             >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0)
         """
-        from .ket import Ket
+        from .ket import Ket  # pylint: disable=import-outside-toplevel
 
         other_modes = [m for m in self.modes if m not in core_modes]
         core_bra_indices = self.wires.bra[core_modes].indices
