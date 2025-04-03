@@ -399,7 +399,7 @@ class DM(State):
         b_temp = math.reshape(b_out_in, (2, 2, M))
         b_temp = math.transpose(b_temp, (1, 0, 2))
         b_T = math.reshape(b_temp, (4 * M,))
-        c_T = 1
+        c_T = math.astensor(1, dtype=math.complex128)
         phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
         return core, phi
 
@@ -465,7 +465,7 @@ class DM(State):
         reduced_A = An - R @ math.inv(Am - math.Xmat(M)) @ R.T
         r_squared = reduced_A[:M, M:]
         r_evals, r_evecs = math.eigh(r_squared)
-        r_core = (r_evecs * math.sqrt(r_evals) @ math.conj(r_evecs.T)).T
+        r_core = (r_evecs * math.sqrt(r_evals, dtype=math.complex128) @ math.conj(r_evecs.T)).T
         a_core = reduced_A[M:, M:]
         A_core = math.block(
             [
@@ -474,7 +474,7 @@ class DM(State):
             ]
         )
         b_core = math.zeros(self.n_modes, dtype=math.complex128)
-        c_core = 1  # to be renormalized
+        c_core = math.astensor(1, dtype=math.complex128)  # to be renormalized
 
         inverse_order = np.argsort(core_ket_indices + other_ket_indices)
         inverse_order = [i for i in inverse_order if i < self.n_modes]  # removing double-indices
@@ -580,7 +580,7 @@ class DM(State):
         idx = np.argsort(r_c_evals)[::-1]
         r_c_evals = r_c_evals[idx]
         r_c_evecs = r_c_evecs[:, idx]
-        r_c = r_c_evecs[:, :M] * math.sqrt(math.real(r_c_evals[:M]))
+        r_c = r_c_evecs[:, :M] * math.sqrt(r_c_evals[:M], dtype=math.complex128)
         R_c = math.block(
             [
                 [math.conj(r_c), math.zeros((N, M), dtype=math.complex128)],
@@ -605,7 +605,7 @@ class DM(State):
         core = DM.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
 
         Aphi_out = Am
-        gamma = math.pinv(R_c) @ R
+        gamma = np.linalg.pinv(R_c) @ R
         Aphi_in = gamma @ math.inv(Aphi_out - math.Xmat(M)) @ gamma.T + math.Xmat(M)
 
         Aphi_oi = math.block([[Aphi_out, gamma.T], [gamma, Aphi_in]])

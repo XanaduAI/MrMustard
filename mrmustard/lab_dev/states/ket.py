@@ -331,7 +331,7 @@ class Ket(State):
             [bm, -math.conj(Am) @ math.inv(gamma) @ bm - math.inv(gamma.T) @ math.conj(bm)],
             axes=(0, 0),
         )
-        cu = 1  # to be changed by renormalization
+        cu = math.astensor(1, dtype=math.complex128)
 
         U = Unitary.from_bargmann(core_modes, core_modes, (Au, bu, cu))
         _, _, U_normalization = (U >> U.dual).ansatz.triple
@@ -351,7 +351,7 @@ class Ket(State):
         A_core = A_core[inverse_order, :]
         A_core = A_core[:, inverse_order]
         b_core = b_core[inverse_order]
-        c_core = 1  # to be renormalized
+        c_core = math.astensor(1, dtype=math.complex128)  # to be renormalized
 
         psi_core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
 
@@ -423,7 +423,7 @@ class Ket(State):
             ]
         )
         bt = math.block([bm, math.zeros(M, dtype=math.complex128)], axes=(0, 0))
-        ct = 1
+        ct = math.astensor(1, dtype=math.complex128)
         t = Operation.from_bargmann(core_modes, core_modes, (At, bt, ct))
 
         return s, t
