@@ -19,7 +19,6 @@ This module contains the defintion of the ket class ``Ket``.
 from __future__ import annotations
 
 from typing import Collection, Sequence
-from itertools import product
 import warnings
 
 from IPython.display import display
@@ -32,7 +31,6 @@ from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
-    RealTensor,
     RealVector,
     Scalar,
     Batch,
