@@ -30,12 +30,6 @@ class SqueezedVacuum(Ket):
     r"""
     The squeezed vacuum state in Bargmann representation.
 
-    .. code-block::
-
-        >>> from mrmustard.lab_dev import SqueezedVacuum, Vacuum, Sgate
-
-        >>> state = SqueezedVacuum(mode=0, r=0.3, phi=0.2)
-        >>> assert state == Vacuum(0) >> Sgate(0, r=0.3, phi=0.2)
 
     Args:
         mode: The mode of the squeezed vacuum state.
@@ -45,6 +39,13 @@ class SqueezedVacuum(Ket):
         phi_trainable: Whether `phi` is trainable.
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import SqueezedVacuum, Vacuum, Sgate
+
+        >>> state = SqueezedVacuum(mode=0, r=0.3, phi=0.2)
+        >>> assert state == Vacuum(0) >> Sgate(0, r=0.3, phi=0.2)
     """
 
     short_name = "Sq"

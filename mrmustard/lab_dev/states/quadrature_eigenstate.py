@@ -42,6 +42,13 @@ class QuadratureEigenstate(Ket):
         x_bounds: The bounds of `x`.
         phi_bounds: The bounds of `phi`.
 
+    .. code-block ::
+
+        >>> from mrmustard.lab_dev import QuadratureEigenstate
+
+        >>> state = QuadratureEigenstate(1, x = 1, phi = 0)
+        >>> assert state.modes == (1,)
+
     .. details::
         Its ``(A,b,c)`` triple is given by
 
@@ -49,12 +56,6 @@ class QuadratureEigenstate(Ket):
             A = -I_{N}\exp(i2\phi)\text{, }b = I_Nx\exp(i\phi)\sqrt{2/\hbar}\text{, and }c = 1/(\pi\hbar)^{-1/4}\exp(-\abs{x}^2/(2\hbar)).
 
 
-    .. code-block ::
-
-        >>> from mrmustard.lab_dev import QuadratureEigenstate
-
-        >>> state = QuadratureEigenstate(1, x = 1, phi = 0)
-        >>> assert state.modes == (1,)
     """
 
     def __init__(
