@@ -31,15 +31,17 @@ class Vacuum(Ket):
     r"""
     The `N`-mode vacuum state in Bargmann representation.
 
+
+    Args:
+        modes: A tuple of modes.
+
+
     .. code-block ::
 
         >>> from mrmustard.lab_dev import Vacuum
 
         >>> state = Vacuum((1, 2))
         >>> assert state.modes == (1, 2)
-
-    Args:
-        modes: A tuple of modes.
 
     .. details::
 

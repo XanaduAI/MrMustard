@@ -30,18 +30,23 @@ class Thermal(DM):
     r"""
     The thermal state in Bargmann representation.
 
-    .. code-block ::
-
-        >>> from mrmustard.lab_dev import Vacuum
-
-        >>> state = Thermal(1, nbar=3)
-        >>> assert state.modes == (1,)
 
     Args:
         mode: The mode of the thermal state.
         nbar: The expected number of photons.
         nbar_trainable: Whether ``nbar`` is trainable.
         nbar_bounds: The bounds of ``nbar``.
+
+
+    Returns:
+        A ``DM`` type object that represents the thermal state.
+
+    .. code-block ::
+
+        >>> from mrmustard.lab_dev import Vacuum
+
+        >>> state = Thermal(1, nbar=3)
+        >>> assert state.modes == (1,)
     """
 
     short_name = "Th"

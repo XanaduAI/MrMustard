@@ -209,7 +209,7 @@ class Unitary(Operation):
     @property
     def symplectic(self):
         r"""
-        Returns the symplectic matrix that corresponds to this unitary
+        Returns the symplectic matrix that corresponds to this unitary.
         """
         return au2Symplectic(self.ansatz.A)
 
@@ -233,11 +233,23 @@ class Unitary(Operation):
         )
 
     @classmethod
-    def from_symplectic(cls, modes, S) -> Unitary:
+    def from_symplectic(cls, modes: Sequence[int], S) -> Unitary:
         r"""
-        A simple method for initializing using symplectic representation
-        modes: the modes that we want the unitary to act on (should be a list of int)
-        S: the symplectic representation (in XXPP order)
+        A method for constructing a ``Unitary`` from its symplectic representation
+
+        Args:
+            modes: the modes that we want the unitary to act on (should be a list of int)
+            S: the symplectic representation (in XXPP order)
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Unitary, Identity
+
+            >>> S = math.eye(2)
+            >>> U = Unitary.from_symplectic([0], S)
+
+            >>> assert U == Identity([0])
         """
         m = len(modes)
         batch_shape = S.shape[:-2]
@@ -255,12 +267,28 @@ class Unitary(Operation):
         Args:
             modes: The modes of the unitary.
             max_r: The maximum squeezing parameter.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Unitary
+
+            >>> U = Unitary.random((0, 1, 2), max_r=1.2)
+            >>> assert U.modes == (0,1,2)
         """
         m = len(modes)
         S = math.random_symplectic(m, max_r)
         return Unitary.from_symplectic(modes, S)
 
     def inverse(self) -> Unitary:
+        r"""
+        Returns the inverse of the unitary.
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import Unitary, Identity
+
+            >>> u = Unitary.random((0, 1, 2))
+            >>> assert u >> u.inverse() == Identity(u.modes)
+        """
         unitary_dual = self.dual
         return Unitary(
             representation=unitary_dual.representation,
@@ -272,11 +300,15 @@ class Unitary(Operation):
         Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
         they are missing.
 
-        For example ``u >> channel`` is equivalent to ``u.adjoint @ u @ channel`` because the
-        channel requires an input on the bra side as well.
+        Returns:
+            Contraction of ``self`` and ``other``.
 
-        Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
-        ``Channel``, and a ``CircuitComponent`` otherwise.
+        .. details::
+            For example ``u >> channel`` is equivalent to ``u.adjoint @ u @ channel`` because the
+            channel requires an input on the bra side as well.
+
+            Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
+            ``Channel``, and a ``CircuitComponent`` otherwise.
         """
         ret = super().__rshift__(other)
 
@@ -326,6 +358,13 @@ class Channel(Map):
     def is_CP(self) -> bool:  # TODO: revisit this
         r"""
         Whether this channel is completely positive (CP).
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Channel
+
+            >>> channel = Channel.random((0, 1, 2))
+            >>> assert channel.is_CP
         """
         batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
@@ -349,6 +388,13 @@ class Channel(Map):
     def is_TP(self) -> bool:  # TODO: revisit this
         r"""
         Whether this channel is trace preserving (TP).
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Channel
+
+            >>> channel = Channel.random((0, 1, 2))
+            >>> assert channel.is_TP
         """
         batch_dim = self.ansatz.batch_size
         if batch_dim > 1:
@@ -368,6 +414,13 @@ class Channel(Map):
     def is_physical(self) -> bool:
         r"""
         Whether this channel is physical (i.e. CPTP).
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Channel
+
+            >>> channel = Channel.random((0, 1, 2))
+            >>> assert channel.is_physical
         """
         return self.is_CP and self.is_TP
 
@@ -375,6 +428,14 @@ class Channel(Map):
     def XY(self) -> tuple[ComplexMatrix, ComplexMatrix]:
         r"""
         Returns the X and Y matrix corresponding to the channel.
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import Channel
+
+            >>> channel = Channel.random((0, 1))
+            >>> X, Y = channel.XY
+            >>> assert X.shape == (4, 4)
+            >>> assert Y.shape == (4, 4)
         """
         return XY_of_channel(self.ansatz.A)
 
@@ -414,6 +475,18 @@ class Channel(Map):
             X: The X matrix of the channel.
             Y: The Y matrix of the channel.
             d:  The d vector of the channel.
+
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Channel, DM
+
+            >>> X = math.eye(4)
+            >>> Y = math.zeros((4,4))
+            >>> channel = Channel.from_XY([0,1], [0,1], X,Y)
+
+            >>> rho = DM.random([0,1])
+            >>> assert rho >> channel == rho
 
         .. details::
             Each Gaussian channel transforms a state with covarince matrix :math:`\Sigma` and mean :math:`\mu`

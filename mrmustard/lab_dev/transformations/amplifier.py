@@ -30,6 +30,13 @@ class Amplifier(Channel):
     r"""
     The noisy amplifier channel.
 
+
+    Args:
+        mode: The mode this gate is applied to.
+        gain: The gain.
+        gain_trainable: Whether ``gain`` is trainable.
+        gain_bounds: The bounds for ``gain``.
+
     .. code-block ::
 
         >>> import numpy as np
@@ -40,12 +47,6 @@ class Amplifier(Channel):
         >>> coh = Coherent(0, x=1.0, y=2.0)
         >>> _, mu, _ = (coh >> amp).phase_space(0)
         >>> assert np.allclose(mu*np.sqrt(2/settings.HBAR), np.array([4.0, 8.0]))
-
-    Args:
-        mode: The mode this gate is applied to.
-        gain: The gain.
-        gain_trainable: Whether ``gain`` is trainable.
-        gain_bounds: The bounds for ``gain``.
 
     .. details::
 
