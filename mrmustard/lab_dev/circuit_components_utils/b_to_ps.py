@@ -51,11 +51,11 @@ class BtoPS(Map):
         Any operator, say O can be expressed in the displacement basis. Formally, we have that
         the s-parametrized phase space basis is characterized by the following operators
 
-        ..math:
+        .. math:
             D_s(\alpha) = exp(s|\alpha|^2/2) D(\alpha).
         The s-parametrized phase space representation of an object O, would therefore be
 
-        ..math:
+        .. math:
             mathrm{tr}(D_s(\alpha) O).
 
         Important s-parametrizations include:

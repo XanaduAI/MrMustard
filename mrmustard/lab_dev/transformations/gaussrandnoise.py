@@ -54,7 +54,9 @@ class GaussRandNoise(Channel):
         https://arxiv.org/pdf/2209.06069
 
         The channel maps an inout covariance matrix ``cov`` as
-        ..math::
+
+        .. math::
+
                 cov \mapsto cov + Y.
     """
 

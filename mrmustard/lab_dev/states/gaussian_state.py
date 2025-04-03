@@ -63,7 +63,7 @@ class GKet(Ket):
 
         For a given Gaussian unitary U (that is determined by its symplectic
         representation), produces the state
-        ..math:
+        .. math:
             |\psi\rangle = U |0\rangle
     """
 
