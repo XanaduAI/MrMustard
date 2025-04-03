@@ -41,7 +41,7 @@ def vacuum_cov(num_modes: int) -> Matrix:
     return math.eye(num_modes * 2, dtype=math.float64) * settings.HBAR / 2
 
 
-def vacuum_means(num_modes: int) -> tuple[Matrix, Vector]:
+def vacuum_means(num_modes: int) -> Vector:
     r"""Returns the means vector of the vacuum state.
 
     Args:
