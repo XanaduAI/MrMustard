@@ -41,18 +41,19 @@ class TestBtoPS:
 
     @pytest.mark.parametrize("hbar", [1.0, 2.0, 3.0])
     def test_application(self, hbar):
-        settings.HBAR = hbar
         state = Ket.random((0,)) >> Dgate(0, x=2, y=0.1)
 
         dm = state.to_fock(100).dm().ansatz.array
         vec = np.linspace(-5, 5, 100)
         wigner, _, _ = wigner_discretized(dm, vec, vec)
 
+        settings.HBAR = hbar
         Wigner = (state >> BtoPS(0, s=0)).ansatz
+        settings.HBAR = 1.0
+
         X, Y = np.meshgrid(vec / np.sqrt(2 * settings.HBAR), vec / np.sqrt(2 * settings.HBAR))
         assert math.allclose(
             np.real(Wigner(X - 1j * Y, X + 1j * Y)) / (2 * settings.HBAR),
             np.real(wigner.T),
             atol=1e-6,
         )
-        settings.HBAR = 1.0
