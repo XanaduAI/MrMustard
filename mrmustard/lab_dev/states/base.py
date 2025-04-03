@@ -121,6 +121,13 @@ class State(CircuitComponent):
     def L2_norm(self) -> float:
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
+
+        .. code-block::
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Ket
+
+            >>> state = Ket.random([0])
+            >>> assert math.allclose(state.L2_norm, 1.0)
         """
         return math.sum(self._compute_L2_norms(mode="kron"))
 
@@ -170,7 +177,6 @@ class State(CircuitComponent):
             ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
                 the number of modes.
 
-        Examples:
         .. code-block::
 
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
@@ -213,7 +219,6 @@ class State(CircuitComponent):
             ValueError: If the given array has a shape that is inconsistent with the number of
                 modes.
 
-        Examples:
         .. code-block::
 
             >>> from mrmustard.physics.ansatz import ArrayAnsatz
