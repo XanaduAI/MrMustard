@@ -742,8 +742,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def hermite_renormalized_full_batch(
         self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
     ) -> tf.Tensor:
-        return tf.py_function(
-            func=strategies.vanilla.vanilla_full_batch_numba,
-            inp=[shape, A, b, c],
-            Tout=A.dtype,
-        )
+        A = self.asnumpy(A)
+        b = self.asnumpy(b)
+        c = self.asnumpy(c)
+        return strategies.vanilla_full_batch_numba(shape, A, b, c)
