@@ -15,6 +15,7 @@
 """Tests for the mm_einsum function."""
 
 import numpy as np
+from mrmustard import math
 from mrmustard.lab_dev import *
 from mrmustard.physics.mm_einsum import mm_einsum
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
@@ -284,23 +285,63 @@ class TestMmEinsum:
             ).ansatz
         )
 
-    def test_2mode_staircase_with_batch(self):
+    def test_no_hilbert_wires_left_with_batch(self):
         s0 = SqueezedVacuum(0, 0.1, 0.4)
         s1 = SqueezedVacuum(1, 0.2, 0.7)
-        bs01 = BSgate((0, 1), 0.5, 0.2) + BSgate((0, 1), 0.5, 0.2)
+        s2_0 = SqueezedVacuum(2, 0.3, 0.8)
+        s2_1 = SqueezedVacuum(2, 0.2, 0.3)
+        s2_2 = SqueezedVacuum(2, 0.1, 0.5)
+        bs01_0 = BSgate((0, 1), 0.5, 0.2)
+        bs01_1 = BSgate((0, 1), 0.3, 1.2)
+        bs12 = BSgate((1, 2), 0.5, 0.2)
+        g0 = Ket.random([0])
         f1 = Ket.random([1]).to_fock()
+        f2 = Ket.random([2]).to_fock()
+        d1 = f1.auto_shape()[0]
+        d2 = f2.auto_shape()[0]
         res = mm_einsum(
             s0.ansatz,
             [0],
             s1.ansatz,
             [1],
-            bs01.ansatz,
-            ["hello", 2, 3, 0, 1],
+            (s2_0 + s2_1 + s2_2).ansatz,
+            ["hello", 2],
+            (bs01_0 + bs01_1).ansatz,
+            ["world", 3, 4, 0, 1],
+            bs12.ansatz,
+            [5, 6, 4, 2],
             f1.dual.ansatz,
+            [5],
+            f2.dual.ansatz,
+            [6],
+            g0.dual.ansatz,
             [3],
-            output=["hello", 2],
-            contraction_order=[(0, 1), (1, 2), (2, 3)],
-            fock_dims={0: 0, 1: 0, 2: 20, 3: 20},
+            output=["hello", "world"],
+            contraction_order=[(3, 7), (0, 3), (1, 3), (3, 4), (2, 4), (4, 5), (4, 6)],
+            fock_dims={0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: d1, 6: d2},
         )
-        assert isinstance(res, ArrayAnsatz)
-        assert res == ((s1 >> (s0 >> bs01)).to_fock((20, 20)) >> f1.dual).ansatz
+
+        assert np.allclose(
+            res.array[0, 0],
+            (s1 >> (s0 >> bs01_0) >> (s2_0 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
+        )
+        assert np.allclose(
+            res.array[1, 0],
+            (s1 >> (s0 >> bs01_0) >> (s2_1 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
+        )
+        assert np.allclose(
+            res.array[2, 0],
+            (s1 >> (s0 >> bs01_0) >> (s2_2 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
+        )
+        assert np.allclose(
+            res.array[0, 1],
+            (s1 >> (s0 >> bs01_1) >> (s2_0 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
+        )
+        assert np.allclose(
+            res.array[1, 1],
+            (s1 >> (s0 >> bs01_1) >> (s2_1 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
+        )
+        assert np.allclose(
+            res.array[2, 1],
+            (s1 >> (s0 >> bs01_1) >> (s2_2 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
+        )
