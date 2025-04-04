@@ -470,7 +470,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         # 4-mode example
         rho = DM.random([0, 1, 2, 3])
-        core, phi = rho.physical_stellar_decomposition_2([0, 3])
+        core, phi = rho.physical_stellar_decomposition_mixed([0, 3])
 
         assert rho == core >> phi
         assert phi.is_physical
