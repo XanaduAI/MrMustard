@@ -537,7 +537,7 @@ class DM(State):
             >>> from mrmustard.lab_dev import DM, Vacuum
 
             >>> rho = DM.random([0,1])
-            >>> core, phi = rho.physical_stellar_decomposition_2([0])
+            >>> core, phi = rho.physical_stellar_decomposition_mixed([0])
 
             >>> assert rho == core >> phi
             >>> assert core.is_physical
