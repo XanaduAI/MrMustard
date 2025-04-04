@@ -110,7 +110,17 @@ def mm_einsum(
 
 
 def convert_ansatz(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
-    r"""Converts a PolyExpAnsatz to an ArrayAnsatz or vice versa."""
+    r"""
+    Converts an ansatz to PolyExpAnsatz if the shape is all zeros.
+    Otherwise, it converts the ansatz to an ArrayAnsatz with the given shape.
+
+    Args:
+        ansatz: The ansatz to convert.
+        shape: The shape of the ArrayAnsatz.
+
+    Returns:
+        Ansatz: The converted Ansatz.
+    """
     if all(shape[i] == 0 for i in range(len(shape))):
         return to_bargmann(ansatz)
     else:
@@ -118,6 +128,17 @@ def convert_ansatz(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
 
 
 def to_fock(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
+    r"""
+    Converts a PolyExpAnsatz to an ArrayAnsatz.
+    If the ansatz is already an ArrayAnsatz, it reduces the shape to the given shape.
+
+    Args:
+        ansatz: The ansatz to convert.
+        shape: The shape of the ArrayAnsatz.
+
+    Returns:
+        ArrayAnsatz: The converted ArrayAnsatz.
+    """
     if isinstance(ansatz, ArrayAnsatz):
         return ansatz.reduce(shape)
     array = math.hermite_renormalized_full_batch(*ansatz.triple, shape)
@@ -125,6 +146,16 @@ def to_fock(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
 
 
 def to_bargmann(ansatz: Ansatz) -> PolyExpAnsatz:
+    r"""
+    Converts an ArrayAnsatz to a PolyExpAnsatz.
+    If the ansatz is already a PolyExpAnsatz, it returns the ansatz unchanged.
+
+    Args:
+        ansatz: The ansatz to convert.
+
+    Returns:
+        PolyExpAnsatz: The converted PolyExpAnsatz.
+    """
     if isinstance(ansatz, PolyExpAnsatz):
         return ansatz
     try:
