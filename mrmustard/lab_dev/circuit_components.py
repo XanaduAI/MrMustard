@@ -131,7 +131,7 @@ class CircuitComponent:
             >>> from mrmustard.lab_dev import Ket
 
             >>> psi = Ket.random([0])
-            >>> assert psi.dm() == psi >> psi.adjoint
+            >>> assert psi.dm() == psi.contract(psi.adjoint)
         """
         ret = CircuitComponent(self.representation.adjoint, self.name)
         ret.short_name = self.short_name
