@@ -15,16 +15,14 @@
 """Tests for the mm_einsum function."""
 
 import numpy as np
-from mrmustard import math
-from mrmustard.lab_dev import *
+from mrmustard.lab_dev import Ket, Unitary, BSgate, SqueezedVacuum
 from mrmustard.physics.mm_einsum import mm_einsum
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 
 
-# unit tests for mm_einsum
-
-
 class TestMmEinsum:
+    """Unit tests for the mm_einsum function."""
+
     g0 = Ket.random([0])
     g1 = Ket.random([0])
     g0123 = Ket.random([0, 1, 2, 3])
@@ -139,6 +137,7 @@ class TestMmEinsum:
         assert np.allclose(res.scalar, self.f0.contract(self.f1.dual, mode="zip").ansatz.scalar)
 
     def test_single_mode_fock_with_double_batch(self):
+        """Test that mm_einsum works for a single mode fock state with double batch dimensions."""
         array1 = np.random.random((3, 4, 5, 6))
         array2 = np.random.random((3, 5, 6))
         f1 = ArrayAnsatz(array1, batch_dims=2)
@@ -156,6 +155,7 @@ class TestMmEinsum:
         assert isinstance(res, ArrayAnsatz)
 
     def test_fock_to_bargmann_because_of_zero_fock_dim(self):
+        """Test that mm_einsum works for a single mode fock state with double batch dimensions."""
         res = mm_einsum(
             self.g0.ansatz,
             [0],
@@ -168,6 +168,7 @@ class TestMmEinsum:
         assert isinstance(res, PolyExpAnsatz)
 
     def test_2mode_staircase_fock(self):
+        """Test that mm_einsum works for a 2 mode staircase fock state."""
         s0 = SqueezedVacuum(0, 0.1, 0.4)
         s1 = SqueezedVacuum(1, 0.2, 0.7)
         bs01 = BSgate((0, 1), 0.5, 0.2)
@@ -189,6 +190,7 @@ class TestMmEinsum:
         assert res == ((s1 >> s0 >> bs01).to_fock((20, 20)) >> f1.dual).ansatz
 
     def test_2mode_staircase_bargmann(self):
+        """Test that mm_einsum works for a 2 mode staircase bargmann state."""
         s0 = SqueezedVacuum(0, 0.1, 0.4)
         s1 = SqueezedVacuum(1, 0.2, 0.7)
         bs01 = BSgate((0, 1), 0.5, 0.2)
@@ -210,6 +212,7 @@ class TestMmEinsum:
         assert res == ((s1 >> s0 >> bs01) >> f1.dual.to_bargmann()).ansatz
 
     def test_3mode_staircase_fock(self):
+        """Test that mm_einsum works for a 3 mode staircase fock state."""
         s0 = SqueezedVacuum(0, 0.1, 0.4)
         s1 = SqueezedVacuum(1, 0.2, 0.7)
         s2 = SqueezedVacuum(2, 0.3, 0.8)
@@ -249,6 +252,7 @@ class TestMmEinsum:
         )
 
     def test_3mode_staircase_bargmann(self):
+        """Test that mm_einsum works for a 3 mode staircase bargmann state."""
         s0 = SqueezedVacuum(0, 0.1, 0.4)
         s1 = SqueezedVacuum(1, 0.2, 0.7)
         s2 = SqueezedVacuum(2, 0.3, 0.8)
@@ -286,6 +290,7 @@ class TestMmEinsum:
         )
 
     def test_no_hilbert_wires_left_with_batch(self):
+        """Test that mm_einsum works for a 3 mode staircase fock state with batch dimensions."""
         s0 = SqueezedVacuum(0, 0.1, 0.4)
         s1 = SqueezedVacuum(1, 0.2, 0.7)
         s2_0 = SqueezedVacuum(2, 0.3, 0.8)
