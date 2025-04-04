@@ -271,7 +271,7 @@ class TestMmEinsum:
             f2.dual.ansatz,
             [6],
             output=[3],
-            contraction_order=[(0, 3), (1, 3), (2, 4), (4, 5), (4, 6), (3, 4)],
+            contraction_order=[(0, 3), (1, 3), (2, 4), (4, 6), (4, 5), (3, 4)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
@@ -283,3 +283,24 @@ class TestMmEinsum:
                 >> f2.dual.to_bargmann()
             ).ansatz
         )
+
+    def test_2mode_staircase_with_batch(self):
+        s0 = SqueezedVacuum(0, 0.1, 0.4)
+        s1 = SqueezedVacuum(1, 0.2, 0.7)
+        bs01 = BSgate((0, 1), 0.5, 0.2) + BSgate((0, 1), 0.5, 0.2)
+        f1 = Ket.random([1]).to_fock()
+        res = mm_einsum(
+            s0.ansatz,
+            [0],
+            s1.ansatz,
+            [1],
+            bs01.ansatz,
+            ["hello", 2, 3, 0, 1],
+            f1.dual.ansatz,
+            [3],
+            output=["hello", 2],
+            contraction_order=[(0, 1), (1, 2), (2, 3)],
+            fock_dims={0: 0, 1: 0, 2: 20, 3: 20},
+        )
+        assert isinstance(res, ArrayAnsatz)
+        assert res == ((s1 >> (s0 >> bs01)).to_fock((20, 20)) >> f1.dual).ansatz
