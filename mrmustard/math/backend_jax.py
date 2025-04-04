@@ -77,6 +77,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def any(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.any(array)
 
+    @partial(jax.jit, static_argnames=["start", "limit", "delta", "dtype"])
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.arange(start, limit, delta, dtype=dtype)
@@ -84,15 +85,12 @@ class BackendJax(BackendBase):  # pragma: no cover
     def asnumpy(self, tensor: jnp.ndarray) -> np.ndarray:
         return np.array(tensor)
 
-    def block(self, blocks: list[list[jnp.ndarray]], axes=(-2, -1)) -> jnp.ndarray:
-        rows = [self.concat(row, axis=axes[1]) for row in blocks]
-        return self.concat(rows, axis=axes[0])
-
     @partial(jax.jit, static_argnames=["shape"])
     def broadcast_to(self, array: jnp.ndarray, shape: tuple[int]) -> jnp.ndarray:
         return jnp.broadcast_to(array, shape)
 
-    def broadcast_arrays(self, *arrays: list[jnp.ndarray]) -> list[jnp.ndarray]:
+    @jax.jit
+    def broadcast_arrays(self, *arrays: jnp.ndarray) -> list[jnp.ndarray]:
         return jnp.broadcast_arrays(*arrays)
 
     @partial(jax.jit, static_argnames=["axis"])
@@ -104,6 +102,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         tensor = value
         return tensor
 
+    @partial(jax.jit, static_argnames=["dtype"])
     def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.asarray(array, dtype=dtype)
 
@@ -111,6 +110,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def log(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.log(array)
 
+    @partial(jax.jit, static_argnames=["n", "dtype"])
     def atleast_nd(self, array: jnp.ndarray, n: int, dtype=None) -> jnp.ndarray:
         return jnp.array(array, ndmin=n, dtype=dtype)
 
@@ -177,6 +177,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         return jnp.conj(array)
 
     @Autocast()
+    @jax.jit
     def pow(self, x: jnp.ndarray, y: float) -> jnp.ndarray:
         return jnp.power(x, y)
 
@@ -232,9 +233,8 @@ class BackendJax(BackendBase):  # pragma: no cover
         padding = padding or "VALID"
         return jax.lax.conv(array, filters, (1, 1), padding)
 
+    @partial(jax.jit, static_argnames=["repeats"])
     def tile(self, array: jnp.ndarray, repeats: Sequence[int]) -> jnp.ndarray:
-        repeats = tuple(repeats)
-        array = jnp.array(array)
         return jnp.tile(array, repeats)
 
     @Autocast()
@@ -271,6 +271,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def det(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.det(matrix)
 
+    @partial(jax.jit, static_argnames=["k"])
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
         if array.ndim == 0:
             return array
@@ -278,9 +279,9 @@ class BackendJax(BackendBase):  # pragma: no cover
             return jnp.diag(array, k=k)
         else:
             # fallback into more complex algorithm
-            original_sh = jnp.array(array.shape)
+            original_sh = np.array(array.shape)
 
-            ravelled_sh = (jnp.prod(original_sh[:-1]), original_sh[-1])
+            ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
             array = array.ravel().reshape(*ravelled_sh)
 
             ret = []
@@ -316,6 +317,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def expm(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jsp.linalg.expm(matrix)
 
+    @partial(jax.jit, static_argnames=["size", "dtype"])
     def eye(self, size: int, dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.eye(size, dtype=dtype)
@@ -362,6 +364,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     ) -> jnp.ndarray:
         return jnp.moveaxis(array, old, new)
 
+    @partial(jax.jit, static_argnames=["shape", "dtype"])
     def ones(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.ones(shape, dtype=dtype)
@@ -382,6 +385,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def error_if(self, array: jnp.ndarray, condition: jnp.ndarray, msg: str):
         eqx.error_if(array, condition, msg)
 
+    @partial(jax.jit, static_argnames=["paddings", "mode", "constant_values"])
     def pad(
         self,
         array: jnp.ndarray,
@@ -399,7 +403,8 @@ class BackendJax(BackendBase):  # pragma: no cover
     def real(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.real(array)
 
-    def reshape(self, array: jnp.ndarray, shape: Sequence[int]) -> jnp.ndarray:
+    @partial(jax.jit, static_argnames=["shape"])
+    def reshape(self, array: jnp.ndarray, shape: tuple[int, ...]) -> jnp.ndarray:
         return jnp.reshape(array, shape)
 
     @partial(jax.jit, static_argnames=["decimals"])
@@ -473,9 +478,8 @@ class BackendJax(BackendBase):  # pragma: no cover
     def trace(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return self.cast(jnp.trace(array, axis1=-1, axis2=-2), dtype)
 
-    def transpose(self, a: jnp.ndarray, perm: Sequence[int] = None) -> jnp.ndarray:
-        if a is None:
-            return None
+    @partial(jax.jit, static_argnames=["perm"])
+    def transpose(self, a: jnp.ndarray, perm: Sequence[int] | None = None) -> jnp.ndarray:
         return jnp.transpose(a, perm)
 
     def zeros(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:
