@@ -572,7 +572,9 @@ class DM(State):
 
         rank = np.linalg.matrix_rank(r @ math.conj(r).T + sigma @ math.conj(sigma.T))
         if rank > M:
-            raise ValueError(f"The rank {rank} is larger than the number of core modes {M}.")
+            raise ValueError("The physical mixed stellar decomposition is not possible for this DM, "
+            f"as the rank {rank} of the off-diagonal block of the Bargmann matrix is larger than the number "
+            f"of core modes {M}.")
 
         reduced_A = R @ math.inv(math.eye(2 * M) - math.Xmat(M) @ Am) @ math.conj(R.T)
 
