@@ -321,7 +321,7 @@ class TestMmEinsum:
             [6],
             g0.dual.ansatz,
             [3],
-            output=["hello", "world"],
+            output=["world", "hello"],
             contraction_order=[(3, 7), (0, 3), (1, 3), (3, 4), (2, 4), (4, 5), (4, 6)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: d1, 6: d2},
         )
@@ -331,15 +331,15 @@ class TestMmEinsum:
             (s1 >> (s0 >> bs01_0) >> (s2_0 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
         assert np.allclose(
-            res.array[1, 0],
+            res.array[0, 1],
             (s1 >> (s0 >> bs01_0) >> (s2_1 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
         assert np.allclose(
-            res.array[2, 0],
+            res.array[0, 2],
             (s1 >> (s0 >> bs01_0) >> (s2_2 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
         assert np.allclose(
-            res.array[0, 1],
+            res.array[1, 0],
             (s1 >> (s0 >> bs01_1) >> (s2_0 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
         assert np.allclose(
@@ -347,6 +347,6 @@ class TestMmEinsum:
             (s1 >> (s0 >> bs01_1) >> (s2_1 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
         assert np.allclose(
-            res.array[2, 1],
+            res.array[1, 2],
             (s1 >> (s0 >> bs01_1) >> (s2_2 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
