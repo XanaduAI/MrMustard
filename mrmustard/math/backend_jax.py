@@ -36,6 +36,7 @@ from .lattice.strategies import (  # pragma: no cover
     vanilla_stable,
     vanilla_stable_batch,
     vanilla_batch,
+    vanilla_full_batch_numba,
 )
 from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cover
     hermite_multidimensional_1leftoverMode,
@@ -764,10 +765,13 @@ class BackendJax(BackendBase):  # pragma: no cover
     def hermite_renormalized_full_batch(
         self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
     ) -> jnp.ndarray:
-        batch_shape = A.shape[:-2]
-        result_shape_dtype = jax.ShapeDtypeStruct(tuple(batch_shape) + shape, A.dtype)
+        function = partial(vanilla_full_batch_numba, shape)
         return jax.pure_callback(
-            vanilla.vanilla_full_batch_numba, result_shape_dtype, shape, A, b, c
+            lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
+            jax.ShapeDtypeStruct(tuple(A.shape[:-2]) + shape, A.dtype),
+            A,
+            b,
+            c,
         )
 
 
