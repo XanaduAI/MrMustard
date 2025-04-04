@@ -405,7 +405,7 @@ class DM(State):
 
     def physical_stellar_decomposition(self, core_modes: Collection[int]):
         r"""
-        Applies the physical stellar decomposition, pulling put a channel from a pure state.
+        Applies the physical stellar decomposition, pulling out a channel from a pure state.
 
         Args:
             core_modes: the core modes defining the core variables.
