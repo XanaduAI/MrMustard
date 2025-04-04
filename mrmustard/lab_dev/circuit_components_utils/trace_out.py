@@ -105,7 +105,10 @@ class TraceOut(CircuitComponent):
         cpt = other._from_attributes(Representation(ansatz, wires))
 
         if len(cpt.wires) == 0:
-            einsum_str = generate_batch_str(ansatz.batch_shape)
-            return math.einsum(einsum_str + "->" + einsum_str[:-2], cpt.ansatz.scalar)
+            if ansatz._lin_sup:
+                einsum_str = generate_batch_str(ansatz.batch_shape)
+                return math.einsum(einsum_str + "->" + einsum_str[:-2], cpt.ansatz.scalar)
+            else:
+                return cpt.ansatz.scalar
         else:
             return cpt
