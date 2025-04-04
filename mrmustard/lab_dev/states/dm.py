@@ -516,7 +516,7 @@ class DM(State):
         phi = phi / renorm
         return core, phi
 
-    def physical_stellar_decomposition_2(
+    def physical_stellar_decomposition_mixed(
         self, core_modes: Collection[int]
     ):  # pylint: disable=too-many-statements
         r"""
