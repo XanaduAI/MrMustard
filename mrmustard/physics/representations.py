@@ -186,9 +186,12 @@ class Representation:
                 [chr(i) for i in range(97, 97 + len(G.shape[1:] if batch else G.shape))]
             )
             ret = math.einsum(f"...{core_str},...{core_str[-1]}->...{core_str[:-1]}", G, cs)
+            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
+            if self.ansatz._lin_sup:
+                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         except AttributeError:
             ret = self.ansatz.reduce(shape).array
-        return math.reshape(ret, self.ansatz.batch_shape + shape)
+        return ret
 
     def to_bargmann(self) -> Representation:
         r"""
@@ -216,7 +219,8 @@ class Representation:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=self.ansatz.batch_dims)
+        batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
+        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
         try:
             if self.ansatz.num_derived_vars == 0:
                 fock._original_abc_data = self.ansatz.triple

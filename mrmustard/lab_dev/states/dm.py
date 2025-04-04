@@ -53,7 +53,7 @@ class DM(State):
         r"""
         Whether this DM is a positive operator.
         """
-        if self._lin_sup:
+        if self.ansatz._lin_sup:
             raise NotImplementedError(
                 "Physicality conditions are not implemented for a mixture of states."
             )
@@ -83,7 +83,9 @@ class DM(State):
         Probability (trace) of this DM, using the batch dimension of the Ansatz
         as a convex combination of states.
         """
-        return math.sum(self._probabilities, axis=-1) if self._lin_sup else self._probabilities
+        return (
+            math.sum(self._probabilities, axis=-1) if self.ansatz._lin_sup else self._probabilities
+        )
 
     @property
     def purity(self) -> float:

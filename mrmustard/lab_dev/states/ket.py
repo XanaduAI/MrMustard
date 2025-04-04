@@ -56,7 +56,7 @@ class Ket(State):
         r"""
         Whether the ket object is a physical one.
         """
-        if self._lin_sup:
+        if self.ansatz._lin_sup:
             raise NotImplementedError(
                 "Physicality conditions are not implemented for a linear superposition of states."
             )
@@ -73,8 +73,12 @@ class Ket(State):
 
     @property
     def purity(self) -> float:
-        shape = self.ansatz.batch_shape if self.ansatz else ()
-        shape = shape[:-1] if self._lin_sup else shape
+        if self.ansatz:
+            shape = (
+                self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
+            )
+        else:
+            shape = ()
         return math.ones(shape)
 
     @classmethod
@@ -208,7 +212,7 @@ class Ket(State):
         The ``DM`` object obtained from this ``Ket``.
         """
         # TODO: assuming first batch dim is lin_sup
-        if self._lin_sup:
+        if self.ansatz._lin_sup:
             str1 = generate_batch_str(self.ansatz.batch_shape)
             str2 = str1[:-1] + chr(ord(str1[-1]) + 1)
             mode = f"{str1},{str2}->{str1}{str2[-1]}"
@@ -217,7 +221,7 @@ class Ket(State):
         repr = self.representation.contract(self.adjoint.representation, mode=mode)
 
         # TODO: assuming first batch dim is lin_sup
-        if self._lin_sup:
+        if self.ansatz._lin_sup:
             if isinstance(self.ansatz, PolyExpAnsatz):
                 A, b, c = repr.ansatz.triple
                 batch_shape = self.ansatz.batch_shape[:-1]
@@ -237,7 +241,7 @@ class Ket(State):
 
         ret = DM(repr, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
-        ret._lin_sup = self._lin_sup
+        ret.ansatz._lin_sup = self.ansatz._lin_sup
         return ret
 
     def expectation(self, operator: CircuitComponent):

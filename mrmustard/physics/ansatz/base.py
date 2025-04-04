@@ -41,7 +41,7 @@ class Ansatz(ABC):
     """
 
     def __init__(self) -> None:
-        self._lin_sup = None
+        self._lin_sup = False
         self._fn = None
         self._kwargs = {}
 

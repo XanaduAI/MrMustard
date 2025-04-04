@@ -54,4 +54,4 @@ class Sauron(Ket):
                 epsilon=self.parameters.epsilon,
             ),
         ).representation
-        self._lin_sup = True
+        self._representation.ansatz._lin_sup = True
