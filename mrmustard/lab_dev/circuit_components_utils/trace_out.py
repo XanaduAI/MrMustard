@@ -23,6 +23,7 @@ from mrmustard.physics import triples
 
 from ..circuit_components import CircuitComponent
 from ...physics.ansatz import PolyExpAnsatz
+from ...physics.utils import zip_batch_strings
 from ...physics.representations import Representation
 from ...physics.wires import Wires
 
@@ -87,7 +88,10 @@ class TraceOut(CircuitComponent):
             ansatz = other.ansatz
             wires = other.wires
         elif not ket or not bra:
-            ansatz = other.ansatz.conj.contract(other.ansatz, idx_z, idx_z)
+            batch_str = zip_batch_strings(
+                len(other.ansatz.batch_shape), len(other.ansatz.batch_shape)
+            )
+            ansatz = other.ansatz.conj.contract(other.ansatz, idx_z, idx_z, batch_str=batch_str)
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
             ansatz = other.ansatz.trace(idx_z, idx_zconj)

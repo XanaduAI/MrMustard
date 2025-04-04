@@ -119,11 +119,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
         state = coeff * state
         # Bargmann
         normalized = state.normalize()
-        assert np.isclose(normalized.probability, 1.0)
+        assert math.allclose(normalized.probability, 1.0)
         # Fock
         state = state.to_fock(5)  # truncated
         normalized = state.normalize()
-        assert np.isclose(normalized.probability, 1.0)
+        assert math.allclose(normalized.probability, 1.0)
 
     def test_normalize_poly_dim(self):
         # https://github.com/XanaduAI/MrMustard/issues/481
@@ -167,8 +167,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_to_from_phase_space(self, modes):
         cov, means, coeff = Coherent(0, x=1, y=2).phase_space(s=0)
         assert math.allclose(coeff, 1.0)
-        assert math.allclose(cov, np.eye(2) * settings.HBAR / 2)
-        assert math.allclose(means, np.array([1.0, 2.0]) * np.sqrt(2 * settings.HBAR))
+        assert math.allclose(cov, math.eye(2) * settings.HBAR / 2)
+        assert math.allclose(means, math.astensor([1.0, 2.0]) * math.sqrt(2 * settings.HBAR))
         n_modes = len(modes)
 
         state1 = Ket.from_phase_space(modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0))
@@ -186,9 +186,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_to_from_quadrature(self):
         modes = (0,)
-        A0 = np.array([[0]])
-        b0 = np.array([0.2j])
-        c0 = np.exp(-0.5 * 0.04)  # z^*
+        A0 = math.astensor([[[0]]])
+        b0 = math.astensor([0.2j])
+        c0 = math.exp(-0.5 * 0.04)  # z^*
 
         state0 = Ket.from_bargmann(modes, (A0, b0, c0))
         Atest, btest, ctest = state0.quadrature_triple()
@@ -318,7 +318,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_expectation_fock(self):
         ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
 
-        assert math.allclose(ket.expectation(ket), np.abs(ket >> ket.dual) ** 2)
+        assert math.allclose(ket.expectation(ket), math.abs(ket >> ket.dual) ** 2)
         k0 = Coherent(0, x=1, y=2).to_fock(10)
         k1 = Coherent(1, x=1, y=3).to_fock(10)
         k01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
