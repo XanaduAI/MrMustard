@@ -40,7 +40,7 @@ class TestMmEinsum:
             [0],
             output=[],
             contraction_order=[(0, 1)],
-            shapes={},
+            fock_dims={0: 20},
         )
         assert isinstance(res, PolyExpAnsatz)
         assert np.isclose(res.scalar, self.g0 >> self.g1.dual)
@@ -54,7 +54,7 @@ class TestMmEinsum:
             [0, 1, 2, 3],
             output=[],
             contraction_order=[(0, 1)],
-            shapes={},
+            fock_dims={},
         )
         assert isinstance(res, PolyExpAnsatz)
         assert np.isclose(res.scalar, self.g0123 >> self.g0123.dual)
@@ -70,7 +70,7 @@ class TestMmEinsum:
             [2, 3, 0, 1],
             output=[2, 3],
             contraction_order=[(0, 2), (1, 2)],
-            shapes={0},
+            fock_dims={},
         )
         assert isinstance(res, PolyExpAnsatz)
         assert res == (self.g0 >> (self.g0.on(1) >> self.u01)).ansatz
@@ -84,7 +84,7 @@ class TestMmEinsum:
             [0],
             output=["hello"],
             contraction_order=[(0, 1)],
-            shapes={},
+            fock_dims={},
         )
         assert isinstance(res, PolyExpAnsatz)
         assert res.batch_shape == (2,)
@@ -99,7 +99,7 @@ class TestMmEinsum:
             [0, 1, 2, 3],
             output=["hello"],
             contraction_order=[(0, 1)],
-            shapes={},
+            fock_dims={},
         )
         assert isinstance(res, PolyExpAnsatz)
         assert res.batch_shape == (2,)
@@ -116,7 +116,7 @@ class TestMmEinsum:
             [0],
             output=[],
             contraction_order=[(0, 1)],
-            shapes={0: 20},
+            fock_dims={0: 20},
         )
         assert isinstance(res, ArrayAnsatz)
         assert np.isclose(res.scalar, self.f0 >> self.f0.dual)
@@ -131,26 +131,155 @@ class TestMmEinsum:
             [0],
             output=["hello"],
             contraction_order=[(0, 1)],
-            shapes={0: 20},
+            fock_dims={0: 20},
         )
         assert isinstance(res, ArrayAnsatz)
         assert res.batch_shape == (2,)
         assert np.allclose(res.scalar, self.f0.contract(self.f1.dual, mode="zip").ansatz.scalar)
 
-    def test_single_mode_with_complex_batch(self):
-        A = np.random.random((4, 3, 2, 2))
-        b = np.random.random((4, 3, 2))
-        c = np.random.random((4, 3))
-        g0 = PolyExpAnsatz(A, b, c)
+    def test_single_mode_fock_with_double_batch(self):
+        array1 = np.random.random((3, 4, 5, 6))
+        array2 = np.random.random((3, 5, 6))
+        f1 = ArrayAnsatz(array1, batch_dims=2)
+        f2 = ArrayAnsatz(array2, batch_dims=1)
 
         res = mm_einsum(
-            g0,
+            f1,
             ["hello", "world", 0, 1],
-            g0,
-            ["hello", "world", 0, 1],
-            output=["hello"],
+            f2,
+            ["hello", 0, 1],
+            output=["world"],
             contraction_order=[(0, 1)],
-            shapes={},
+            fock_dims={},
+        )
+        assert isinstance(res, ArrayAnsatz)
+
+    def test_fock_to_bargmann_because_of_zero_fock_dim(self):
+        res = mm_einsum(
+            self.g0.ansatz,
+            [0],
+            self.f0.ansatz.conj,
+            [0],
+            output=[],
+            contraction_order=[(0, 1)],
+            fock_dims={0: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
-        assert res.batch_shape == (3,)
+
+    def test_2mode_staircase_fock(self):
+        s0 = SqueezedVacuum(0, 0.1, 0.4)
+        s1 = SqueezedVacuum(1, 0.2, 0.7)
+        bs01 = BSgate((0, 1), 0.5, 0.2)
+        f1 = Ket.random([1]).to_fock()
+        res = mm_einsum(
+            s0.ansatz,
+            [0],
+            s1.ansatz,
+            [1],
+            bs01.ansatz,
+            [2, 3, 0, 1],
+            f1.dual.ansatz,
+            [3],
+            output=[2],
+            contraction_order=[(0, 2), (1, 2), (2, 3)],
+            fock_dims={0: 0, 1: 0, 2: 20, 3: f1.auto_shape()[0]},
+        )
+        assert isinstance(res, ArrayAnsatz)
+        assert res == ((s1 >> s0 >> bs01).to_fock((20, 20)) >> f1.dual).ansatz
+
+    def test_2mode_staircase_bargmann(self):
+        s0 = SqueezedVacuum(0, 0.1, 0.4)
+        s1 = SqueezedVacuum(1, 0.2, 0.7)
+        bs01 = BSgate((0, 1), 0.5, 0.2)
+        f1 = Ket.random([1]).to_fock()
+        res = mm_einsum(
+            s0.ansatz,
+            [0],
+            s1.ansatz,
+            [1],
+            bs01.ansatz,
+            [2, 3, 0, 1],
+            f1.dual.ansatz,
+            [3],
+            output=[2],
+            contraction_order=[(0, 2), (1, 2), (2, 3)],
+            fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
+        )
+        assert isinstance(res, PolyExpAnsatz)
+        assert res == ((s1 >> s0 >> bs01) >> f1.dual.to_bargmann()).ansatz
+
+    def test_3mode_staircase_fock(self):
+        s0 = SqueezedVacuum(0, 0.1, 0.4)
+        s1 = SqueezedVacuum(1, 0.2, 0.7)
+        s2 = SqueezedVacuum(2, 0.3, 0.8)
+        bs01 = BSgate((0, 1), 0.5, 0.2)
+        bs12 = BSgate((1, 2), 0.5, 0.2)
+        f1 = Ket.random([1]).to_fock()
+        f2 = Ket.random([2]).to_fock()
+        d1 = f1.auto_shape()[0]
+        d2 = f2.auto_shape()[0]
+        res = mm_einsum(
+            s0.ansatz,
+            [0],
+            s1.ansatz,
+            [1],
+            s2.ansatz,
+            [2],
+            bs01.ansatz,
+            [3, 4, 0, 1],
+            bs12.ansatz,
+            [5, 6, 4, 2],
+            f1.dual.ansatz,
+            [5],
+            f2.dual.ansatz,
+            [6],
+            output=[3],
+            contraction_order=[(0, 3), (1, 3), (2, 4), (4, 5), (4, 6), (3, 4)],
+            fock_dims={0: 0, 1: 0, 2: 0, 3: 20, 4: d1 + d2, 5: d1, 6: d2},
+        )
+        assert isinstance(res, ArrayAnsatz)
+        assert (
+            res
+            == (
+                ((s1 >> (s0 >> bs01)) >> (s2 >> bs12)).to_fock((20, d1 + d2, d1 + d2))
+                >> f1.dual
+                >> f2.dual
+            ).ansatz
+        )
+
+    def test_3mode_staircase_bargmann(self):
+        s0 = SqueezedVacuum(0, 0.1, 0.4)
+        s1 = SqueezedVacuum(1, 0.2, 0.7)
+        s2 = SqueezedVacuum(2, 0.3, 0.8)
+        bs01 = BSgate((0, 1), 0.5, 0.2)
+        bs12 = BSgate((1, 2), 0.5, 0.2)
+        f1 = Ket.random([1]).to_fock()
+        f2 = Ket.random([2]).to_fock()
+        res = mm_einsum(
+            s0.ansatz,
+            [0],
+            s1.ansatz,
+            [1],
+            s2.ansatz,
+            [2],
+            bs01.ansatz,
+            [3, 4, 0, 1],
+            bs12.ansatz,
+            [5, 6, 4, 2],
+            f1.dual.ansatz,
+            [5],
+            f2.dual.ansatz,
+            [6],
+            output=[3],
+            contraction_order=[(0, 3), (1, 3), (2, 4), (4, 5), (4, 6), (3, 4)],
+            fock_dims={0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0},
+        )
+        assert isinstance(res, PolyExpAnsatz)
+        assert (
+            res
+            == (
+                ((s1 >> (s0 >> bs01)) >> (s2 >> bs12))
+                >> f1.dual.to_bargmann()
+                >> f2.dual.to_bargmann()
+            ).ansatz
+        )
