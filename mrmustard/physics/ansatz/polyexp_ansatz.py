@@ -647,9 +647,11 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(
                 f"The number of CV variables must match. Got {self.num_CV_vars} and {other.num_CV_vars}."
             )
-        if self.batch_dims > 1 or other.batch_dims > 1:
+        if (self.batch_shape != () and not self._lin_sup) or (
+            other.batch_shape != () and not other._lin_sup
+        ):
             raise ValueError(
-                f"The batch dimensions must be 0 or 1. Got {self.batch_dims} and {other.batch_dims}."
+                f"Cannot add PolyExpAnsatz with batch dimensions {self.batch_shape} and {other.batch_shape}."
             )
         A_self = self.A if self.batch_dims == 1 else math.expand_dims(self.A, axis=0)
         b_self = self.b if self.batch_dims == 1 else math.expand_dims(self.b, axis=0)
