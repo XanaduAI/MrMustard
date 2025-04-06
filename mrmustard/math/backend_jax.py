@@ -778,7 +778,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        function = partial(binomial, tuple(shape))
+        function = partial(strategies.binomial, tuple(shape))
         G = jax.pure_callback(
             lambda A, B, C, max_l2, global_cutoff: function(
                 np.array(A), np.array(B), np.array(C), max_l2, global_cutoff
