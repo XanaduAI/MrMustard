@@ -157,6 +157,7 @@ class State(CircuitComponent):
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
+        lin_sup: bool = False,
     ) -> State:
         r"""
         Initializes a state of type ``cls`` from an ``(A, b, c)`` triple
@@ -188,7 +189,7 @@ class State(CircuitComponent):
             ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
                 the number of modes.
         """
-        return cls.from_ansatz(modes, PolyExpAnsatz(*triple), name)
+        return cls.from_ansatz(modes, PolyExpAnsatz(*triple, lin_sup=lin_sup), name)
 
     @classmethod
     def from_fock(

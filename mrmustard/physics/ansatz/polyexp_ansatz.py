@@ -114,6 +114,7 @@ class PolyExpAnsatz(Ansatz):
         b: ComplexVector | Batch[ComplexVector] | None,
         c: ComplexTensor | Batch[ComplexTensor] | None,
         name: str = "",
+        lin_sup: bool = False,
     ):
         super().__init__()
         self._A = math.astensor(A) if A is not None else None
@@ -126,6 +127,7 @@ class PolyExpAnsatz(Ansatz):
         self._simplified = False
         self._fn = None
         self._fn_kwargs = {}
+        self._lin_sup = lin_sup
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -165,7 +167,9 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def conj(self):
-        return PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        return PolyExpAnsatz(
+            math.conj(self.A), math.conj(self.b), math.conj(self.c), lin_sup=self._lin_sup
+        )
 
     @property
     def data(
@@ -269,7 +273,7 @@ class PolyExpAnsatz(Ansatz):
                 )
 
         A, b, c = complex_gaussian_integral_2(self.triple, other.triple, idx1, idx2, batch_str)
-        return PolyExpAnsatz(A, b, c)
+        return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup or other._lin_sup)
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
@@ -329,7 +333,7 @@ class PolyExpAnsatz(Ansatz):
         I_matrix = math.broadcast_to(math.eye_like(block), block.shape)
         A_decomp = math.block([[block, I_matrix], [I_matrix, math.zeros_like(block)]])
         b_decomp = math.concat((b[..., :n], math.zeros(batch_shape + (n,), dtype=b.dtype)), axis=-1)
-        return PolyExpAnsatz(A_decomp, b_decomp, c_prime)
+        return PolyExpAnsatz(A_decomp, b_decomp, c_prime, lin_sup=self._lin_sup)
 
     def eval(
         self, *z: Vector | None, batch_string: str | None = None
@@ -393,7 +397,7 @@ class PolyExpAnsatz(Ansatz):
         )
         A = math.gather(math.gather(self.A, order, axis=-1), order, axis=-2)
         b = math.gather(self.b, order, axis=-1)
-        return PolyExpAnsatz(A, b, self.c)
+        return PolyExpAnsatz(A, b, self.c, lin_sup=self._lin_sup)
 
     def to_dict(self) -> dict[str, ArrayLike]:
         r"""Returns a dictionary representation of the ansatz. For serialization purposes."""
@@ -424,7 +428,7 @@ class PolyExpAnsatz(Ansatz):
                 f"All indices must be between 0 and {self.num_CV_vars-1}. Got {idx_z} and {idx_zconj}."
             )
         A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=measure)
-        return PolyExpAnsatz(A, b, c)
+        return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
 
     def _combine_exp_and_poly(
         self, exp_sum: Batch[ComplexTensor], poly: Batch[ComplexTensor], c: Batch[ComplexTensor]
@@ -623,6 +627,7 @@ class PolyExpAnsatz(Ansatz):
             new_A,
             new_b,
             new_c2,
+            lin_sup=self._lin_sup,
         )
 
     def _should_regenerate(self):
@@ -690,6 +695,7 @@ class PolyExpAnsatz(Ansatz):
             combined_matrices,
             combined_vectors,
             combined_arrays,
+            lin_sup=True,
         )
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
@@ -779,7 +785,7 @@ class PolyExpAnsatz(Ansatz):
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatz(self.A, self.b, self.c * other)
+                return PolyExpAnsatz(self.A, self.b, self.c * other, lin_sup=self._lin_sup)
             except Exception as e:
                 raise TypeError(f"Cannot multiply PolyExpAnsatz and {other.__class__}.") from e
 
@@ -789,7 +795,7 @@ class PolyExpAnsatz(Ansatz):
             )
 
     def __neg__(self) -> PolyExpAnsatz:
-        return PolyExpAnsatz(self.A, self.b, -self.c)
+        return PolyExpAnsatz(self.A, self.b, -self.c, lin_sup=self._lin_sup)
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the PolyExpAnsatz object."""
@@ -826,7 +832,7 @@ class PolyExpAnsatz(Ansatz):
     def __truediv__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatz(self.A, self.b, self.c / other)
+                return PolyExpAnsatz(self.A, self.b, self.c / other, lin_sup=self._lin_sup)
             except Exception as e:
                 raise TypeError(f"Cannot divide PolyExpAnsatz and {other.__class__}.") from e
         else:

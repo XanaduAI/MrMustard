@@ -222,26 +222,16 @@ class Ket(State):
 
         # TODO: assuming first batch dim is lin_sup
         if self.ansatz._lin_sup:
-            if isinstance(self.ansatz, PolyExpAnsatz):
-                A, b, c = repr.ansatz.triple
-                batch_shape = self.ansatz.batch_shape[:-1]
-                new_A = math.reshape(A, batch_shape + (-1,) + A.shape[-2:])
-                new_b = math.reshape(b, batch_shape + (-1,) + b.shape[-1:])
-                new_c = math.reshape(c, batch_shape + (-1,) + self.ansatz.shape_derived_vars)
-                new_ansatz = PolyExpAnsatz(new_A, new_b, new_c)
-                repr._ansatz = new_ansatz
-            else:
-                fock_array = repr.ansatz.array
-                batch_shape = self.ansatz.batch_shape[:-1]
-                new_fock_array = math.reshape(
-                    fock_array, batch_shape + (-1,) + repr.ansatz.core_shape
-                )
-                new_ansatz = ArrayAnsatz(new_fock_array, batch_dims=self.ansatz.batch_dims)
-                repr._ansatz = new_ansatz
+            A, b, c = repr.ansatz.triple
+            batch_shape = self.ansatz.batch_shape[:-1]
+            new_A = math.reshape(A, batch_shape + (-1,) + A.shape[-2:])
+            new_b = math.reshape(b, batch_shape + (-1,) + b.shape[-1:])
+            new_c = math.reshape(c, batch_shape + (-1,) + self.ansatz.shape_derived_vars)
+            new_ansatz = PolyExpAnsatz(new_A, new_b, new_c, lin_sup=True)
+            repr._ansatz = new_ansatz
 
         ret = DM(repr, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
-        ret.ansatz._lin_sup = self.ansatz._lin_sup
         return ret
 
     def expectation(self, operator: CircuitComponent):

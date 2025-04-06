@@ -647,9 +647,7 @@ class CircuitComponent:
             raise ValueError("Cannot add components with different wires.")
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
-        ret = self._from_attributes(Representation(ansatz, self.wires), name)
-        ret.ansatz._lin_sup = isinstance(ansatz, PolyExpAnsatz)
-        return ret
+        return self._from_attributes(Representation(ansatz, self.wires), name)
 
     def __eq__(self, other) -> bool:
         r"""
@@ -668,9 +666,7 @@ class CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the right.
         """
-        ret = self._from_attributes(Representation(self.ansatz * other, self.wires), self.name)
-        ret.ansatz._lin_sup = self.ansatz._lin_sup
-        return ret
+        return self._from_attributes(Representation(self.ansatz * other, self.wires), self.name)
 
     def __repr__(self) -> str:
         ansatz = self.ansatz
@@ -775,9 +771,7 @@ class CircuitComponent:
         r"""
         Implements the division by a scalar for circuit components.
         """
-        ret = self._from_attributes(Representation(self.ansatz / other, self.wires), self.name)
-        ret.ansatz._lin_sup = self.ansatz._lin_sup
-        return ret
+        return self._from_attributes(Representation(self.ansatz / other, self.wires), self.name)
 
     def _ipython_display_(self):
         if mmwidgets.IN_INTERACTIVE_SHELL:
