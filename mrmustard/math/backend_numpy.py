@@ -523,8 +523,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
     ) -> np.ndarray:
         if stable:
-            return stable_numba(shape, A, b, c)
-        return vanilla_numba(shape, A, b, c)
+            return stable_numba(tuple(shape), A, b, c)
+        return vanilla_numba(tuple(shape), A, b, c)
 
     def hermite_renormalized_b_batch(
         self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
