@@ -253,3 +253,70 @@ def vanilla_full_batch_vjp_numba(
         dLdc[k] = dLdc_k
 
     return dLdA, dLdb, dLdc
+
+
+@njit(parallel=True)
+def vanilla_b_batch_vjp_numba(
+    G: ComplexTensor, b: ComplexMatrix, c: complex, dLdG: ComplexTensor
+) -> tuple[ComplexTensor, ComplexMatrix, ComplexVector]:  # pragma: no cover
+    r"""Vector-Jacobian product (VJP) for batched displacements b with shared vacuum amplitude.
+    Returns dL/dA, dL/db, dL/dc by parallelizing the single-instance ``vanilla_vjp`` over the batch dimension.
+
+    Args:
+        G (np.ndarray): Tensor result of the forward pass with shape `(batch_size,) + shape`.
+        b (np.ndarray): Batched displacement vectors with shape `(batch_size, D)`.
+        c (complex): Shared vacuum amplitude.
+        dLdG (np.ndarray): Gradient of the loss with respect to the output tensor `G`, with the same shape as `G`.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, np.ndarray]: dL/dA, dL/db, dL/dc.
+            dL/dA has shape `(batch_size, D, D)`, dL/db has shape `(batch_size, D)`, dL/dc has shape `(batch_size,)`.
+            Where D is the number of modes (last dimension of G).
+    """
+    batch_size = G.shape[0]
+    D = G.ndim - 1
+    dLdA = np.zeros((batch_size, D, D), dtype=np.complex128)
+    dLdb = np.zeros((batch_size, D), dtype=np.complex128)
+    dLdc = np.zeros(batch_size, dtype=np.complex128)
+
+    for k in prange(batch_size):
+        dLdA_k, dLdb_k, dLdc_k = vanilla_vjp_numba(G[k], c, dLdG[k])
+        dLdA[k] = dLdA_k
+        dLdb[k] = dLdb_k
+        dLdc[k] = dLdc_k
+
+    return dLdA, dLdb, dLdc
+
+
+@njit(parallel=True)
+def stable_b_batch_vjp_numba(
+    G: ComplexTensor, A: ComplexMatrix, b: ComplexMatrix, c: complex, dLdG: ComplexTensor
+) -> tuple[ComplexTensor, ComplexMatrix, ComplexVector]:  # pragma: no cover
+    r"""Vector-Jacobian product (VJP) for the case with shared A matrix and c, but batched b vectors.
+    Returns dL/dA, dL/db, dL/dc by parallelizing the single-instance ``stable_vjp`` over the batch dimension.
+
+    Args:
+        G (np.ndarray): Tensor result of the forward pass with shape `(batch_size,) + shape`.
+        A (np.ndarray): Shared A matrix with shape `(D, D)`.
+        b (np.ndarray): Batched displacement vectors with shape `(batch_size, D)`.
+        c (complex): Shared vacuum amplitude.
+        dLdG (np.ndarray): Gradient of the loss with respect to the output tensor `G`, with the same shape as `G`.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, np.ndarray]: dL/dA, dL/db, dL/dc.
+            dL/dA has shape `(batch_size, D, D)`, dL/db has shape `(batch_size, D)`, dL/dc has shape `(batch_size,)`.
+            Where D is the number of modes (last dimension of G).
+    """
+    batch_size = G.shape[0]
+    D = A.shape[0]  # Number of modes
+    dLdA = np.zeros((batch_size, D, D), dtype=np.complex128)
+    dLdb = np.zeros((batch_size, D), dtype=np.complex128)
+    dLdc = np.zeros(batch_size, dtype=np.complex128)
+
+    for k in prange(batch_size):
+        dLdA_k, dLdb_k, dLdc_k = stable_vjp_numba(G[k], A, b[k], c, dLdG[k])
+        dLdA[k] = dLdA_k
+        dLdb[k] = dLdb_k
+        dLdc[k] = dLdc_k
+
+    return dLdA, dLdb, dLdc
