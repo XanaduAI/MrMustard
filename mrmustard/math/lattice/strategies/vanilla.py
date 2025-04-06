@@ -285,6 +285,38 @@ def vanilla_full_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor: 
     return G
 
 
+@njit(parallel=True)
+def vanilla_full_batch_numba_vjp(
+    G: ComplexTensor, c: ComplexVector, dLdG: ComplexTensor
+) -> tuple[ComplexTensor, ComplexTensor, ComplexVector]:  # pragma: no cover
+    r"""Vector-Jacobian product (VJP) for the ``vanilla_full_batch_numba`` function.
+    Returns dL/dA, dL/db, dL/dc by parallelizing the single-instance ``vanilla_vjp`` over the batch dimension.
+
+    Args:
+        G (np.ndarray): Tensor result of the forward pass with shape `(batch_size,) + shape`.
+        c (np.ndarray): Batched vacuum amplitudes with shape `(batch_size,)`.
+        dLdG (np.ndarray): Gradient of the loss with respect to the output tensor `G`, with the same shape as `G`.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, np.ndarray]: dL/dA, dL/db, dL/dc.
+            dL/dA has shape `(batch_size, D, D)`, dL/db has shape `(batch_size, D)`, dL/dc has shape `(batch_size,)`.
+            Where D is the number of modes (last dimension of G).
+    """
+    batch_size = G.shape[0]
+    D = G.ndim - 1
+    dLdA = np.zeros((batch_size, D, D), dtype=np.complex128)
+    dLdb = np.zeros((batch_size, D), dtype=np.complex128)
+    dLdc = np.zeros(batch_size, dtype=np.complex128)
+
+    for k in prange(batch_size):
+        dLdA_k, dLdb_k, dLdc_k = vanilla_vjp(G[k], c[k], dLdG[k])
+        dLdA[k] = dLdA_k
+        dLdb[k] = dLdb_k
+        dLdc[k] = dLdc_k
+
+    return dLdA, dLdb, dLdc
+
+
 @njit
 def vanilla_jacobian(
     G, A, b, c
