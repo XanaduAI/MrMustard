@@ -674,42 +674,32 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ),
         )
 
-    def hermite_renormalized(self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]) -> Tensor:
+    def hermite_renormalized(self, A: Tensor, b: Tensor, c: Tensor, shape: tuple[int]) -> Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        series of :math:`exp(c + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
         tensor of given shape.
 
+        This method automatically selects the appropriate calculation method based on input dimensions:
+        1. If A.ndim = 2, b.ndim = 1, c is scalar: Uses vanilla strategy (unbatched)
+        2. If A.ndim = 2, b.ndim = 2, c is scalar: Uses vanilla_b_batched strategy (b-batched)
+        3. If A.ndim = 3, b.ndim = 2, c.ndim = 1: Uses vanilla_full_batch strategy (fully batched)
+
         Args:
-            A: The A matrix of the Bargmann representation.
-            B: The B vector of the Bargmann representation.
-            C: The C scalar of the Bargmann representation.
-            shape: The shape of the output tensor.
+            A: The A matrix. Can be unbatched (shape D×D) or batched (shape B×D×D).
+            b: The b vector. Can be unbatched (shape D) or batched (shape B×D).
+            c: The c scalar. Can be scalar or batched (shape B).
+            shape: The shape of the final tensor.
 
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        return self._apply("hermite_renormalized", (A, B, C, shape))  # pragma: no cover
-
-    def hermite_renormalized_batch(
-        self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
-    ) -> Tensor:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape in case of B is a batched vector with a batched dimension on the
-        last index.
-
-        Args:
-            A: The A matrix.
-            B: The batched B vector with its batch dimension on the last index.
-            C: The C scalar.
-            shape: The shape of the final tensor.
-
-        Returns:
-            The batched Hermite polynomial of given shape.
-        """
-        return self._apply("hermite_renormalized_batch", (A, B, C, shape))
+        if hasattr(c, "ndim") and c.ndim > 0:  # Fully batched case
+            return self._apply("hermite_renormalized_full_batch", (A, b, c, shape))
+        elif b.ndim > 1:  # b-batched case
+            return self._apply("hermite_renormalized_b_batch", (A, b, c, shape))
+        else:  # Unbatched case
+            return self._apply("hermite_renormalized_unbatched", (A, b, c, shape))
 
     def hermite_renormalized_full_batch(
         self, A: Tensor, b: Tensor, c: Tensor, shape: tuple[int]
@@ -740,15 +730,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         r"""Firsts, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculates the required renormalized multidimensional Hermite polynomial.
         """
-        return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
-
-    def hermite_renormalized_diagonal_batch(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
-    ) -> Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
-        Then, calculates the required renormalized multidimensional Hermite polynomial.
-        Same as hermite_renormalized_diagonal but works for a batch of different B's."""
-        return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
+        if hasattr(B, "ndim") and B.ndim > 1:
+            return self._apply("hermite_renormalized_diagonal_b_batch", (A, B, C, cutoffs))
+        else:
+            return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
 
     def hermite_renormalized_1leftoverMode(
         self, A: Tensor, b: Tensor, c: Tensor, output_cutoff: int, pnr_cutoffs: tuple[int, ...]
