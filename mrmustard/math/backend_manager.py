@@ -128,7 +128,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             "float64",
             "complex64",
             "complex128",
-            "hermite_renormalized",
+            "hermite_renormalized",  # why??
             "hermite_renormalized_binomial",
             "hermite_renormalized_diagonal_reorderedAB",
         ]:
@@ -674,7 +674,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ),
         )
 
-    def hermite_renormalized(self, A: Tensor, b: Tensor, c: Tensor, shape: tuple[int]) -> Tensor:
+    def hermite_renormalized(
+        self, A: Tensor, b: Tensor, c: Tensor, shape: tuple[int], stable: bool = False
+    ) -> Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(c + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
@@ -682,24 +684,35 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
         This method automatically selects the appropriate calculation method based on input dimensions:
         1. If A.ndim = 2, b.ndim = 1, c is scalar: Uses vanilla strategy (unbatched)
-        2. If A.ndim = 2, b.ndim = 2, c is scalar: Uses vanilla_b_batched strategy (b-batched)
-        3. If A.ndim = 3, b.ndim = 2, c.ndim = 1: Uses vanilla_full_batch strategy (fully batched)
+        2. If A.ndim = 2, b.ndim > 1, c is scalar: Uses vanilla_b_batched strategy (b-batched)
+        3. If A.ndim > 2, b.ndim > 1, c.ndim > 0: Uses vanilla_full_batch strategy (fully batched)
 
         Args:
             A: The A matrix. Can be unbatched (shape D×D) or batched (shape B×D×D).
             b: The b vector. Can be unbatched (shape D) or batched (shape B×D).
             c: The c scalar. Can be scalar or batched (shape B).
             shape: The shape of the final tensor.
+            stable: Whether to use the numerically stable version of the algorithm (also slower).
 
         Returns:
-            The renormalized Hermite polynomial of given shape.
+            The renormalized Hermite polynomial of given shape preserving the batch dimensions.
         """
-        if hasattr(c, "ndim") and c.ndim > 0:  # Fully batched case
-            return self._apply("hermite_renormalized_full_batch", (A, b, c, shape))
-        elif b.ndim > 1:  # b-batched case
-            return self._apply("hermite_renormalized_b_batch", (A, b, c, shape))
+        if A.ndim > 2 and b.ndim > 1 and c.ndim > 0:
+            batch_shape = A.shape[:-2]
+            D = int(np.prod(batch_shape))
+            A = self.reshape(A, (D,) + A.shape[-2:])
+            b = self.reshape(b, (D,) + b.shape[-1:])
+            c = self.reshape(c, (D,))
+            result = self._apply("hermite_renormalized_full_batch", (A, b, c, shape, stable))
+            return self.reshape(result, batch_shape + shape)
+        elif A.ndim == 2 and b.ndim > 1:  # b-batched case
+            batch_shape = b.shape[:-1]
+            D = int(np.prod(batch_shape))
+            b = self.reshape(b, (D,) + b.shape[-1:])
+            result = self._apply("hermite_renormalized_b_batch", (A, b, c, shape, stable))
+            return self.reshape(result, batch_shape + shape)
         else:  # Unbatched case
-            return self._apply("hermite_renormalized_unbatched", (A, b, c, shape))
+            return self._apply("hermite_renormalized_unbatched", (A, b, c, shape, stable))
 
     def hermite_renormalized_full_batch(
         self, A: Tensor, b: Tensor, c: Tensor, shape: tuple[int]
