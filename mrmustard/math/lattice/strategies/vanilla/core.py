@@ -33,9 +33,9 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
 
     .. math::
 
-         G_{k} = \\frac{1}{\\sqrt{k_i}} \\left[b_{i} G_{k-1_i} + \\sum_j A_{ij} \\sqrt{k_j - \\delta_{ij}} G_{k-1_i-1_j} \\right]
+         G_{k} = \frac{1}{\sqrt{k_i}} \left[b_{i} G_{k-1_i} + \sum_j A_{ij} \sqrt{k_j - \delta_{ij}} G_{k-1_i-1_j} \right]
 
-    where :math:`1_i` is the vector of zeros with a 1 at index :math:`i`, and :math:`\\delta_{ij}` is the Kronecker delta.
+    where :math:`1_i` is the vector of zeros with a 1 at index :math:`i`, and :math:`\delta_{ij}` is the Kronecker delta.
     In this formula :math:`k` is the vector of indices indexing into the Fock lattice.
     In the implementation the indices are flattened into a single integer index.
     This simplifies the bounds check when calculating the index of the pivot :math:`k-1_i`,
@@ -116,7 +116,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
 
 
 @njit
-def vanilla_stable(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def stable(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Stable version of the vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     This implementation works on flattened tensors and reshapes the tensor before returning.
 
