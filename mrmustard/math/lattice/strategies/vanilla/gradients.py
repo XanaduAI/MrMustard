@@ -105,7 +105,6 @@ def stable_vjp_numba(G, A, b, c, dLdG):  # pragma: no cover
     G = G.flatten()
     dLdG = dLdG.flatten()
     D = int(np.sqrt(G[1].size))
-    N = G.shape[0]
 
     # calculate strides
     shape_arr = np.array(shape)
@@ -257,7 +256,7 @@ def vanilla_full_batch_vjp_numba(
 
 @njit(parallel=True)
 def vanilla_b_batch_vjp_numba(
-    G: ComplexTensor, b: ComplexMatrix, c: complex, dLdG: ComplexTensor
+    G: ComplexTensor, c: complex, dLdG: ComplexTensor
 ) -> tuple[ComplexTensor, ComplexMatrix, ComplexVector]:  # pragma: no cover
     r"""Vector-Jacobian product (VJP) for batched displacements b with shared vacuum amplitude.
     Returns dL/dA, dL/db, dL/dc by parallelizing the single-instance ``vanilla_vjp`` over the batch dimension.
