@@ -15,7 +15,7 @@
 """Tests for the mm_einsum function."""
 
 import numpy as np
-from mrmustard.lab_dev import Ket, Unitary, BSgate, SqueezedVacuum
+from mrmustard.lab_dev import Ket, Unitary, BSgate, SqueezedVacuum, Rgate
 from mrmustard.physics.mm_einsum import mm_einsum
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 
@@ -350,3 +350,21 @@ class TestMmEinsum:
             res.array[1, 2],
             (s1 >> (s0 >> bs01_1) >> (s2_2 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
+
+    def test_diagonal_fock_operator(self):
+        """Test that mm_einsum works for a diagonal fock operator."""
+        R = Rgate(0, 0.5)
+        f0 = Ket.random([0]).to_fock()
+        d = f0.auto_shape()[0]
+        r = ArrayAnsatz(np.diag(R.fock_array(d)), batch_dims=0)
+        res = mm_einsum(
+            f0.ansatz,
+            [0],
+            r,
+            [0],
+            output=[0],
+            contraction_order=[(0, 1)],
+            fock_dims={0: d},
+        )
+        assert isinstance(res, ArrayAnsatz)
+        assert res == (f0 >> R).ansatz
