@@ -20,11 +20,11 @@ from numba import njit, prange
 from mrmustard.math.lattice import steps
 from mrmustard.utils.typing import ComplexTensor
 
-from .core import vanilla, stable
+from .core import vanilla_numba, stable_numba
 
 
 @njit(parallel=True)
-def stable_b_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def stable_b_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Batched version of the stable vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     See the documentation of ``stable`` for more details about the non-batched version.
 
@@ -41,12 +41,12 @@ def stable_b_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma:
     B = b.shape[0]
     G = np.zeros((B,) + shape, dtype=np.complex128)
     for k in prange(B):
-        G[k] = stable(shape, A, b[k], c)
+        G[k] = stable_numba(shape, A, b[k], c)
     return G
 
 
 @njit
-def vanilla_b_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def vanilla_b_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy for batched ``b``, with batched dimension on the
     first index.
 
@@ -71,7 +71,7 @@ def vanilla_b_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma
 
 
 @njit(parallel=True)
-def vanilla_full_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def vanilla_full_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Batched version of the vanilla algorithm for calculating the fock representation of a
     Gaussian tensor. This implementation assumes that the batch dimension is on the first
     axis of A, b, and c and it's the same for all of them.
@@ -89,12 +89,12 @@ def vanilla_full_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pra
     batch_size = b.shape[0]
     G = np.zeros((batch_size,) + shape, dtype=np.complex128)
     for k in prange(batch_size):
-        G[k] = vanilla(shape, A[k], b[k], c[k])
+        G[k] = vanilla_numba(shape, A[k], b[k], c[k])
     return G
 
 
 @njit(parallel=True)
-def stable_full_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def stable_full_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Batched version of the stable vanilla algorithm for calculating the fock representation of a
     Gaussian tensor. This implementation assumes that the batch dimension is on the first
     axis of A, b, and c and it's the same for all of them.
@@ -112,5 +112,5 @@ def stable_full_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # prag
     batch_size = b.shape[0]
     G = np.zeros((batch_size,) + shape, dtype=np.complex128)
     for k in prange(batch_size):
-        G[k] = stable(shape, A[k], b[k], c[k])
+        G[k] = stable_numba(shape, A[k], b[k], c[k])
     return G
