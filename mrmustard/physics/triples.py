@@ -836,28 +836,30 @@ def displacement_map_s_parametrized_Abc(
     return A, b, c
 
 
-def complex_fourier_transform_Abc(
-    n_modes: int,
+def bargmann_to_wigner_Abc(
+    s: float, n_modes: int
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
-    The ``(A, b, c)`` triple of the complex Fourier transform between two pairs of complex variables.
-    Given a function :math:`f(z^*, z)`, the complex Fourier transform is defined as
-    :math:
-        \hat{f} (y^*, y) = \int_{\mathbb{C}} \frac{d^2 z}{\pi} e^{yz^* - y^*z} f(z^*, z).
-    The indices of this triple correspond to the variables :math:`(y^*, z^*, y, z)`.
-
-    Args:
-        n_modes: the number of modes for this map.
-
-    Returns:
-        The ``(A, b, c)`` triple of the complex fourier transform.
+    The Abc triple of the Bargmann to Wigner/Husimi transformation.
     """
-    O2n = math.zeros((2 * n_modes, 2 * n_modes))
-    Omega = math.J(n_modes)
-    A = math.block([[O2n, -Omega], [Omega, O2n]])
-    b = _vacuum_B_vector(4 * n_modes)
-    c = 1.0 + 0j
 
+    On = math.zeros((n_modes, n_modes), dtype=math.complex128)
+    In = math.eye(n_modes, dtype=math.complex128)
+
+    A = (
+        2
+        / (s - 1)
+        * math.block(
+            [
+                [On, -In, In, On],
+                [-In, On, On, (s + 1) / 2 * In],
+                [In, On, On, -In],
+                [On, (s + 1) / 2 * In, -In, On],
+            ]
+        )
+    )
+    b = math.zeros(4 * n_modes, dtype=math.complex128)
+    c = (2 / (math.abs(s - 1) * np.pi)) ** (n_modes)
     return A, b, c
 
 
