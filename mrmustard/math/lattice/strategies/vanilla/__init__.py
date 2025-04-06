@@ -26,6 +26,8 @@ from .gradients import (
     stable_vjp_numba,
     vanilla_vjp_numba,
     stable_full_batch_vjp_numba,
+    stable_b_batch_vjp_numba,
+    vanilla_b_batch_vjp_numba,
 )
 
 __all__ = [
@@ -39,4 +41,6 @@ __all__ = [
     "stable_vjp_numba",
     "vanilla_full_batch_vjp_numba",
     "stable_full_batch_vjp_numba",
+    "stable_b_batch_vjp_numba",
+    "vanilla_b_batch_vjp_numba",
 ]
