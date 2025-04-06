@@ -128,9 +128,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             "float64",
             "complex64",
             "complex128",
-            "hermite_renormalized",  # why??
-            "hermite_renormalized_binomial",
-            "hermite_renormalized_diagonal_reorderedAB",
         ]:
             setattr(self, name, getattr(self._backend, name))
 
@@ -697,6 +694,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The renormalized Hermite polynomial of given shape preserving the batch dimensions.
         """
+        stable = stable or settings.STABLE_FOCK_CONVERSION
         if A.ndim > 2 and b.ndim > 1 and c.ndim > 0:
             batch_shape = A.shape[:-2]
             D = int(np.prod(batch_shape))
