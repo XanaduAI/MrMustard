@@ -23,7 +23,9 @@ from .core import SQRT
 
 
 @njit
-def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
+def vanilla_vjp_numba(
+    G, c, dLdG
+) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
     r"""Vanilla vjp function. Returns dL/dA, dL/db, dL/dc.
 
     Args:
@@ -79,7 +81,7 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
 
 # TODO: thoroughly check this
 @njit
-def stable_vjp(G, A, b, c, dLdG):  # pragma: no cover
+def stable_vjp_numba(G, A, b, c, dLdG):  # pragma: no cover
     r"""Calculates the vector-Jacobian product (VJP) for the Fock representation G
     obtained with the stable strategy with respect to the parameters A, b, c.
     Given the gradient of the loss ``dLdG`` with respect to the Fock representation ``G``,
@@ -188,7 +190,7 @@ def stable_vjp(G, A, b, c, dLdG):  # pragma: no cover
 
 
 @njit(parallel=True)
-def stable_full_batch_vjp(
+def stable_full_batch_vjp_numba(
     G: ComplexTensor, A: ComplexTensor, b: ComplexMatrix, c: ComplexVector, dLdG: ComplexTensor
 ) -> tuple[ComplexTensor, ComplexMatrix, ComplexVector]:  # pragma: no cover
     r"""Vector-Jacobian product (VJP) for the ``stable_full_batch`` function.
@@ -213,7 +215,7 @@ def stable_full_batch_vjp(
     dLdc = np.zeros(batch_size, dtype=np.complex128)
 
     for k in prange(batch_size):
-        dLdA_k, dLdb_k, dLdc_k = stable_vjp(G[k], A[k], b[k], c[k], dLdG[k])
+        dLdA_k, dLdb_k, dLdc_k = stable_vjp_numba(G[k], A[k], b[k], c[k], dLdG[k])
         dLdA[k] = dLdA_k
         dLdb[k] = dLdb_k
         dLdc[k] = dLdc_k
@@ -222,7 +224,7 @@ def stable_full_batch_vjp(
 
 
 @njit(parallel=True)
-def vanilla_full_batch_vjp(
+def vanilla_full_batch_vjp_numba(
     G: ComplexTensor, c: ComplexVector, dLdG: ComplexTensor
 ) -> tuple[ComplexTensor, ComplexMatrix, ComplexVector]:  # pragma: no cover
     r"""Vector-Jacobian product (VJP) for the ``vanilla_full_batch`` function.
@@ -245,7 +247,7 @@ def vanilla_full_batch_vjp(
     dLdc = np.zeros(batch_size, dtype=np.complex128)
 
     for k in prange(batch_size):
-        dLdA_k, dLdb_k, dLdc_k = vanilla_vjp(G[k], c[k], dLdG[k])
+        dLdA_k, dLdb_k, dLdc_k = vanilla_vjp_numba(G[k], c[k], dLdG[k])
         dLdA[k] = dLdA_k
         dLdb[k] = dLdb_k
         dLdc[k] = dLdc_k

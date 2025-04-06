@@ -23,7 +23,7 @@ SQRT = np.sqrt(np.arange(100000))
 
 
 @njit
-def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def vanilla_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     This implementation works on flattened tensors and reshapes the tensor before returning.
 
@@ -116,7 +116,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
 
 
 @njit
-def stable(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def stable_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Stable version of the vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     This implementation works on flattened tensors and reshapes the tensor before returning.
 
