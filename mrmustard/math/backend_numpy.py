@@ -651,8 +651,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         c: np.ndarray,
         output_cutoff: int,
         pnr_cutoffs: tuple[int, ...],
+        stable: bool = False,
     ) -> np.ndarray:
-        return fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs).transpose(
+        return fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
             (-2, -1) + tuple(range(len(pnr_cutoffs)))
         )
 
