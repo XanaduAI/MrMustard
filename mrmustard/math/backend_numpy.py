@@ -29,16 +29,19 @@ from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
 
+from mrmustard.math.lattice.strategies import vanilla
+
 from ..utils.settings import settings
 from .autocast import Autocast
 from .backend_base import BackendBase
 from .lattice.strategies import (
     binomial,
-    vanilla,
-    vanilla_stable,
-    vanilla_stable_batch,
+    vanilla_numba,
+    stable_numba,
+    vanilla_b_batch_numba,
+    stable_b_batch_numba,
     vanilla_full_batch_numba,
-    vanilla_batch,
+    stable_full_batch_numba,
     fast_diagonal,
 )
 from .lattice.strategies.compactFock.inputValidation import (
@@ -516,40 +519,26 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def DefaultEuclideanOptimizer() -> None:
         return None
 
-    def hermite_renormalized(
-        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int]
+    def hermite_renormalized_unbatched(
+        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
     ) -> np.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(c + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape.
+        if stable:
+            return stable_numba(shape, A, b, c)
+        return vanilla_numba(shape, A, b, c)
 
-        Args:
-            A: The A matrix.
-            b: The b vector.
-            c: The c scalar.
-            shape: The shape of the final tensor.
-
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-
-        shape = tuple(int(i) for i in shape)  # ensure each item in the tuple is of the same dtype
-        if settings.STABLE_FOCK_CONVERSION:
-            G = vanilla_stable(shape, A, b, c)
-        else:
-            G = vanilla(shape, A, b, c)
-
-        return G
-
-    def hermite_renormalized_batch(
-        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int]
+    def hermite_renormalized_b_batch(
+        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
     ) -> np.ndarray:
-        if settings.STABLE_FOCK_CONVERSION:
-            G = vanilla_stable_batch(tuple(shape), A, b, c)
-        else:
-            G = vanilla_batch(tuple(shape), A, b, c)
-        return G
+        if stable:
+            return stable_b_batch_numba(tuple(shape), A, b, c)
+        return vanilla_b_batch_numba(tuple(shape), A, b, c)
+
+    def hermite_renormalized_full_batch(
+        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
+    ) -> np.ndarray:
+        if stable:
+            return stable_full_batch_numba(tuple(shape), A, b, c)
+        return vanilla_full_batch_numba(tuple(shape), A, b, c)
 
     def hermite_renormalized_binomial(
         self,
