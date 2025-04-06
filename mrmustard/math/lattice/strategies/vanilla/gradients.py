@@ -77,8 +77,9 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     return dLdA, dLdb, dLdc
 
 
+# TODO: thoroughly check this
 @njit
-def vanilla_stable_vjp(G, A, b, c, dLdG):  # TODO: thoroughly check this
+def vanilla_stable_vjp(G, A, b, c, dLdG):  # pragma: no cover
     r"""Calculates the vector-Jacobian product (VJP) for the Fock representation G
     obtained with the vanilla_stable strategy with respect to the parameters A, b, c.
     Given the gradient of the loss ``dLdG`` with respect to the Fock representation ``G``,
