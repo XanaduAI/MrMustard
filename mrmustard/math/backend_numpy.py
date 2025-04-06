@@ -32,16 +32,8 @@ from scipy.stats import multivariate_normal
 from ..utils.settings import settings
 from .autocast import Autocast
 from .backend_base import BackendBase
-from .lattice.strategies import (
-    binomial,
-    vanilla_numba,
-    stable_numba,
-    vanilla_b_batch_numba,
-    stable_b_batch_numba,
-    vanilla_full_batch_numba,
-    stable_full_batch_numba,
-    fast_diagonal,
-)
+from .lattice import strategies
+
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
@@ -521,22 +513,22 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
     ) -> np.ndarray:
         if stable:
-            return stable_numba(tuple(shape), A, b, c)
-        return vanilla_numba(tuple(shape), A, b, c)
+            return strategies.stable_numba(tuple(shape), A, b, c)
+        return strategies.vanilla_numba(tuple(shape), A, b, c)
 
     def hermite_renormalized_b_batch(
         self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
     ) -> np.ndarray:
         if stable:
-            return stable_b_batch_numba(tuple(shape), A, b, c)
-        return vanilla_b_batch_numba(tuple(shape), A, b, c)
+            return strategies.stable_b_batch_numba(tuple(shape), A, b, c)
+        return strategies.vanilla_b_batch_numba(tuple(shape), A, b, c)
 
     def hermite_renormalized_full_batch(
         self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
     ) -> np.ndarray:
         if stable:
-            return stable_full_batch_numba(tuple(shape), A, b, c)
-        return vanilla_full_batch_numba(tuple(shape), A, b, c)
+            return strategies.stable_full_batch_numba(tuple(shape), A, b, c)
+        return strategies.vanilla_full_batch_numba(tuple(shape), A, b, c)
 
     def hermite_renormalized_binomial(
         self,
@@ -564,7 +556,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        G, _ = binomial(
+        G, _ = strategies.binomial(
             tuple(shape),
             A,
             B,
@@ -651,7 +643,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         pnr_cutoffs: tuple[int, ...],
         stable: bool = False,
     ) -> np.ndarray:
-        return fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
+        return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
             (-2, -1) + tuple(range(len(pnr_cutoffs)))
         )
 
