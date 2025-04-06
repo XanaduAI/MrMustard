@@ -725,15 +725,27 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self.reshape(result, batch_shape + tuple(shape))
 
     def hermite_renormalized_diagonal(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
+        self, A: Tensor, b: Tensor, c: Tensor, cutoffs: tuple[int]
     ) -> Tensor:
-        r"""Firsts, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
-        Then, calculates the required renormalized multidimensional Hermite polynomial.
+        r"""Renormalized multidimensional Hermite polynomial for calculating the diagonal of the Fock representation.
+
+        This method automatically selects the appropriate calculation method based on input dimensions:
+        1. If b.ndim > 1: Uses batched implementation for multiple b vectors
+        2. Otherwise: Uses standard implementation for a single set of parameters
+
+        Args:
+            A: The A matrix.
+            b: The b vector. Can be unbatched or batched.
+            c: The c scalar.
+            cutoffs: Upper boundary of photon numbers in each mode.
+
+        Returns:
+            The diagonal elements of the Fock representation (i.e., PNR detection probabilities).
         """
-        if hasattr(B, "ndim") and B.ndim > 1:
-            return self._apply("hermite_renormalized_diagonal_b_batch", (A, B, C, cutoffs))
+        if hasattr(b, "ndim") and b.ndim > 1:
+            return self._apply("hermite_renormalized_diagonal_b_batch", (A, b, c, cutoffs))
         else:
-            return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
+            return self._apply("hermite_renormalized_diagonal", (A, b, c, cutoffs))
 
     def hermite_renormalized_1leftoverMode(
         self, A: Tensor, b: Tensor, c: Tensor, output_cutoff: int, pnr_cutoffs: tuple[int, ...]
