@@ -27,7 +27,6 @@ import numpy as np  # pragma: no cover
 import equinox as eqx  # pragma: no cover
 from jax import tree_util  # pragma: no cover
 
-from ..utils.settings import settings  # pragma: no cover
 from .autocast import Autocast  # pragma: no cover
 from .backend_base import BackendBase  # pragma: no cover
 from .lattice import strategies

@@ -29,8 +29,6 @@ from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
 
-from mrmustard.math.lattice.strategies import vanilla
-
 from ..utils.settings import settings
 from .autocast import Autocast
 from .backend_base import BackendBase
