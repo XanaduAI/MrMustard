@@ -780,6 +780,34 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             "hermite_renormalized_1leftoverMode", (A, b, c, output_cutoff, pnr_cutoffs)
         )
 
+    def hermite_renormalized_binomial(
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        shape: tuple[int],
+        max_l2: float | None,
+        global_cutoff: int | None,
+    ) -> np.ndarray:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
+        up to a given L2 norm or global cutoff, whichever applies first. The max_l2 value, if
+        not provided, is set to the default value of the AUTOSHAPE_PROBABILITY setting.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            shape: The shape of the final tensor (local cutoffs).
+            max_l2 (float): The maximum squared L2 norm of the tensor.
+            global_cutoff (optional int): The global cutoff.
+
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        return self._apply("hermite_renormalized_binomial", (A, B, C, shape, max_l2, global_cutoff))
+
     def imag(self, array: Tensor) -> Tensor:
         r"""The imaginary part of array.
 
