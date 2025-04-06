@@ -463,58 +463,49 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return loss, gradients
 
     @tf.custom_gradient
-    def hermite_renormalized(
-        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
+    def hermite_renormalized_unbatched(
+        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int], stable: bool = False
     ) -> tuple[tf.Tensor, Callable]:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`c * exp(bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape.
-
-        Args:
-            A: The A matrix.
-            b: The b vector.
-            c: The c scalar.
-            shape: The shape of the final tensor.
-
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-
         A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
 
-        if settings.STABLE_FOCK_CONVERSION:
-            G = strategies.vanilla_stable(tuple(shape), A, b, c)
-        else:
-            G = strategies.vanilla(tuple(shape), A, b, c)
+        if stable:
+            G = strategies.stable_numba(tuple(shape), A, b, c)
 
-        def grad(dLdGconj):
-            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, c, np.conj(dLdGconj))
-            return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+            def grad(dLdGconj):
+                dLdA, dLdB, dLdC = strategies.stable_vjp_numba(G, c, np.conj(dLdGconj))
+                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+
+        else:
+            G = strategies.vanilla_numba(tuple(shape), A, b, c)
+
+            def grad(dLdGconj):
+                dLdA, dLdB, dLdC = strategies.vanilla_vjp_numba(G, c, np.conj(dLdGconj))
+                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
 
         return G, grad
 
-    def hermite_renormalized_batch(
-        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
+    def hermite_renormalized_b_batch(
+        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int], stable: bool = False
     ) -> tf.Tensor:
-        r"""Same as hermite_renormalized but works for a batch of different b's.
-
-        Args:
-            A: The A matrix.
-            b: The b vectors batched on the first axis.
-            c: The c scalar.
-            shape: The shape of the final tensor.
-
-        Returns:
-            The renormalized Hermite polynomial from different b values.
-        """
         _A, _b, _c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
 
-        if settings.STABLE_FOCK_CONVERSION:
-            G = strategies.vanilla_stable_batch(tuple(shape), _A, _b, _c)
+        if stable:
+            G = strategies.stable_b_batch_numba(tuple(shape), _A, _b, _c)
+
+            def grad(dLdGconj):
+                dLdA, dLdB, dLdC = strategies.stable_b_batch_vjp_numba(
+                    G, _A, _b, _c, np.conj(dLdGconj)
+                )
+                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+
         else:
-            G = strategies.vanilla_batch(tuple(shape), _A, _b, _c)
-        return G
+            G = strategies.vanilla_b_batch_numba(tuple(shape), _A, _b, _c)
+
+            def grad(dLdGconj):
+                dLdA, dLdB, dLdC = strategies.vanilla_b_batch_vjp_numba(G, _c, np.conj(dLdGconj))
+                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+
+        return G, grad
 
     @tf.custom_gradient
     def hermite_renormalized_binomial(
