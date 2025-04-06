@@ -19,7 +19,7 @@ This module contains the fast diagonal strategy for computing the conditional de
 from itertools import product
 from functools import lru_cache
 import numpy as np
-from mrmustard.math.lattice.strategies.vanilla import stable
+from mrmustard.math.lattice.strategies.vanilla import stable_numba, vanilla_numba
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector
 
 __all__ = ["fast_diagonal"]
@@ -28,7 +28,12 @@ SQRT = np.sqrt(np.arange(10000))
 
 
 def fast_diagonal(
-    A: ComplexMatrix, b: ComplexVector, c: complex, output_cutoff: int, pnr_cutoffs: tuple[int, ...]
+    A: ComplexMatrix,
+    b: ComplexVector,
+    c: complex,
+    output_cutoff: int,
+    pnr_cutoffs: tuple[int, ...],
+    stable: bool = False,
 ) -> ComplexMatrix:
     r"""
     Computes an array of conditional density matrices using the fast diagonal strategy.
@@ -50,7 +55,10 @@ def fast_diagonal(
     b = np.array(b)[perm]
     c = np.array(c)
     output = np.zeros(tuple(p + 1 for p in pnr_cutoffs) + output_shape, dtype=np.complex128)
-    output[(0,) * (L - 1)] = stable(output_shape, A[:2, :2], b[:2], c)
+    if stable:
+        output[(0,) * (L - 1)] = stable_numba(output_shape, A[:2, :2], b[:2], c)
+    else:
+        output[(0,) * (L - 1)] = vanilla_numba(output_shape, A[:2, :2], b[:2], c)
     buffer_2 = {}
     buffer_1 = {}
     buffer_0 = {(0, 0) * (L - 1): output[(0,) * (L - 1)]}
