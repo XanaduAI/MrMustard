@@ -473,14 +473,14 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
             def grad(dLdGconj):
                 dLdA, dLdB, dLdC = strategies.stable_vjp_numba(G, c, np.conj(dLdGconj))
-                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC), None, None
 
         else:
             G = strategies.vanilla_numba(tuple(shape), A, b, c)
 
             def grad(dLdGconj):
                 dLdA, dLdB, dLdC = strategies.vanilla_vjp_numba(G, c, np.conj(dLdGconj))
-                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC), None, None
 
         return G, grad
 
@@ -497,14 +497,14 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 dLdA, dLdB, dLdC = strategies.stable_b_batch_vjp_numba(
                     G, _A, _b, _c, np.conj(dLdGconj)
                 )
-                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC), None, None
 
         else:
             G = strategies.vanilla_b_batch_numba(tuple(shape), _A, _b, _c)
 
             def grad(dLdGconj):
                 dLdA, dLdB, dLdC = strategies.vanilla_b_batch_vjp_numba(G, _c, np.conj(dLdGconj))
-                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC), None, None
 
         return G, grad
 
@@ -519,14 +519,14 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
             def grad(dLdGconj):
                 dLdA, dLdB, dLdC = strategies.stable_full_batch_vjp_numba(G, _c, np.conj(dLdGconj))
-                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC), None, None
 
         else:
             G = strategies.vanilla_full_batch_numba(tuple(shape), _A, _b, _c)
 
             def grad(dLdGconj):
                 dLdA, dLdB, dLdC = strategies.vanilla_full_batch_vjp_numba(G, _c, np.conj(dLdGconj))
-                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+                return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC), None, None
 
         return G, grad
 
