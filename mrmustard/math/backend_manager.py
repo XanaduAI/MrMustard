@@ -728,6 +728,14 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("hermite_renormalized_diagonal", (A, b, c, cutoffs))
 
+    def hermite_renormalized_diagonal_batch(
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
+    ) -> Tensor:
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
+        Then, calculates the required renormalized multidimensional Hermite polynomial.
+        Same as hermite_renormalized_diagonal but works for a batch of different B's."""
+        return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
+
     def hermite_renormalized_1leftoverMode(
         self, A: Tensor, b: Tensor, c: Tensor, output_cutoff: int, pnr_cutoffs: tuple[int, ...]
     ) -> Tensor:
