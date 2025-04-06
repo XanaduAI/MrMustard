@@ -72,7 +72,7 @@ def test_vanillabatchNumba_vs_vanillaNumba(batch_size):
     # replicate the B
     B_batched = np.stack((B,) * batch_size, axis=0)
 
-    G_batched = math.hermite_renormalized_batch(A, B_batched, C, shape=(3, 4, 5, 2, 6, 4))
+    G_batched = math.hermite_renormalized(A, B_batched, C, shape=(3, 4, 5, 2, 6, 4))
 
     for nb in range(batch_size):
         assert np.allclose(G_ref, G_batched[nb, :, :, :, :])
