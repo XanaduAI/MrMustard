@@ -20,10 +20,10 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 __all__ = [
     "vanilla",
+    "vanilla_b_batch",
     "vanilla_stable",
-    "vanilla_stable_batch",
-    "vanilla_full_batch_numba",
-    "vanilla_batch",
+    "vanilla_stable_b_batch",
+    "vanilla_full_batch",
     "vanilla_jacobian",
     "vanilla_vjp",
     "autoshape_numba",
@@ -206,7 +206,7 @@ def vanilla_stable(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma:
 
 
 @njit(parallel=True)
-def vanilla_stable_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def vanilla_stable_b_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Batched version of the stable vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     See the documentation of ``vanilla_stable`` for more details about the non-batched version.
 
@@ -228,7 +228,7 @@ def vanilla_stable_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # p
 
 
 @njit
-def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def vanilla_b_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy for batched ``b``, with batched dimension on the
     first index.
 
@@ -263,7 +263,7 @@ def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
 
 
 @njit(parallel=True)
-def vanilla_full_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def vanilla_full_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Batched version of the vanilla algorithm for calculating the fock representation of a
     Gaussian tensor. This implementation assumes that the batch dimension is on the first
     axis of A, b, and c and it's the same for all of them.
@@ -286,10 +286,10 @@ def vanilla_full_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor: 
 
 
 @njit(parallel=True)
-def vanilla_full_batch_numba_vjp(
+def vanilla_full_batch_vjp(
     G: ComplexTensor, c: ComplexVector, dLdG: ComplexTensor
 ) -> tuple[ComplexTensor, ComplexTensor, ComplexVector]:  # pragma: no cover
-    r"""Vector-Jacobian product (VJP) for the ``vanilla_full_batch_numba`` function.
+    r"""Vector-Jacobian product (VJP) for the ``vanilla_full_batch`` function.
     Returns dL/dA, dL/db, dL/dc by parallelizing the single-instance ``vanilla_vjp`` over the batch dimension.
 
     Args:
