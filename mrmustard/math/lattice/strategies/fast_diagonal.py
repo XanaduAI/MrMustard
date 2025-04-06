@@ -19,7 +19,7 @@ This module contains the fast diagonal strategy for computing the conditional de
 from itertools import product
 from functools import lru_cache
 import numpy as np
-from mrmustard.math.lattice.strategies.vanilla import vanilla_stable
+from mrmustard.math.lattice.strategies.vanilla import stable
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector
 
 __all__ = ["fast_diagonal"]
@@ -50,7 +50,7 @@ def fast_diagonal(
     b = np.array(b)[perm]
     c = np.array(c)
     output = np.zeros(tuple(p + 1 for p in pnr_cutoffs) + output_shape, dtype=np.complex128)
-    output[(0,) * (L - 1)] = vanilla_stable(output_shape, A[:2, :2], b[:2], c)
+    output[(0,) * (L - 1)] = stable(output_shape, A[:2, :2], b[:2], c)
     buffer_2 = {}
     buffer_1 = {}
     buffer_0 = {(0, 0) * (L - 1): output[(0,) * (L - 1)]}
