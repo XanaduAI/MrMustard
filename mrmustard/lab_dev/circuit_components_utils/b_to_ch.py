@@ -25,18 +25,18 @@ from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
 from ..utils import make_parameter
 
-__all__ = ["BtoPS"]
+__all__ = ["BtoChar"]
 
 
-class BtoPS(Map):
+class BtoChar(Map):
     r"""
-    The `s`-parametrized Stratonovich-Weyl kernel as a ``Map``.
+    The `s`-parametrized ``Dgate`` as a ``Map``. Also known as the Fourier transform of the Stratonovich-Weyl kernel. See https://arxiv.org/abs/quant-ph/9707010.
 
-    Used internally as a ``Channel`` for transformations between representations.
+    This is an unphysical component whose purpose is to modify the internal representation of another component. In particular it transforms between the Bargmann representation and the s-parametrized Characteristic functions. Note that it can be applied to a subset of modes.
 
     Args:
         modes: The modes of this channel.
-        s: The `s` parameter of this channel. The case `s=-1`  corresponds to Husimi, `s=0` to Wigner, and `s=1` to Glauber P function.
+        s: The `s` parameter of this channel.
     """
 
     def __init__(
@@ -45,17 +45,23 @@ class BtoPS(Map):
         s: float,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="BtoPS")
+        super().__init__(name="BtoChar")
         self.parameters.add_parameter(make_parameter(False, s, "s", (None, None)))
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.bargmann_to_wigner_Abc,
+                fn=triples.displacement_map_s_parametrized_Abc,
                 s=self.parameters.s,
                 n_modes=len(modes),
             ),
         ).representation
         for w in self.representation.wires.output.wires:
-            w.repr = ReprEnum.PHASESPACE
+            w.repr = ReprEnum.CHARACTERISTIC
             w.repr_params_func = lambda: self.parameters.s
+
+    def inverse(self):
+        ret = BtoChar(self.modes, self.parameters.s)
+        ret._representation = super().inverse().representation
+        ret._representation._wires = ret.representation.wires.dual
+        return ret

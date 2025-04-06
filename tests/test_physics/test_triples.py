@@ -28,33 +28,33 @@ class TestTriples:
     Tests the Bargmann triples.
     """
 
-    # def test_incompatible_shapes(self):
-    #     if math.backend_name == "jax":
-    #         error = TypeError
-    #         match = "incompatible shapes for broadcasting"
-    #     elif math.backend_name == "tensorflow":
+    def test_incompatible_shapes(self):
+        if math.backend_name == "jax":
+            error = ValueError
+            match = "Incompatible shapes for broadcasting"
+        elif math.backend_name == "tensorflow":
 
-    #         from tensorflow.errors import (
-    #             InvalidArgumentError,
-    #         )
+            from tensorflow.errors import (
+                InvalidArgumentError,
+            )
 
-    #         error = InvalidArgumentError
-    #         match = "Incompatible shape"
-    #     else:
-    #         error = ValueError
-    #         match = "shape mismatch"
+            error = InvalidArgumentError
+            match = "Incompatible shape"
+        else:
+            error = ValueError
+            match = "shape mismatch"
 
-    #     with pytest.raises(error, match=match):
-    #         triples.coherent_state_Abc([1, 2], [3, 4, 5])
+        with pytest.raises(error, match=match):
+            triples.coherent_state_Abc([1, 2], [3, 4, 5])
 
-    #     with pytest.raises(error, match=match):
-    #         triples.coherent_state_Abc([1, 2], [3, 4, 5])
+        with pytest.raises(error, match=match):
+            triples.coherent_state_Abc([1, 2], [3, 4, 5])
 
-    #     with pytest.raises(error, match=match):
-    #         triples.squeezed_vacuum_state_Abc([1, 2], [3, 4, 5])
+        with pytest.raises(error, match=match):
+            triples.squeezed_vacuum_state_Abc([1, 2], [3, 4, 5])
 
-    #     with pytest.raises(error, match=match):
-    #         triples.displaced_squeezed_vacuum_state_Abc([1, 2], [3, 4, 5], 6, 7)
+        with pytest.raises(error, match=match):
+            triples.displaced_squeezed_vacuum_state_Abc([1, 2], [3, 4, 5], 6, 7)
 
     @pytest.mark.parametrize("n_modes", [1, 3])
     def test_vacuum_state_Abc(self, n_modes):
@@ -410,14 +410,13 @@ class TestTriples:
 
         A, b, c = triples.XY_to_channel_Abc(X, Y)
 
-        A_by_hand = math.concat(
+        A_by_hand = math.block(
             [
                 math.astensor([[0, math.sqrt(eta), 0, 0]]),
                 math.astensor([[math.sqrt(eta), 0, 0, 1 - eta]]),
                 math.astensor([[0, 0, 0, math.sqrt(eta)]]),
                 math.astensor([[0, 1 - eta, math.sqrt(eta), 0]]),
             ],
-            axis=-2,
         )
         assert math.allclose(
             A, A_by_hand, atol=1e-7
