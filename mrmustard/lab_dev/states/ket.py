@@ -305,7 +305,6 @@ class Ket(State):
             >>> assert A_c[0,0] == 0
         """
         # bringing A to the ordering of our interest
-
         other_modes = [m for m in self.modes if m not in core_modes]
         core_indices = self.wires[core_modes].indices
         other_indices = self.wires[other_modes].indices
