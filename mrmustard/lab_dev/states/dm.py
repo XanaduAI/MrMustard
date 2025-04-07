@@ -330,7 +330,7 @@ class DM(State):
         """
         return self / self.probability
 
-    def formal_stellar_decomposition(self, core_modes: Collection[int]):
+    def formal_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[DM, Map]:
         r"""
         Computes the formal stellar decomposition for the DM.
 
