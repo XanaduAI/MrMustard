@@ -102,10 +102,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             axis=-2,
         )
 
-    def block(self, blocks: list[list[tf.Tensor]], axes=(-2, -1)) -> tf.Tensor:
-        rows = [self.concat(row, axis=axes[1]) for row in blocks]
-        return self.concat(rows, axis=axes[0])
-
     def broadcast_to(self, array: tf.Tensor, shape: tuple[int]) -> tf.Tensor:
         return tf.broadcast_to(array, shape)
 
@@ -376,9 +372,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def trace(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return self.cast(tf.linalg.trace(array), dtype)
 
-    def transpose(self, a: tf.Tensor, perm: Sequence[int] = None) -> tf.Tensor:
-        if a is None:
-            return None  # TODO: remove and address None inputs where tranpose is used
+    def transpose(self, a: tf.Tensor, perm: Sequence[int] | None = None) -> tf.Tensor:
         return tf.transpose(a, perm)
 
     @Autocast()

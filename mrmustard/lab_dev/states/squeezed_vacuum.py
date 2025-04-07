@@ -66,6 +66,8 @@ class SqueezedVacuum(Ket):
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.squeezed_vacuum_state_Abc, r=self.parameters.r, phi=self.parameters.phi
+                fn=triples.squeezed_vacuum_state_Abc,
+                r=self.parameters.r,
+                phi=self.parameters.phi,
             ),
         ).representation
