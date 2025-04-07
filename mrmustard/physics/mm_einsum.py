@@ -109,6 +109,62 @@ def mm_einsum(
     return result
 
 
+def mm_einsum_3stages(
+    *args: Ansatz | list[int | str],
+    output: list[int | str],
+    contraction_order: list[tuple[int, int]],
+    fock_dims: dict[int, int],
+) -> PolyExpAnsatz | ArrayAnsatz:
+    ansatze = {(i,): ansatz for i, ansatz in enumerate(args[::2])}
+    indices = {(i,): index for i, index in enumerate(args[1::2])}
+    all_batch_names = set(name for index in indices.values() for name in _strings(index))
+    names_to_chars = {name: chr(97 + i) for i, name in enumerate(all_batch_names)}
+    indices = {
+        k: [names_to_chars[s] for s in _strings(index)] + _ints(index)
+        for k, index in indices.items()
+    }
+    output = [names_to_chars[s] for s in _strings(output)] + _ints(output)
+
+    # stage 1: contract all the PolyExpAnsatz with each other
+    processed_pairs = set()
+    for a, b in contraction_order:
+        relevant_ansatze = {ids: ansatz for ids, ansatz in ansatze.items() if a in ids or b in ids}
+        (id_a, ansatz_a), (id_b, ansatz_b) = relevant_ansatze.items()
+        if isinstance(ansatz_a, PolyExpAnsatz) and isinstance(ansatz_b, PolyExpAnsatz):
+            eins_str, idx_a, idx_b, new_idx, keep = prepare_all_things(indices, id_a, id_b, output)
+            new_ansatz = ansatz_a.contract(ansatz_b, idx_a, idx_b, eins_str)
+            del ansatze[id_a], ansatze[id_b], indices[id_a], indices[id_b]
+            ansatze[id_a + id_b] = new_ansatz
+            indices[id_a + id_b] = list(keep) + new_idx
+            processed_pairs.add((a, b))
+
+    # stage 2: convert everything to ArrayAnsatz
+    for id, ansatz in ansatze.items():
+        ansatze[id] = convert_ansatz(ansatz, [fock_dims[i] for i in _ints(indices[id])])
+
+    # stage 3: use math.einsum to contract the leftover arrays
+    for (a, b) in [c for c in contraction_order if c not in processed_pairs]:
+        relevant_ansatze = {ids: ansatz for ids, ansatz in ansatze.items() if a in ids or b in ids}
+        (id_a, ansatz_a), (id_b, ansatz_b) = relevant_ansatze.items()
+
+        eins_str, idx_a, idx_b, new_idx, keep = prepare_all_things(indices, a, b, output)
+
+
+def prepare_all_things(indices, id_a, id_b, output):
+    index_a, index_b = indices[id_a], indices[id_b]
+    int_a, int_b = _ints(index_a), _ints(index_b)
+    str_a, str_b = _strings(index_a), _strings(index_b)
+    common_int = [i for i in int_a if i in int_b]
+    idx_a = [int_a.index(i) for i in common_int]
+    idx_b = [int_b.index(i) for i in common_int]
+    new_idx = [i for i in int_a + int_b if i not in common_int]
+    other_indices = [index for ids, index in indices.items() if ids not in (id_a, id_b)]
+    other_names = [name for idx in other_indices for name in _strings(idx)] + _strings(output)
+    keep = {name for name in str_a + str_b if name in other_names}
+    eins_str = "".join(str_a) + "," + "".join(str_b) + "->" + "".join(keep)
+    return eins_str, idx_a, idx_b, new_idx, keep
+
+
 def convert_ansatz(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
     r"""
     Converts an ansatz to PolyExpAnsatz if the shape is all zeros.
