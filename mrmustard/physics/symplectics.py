@@ -64,17 +64,19 @@ def czgate_symplectic(s: float | Iterable[float]) -> Matrix:
     """
     s = math.astensor(s, dtype=math.complex128)
     batch_shape = s.shape
+    batch_dim = len(batch_shape)
 
     O_matrix = math.zeros(batch_shape, math.complex128)
     I_matrix = math.ones(batch_shape, math.complex128)
 
-    return math.block(
+    return math.stack(
         [
-            [I_matrix, O_matrix, O_matrix, O_matrix],
-            [O_matrix, I_matrix, O_matrix, O_matrix],
-            [O_matrix, s, I_matrix, O_matrix],
-            [s, O_matrix, O_matrix, I_matrix],
+            math.stack([I_matrix, O_matrix, O_matrix, O_matrix], batch_dim),
+            math.stack([O_matrix, I_matrix, O_matrix, O_matrix], batch_dim),
+            math.stack([O_matrix, s, I_matrix, O_matrix], batch_dim),
+            math.stack([s, O_matrix, O_matrix, I_matrix], batch_dim),
         ],
+        batch_dim,
     )
 
 
