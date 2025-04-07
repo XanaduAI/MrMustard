@@ -18,56 +18,10 @@ import numpy as np
 from numba import njit, prange
 
 from mrmustard.math.lattice import steps
+from mrmustard.math.lattice.strategies import vanilla
 from mrmustard.utils.typing import ComplexTensor
 
 from .core import vanilla_numba, stable_numba
-
-
-@njit(parallel=True)
-def stable_b_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
-    r"""Batched version of the stable vanilla algorithm for calculating the fock representation of a Gaussian tensor.
-    See the documentation of ``stable`` for more details about the non-batched version.
-
-    Args:
-        shape (tuple[int, ...]): shape of the output tensor excluding the batch dimension, which is inferred from ``b``
-        A (np.ndarray): A matrix of the Bargmann representation
-        b (np.ndarray): batched b vector of the Bargmann representation with batch on the first dimension
-        c (complex): vacuum amplitude
-
-    Returns:
-        np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
-    """
-
-    B = b.shape[0]
-    G = np.zeros((B,) + shape, dtype=np.complex128)
-    for k in prange(B):
-        G[k] = stable_numba(shape, A, b[k], c)
-    return G
-
-
-@njit
-def vanilla_b_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
-    r"""Vanilla Fock-Bargmann strategy for batched ``b``, with batched dimension on the
-    first index.
-
-    Fills the tensor by iterating over all indices in the order given by ``np.ndindex``.
-
-    Args:
-        shape (tuple[int, ...]): shape of the output tensor without the batch dimension
-        A (np.ndarray): A matrix of the Fock-Bargmann representation
-        b (np.ndarray): batched B vector of the Fock-Bargmann representation, the batch dimension is on the first index
-        c (complex): vacuum amplitude
-
-    Returns:
-        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
-    """
-    batch_shape = (b.shape[0],)
-    G = np.zeros(batch_shape + shape, dtype=np.complex128)
-    path = np.ndindex(shape)
-    G[(slice(None),) + next(path)] = c
-    for index in path:
-        G[(slice(None),) + index] = steps.vanilla_step_batch(G, A, b, index)
-    return G
 
 
 @njit(parallel=True)

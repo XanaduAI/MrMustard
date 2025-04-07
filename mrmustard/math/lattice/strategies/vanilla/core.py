@@ -55,7 +55,7 @@ def vanilla_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     """
     # numba doesn't like tuples
     shape_arr = np.array(shape)
-    D = b.shape[0]
+    D = b.shape[-1]
 
     # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
     strides = np.ones_like(shape_arr)
@@ -146,31 +146,33 @@ def stable_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: n
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
     shape_arr = np.array(shape)
-    D = b.shape[0]
+    D = b.shape[-1]
 
     # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
     strides = np.ones_like(shape_arr)
     for i in range(D - 1, 0, -1):
         strides[i - 1] = strides[i] * shape[i]
 
-    # initialize flat output array and write vacuum amplitude
+    # initialize flat output tensor
     G = np.zeros(np.prod(shape_arr), dtype=np.complex128)
-    G[0] = c
 
     # initialize flat index and n-dim iterator
-    idx = 0
-    nd_iterator = np.ndindex(shape)
-    next(nd_iterator)  # skip (0,0,...,0) as we already wrote it
+    flat_index = 0
+    nd_index = np.ndindex(shape)
 
-    for nd_idx in nd_iterator:
-        idx += 1
+    # write vacuum amplitude
+    G[flat_index] = c
+    next(nd_index)
+
+    for nd_idx in nd_index:
+        flat_index += 1
         num_pivots = 0
         vals = 0
         for i in range(D):
             if nd_idx[i] == 0:
                 continue  # pivot would be out of bounds
             num_pivots += 1
-            pivot = idx - strides[i]
+            pivot = flat_index - strides[i]
 
             # contribution from i-th pivot
             val = b[i] * G[pivot]
@@ -190,6 +192,6 @@ def stable_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: n
             vals += val / SQRT[nd_idx[i]]
 
         # write the average
-        G[idx] = vals / num_pivots
+        G[flat_index] = vals / num_pivots
 
     return G.reshape(shape)

@@ -14,33 +14,15 @@
 
 """Vanilla strategies for Fock representation calculation, including core, batched, and gradient functions."""
 
-from .batch import (
-    vanilla_b_batch_numba,
-    vanilla_full_batch_numba,
-    stable_b_batch_numba,
-    stable_full_batch_numba,
-)
+from .batch import vanilla_full_batch_numba, stable_full_batch_numba
 from .core import vanilla_numba, stable_numba
-from .gradients import (
-    vanilla_full_batch_vjp_numba,
-    stable_vjp_numba,
-    vanilla_vjp_numba,
-    stable_full_batch_vjp_numba,
-    stable_b_batch_vjp_numba,
-    vanilla_b_batch_vjp_numba,
-)
+from .gradients import vanilla_full_batch_vjp_numba, vanilla_vjp_numba
 
 __all__ = [
     "vanilla_numba",
     "stable_numba",
-    "vanilla_b_batch_numba",
-    "stable_b_batch_numba",
     "vanilla_full_batch_numba",
     "stable_full_batch_numba",
     "vanilla_vjp_numba",
-    "stable_vjp_numba",
     "vanilla_full_batch_vjp_numba",
-    "stable_full_batch_vjp_numba",
-    "stable_b_batch_vjp_numba",
-    "vanilla_b_batch_vjp_numba",
 ]
