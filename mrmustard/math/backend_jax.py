@@ -29,7 +29,7 @@ from jax import tree_util  # pragma: no cover
 
 from .autocast import Autocast  # pragma: no cover
 from .backend_base import BackendBase  # pragma: no cover
-from .lattice import strategies
+from .lattice import strategies  # pragma: no cover
 from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cover
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
