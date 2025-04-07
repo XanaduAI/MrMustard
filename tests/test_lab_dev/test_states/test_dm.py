@@ -20,11 +20,11 @@ import pytest
 
 from mrmustard import math, settings
 from mrmustard.lab_dev import (
+    DM,
     Attenuator,
     CircuitComponent,
     Coherent,
     Dgate,
-    DM,
     Ket,
     Number,
     TraceOut,

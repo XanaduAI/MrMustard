@@ -19,7 +19,8 @@ import pytest
 
 from mrmustard.lab.gates import BSgate, CXgate, CZgate, Dgate, MZgate, Rgate, Sgate
 from mrmustard.math.tensor_networks import connect, contract
-from ...conftest import skip_np, skip_jax
+
+from ...conftest import skip_jax, skip_np
 
 
 class TestTransformations:

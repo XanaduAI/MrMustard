@@ -53,7 +53,7 @@ from tests.random import (
     two_mode_unitary_gate,
 )
 
-from ..conftest import skip_np, skip_jax
+from ..conftest import skip_jax, skip_np
 
 
 @given(state=n_mode_pure_state(num_modes=1), x=medium_float, y=medium_float)

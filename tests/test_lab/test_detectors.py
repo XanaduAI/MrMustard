@@ -38,7 +38,7 @@ from mrmustard.lab import (
 )
 from tests.random import none_or_
 
-from ..conftest import skip_np, skip_jax
+from ..conftest import skip_jax, skip_np
 
 hbar = settings.HBAR
 

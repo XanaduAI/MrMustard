@@ -22,14 +22,13 @@ from ipywidgets import HTML, Box, HBox, VBox
 from plotly.graph_objs import FigureWidget
 
 from mrmustard import math, settings
-
 from mrmustard.lab_dev import (
+    DM,
     Attenuator,
     BSgate,
     CircuitComponent,
     Coherent,
     Dgate,
-    DM,
     Identity,
     Ket,
     Number,
