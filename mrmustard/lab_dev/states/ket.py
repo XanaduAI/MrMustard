@@ -357,7 +357,7 @@ class Ket(State):
 
         return psi_core, U
 
-    def formal_stellar_decomposition(self, core_modes: Collection[int]):
+    def formal_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[Ket, Operation]:
         r"""
         Applies the formal stellar decomposition.
 
