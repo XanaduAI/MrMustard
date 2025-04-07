@@ -365,7 +365,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("boolean_mask", (tensor, mask))
 
     def block(self, blocks: list[list[Tensor]], axes=(-2, -1)) -> Tensor:
-        r"""Returns a matrix made from the given blocks.
+        r"""
+        Returns a matrix made from the given blocks.
 
         Args:
             blocks: A list of lists of compatible blocks.
@@ -374,7 +375,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The matrix made of blocks.
         """
-        return self._apply("block", (blocks, axes))
+        rows = [self.concat(row, axis=axes[1]) for row in blocks]
+        return self.concat(rows, axis=axes[0])
 
     def broadcast_arrays(self, *arrays: list[Tensor]) -> list[Tensor]:
         r"""
@@ -1016,6 +1018,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array of ones
         """
         # NOTE : should be float64 by default
+
+        shape = shape if isinstance(shape, int) else tuple(shape)
         return self._apply("ones", (shape, dtype))
 
     def ones_like(self, array: Tensor) -> Tensor:
@@ -1059,7 +1063,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The padded array
         """
-        return self._apply("pad", (array, paddings, mode, constant_values))
+        return self._apply("pad", (array, tuple(paddings), mode, constant_values))
 
     def pinv(self, matrix: Tensor) -> Tensor:
         r"""The pseudo-inverse of matrix.
@@ -1146,6 +1150,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The reshaped array
         """
+        shape = (shape,) if isinstance(shape, int) else tuple(shape)
         return self._apply("reshape", (array, shape))
 
     def round(self, array: Tensor, decimals: int) -> Tensor:
@@ -1253,7 +1258,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The stacked array
         """
-        arrays = self.astensor(arrays)
         return self._apply("stack", (arrays, axis))
 
     def sum(self, array: Tensor, axis: int | Sequence[int] | None = None):
@@ -1296,7 +1300,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tiled array
         """
-        return self._apply("tile", (array, repeats))
+        return self._apply("tile", (array, tuple(repeats)))
 
     def trace(self, array: Tensor, dtype=None) -> Tensor:
         r"""The trace of array.
@@ -1320,6 +1324,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The transposed array
         """
+        if a is None:
+            return None  # TODO: remove and address None inputs where tranpose is used
+        perm = tuple(perm) if perm is not None else None
         return self._apply("transpose", (a, perm))
 
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
@@ -1594,7 +1601,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if vec.shape[-1] != 2:
             raise ValueError("vec must be 2-dimensional (i.e. single-mode)")
         x, y = vec[..., -2], vec[..., -1]
-        vec = self.concat([self.tile([x], [num_modes]), self.tile([y], [num_modes])], axis=-1)
+        vec = self.concat(
+            [
+                self.tile(self.astensor([x]), (num_modes,)),
+                self.tile(self.astensor([y]), (num_modes,)),
+            ],
+            axis=-1,
+        )
         return vec
 
     def single_mode_to_multimode_mat(self, mat: Tensor, num_modes: int):

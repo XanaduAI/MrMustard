@@ -18,11 +18,13 @@ various states and transformations.
 """
 from __future__ import annotations
 
+from typing import Iterable
+
 from mrmustard import math
 from mrmustard.utils.typing import Matrix
 
 
-def cxgate_symplectic(s: float) -> Matrix:
+def cxgate_symplectic(s: float | Iterable[float]) -> Matrix:
     r"""
     The symplectic matrix of a controlled X gate.
 
@@ -32,12 +34,25 @@ def cxgate_symplectic(s: float) -> Matrix:
     Returns:
         The symplectic matrix of a CX gate.
     """
-    return math.astensor(
-        [[1, 0, 0, 0], [s, 1, 0, 0], [0, 0, 1, -s], [0, 0, 0, 1]], dtype="complex128"
+    s = math.astensor(s, dtype=math.complex128)
+    batch_shape = s.shape
+    batch_dim = len(batch_shape)
+
+    O_matrix = math.zeros(batch_shape, math.complex128)
+    I_matrix = math.ones(batch_shape, math.complex128)
+
+    return math.stack(
+        [
+            math.stack([I_matrix, O_matrix, O_matrix, O_matrix], batch_dim),
+            math.stack([s, I_matrix, O_matrix, O_matrix], batch_dim),
+            math.stack([O_matrix, O_matrix, I_matrix, -s], batch_dim),
+            math.stack([O_matrix, O_matrix, O_matrix, I_matrix], batch_dim),
+        ],
+        batch_dim,
     )
 
 
-def czgate_symplectic(s: float) -> Matrix:
+def czgate_symplectic(s: float | Iterable[float]) -> Matrix:
     r"""
     The symplectic matrix of a controlled Z gate.
 
@@ -47,7 +62,22 @@ def czgate_symplectic(s: float) -> Matrix:
     Returns:
         The symplectic matrix of a CZ gate.
     """
-    return math.astensor([[1, 0, 0, 0], [0, 1, 0, 0], [0, s, 1, 0], [s, 0, 0, 1]])
+    s = math.astensor(s, dtype=math.complex128)
+    batch_shape = s.shape
+    batch_dim = len(batch_shape)
+
+    O_matrix = math.zeros(batch_shape, math.complex128)
+    I_matrix = math.ones(batch_shape, math.complex128)
+
+    return math.stack(
+        [
+            math.stack([I_matrix, O_matrix, O_matrix, O_matrix], batch_dim),
+            math.stack([O_matrix, I_matrix, O_matrix, O_matrix], batch_dim),
+            math.stack([O_matrix, s, I_matrix, O_matrix], batch_dim),
+            math.stack([s, O_matrix, O_matrix, I_matrix], batch_dim),
+        ],
+        batch_dim,
+    )
 
 
 def interferometer_symplectic(unitary: Matrix) -> Matrix:
@@ -65,7 +95,9 @@ def interferometer_symplectic(unitary: Matrix) -> Matrix:
     )
 
 
-def mzgate_symplectic(phi_a: float, phi_b: float, internal: bool) -> Matrix:
+def mzgate_symplectic(
+    phi_a: float | Iterable[float], phi_b: float | Iterable[float], internal: bool
+) -> Matrix:
     r"""
     The symplectic matrix of a Mach-Zehnder gate.
 
@@ -81,48 +113,61 @@ def mzgate_symplectic(phi_a: float, phi_b: float, internal: bool) -> Matrix:
     Returns:
         The symplectic matrix of a Mach-Zehnder gate.
     """
-    ca = math.cos(complex(phi_a))
-    sa = math.sin(complex(phi_a))
-    cb = math.cos(complex(phi_b))
-    sb = math.sin(complex(phi_b))
-    cp = math.cos(complex(phi_a + phi_b))
-    sp = math.sin(complex(phi_a + phi_b))
+    phi_a, phi_b = math.broadcast_arrays(
+        math.astensor(phi_a, dtype=math.complex128), math.astensor(phi_b, dtype=math.complex128)
+    )
+    batch_shape = phi_a.shape
+    batch_dim = len(batch_shape)
+
+    ca = math.cos(phi_a)
+    sa = math.sin(phi_a)
+    cb = math.cos(phi_b)
+    sb = math.sin(phi_b)
+    cp = math.cos(phi_a + phi_b)
+    sp = math.sin(phi_a + phi_b)
     if internal:
-        return 0.5 * math.astensor(
+        symplectic = math.stack(
             [
-                [ca - cb, -sa - sb, sb - sa, -ca - cb],
-                [-sa - sb, cb - ca, -ca - cb, sa - sb],
-                [sa - sb, ca + cb, ca - cb, -sa - sb],
-                [ca + cb, sb - sa, -sa - sb, cb - ca],
-            ]
+                math.stack([ca - cb, -sa - sb, sb - sa, -ca - cb], batch_dim),
+                math.stack([-sa - sb, cb - ca, -ca - cb, sa - sb], batch_dim),
+                math.stack([sa - sb, ca + cb, ca - cb, -sa - sb], batch_dim),
+                math.stack([ca + cb, sb - sa, -sa - sb, cb - ca], batch_dim),
+            ],
+            batch_dim,
         )
     else:
-        return 0.5 * math.astensor(
+        symplectic = math.stack(
             [
-                [cp - ca, -sb, sa - sp, -1 - cb],
-                [-sa - sp, 1 - cb, -ca - cp, sb],
-                [sp - sa, 1 + cb, cp - ca, -sb],
-                [cp + ca, -sb, -sa - sp, 1 - cb],
-            ]
+                math.stack([cp - ca, -sb, sa - sp, -1 - cb], batch_dim),
+                math.stack([-sa - sp, 1 - cb, -ca - cp, sb], batch_dim),
+                math.stack([sp - sa, 1 + cb, cp - ca, -sb], batch_dim),
+                math.stack([cp + ca, -sb, -sa - sp, 1 - cb], batch_dim),
+            ],
+            batch_dim,
         )
+    return 0.5 * symplectic
 
 
-def pgate_symplectic(n_modes: int, shearing: float) -> Matrix:
+def pgate_symplectic(n_modes: int, shearing: float | Iterable[float]) -> Matrix:
     r"""
     The symplectic matrix of a quadratic phase gate.
 
     Args:
+        n_modes: The number of modes.
         shearing: The shearing parameter.
 
     Returns:
         The symplectic matrix of a phase gate.
     """
-    return math.block(
-        [
-            [math.eye(n_modes), math.zeros((n_modes, n_modes))],
-            [math.eye(n_modes) * shearing, math.eye(n_modes)],
-        ]
+    shearing = math.astensor(shearing, dtype=math.complex128)
+    batch_shape = shearing.shape
+
+    I_matrix = math.broadcast_to(
+        math.eye(n_modes, dtype=math.complex128), batch_shape + (n_modes, n_modes)
     )
+    O_matrix = math.zeros(batch_shape + (n_modes, n_modes), dtype=math.complex128)
+
+    return math.block([[I_matrix, O_matrix], [I_matrix * shearing[..., None, None], I_matrix]])
 
 
 def realinterferometer_symplectic(orthogonal: Matrix) -> Matrix:

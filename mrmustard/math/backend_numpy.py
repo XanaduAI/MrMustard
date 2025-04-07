@@ -90,10 +90,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
         return np.array(array, ndmin=n, dtype=dtype)
 
-    def block(self, blocks: list[list[np.ndarray]], axes=(-2, -1)) -> np.ndarray:
-        rows = [self.concat(row, axis=axes[1]) for row in blocks]
-        return self.concat(rows, axis=axes[0])
-
     def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
         return np.broadcast_to(array, shape)
 
@@ -412,9 +408,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def trace(self, array: np.ndarray, dtype=None) -> np.ndarray:
         return self.cast(np.trace(array, axis1=-1, axis2=-2), dtype)
 
-    def transpose(self, a: np.ndarray, perm: Sequence[int] = None) -> np.ndarray | None:
-        if a is None:
-            return None  # TODO: remove and address None inputs where tranpose is used
+    def transpose(self, a: np.ndarray, perm: Sequence[int] | None = None) -> np.ndarray | None:
         return np.transpose(a, axes=perm)
 
     @Autocast()
