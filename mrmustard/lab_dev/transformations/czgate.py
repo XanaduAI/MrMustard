@@ -18,6 +18,8 @@ The class representing a controlled-phase gate.
 
 from __future__ import annotations
 
+from typing import Iterable
+
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .base import Unitary
@@ -52,7 +54,7 @@ class CZgate(Unitary):
     def __init__(
         self,
         modes: tuple[int, int],
-        s: float = 0.0,
+        s: float | Iterable[float] = 0.0,
         s_trainable: bool = False,
         s_bounds: tuple[float | None, float | None] = (None, None),
     ):

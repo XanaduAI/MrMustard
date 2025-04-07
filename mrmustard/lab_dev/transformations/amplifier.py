@@ -17,7 +17,7 @@ The class representing a noisy amplifier channel.
 """
 
 from __future__ import annotations
-
+from typing import Iterable
 from .base import Channel
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
@@ -75,7 +75,7 @@ class Amplifier(Channel):
     def __init__(
         self,
         mode: int,
-        gain: float = 1.0,
+        gain: float | Iterable[float] = 1.0,
         gain_trainable: bool = False,
         gain_bounds: tuple[float | None, float | None] = (1.0, None),
     ):

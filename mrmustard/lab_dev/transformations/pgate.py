@@ -17,7 +17,7 @@ The class representing a quadratic phase gate.
 """
 
 from __future__ import annotations
-
+from typing import Iterable
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .base import Unitary
@@ -49,7 +49,7 @@ class Pgate(Unitary):
     def __init__(
         self,
         mode: int,
-        shearing: float = 0.0,
+        shearing: float | Iterable[float] = 0.0,
         shearing_trainable: bool = False,
         shearing_bounds: tuple[float | None, float | None] = (None, None),
     ):

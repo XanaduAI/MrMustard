@@ -17,7 +17,7 @@ The class representing a two-mode squeezed vacuum state.
 """
 
 from __future__ import annotations
-
+from typing import Iterable
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .ket import Ket
@@ -51,8 +51,8 @@ class TwoModeSqueezedVacuum(Ket):
     def __init__(
         self,
         modes: tuple[int, int],
-        r: float = 0.0,
-        phi: float = 0.0,
+        r: float | Iterable[float] = 0.0,
+        phi: float | Iterable[float] = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
         r_bounds: tuple[float | None, float | None] = (None, None),

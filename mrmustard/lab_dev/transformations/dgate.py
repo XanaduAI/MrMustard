@@ -17,8 +17,7 @@ The class representing a displacement gate.
 """
 
 from __future__ import annotations
-
-from typing import Sequence
+from typing import Iterable, Sequence
 from dataclasses import replace
 
 from mrmustard.utils.typing import ComplexTensor
@@ -84,8 +83,8 @@ class Dgate(Unitary):
     def __init__(
         self,
         mode: int,
-        x: float = 0.0,
-        y: float = 0.0,
+        x: float | Iterable[float] = 0.0,
+        y: float | Iterable[float] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: tuple[float | None, float | None] = (None, None),
