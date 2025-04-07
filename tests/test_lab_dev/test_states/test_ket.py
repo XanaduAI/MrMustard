@@ -192,6 +192,12 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(coeff, 1.0)
         assert math.allclose(cov, math.eye(2) * settings.HBAR / 2)
         assert math.allclose(means, math.astensor([1.0, 2.0]) * math.sqrt(2 * settings.HBAR))
+
+        cov, means, coeff = Coherent(0, x=[1, 1, 1], y=2).phase_space(s=0)
+        assert math.allclose(coeff, 1.0)
+        assert math.allclose(cov, math.eye(2) * settings.HBAR / 2)
+        assert math.allclose(means, math.astensor([1.0, 2.0]) * math.sqrt(2 * settings.HBAR))
+
         n_modes = len(modes)
 
         state1 = Ket.from_phase_space(modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0))

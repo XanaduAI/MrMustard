@@ -390,7 +390,7 @@ class State(CircuitComponent):
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
-        new_state = self.adjoint.contract(self.contract(BtoChar(0, s=0), "zip"), "zip")
+        new_state = self >> BtoChar(self.modes, s=0)
         return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple())
 
     def quadrature_distribution(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:

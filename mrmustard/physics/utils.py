@@ -115,11 +115,9 @@ def verify_batch_triple(
         )
 
 
-def zip_batch_strings(*ndims: int) -> str:
+def zip_batch_strings(*batch_shapes: tuple[int, ...]) -> str:
     r"""
     Creates a batch string for zipping over the batch dimensions.
     """
-    if len(set(ndims)) != 1:
-        raise ValueError(f"Arrays must have the same number of batch dimensions, got {ndims}")
-    str_ = "".join([chr(97 + i) for i in range(ndims[0])])
-    return ",".join([str_] * len(ndims)) + "->" + str_
+    input = ",".join([generate_batch_str(batch_shape) for batch_shape in batch_shapes])
+    return input + "->" + generate_batch_str(max(batch_shapes))

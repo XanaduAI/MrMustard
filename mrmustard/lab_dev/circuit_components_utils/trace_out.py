@@ -93,9 +93,7 @@ class TraceOut(CircuitComponent):
                 str2 = str1[:-1] + chr(ord(str1[-1]) + 1)
                 batch_str = f"{str1},{str2}->{str1}{str2[-1]}"
             else:
-                batch_str = zip_batch_strings(
-                    len(other.ansatz.batch_shape), len(other.ansatz.batch_shape)
-                )
+                batch_str = zip_batch_strings(other.ansatz.batch_shape, other.ansatz.batch_shape)
             ansatz = other.ansatz.conj.contract(other.ansatz, idx_z, idx_z, batch_str=batch_str)
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
