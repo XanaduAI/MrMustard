@@ -17,6 +17,7 @@ A set of components that do not correspond to physical elements of a circuit, bu
 perform useful mathematical calculations.
 """
 
-from .b_to_ps import *
+from .b_to_ch import *
 from .b_to_q import *
 from .trace_out import *
+from .b_to_ps import *

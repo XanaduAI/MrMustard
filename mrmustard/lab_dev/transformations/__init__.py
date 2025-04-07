@@ -20,7 +20,6 @@ from .amplifier import *
 from .attenuator import *
 from .base import *
 from .bsgate import *
-from .cft import *
 from .cxgate import *
 from .czgate import *
 from .dgate import *

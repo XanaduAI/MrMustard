@@ -93,6 +93,8 @@ class Sgate(Unitary):
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.squeezing_gate_Abc, r=self.parameters.r, delta=self.parameters.phi
+                fn=triples.squeezing_gate_Abc,
+                r=self.parameters.r,
+                phi=self.parameters.phi,
             ),
         ).representation

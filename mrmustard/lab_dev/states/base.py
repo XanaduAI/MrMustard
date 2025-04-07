@@ -42,7 +42,7 @@ from mrmustard.utils.typing import (
 )
 
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoPS, BtoQ
+from ..circuit_components_utils import BtoChar, BtoQ
 
 
 __all__ = ["State"]
@@ -183,8 +183,8 @@ class State(CircuitComponent):
             >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab_dev.states.ket import Ket
 
-            >>> modes = (0, 1)
-            >>> triple = coherent_state_Abc(x=[0.1, 0.2])  # parallel coherent states
+            >>> modes = (0,)
+            >>> triple = coherent_state_Abc(x=0.1)
 
             >>> coh = Ket.from_bargmann(modes, triple)
             >>> assert coh.modes == modes
@@ -401,7 +401,7 @@ class State(CircuitComponent):
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
-        new_state = self >> BtoPS(self.modes, s=s)
+        new_state = self >> BtoChar(self.modes, s=s)
         return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple())
 
     def quadrature_distribution(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
