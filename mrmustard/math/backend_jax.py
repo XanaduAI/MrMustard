@@ -765,7 +765,7 @@ class BackendJax(BackendBase):  # pragma: no cover
     def hermite_renormalized_full_batch(
         self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
     ) -> jnp.ndarray:
-        function = partial(vanilla_full_batch_numba, shape)
+        function = partial(strategies.vanilla_full_batch_numba, shape)
         return jax.pure_callback(
             lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
             jax.ShapeDtypeStruct(tuple(A.shape[:-2]) + shape, A.dtype),
