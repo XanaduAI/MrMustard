@@ -170,7 +170,7 @@ class TestVanilla:
         """
         A, b, c = random_triple(2, (2, 1))
         shape = (4, 5)
-        G = math.hermite_renormalized(A, b, c, shape, stable=stable)
+        G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape, stable=stable)
         assert G.shape == (2, 1) + shape
         assert math.allclose(G[0, 0], math.hermite_renormalized(A[0, 0], b[0, 0], c[0, 0], shape))
         assert math.allclose(G[1, 0], math.hermite_renormalized(A[0, 0], b[1, 0], c[0, 0], shape))
