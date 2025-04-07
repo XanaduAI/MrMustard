@@ -35,9 +35,7 @@ class BargmannEigenstate(Ket):
         alpha: The displacement of the state (i.e., the eigen-value).
 
     Notes:
-        If ``alphas`` is a ``Sequence``, its length must be equal to `1` or `N`.
-        If its length is equal to `1`, all the modes share the same parameters.
-        Note that the only difference with ``Coherent(modes, alphas)`` is in its `c` parameter (and hence, does not have unit norm).
+        The only difference with ``Coherent(modes, alphas)`` is in its `c` parameter (and hence, does not have unit norm).
 
     .. code-block::
 
