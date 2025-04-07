@@ -18,8 +18,6 @@ The class representing a generic gaussian gate.
 
 from __future__ import annotations
 
-from typing import Iterable
-
 from mrmustard import math
 from mrmustard.math.parameters import update_symplectic
 from mrmustard.utils.typing import RealMatrix
