@@ -338,11 +338,11 @@ class ArrayAnsatz(Ansatz):
         slices = tuple(slice(0, min(si, oi)) for si, oi in zip(self.core_shape, other.core_shape))
         return np.allclose(self.array[(...,) + slices], other.array[(...,) + slices], atol=1e-10)
 
-    def __mul__(self, other: Scalar) -> ArrayAnsatz:
+    def __mul__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:
         return ArrayAnsatz(array=self.array * other, batch_dims=self.batch_dims)
 
     def __neg__(self) -> ArrayAnsatz:
         return ArrayAnsatz(array=-self.array, batch_dims=self.batch_dims)
 
-    def __truediv__(self, other: Scalar) -> ArrayAnsatz:
+    def __truediv__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:
         return ArrayAnsatz(array=self.array / other, batch_dims=self.batch_dims)

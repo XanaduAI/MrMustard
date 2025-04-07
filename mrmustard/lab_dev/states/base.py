@@ -357,10 +357,22 @@ class State(CircuitComponent):
         r"""
         Returns a rescaled version of the state such that its probability is 1.
         """
+        probability = self.probability
+
+        # TODO: CLEAN
+        if self.ansatz.batch_shape != () and isinstance(self.ansatz, PolyExpAnsatz):
+            probability = (
+                probability[..., None]
+                if (self.ansatz.num_derived_vars > 0 or self.ansatz._lin_sup)
+                else probability
+            )
+        elif self.ansatz.batch_shape != () and isinstance(self.ansatz, ArrayAnsatz):
+            probability = probability[..., None]
+
         if self.wires.ket and not self.wires.bra:
-            return self / math.sqrt(self.probability)
+            return self / math.sqrt(probability)
         else:
-            return self / self.probability
+            return self / probability
 
     def phase_space(self, s: float) -> tuple:
         r"""

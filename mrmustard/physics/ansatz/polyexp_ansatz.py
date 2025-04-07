@@ -782,7 +782,7 @@ class PolyExpAnsatz(Ansatz):
             and math.allclose(self_c, other_c)
         )
 
-    def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
+    def __mul__(self, other: Scalar | ArrayLike | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
                 return PolyExpAnsatz(self.A, self.b, self.c * other, lin_sup=self._lin_sup)
@@ -829,7 +829,7 @@ class PolyExpAnsatz(Ansatz):
 
         return "\n".join(repr_str)
 
-    def __truediv__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
+    def __truediv__(self, other: Scalar | ArrayLike | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
                 return PolyExpAnsatz(self.A, self.b, self.c / other, lin_sup=self._lin_sup)

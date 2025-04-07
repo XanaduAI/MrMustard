@@ -114,15 +114,38 @@ class TestKet:  # pylint: disable=too-many-public-methods
             Number(0, n=10).bargmann_triple()
 
     @pytest.mark.parametrize("coeff", [0.5, 0.3])
-    def test_normalize(self, coeff):
-        state = Coherent(0, 1, 1) + Coherent(0, -1, -1)
+    @pytest.mark.parametrize(
+        "x, y", [(1, 2), ([1, 2], [3, 4]), ([[1, 2], [1, 2]], [[3, 4], [3, 4]])]
+    )
+    def test_normalize(self, coeff, x, y):
+        state = Coherent(0, x, y)
         state = coeff * state
-        # Bargmann
         normalized = state.normalize()
         assert math.allclose(normalized.probability, 1.0)
-        # Fock
-        state = state.to_fock(5)  # truncated
+        fock_state = state.to_fock(5)
+        normalized = fock_state.normalize()
+        assert math.allclose(normalized.probability, 1.0)
+
+    @pytest.mark.parametrize("coeff", [0.5, 0.3])
+    def test_normalize_lin_sup(self, coeff):
+        state = Coherent(0, 1, 1) + Coherent(0, -1, -1)
+        state = coeff * state
         normalized = state.normalize()
+        assert math.allclose(normalized.probability, 1.0)
+        fock_state = state.to_fock(5)
+        normalized = fock_state.normalize()
+        assert math.allclose(normalized.probability, 1.0)
+
+        # batch
+        A, b, c = state.ansatz.triple
+        A_batch = math.astensor([A, A, A])
+        b_batch = math.astensor([b, b, b])
+        c_batch = math.astensor([c, c, c])
+        lin_sup_state_batch = Ket.from_bargmann((0,), (A_batch, b_batch, c_batch), lin_sup=True)
+        normalized_batch = lin_sup_state_batch.normalize()
+        assert math.allclose(normalized_batch.probability, 1.0)
+        fock_state = state.to_fock(5)
+        normalized = fock_state.normalize()
         assert math.allclose(normalized.probability, 1.0)
 
     def test_normalize_poly_dim(self):
