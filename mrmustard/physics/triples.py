@@ -784,7 +784,7 @@ def bargmann_to_quadrature_Abc(
 
 
 def displacement_map_s_parametrized_Abc(
-    s: int, n_modes: int
+    s: float | Iterable[float], n_modes: int
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map.

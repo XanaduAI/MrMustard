@@ -151,6 +151,8 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def batch_shape(self) -> tuple[int, ...]:
+        if self._A is None:
+            self._generate_ansatz()
         return self._batch_shape
 
     @property
