@@ -405,7 +405,7 @@ class DM(State):
 
     def physical_stellar_decomposition(self, core_modes: Collection[int]):
         r"""
-        Applies the physical stellar decomposition, pulling put a channel from a pure state.
+        Applies the physical stellar decomposition, pulling out a channel from a pure state.
 
         Args:
             core_modes: the core modes defining the core variables.
@@ -516,7 +516,7 @@ class DM(State):
         phi = phi / renorm
         return core, phi
 
-    def physical_stellar_decomposition_2(
+    def physical_stellar_decomposition_mixed(
         self, core_modes: Collection[int]
     ):  # pylint: disable=too-many-statements
         r"""
@@ -537,7 +537,7 @@ class DM(State):
             >>> from mrmustard.lab_dev import DM, Vacuum
 
             >>> rho = DM.random([0,1])
-            >>> core, phi = rho.physical_stellar_decomposition_2([0])
+            >>> core, phi = rho.physical_stellar_decomposition_mixed([0])
 
             >>> assert rho == core >> phi
             >>> assert core.is_physical
@@ -572,7 +572,9 @@ class DM(State):
 
         rank = np.linalg.matrix_rank(r @ math.conj(r).T + sigma @ math.conj(sigma.T))
         if rank > M:
-            raise ValueError(f"The rank {rank} is larger than the number of core modes {M}.")
+            raise ValueError("The physical mixed stellar decomposition is not possible for this DM, "
+            f"as the rank {rank} of the off-diagonal block of the Bargmann matrix is larger than the number "
+            f"of core modes {M}.")
 
         reduced_A = R @ math.inv(math.eye(2 * M) - math.Xmat(M) @ Am) @ math.conj(R.T)
 

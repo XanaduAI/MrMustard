@@ -359,7 +359,7 @@ class Ket(State):
 
     def formal_stellar_decomposition(self, core_modes: Collection[int]):
         r"""
-        Applies the physical stellar decomposition.
+        Applies the formal stellar decomposition.
 
         Args:
             core_modes: The set of modes defining core variables.
