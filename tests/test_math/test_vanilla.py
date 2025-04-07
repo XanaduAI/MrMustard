@@ -22,6 +22,9 @@ from ..conftest import skip_tf, skip_jax
 
 
 def random_triple(n, batch=()):
+    r"""
+    Generate random triple of A, b, c for testing the vanilla strategy.
+    """
     A = np.random.random(batch + (n, n)) + 1j * np.random.random(batch + (n, n))
     A = A + np.swapaxes(A, -1, -2)
     A /= np.abs(np.linalg.eigvals(A)).max() + 0.2
