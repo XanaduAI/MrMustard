@@ -50,7 +50,9 @@ class BtoQ(Operation):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.bargmann_to_quadrature_Abc, n_modes=len(modes), phi=self.parameters.phi
+                fn=triples.bargmann_to_quadrature_Abc,
+                n_modes=len(modes),
+                phi=self.parameters.phi,
             ),
         ).representation
         for w in self.representation.wires.input.wires:

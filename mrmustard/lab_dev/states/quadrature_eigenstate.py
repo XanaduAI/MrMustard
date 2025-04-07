@@ -75,7 +75,9 @@ class QuadratureEigenstate(Ket):
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.quadrature_eigenstates_Abc, x=self.parameters.x, phi=self.parameters.phi
+                fn=triples.quadrature_eigenstates_Abc,
+                x=self.parameters.x,
+                phi=self.parameters.phi,
             ),
         ).representation
 
