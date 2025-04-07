@@ -681,7 +681,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
         This method automatically selects the appropriate calculation method based on input dimensions:
         1. If A.ndim = 2, b.ndim = 1, c is scalar: Uses vanilla strategy (unbatched)
-        2. If A.ndim = 2, b.ndim > 1, c is scalar: Uses vanilla_b_batched strategy (b-batched)
+        2. If A.ndim = 2, b.ndim > 1, c is scalar: Uses vanilla_full_batch strategy with broadcasting
         3. If A.ndim > 2, b.ndim > 1, c.ndim > 0: Uses vanilla_full_batch strategy (fully batched)
 
         Args:
@@ -707,7 +707,11 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             batch_shape = b.shape[:-1]
             D = int(np.prod(batch_shape))
             b = self.reshape(b, (D,) + b.shape[-1:])
-            result = self._apply("hermite_renormalized_b_batch", (A, b, c, shape, stable))
+            A_broadcast = self.broadcast_to(A, (D,) + A.shape)
+            c_broadcast = self.broadcast_to(c, (D,))
+            result = self._apply(
+                "hermite_renormalized_full_batch", (A_broadcast, b, c_broadcast, shape, stable)
+            )
             return self.reshape(result, batch_shape + shape)
         else:  # Unbatched case
             return self._apply("hermite_renormalized_unbatched", (A, b, c, shape, stable))
