@@ -84,10 +84,6 @@ class BackendJax(BackendBase):  # pragma: no cover
     def asnumpy(self, tensor: jnp.ndarray) -> np.ndarray:
         return np.array(tensor)
 
-    def block(self, blocks: list[list[jnp.ndarray]], axes=(-2, -1)) -> jnp.ndarray:
-        rows = [self.concat(row, axis=axes[1]) for row in blocks]
-        return self.concat(rows, axis=axes[0])
-
     @partial(jax.jit, static_argnames=["shape"])
     def broadcast_to(self, array: jnp.ndarray, shape: tuple[int]) -> jnp.ndarray:
         return jnp.broadcast_to(array, shape)
@@ -233,8 +229,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         return jax.lax.conv(array, filters, (1, 1), padding)
 
     def tile(self, array: jnp.ndarray, repeats: Sequence[int]) -> jnp.ndarray:
-        repeats = tuple(repeats)
-        array = jnp.array(array)
         return jnp.tile(array, repeats)
 
     @Autocast()
@@ -474,8 +468,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         return self.cast(jnp.trace(array, axis1=-1, axis2=-2), dtype)
 
     def transpose(self, a: jnp.ndarray, perm: Sequence[int] = None) -> jnp.ndarray:
-        if a is None:
-            return None
         return jnp.transpose(a, perm)
 
     def zeros(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:

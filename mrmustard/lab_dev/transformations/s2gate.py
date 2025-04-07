@@ -81,6 +81,8 @@ class S2gate(Unitary):
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.twomode_squeezing_gate_Abc, r=self.parameters.r, phi=self.parameters.phi
+                fn=triples.twomode_squeezing_gate_Abc,
+                r=self.parameters.r,
+                phi=self.parameters.phi,
             ),
         ).representation
