@@ -559,51 +559,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         return G
 
     # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_b_batch
-    # ~~~~~~~~~~~~~~~~~
-    @partial(jax.jit, static_argnames=["shape", "stable"])
-    def hermite_renormalized_b_batch(
-        self,
-        A: jnp.ndarray,
-        b: jnp.ndarray,
-        c: jnp.ndarray,
-        shape: tuple[int],
-        stable: bool = False,
-    ) -> jnp.ndarray:
-        """Renormalized multidimensional Hermite polynomial with batched b vectors.
-
-        This variant works when only the b vectors are batched (A and c remain fixed).
-
-        Args:
-            A: The A matrix (constant for all batch elements)
-            b: Batched b vectors with shape (B, D)
-            c: The c scalar (constant for all batch elements)
-            shape: The shape of the final tensor
-            stable: Whether to use numerically stable algorithm
-
-        Returns:
-            Batched Hermite polynomials
-        """
-        # Use the appropriate strategy function
-        if stable:
-            function = partial(strategies.stable_b_batch_numba, tuple(shape))
-        else:
-            function = partial(strategies.vanilla_b_batch_numba, tuple(shape))
-
-        # Use pure_callback to handle the external numba function call
-        batch_size = b.shape[0]
-        output_shape = (batch_size,) + shape
-
-        G = jax.pure_callback(
-            lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
-            jax.ShapeDtypeStruct(output_shape, jnp.complex128),
-            A,
-            b,
-            c,
-        )
-        return G
-
-    # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_full_batch
     # ~~~~~~~~~~~~~~~~~
     @partial(jax.jit, static_argnames=["shape", "stable"])
@@ -615,20 +570,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         shape: tuple[int],
         stable: bool = False,
     ) -> jnp.ndarray:
-        """Renormalized multidimensional Hermite polynomial for batches of A, b, and c parameters.
-
-        Works with full batching where all inputs (A, b, c) have batch dimensions.
-
-        Args:
-            A: Batched A matrices with shape (B, D, D)
-            b: Batched b vectors with shape (B, D)
-            c: Batched c scalars with shape (B,)
-            shape: The shape of the final tensor
-            stable: Whether to use numerically stable algorithm (slower)
-
-        Returns:
-            Batched Hermite polynomials
-        """
         # We use jax.pure_callback since the implementation relies on external
         # numba-accelerated functions from the strategies module
         if stable:
@@ -636,20 +577,12 @@ class BackendJax(BackendBase):  # pragma: no cover
         else:
             function = partial(strategies.vanilla_full_batch_numba, tuple(shape))
 
-        # Call the appropriate strategy function for each batch element
-        def process_batch(inputs):
-            A_i, b_i, c_i = inputs
-            return function(np.array(A_i), np.array(b_i), np.array(c_i))
-
-        # Use vmap to vectorize the computation over the batch dimension
         batch_size = A.shape[0]
         output_shape = (batch_size,) + shape
 
         # Use pure_callback to handle the external numba function call
         G = jax.pure_callback(
-            lambda A, b, c: np.stack(
-                [function(np.array(A[i]), np.array(b[i]), np.array(c[i])) for i in range(len(A))]
-            ),
+            lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
             jax.ShapeDtypeStruct(output_shape, jnp.complex128),
             A,
             b,
