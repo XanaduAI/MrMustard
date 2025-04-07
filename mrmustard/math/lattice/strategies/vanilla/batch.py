@@ -17,8 +17,6 @@
 import numpy as np
 from numba import njit, prange
 
-from mrmustard.math.lattice import steps
-from mrmustard.math.lattice.strategies import vanilla
 from mrmustard.utils.typing import ComplexTensor
 
 from .core import vanilla_numba, stable_numba
