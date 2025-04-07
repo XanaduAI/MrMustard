@@ -31,6 +31,10 @@ def random_triple(n, batch=()):
 
 
 class TestVanilla:
+    r"""
+    Test the vanilla strategy for calculating the Fock representation of a Gaussian tensor.
+    """
+
     @pytest.mark.parametrize("n", [2, 3])
     def test_vanilla_vjp(self, n):
         r"""
@@ -147,12 +151,18 @@ class TestVanilla:
         assert np.allclose(dLdA, (dLdA_fd + np.swapaxes(dLdA_fd, -1, -2)) / 2)
 
     def test_hermite_renormalized_unbatched(self):
+        r"""
+        Test the hermite_renormalized function for unbatched inputs.
+        """
         A, b, c = random_triple(2, ())
         shape = (3, 3)
         G = math.hermite_renormalized(A, b, c, shape)
         assert G.shape == shape
 
     def test_hermite_renormalized_b_batched(self):
+        r"""
+        Test the hermite_renormalized function for batched b inputs.
+        """
         A, b, c = random_triple(2, (2, 1))
         shape = (4, 5)
         G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape)
@@ -161,6 +171,9 @@ class TestVanilla:
         assert math.allclose(G[1, 0], math.hermite_renormalized(A[0, 0], b[1, 0], c[0, 0], shape))
 
     def test_hermite_renormalized_full_batch(self):
+        r"""
+        Test the hermite_renormalized function for full batch inputs.
+        """
         A, b, c = random_triple(2, (2, 1))
         shape = (4, 5)
         G = math.hermite_renormalized(A, b, c, shape)
