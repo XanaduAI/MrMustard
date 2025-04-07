@@ -361,7 +361,6 @@ class DM(State):
             >>> assert rho == core >> phi
             >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
         """
-
         other_modes = [m for m in self.modes if m not in core_modes]
         core_indices = self.wires[core_modes].indices
         other_indices = self.wires[other_modes].indices
