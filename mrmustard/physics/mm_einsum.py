@@ -64,28 +64,18 @@ def mm_einsum(
         (id_a, ansatz_a), (id_b, ansatz_b) = relevant_ansatze.items()
         index_a, index_b = indices[id_a], indices[id_b]
         int_a, int_b = _ints(index_a), _ints(index_b)
-        str_a, str_b = _strings(index_a), _strings(index_b)
         convert = type(ansatz_a) is not type(ansatz_b)
         ansatz_a = convert_ansatz(ansatz_a, [fock_dims[i] for i in int_a]) if convert else ansatz_a
         ansatz_b = convert_ansatz(ansatz_b, [fock_dims[i] for i in int_b]) if convert else ansatz_b
 
-        common_int = [i for i in int_a if i in int_b]
-        idx_a = [int_a.index(i) for i in common_int]
-        idx_b = [int_b.index(i) for i in common_int]
-        new_idx = [i for i in int_a + int_b if i not in common_int]
-
-        other_indices = [index for ids, index in indices.items() if ids not in (id_a, id_b)]
-        other_names = [name for idx in other_indices for name in _strings(idx)] + _strings(output)
-        keep = {name for name in str_a + str_b if name in other_names}
-        eins_str = "".join(str_a) + "," + "".join(str_b) + "->" + "".join(keep)
-
+        eins_str, idx_a, idx_b, new_index = prepare_all_things(indices, id_a, id_b, output)
         new_ansatz = ansatz_a.contract(ansatz_b, idx_a, idx_b, eins_str)
         del ansatze[id_a]
         del ansatze[id_b]
         ansatze[id_a + id_b] = new_ansatz
         del indices[id_a]
         del indices[id_b]
-        indices[id_a + id_b] = list(keep) + new_idx
+        indices[id_a + id_b] = new_index
 
     if len(ansatze) > 1:
         raise ValueError("More than one ansatz left after contraction.")
@@ -138,12 +128,12 @@ def mm_einsum_3stages(
             indices[id_a + id_b] = new_index
             processed_pairs.add((a, b))
 
-    # stage 2: convert everything to ArrayAnsatz
+    # stage 2: convert everything left to ArrayAnsatz
     for id, ansatz in ansatze.items():
         ansatze[id] = convert_ansatz(ansatz, [fock_dims[i] for i in _ints(indices[id])])
 
     # stage 3: use math.einsum to contract the leftover arrays
-    for (a, b) in [c for c in contraction_order if c not in processed_pairs]:
+    for (a, b) in (c for c in contraction_order if c not in processed_pairs):
         relevant_ansatze = {ids: ansatz for ids, ansatz in ansatze.items() if a in ids or b in ids}
         (id_a, ansatz_a), (id_b, ansatz_b) = relevant_ansatze.items()
 
@@ -153,8 +143,30 @@ def mm_einsum_3stages(
         ansatze[id_a + id_b] = ArrayAnsatz(new_array, ansatz_a.batch_shape)
         indices[id_a + id_b] = new_index
 
+    # stage 4: convert the result to the correct type and reorder the output indices
+    result = list(ansatze.values())[0]
+    final_idx = list(indices.values())[0]
+    output_idx_str = _strings(output)
+    output_idx_int = _ints(output)
+
+    if len(output_idx_str) > 1:
+        final_idx_str = _strings(final_idx)
+        batch_perm = [final_idx_str.index(i) for i in output_idx_str]
+        result = result.reorder_batch(batch_perm)
+
+    if len(output_idx_int) > 1:
+        final_idx_int = _ints(final_idx)
+        index_perm = [final_idx_int.index(i) for i in output_idx_int]
+        result = result.reorder(index_perm)
+
 
 def prepare_all_things(indices, id_a, id_b, output, full=False):
+    r"""
+    Prepares the things needed to contract two ansatze.
+    If full is True, the integers are converted to characters and included in the einsum string,
+    so that the actual einsum function can be used, rather than the contract method of the Ansatz
+    class.
+    """
     index_a, index_b = indices[id_a], indices[id_b]
     int_a, int_b = _ints(index_a), _ints(index_b)
     str_a, str_b = _strings(index_a), _strings(index_b)
@@ -213,7 +225,7 @@ def to_fock(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
     """
     if isinstance(ansatz, ArrayAnsatz):
         return ansatz.reduce(shape)
-    array = math.hermite_renormalized_full_batch(*ansatz.triple, shape)
+    array = math.hermite_renormalized(*ansatz.triple, shape)
     return ArrayAnsatz(array, ansatz.batch_dims)
 
 
