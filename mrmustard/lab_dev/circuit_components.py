@@ -748,7 +748,7 @@ class CircuitComponent:
         if only_ket or only_bra or both_sides:
             ret = self.contract(other)
         elif self_needs_bra or self_needs_ket:
-            ret = self.adjoint.contract(self.contract(other))
+            ret = self.adjoint.contract(self.contract(other), "zip")
         elif other_needs_bra or other_needs_ket:
             ret = self.contract(other.adjoint).contract(other)
         else:

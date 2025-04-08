@@ -112,6 +112,8 @@ class Ket(State):
         cov, means, coeff = triple
         cov = math.astensor(cov)
         means = math.astensor(means)
+        if cov.shape[:-2] != ():
+            raise NotImplementedError("Not implemented for batched states.")
         shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
             p = purity(cov)

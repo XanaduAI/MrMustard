@@ -44,6 +44,8 @@ from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wires import Wires
 from mrmustard.widgets import state as state_widget
 
+from ...random import Abc_triple
+
 
 def coherent_state_quad(q, x, y, phi=0):
     """From https://en.wikipedia.org/wiki/Coherent_state#The_wavefunction_of_a_coherent_state"""
@@ -216,30 +218,46 @@ class TestKet:  # pylint: disable=too-many-public-methods
             exp_state = exp_state >> Sgate(mode, r_i, phi_i)
         assert state2 == exp_state
 
-    def test_to_from_phase_space(self):  # TODO: fix batched from phase space
+    def test_to_from_phase_space(self):
         modes = (0,)
         state = Coherent(0, x=1, y=2)
         cov, means, coeff = state.phase_space(s=0)
         state2 = Ket.from_phase_space(modes, (cov, means, coeff))
         assert state == state2
 
-    def test_to_from_quadrature(self):
-        modes = (0,)
-        A0 = math.astensor([[[0]]])
-        b0 = math.astensor([0.2j])
-        c0 = math.exp(-0.5 * 0.04)  # z^*
-
-        state0 = Ket.from_bargmann(modes, (A0, b0, c0))
+    @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
+    @pytest.mark.parametrize("batch_shape", [(1,), (2, 3)])
+    def test_to_from_quadrature(self, modes, batch_shape):
+        A, b, c = Abc_triple(len(modes), batch_shape)
+        state0 = Ket.from_bargmann(modes, (A, b, c))
         Atest, btest, ctest = state0.quadrature_triple()
         state1 = Ket.from_quadrature(modes, (Atest, btest, ctest))
         Atest2, btest2, ctest2 = state1.bargmann_triple()
-        assert math.allclose(Atest2, A0)
-        assert math.allclose(btest2, b0)
-        assert math.allclose(ctest2, c0)
+        assert math.allclose(Atest2, A)
+        assert math.allclose(btest2, b)
+        assert math.allclose(ctest2, c)
 
-    def test_L2_norm(self):
-        state = Coherent(0, x=1)
+    @pytest.mark.parametrize(
+        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
+    )
+    def test_L2_norm(self, x, y):
+        state = Coherent(0, x=x, y=y)
         assert math.allclose(state.L2_norm, 1)
+
+    def test_L2_norm_lin_sup(self):
+        state = Coherent(mode=0, x=0.1) + Coherent(mode=0, x=0.2)
+        L2_norm = state.L2_norm
+        assert L2_norm.shape == ()
+        assert math.allclose(L2_norm, 3.99002496)
+
+        A, b, c = state.ansatz.triple
+        A_batch = math.astensor([A, A, A])
+        b_batch = math.astensor([b, b, b])
+        c_batch = math.astensor([c, c, c])
+        state_batch = Ket.from_bargmann((0,), (A_batch, b_batch, c_batch), lin_sup=True)
+        L2_norm = state_batch.L2_norm
+        assert L2_norm.shape == (3,)
+        assert math.allclose(L2_norm, 3.99002496)
 
     def test_probability(self):
         state1 = Coherent(0, x=1) / 3

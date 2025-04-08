@@ -260,7 +260,7 @@ class State(CircuitComponent):
         means: ComplexMatrix,
         name: str | None = None,
         atol_purity: float | None = 1e-5,
-    ) -> State:  # pylint: disable=abstract-method
+    ) -> State:  # pylint: disable=abstract-method #TODO: batched
         r"""
         Initializes a state from the covariance matrix and the vector of means of a state in
         phase space.

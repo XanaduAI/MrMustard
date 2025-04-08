@@ -144,7 +144,7 @@ class DM(State):
         modes: Collection[int],
         triple: tuple,
         name: str | None = None,
-        s: float = 0,  # pylint: disable=unused-argument
+        atol_purity: float | None = 1e-5,  # pylint: disable=unused-argument
     ) -> DM:
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
@@ -161,6 +161,8 @@ class DM(State):
         cov, means, coeff = triple
         cov = math.astensor(cov)
         means = math.astensor(means)
+        if cov.shape[:-2] != ():
+            raise NotImplementedError("Not implemented for batched states.")
         shape_check(cov, means, 2 * len(modes), "Phase space")
         return coeff * DM.from_ansatz(
             modes,
