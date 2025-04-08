@@ -140,7 +140,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(means, math.astensor([1.0, 2.0]) * math.sqrt(settings.HBAR * 2))
 
     def test_from_phase_space(self):
-        state = Coherent(0, x=1, y=2) >> Attenuator(0, 1.0)
+        state = Coherent(0, x=1, y=2) >> Attenuator(0, 0.8)
         cov, means, _ = state.phase_space(s=0)
 
         # test error
