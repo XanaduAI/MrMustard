@@ -634,11 +634,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             (-2, -1) + tuple(range(len(pnr_cutoffs)))
         )
 
-    def hermite_renormalized_full_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, shape: tuple[int]
-    ) -> np.ndarray:
-        return vanilla_full_batch_numba(shape, A, B, C)
-
     @staticmethod
     def getitem(tensor, *, key):
         value = np.array(tensor)[key]

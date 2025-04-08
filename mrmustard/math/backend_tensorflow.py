@@ -710,11 +710,3 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             return dL_dtensor, dL_dvalue
 
         return _tensor, grad
-
-    def hermite_renormalized_full_batch(
-        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int]
-    ) -> tf.Tensor:
-        A = self.asnumpy(A)
-        b = self.asnumpy(b)
-        c = self.asnumpy(c)
-        return strategies.vanilla_full_batch_numba(shape, A, b, c)
