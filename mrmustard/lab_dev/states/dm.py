@@ -517,7 +517,7 @@ class DM(State):
 
     def physical_stellar_decomposition_mixed(
         self, core_modes: Collection[int]
-    ):  # pylint: disable=too-many-statements
+    ): -> tuple[DM, Channel] # pylint: disable=too-many-statements
         r"""
         Applies the physical stellar decomposition based on the rank condition.
 
