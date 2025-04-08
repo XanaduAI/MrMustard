@@ -272,7 +272,7 @@ class Ket(State):
         """
         return self / math.sqrt(self.probability)
 
-    def physical_stellar_decomposition(self, core_modes: Collection[int]):
+    def physical_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[Ket, Unitary]:
         r"""
         Applies the physical stellar decomposition.
 
