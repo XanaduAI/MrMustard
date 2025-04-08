@@ -17,7 +17,7 @@ This module contains the array ansatz.
 """
 
 from __future__ import annotations
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Sequence, Tuple, List, Optional, Union, Dict
 from warnings import warn
 
 import numpy as np
@@ -139,22 +139,173 @@ class ArrayAnsatz(Ansatz):
         ret._kwargs = kwargs
         return ret
 
+    def _validate_and_prepare_indices(
+        self,
+        idx1: Union[int, Tuple[int, ...], List[int], None],
+        idx2: Union[int, Tuple[int, ...], List[int], None],
+        core_str: Optional[str],
+    ) -> Tuple[Optional[Tuple[int, ...]], Optional[Tuple[int, ...]]]:
+        """
+        Validates contraction inputs and ensures idx1/idx2 are tuples if provided.
+        Returns the validated/converted idx1 and idx2 as tuples or None.
+        """
+        if core_str is not None:
+            if idx1 is not None or idx2 is not None:
+                raise ValueError("Cannot specify both `core_str` and `idx1`/`idx2`.")
+            return None, None  # Not using idx1/idx2
+
+        if idx1 is None or idx2 is None:
+            raise ValueError("Either `core_str` or both `idx1` and `idx2` must be provided.")
+
+        # Convert to tuples for consistent handling
+        _idx1 = tuple(idx1) if isinstance(idx1, (list, tuple)) else (idx1,)
+        _idx2 = tuple(idx2) if isinstance(idx2, (list, tuple)) else (idx2,)
+
+        if len(_idx1) != len(_idx2):
+            raise ValueError("idx1 and idx2 must have the same length when provided.")
+
+        return _idx1, _idx2
+
+    def _get_einsum_components(
+        self,
+        other: ArrayAnsatz,
+        core_str: Optional[str],
+        idx1: Optional[Tuple[int, ...]],
+        idx2: Optional[Tuple[int, ...]],
+        batch_str: Optional[str],
+    ) -> Tuple[List[str], str, List[str], str, Dict[str, Tuple[int, int]]]:
+        """
+        Determines batch and core einsum components based on input method.
+
+        Returns:
+            tuple: (batch_input_parts, batch_output_str,
+                    core_input_parts, core_output_str,
+                    contracted_indices_map)
+        """
+        # --- Batch String Processing ---
+        if batch_str is None:
+            batch_str = outer_product_batch_str(self.batch_shape, other.batch_shape)
+        try:
+            batch_input_str, batch_output_str = batch_str.split("->")
+            batch_input_parts = batch_input_str.split(",")
+            if len(batch_input_parts) != 2:
+                raise ValueError("Batch string must have exactly two input parts.")
+            used_batch_chars = set(batch_input_str) | set(batch_output_str)
+            start_ord = (max(ord(c) for c in used_batch_chars) + 1) if used_batch_chars else 97
+        except ValueError as e:
+            raise ValueError(f"Invalid batch_str format: '{batch_str}'. {e}") from e
+
+        # --- Core String Processing ---
+        contracted_indices_map = {}
+        if core_str is not None:
+            # Parse core_str
+            try:
+                core_input_str, core_output_str = core_str.split("->")
+                core_input_parts = core_input_str.split(",")
+                if len(core_input_parts) != 2:
+                    raise ValueError("Core string must have exactly two input parts.")
+
+                # Validate characters and map dimensions
+                map1 = {}
+                for i, char in enumerate(core_input_parts[0]):
+                    if i >= self.core_dims:
+                        raise IndexError(
+                            f"Index for core char '{char}' ({i}) out of bounds for self (dims={self.core_dims})"
+                        )
+                    map1[char] = i
+                map2 = {}
+                for i, char in enumerate(core_input_parts[1]):
+                    if i >= other.core_dims:
+                        raise IndexError(
+                            f"Index for core char '{char}' ({i}) out of bounds for other (dims={other.core_dims})"
+                        )
+                    map2[char] = i
+
+                # Identify contracted indices and populate map
+                chars1, chars2 = set(core_input_parts[0]), set(core_input_parts[1])
+                contracted_chars = chars1 & chars2
+                for char in contracted_chars:
+                    contracted_indices_map[char] = (map1[char], map2[char])
+
+            except ValueError as e:
+                raise ValueError(f"Invalid core_str format: '{core_str}'. {e}") from e
+            except IndexError as e:  # Re-raise index errors from validation
+                raise e
+        else:
+            # Generate core string components from idx1/idx2
+            # Input idx1/idx2 are guaranteed to be tuples here by _validate_and_prepare_indices
+            if any(i >= self.core_dims for i in idx1) or any(j >= other.core_dims for j in idx2):
+                raise IndexError(
+                    f"Index in idx1/idx2 out of bounds for core dims ({self.core_dims}, {other.core_dims})"
+                )
+
+            core_indices1 = [chr(start_ord + i) for i in range(self.core_dims)]
+            core_indices2 = [chr(start_ord + self.core_dims + i) for i in range(other.core_dims)]
+
+            for i_self, i_other in zip(idx1, idx2):
+                contracted_char = core_indices1[i_self]
+                core_indices2[i_other] = contracted_char
+                contracted_indices_map[contracted_char] = (i_self, i_other)
+
+            core_input_parts = ["".join(core_indices1), "".join(core_indices2)]
+            survivors1 = [c for i, c in enumerate(core_indices1) if i not in idx1]
+            survivors2 = [c for i, c in enumerate(core_indices2) if i not in idx2]
+            core_output_str = "".join(survivors1 + survivors2)
+
+        return (
+            batch_input_parts,
+            batch_output_str,
+            core_input_parts,
+            core_output_str,
+            contracted_indices_map,
+        )
+
+    def _reduce_arrays_if_needed(
+        self, other: ArrayAnsatz, contracted_indices_map: dict[str, tuple[int, int]]
+    ) -> tuple:
+        r"""Reduces array dimensions if necessary for contraction.
+        Needed in contract method.
+        """
+        shape_s = list(self.core_shape)
+        shape_o = list(other.core_shape)
+        needs_reduction = False
+        for s_idx, o_idx in contracted_indices_map.values():
+            min_dim = min(shape_s[s_idx], shape_o[o_idx])
+            if shape_s[s_idx] != min_dim or shape_o[o_idx] != min_dim:
+                needs_reduction = True
+            shape_s[s_idx] = min_dim
+            shape_o[o_idx] = min_dim
+
+        # Use tuple for reduce shape argument
+        array_self = self.reduce(tuple(shape_s)).array if needs_reduction else self.array
+        array_other = other.reduce(tuple(shape_o)).array if needs_reduction else other.array
+        return array_self, array_other
+
     def contract(
         self,
         other: ArrayAnsatz,
-        idx1: int | tuple[int, ...] = tuple(),
-        idx2: int | tuple[int, ...] = tuple(),
-        batch_str: str | None = None,
+        idx1: Optional[Union[int, Tuple[int, ...], List[int]]] = None,
+        idx2: Optional[Union[int, Tuple[int, ...], List[int]]] = None,
+        core_str: Optional[str] = None,
+        batch_str: Optional[str] = None,
     ) -> ArrayAnsatz:
         r"""
         Contracts two ansatze across the specified variables and batch dimensions.
-        Variables are indexed by integers, while for batch dimensions the string has the same
-        syntax as in ``np.einsum``.
+        Either `idx1` and `idx2` OR a more flexible `core_str` must be provided.
+
+        If `idx1` and `idx2` are used, they specify the core dimensions to contract (sum over).
+        All other core dimensions survive in their original relative order (self's survivors
+        followed by other's survivors).
+
+        If `core_str` is used, it specifies the contraction using einsum notation for the
+        core dimensions, allowing for index survival and reordering in a single call.
 
         Args:
             other: The other ArrayAnsatz to contract with.
-            idx1: The variables of the first ansatz to contract.
-            idx2: The variables of the second ansatz to contract.
+            idx1: The variables of the first ansatz to contract (used if core_str is None).
+            idx2: The variables of the second ansatz to contract (used if core_str is None).
+            core_str: The einsum string defining the core contraction (used if idx1/idx2 are None).
+                      Example: "ab,bc->ac" contracts the 2nd dim of self with the 1st dim of other.
             batch_str: The (optional) batch dimensions to contract over with the
                 same syntax as in ``np.einsum``. If not indicated, the batch dimensions
                 are taken in outer product.
@@ -162,53 +313,35 @@ class ArrayAnsatz(Ansatz):
         Returns:
             The contracted ansatz.
         """
-        idx1 = (idx1,) if isinstance(idx1, int) else idx1
-        idx2 = (idx2,) if isinstance(idx2, int) else idx2
-        for i, j in zip(idx1, idx2):
-            if i >= self.core_dims:
-                raise IndexError(f"Valid indices are 0 to {self.core_dims-1}. Got {i}.")
-            if j >= other.core_dims:
-                raise IndexError(f"Valid indices are 0 to {other.core_dims-1}. Got {j}.")
+        # 1. Validate inputs and ensure idx1/idx2 are tuples if used
+        _idx1, _idx2 = self._validate_and_prepare_indices(idx1, idx2, core_str)
 
-        if batch_str is None:
-            batch_str = outer_product_batch_str(self.batch_shape, other.batch_shape)
-        input_str, output_str = batch_str.split("->")
-        input_parts = input_str.split(",")
-        if len(input_parts) != 2:
-            raise ValueError("Batch string must have exactly two input parts")
+        # 2. Determine all einsum string components and contraction map
+        (
+            batch_input_parts,
+            batch_output_str,
+            core_input_parts,
+            core_output_str,
+            contracted_indices_map,
+        ) = self._get_einsum_components(other, core_str, _idx1, _idx2, batch_str)
 
-        # reshape the arrays to match
-        shape_s = self.core_shape
-        shape_o = other.core_shape
+        # 3. Reduce arrays if shapes mismatch on contracted dimensions
+        array_self, array_other = self._reduce_arrays_if_needed(other, contracted_indices_map)
 
-        new_shape_s = list(shape_s)
-        new_shape_o = list(shape_o)
-        for s, o in zip(idx1, idx2):
-            new_shape_s[s] = min(shape_s[s], shape_o[o])
-            new_shape_o[o] = min(shape_s[s], shape_o[o])
-
-        reduced_self = self.reduce(new_shape_s)
-        reduced_other = other.reduce(new_shape_o)
-
-        # Start variable indices after batch indices
-        start_idx = max(len(input_parts[0]), len(input_parts[1]), len(output_str))
-        var_idx1 = [chr(i + 97 + start_idx) for i in range(reduced_self.core_dims)]
-        var_idx2 = [
-            chr(i + 97 + start_idx + reduced_self.core_dims) for i in range(reduced_other.core_dims)
-        ]
-
-        # Replace contracted indices in second array with corresponding indices from first
-        for i, j in zip(idx1, idx2):
-            var_idx2[j] = var_idx1[i]
-
-        # Combine batch and variable indices for einsum
+        # 4. Construct the final einsum string
         einsum_str = (
-            f"{input_parts[0]}{''.join(var_idx1)},"
-            f"{input_parts[1]}{''.join(var_idx2)}->"
-            f"{output_str}{''.join([i for i in var_idx1 + var_idx2 if i not in set(var_idx1) & set(var_idx2)])}"
+            f"{batch_input_parts[0]}{core_input_parts[0]},"
+            f"{batch_input_parts[1]}{core_input_parts[1]}->"
+            f"{batch_output_str}{core_output_str}"
         )
-        result = math.einsum(einsum_str, reduced_self.array, reduced_other.array)
-        return ArrayAnsatz(result, batch_dims=len(output_str))
+
+        # 5. Execute einsum
+        try:
+            result = math.einsum(einsum_str, array_self, array_other)
+        except Exception as e:
+            raise ValueError(f"Failed to execute einsum with string '{einsum_str}'.") from e
+
+        return ArrayAnsatz(result, batch_dims=len(batch_output_str))
 
     def reduce(self, shape: Sequence[int]) -> ArrayAnsatz:
         r"""
