@@ -259,23 +259,60 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert L2_norm.shape == (3,)
         assert math.allclose(L2_norm, 3.99002496)
 
-    def test_probability(self):
-        state1 = Coherent(0, x=1) / 3
-        assert math.allclose(state1.probability, 1 / 9)
-        assert math.allclose(state1.to_fock(20).probability, 1 / 9)
+    @pytest.mark.parametrize(
+        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
+    )
+    def test_probability(self, x, y):
+        state = Coherent(0, x=x, y=y) / 3
+        probability = state.probability
+        assert probability.shape == state.ansatz.batch_shape
+        assert math.allclose(probability, 1 / 9)
+        assert math.allclose(state.to_fock(20).probability, 1 / 9)
 
-        state2 = Coherent(0, x=1) / 2**0.5 + Coherent(0, x=-1) / 2**0.5
-        assert math.allclose(state2.probability, 1.13533528)
-        assert math.allclose(state2.to_fock(20).probability, 1.13533528)
+    def test_probability_lin_sup(self):
+        state = Coherent(0, x=1) / 2**0.5 + Coherent(0, x=-1) / 2**0.5
+        probability = state.probability
+        assert probability.shape == ()
+        assert math.allclose(probability, 1.13533528)
+        assert math.allclose(state.to_fock(20).probability, 1.13533528)
 
-        state3 = Number(0, n=1, cutoff=2) / 2**0.5 + Number(0, n=2) / 2**0.5
-        assert math.allclose(state3.probability, 1)
+        A, b, c = state.ansatz.triple
+        A_batch = math.astensor([A, A, A])
+        b_batch = math.astensor([b, b, b])
+        c_batch = math.astensor([c, c, c])
+        state_batch = Ket.from_bargmann((0,), (A_batch, b_batch, c_batch), lin_sup=True)
 
-    @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
-    def test_purity(self, modes):
-        state = Ket.from_ansatz(modes, None, "my_ket")
-        assert state.purity == 1
+        probability_batch = state_batch.probability
+        assert probability_batch.shape == (3,)
+        assert math.allclose(probability_batch, 1.13533528)
+        assert math.allclose(state_batch.to_fock(20).probability, 1.13533528)
+
+    @pytest.mark.parametrize(
+        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
+    )
+    def test_purity(self, x, y):
+        state = Coherent(0, x=x, y=y)
+        purity = state.purity
+        assert purity.shape == state.ansatz.batch_shape
+        assert math.allclose(purity, 1)
         assert state.is_pure
+
+    def test_purity_lin_sup(self):
+        state = Coherent(0, x=1) + Coherent(0, x=-1)
+        purity = state.purity
+        assert purity.shape == ()
+        assert math.allclose(purity, 1)
+        assert state.is_pure
+
+        A, b, c = state.ansatz.triple
+        A_batch = math.astensor([A, A, A])
+        b_batch = math.astensor([b, b, b])
+        c_batch = math.astensor([c, c, c])
+        state_batch = Ket.from_bargmann((0,), (A_batch, b_batch, c_batch), lin_sup=True)
+        purity_batch = state_batch.purity
+        assert purity_batch.shape == (3,)
+        assert math.allclose(purity_batch, 1)
+        assert state_batch.is_pure
 
     def test_dm(self):
         ket = Coherent(0, x=1, y=2)
