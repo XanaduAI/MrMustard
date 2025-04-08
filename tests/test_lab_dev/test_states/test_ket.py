@@ -314,13 +314,24 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(purity_batch, 1)
         assert state_batch.is_pure
 
-    def test_dm(self):
-        ket = Coherent(0, x=1, y=2)
+    @pytest.mark.parametrize(
+        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
+    )
+    def test_dm(self, x, y):
+        ket = Coherent(0, x=x, y=y)
         dm = ket.dm()
 
+        assert dm.ansatz.batch_shape == ket.ansatz.batch_shape
         assert dm.name == ket.name
-        assert dm.ansatz == (ket.contract(ket.adjoint)).ansatz
-        assert dm.wires == (ket.contract(ket.adjoint)).wires
+        assert dm.ansatz == (ket.contract(ket.adjoint, "zip")).ansatz
+        assert dm.wires == (ket.contract(ket.adjoint, "zip")).wires
+
+    def test_dm_lin_sup(self):
+        state = Coherent(0, x=1) + Coherent(0, x=-1)
+        dm = state.dm()
+        assert dm.ansatz.batch_shape == (4,)
+        assert dm.name == state.name
+        assert dm.wires == (state.contract(state.adjoint, "zip")).wires
 
     @pytest.mark.parametrize("phi", [0, 0.3, np.pi / 4, np.pi / 2])
     def test_quadrature_single_mode_ket(self, phi):
@@ -487,13 +498,15 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert isinstance(ket >> Coherent(0, 1).dm().dual, DM)
 
     @pytest.mark.parametrize("m", [[3], [30], [98], [3, 98]])
-    def test_get_item(self, m):
-        ket = Vacuum((3, 30, 98)) >> Dgate(3, x=0) >> Dgate(30, 1) >> Dgate(98, x=2)
+    @pytest.mark.parametrize("x", [(0, 1, 2), ([0, 0], [1, 1], [2, 2])])
+    def test_get_item(self, m, x):
+        x3, x30, x98 = x
+        ket = Vacuum((3, 30, 98)) >> Dgate(3, x=x3) >> Dgate(30, x=x30) >> Dgate(98, x=x98)
         dm = ket.dm()
         assert ket[m] == dm[m]
 
-    def test_unsafe_batch_zipping(self):
-        cat = Coherent(0, x=1.0) + Coherent(0, x=-1.0)  # used as a batch
+    def test_contract_lin_sup(self):
+        cat = Coherent(0, x=1.0) + Coherent(0, x=-1.0)
         displacements = Dgate(0, x=1.0) + Dgate(0, x=-1.0)
         better_cat = cat.contract(displacements, mode="zip")
         assert better_cat == Coherent(0, x=2.0) + Coherent(0, x=-2.0)
@@ -501,7 +514,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("max_sq", [1, 2, 3])
     def test_random_states(self, max_sq):
         psi = Ket.random((1, 22), max_sq)
-        A = psi.ansatz.A[0]
+        A = psi.ansatz.A
         assert math.allclose(psi.probability, 1)  # checks if the state is normalized
         assert math.allclose(
             A - math.transpose(A), math.zeros((2, 2))
@@ -534,3 +547,4 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_is_physical(self):
         assert Ket.random((0, 1)).is_physical
+        assert Coherent(0, x=[1, 1, 1]).is_physical

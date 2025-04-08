@@ -61,7 +61,13 @@ class Ket(State):
                 "Physicality conditions are not implemented for a linear superposition of states."
             )
         if self.ansatz.num_derived_vars > 0:
-            raise ValueError("Physicality conditions are not implemented for derived variables.")
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for derived variables."
+            )
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for states with ArrayAnsatz."
+            )
         return all(math.abs(math.eigvals(self.ansatz.A)) < 1) and math.allclose(
             self.probability, 1, settings.ATOL
         )
@@ -236,7 +242,7 @@ class Ket(State):
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 
-    def expectation(self, operator: CircuitComponent):
+    def expectation(self, operator: CircuitComponent):  # TODO: revisit
         r"""
         The expectation value of an operator calculated with respect to this Ket.
 
