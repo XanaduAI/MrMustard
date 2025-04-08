@@ -186,18 +186,21 @@ class TestKet:  # pylint: disable=too-many-public-methods
         state_out = Ket.from_fock((modes,), array_in, "my_ket")
         assert state_in_fock == state_out
 
+    @pytest.mark.parametrize(
+        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
+    )
+    def test_phase_space(self, x, y):
+        state = Coherent(0, x=x, y=y)
+        cov, means, coeff = state.phase_space(s=0)
+        assert cov.shape[:-2] == state.ansatz.batch_shape
+        assert means.shape[:-1] == state.ansatz.batch_shape
+        assert coeff.shape == state.ansatz.batch_shape
+        assert math.allclose(coeff, 1.0)
+        assert math.allclose(cov, math.eye(2) * settings.HBAR / 2)
+        assert math.allclose(means, math.astensor([1.0, 2.0]) * math.sqrt(2 * settings.HBAR))
+
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
-    def test_to_from_phase_space(self, modes):
-        cov, means, coeff = Coherent(0, x=1, y=2).phase_space(s=0)
-        assert math.allclose(coeff, 1.0)
-        assert math.allclose(cov, math.eye(2) * settings.HBAR / 2)
-        assert math.allclose(means, math.astensor([1.0, 2.0]) * math.sqrt(2 * settings.HBAR))
-
-        cov, means, coeff = Coherent(0, x=[1, 1, 1], y=2).phase_space(s=0)
-        assert math.allclose(coeff, 1.0)
-        assert math.allclose(cov, math.eye(2) * settings.HBAR / 2)
-        assert math.allclose(means, math.astensor([1.0, 2.0]) * math.sqrt(2 * settings.HBAR))
-
+    def test_from_phase_space(self, modes):
         n_modes = len(modes)
 
         state1 = Ket.from_phase_space(modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0))
@@ -212,6 +215,13 @@ class TestKet:  # pylint: disable=too-many-public-methods
         for mode, r_i, phi_i in zip(modes, r, phi):
             exp_state = exp_state >> Sgate(mode, r_i, phi_i)
         assert state2 == exp_state
+
+    def test_to_from_phase_space(self):  # TODO: fix batched from phase space
+        modes = (0,)
+        state = Coherent(0, x=1, y=2)
+        cov, means, coeff = state.phase_space(s=0)
+        state2 = Ket.from_phase_space(modes, (cov, means, coeff))
+        assert state == state2
 
     def test_to_from_quadrature(self):
         modes = (0,)

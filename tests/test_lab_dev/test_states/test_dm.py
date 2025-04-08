@@ -129,12 +129,19 @@ class TestDM:  # pylint:disable=too-many-public-methods
         state_out = DM.from_fock((modes,), array_in, "my_dm")
         assert state_in_fock == state_out
 
-    def test_to_from_phase_space(self):
-        state0 = Coherent(0, x=1, y=2) >> Attenuator(0, 1.0)
+    def test_phase_space(self):
+        state0 = Coherent(0, x=[1, 1, 1], y=2) >> Attenuator(0, 1.0)
         cov, means, coeff = state0.phase_space(s=0)
-        assert math.allclose(coeff, math.atleast_1d(1.0))
+        assert cov.shape[:-2] == state0.ansatz.batch_shape
+        assert means.shape[:-1] == state0.ansatz.batch_shape
+        assert coeff.shape == state0.ansatz.batch_shape
+        assert math.allclose(coeff, 1.0)
         assert math.allclose(cov, math.eye(2) * settings.HBAR / 2)
         assert math.allclose(means, math.astensor([1.0, 2.0]) * math.sqrt(settings.HBAR * 2))
+
+    def test_from_phase_space(self):
+        state = Coherent(0, x=1, y=2) >> Attenuator(0, 1.0)
+        cov, means, _ = state.phase_space(s=0)
 
         # test error
         with pytest.raises(ValueError):
@@ -143,7 +150,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         cov = vacuum_cov(1)
         means = np.array([1, 2]) * np.sqrt(settings.HBAR * 2 * 0.8)
         state1 = DM.from_phase_space([0], (cov, means, 1.0))
-        assert state1 == Coherent(0, 1, 2) >> Attenuator(0, 0.8)
+        assert state1 == state
 
     def test_to_from_quadrature(self):
         modes = (0,)
