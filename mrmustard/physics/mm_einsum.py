@@ -131,11 +131,11 @@ def mm_einsum_3stages(
         relevant_ansatze = {ids: ansatz for ids, ansatz in ansatze.items() if a in ids or b in ids}
         (id_a, ansatz_a), (id_b, ansatz_b) = relevant_ansatze.items()
         if isinstance(ansatz_a, PolyExpAnsatz) and isinstance(ansatz_b, PolyExpAnsatz):
-            eins_str, idx_a, idx_b, new_idx, keep = prepare_all_things(indices, id_a, id_b, output)
+            eins_str, idx_a, idx_b, new_index = prepare_all_things(indices, id_a, id_b, output)
             new_ansatz = ansatz_a.contract(ansatz_b, idx_a, idx_b, eins_str)
             del ansatze[id_a], ansatze[id_b], indices[id_a], indices[id_b]
             ansatze[id_a + id_b] = new_ansatz
-            indices[id_a + id_b] = list(keep) + new_idx
+            indices[id_a + id_b] = new_index
             processed_pairs.add((a, b))
 
     # stage 2: convert everything to ArrayAnsatz
@@ -147,10 +147,14 @@ def mm_einsum_3stages(
         relevant_ansatze = {ids: ansatz for ids, ansatz in ansatze.items() if a in ids or b in ids}
         (id_a, ansatz_a), (id_b, ansatz_b) = relevant_ansatze.items()
 
-        eins_str, idx_a, idx_b, new_idx, keep = prepare_all_things(indices, a, b, output)
+        eins_str, new_index = prepare_all_things(indices, id_a, id_b, output, full=True)
+        new_array = math.einsum(eins_str, ansatz_a.array, ansatz_b.array)
+        del ansatze[id_a], ansatze[id_b], indices[id_a], indices[id_b]
+        ansatze[id_a + id_b] = ArrayAnsatz(new_array, ansatz_a.batch_shape)
+        indices[id_a + id_b] = new_index
 
 
-def prepare_all_things(indices, id_a, id_b, output):
+def prepare_all_things(indices, id_a, id_b, output, full=False):
     index_a, index_b = indices[id_a], indices[id_b]
     int_a, int_b = _ints(index_a), _ints(index_b)
     str_a, str_b = _strings(index_a), _strings(index_b)
@@ -160,9 +164,21 @@ def prepare_all_things(indices, id_a, id_b, output):
     new_idx = [i for i in int_a + int_b if i not in common_int]
     other_indices = [index for ids, index in indices.items() if ids not in (id_a, id_b)]
     other_names = [name for idx in other_indices for name in _strings(idx)] + _strings(output)
-    keep = {name for name in str_a + str_b if name in other_names}
-    eins_str = "".join(str_a) + "," + "".join(str_b) + "->" + "".join(keep)
-    return eins_str, idx_a, idx_b, new_idx, keep
+    other_ints = [i for idx in other_indices for i in _ints(idx)] + _ints(output)
+    keep_str = {name for name in str_a + str_b if name in other_names}
+    keep_int = [i for i in new_idx if i in other_ints]
+
+    if full:  # Convert integers to characters and include them in the einsum string
+        L = len(keep_str)
+        int_to_char = {i: chr(97 + L + idx) for idx, i in enumerate(set(int_a + int_b))}
+        str_a_full = "".join(str_a) + "".join(int_to_char[i] for i in int_a)
+        str_b_full = "".join(str_b) + "".join(int_to_char[i] for i in int_b)
+        keep_full = "".join(keep_str) + "".join(int_to_char[i] for i in keep_int)
+        eins_str = str_a_full + "," + str_b_full + "->" + keep_full
+        return eins_str, list(keep_full) + new_idx
+    else:
+        eins_str = "".join(str_a) + "," + "".join(str_b) + "->" + "".join(keep_str)
+        return eins_str, idx_a, idx_b, list(keep_str) + new_idx
 
 
 def convert_ansatz(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
