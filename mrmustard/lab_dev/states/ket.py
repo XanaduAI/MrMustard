@@ -315,19 +315,21 @@ class Ket(State):
         M = len(core_modes)
 
         # we pick the blocks according to the naming chosen in the paper
-        Am = A[:M, :M]
-        R = A[M:, :M]
-        An = A[M:, M:]
-        bm = b[:M]
-        bn = b[M:]
+        Am = A[..., :M, :M]
+        R = A[..., M:, :M]
+        An = A[..., M:, M:]
+        bm = b[..., :M]
+        bn = b[..., M:]
 
         gamma_squared = math.eye(M, dtype=math.complex128) - Am @ math.conj(Am)
         gamma_evals, gamma_evecs = math.eigh(gamma_squared)
-        gamma = (gamma_evecs * math.sqrt(gamma_evals) @ math.conj(gamma_evecs.T)).T
+        gamma_evecs_transpose = math.einsum("...ij->...ji", gamma_evecs)
+        gamma = gamma_evecs * math.sqrt(gamma_evals) @ math.conj(gamma_evecs_transpose)
+        gamma_transpose = math.einsum("...ij->...ji", gamma)
 
-        Au = math.block([[Am, gamma.T], [gamma, -math.conj(Am)]])
+        Au = math.block([[Am, gamma], [gamma_transpose, -math.conj(Am)]])
         bu = math.block(
-            [bm, -math.conj(Am) @ math.inv(gamma) @ bm - math.inv(gamma.T) @ math.conj(bm)],
+            [bm, -math.conj(Am) @ math.inv(gamma_transpose) @ bm - math.inv(gamma) @ math.conj(bm)],
             axes=(0, 0),
         )
         cu = math.astensor(1, dtype=math.complex128)
@@ -338,12 +340,15 @@ class Ket(State):
 
         A_core = math.block(
             [
-                [math.zeros((M, M), dtype=math.complex128), math.inv(gamma.T) @ R.T],
-                [R @ math.inv(gamma), An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R.T],
+                [math.zeros((M, M), dtype=math.complex128), math.inv(gamma) @ R.T],
+                [
+                    R @ math.inv(gamma_transpose),
+                    An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R.T,
+                ],
             ]
         )
 
-        b_core = math.block([bm, bn - R @ math.inv(gamma) @ bu[M:]], axes=(0, 0))
+        b_core = math.block([bm, bn - R @ math.inv(gamma_transpose) @ bu[..., M:]], axes=(0, 0))
 
         inverse_order = np.argsort(new_order)
 
