@@ -381,7 +381,7 @@ class TestTriples:
     def test_attenuator_kraus_Abc(self, eta):
         B = PolyExpAnsatz(*triples.attenuator_kraus_Abc(eta))
         Att = PolyExpAnsatz(*triples.attenuator_Abc(eta))
-        assert B.contract(B, 2, 2) == Att
+        assert B.contract(B, [0, 1, 2], [3, 4, 2], [0, 1, 3, 4]) == Att
 
     def test_gaussian_random_noise_Abc(self):
 
