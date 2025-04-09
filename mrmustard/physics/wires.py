@@ -555,7 +555,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         lblA = list(range(len(self)))
         lblB = list(range(len(self), len(self) + len(other)))
         for i, j in zip(idxA, idxB):
-            lblA[i] = lblB[j]
+            lblB[j] = lblA[i]
         lbl_out = sorted(set(lblA) ^ set(lblB))
         return lblA, lblB, lbl_out
 
