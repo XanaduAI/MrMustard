@@ -554,7 +554,7 @@ class DM(State):
         new_order = core_indices + other_indices
         new_order = math.astensor(core_indices + other_indices)
 
-        A, _, _ = self.ansatz.reorder(new_order).triple
+        A = self.ansatz.reorder(new_order).A
 
         M = len(core_modes)
         N = self.n_modes - M
