@@ -183,13 +183,17 @@ class TestPolyExpAnsatz:
         triple1 = Abc_triple(3)
         triple2 = Abc_triple(3)
 
-        res1 = PolyExpAnsatz(*triple1).contract(PolyExpAnsatz(*triple2))
+        res1 = PolyExpAnsatz(*triple1).contract(
+            PolyExpAnsatz(*triple2), [0, 1, 2], [3, 4, 5], [0, 1, 2, 3, 4, 5]
+        )
         exp1 = complex_gaussian_integral_2(triple1, triple2, [], [])
         assert math.allclose(res1.A, exp1[0])
         assert math.allclose(res1.b, exp1[1])
         assert math.allclose(res1.c, exp1[2])
 
-        res2 = PolyExpAnsatz(*triple1).contract(PolyExpAnsatz(*triple2), idx1=0, idx2=0)
+        res2 = PolyExpAnsatz(*triple1).contract(
+            PolyExpAnsatz(*triple2), [0, 1, 2], [0, 3, 4], [1, 2, 3, 4]
+        )
         exp2 = complex_gaussian_integral_2(triple1, triple2, [0], [0])
         assert math.allclose(res2.A, exp2[0])
         assert math.allclose(res2.b, exp2[1])
