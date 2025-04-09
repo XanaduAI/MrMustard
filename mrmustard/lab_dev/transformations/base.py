@@ -327,19 +327,25 @@ class Channel(Map):
         r"""
         Whether this channel is completely positive (CP).
         """
-        batch_dim = self.ansatz.batch_size
-        if batch_dim > 1:
-            raise ValueError(
-                "Physicality conditions are not implemented for batch dimension larger than 1."
+        if self.ansatz._lin_sup:
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for a mixture of states."
             )
         if self.ansatz.num_derived_vars > 0:
-            raise ValueError("Physicality conditions are not implemented for derived variables.")
-        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for derived variables."
+            )
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for states with ArrayAnsatz."
+            )
+        A = self.ansatz.A
         m = A.shape[-1] // 2
-        gamma_A = A[:m, m:]
+        gamma_A = A[..., :m, m:]
 
         if (
-            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+            math.real(math.norm(gamma_A - math.conj(math.einsum("...ij->...ji", gamma_A))))
+            > settings.ATOL
         ):  # checks if gamma_A is Hermitian
             return False
 
@@ -350,18 +356,28 @@ class Channel(Map):
         r"""
         Whether this channel is trace preserving (TP).
         """
-        batch_dim = self.ansatz.batch_size
-        if batch_dim > 1:
-            raise ValueError(
-                "Physicality conditions are not implemented for batch dimension larger than 1."
+        if self.ansatz._lin_sup:
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for a mixture of states."
             )
         if self.ansatz.num_derived_vars > 0:
-            raise ValueError("Physicality conditions are not implemented for derived variables.")
-        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for derived variables."
+            )
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for states with ArrayAnsatz."
+            )
+        A = self.ansatz.A
         m = A.shape[-1] // 2
-        gamma_A = A[:m, m:]
-        lambda_A = A[m:, m:]
-        temp_A = gamma_A + math.conj(lambda_A.T) @ math.inv(math.eye(m) - gamma_A.T) @ lambda_A
+        gamma_A = A[..., :m, m:]
+        lambda_A = A[..., m:, m:]
+        temp_A = (
+            gamma_A
+            + math.conj(math.einsum("...ij->...ji", lambda_A))
+            @ math.inv(math.eye(m) - math.einsum("...ij->...ji", gamma_A))
+            @ lambda_A
+        )
         return math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL
 
     @property

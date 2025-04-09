@@ -49,7 +49,7 @@ class DM(State):
     short_name = "DM"
 
     @property
-    def is_positive(self) -> bool:
+    def is_positive(self) -> bool:  # TODO: revisit
         r"""
         Whether this DM is a positive operator.
         """
@@ -59,16 +59,21 @@ class DM(State):
             )
         if self.ansatz.num_derived_vars > 0:
             raise ValueError("Physicality conditions are not implemented for derived variables.")
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for states with ArrayAnsatz."
+            )
         A = self.ansatz.A
         m = A.shape[-1] // 2
         gamma_A = A[..., :m, m:]
 
         if (
-            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+            math.real(math.norm(gamma_A - math.conj(math.einsum("...ij->...ji", gamma_A))))
+            > settings.ATOL
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return all(math.real(math.eigvals(gamma_A)) >= 0)
+        return math.allclose(math.real(math.eigvals(gamma_A)) >= 0, True)
 
     @property
     def is_physical(self) -> bool:
@@ -145,7 +150,7 @@ class DM(State):
         triple: tuple,
         name: str | None = None,
         atol_purity: float | None = 1e-5,  # pylint: disable=unused-argument
-    ) -> DM:
+    ) -> DM:  # TODO: revisit
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
         which parametrize the s-parametrized phase space function
@@ -256,7 +261,7 @@ class DM(State):
         """
         return self
 
-    def expectation(self, operator: CircuitComponent):
+    def expectation(self, operator: CircuitComponent):  # TODO: revisit
         r"""
         The expectation value of an operator with respect to this DM.
 
@@ -302,7 +307,7 @@ class DM(State):
 
     def fock_array(
         self, shape: int | Sequence[int] | None = None, standard_order: bool = False
-    ) -> ComplexTensor:
+    ) -> ComplexTensor:  # TODO: revisit
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is

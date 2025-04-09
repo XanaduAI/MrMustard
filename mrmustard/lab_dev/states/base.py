@@ -260,7 +260,7 @@ class State(CircuitComponent):
         means: ComplexMatrix,
         name: str | None = None,
         atol_purity: float | None = 1e-5,
-    ) -> State:  # pylint: disable=abstract-method #TODO: batched
+    ) -> State:  # pylint: disable=abstract-method
         r"""
         Initializes a state from the covariance matrix and the vector of means of a state in
         phase space.
@@ -359,15 +359,17 @@ class State(CircuitComponent):
         """
         probability = self.probability
 
-        # TODO: CLEAN
-        if self.ansatz.batch_shape != () and isinstance(self.ansatz, PolyExpAnsatz):
-            probability = (
-                probability[..., None]
-                if (self.ansatz.num_derived_vars > 0 or self.ansatz._lin_sup)
-                else probability
+        if probability.shape != () and isinstance(self.ansatz, PolyExpAnsatz):
+            probability = math.reshape(
+                probability,
+                probability.shape
+                + (1,) * int(self.ansatz._lin_sup)
+                + (1,) * self.ansatz.num_derived_vars,
             )
-        elif self.ansatz.batch_shape != () and isinstance(self.ansatz, ArrayAnsatz):
-            probability = probability[..., None]
+        elif probability.shape != () and isinstance(self.ansatz, ArrayAnsatz):
+            probability = math.reshape(
+                probability, probability.shape + (1,) * self.ansatz.core_dims
+            )
 
         if self.wires.ket and not self.wires.bra:
             return self / math.sqrt(probability)

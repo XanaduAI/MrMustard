@@ -178,14 +178,19 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(state3.probability, 1.0)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
-    def test_to_from_fock(self, modes):
-        state_in = Coherent(modes, x=1, y=2)
+    @pytest.mark.parametrize(
+        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
+    )
+    def test_to_from_fock(self, modes, x, y):
+        state_in = Coherent(modes, x=x, y=y)
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock_array(5)
 
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
-        state_out = Ket.from_fock((modes,), array_in, "my_ket")
+        state_out = Ket.from_fock(
+            (modes,), array_in, "my_ket", batch_dims=state_in_fock.ansatz.batch_dims
+        )
         assert state_in_fock == state_out
 
     @pytest.mark.parametrize(

@@ -52,7 +52,7 @@ class Ket(State):
     short_name = "Ket"
 
     @property
-    def is_physical(self) -> bool:
+    def is_physical(self) -> bool:  # TODO: revisit
         r"""
         Whether the ket object is a physical one.
         """
@@ -68,7 +68,7 @@ class Ket(State):
             raise NotImplementedError(
                 "Physicality conditions are not implemented for states with ArrayAnsatz."
             )
-        return all(math.abs(math.eigvals(self.ansatz.A)) < 1) and math.allclose(
+        return math.allclose(math.abs(math.eigvals(self.ansatz.A)) < 1, True) and math.allclose(
             self.probability, 1, settings.ATOL
         )
 
@@ -114,7 +114,7 @@ class Ket(State):
         triple: tuple,
         name: str | None = None,
         atol_purity: float | None = 1e-5,
-    ) -> Ket:
+    ) -> Ket:  # TODO: revisit
         cov, means, coeff = triple
         cov = math.astensor(cov)
         means = math.astensor(means)
@@ -322,7 +322,6 @@ class Ket(State):
         with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
         and a (batched) scalar if there are no wires left, for convenience.
         """
-
         result = super().__rshift__(other)
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here
