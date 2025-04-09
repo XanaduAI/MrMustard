@@ -19,6 +19,7 @@ from mrmustard import math
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.ansatz.base import Ansatz
 from mrmustard.physics.triples import identity_Abc
+from numpy.typing import ArrayLike
 
 
 def _ints(seq: list[int | str]) -> list[int]:
@@ -34,7 +35,7 @@ def mm_einsum(
     output: list[int | str],
     contraction_order: list[tuple[int, int]],
     fock_dims: dict[int, int],
-) -> PolyExpAnsatz | ArrayAnsatz:
+) -> PolyExpAnsatz | ArrayAnsatz | ArrayLike:
     r"""
     Contracts a network of Ansatze using a custom contraction order.
     This function is analogous to numpy's einsum but specialized for MrMustard's Ansatze.
@@ -97,67 +98,6 @@ def mm_einsum(
         result = result.reorder(index_perm)
 
     return result
-
-
-def mm_einsum_3stages(
-    *args: Ansatz | list[int | str],
-    output: list[int | str],
-    contraction_order: list[tuple[int, int]],
-    fock_dims: dict[int, int],
-) -> PolyExpAnsatz | ArrayAnsatz:
-    ansatze = {(i,): ansatz for i, ansatz in enumerate(args[::2])}
-    indices = {(i,): index for i, index in enumerate(args[1::2])}
-    all_batch_names = set(name for index in indices.values() for name in _strings(index))
-    names_to_chars = {name: chr(97 + i) for i, name in enumerate(all_batch_names)}
-    indices = {
-        k: [names_to_chars[s] for s in _strings(index)] + _ints(index)
-        for k, index in indices.items()
-    }
-    output = [names_to_chars[s] for s in _strings(output)] + _ints(output)
-
-    # stage 1: contract all the PolyExpAnsatz with each other
-    processed_pairs = set()
-    for a, b in contraction_order:
-        relevant_ansatze = {ids: ansatz for ids, ansatz in ansatze.items() if a in ids or b in ids}
-        (id_a, ansatz_a), (id_b, ansatz_b) = relevant_ansatze.items()
-        if isinstance(ansatz_a, PolyExpAnsatz) and isinstance(ansatz_b, PolyExpAnsatz):
-            eins_str, idx_a, idx_b, new_index = prepare_all_things(indices, id_a, id_b, output)
-            new_ansatz = ansatz_a.contract(ansatz_b, idx_a, idx_b, eins_str)
-            del ansatze[id_a], ansatze[id_b], indices[id_a], indices[id_b]
-            ansatze[id_a + id_b] = new_ansatz
-            indices[id_a + id_b] = new_index
-            processed_pairs.add((a, b))
-
-    # stage 2: convert everything left to ArrayAnsatz
-    for id, ansatz in ansatze.items():
-        ansatze[id] = convert_ansatz(ansatz, [fock_dims[i] for i in _ints(indices[id])])
-
-    # stage 3: use math.einsum to contract the leftover arrays
-    for (a, b) in (c for c in contraction_order if c not in processed_pairs):
-        relevant_ansatze = {ids: ansatz for ids, ansatz in ansatze.items() if a in ids or b in ids}
-        (id_a, ansatz_a), (id_b, ansatz_b) = relevant_ansatze.items()
-
-        eins_str, new_index = prepare_all_things(indices, id_a, id_b, output, full=True)
-        new_array = math.einsum(eins_str, ansatz_a.array, ansatz_b.array)
-        del ansatze[id_a], ansatze[id_b], indices[id_a], indices[id_b]
-        ansatze[id_a + id_b] = ArrayAnsatz(new_array, ansatz_a.batch_shape)
-        indices[id_a + id_b] = new_index
-
-    # stage 4: convert the result to the correct type and reorder the output indices
-    result = list(ansatze.values())[0]
-    final_idx = list(indices.values())[0]
-    output_idx_str = _strings(output)
-    output_idx_int = _ints(output)
-
-    if len(output_idx_str) > 1:
-        final_idx_str = _strings(final_idx)
-        batch_perm = [final_idx_str.index(i) for i in output_idx_str]
-        result = result.reorder_batch(batch_perm)
-
-    if len(output_idx_int) > 1:
-        final_idx_int = _ints(final_idx)
-        index_perm = [final_idx_int.index(i) for i in output_idx_int]
-        result = result.reorder(index_perm)
 
 
 def prepare_all_things(indices, id_a, id_b, output, full=False):

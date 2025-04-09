@@ -122,9 +122,9 @@ class Ansatz(ABC):
     def contract(
         self,
         other: Ansatz,
-        idx1: int | tuple[int, ...] = tuple(),
-        idx2: int | tuple[int, ...] = tuple(),
-        batch_str: str | None = None,
+        idx1: int | tuple[str | int, ...],
+        idx2: int | tuple[str | int, ...],
+        idx_out: int | tuple[str | int, ...],
     ) -> Ansatz:
         r"""
         Contract two ansatz together.
@@ -132,9 +132,7 @@ class Ansatz(ABC):
             other: Another ansatz.
             idx1: The (optional) index of the first ansatz to contract.
             idx2: The (optional) index of the second ansatz to contract.
-            batch_str: The (optional) batch dimensions to contract over with the
-                same syntax as in ``np.einsum``. If not indicated, the batch dimensions
-                are taken in outer product.
+            idx_out: The (optional) index of the output ansatz.
         Returns:
             The resulting contracted ansatz.
         """
