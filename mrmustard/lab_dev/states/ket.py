@@ -262,7 +262,9 @@ class Ket(State):
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
-        if self.ansatz.batch_shape != () or operator.ansatz.batch_shape != ():
+        if (self.ansatz and self.ansatz.batch_shape != ()) or (
+            operator.ansatz and operator.ansatz.batch_shape != ()
+        ):
             raise NotImplementedError("Batched expectation values are not implemented.")
 
         op_type, msg = _validate_operator(operator)

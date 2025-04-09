@@ -81,10 +81,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert dm.auto_shape() == (8, 11, 8, 11)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 2], [3, 4]), ([[1, 2], [1, 2]], [[3, 4], [3, 4]])]
-    )
-    def test_to_from_bargmann(self, modes, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_to_from_bargmann(self, modes, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state_in = Coherent(modes, x, y) >> Attenuator(modes, 0.7)
         triple_in = state_in.bargmann_triple()
 
@@ -112,10 +112,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
             fock.bargmann_triple()
 
     @pytest.mark.parametrize("coeff", [0.5, 0.3])
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 2], [3, 4]), ([[1, 2], [1, 2]], [[3, 4], [3, 4]])]
-    )
-    def test_normalize(self, coeff, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_normalize(self, coeff, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state = Coherent(0, x, y).dm()
         state *= coeff
         normalized = state.normalize()
@@ -146,10 +146,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(normalized.probability, 1.0)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 2], [3, 4]), ([[1, 2], [1, 2]], [[3, 4], [3, 4]])]
-    )
-    def test_to_from_fock(self, modes, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_to_from_fock(self, modes, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state_in = Coherent(modes, x=x, y=y) >> Attenuator(modes, 0.8)
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock_array(5)
@@ -186,10 +186,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         )
         assert state_in_fock == state_out
 
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
-    )
-    def test_phase_space(self, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_phase_space(self, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state0 = Coherent(0, x=x, y=y) >> Attenuator(0, 1.0)
         cov, means, coeff = state0.phase_space(s=0)
         assert cov.shape[:-2] == state0.ansatz.batch_shape
@@ -224,10 +224,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(btest2, b)
         assert math.allclose(ctest2, c)
 
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
-    )
-    def test_L2_norm(self, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_L2_norm(self, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state = Coherent(0, x=x, y=y).dm()
         L2_norms = state._L2_norms
         assert L2_norms.shape == state.ansatz.batch_shape
@@ -253,10 +253,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(L2_norms, 1)
         assert math.allclose(L2_norm, 2.03663128)
 
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
-    )
-    def test_probability(self, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_probability(self, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state = Coherent(0, x=x, y=y).dm()
         assert math.allclose(state._probabilities, 1)
         assert math.allclose(state.probability, 1)
@@ -270,10 +270,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(state.probability, 1)
         assert math.allclose(state.to_fock(20).probability, 1)
 
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
-    )
-    def test_purity(self, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_purity(self, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state = Coherent(mode=0, x=x, y=y).dm()
         assert math.allclose(state.purity, 1)
         assert math.allclose(state._purities, 1)
@@ -445,10 +445,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError, match="Expected an operator defined on"):
             dm.expectation(op3)
 
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
-    )
-    def test_fock_distribution(self, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_fock_distribution(self, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state = Coherent(0, x=x, y=y)
         assert math.allclose(state.fock_distribution(10), state.dm().fock_distribution(10))
 

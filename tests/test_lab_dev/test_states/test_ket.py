@@ -90,10 +90,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert ket.auto_shape() == (8, 11)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 2], [3, 4]), ([[1, 2], [1, 2]], [[3, 4], [3, 4]])]
-    )
-    def test_to_from_bargmann(self, modes, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_to_from_bargmann(self, modes, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
 
         state_in = Coherent(modes, x, y)
         A, b, c = state_in.bargmann_triple()
@@ -116,10 +116,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
             Number(0, n=10).bargmann_triple()
 
     @pytest.mark.parametrize("coeff", [0.5, 0.3])
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 2], [3, 4]), ([[1, 2], [1, 2]], [[3, 4], [3, 4]])]
-    )
-    def test_normalize(self, coeff, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_normalize(self, coeff, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state = Coherent(0, x, y)
         state = coeff * state
         normalized = state.normalize()
@@ -178,10 +178,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(state3.probability, 1.0)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
-    )
-    def test_to_from_fock(self, modes, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_to_from_fock(self, modes, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state_in = Coherent(modes, x=x, y=y)
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock_array(5)
@@ -193,10 +193,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         )
         assert state_in_fock == state_out
 
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
-    )
-    def test_phase_space(self, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_phase_space(self, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state = Coherent(0, x=x, y=y)
         cov, means, coeff = state.phase_space(s=0)
         assert cov.shape[:-2] == state.ansatz.batch_shape
@@ -242,10 +242,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(btest2, b)
         assert math.allclose(ctest2, c)
 
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
-    )
-    def test_L2_norm(self, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_L2_norm(self, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state = Coherent(0, x=x, y=y)
         assert math.allclose(state.L2_norm, 1)
 
@@ -264,10 +264,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert L2_norm.shape == (3,)
         assert math.allclose(L2_norm, 3.99002496)
 
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
-    )
-    def test_probability(self, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_probability(self, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state = Coherent(0, x=x, y=y) / 3
         probability = state.probability
         assert probability.shape == state.ansatz.batch_shape
@@ -292,10 +292,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(probability_batch, 1.13533528)
         assert math.allclose(state_batch.to_fock(20).probability, 1.13533528)
 
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
-    )
-    def test_purity(self, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_purity(self, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state = Coherent(0, x=x, y=y)
         purity = state.purity
         assert purity.shape == state.ansatz.batch_shape
@@ -319,10 +319,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(purity_batch, 1)
         assert state_batch.is_pure
 
-    @pytest.mark.parametrize(
-        "x, y", [(1, 2), ([1, 1], [2, 2]), ([[1, 1], [1, 1]], [[2, 2], [2, 2]])]
-    )
-    def test_dm(self, x, y):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_dm(self, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         ket = Coherent(0, x=x, y=y)
         dm = ket.dm()
 

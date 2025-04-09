@@ -121,7 +121,8 @@ class DM(State):
         Element-wise purities along the batch dimension of this DM.
         Useful for cases where the batch dimension does not mean a convex combination of states.
         """
-        return self._L2_norms / self.probability[..., None]
+        probability = self.probability[..., None] if self.ansatz._lin_sup else self.probability
+        return self._L2_norms / probability
 
     @classmethod
     def from_ansatz(
@@ -281,7 +282,9 @@ class DM(State):
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
-        if self.ansatz.batch_shape != () or operator.ansatz.batch_shape != ():
+        if (self.ansatz and self.ansatz.batch_shape != ()) or (
+            operator.ansatz and operator.ansatz.batch_shape != ()
+        ):
             raise NotImplementedError("Batched expectation values are not implemented.")
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
