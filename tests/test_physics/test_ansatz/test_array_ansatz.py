@@ -85,7 +85,9 @@ class TestArrayAnsatz:
     def test_contract_fock_fock(self):
         fock1 = ArrayAnsatz(self.array2578, batch_dims=1)
         fock2 = ArrayAnsatz(self.array1578, batch_dims=1)
-        fock_test = fock1.contract(fock2, batch_str="a,b->ab", idx1=[0, 1], idx2=[0, 1])
+        fock_test = fock1.contract(
+            fock2, idx1=["a", 0, 1, 2], idx2=["b", 0, 1, 3], idx_out=["a", "b", 2, 3]
+        )
         assert fock_test.array.shape == (2, 1, 8, 8)
         assert np.allclose(
             fock_test.array, np.einsum("acde, bcdh -> abeh", self.array2578, self.array1578)
