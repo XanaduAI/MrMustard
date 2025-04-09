@@ -281,7 +281,8 @@ class DM(State):
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
-
+        if self.ansatz.batch_shape != () or operator.ansatz.batch_shape != ():
+            raise NotImplementedError("Batched expectation values are not implemented.")
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
             raise ValueError(msg)
