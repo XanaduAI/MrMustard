@@ -369,7 +369,7 @@ class DM(State):
 
         M = len(core_modes)
 
-        Am = A[: 2 * M, : 2 * M]
+        Am = A[..., : 2 * M, : 2 * M]
         An = A[2 * M :, 2 * M :]
         R = A[: 2 * M, 2 * M :]
         bm = b[: 2 * M]
