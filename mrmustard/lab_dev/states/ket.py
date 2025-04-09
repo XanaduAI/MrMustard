@@ -317,9 +317,12 @@ class Ket(State):
         # we pick the blocks according to the naming chosen in the paper
         Am = A[..., :M, :M]
         R = A[..., M:, :M]
+        R_transpose = math.einsum("...ij->...ji", R)
         An = A[..., M:, M:]
         bm = b[..., :M]
         bn = b[..., M:]
+
+        batch_shape = self.ansatz.batch_shape
 
         gamma_squared = math.eye(M, dtype=math.complex128) - Am @ math.conj(Am)
         gamma_evals, gamma_evecs = math.eigh(gamma_squared)
@@ -340,10 +343,13 @@ class Ket(State):
 
         A_core = math.block(
             [
-                [math.zeros((M, M), dtype=math.complex128), math.inv(gamma) @ R.T],
+                [
+                    math.zeros(batch_shape + (M,) * 2, dtype=math.complex128),
+                    math.inv(gamma) @ R_transpose,
+                ],
                 [
                     R @ math.inv(gamma_transpose),
-                    An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R.T,
+                    An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R_transpose,
                 ],
             ]
         )
@@ -352,9 +358,9 @@ class Ket(State):
 
         inverse_order = np.argsort(new_order)
 
-        A_core = A_core[inverse_order, :]
-        A_core = A_core[:, inverse_order]
-        b_core = b_core[inverse_order]
+        A_core = A_core[..., inverse_order, :]
+        A_core = A_core[..., :, inverse_order]
+        b_core = b_core[..., inverse_order]
         c_core = math.astensor(1, dtype=math.complex128)  # to be renormalized
 
         psi_core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
@@ -402,27 +408,53 @@ class Ket(State):
         M = len(core_modes)
 
         # we pick the blocks according to the naming chosen in the paper
-        Am = A[:M, :M]
-        R = A[M:, :M]
-        An = A[M:, M:]
-        bm = b[:M]
-        bn = b[M:]
-        As = math.block([[math.zeros((M, M), dtype=math.complex128), R.T], [R, An]])
+        Am = A[..., :M, :M]
+        R = A[..., M:, :M]
+        R_transpose = math.einsum("...ij->...ji", R)
+        An = A[..., M:, M:]
+        bm = b[..., :M]
+        bn = b[..., M:]
+
+        batch_shape = self.ansatz.batch_shape
+
+        As = math.block(
+            [
+                [
+                    math.zeros(
+                        batch_shape
+                        + (
+                            M,
+                            M,
+                        ),
+                        dtype=math.complex128,
+                    ),
+                    R_transpose,
+                ],
+                [R, An],
+            ]
+        )
         bs = math.block([math.zeros(M, dtype=math.complex128), bn], axes=(0, 0))
         cs = c
 
         inverse_order = np.argsort(new_order)
-        As = As[inverse_order, :]
-        As = As[:, inverse_order]
+        As = As[..., inverse_order, :]
+        As = As[..., :, inverse_order]
         bs = bs[inverse_order]
         s = Ket.from_bargmann(self.modes, (As, bs, cs))
 
+        if batch_shape != ():
+            Im = math.stack([math.eye(M, dtype=math.complex128)] * math.prod(batch_shape)).reshape(
+                batch_shape + (M,) * 2
+            )
+        else:
+            Im = math.eye(M, dtype=math.complex128)
+
         At = math.block(
             [
-                [Am, math.eye(M, dtype=math.complex128)],
+                [Am, Im],
                 [
-                    math.eye(M, dtype=math.complex128),
-                    math.zeros((M, M), dtype=math.complex128),
+                    Im,
+                    math.zeros(batch_shape + (M, M), dtype=math.complex128),
                 ],
             ]
         )
