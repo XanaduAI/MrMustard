@@ -121,16 +121,17 @@ class Representation:
                 f"of type {type(other.ansatz)}. Please call either `to_fock` or `to_bargmann` ",
                 "on one of the representations.",
             )
-        wires_result, perm = self.wires @ other.wires
-        idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
+        wires_result, _ = self.wires @ other.wires
+        idx1, idx2, idx_out = self.wires.contracted_labels(other.wires)
         if mode == "zip":
-            eins_str = zip_batch_strings(
-                len(self.ansatz.batch_shape), len(other.ansatz.batch_shape)
-            )
+            eins_str = zip_batch_strings(self.ansatz.batch_dims, other.ansatz.batch_dims)
         elif mode == "kron":
             eins_str = outer_product_batch_str(self.ansatz.batch_shape, other.ansatz.batch_shape)
-        ansatz = self.ansatz.contract(other.ansatz, batch_str=eins_str, idx1=idx_z, idx2=idx_zconj)
-        ansatz = ansatz.reorder(perm) if perm else ansatz
+        in_, batch_out = eins_str.split("->")
+        batch1, batch2 = in_.split(",")
+        ansatz = self.ansatz.contract(
+            other.ansatz, list(batch1) + idx1, list(batch2) + idx2, list(batch_out) + idx_out
+        )
         return Representation(ansatz, wires_result)
 
     def fock_array(self, shape: int | Sequence[int]) -> ComplexTensor:
