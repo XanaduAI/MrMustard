@@ -543,6 +543,22 @@ class Wires:  # pylint: disable=too-many-public-methods
         idxB = other.input.bra[ovlp_bra].indices + other.input.ket[ovlp_ket].indices
         return idxA, idxB
 
+    def contracted_labels(self, other: Wires) -> tuple[list[int], list[int], list[int]]:
+        r"""
+        Returns the integer labels of the contracted wires, such that contracted wires have the same
+        label.
+
+        Args:
+            other: another Wires object
+        """
+        idxA, idxB = self.contracted_indices(other)
+        lblA = list(range(len(self)))
+        lblB = list(range(len(self), len(self) + len(other)))
+        for i, j in zip(idxA, idxB):
+            lblA[i] = lblB[j]
+        lbl_out = sorted(set(lblA) ^ set(lblB))
+        return lblA, lblB, lbl_out
+
     def _reindex(self) -> None:
         r"""
         Updates the indices of the wires according to the standard order.

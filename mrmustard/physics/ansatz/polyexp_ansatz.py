@@ -20,7 +20,7 @@ This module contains the PolyExp ansatz.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Sequence, Union
 import itertools
 
 import numpy as np
@@ -239,38 +239,89 @@ class PolyExpAnsatz(Ansatz):
     def contract(
         self,
         other: PolyExpAnsatz,
-        idx1: int | tuple[int, ...] = tuple(),
-        idx2: int | tuple[int, ...] = tuple(),
-        batch_str: str | None = None,
+        idx1: Sequence[str | int],
+        idx2: Sequence[str | int],
+        idx_out: Sequence[str | int],
     ) -> PolyExpAnsatz:
-        r"""
-        Contracts two ansatze across the specified CV variables and batch dimensions.
-        CV variables are indexed by integers, while for batch dimensions the string has the same
-        syntax as in ``np.einsum``.
+        r"""Contracts this ansatz with another using einsum-style notation with labels.
+
+        Indices are specified as sequences of labels (str or int). Batch dimensions must
+        be strings, core dimensions must be integers. Integer labels refer to the
+        index within the CV variables (0 to num_CV_vars-1).
+
+        Unlike ArrayAnsatz, for PolyExpAnsatz:
+        1. Only core (CV) variables can be contracted.
+        2. Contracted core variable labels cannot appear in the output index list.
+        3. Contracted batch labels *must* appear in the output index list.
+
+        Example:
+            `self.contract(other, idx1=['b', 0, 1], idx2=['b', 1, 0], idx_out=['b', 0, 0])`
+            would raise an error because core label 0 is contracted and appears in output.
+            `self.contract(other, idx1=['a', 0], idx2=['b', 0], idx_out=[0])`
+            would raise an error because batch labels 'a', 'b' are not in output.
 
         Args:
             other: The other PolyExpAnsatz to contract with.
-            idx1: The CV variables of the first ansatz to contract.
-            idx2: The CV variables of the second ansatz to contract.
-            batch_str: The batch dimensions to contract over with the same syntax as in ``np.einsum``.
-                If not indicated, the batch dimensions are taken in outer product
-        Returns:
-            The contracted ansatz.
-        """
-        idx1 = (idx1,) if isinstance(idx1, int) else idx1
-        idx2 = (idx2,) if isinstance(idx2, int) else idx2
-        for i, j in zip(idx1, idx2):
-            if i and i >= self.num_CV_vars:
-                raise IndexError(
-                    f"Index {i} out of bounds for ansatz with {self.num_CV_vars} CV variables."
-                )
-            if j and j >= other.num_CV_vars:
-                raise IndexError(
-                    f"Index {j} out of bounds for ansatz with {other.num_CV_vars} CV variables."
-                )
+            idx1: Sequence of labels (str/int) for this ansatz's dimensions (batch_dims + num_CV_vars).
+            idx2: Sequence of labels (str/int) for the other ansatz's dimensions (batch_dims + num_CV_vars).
+            idx_out: Sequence of labels for the output dimensions.
 
-        A, b, c = complex_gaussian_integral_2(self.triple, other.triple, idx1, idx2, batch_str)
-        return PolyExpAnsatz(A, b, c)
+        Returns:
+            The contracted PolyExpAnsatz.
+
+        Raises:
+            ValueError: If index sequences have incorrect length, invalid labels, or violate PolyExpAnsatz contraction rules.
+        """
+        # --- Parse and Validate Inputs ---
+        batch1 = [label for label in idx1 if isinstance(label, str)]
+        core1 = [label for label in idx1 if isinstance(label, int)]
+        batch2 = [label for label in idx2 if isinstance(label, str)]
+        core2 = [label for label in idx2 if isinstance(label, int)]
+        batch_out = [label for label in idx_out if isinstance(label, str)]
+        core_out = [label for label in idx_out if isinstance(label, int)]
+
+        # Check dimensions match expected counts
+        for actual, expected, description in [
+            (len(batch1), self.batch_dims, "batch labels in idx1"),
+            (len(core1), self.num_CV_vars, "core labels in idx1"),
+            (len(batch2), other.batch_dims, "batch labels in idx2"),
+            (len(core2), other.num_CV_vars, "core labels in idx2"),
+            (len(batch_out), len(set(batch1) | set(batch2)), "batch labels in idx_out"),
+            (len(core_out), len(set(core1) ^ set(core2)), "core labels in idx_out"),
+        ]:
+            if actual != expected:
+                raise ValueError(f"Expected {expected} {description}, found {actual}.")
+
+        # Check contracted core labels don't appear in output
+        contracted_cores = set(core1) & set(core2)
+        if not set(core_out).isdisjoint(contracted_cores):
+            raise ValueError(
+                "idx_out cannot contain core labels that are contracted: "
+                f"{set(core_out) & contracted_cores}"
+            )
+
+        # --- Prepare for complex_gaussian_integral_2 ---
+        contracted_core = set(core1) & set(core2)
+        idx1_cv = sorted(core1.index(label) for label in contracted_core)
+        idx2_cv = sorted(core2.index(label) for label in contracted_core)
+
+        unique_batch_labels = set(batch1) | set(batch2)
+        label_to_char = {label: chr(97 + i) for i, label in enumerate(unique_batch_labels)}
+        batch1_chars = "".join([label_to_char[label] for label in batch1])
+        batch2_chars = "".join([label_to_char[label] for label in batch2])
+        batch_out_chars = "".join([label_to_char[label] for label in batch_out])
+        batch_str = f"{batch1_chars},{batch2_chars}->{batch_out_chars}"
+
+        # --- Call complex_gaussian_integral_2 ---
+        A, b, c = complex_gaussian_integral_2(
+            self.triple, other.triple, idx1_cv, idx2_cv, batch_str
+        )
+        result = PolyExpAnsatz(A, b, c)
+
+        # --- Reorder core dimensions ---
+        leftover_core = [i for i in idx1 + idx2 if isinstance(i, int) and i not in contracted_core]
+        perm = [core_out.index(i) for i in leftover_core]
+        return result.reorder(perm)
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
@@ -395,6 +446,21 @@ class PolyExpAnsatz(Ansatz):
         A = math.gather(math.gather(self.A, order, axis=-1), order, axis=-2)
         b = math.gather(self.b, order, axis=-1)
         return PolyExpAnsatz(A, b, self.c)
+
+    def reorder_batch(self, order: Sequence[int]):
+        if len(order) != self.batch_dims:
+            raise ValueError(
+                f"order must have length {self.batch_dims} (number of batch dimensions), got {len(order)}"
+            )
+
+        core_dims_indices = range(self.batch_dims, self.batch_dims + self.num_vars)
+        core_dims_indices_c = range(self.batch_dims, self.batch_dims + self.num_derived_vars)
+
+        new_A = math.transpose(self.A, list(order) + list(core_dims_indices))
+        new_b = math.transpose(self.b, list(order) + list(core_dims_indices))
+        new_c = math.transpose(self.c, list(order) + list(core_dims_indices_c))
+
+        return PolyExpAnsatz(new_A, new_b, new_c)
 
     # TODO: this should be moved to classes responsible for interpreting a batch dimension as a sum
     def simplify(self) -> None:
