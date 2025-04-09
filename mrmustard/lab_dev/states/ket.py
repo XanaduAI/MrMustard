@@ -301,7 +301,7 @@ class Ket(State):
             >>> core, U = psi.physical_stellar_decomposition([0])
             >>> assert psi == core >> U
 
-            >>> A_c, _, _ = core.ansatz.triple
+            >>> A_c = core.ansatz.A
             >>> assert A_c[0,0] == 0
         """
         # bringing A to the ordering of our interest
