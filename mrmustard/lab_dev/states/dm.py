@@ -515,9 +515,9 @@ class DM(State):
         phi = phi / renorm
         return core, phi
 
-    def physical_stellar_decomposition_mixed(
+    def physical_stellar_decomposition_mixed(  # pylint: disable=too-many-statements
         self, core_modes: Collection[int]
-    ) -> tuple[DM, Channel]:  # pylint: disable=too-many-statements
+    ) -> tuple[DM, Channel]:
         r"""
         Applies the physical stellar decomposition based on the rank condition.
 
