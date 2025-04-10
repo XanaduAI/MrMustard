@@ -81,17 +81,33 @@ class TraceOut(CircuitComponent):
         """
         ket = other.wires.output.ket
         bra = other.wires.output.bra
-        idx_zconj = [bra[m].indices[0] for m in self.wires.modes & bra.modes]
-        idx_z = [ket[m].indices[0] for m in self.wires.modes & ket.modes]
         if len(self.wires) == 0:
             ansatz = other.ansatz
             wires = other.wires
         elif not ket or not bra:
-            ansatz = other.ansatz.conj.contract(other.ansatz, idx_z, idx_z)
+            B = other.ansatz.batch_dims
+            C = other.ansatz.core_dims
+            wires = ket + bra
+            _, ovlp, core_out = (wires.adjoint @ wires)[0].contracted_labels(self.wires)
+            core1 = list(range(C))
+            core2 = list(range(C, 2 * C))
+            for i in ovlp[: len(self.modes)]:
+                core2[i] = core1[i]
+            batch = [chr(97 + i) for i in range(B)]
+            if not bra:
+                ansatz = other.ansatz.conj.contract(
+                    other.ansatz, batch + core1, batch + core2, core_out
+                )
+            else:
+                ansatz = other.ansatz.contract(
+                    other.ansatz.conj, batch + core2, batch + core1, core_out
+                )
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
+            idx_zconj = [bra[m].indices[0] for m in self.wires.modes & bra.modes]
+            idx_z = [ket[m].indices[0] for m in self.wires.modes & ket.modes]
             ansatz = other.ansatz.trace(idx_z, idx_zconj)
             wires, _ = other.wires @ self.wires
 
         cpt = other._from_attributes(Representation(ansatz, wires))
-        return math.sum(cpt.ansatz.scalar) if len(cpt.wires) == 0 else cpt
+        return cpt.ansatz.scalar if len(cpt.wires) == 0 else cpt
