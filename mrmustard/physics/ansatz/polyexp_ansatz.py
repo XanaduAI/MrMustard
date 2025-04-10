@@ -496,7 +496,7 @@ class PolyExpAnsatz(Ansatz):
     def _equal_no_array(self, other: PolyExpAnsatz) -> bool:
         self.simplify()
         other.simplify()
-        return np.allclose(self.b, other.b, atol=settings.ATOL) and np.allclose(
+        return math.allclose(self.b, other.b, atol=settings.ATOL) and math.allclose(
             self.A, other.A, atol=settings.ATOL
         )
 
@@ -516,8 +516,8 @@ class PolyExpAnsatz(Ansatz):
 
         for d in range(1, self.batch_size):
             if not (
-                np.allclose(mat, A[d], atol=settings.ATOL)
-                and np.allclose(vec, b[d], atol=settings.ATOL)
+                math.allclose(mat, A[d], atol=settings.ATOL)
+                and math.allclose(vec, b[d], atol=settings.ATOL)
             ):
                 to_keep.append(d)
                 d0 = d
@@ -808,7 +808,7 @@ class PolyExpAnsatz(Ansatz):
     def __eq__(self, other: PolyExpAnsatz) -> bool:
         if not isinstance(other, PolyExpAnsatz):
             return False
-        return self._equal_no_array(other) and np.allclose(self.c, other.c, atol=settings.ATOL)
+        return self._equal_no_array(other) and math.allclose(self.c, other.c, atol=settings.ATOL)
 
     def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number

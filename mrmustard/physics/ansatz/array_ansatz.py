@@ -336,7 +336,7 @@ class ArrayAnsatz(Ansatz):
         if self.batch_shape != other.batch_shape:
             return False
         slices = tuple(slice(0, min(si, oi)) for si, oi in zip(self.core_shape, other.core_shape))
-        return np.allclose(
+        return math.allclose(
             self.array[(...,) + slices], other.array[(...,) + slices], atol=settings.ATOL
         )
 
