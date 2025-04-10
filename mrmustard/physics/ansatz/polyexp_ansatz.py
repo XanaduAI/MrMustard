@@ -20,7 +20,7 @@ This module contains the PolyExp ansatz.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence, Union
+from typing import Any, Callable, Sequence
 import itertools
 
 import numpy as np
