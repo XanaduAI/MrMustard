@@ -17,7 +17,7 @@ This module contains the array ansatz.
 """
 
 from __future__ import annotations
-from typing import Any, Callable, Sequence, Tuple, List, Optional, Union, Dict
+from typing import Any, Callable, Sequence, Union
 from warnings import warn
 
 import numpy as np
@@ -30,7 +30,6 @@ from mrmustard.math.parameters import Variable
 from mrmustard.utils.typing import Batch, Scalar, Tensor
 
 from .base import Ansatz
-from ..utils import outer_product_batch_str
 
 __all__ = ["ArrayAnsatz"]
 
