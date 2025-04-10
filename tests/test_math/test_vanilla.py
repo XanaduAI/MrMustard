@@ -87,14 +87,14 @@ class TestVanilla:
 
     def test_full_batch_vjp(self):
         r"""
-        Unit test for vanilla_full_batch_vjp_numba function by comparing its results with finite difference approximations.
+        Unit test for vanilla_batch_vjp_numba function by comparing its results with finite difference approximations.
         """
         skip_tf()
         skip_jax()
         # Generate the output tensor G
         A, b, c = random_triple(3, (2,))
         shape = (1, 2, 3)
-        G = strategies.vanilla_full_batch_numba(shape, A, b, c)
+        G = strategies.vanilla_batch_numba(shape, A, b, c)
 
         # Generate random upstream gradient with same shape as G
         dLdG = np.random.randn(*G.shape) + 1j * np.random.randn(*G.shape)  # upstream gradient
@@ -104,7 +104,7 @@ class TestVanilla:
         for i in range(c.shape[0]):
             eps = np.zeros_like(c)
             eps[i] = 1e-6
-            dGdc_fd[..., i] = (strategies.vanilla_full_batch_numba(shape, A, b, c + eps) - G) / 1e-6
+            dGdc_fd[..., i] = (strategies.vanilla_batch_numba(shape, A, b, c + eps) - G) / 1e-6
 
         # Contract with upstream gradient
         dLdc_fd = np.zeros_like(c)
@@ -118,7 +118,7 @@ class TestVanilla:
                 eps = np.zeros_like(b)
                 eps[i, j] = 1e-6
                 dGdb_fd[..., i, j] = (
-                    strategies.vanilla_full_batch_numba(shape, A, b + eps, c) - G
+                    strategies.vanilla_batch_numba(shape, A, b + eps, c) - G
                 ) / 1e-6
 
         # Contract with upstream gradient
@@ -135,7 +135,7 @@ class TestVanilla:
                     eps = np.zeros_like(A)
                     eps[i, j, k] = 1e-6
                     dGdA_fd[..., i, j, k] = (
-                        strategies.vanilla_full_batch_numba(shape, A + eps, b, c) - G
+                        strategies.vanilla_batch_numba(shape, A + eps, b, c) - G
                     ) / 1e-6
 
         # Contract with upstream gradient
@@ -146,7 +146,7 @@ class TestVanilla:
                     dLdA_fd[i, j, k] = np.sum(dLdG * dGdA_fd[..., i, j, k])
 
         # Use the VJP function to compute gradients
-        dLdA, dLdb, dLdc = strategies.vanilla_full_batch_vjp_numba(G, c, dLdG)
+        dLdA, dLdb, dLdc = strategies.vanilla_batch_vjp_numba(G, c, dLdG)
 
         # Verify results
         assert np.allclose(dLdc, dLdc_fd)
@@ -176,9 +176,9 @@ class TestVanilla:
         assert math.allclose(G[1, 0], math.hermite_renormalized(A[0, 0], b[1, 0], c[0, 0], shape))
 
     @pytest.mark.parametrize("stable", [True, False])
-    def test_hermite_renormalized_full_batch(self, stable):
+    def test_hermite_renormalized_batched(self, stable):
         r"""
-        Test the hermite_renormalized function for full batch inputs.
+        Test the hermite_renormalized function for batched inputs.
         """
         A, b, c = random_triple(2, (2, 1))
         shape = (4, 5)

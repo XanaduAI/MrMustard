@@ -23,17 +23,22 @@ from .core import vanilla_numba, stable_numba
 
 
 @njit(parallel=True)
-def vanilla_full_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+def vanilla_batch_numba(
+    shape: tuple[int, ...], A, b, c, stable: bool = False
+) -> ComplexTensor:  # pragma: no cover
     r"""Batched version of the vanilla algorithm for calculating the fock representation of a
     Gaussian tensor. This implementation assumes that the batch dimension is on the first
     axis of A, b, and c and it's the same for all of them.
-    See the documentation of ``vanilla`` for more details about the non-batched version.
+    It can use either the standard or the stable algorithm based on the `stable` flag.
+    Default is to use the standard algorithm.
+    See the documentation of ``vanilla_numba`` and ``stable_numba`` for more details.
 
     Args:
         shape (tuple[int, ...]): shape of the output tensor excluding the batch dimension
         A (np.ndarray): batched A matrix of the Bargmann representation
         b (np.ndarray): batched b vector of the Bargmann representation
         c (complex): batched vacuum amplitudes
+        stable (bool): if ``True``, use the stable algorithm, otherwise use the standard one
 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
@@ -41,28 +46,8 @@ def vanilla_full_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor: 
     batch_size = b.shape[0]
     G = np.zeros((batch_size,) + shape, dtype=np.complex128)
     for k in prange(batch_size):
-        G[k] = vanilla_numba(shape, A[k], b[k], c[k])
-    return G
-
-
-@njit(parallel=True)
-def stable_full_batch_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
-    r"""Batched version of the stable vanilla algorithm for calculating the fock representation of a
-    Gaussian tensor. This implementation assumes that the batch dimension is on the first
-    axis of A, b, and c and it's the same for all of them.
-    See the documentation ``stable`` for more details about the non-batched version.
-
-    Args:
-        shape (tuple[int, ...]): shape of the output tensor excluding the batch dimension
-        A (np.ndarray): batched A matrix of the Bargmann representation
-        b (np.ndarray): batched b vector of the Bargmann representation
-        c (complex): batched vacuum amplitudes
-
-    Returns:
-        np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
-    """
-    batch_size = b.shape[0]
-    G = np.zeros((batch_size,) + shape, dtype=np.complex128)
-    for k in prange(batch_size):
-        G[k] = stable_numba(shape, A[k], b[k], c[k])
+        if stable:
+            G[k] = stable_numba(shape, A[k], b[k], c[k])
+        else:
+            G[k] = vanilla_numba(shape, A[k], b[k], c[k])
     return G
