@@ -44,6 +44,7 @@ def fast_diagonal(
         c: A complex scalar
         output_cutoff: The cutoff for the output density matrices
         pnr_cutoffs: A tuple of integers representing the cutoffs for the PNR terms
+        stable: If True, use the stable algorithm, otherwise use the standard algorithm
 
     Returns:
         An array of conditional density matrices of shape (output_cutoff + 1, output_cutoff + 1, *pnr_cutoffs)
