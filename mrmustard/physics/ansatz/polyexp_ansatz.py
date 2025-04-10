@@ -184,6 +184,13 @@ class PolyExpAnsatz(Ansatz):
         return self.A.shape[-1] - self.num_derived_vars
 
     @property
+    def core_dims(self) -> int:
+        r"""
+        The number of core variables of the ansatz. Equivalent to ``self.num_CV_vars``.
+        """
+        return self.num_CV_vars
+
+    @property
     def num_derived_vars(self) -> int:
         r"""
         The number of derived variables that are derived by the polynomial of derivatives.
