@@ -537,14 +537,26 @@ class BackendJax(BackendBase):  # pragma: no cover
         shape: tuple[int],
         stable: bool = False,
     ) -> jnp.ndarray:
-        function = partial(strategies.vanilla_numba, shape, stable=stable)
-        G = jax.pure_callback(
-            lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
-            jax.ShapeDtypeStruct(shape, jnp.complex128),
-            A,
-            b,
-            c,
-        )
+        if stable:
+            G = jax.pure_callback(
+                lambda A, b, c: strategies.stable_numba(
+                    shape, np.array(A), np.array(b), np.array(c)
+                ),
+                jax.ShapeDtypeStruct(shape, jnp.complex128),
+                A,
+                b,
+                c,
+            )
+        else:
+            G = jax.pure_callback(
+                lambda A, b, c: strategies.vanilla_numba(
+                    shape, np.array(A), np.array(b), np.array(c)
+                ),
+                jax.ShapeDtypeStruct(shape, jnp.complex128),
+                A,
+                b,
+                c,
+            )
         return G
 
     # ~~~~~~~~~~~~~~~~~
@@ -559,11 +571,12 @@ class BackendJax(BackendBase):  # pragma: no cover
         shape: tuple[int],
         stable: bool = False,
     ) -> jnp.ndarray:
-        function = partial(strategies.vanilla_batch_numba, tuple(shape), stable=stable)
         batch_size = A.shape[0]
         output_shape = (batch_size,) + shape
         G = jax.pure_callback(
-            lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
+            lambda A, b, c: strategies.vanilla_batch_numba(
+                shape, np.array(A), np.array(b), np.array(c), stable
+            ),
             jax.ShapeDtypeStruct(output_shape, jnp.complex128),
             A,
             b,
