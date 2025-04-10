@@ -18,6 +18,7 @@
 
 import pytest
 
+from mrmustard import math
 from mrmustard.lab_dev.states import Thermal
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.triples import thermal_state_Abc
@@ -39,7 +40,9 @@ class TestThermal:
         assert state.modes == (modes,)
 
     @pytest.mark.parametrize("nbar", nbar)
-    def test_representation(self, nbar):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, nbar, batch_shape):
+        nbar = math.broadcast_to(nbar, batch_shape)
         rep = Thermal(0, nbar).ansatz
         exp = PolyExpAnsatz(*thermal_state_Abc(nbar))
         assert rep == exp

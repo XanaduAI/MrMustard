@@ -57,7 +57,7 @@ class ArrayAnsatz(Ansatz):
         super().__init__()
         self._array = math.astensor(array) if array is not None else None
         self._batch_dims = batch_dims
-        self._batch_shape = self._array.shape[:batch_dims] if array is not None else ()
+        self._batch_shape = tuple(self._array.shape[:batch_dims]) if array is not None else ()
         self._original_abc_data = None
 
     @property
@@ -71,7 +71,7 @@ class ArrayAnsatz(Ansatz):
     @array.setter
     def array(self, value: Tensor):
         self._array = math.astensor(value)
-        self._batch_shape = value.shape[: self.batch_dims]
+        self._batch_shape = tuple(value.shape[: self.batch_dims])
 
     @property
     def batch_dims(self) -> int:

@@ -28,7 +28,6 @@ from mrmustard.lab_dev import (
     Ket,
     Number,
     TraceOut,
-    Vacuum,
 )
 from mrmustard.physics.gaussian import vacuum_cov
 from mrmustard.physics.representations import Representation

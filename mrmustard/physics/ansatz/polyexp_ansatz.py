@@ -121,7 +121,7 @@ class PolyExpAnsatz(Ansatz):
         self._b = math.astensor(b) if b is not None else None
         self._c = math.astensor(c) if c is not None else None
         verify_batch_triple(self._A, self._b, self._c)
-        self._batch_shape = self._A.shape[:-2] if A is not None else ()
+        self._batch_shape = tuple(self._A.shape[:-2]) if A is not None else ()
 
         self.name = name
         self._simplified = False
@@ -216,7 +216,7 @@ class PolyExpAnsatz(Ansatz):
         r"""
         The shape of the coefficients of the polynomial of derivatives.
         """
-        return self.c.shape[self.batch_dims :]
+        return tuple(self.c.shape[self.batch_dims :])
 
     @property
     def triple(
@@ -518,7 +518,7 @@ class PolyExpAnsatz(Ansatz):
             self._b = math.astensor(b)
             self._c = math.astensor(c)
             verify_batch_triple(self._A, self._b, self._c)
-            self._batch_shape = self._A.shape[:-2]
+            self._batch_shape = tuple(self._A.shape[:-2])
 
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL:

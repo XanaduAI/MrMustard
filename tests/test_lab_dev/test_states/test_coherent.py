@@ -27,16 +27,16 @@ class TestCoherent:
     Tests for the ``Coherent`` class.
     """
 
-    modes = [0, 1, 7]
-    x = [1, 2, 3]
-    y = [3, 4, 5]
-
-    @pytest.mark.parametrize("modes,x,y", zip(modes, x, y))
-    def test_init(self, modes, x, y):
+    @pytest.mark.parametrize("modes", [0, 1, 7])
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_init(self, modes, batch_shape):
+        x = math.broadcast_to(1, batch_shape)
+        y = math.broadcast_to(2, batch_shape)
         state = Coherent(modes, x, y)
 
         assert state.name == "Coherent"
         assert state.modes == (modes,)
+        assert state.ansatz.batch_shape == batch_shape
 
     def test_trainable_parameters(self):
         state1 = Coherent(0, 1, 1)
@@ -52,13 +52,16 @@ class TestCoherent:
         state3.parameters.y.value = 2
         assert state3.parameters.y.value == 2
 
-    def test_representation(self):
-        rep1 = Coherent(mode=0, x=0.1, y=0.2).ansatz
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, batch_shape):
+        x = math.broadcast_to(0.1, batch_shape)
+        y = math.broadcast_to(0.2, batch_shape)
+        rep1 = Coherent(mode=0, x=x, y=y).ansatz
         assert math.allclose(rep1.A, math.zeros((1, 1)))
         assert math.allclose(rep1.b, [0.1 + 0.2j])
         assert math.allclose(rep1.c, 0.97530991)
 
-        rep3 = Coherent(mode=1, x=0.1).ansatz
+        rep3 = Coherent(mode=1, x=x).ansatz
         assert math.allclose(rep3.A, math.zeros((1, 1)))
         assert math.allclose(rep3.b, [0.1])
         assert math.allclose(rep3.c, 0.9950124791926823)

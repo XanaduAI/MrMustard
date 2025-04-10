@@ -122,7 +122,7 @@ class Ket(State):
             raise NotImplementedError("Not implemented for batched states.")
         shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
-            p = purity(cov)
+            p = float(purity(cov))
             math.error_if(
                 p,
                 p < 1.0 - atol_purity,
@@ -232,8 +232,8 @@ class Ket(State):
         if self.ansatz._lin_sup:
             A, b, c = repr.ansatz.triple
             batch_shape = self.ansatz.batch_shape[:-1]
-            new_A = math.reshape(A, batch_shape + (-1,) + A.shape[-2:])
-            new_b = math.reshape(b, batch_shape + (-1,) + b.shape[-1:])
+            new_A = math.reshape(A, batch_shape + (-1,) + tuple(A.shape[-2:]))
+            new_b = math.reshape(b, batch_shape + (-1,) + tuple(b.shape[-1:]))
             new_c = math.reshape(c, batch_shape + (-1,) + self.ansatz.shape_derived_vars)
             new_ansatz = PolyExpAnsatz(new_A, new_b, new_c, lin_sup=True)
             repr._ansatz = new_ansatz
