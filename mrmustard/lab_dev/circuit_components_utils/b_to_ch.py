@@ -64,10 +64,10 @@ class BtoChar(Map):
 
     .. code-block::
 
-        >>> from mrmustard.lab_dev import BtoPS, Ket
+        >>> from mrmustard.lab_dev import BtoChar, Ket
         >>> from mrmustard import math
 
-        >>> chi = (Ket.random([0]) >> BtoPS([0], s=0)).ansatz
+        >>> chi = (Ket.random([0]) >> BtoChar([0], s=0)).ansatz
         >>> assert math.allclose(chi(0,0), 1.0)
     """
 
