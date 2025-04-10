@@ -56,8 +56,8 @@ class TestTwoModeSqueezedVacuum:
     @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_representation(self, modes, r, phi, batch_shape):
-        r = math.broadcast_to(r, batch_shape)
-        phi = math.broadcast_to(phi, batch_shape)
+        r = math.broadcast_to(r, batch_shape, dtype=math.float64)
+        phi = math.broadcast_to(phi, batch_shape, dtype=math.float64)
         rep = TwoModeSqueezedVacuum(modes, r, phi).ansatz
         exp = (Vacuum(modes) >> S2gate(modes, -r, phi)).ansatz
         assert rep == exp

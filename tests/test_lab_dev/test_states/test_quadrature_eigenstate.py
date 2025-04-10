@@ -42,7 +42,7 @@ class TestQuadratureEigenstate:
     def test_dual(self, batch_shape):
         x = math.zeros(batch_shape)
         state = QuadratureEigenstate(0, x=x)
-        assert math.allclose(math.real(state >> state.dual), np.inf)
+        assert math.real(state >> state.dual) == np.inf
 
     @pytest.mark.parametrize("modes,x,phi", zip(modes, x, phi))
     def test_init(self, modes, x, phi):

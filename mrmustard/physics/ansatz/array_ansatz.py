@@ -83,7 +83,7 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def batch_size(self):
-        return int(np.prod(self.batch_shape)) if self.batch_shape != () else 0  # tensorflow
+        return int(np.prod(self.batch_shape)) if self.batch_shape else 0
 
     @property
     def core_dims(self) -> int:

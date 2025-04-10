@@ -157,7 +157,7 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def batch_size(self) -> int:
-        return int(math.prod(self.batch_shape)) if self.batch_shape != () else 0  # tensorflow
+        return int(math.prod(self.batch_shape)) if self.batch_shape else 0
 
     @property
     def c(self) -> Batch[ComplexTensor]:
@@ -538,7 +538,7 @@ class PolyExpAnsatz(Ansatz):
         Returns:
             The ordered vectorized (A, b, c) triple.
         """
-        if self.batch_shape == ():
+        if not self.batch_shape:
             return self.A, self.b, self.c
         A_vectorized = math.reshape(self.A, (-1, self.num_vars, self.num_vars))
         b_vectorized = math.reshape(self.b, (-1, self.num_vars))
@@ -654,7 +654,7 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(
                 f"The number of CV variables must match. Got {self.num_CV_vars} and {other.num_CV_vars}."
             )
-        if (self.batch_shape != () and not self._lin_sup) or (
+        if (self.batch_shape and not self._lin_sup) or (
             other.batch_shape != () and not other._lin_sup
         ):
             raise ValueError(
@@ -743,7 +743,7 @@ class PolyExpAnsatz(Ansatz):
             math.cast(math.stack(broadcasted_z, axis=-1), dtype=math.complex128)
             if broadcasted_z
             else math.astensor([], dtype=math.complex128)
-        )  # tensorflow
+        )
         if len(z_only) < self.num_CV_vars:
             indices = tuple(i for i, arr in enumerate(z_inputs) if arr is not None)
             return self._partial_eval(z, indices)
