@@ -326,20 +326,30 @@ class Ket(State):
 
         gamma_squared = math.eye(M, dtype=math.complex128) - Am @ math.conj(Am)
         gamma_evals, gamma_evecs = math.eigh(gamma_squared)
-        gamma_evecs_transpose = math.einsum("...ij->...ji", gamma_evecs)
-        gamma = gamma_evecs * math.sqrt(gamma_evals) @ math.conj(gamma_evecs_transpose)
+
+        gamma = math.einsum(
+            "...ij, ...j, ...kj -> ...ik", gamma_evecs, gamma_evals, math.conj(gamma_evecs)
+        )
         gamma_transpose = math.einsum("...ij->...ji", gamma)
 
         Au = math.block([[Am, gamma], [gamma_transpose, -math.conj(Am)]])
-        bu = math.block(
-            [bm, -math.conj(Am) @ math.inv(gamma_transpose) @ bm - math.inv(gamma) @ math.conj(bm)],
-            axes=(0, 0),
-        )
-        cu = math.astensor(1, dtype=math.complex128)
 
+        b_temp = math.einsum(
+            "...ij, ...jk, ...k -> ...i", math.conj(Am), math.inv(gamma_transpose), bm
+        )
+        b_temp2 = math.einsum("...ij, ...j -> ...i", math.inv(gamma), math.conj(bm))
+
+        if batch_shape == ():
+            bu = math.block([bm, -b_temp - b_temp2], axes=(0, 0))
+        else:
+            bu = math.block([bm, -b_temp - b_temp2])
+
+        cu = math.ones(batch_shape, dtype=math.complex128)
         U = Unitary.from_bargmann(core_modes, core_modes, (Au, bu, cu))
-        _, _, U_normalization = (U >> U.dual).ansatz.triple
-        U /= math.sqrt(U_normalization)
+
+        u_renorm = (U.contract(U.dual, mode="zip")).ansatz.c
+
+        U /= math.sqrt(u_renorm)
 
         A_core = math.block(
             [
@@ -353,15 +363,21 @@ class Ket(State):
                 ],
             ]
         )
+        b_temp = math.einsum(
+            "...ij, ...jk, ...k -> ...i", R, math.inv(gamma_transpose), bu[..., M:]
+        )
 
-        b_core = math.block([bm, bn - R @ math.inv(gamma_transpose) @ bu[..., M:]], axes=(0, 0))
+        if batch_shape == ():
+            b_core = math.block([bm, bn - b_temp], axes=(0, 0))
+        else:
+            b_core = math.block([bm, bn - b_temp])
 
         inverse_order = np.argsort(new_order)
 
         A_core = A_core[..., inverse_order, :]
-        A_core = A_core[..., :, inverse_order]
+        A_core = A_core[..., inverse_order]
         b_core = b_core[..., inverse_order]
-        c_core = math.astensor(1, dtype=math.complex128)  # to be renormalized
+        c_core = math.ones(batch_shape, dtype=math.complex128)  # to be renormalized
 
         psi_core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
 
