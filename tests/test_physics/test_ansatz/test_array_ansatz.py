@@ -235,3 +235,8 @@ class TestArrayAnsatz:
         rep._ipython_display_()
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(rep)
+
+    def test_reorder_batch(self):
+        fock = ArrayAnsatz(self.array1578, batch_dims=2)
+        fock_reordered = fock.reorder_batch([1, 0])
+        assert fock_reordered.array.shape == (5, 1, 7, 8)
