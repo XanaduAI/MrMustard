@@ -473,17 +473,14 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return G, grad
 
     @tf.custom_gradient
-    def hermite_renormalized_full_batch(
+    def hermite_renormalized_batched(
         self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int], stable: bool = False
     ) -> tf.Tensor:
         _A, _b, _c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
-        if stable:
-            G = strategies.stable_full_batch_numba(tuple(shape), _A, _b, _c)
-        else:
-            G = strategies.vanilla_full_batch_numba(tuple(shape), _A, _b, _c)
+        G = strategies.vanilla_batch_numba(tuple(shape), _A, _b, _c, stable=stable)
 
         def grad(dLdGconj):
-            dLdA, dLdB, dLdC = strategies.vanilla_full_batch_vjp_numba(G, _c, np.conj(dLdGconj))
+            dLdA, dLdB, dLdC = strategies.vanilla_batch_vjp_numba(G, _c, np.conj(dLdGconj))
             return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC), None, None
 
         return G, grad
