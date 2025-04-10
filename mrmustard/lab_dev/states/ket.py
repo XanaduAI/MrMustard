@@ -122,7 +122,7 @@ class Ket(State):
             raise NotImplementedError("Not implemented for batched states.")
         shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
-            p = float(purity(cov))
+            p = math.cast(purity(cov), math.float64)
             math.error_if(
                 p,
                 p < 1.0 - atol_purity,
