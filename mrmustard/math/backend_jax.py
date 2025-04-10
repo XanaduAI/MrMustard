@@ -537,10 +537,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         shape: tuple[int],
         stable: bool = False,
     ) -> jnp.ndarray:
-        if stable:
-            function = partial(strategies.stable_numba, shape)
-        else:
-            function = partial(strategies.vanilla_numba, shape)
+        function = partial(strategies.vanilla_numba, shape, stable=stable)
         G = jax.pure_callback(
             lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
             jax.ShapeDtypeStruct(shape, jnp.complex128),
@@ -551,10 +548,10 @@ class BackendJax(BackendBase):  # pragma: no cover
         return G
 
     # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_full_batch
+    # hermite_renormalized_batched
     # ~~~~~~~~~~~~~~~~~
     @partial(jax.jit, static_argnames=["shape", "stable"])
-    def hermite_renormalized_full_batch(
+    def hermite_renormalized_batched(
         self,
         A: jnp.ndarray,
         b: jnp.ndarray,
@@ -562,17 +559,9 @@ class BackendJax(BackendBase):  # pragma: no cover
         shape: tuple[int],
         stable: bool = False,
     ) -> jnp.ndarray:
-        # We use jax.pure_callback since the implementation relies on external
-        # numba-accelerated functions from the strategies module
-        if stable:
-            function = partial(strategies.stable_full_batch_numba, tuple(shape))
-        else:
-            function = partial(strategies.vanilla_full_batch_numba, tuple(shape))
-
+        function = partial(strategies.vanilla_batch_numba, tuple(shape), stable=stable)
         batch_size = A.shape[0]
         output_shape = (batch_size,) + shape
-
-        # Use pure_callback to handle the external numba function call
         G = jax.pure_callback(
             lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
             jax.ShapeDtypeStruct(output_shape, jnp.complex128),
