@@ -37,15 +37,17 @@ class TestPhaseNoise:
         assert ch.modes == (0,)
         assert ch.ansatz is None
 
-    def test_application(self):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_application(self, batch_shape):
         "Tests application of PhaseNoise on Ket and DM"
-        psi_1 = Ket.random((0, 1)) >> Dgate(0, 0.5, 0.5) >> PhaseNoise(0, 0.2)
+        x = math.broadcast_to(0.5, batch_shape)
+        psi_1 = Ket.random((0, 1)) >> Dgate(0, x, 0.5) >> PhaseNoise(0, 0.2)
         assert isinstance(psi_1, DM)
-        assert psi_1.purity < 1
+        assert math.allclose(psi_1.purity < 1, True)
 
         rho = DM.random((0, 1)) >> Dgate(0, 0.5, 0.5) >> PhaseNoise(0, 0.2)
         assert isinstance(rho, DM)
-        assert rho.purity < 1
+        assert math.allclose(rho.purity < 1, True)
 
         psi_2 = Coherent(0, 2)
         after_noise_array = (psi_2 >> PhaseNoise(0, 10)).fock_array(10)

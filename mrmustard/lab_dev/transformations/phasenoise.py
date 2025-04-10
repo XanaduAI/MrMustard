@@ -51,7 +51,7 @@ class PhaseNoise(Channel):
     def __init__(
         self,
         mode: int,
-        phase_stdev: float | Iterable[float] = 0.0,
+        phase_stdev: float = 0.0,
         phase_stdev_trainable: bool = False,
         phase_stdev_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
@@ -73,9 +73,8 @@ class PhaseNoise(Channel):
         Output:
             the result of the contraction.
         """
-
         if not other.wires.bra or not other.wires.ket:
-            other = other.contract(other.adjoint)
+            other = other.contract(other.adjoint, "zip")
         other = other.to_fock()
         array = other.fock_array()
         mode_indices = np.indices(other.ansatz.core_shape)
