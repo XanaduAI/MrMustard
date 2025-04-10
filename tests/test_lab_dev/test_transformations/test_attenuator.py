@@ -38,12 +38,14 @@ class TestAttenuator:
         assert gate.name == "Att~"
         assert gate.modes == (modes,)
 
-    def test_representation(self):
-        rep1 = Attenuator(mode=0, transmissivity=0.1).ansatz
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, batch_shape):
+        transmissivity = math.broadcast_to(0.1, batch_shape)
+        rep1 = Attenuator(mode=0, transmissivity=transmissivity).ansatz
         e = 0.31622777
-        assert math.allclose(rep1.A, [[[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]]])
-        assert math.allclose(rep1.b, np.zeros((1, 4)))
-        assert math.allclose(rep1.c, [1.0])
+        assert math.allclose(rep1.A, [[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]])
+        assert math.allclose(rep1.b, math.zeros((4,)))
+        assert math.allclose(rep1.c, 1.0)
 
     def test_trainable_parameters(self):
         gate1 = Attenuator(0, 0.1)

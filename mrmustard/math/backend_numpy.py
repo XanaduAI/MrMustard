@@ -193,10 +193,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return det
 
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
-        if len(array.shape) == 1:
+        if array.ndim == 1 or array.ndim == 2:
             return np.diag(array, k=k)
-        elif len(array.shape) == 2:
-            return np.array([np.diag(l, k=k).tolist() for l in array])
         else:
             # fallback into more complex algorithm
             original_sh = array.shape

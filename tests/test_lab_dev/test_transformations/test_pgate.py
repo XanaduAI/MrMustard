@@ -36,9 +36,11 @@ class TestPgate:
         assert up.parameters.shearing.value == 0.3
 
     @pytest.mark.parametrize("s", [0.1, 0.5, 1])
-    def test_application(self, s):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_application(self, s, batch_shape):
         "Tests if Pgate is being applied correctly."
-        up = Pgate(0, s)
+        s_batch = math.broadcast_to(s, batch_shape)
+        up = Pgate(0, s_batch)
         rho = Vacuum(0) >> up
         cov, _, _ = rho.phase_space(s=0)
         temp = math.astensor([[1, 0], [s, 1]], dtype="complex128")

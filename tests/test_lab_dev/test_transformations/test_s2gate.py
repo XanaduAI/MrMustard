@@ -16,7 +16,6 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-import numpy as np
 import pytest
 
 from mrmustard import math
@@ -37,22 +36,24 @@ class TestS2gate:
         assert gate.parameters.r.value == 2
         assert gate.parameters.phi.value == 1
 
-    def test_representation(self):
-        rep1 = S2gate((0, 1), 0.1, 0.2).ansatz
-        tanhr = np.exp(1j * 0.2) * np.sinh(0.1) / np.cosh(0.1)
-        sechr = 1 / np.cosh(0.1)
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, batch_shape):
+        r = math.broadcast_to(0.1, batch_shape)
+        phi = math.broadcast_to(0.2, batch_shape)
+
+        rep1 = S2gate((0, 1), r, phi).ansatz
+        tanhr = math.exp(1j * 0.2) * math.sinh(0.1) / math.cosh(0.1)
+        sechr = math.astensor(1 / math.cosh(0.1), dtype=math.complex128)
 
         A_exp = [
-            [
-                [0, tanhr, sechr, 0],
-                [tanhr, 0, 0, sechr],
-                [sechr, 0, 0, -np.conj(tanhr)],
-                [0, sechr, -np.conj(tanhr), 0],
-            ]
+            [0, tanhr, sechr, 0],
+            [tanhr, 0, 0, sechr],
+            [sechr, 0, 0, -math.conj(tanhr)],
+            [0, sechr, -math.conj(tanhr), 0],
         ]
         assert math.allclose(rep1.A, A_exp)
-        assert math.allclose(rep1.b, np.zeros((1, 4)))
-        assert math.allclose(rep1.c, [1 / np.cosh(0.1)])
+        assert math.allclose(rep1.b, math.zeros((4,)))
+        assert math.allclose(rep1.c, 1 / math.cosh(0.1))
 
     def test_trainable_parameters(self):
         gate1 = S2gate((0, 1), 1, 1)
@@ -68,9 +69,12 @@ class TestS2gate:
         gate3.parameters.phi.value = 2
         assert gate3.parameters.phi.value == 2
 
-    def test_operation(self):
-        rep1 = (Vacuum((0, 1)) >> S2gate(modes=(0, 1), r=-1, phi=0.5)).ansatz
-        rep2 = (TwoModeSqueezedVacuum(modes=(0, 1), r=1, phi=0.5)).ansatz
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_operation(self, batch_shape):
+        r = math.broadcast_to(1, batch_shape)
+        phi = math.broadcast_to(0.5, batch_shape)
+        rep1 = (Vacuum((0, 1)) >> S2gate(modes=(0, 1), r=-r, phi=phi)).ansatz
+        rep2 = (TwoModeSqueezedVacuum(modes=(0, 1), r=r, phi=phi)).ansatz
 
         assert math.allclose(rep1.A, rep2.A)
         assert math.allclose(rep1.b, rep2.b)

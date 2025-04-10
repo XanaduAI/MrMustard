@@ -200,7 +200,7 @@ class TestChannel:
             .contract(Dgate(0, r, phi), "zip")
             .contract(Attenuator(0, 0.5), "zip")
             .representation
-        )
+        )  # TODO: revisit rshift
         should_be_identity = gate >> gate.inverse()
         assert should_be_identity.ansatz == Attenuator(0, 1.0).ansatz
 
