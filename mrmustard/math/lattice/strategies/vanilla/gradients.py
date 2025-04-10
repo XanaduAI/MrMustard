@@ -80,7 +80,7 @@ def vanilla_vjp_numba(
 
 
 @njit(parallel=True)
-def vanilla_full_batch_vjp_numba(
+def vanilla_batch_vjp_numba(
     G: ComplexTensor, c: ComplexVector, dLdG: ComplexTensor
 ) -> tuple[ComplexTensor, ComplexMatrix, ComplexVector]:  # pragma: no cover
     r"""Vector-Jacobian product (VJP) for the ``vanilla_full_batch`` function.
