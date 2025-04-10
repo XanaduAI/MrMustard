@@ -194,8 +194,7 @@ class TestChannel:
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (0, 1, 2)])
     def test_is_CP(self, modes):
         u = Unitary.random(modes).ansatz
-        kraus = u.contract(u.conj)
-        assert Channel.from_bargmann(modes, modes, kraus.triple).is_CP
+        assert Channel.from_ansatz(modes, modes, u.conj & u).is_CP
 
     def test_is_TP(self):
         assert Attenuator(0, 0.5).is_CP
@@ -206,7 +205,7 @@ class TestChannel:
     def test_XY(self):
         U = Unitary.random((0, 1))
         u = U.ansatz
-        unitary_channel = Channel.from_bargmann((0, 1), (0, 1), u.conj.contract(u).triple)
+        unitary_channel = Channel.from_ansatz((0, 1), (0, 1), u.conj & u)
         X, Y = unitary_channel.XY
         assert math.allclose(X, U.symplectic) and math.allclose(Y, math.zeros((4, 4)))
 
