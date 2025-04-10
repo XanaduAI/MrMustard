@@ -460,11 +460,12 @@ class PolyExpAnsatz(Ansatz):
                 f"order must have length {self.batch_dims} (number of batch dimensions), got {len(order)}"
             )
 
-        core_dims_indices = range(self.batch_dims, self.batch_dims + self.num_vars)
+        core_dims_indices_A = range(self.batch_dims, self.batch_dims + 2)
+        core_dims_indices_b = range(self.batch_dims, self.batch_dims + 1)
         core_dims_indices_c = range(self.batch_dims, self.batch_dims + self.num_derived_vars)
 
-        new_A = math.transpose(self.A, list(order) + list(core_dims_indices))
-        new_b = math.transpose(self.b, list(order) + list(core_dims_indices))
+        new_A = math.transpose(self.A, list(order) + list(core_dims_indices_A))
+        new_b = math.transpose(self.b, list(order) + list(core_dims_indices_b))
         new_c = math.transpose(self.c, list(order) + list(core_dims_indices_c))
 
         return PolyExpAnsatz(new_A, new_b, new_c)
