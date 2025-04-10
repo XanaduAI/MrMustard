@@ -153,17 +153,19 @@ class Transformation(CircuitComponent):
             Representation(
                 PolyExpAnsatz(
                     math.inv(A),
-                    -math.inv(A) @ b,
+                    math.einsum("...ij,...j->...i", -math.inv(A), b),
                     math.ones(self.ansatz.batch_shape, dtype=math.complex128),
                 ),
                 self.wires.copy(new_ids=True),
             )
         )
-        almost_identity = self.contract(almost_inverse)
+        almost_identity = self.contract(almost_inverse, "zip")
         invert_this_c = almost_identity.ansatz.c
         actual_inverse = self._from_attributes(
             Representation(
-                PolyExpAnsatz(math.inv(A), -math.inv(A) @ b, 1 / invert_this_c),
+                PolyExpAnsatz(
+                    math.inv(A), math.einsum("...ij,...j->...i", -math.inv(A), b), 1 / invert_this_c
+                ),
                 self.wires.copy(new_ids=True),
             ),
             self.name + "_inv",
@@ -437,7 +439,8 @@ class Channel(Map):
             This channel has a Bargmann triple that is computed in https://arxiv.org/pdf/2209.06069. We borrow
             the formulas from the paper to implement the corresponding channel.
         """
-
+        if X.shape[:-2]:
+            raise NotImplementedError("Batching is not implemented.")
         if X.shape != (2 * len(modes_out), 2 * len(modes_in)):
             raise ValueError(
                 f"The dimension of X matrix ({X.shape}) and number of modes ({len(modes_in), len(modes_out)}) don't match."
