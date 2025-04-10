@@ -591,3 +591,11 @@ class TestPolyExpAnsatz:
         # Verify the result matches direct evaluation
         direct_result = F(z0, z1)
         assert math.allclose(result, direct_result)
+
+    def test_reorder_batch(self):
+        fock = PolyExpAnsatz(*Abc_triple(3, (1, 5)))
+        print(fock)
+        fock_reordered = fock.reorder_batch([1, 0])
+        assert fock_reordered.A.shape == (5, 1, 3, 3)
+        assert fock_reordered.b.shape == (5, 1, 3)
+        assert fock_reordered.c.shape == (5, 1)
