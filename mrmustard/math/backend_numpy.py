@@ -28,7 +28,6 @@ from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
-from opt_einsum import contract
 from ..utils.settings import settings
 from .autocast import Autocast
 from .backend_base import BackendBase
@@ -228,7 +227,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return array
 
     def einsum(self, string: str, *tensors, optimize: bool | str = False) -> np.ndarray:
-        return contract(string, *tensors, optimize=optimize)
+        return np.einsum(string, *tensors, optimize=optimize)
 
     def exp(self, array: np.ndarray) -> np.ndarray:
         return np.exp(array)
