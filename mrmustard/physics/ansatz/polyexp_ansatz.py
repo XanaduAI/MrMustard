@@ -407,7 +407,7 @@ class PolyExpAnsatz(Ansatz):
         b = math.gather(self.b, order, axis=-1)
         return PolyExpAnsatz(A, b, self.c, lin_sup=self._lin_sup)
 
-    def simplify_ansatz(self) -> PolyExpAnsatz:
+    def simplify(self) -> PolyExpAnsatz:
         r"""
         Returns a new ansatz simplified by combining terms that have the
         same exponential part, i.e. two components of the batch are considered equal if their
@@ -415,12 +415,12 @@ class PolyExpAnsatz(Ansatz):
 
         Will return immediately if the ansatz has already been simplified, so it is safe to re-call.
         """
-        if self.ansatz._simplified or not self.ansatz._lin_sup:
+        if self._simplified or not self._lin_sup:
             return self
         batch_shape = self.batch_shape[:-1] if self._lin_sup else self.batch_shape
         if batch_shape:
             raise NotImplementedError("Batched simplify is not implemented.")
-        (A, b, c), to_keep = self.ansatz._find_unique_terms_sorted()
+        (A, b, c), to_keep = self._find_unique_terms_sorted()
 
         A = math.gather(A, to_keep, axis=0)
         b = math.gather(b, to_keep, axis=0)

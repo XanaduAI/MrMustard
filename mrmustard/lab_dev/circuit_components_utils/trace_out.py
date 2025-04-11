@@ -18,7 +18,6 @@ The class representing a trace out operation.
 
 from __future__ import annotations
 
-from mrmustard import math
 from mrmustard.physics import triples
 
 from ..circuit_components import CircuitComponent
