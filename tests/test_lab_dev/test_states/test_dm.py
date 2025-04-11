@@ -228,17 +228,15 @@ class TestDM:  # pylint:disable=too-many-public-methods
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
         state = Coherent(0, x=x, y=y).dm()
-        L2_norms = state._L2_norms
-        assert L2_norms.shape == state.ansatz.batch_shape
-        assert math.allclose(L2_norms, 1)
-        assert math.allclose(state.L2_norm, 1)
+        L2_norm = state.L2_norm
+        assert L2_norm.shape == state.ansatz.batch_shape
+        assert math.allclose(L2_norm, 1)
 
     def test_L2_norm_mixture(self):
         state = Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()
-        L2_norms = state._L2_norms
-        assert L2_norms.shape == state.ansatz.batch_shape
-        assert math.allclose(L2_norms, 1)
-        assert math.allclose(state.L2_norm, 2.03663128)
+        L2_norm = state.L2_norm
+        assert L2_norm.shape == state.ansatz.batch_shape[:-1]
+        assert math.allclose(L2_norm, 2.03663128)
 
         A, b, c = state.ansatz.triple
         A_batch = math.astensor([A, A, A])
@@ -246,10 +244,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         c_batch = math.astensor([c, c, c])
         state_batch = DM.from_bargmann((0,), (A_batch, b_batch, c_batch), lin_sup=True)
         L2_norm = state_batch.L2_norm
-        L2_norms = state_batch._L2_norms
-        assert L2_norms.shape == state_batch.ansatz.batch_shape
         assert L2_norm.shape == state_batch.ansatz.batch_shape[:-1]
-        assert math.allclose(L2_norms, 1)
         assert math.allclose(L2_norm, 2.03663128)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
@@ -257,16 +252,16 @@ class TestDM:  # pylint:disable=too-many-public-methods
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
         state = Coherent(0, x=x, y=y).dm()
-        assert math.allclose(state._probabilities, 1)
-        assert math.allclose(state.probability, 1)
+        prob = state.probability
+        assert prob.shape == state.ansatz.batch_shape
+        assert math.allclose(prob, 1)
         assert math.allclose(state.to_fock(20).probability, 1)
 
     def test_probability_mixture(self):
         state = (Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()).normalize()
-        probabilities = state._probabilities
-        assert probabilities.shape == state.ansatz.batch_shape
-        assert math.allclose(probabilities, 0.5)
-        assert math.allclose(state.probability, 1)
+        prob = state.probability
+        assert prob.shape == state.ansatz.batch_shape[:-1]
+        assert math.allclose(prob, 1)
         assert math.allclose(state.to_fock(20).probability, 1)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
@@ -275,13 +270,11 @@ class TestDM:  # pylint:disable=too-many-public-methods
         y = math.broadcast_to(2, batch_shape)
         state = Coherent(mode=0, x=x, y=y).dm()
         assert math.allclose(state.purity, 1)
-        assert math.allclose(state._purities, 1)
         assert state.is_pure
 
     def test_purity_mixture(self):
         state = Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()
         assert math.allclose(state.purity, 2.0366312777774684)
-        assert math.allclose(state._purities, 0.5)
         assert not state.is_pure
 
     def test_quadrature_single_mode_dm(self):

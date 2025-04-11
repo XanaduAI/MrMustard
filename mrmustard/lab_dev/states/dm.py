@@ -88,41 +88,15 @@ class DM(State):
         Probability (trace) of this DM, using the batch dimension of the Ansatz
         as a convex combination of states.
         """
-        return (
-            math.sum(self._probabilities, axis=-1) if self.ansatz._lin_sup else self._probabilities
-        )
+        idx_ket = self.wires.output.ket.indices
+        idx_bra = self.wires.output.bra.indices
+        rep = self.ansatz.trace(idx_ket, idx_bra)
+        ret = math.real(rep.scalar)
+        return math.sum(ret, axis=-1) if self.ansatz._lin_sup else ret
 
     @property
     def purity(self) -> float:
         return self.L2_norm
-
-    @property
-    def _L2_norms(self) -> RealVector:
-        r"""
-        The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
-        element-wise along the batch dimension.
-        """
-        return self._compute_L2_norms(mode="zip")
-
-    @property
-    def _probabilities(self) -> RealVector:
-        r"""
-        Element-wise probabilities along the batch dimension of this DM.
-        Useful for cases where the batch dimension does not mean a convex combination of states.
-        """
-        idx_ket = self.wires.output.ket.indices
-        idx_bra = self.wires.output.bra.indices
-        rep = self.ansatz.trace(idx_ket, idx_bra)
-        return math.real(rep.scalar)
-
-    @property
-    def _purities(self) -> RealVector:
-        r"""
-        Element-wise purities along the batch dimension of this DM.
-        Useful for cases where the batch dimension does not mean a convex combination of states.
-        """
-        probability = self.probability[..., None] if self.ansatz._lin_sup else self.probability
-        return self._L2_norms / probability
 
     @classmethod
     def from_ansatz(
