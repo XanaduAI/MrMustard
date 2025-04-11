@@ -105,17 +105,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         # binding types and decorators of numpy backend
         self._bind()
 
-    def _apply(self, fn: str, args: Sequence[Any] | None = ()) -> Any:
+    def _apply(self, fn: str, args: Sequence[Any] | None = (), kwargs: dict | None = None) -> Any:
         r"""
-        Applies a function ``fn`` from the backend in use to the given ``args``.
+        Applies a function ``fn`` from the backend in use to the given ``args`` and ``kwargs``.
         """
+        kwargs = kwargs or {}
         try:
             attr = getattr(self.backend, fn)
         except AttributeError:
             msg = f"Function ``{fn}`` not implemented for backend ``{self.backend_name}``."
             # pylint: disable=raise-missing-from
             raise NotImplementedError(msg)
-        return attr(*args)
+        return attr(*args, **kwargs)
 
     def _bind(self) -> None:
         r"""
@@ -703,7 +704,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             A = self.reshape(A, (D,) + A.shape[-2:])
             b = self.reshape(b, (D,) + b.shape[-1:])
             c = self.reshape(c, (D,))
-            result = self._apply("hermite_renormalized_batched", (A, b, c, tuple(shape), stable))
+            result = self._apply(
+                "hermite_renormalized_batched", (A, b, c), {"shape": tuple(shape), "stable": stable}
+            )
             return self.reshape(result, batch_shape + shape)
         elif A.ndim == 2 and b.ndim > 1:  # b-batched case
             batch_shape = b.shape[:-1]
@@ -712,11 +715,17 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             A_broadcast = self.broadcast_to(A, (D,) + A.shape)
             c_broadcast = self.broadcast_to(c, (D,))
             result = self._apply(
-                "hermite_renormalized_batched", (A_broadcast, b, c_broadcast, tuple(shape), stable)
+                "hermite_renormalized_batched",
+                (A_broadcast, b, c_broadcast),
+                {"shape": tuple(shape), "stable": stable},
             )
             return self.reshape(result, batch_shape + shape)
         else:  # Unbatched case
-            return self._apply("hermite_renormalized_unbatched", (A, b, c, tuple(shape), stable))
+            return self._apply(
+                "hermite_renormalized_unbatched",
+                (A, b, c),
+                {"shape": tuple(shape), "stable": stable},
+            )
 
     def hermite_renormalized_diagonal(
         self, A: Tensor, b: Tensor, c: Tensor, cutoffs: tuple[int]
