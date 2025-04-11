@@ -28,7 +28,7 @@ from mrmustard.math.lattice.strategies.beamsplitter import (
 )
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 from mrmustard.math.lattice.strategies.displacement import displacement
-from mrmustard.math.lattice.strategies.vanilla import vanilla_stable, vanilla_stable_batch
+from mrmustard.math.lattice.strategies.vanilla import vanilla_numba
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 
 
@@ -72,7 +72,7 @@ def test_vanillabatchNumba_vs_vanillaNumba(batch_size):
     # replicate the B
     B_batched = np.stack((B,) * batch_size, axis=0)
 
-    G_batched = math.hermite_renormalized_batch(A, B_batched, C, shape=(3, 4, 5, 2, 6, 4))
+    G_batched = math.hermite_renormalized(A, B_batched, C, shape=(3, 4, 5, 2, 6, 4))
 
     for nb in range(batch_size):
         assert np.allclose(G_ref, G_batched[nb, :, :, :, :])
@@ -135,24 +135,10 @@ def test_sector_u():
 
 def test_vanilla_stable():
     "tests the vanilla stable against other known stable methods"
-    settings.STABLE_FOCK_CONVERSION = True
-    assert np.allclose(
-        mmld.Dgate(0, x=4.0, y=4.0).fock_array([1000, 1000]),
-        displacement((1000, 1000), 4.0 + 4.0j),
-    )
-    sgate = mmld.Sgate(0, r=4.0, phi=2.0).fock_array([1000, 1000])
-    assert np.max(np.abs(sgate)) < 1
-    settings.STABLE_FOCK_CONVERSION = False
-
-
-def test_vanilla_stable_batched():
-    "tests the vanilla average against other known stable methods. batched version."
-    settings.STABLE_FOCK_CONVERSION = True
-    A, b, c = mmld.Ket.random((0, 1)).bargmann_triple()
-    A, b, c = math.asnumpy(A), math.asnumpy(math.atleast_2d(b)), math.asnumpy(c)  # for tf backend
-    batched = vanilla_stable_batch((4, 4), A, b, c)
-    non_batched = vanilla_stable((4, 4), A, b[0], c)
-
-    assert math.allclose(batched[0], non_batched)
-
-    settings.STABLE_FOCK_CONVERSION = False
+    with settings(STABLE_FOCK_CONVERSION=True):
+        assert np.allclose(
+            mmld.Dgate(0, x=4.0, y=4.0).fock_array([1000, 1000]),
+            displacement((1000, 1000), 4.0 + 4.0j),
+        )
+        sgate = mmld.Sgate(0, r=4.0, phi=2.0).fock_array([1000, 1000])
+        assert np.max(np.abs(sgate)) < 1
