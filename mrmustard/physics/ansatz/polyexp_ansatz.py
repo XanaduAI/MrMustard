@@ -876,18 +876,3 @@ class PolyExpAnsatz(Ansatz):
             raise NotImplementedError(
                 "Division of PolyExpAnsatz with other PolyExpAnsatz is not implemented."
             )
-
-
-class CombinationAnsatz(PolyExpAnsatz):
-    def __init__(
-        self,
-        A: ComplexMatrix | Batch[ComplexMatrix] | None,
-        b: ComplexVector | Batch[ComplexVector] | None,
-        c: ComplexTensor | Batch[ComplexTensor] | None,
-        name: str = "",
-    ):
-        super().__init__(A, b, c, name=name, lin_sup=True)
-
-    @property
-    def scalar(self) -> Scalar:
-        return math.sum(self.c, axis=-1)
