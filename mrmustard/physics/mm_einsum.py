@@ -68,7 +68,6 @@ def mm_einsum(
         ansatz_a = convert_ansatz(ansatz_a, [fock_dims[i] for i in ints_a]) if convert else ansatz_a
         ansatz_b = convert_ansatz(ansatz_b, [fock_dims[i] for i in ints_b]) if convert else ansatz_b
         idx_out = prepare_idx_out(indices, id_a, id_b, output)
-        print(indices[id_a], indices[id_b], idx_out)
         ansatze[id_a + id_b] = ansatz_a.contract(ansatz_b, indices[id_a], indices[id_b], idx_out)
         indices[id_a + id_b] = idx_out
         del ansatze[id_a], ansatze[id_b]

@@ -707,7 +707,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             result = self._apply(
                 "hermite_renormalized_batched", (A, b, c), {"shape": tuple(shape), "stable": stable}
             )
-            return self.reshape(result, batch_shape + shape)
+            return self.reshape(result, batch_shape + tuple(shape))
         elif A.ndim == 2 and b.ndim > 1:  # b-batched case
             batch_shape = b.shape[:-1]
             D = int(np.prod(batch_shape))
@@ -719,7 +719,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 (A_broadcast, b, c_broadcast),
                 {"shape": tuple(shape), "stable": stable},
             )
-            return self.reshape(result, batch_shape + shape)
+            return self.reshape(result, batch_shape + tuple(shape))
         else:  # Unbatched case
             return self._apply(
                 "hermite_renormalized_unbatched",
