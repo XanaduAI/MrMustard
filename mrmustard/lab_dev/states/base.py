@@ -130,6 +130,7 @@ class State(CircuitComponent):
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
+        # TODO: move to class
         if self.ansatz._lin_sup:
             str1 = generate_batch_str(self.ansatz.batch_shape)
             str2 = str1[:-1] + chr(ord(str1[-1]) + 1)
@@ -141,9 +142,21 @@ class State(CircuitComponent):
             fock_state = self.to_fock()
             ret = math.real(fock_state.contract(fock_state.dual, mode=mode).ansatz.scalar)
         else:
-            ret = math.real(self.contract(self.dual, mode=mode).ansatz.scalar)
+            ret = self.contract(self.dual, mode=mode).ansatz
 
-        return math.sum(math.sum(ret, axis=-1), axis=-1) if self.ansatz._lin_sup else ret
+            # TODO: move to class
+            if self.ansatz._lin_sup:
+                A, b, c = ret.triple
+                batch_shape = self.ansatz.batch_shape[:-1]
+                flattened = 2 * self.ansatz.batch_shape[-1]
+                new_A = math.reshape(A, batch_shape + (flattened,) + tuple(A.shape[-2:]))
+                new_b = math.reshape(b, batch_shape + (flattened,) + tuple(b.shape[-1:]))
+                new_c = math.reshape(c, batch_shape + (flattened,) + self.ansatz.shape_derived_vars)
+                new_ansatz = PolyExpAnsatz(new_A, new_b, new_c, lin_sup=True)
+                ret = new_ansatz
+
+            ret = math.real(ret.scalar)
+        return ret
 
     @property
     @abstractmethod
@@ -347,19 +360,13 @@ class State(CircuitComponent):
         Returns a rescaled version of the state such that its probability is 1.
         """
         probability = self.probability
-
         if probability.shape != () and isinstance(self.ansatz, PolyExpAnsatz):
-            probability = math.reshape(
-                probability,
-                probability.shape
-                + (1,) * int(self.ansatz._lin_sup)
-                + (1,) * self.ansatz.num_derived_vars,
-            )
+            delta = len(self.ansatz.c.shape) - len(probability.shape)
+            probability = math.reshape(probability, probability.shape + (1,) * delta)
         elif probability.shape != () and isinstance(self.ansatz, ArrayAnsatz):
             probability = math.reshape(
                 probability, probability.shape + (1,) * self.ansatz.core_dims
             )
-
         if self.wires.ket and not self.wires.bra:
             return self / math.sqrt(probability)
         else:

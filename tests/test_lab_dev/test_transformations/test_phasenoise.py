@@ -17,7 +17,6 @@
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
 import pytest
-import numpy as np
 
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent

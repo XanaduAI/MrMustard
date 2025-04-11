@@ -90,8 +90,7 @@ class DM(State):
         idx_ket = self.wires.output.ket.indices
         idx_bra = self.wires.output.bra.indices
         rep = self.ansatz.trace(idx_ket, idx_bra)
-        ret = math.real(rep.scalar)
-        return math.sum(ret, axis=-1) if self.ansatz._lin_sup else ret
+        return math.real(rep.scalar)
 
     @property
     def purity(self) -> float:

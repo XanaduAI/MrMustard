@@ -205,11 +205,17 @@ class PolyExpAnsatz(Ansatz):
         The scalar part of the ansatz, i.e. F(0)
         """
         if self.num_CV_vars == 0 and self.num_derived_vars == 0:
-            return self.c
+            ret = self.c
         elif self.num_CV_vars == 0:
-            return self()
+            ret = self()
         else:
-            return self(*math.zeros_like(self.b))
+            ret = self(*math.zeros_like(self.b))
+
+        if self._lin_sup:
+            einsum_str = generate_batch_str(self.batch_shape[:-1], 1)
+            ret = math.einsum(einsum_str + "a" + "->" + einsum_str, ret)
+
+        return ret
 
     @property
     def shape_derived_vars(self) -> tuple[int, ...]:
@@ -400,6 +406,34 @@ class PolyExpAnsatz(Ansatz):
         A = math.gather(math.gather(self.A, order, axis=-1), order, axis=-2)
         b = math.gather(self.b, order, axis=-1)
         return PolyExpAnsatz(A, b, self.c, lin_sup=self._lin_sup)
+
+    def simplify_ansatz(self) -> PolyExpAnsatz:
+        r"""
+        Returns a new ansatz simplified by combining terms that have the
+        same exponential part, i.e. two components of the batch are considered equal if their
+        ``A`` and ``b`` are equal. In this case only one is kept and the corresponding ``c`` are added.
+
+        Will return immediately if the ansatz has already been simplified, so it is safe to re-call.
+        """
+        if self.ansatz._simplified or not self.ansatz._lin_sup:
+            return self
+        batch_shape = self.batch_shape[:-1] if self._lin_sup else self.batch_shape
+        if batch_shape:
+            raise NotImplementedError("Batched simplify is not implemented.")
+        (A, b, c), to_keep = self.ansatz._find_unique_terms_sorted()
+
+        A = math.gather(A, to_keep, axis=0)
+        b = math.gather(b, to_keep, axis=0)
+        c = math.gather(c, to_keep, axis=0)  # already added
+
+        A = math.reshape(A, (len(to_keep),) + (self.num_vars, self.num_vars))
+        b = math.reshape(b, (len(to_keep),) + (self.num_vars,))
+        c = math.reshape(c, (len(to_keep),) + self.shape_derived_vars)
+
+        new_ansatz = PolyExpAnsatz(A, b, c)
+        new_ansatz._simplified = True
+
+        return new_ansatz
 
     def to_dict(self) -> dict[str, ArrayLike]:
         r"""Returns a dictionary representation of the ansatz. For serialization purposes."""
@@ -842,3 +876,18 @@ class PolyExpAnsatz(Ansatz):
             raise NotImplementedError(
                 "Division of PolyExpAnsatz with other PolyExpAnsatz is not implemented."
             )
+
+
+class CombinationAnsatz(PolyExpAnsatz):
+    def __init__(
+        self,
+        A: ComplexMatrix | Batch[ComplexMatrix] | None,
+        b: ComplexVector | Batch[ComplexVector] | None,
+        c: ComplexTensor | Batch[ComplexTensor] | None,
+        name: str = "",
+    ):
+        super().__init__(A, b, c, name=name, lin_sup=True)
+
+    @property
+    def scalar(self) -> Scalar:
+        return math.sum(self.c, axis=-1)

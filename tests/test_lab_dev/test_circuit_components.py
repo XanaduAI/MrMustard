@@ -177,23 +177,6 @@ class TestCircuitComponent:
         with pytest.raises(ValueError):
             Vacuum((1, 2)).on(3)
 
-    # def test_simplify(self):
-    #     A, b, c = Abc_triple(5)
-
-    #     ansatz = PolyExpAnsatz(A, b, c)
-
-    #     ansatz = ansatz + ansatz
-
-    #     assert math.allclose(ansatz.A[0], ansatz.A[1])
-    #     assert math.allclose(ansatz.A[0], A)
-    #     assert math.allclose(ansatz.b[0], ansatz.b[1])
-    #     assert math.allclose(ansatz.b[0], b)
-
-    #     ansatz.simplify()
-    #     assert len(ansatz.A) == 1
-    #     assert len(ansatz.b) == 1
-    #     assert ansatz.c == 2 * c
-
     def test_to_bargmann_unitary(self):
         d = Dgate(1, x=0.1, y=0.1)
         fock = Unitary(d.representation.to_fock(shape=(4, 6)))

@@ -52,7 +52,7 @@ class Ket(State):
     short_name = "Ket"
 
     @property
-    def is_physical(self) -> bool:  # TODO: revisit
+    def is_physical(self) -> bool:
         r"""
         Whether the ket object is a physical one.
         """
@@ -80,6 +80,7 @@ class Ket(State):
     @property
     def purity(self) -> float:
         if self.ansatz:
+            # TODO: move to class
             shape = (
                 self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
             )
@@ -114,11 +115,11 @@ class Ket(State):
         triple: tuple,
         name: str | None = None,
         atol_purity: float | None = 1e-5,
-    ) -> Ket:  # TODO: revisit
+    ) -> Ket:
         cov, means, coeff = triple
         cov = math.astensor(cov)
         means = math.astensor(means)
-        if cov.shape[:-2] != ():
+        if cov.shape[:-2] != ():  # pragma: no cover
             raise NotImplementedError("Not implemented for batched states.")
         shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
@@ -173,7 +174,7 @@ class Ket(State):
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:  # TODO: revisit
+    ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -187,10 +188,11 @@ class Ket(State):
             max_shape: The maximum shape to compute (default from ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
+        # TODO: move to class
         batch_shape = (
             self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
         )
-        if batch_shape:
+        if batch_shape:  # pragma: no cover
             raise NotImplementedError("Batched auto_shape is not implemented.")
         if not self.ansatz._lin_sup:
             try:  # fock
@@ -220,22 +222,24 @@ class Ket(State):
         r"""
         The ``DM`` object obtained from this ``Ket``.
         """
-        # TODO: assuming first batch dim is lin_sup
+        # TODO: move to class
         if self.ansatz._lin_sup:
             str1 = generate_batch_str(self.ansatz.batch_shape)
             str2 = str1[:-1] + chr(ord(str1[-1]) + 1)
             mode = f"{str1},{str2}->{str1}{str2[-1]}"
         else:
             mode = "zip"
+
         repr = self.representation.contract(self.adjoint.representation, mode=mode)
 
-        # TODO: assuming first batch dim is lin_sup
+        # TODO: move to class
         if self.ansatz._lin_sup:
             A, b, c = repr.ansatz.triple
             batch_shape = self.ansatz.batch_shape[:-1]
-            new_A = math.reshape(A, batch_shape + (-1,) + tuple(A.shape[-2:]))
-            new_b = math.reshape(b, batch_shape + (-1,) + tuple(b.shape[-1:]))
-            new_c = math.reshape(c, batch_shape + (-1,) + self.ansatz.shape_derived_vars)
+            flattened = 2 * self.ansatz.batch_shape[-1]
+            new_A = math.reshape(A, batch_shape + (flattened,) + tuple(A.shape[-2:]))
+            new_b = math.reshape(b, batch_shape + (flattened,) + tuple(b.shape[-1:]))
+            new_c = math.reshape(c, batch_shape + (flattened,) + self.ansatz.shape_derived_vars)
             new_ansatz = PolyExpAnsatz(new_A, new_b, new_c, lin_sup=True)
             repr._ansatz = new_ansatz
 
@@ -243,7 +247,7 @@ class Ket(State):
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 
-    def expectation(self, operator: CircuitComponent):  # TODO: revisit
+    def expectation(self, operator: CircuitComponent):
         r"""
         The expectation value of an operator calculated with respect to this Ket.
 
@@ -263,9 +267,9 @@ class Ket(State):
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
-        if (self.ansatz and self.ansatz.batch_shape != ()) or (
-            operator.ansatz and operator.ansatz.batch_shape != ()
-        ):
+        if (self.ansatz and self.ansatz.batch_shape) or (
+            operator.ansatz and operator.ansatz.batch_shape
+        ):  # pragma: no cover
             raise NotImplementedError("Batched expectation values are not implemented.")
 
         op_type, msg = _validate_operator(operator)

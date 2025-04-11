@@ -145,7 +145,7 @@ class Transformation(CircuitComponent):
             raise NotImplementedError(
                 "Only Transformations with the same number of input and output wires are supported."
             )
-        if not isinstance(self.ansatz, PolyExpAnsatz):
+        if not isinstance(self.ansatz, PolyExpAnsatz):  # pragma: no cover
             raise NotImplementedError("Only Bargmann representation is supported.")
 
         A, b, _ = self.dual.ansatz.conj.triple

@@ -535,31 +535,6 @@ class CircuitComponent:
         )
         return ret
 
-    def simplify_ansatz(self) -> CircuitComponent:
-        r"""
-        Returns a new CircuitComponent with a simplified ansatz by combining terms that have the
-        same exponential part, i.e. two components of the batch are considered equal if their
-        ``A`` and ``b`` are equal. In this case only one is kept and the corresponding ``c`` are added.
-
-        Will return immediately if the ansatz has already been simplified, so it is safe to re-call.
-        """
-        if self.ansatz._simplified or not self.ansatz._lin_sup:
-            return self
-        (A, b, c), to_keep = self.ansatz._find_unique_terms_sorted()
-
-        A = math.gather(A, to_keep, axis=0)
-        b = math.gather(b, to_keep, axis=0)
-        c = math.gather(c, to_keep, axis=0)  # already added
-
-        A = math.reshape(A, (len(to_keep),) + (self.num_vars, self.num_vars))
-        b = math.reshape(b, (len(to_keep),) + (self.num_vars,))
-        c = math.reshape(c, (len(to_keep),) + self.shape_derived_vars)
-
-        new_ansatz = PolyExpAnsatz(A, b, c)
-        new_ansatz._simplified = True
-
-        return CircuitComponent(Representation(new_ansatz, self.wires), self.name)
-
     def to_bargmann(self) -> CircuitComponent:
         r"""
         Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.

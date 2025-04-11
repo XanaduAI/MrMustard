@@ -215,6 +215,7 @@ class Representation:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
+        # TODO: move to class
         batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
         fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
         try:
