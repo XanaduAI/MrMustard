@@ -193,7 +193,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return det
 
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
-        if array.ndim == 1 or array.ndim == 2:
+        if array.ndim in (1, 2):
             return np.diag(array, k=k)
         else:
             # fallback into more complex algorithm

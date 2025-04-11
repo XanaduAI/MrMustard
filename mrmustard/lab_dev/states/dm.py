@@ -19,7 +19,6 @@ This module contains the defintion of the density matrix class ``DM``.
 from __future__ import annotations
 from typing import Collection, Sequence
 
-import warnings
 import numpy as np
 from IPython.display import display
 
@@ -30,7 +29,7 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
-from mrmustard.utils.typing import ComplexTensor, RealVector
+from mrmustard.utils.typing import ComplexTensor
 
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
@@ -49,7 +48,7 @@ class DM(State):
     short_name = "DM"
 
     @property
-    def is_positive(self) -> bool:  # TODO: revisit
+    def is_positive(self) -> bool:
         r"""
         Whether this DM is a positive operator.
         """
@@ -125,7 +124,7 @@ class DM(State):
         triple: tuple,
         name: str | None = None,
         atol_purity: float | None = 1e-5,  # pylint: disable=unused-argument
-    ) -> DM:  # TODO: revisit
+    ) -> DM:
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
         which parametrize the s-parametrized phase space function
@@ -186,7 +185,7 @@ class DM(State):
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:  # TODO: revisit
+    ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -200,32 +199,25 @@ class DM(State):
             max_shape: The maximum shape to compute (default in ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
-        # experimental:
-        if self.ansatz.batch_size <= 1:
-            try:  # fock
-                shape = self.ansatz.core_shape
-            except AttributeError:  # bargmann
-                if self.ansatz.num_derived_vars == 0:
-                    ansatz = self.ansatz
-                    A, b, c = (
-                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
-                        if ansatz.batch_shape
-                        else ansatz.triple
-                    )
-                    ansatz = ansatz / self.probability
-                    shape = autoshape_numba(
-                        math.asnumpy(A),
-                        math.asnumpy(b),
-                        math.asnumpy(c),
-                        max_prob or settings.AUTOSHAPE_PROBABILITY,
-                        max_shape or settings.AUTOSHAPE_MAX,
-                    )
-                    shape = tuple(shape) + tuple(shape)
-                else:
-                    shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
-        else:
-            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
-            shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
+        if self.ansatz.batch_shape:
+            raise NotImplementedError("Batched auto_shape is not implemented.")
+        try:  # fock
+            shape = self.ansatz.core_shape
+        except AttributeError:  # bargmann
+            if self.ansatz.num_derived_vars == 0:
+                ansatz = self.ansatz
+                A, b, c = ansatz.triple
+                ansatz = ansatz / self.probability
+                shape = autoshape_numba(
+                    math.asnumpy(A),
+                    math.asnumpy(b),
+                    math.asnumpy(c),
+                    max_prob or settings.AUTOSHAPE_PROBABILITY,
+                    max_shape or settings.AUTOSHAPE_MAX,
+                )
+                shape = tuple(shape) + tuple(shape)
+            else:
+                shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
         return tuple(shape)
@@ -236,7 +228,7 @@ class DM(State):
         """
         return self
 
-    def expectation(self, operator: CircuitComponent):  # TODO: revisit
+    def expectation(self, operator: CircuitComponent):
         r"""
         The expectation value of an operator with respect to this DM.
 
@@ -256,8 +248,8 @@ class DM(State):
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
-        if (self.ansatz and self.ansatz.batch_shape != ()) or (
-            operator.ansatz and operator.ansatz.batch_shape != ()
+        if (self.ansatz and self.ansatz.batch_shape) or (
+            operator.ansatz and operator.ansatz.batch_shape
         ):
             raise NotImplementedError("Batched expectation values are not implemented.")
         op_type, msg = _validate_operator(operator)
@@ -285,7 +277,7 @@ class DM(State):
 
     def fock_array(
         self, shape: int | Sequence[int] | None = None, standard_order: bool = False
-    ) -> ComplexTensor:  # TODO: revisit
+    ) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -310,6 +302,10 @@ class DM(State):
         """
         array = super().fock_array(shape or self.auto_shape())
         if standard_order:
+            if self.ansatz.batch_shape:
+                raise NotImplementedError(
+                    "Standard ordering of fock_array is not implemented for batched states."
+                )
             m = self.n_modes
             axes = tuple(range(m, 2 * m)) + tuple(
                 range(m)

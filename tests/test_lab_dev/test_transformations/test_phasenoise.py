@@ -17,6 +17,7 @@
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
 import pytest
+import numpy as np
 
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
@@ -52,7 +53,7 @@ class TestPhaseNoise:
         psi_2 = Coherent(0, 2)
         after_noise_array = (psi_2 >> PhaseNoise(0, 10)).fock_array(10)
         assert math.allclose(
-            math.diag(after_noise_array), math.diag(psi_2.dm().fock_array(10))
+            math.diag_part(after_noise_array), math.diag_part(psi_2.dm().fock_array(10))
         )  # the diagonal entries must remain unchanged
         mask = ~math.eye(after_noise_array.shape[0], dtype=bool)
         assert math.allclose(

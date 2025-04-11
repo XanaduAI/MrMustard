@@ -325,7 +325,7 @@ class Channel(Map):
     short_name = "Ch"
 
     @property
-    def is_CP(self) -> bool:  # TODO: revisit this
+    def is_CP(self) -> bool:
         r"""
         Whether this channel is completely positive (CP).
         """
@@ -354,7 +354,7 @@ class Channel(Map):
         return all(math.real(math.eigvals(gamma_A)) > -settings.ATOL)
 
     @property
-    def is_TP(self) -> bool:  # TODO: revisit this
+    def is_TP(self) -> bool:
         r"""
         Whether this channel is trace preserving (TP).
         """

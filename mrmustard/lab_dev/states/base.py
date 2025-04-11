@@ -26,7 +26,7 @@ representation.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Literal, Sequence
+from typing import Sequence
 
 from enum import Enum
 

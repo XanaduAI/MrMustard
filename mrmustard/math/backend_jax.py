@@ -266,9 +266,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         return jnp.linalg.det(matrix)
 
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
-        if array.ndim == 0:
-            return array
-        elif array.ndim in [1, 2]:
+        if array.ndim in [1, 2]:
             return jnp.diag(array, k=k)
         else:
             # fallback into more complex algorithm

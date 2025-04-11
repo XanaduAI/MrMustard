@@ -131,7 +131,7 @@ class Representation:
         ansatz = ansatz.reorder(perm) if perm else ansatz
         return Representation(ansatz, wires_result)
 
-    def fock_array(self, shape: int | Sequence[int]) -> ComplexTensor:  # TODO: sum the lin sup dim
+    def fock_array(self, shape: int | Sequence[int]) -> ComplexTensor:
         r"""
         Returns an array of this representation in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is

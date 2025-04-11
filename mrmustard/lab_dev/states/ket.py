@@ -187,17 +187,18 @@ class Ket(State):
             max_shape: The maximum shape to compute (default from ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
-        if self.ansatz.batch_size <= 1:
+        batch_shape = (
+            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
+        )
+        if batch_shape:
+            raise NotImplementedError("Batched auto_shape is not implemented.")
+        if not self.ansatz._lin_sup:
             try:  # fock
                 shape = self.ansatz.core_shape
             except AttributeError:  # bargmann
                 if self.ansatz.num_derived_vars == 0:
                     ansatz = self.ansatz.conj & self.ansatz
-                    A, b, c = (
-                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
-                        if ansatz.batch_shape
-                        else ansatz.triple
-                    )
+                    A, b, c = ansatz.triple
                     ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),

@@ -101,7 +101,7 @@ class Dgate(Unitary):
             ),
         ).representation
 
-    def fock_array(self, shape: int | Sequence[int] = None) -> ComplexTensor:  # TODO: fix for batch
+    def fock_array(self, shape: int | Sequence[int] = None) -> ComplexTensor:
         r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -112,8 +112,6 @@ class Dgate(Unitary):
         Returns:
             array: The Fock representation of this component.
         """
-        if self.ansatz._lin_sup:
-            raise NotImplementedError("Linear superposition ansatz not implemented")
         if self.ansatz.batch_shape:
             raise NotImplementedError("Batching not implemented")
         if isinstance(shape, int):

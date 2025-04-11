@@ -17,7 +17,6 @@ The class representing a Phase noise channel.
 """
 
 from __future__ import annotations
-from typing import Iterable
 import numpy as np
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz

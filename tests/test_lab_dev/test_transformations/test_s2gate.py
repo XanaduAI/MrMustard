@@ -71,7 +71,7 @@ class TestS2gate:
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_operation(self, batch_shape):
-        r = math.broadcast_to(1, batch_shape)
+        r = math.broadcast_to(1.0, batch_shape)
         phi = math.broadcast_to(0.5, batch_shape)
         rep1 = (Vacuum((0, 1)) >> S2gate(modes=(0, 1), r=-r, phi=phi)).ansatz
         rep2 = (TwoModeSqueezedVacuum(modes=(0, 1), r=r, phi=phi)).ansatz
