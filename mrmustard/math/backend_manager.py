@@ -698,7 +698,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The renormalized Hermite polynomial of given shape preserving the batch dimensions.
         """
         stable = stable or settings.STABLE_FOCK_CONVERSION
-        shape = tuple(shape)
         if A.ndim > 2 and b.ndim > 1 and c.ndim > 0:
             batch_shape = A.shape[:-2]
             D = int(np.prod(batch_shape))
