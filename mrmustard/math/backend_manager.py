@@ -105,17 +105,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         # binding types and decorators of numpy backend
         self._bind()
 
-    def _apply(self, fn: str, args: Sequence[Any] | None = ()) -> Any:
+    def _apply(self, fn: str, args: Sequence[Any] | None = (), kwargs: dict | None = None) -> Any:
         r"""
-        Applies a function ``fn`` from the backend in use to the given ``args``.
+        Applies a function ``fn`` from the backend in use to the given ``args`` and ``kwargs``.
         """
+        kwargs = kwargs or {}
         try:
             attr = getattr(self.backend, fn)
         except AttributeError:
             msg = f"Function ``{fn}`` not implemented for backend ``{self.backend_name}``."
             # pylint: disable=raise-missing-from
             raise NotImplementedError(msg)
-        return attr(*args)
+        return attr(*args, **kwargs)
 
     def _bind(self) -> None:
         r"""
@@ -128,9 +129,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             "float64",
             "complex64",
             "complex128",
-            "hermite_renormalized",
-            "hermite_renormalized_binomial",
-            "hermite_renormalized_diagonal_reorderedAB",
         ]:
             setattr(self, name, getattr(self._backend, name))
 
@@ -676,49 +674,74 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ),
         )
 
-    def hermite_renormalized(self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]) -> Tensor:
+    def hermite_renormalized(
+        self, A: Tensor, b: Tensor, c: Tensor, shape: tuple[int], stable: bool = False
+    ) -> Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        series of :math:`exp(c + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
         tensor of given shape.
 
-        Args:
-            A: The A matrix.
-            B: The b vector.
-            C: The c scalar.
-            shape: The shape of the final tensor.
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-        return self._apply("hermite_renormalized", (A, B, C, shape))  # pragma: no cover
-
-    def hermite_renormalized_batch(
-        self, A: Tensor, B: Tensor, C: Tensor, shape: tuple[int]
-    ) -> Tensor:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape in case of B is a batched vector with a batched dimension on the
-        last index.
+        This method automatically selects the appropriate calculation method based on input dimensions:
+        1. If A.ndim = 2, b.ndim = 1, c is scalar: Uses vanilla strategy (unbatched)
+        2. If A.ndim = 2, b.ndim > 1, c is scalar: Uses vanilla_full_batch strategy with broadcasting
+        3. If A.ndim > 2, b.ndim > 1, c.ndim > 0: Uses vanilla_full_batch strategy (fully batched)
 
         Args:
-            A: The A matrix.
-            B: The batched B vector with its batch dimension on the last index.
-            C: The C scalar.
+            A: The A matrix. Can be unbatched (shape D×D) or batched (shape B×D×D).
+            b: The b vector. Can be unbatched (shape D) or batched (shape B×D).
+            c: The c scalar. Can be scalar or batched (shape B).
             shape: The shape of the final tensor.
+            stable: Whether to use the numerically stable version of the algorithm (also slower).
 
         Returns:
-            The batched Hermite polynomial of given shape.
+            The renormalized Hermite polynomial of given shape preserving the batch dimensions.
         """
-        return self._apply("hermite_renormalized_batch", (A, B, C, shape))
+        stable = stable or settings.STABLE_FOCK_CONVERSION
+        if A.ndim > 2 and b.ndim > 1 and c.ndim > 0:
+            batch_shape = A.shape[:-2]
+            D = int(np.prod(batch_shape))
+            A = self.reshape(A, (D,) + A.shape[-2:])
+            b = self.reshape(b, (D,) + b.shape[-1:])
+            c = self.reshape(c, (D,))
+            result = self._apply(
+                "hermite_renormalized_batched", (A, b, c), {"shape": tuple(shape), "stable": stable}
+            )
+            return self.reshape(result, batch_shape + shape)
+        elif A.ndim == 2 and b.ndim > 1:  # b-batched case
+            batch_shape = b.shape[:-1]
+            D = int(np.prod(batch_shape))
+            b = self.reshape(b, (D,) + b.shape[-1:])
+            A_broadcast = self.broadcast_to(A, (D,) + A.shape)
+            c_broadcast = self.broadcast_to(c, (D,))
+            result = self._apply(
+                "hermite_renormalized_batched",
+                (A_broadcast, b, c_broadcast),
+                {"shape": tuple(shape), "stable": stable},
+            )
+            return self.reshape(result, batch_shape + shape)
+        else:  # Unbatched case
+            return self._apply(
+                "hermite_renormalized_unbatched",
+                (A, b, c),
+                {"shape": tuple(shape), "stable": stable},
+            )
 
     def hermite_renormalized_diagonal(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
+        self, A: Tensor, b: Tensor, c: Tensor, cutoffs: tuple[int]
     ) -> Tensor:
-        r"""Firsts, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
-        Then, calculates the required renormalized multidimensional Hermite polynomial.
+        r"""Renormalized multidimensional Hermite polynomial for calculating the diagonal of the Fock representation.
+
+        Args:
+            A: The A matrix.
+            b: The b vector.
+            c: The c scalar.
+            cutoffs: Upper boundary of photon numbers in each mode.
+
+        Returns:
+            The diagonal elements of the Fock representation (i.e., PNR detection probabilities).
         """
-        return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
+        return self._apply("hermite_renormalized_diagonal", (A, b, c, cutoffs))
 
     def hermite_renormalized_diagonal_batch(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
@@ -748,6 +771,34 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply(
             "hermite_renormalized_1leftoverMode", (A, b, c, output_cutoff, pnr_cutoffs)
         )
+
+    def hermite_renormalized_binomial(
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        shape: tuple[int],
+        max_l2: float | None,
+        global_cutoff: int | None,
+    ) -> np.ndarray:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
+        up to a given L2 norm or global cutoff, whichever applies first. The max_l2 value, if
+        not provided, is set to the default value of the AUTOSHAPE_PROBABILITY setting.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            shape: The shape of the final tensor (local cutoffs).
+            max_l2 (float): The maximum squared L2 norm of the tensor.
+            global_cutoff (optional int): The global cutoff.
+
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        return self._apply("hermite_renormalized_binomial", (A, B, C, shape, max_l2, global_cutoff))
 
     def imag(self, array: Tensor) -> Tensor:
         r"""The imaginary part of array.
