@@ -458,7 +458,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     @tf.custom_gradient
     def hermite_renormalized_unbatched(
-        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int], stable: bool = False
+        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int], stable: bool
     ) -> tuple[tf.Tensor, Callable]:
         A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
         if stable:
@@ -474,13 +474,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     @tf.custom_gradient
     def hermite_renormalized_batched(
-        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int], stable: bool = False
+        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int], stable: bool
     ) -> tf.Tensor:
-        _A, _b, _c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
-        G = strategies.vanilla_batch_numba(tuple(shape), _A, _b, _c, stable=stable)
+        A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
+        G = strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable)
 
         def grad(dLdGconj):
-            dLdA, dLdB, dLdC = strategies.vanilla_batch_vjp_numba(G, _c, np.conj(dLdGconj))
+            dLdA, dLdB, dLdC = strategies.vanilla_batch_vjp_numba(G, c, np.conj(dLdGconj))
             return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC), None, None
 
         return G, grad
