@@ -356,7 +356,7 @@ class TestMmEinsum:
         R = Rgate(0, 0.5)
         f0 = Ket.random([0]).to_fock()
         d = f0.auto_shape()[0]
-        r = ArrayAnsatz(np.diag(R.fock_array(d)), batch_dims=0)
+        r = ArrayAnsatz(np.diag(R.fock_array(d)), batch_dims=0)  # diagonal of the Rgate
         res = mm_einsum(
             f0.ansatz,
             [0],

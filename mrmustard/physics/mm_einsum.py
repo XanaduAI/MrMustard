@@ -37,9 +37,8 @@ def mm_einsum(
     fock_dims: dict[int, int],
 ) -> PolyExpAnsatz | ArrayAnsatz | ArrayLike:
     r"""
-    Contracts a network of Ansatze using a custom contraction order.
-    This function is analogous to numpy's einsum but specialized for MrMustard's Ansatze.
-    It handles both continuous-variable (PolyExpAnsatz) and Fock-space (ArrayAnsatz) Ansatze.
+    This function contracts a network of Ansatze using a custom contraction order and a dictionary
+    of Fock space dimensions. If a dimension is 0 its ansatz is converted to PolyExpAnsatz.
 
     Args:
         args: Alternating Ansatze and lists of indices.
@@ -50,49 +49,44 @@ def mm_einsum(
     Returns:
         Ansatz: The resulting Ansatz after performing all the contractions.
     """
+    # --- prepare ansatz and indices, convert names to characters ---
     ansatze = {(i,): ansatz for i, ansatz in enumerate(args[::2])}
-    indices = {(i,): index for i, index in enumerate(args[1::2])}
-    all_batch_names = set(name for index in indices.values() for name in _strings(index))
+    all_batch_names = set(name for index in args[1::2] for name in _strings(index))
     names_to_chars = {name: chr(97 + i) for i, name in enumerate(all_batch_names)}
     indices = {
-        k: [names_to_chars[s] for s in _strings(index)] + _ints(index)
-        for k, index in indices.items()
+        (i,): [names_to_chars[s] for s in _strings(index)] + _ints(index)
+        for i, index in enumerate(args[1::2])
     }
     output = [names_to_chars[s] for s in _strings(output)] + _ints(output)
 
+    # --- perform contractions ---
     for a, b in contraction_order:
         relevant_ansatze = {ids: ansatz for ids, ansatz in ansatze.items() if a in ids or b in ids}
         (id_a, ansatz_a), (id_b, ansatz_b) = relevant_ansatze.items()
-        index_a, index_b = indices[id_a], indices[id_b]
-        int_a, int_b = _ints(index_a), _ints(index_b)
+        ints_a, ints_b = _ints(indices[id_a]), _ints(indices[id_b])
         convert = type(ansatz_a) is not type(ansatz_b)
-        ansatz_a = convert_ansatz(ansatz_a, [fock_dims[i] for i in int_a]) if convert else ansatz_a
-        ansatz_b = convert_ansatz(ansatz_b, [fock_dims[i] for i in int_b]) if convert else ansatz_b
-
-        eins_str, idx_a, idx_b, new_index = prepare_all_things(indices, id_a, id_b, output)
-        new_ansatz = ansatz_a.contract(ansatz_b, idx_a, idx_b, eins_str)
-        del ansatze[id_a]
-        del ansatze[id_b]
-        ansatze[id_a + id_b] = new_ansatz
-        del indices[id_a]
-        del indices[id_b]
-        indices[id_a + id_b] = new_index
+        ansatz_a = convert_ansatz(ansatz_a, [fock_dims[i] for i in ints_a]) if convert else ansatz_a
+        ansatz_b = convert_ansatz(ansatz_b, [fock_dims[i] for i in ints_b]) if convert else ansatz_b
+        idx_out = prepare_idx_out(indices, id_a, id_b, output)
+        print(indices[id_a], indices[id_b], idx_out)
+        ansatze[id_a + id_b] = ansatz_a.contract(ansatz_b, indices[id_a], indices[id_b], idx_out)
+        indices[id_a + id_b] = idx_out
+        del ansatze[id_a], ansatze[id_b]
+        del indices[id_a], indices[id_b]
 
     if len(ansatze) > 1:
         raise ValueError("More than one ansatz left after contraction.")
 
-    # Get the only element from the dictionaries
+    # --- reorder the output ---
     result = list(ansatze.values())[0]
     final_idx = list(indices.values())[0]
-    output_idx_str = _strings(output)
-    output_idx_int = _ints(output)
 
-    if len(output_idx_str) > 1:
+    if len(output_idx_str := _strings(output)) > 1:
         final_idx_str = _strings(final_idx)
         batch_perm = [final_idx_str.index(i) for i in output_idx_str]
         result = result.reorder_batch(batch_perm)
 
-    if len(output_idx_int) > 1:
+    if len(output_idx_int := _ints(output)) > 1:
         final_idx_int = _ints(final_idx)
         index_perm = [final_idx_int.index(i) for i in output_idx_int]
         result = result.reorder(index_perm)
@@ -100,37 +94,22 @@ def mm_einsum(
     return result
 
 
-def prepare_all_things(indices, id_a, id_b, output, full=False):
+def prepare_idx_out(indices, id_a, id_b, output):
     r"""
-    Prepares the things needed to contract two ansatze.
-    If full is True, the integers are converted to characters and included in the einsum string,
-    so that the actual einsum function can be used, rather than the contract method of the Ansatz
-    class.
+    Prepares the index of the output of the contraction of two ansatze.
     """
-    index_a, index_b = indices[id_a], indices[id_b]
-    int_a, int_b = _ints(index_a), _ints(index_b)
-    str_a, str_b = _strings(index_a), _strings(index_b)
-    common_int = [i for i in int_a if i in int_b]
-    idx_a = [int_a.index(i) for i in common_int]
-    idx_b = [int_b.index(i) for i in common_int]
-    new_idx = [i for i in int_a + int_b if i not in common_int]
     other_indices = [index for ids, index in indices.items() if ids not in (id_a, id_b)]
-    other_names = [name for idx in other_indices for name in _strings(idx)] + _strings(output)
-    other_ints = [i for idx in other_indices for i in _ints(idx)] + _ints(output)
-    keep_str = {name for name in str_a + str_b if name in other_names}
-    keep_int = [i for i in new_idx if i in other_ints]
+    other_chars = {char for idx in other_indices for char in _strings(idx)} | set(_strings(output))
+    other_ints = {i for idx in other_indices for i in _ints(idx)} | set(_ints(output))
 
-    if full:  # Convert integers to characters and include them in the einsum string
-        L = len(keep_str)
-        int_to_char = {i: chr(97 + L + idx) for idx, i in enumerate(set(int_a + int_b))}
-        str_a_full = "".join(str_a) + "".join(int_to_char[i] for i in int_a)
-        str_b_full = "".join(str_b) + "".join(int_to_char[i] for i in int_b)
-        keep_full = "".join(keep_str) + "".join(int_to_char[i] for i in keep_int)
-        eins_str = str_a_full + "," + str_b_full + "->" + keep_full
-        return eins_str, list(keep_full) + new_idx
-    else:
-        eins_str = "".join(str_a) + "," + "".join(str_b) + "->" + "".join(keep_str)
-        return eins_str, idx_a, idx_b, list(keep_str) + new_idx
+    idx_out = []
+    for char in _strings(indices[id_a]) + _strings(indices[id_b]):
+        if char in other_chars and char not in idx_out:
+            idx_out.append(char)
+    for i in _ints(indices[id_a]) + _ints(indices[id_b]):
+        if i in other_ints and i not in idx_out:
+            idx_out.append(i)
+    return idx_out
 
 
 def convert_ansatz(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
@@ -151,7 +130,7 @@ def convert_ansatz(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
         return to_fock(ansatz, shape)
 
 
-def to_fock(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
+def to_fock(ansatz: Ansatz, shape: tuple[int, ...], stable: bool = False) -> ArrayAnsatz:
     r"""
     Converts a PolyExpAnsatz to an ArrayAnsatz.
     If the ansatz is already an ArrayAnsatz, it reduces the shape to the given shape.
@@ -159,13 +138,14 @@ def to_fock(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
     Args:
         ansatz: The ansatz to convert.
         shape: The shape of the ArrayAnsatz.
+        stable: Whether to use the stable version of the hermite_renormalized function.
 
     Returns:
         ArrayAnsatz: The converted ArrayAnsatz.
     """
     if isinstance(ansatz, ArrayAnsatz):
         return ansatz.reduce(shape)
-    array = math.hermite_renormalized(*ansatz.triple, shape)
+    array = math.hermite_renormalized(*ansatz.triple, shape, stable)
     return ArrayAnsatz(array, ansatz.batch_dims)
 
 
