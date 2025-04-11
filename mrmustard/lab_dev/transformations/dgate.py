@@ -101,9 +101,7 @@ class Dgate(Unitary):
             ),
         ).representation
 
-    def fock_array(
-        self, shape: int | Sequence[int] = None, batched=False
-    ) -> ComplexTensor:  # TODO: fix for batch
+    def fock_array(self, shape: int | Sequence[int] = None) -> ComplexTensor:  # TODO: fix for batch
         r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -111,11 +109,13 @@ class Dgate(Unitary):
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is estimated.
-            batched: Whether the returned representation is batched or not. If ``False`` (default)
-                it will squeeze the batch dimension if it is 1.
         Returns:
             array: The Fock representation of this component.
         """
+        if self.ansatz._lin_sup:
+            raise NotImplementedError("Linear superposition ansatz not implemented")
+        if self.ansatz.batch_shape:
+            raise NotImplementedError("Batching not implemented")
         if isinstance(shape, int):
             shape = (shape,) * self.ansatz.num_vars
         auto_shape = self.auto_shape()
@@ -144,11 +144,10 @@ class Dgate(Unitary):
             )
         else:
             array = fock_utils.displacement(x[0], y[0], shape=shape)
-        arrays = math.expand_dims(array, 0) if batched else array
-        return arrays
+        return array
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
-        fock = ArrayAnsatz(self.fock_array(shape, batched=False), batch_dims=0)
+        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=0)
         fock._original_abc_data = self.ansatz.triple
         ret = self.__class__(self.modes[0], **self.parameters.to_dict())
         wires = Wires.from_wires(

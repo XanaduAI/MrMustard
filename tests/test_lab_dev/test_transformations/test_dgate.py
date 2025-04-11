@@ -44,7 +44,7 @@ class TestDgate:
         state = SqueezedVacuum(0, r=1.0)
         # displacement gate in fock representation for large displacement
         dgate = Dgate(0, x=10.0).to_fock(150)
-        assert (state.to_fock() >> dgate).probability < 1
+        assert math.allclose((state.to_fock() >> dgate).probability < 1, True)
         assert math.allclose(math.abs(dgate.fock_array(150)) < 1, True)
 
     def test_representation(self):
