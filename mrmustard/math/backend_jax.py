@@ -285,11 +285,9 @@ class BackendJax(BackendBase):  # pragma: no cover
     def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
         return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
-    @partial(jax.jit, static_argnames=["string"])
-    def einsum(self, string: str, *tensors) -> jnp.ndarray:
-        if isinstance(string, str):
-            return jnp.einsum(string, *tensors)
-        return None
+    @partial(jax.jit, static_argnames=["string", "optimize"])
+    def einsum(self, string: str, *tensors, optimize: bool | str = False) -> jnp.ndarray:
+        return jnp.einsum(string, *tensors, optimize=optimize)
 
     @jax.jit
     def exp(self, array: jnp.ndarray) -> jnp.ndarray:

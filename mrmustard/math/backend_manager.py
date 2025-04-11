@@ -571,17 +571,20 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("eigh", (tensor,))
 
-    def einsum(self, string: str, *tensors) -> Tensor:
+    def einsum(self, string: str, *tensors, optimize: bool | str = False) -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
         Args:
             string: The string of the Einstein summation convention.
             tensors: The tensors to perform the Einstein summation on.
+            optimize: Whether to optimize the contraction order.
+                Allowed values are False, "greedy", "optimal"
+                Note the TF backend does not support False and uses "greedy" by default.
 
         Returns:
             The result of the Einstein summation convention.
         """
-        return self._apply("einsum", (string, *tensors))
+        return self._apply("einsum", (string, *tensors), {"optimize": optimize})
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.
