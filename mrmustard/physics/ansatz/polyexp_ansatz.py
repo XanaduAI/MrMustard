@@ -45,7 +45,7 @@ from mrmustard.physics.gaussian_integrals import (
 )
 from mrmustard.physics.utils import generate_batch_str, verify_batch_triple
 
-from mrmustard import math, widgets
+from mrmustard import math, widgets, settings
 from mrmustard.math.parameters import Variable
 
 
@@ -491,7 +491,10 @@ class PolyExpAnsatz(Ansatz):
         mat, vec = A[d0], b[d0]
 
         for d in range(1, self.batch_size):
-            if not (np.allclose(mat, A[d]) and np.allclose(vec, b[d])):
+            if not (
+                math.allclose(mat, A[d], atol=settings.ATOL)
+                and math.allclose(vec, b[d], atol=settings.ATOL)
+            ):
                 to_keep.append(d)
                 d0 = d
                 mat, vec = A[d0], b[d0]
@@ -777,9 +780,9 @@ class PolyExpAnsatz(Ansatz):
         self_A, self_b, self_c = self._order_batch()
         other_A, other_b, other_c = other._order_batch()
         return (
-            math.allclose(self_A, other_A)
-            and math.allclose(self_b, other_b)
-            and math.allclose(self_c, other_c)
+            math.allclose(self_A, other_A, atol=settings.ATOL)
+            and math.allclose(self_b, other_b, atol=settings.ATOL)
+            and math.allclose(self_c, other_c, atol=settings.ATOL)
         )
 
     def __mul__(self, other: Scalar | ArrayLike | PolyExpAnsatz) -> PolyExpAnsatz:

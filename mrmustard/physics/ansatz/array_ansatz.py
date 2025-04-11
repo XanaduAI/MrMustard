@@ -25,7 +25,7 @@ from numpy.typing import ArrayLike
 
 from IPython.display import display
 
-from mrmustard import math, widgets
+from mrmustard import math, widgets, settings
 from mrmustard.math.parameters import Variable
 from mrmustard.utils.typing import Batch, Scalar, Tensor
 
@@ -336,7 +336,9 @@ class ArrayAnsatz(Ansatz):
         if self.batch_shape != other.batch_shape:
             return False
         slices = tuple(slice(0, min(si, oi)) for si, oi in zip(self.core_shape, other.core_shape))
-        return np.allclose(self.array[(...,) + slices], other.array[(...,) + slices], atol=1e-10)
+        return math.allclose(
+            self.array[(...,) + slices], other.array[(...,) + slices], atol=settings.ATOL
+        )
 
     def __mul__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:
         return ArrayAnsatz(array=self.array * other, batch_dims=self.batch_dims)
