@@ -578,8 +578,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             string: The string of the Einstein summation convention.
             tensors: The tensors to perform the Einstein summation on.
             optimize: Whether to optimize the contraction order.
-                Allowed values are False, "greedy", "optimal"
-                Note the TF backend does not support False and uses "greedy" by default.
+                Allowed values are False, "greedy", "optimal" or "auto".
+                Note the TF backend does not support False and converts it to "greedy".
 
         Returns:
             The result of the Einstein summation convention.
