@@ -633,8 +633,6 @@ class CircuitComponent:
         """
         if not isinstance(other, CircuitComponent):
             return False
-        # simplified_self = self.simplify_ansatz()
-        # simplified_other = other.simplify_ansatz()
         return self._representation == other._representation
 
     def __mul__(self, other: Scalar) -> CircuitComponent:

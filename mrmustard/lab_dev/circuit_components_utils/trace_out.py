@@ -102,8 +102,4 @@ class TraceOut(CircuitComponent):
             wires, _ = other.wires @ self.wires
 
         cpt = other._from_attributes(Representation(ansatz, wires))
-
-        if len(cpt.wires) == 0:
-            return cpt.ansatz.scalar
-        else:
-            return cpt
+        return cpt.ansatz.scalar if len(cpt.wires) == 0 else cpt
