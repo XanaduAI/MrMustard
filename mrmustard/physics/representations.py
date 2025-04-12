@@ -155,34 +155,18 @@ class Representation:
             raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
         try:
             A, b, c = self.ansatz.triple
-
-            As = math.reshape(A, (-1, *A.shape[-2:])) if self.ansatz.batch_shape else A
-            bs = math.reshape(b, (-1, *A.shape[-1:])) if self.ansatz.batch_shape else b
-            cs = (
-                math.reshape(c, (-1, *c.shape[self.ansatz.batch_dims :]))
-                if self.ansatz.batch_shape
-                else c
+            G = math.hermite_renormalized(
+                A,
+                b,
+                math.ones(self.ansatz.batch_shape, dtype=math.complex128),
+                shape=shape + self.ansatz.shape_derived_vars,
             )
-
-            batch = (self.ansatz.batch_size,) if self.ansatz.batch_shape else ()
-
-            if self.ansatz.batch_shape:
-                G = math.astensor(
-                    [
-                        math.hermite_renormalized(A, b, complex(1), shape=shape + cs.shape[1:])
-                        for A, b in zip(As, bs)
-                    ]
-                )
-            else:
-                G = math.hermite_renormalized(As, bs, complex(1), shape=shape + cs.shape)
-
-            G = math.reshape(G, batch + shape + (-1,))
-            cs = math.reshape(cs, batch + (-1,))
+            G = math.reshape(G, self.ansatz.batch_shape + shape + (-1,))
+            cs = math.reshape(c, self.ansatz.batch_shape + (-1,))
             core_str = "".join(
-                [chr(i) for i in range(97, 97 + len(G.shape[1:] if batch else G.shape))]
+                [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))]
             )
             ret = math.einsum(f"...{core_str},...{core_str[-1]}->...{core_str[:-1]}", G, cs)
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
             if self.ansatz._lin_sup:
                 ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         except AttributeError:

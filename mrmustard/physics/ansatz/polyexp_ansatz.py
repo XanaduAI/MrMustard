@@ -314,18 +314,10 @@ class PolyExpAnsatz(Ansatz):
             ]
         )
         b_core = math.concat((math.zeros(batch_shape + (n,), dtype=b.dtype), b[..., n:]), axis=-1)
-        if batch_shape:
-            batch_size = int(math.prod(A_core.shape[:-2]))  # tensorflow
-            A_core_vectorized = math.reshape(A_core, (batch_size,) + A_core.shape[-2:])
-            b_core_vectorized = math.reshape(b_core, (batch_size,) + b_core.shape[-1:])
-            poly_core = math.astensor(
-                [
-                    math.hermite_renormalized(A, b, complex(1), shape=poly_shape)
-                    for A, b in zip(A_core_vectorized, b_core_vectorized)
-                ]
-            )
-        else:
-            poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape)
+
+        poly_core = math.hermite_renormalized(
+            A_core, b_core, math.ones(self.batch_shape, dtype=math.complex128), shape=poly_shape
+        )
 
         derived_vars_size = int(math.prod(self.shape_derived_vars))
         poly_core = math.reshape(
@@ -499,17 +491,13 @@ class PolyExpAnsatz(Ansatz):
         """
         n = self.num_CV_vars
         batch_shape = z.shape[:-1]
-        batch_size = int(math.prod(A.shape[:-2]))  # for tensorflow and jax
         b_poly = math.einsum("...ab,...a->...b", A[..., :n, n:], z) + b[..., n:]
-        A_poly_vectorized = math.reshape(A[..., n:, n:], (batch_size,) + A[..., n:, n:].shape[-2:])
-        b_poly_vectorized = math.reshape(b_poly, (batch_size,) + b_poly.shape[-1:])
-        ret = math.astensor(
-            [
-                math.hermite_renormalized(A, b, complex(1), shape=self.shape_derived_vars)
-                for A, b in zip(A_poly_vectorized, b_poly_vectorized)
-            ]
+        return math.hermite_renormalized(
+            A[..., n:, n:],
+            b_poly,
+            math.ones(batch_shape, dtype=math.complex128),
+            shape=self.shape_derived_vars,
         )
-        return math.reshape(ret, batch_shape + self.shape_derived_vars)
 
     def _find_unique_terms_sorted(
         self,
