@@ -135,7 +135,7 @@ def lin_sup_batch_str(batch_str: str) -> str:
     """
     input_str, output_str = batch_str.split("->")
     inputs = input_str.split(",")
-    max_char = max([ord(i) for i in batch_str])
+    max_char = max(ord(i) for i in batch_str)
     lin_sups = [chr(max_char + offset) for offset in range(1, len(inputs) + 1)]
     new_input = ",".join([input + lin_sup for input, lin_sup in zip(inputs, lin_sups)])
     new_output = output_str + "".join(lin_sups)
