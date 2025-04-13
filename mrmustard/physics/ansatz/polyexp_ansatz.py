@@ -50,7 +50,7 @@ from mrmustard.math.parameters import Variable
 
 
 from .base import Ansatz
-from ..utils import outer_product_batch_str, reshape_args_to_batch_string, lin_sup_batch_str
+from ..utils import outer_product_batch_str, reshape_args_to_batch_string
 
 __all__ = ["PolyExpAnsatz"]
 
@@ -270,9 +270,6 @@ class PolyExpAnsatz(Ansatz):
         Returns:
             The contracted ansatz.
         """
-        if self._lin_sup != other._lin_sup:
-            raise ValueError("Cannot contract ansatz with mismatching lin_sup flags.")
-
         idx1 = (idx1,) if isinstance(idx1, int) else idx1
         idx2 = (idx2,) if isinstance(idx2, int) else idx2
         for i, j in zip(idx1, idx2):
@@ -287,14 +284,14 @@ class PolyExpAnsatz(Ansatz):
 
         A, b, c = complex_gaussian_integral_2(self.triple, other.triple, idx1, idx2, batch_str)
 
-        if self._lin_sup:
+        if self._lin_sup and other._lin_sup:
             batch_shape = self.batch_shape[:-1]
             flattened = self.batch_shape[-1] ** 2
             A = math.reshape(A, batch_shape + (flattened,) + tuple(A.shape[-2:]))
             b = math.reshape(b, batch_shape + (flattened,) + tuple(b.shape[-1:]))
             c = math.reshape(c, batch_shape + (flattened,) + self.shape_derived_vars)
 
-        return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
+        return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup or other._lin_sup)
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""

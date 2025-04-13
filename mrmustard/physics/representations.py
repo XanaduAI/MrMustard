@@ -136,7 +136,11 @@ class Representation:
                 else other.ansatz.batch_shape[:-1]
             )
             batch_str = zip_batch_strings(self_batch, other_batch)
-            batch_str = lin_sup_batch_str(batch_str) if self.ansatz._lin_sup else batch_str
+            batch_str = (
+                lin_sup_batch_str(batch_str)
+                if self.ansatz._lin_sup and other.ansatz._lin_sup
+                else batch_str
+            )
         elif mode == "kron":
             batch_str = outer_product_batch_str(self.ansatz.batch_shape, other.ansatz.batch_shape)
         else:
