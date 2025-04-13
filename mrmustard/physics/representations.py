@@ -28,7 +28,7 @@ from mrmustard.utils.typing import (
 
 from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from .triples import identity_Abc
-from .utils import outer_product_batch_str, zip_batch_strings
+from .utils import outer_product_batch_str, zip_batch_strings, lin_sup_batch_str
 from .wires import Wires, ReprEnum
 
 __all__ = ["Representation"]
@@ -124,17 +124,21 @@ class Representation:
         wires_result, perm = self.wires @ other.wires
         idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
 
-        self_batch = (
-            self.ansatz.batch_shape if not self.ansatz._lin_sup else self.ansatz.batch_shape[:-1]
-        )
-        other_batch = (
-            other.ansatz.batch_shape if not other.ansatz._lin_sup else other.ansatz.batch_shape[:-1]
-        )
-
         if mode == "zip":
+            self_batch = (
+                self.ansatz.batch_shape
+                if not self.ansatz._lin_sup
+                else self.ansatz.batch_shape[:-1]
+            )
+            other_batch = (
+                other.ansatz.batch_shape
+                if not other.ansatz._lin_sup
+                else other.ansatz.batch_shape[:-1]
+            )
             batch_str = zip_batch_strings(self_batch, other_batch)
+            batch_str = lin_sup_batch_str(batch_str) if self.ansatz._lin_sup else batch_str
         elif mode == "kron":
-            batch_str = outer_product_batch_str(self_batch, other_batch)
+            batch_str = outer_product_batch_str(self.ansatz.batch_shape, other.ansatz.batch_shape)
         else:
             batch_str = mode
 

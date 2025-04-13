@@ -285,9 +285,6 @@ class PolyExpAnsatz(Ansatz):
                     f"Index {j} out of bounds for ansatz with {other.num_CV_vars} CV variables."
                 )
 
-        if self._lin_sup:
-            batch_str = lin_sup_batch_str(batch_str)
-
         A, b, c = complex_gaussian_integral_2(self.triple, other.triple, idx1, idx2, batch_str)
 
         if self._lin_sup:
