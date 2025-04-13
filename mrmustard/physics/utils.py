@@ -121,3 +121,22 @@ def zip_batch_strings(*batch_shapes: tuple[int, ...]) -> str:
     """
     input = ",".join([generate_batch_str(batch_shape) for batch_shape in batch_shapes])
     return input + "->" + generate_batch_str(max(batch_shapes))
+
+
+def lin_sup_batch_str(batch_str: str) -> str:
+    r"""
+    Given a batch string, appends the linear superposition batch dimension to the end.
+
+    Args:
+        batch_str: The batch string to append the linear superposition batch dimension to.
+
+    Returns:
+        The batch string with the linear superposition batch dimension appended to the end.
+    """
+    input_str, output_str = batch_str.split("->")
+    inputs = input_str.split(",")
+    max_char = max([ord(i) for i in batch_str])
+    lin_sups = [chr(max_char + offset) for offset in range(1, len(inputs) + 1)]
+    new_input = ",".join([input + lin_sup for input, lin_sup in zip(inputs, lin_sups)])
+    new_output = output_str + "".join(lin_sups)
+    return f"{new_input}->{new_output}"

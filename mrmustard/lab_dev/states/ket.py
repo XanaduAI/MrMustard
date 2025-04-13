@@ -222,27 +222,7 @@ class Ket(State):
         r"""
         The ``DM`` object obtained from this ``Ket``.
         """
-        # TODO: move to class
-        if self.ansatz._lin_sup:
-            str1 = generate_batch_str(self.ansatz.batch_shape)
-            str2 = str1[:-1] + chr(ord(str1[-1]) + 1)
-            mode = f"{str1},{str2}->{str1}{str2[-1]}"
-        else:
-            mode = "zip"
-
-        repr = self.representation.contract(self.adjoint.representation, mode=mode)
-
-        # TODO: move to class
-        if self.ansatz._lin_sup:
-            A, b, c = repr.ansatz.triple
-            batch_shape = self.ansatz.batch_shape[:-1]
-            flattened = 2 * self.ansatz.batch_shape[-1]
-            new_A = math.reshape(A, batch_shape + (flattened,) + tuple(A.shape[-2:]))
-            new_b = math.reshape(b, batch_shape + (flattened,) + tuple(b.shape[-1:]))
-            new_c = math.reshape(c, batch_shape + (flattened,) + self.ansatz.shape_derived_vars)
-            new_ansatz = PolyExpAnsatz(new_A, new_b, new_c, lin_sup=True)
-            repr._ansatz = new_ansatz
-
+        repr = self.representation.contract(self.adjoint.representation, mode="zip")
         ret = DM(repr, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret

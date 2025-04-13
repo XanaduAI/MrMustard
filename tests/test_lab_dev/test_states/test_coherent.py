@@ -75,7 +75,7 @@ class TestCoherent:
         assert lc.ansatz.batch_size == 3
 
         assert (lc.contract(lc.dual)).ansatz.batch_size == 9
-        assert (lc.contract(lc.dual, mode="zip")).ansatz.batch_size == 3  # not 9
+        assert (lc.contract(lc.dual, mode="zip")).ansatz.batch_size == 9
 
     def test_vacuum_shape(self):
         assert Coherent(0, x=0.0, y=0.0).auto_shape() == (1,)

@@ -87,14 +87,17 @@ class TraceOut(CircuitComponent):
             ansatz = other.ansatz
             wires = other.wires
         elif not ket or not bra:
-            # TODO: move to class
-            if other.ansatz._lin_sup:
-                str1 = generate_batch_str(other.ansatz.batch_shape)
-                str2 = str1[:-1] + chr(ord(str1[-1]) + 1)
-                batch_str = f"{str1},{str2}->{str1}{str2[-1]}"
-            else:
-                batch_str = zip_batch_strings(other.ansatz.batch_shape, other.ansatz.batch_shape)
-
+            self_batch = (
+                self.ansatz.batch_shape
+                if not self.ansatz._lin_sup
+                else self.ansatz.batch_shape[:-1]
+            )
+            other_batch = (
+                other.ansatz.batch_shape
+                if not other.ansatz._lin_sup
+                else other.ansatz.batch_shape[:-1]
+            )
+            batch_str = zip_batch_strings(self_batch, other_batch)
             ansatz = other.ansatz.conj.contract(other.ansatz, idx_z, idx_z, batch_str=batch_str)
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:

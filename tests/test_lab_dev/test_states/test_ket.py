@@ -510,11 +510,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
         dm = ket.dm()
         assert ket[m] == dm[m]
 
-    def test_contract_lin_sup(self):
-        cat = Coherent(0, x=1.0) + Coherent(0, x=-1.0)
-        displacements = Dgate(0, x=1.0) + Dgate(0, x=-1.0)
-        better_cat = cat.contract(displacements, mode="zip")
-        assert better_cat == Coherent(0, x=2.0) + Coherent(0, x=-2.0)
+    def test_contract_zip(self):
+        coh = Coherent(0, x=[1.0, -1.0])
+        displacements = Dgate(0, x=[1.0, -1.0])
+        better_cat = coh.contract(displacements, mode="zip")
+        assert better_cat == Coherent(0, x=[2.0, -2.0])
 
     @pytest.mark.parametrize("max_sq", [1, 2, 3])
     def test_random_states(self, max_sq):
