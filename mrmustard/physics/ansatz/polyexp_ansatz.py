@@ -120,7 +120,9 @@ class PolyExpAnsatz(Ansatz):
         self._A = math.astensor(A) if A is not None else None
         self._b = math.astensor(b) if b is not None else None
         self._c = math.astensor(c) if c is not None else None
+
         verify_batch_triple(self._A, self._b, self._c)
+
         self._batch_shape = tuple(self._A.shape[:-2]) if A is not None else ()
 
         self.name = name
@@ -193,7 +195,7 @@ class PolyExpAnsatz(Ansatz):
         r"""
         The number of derived variables that are derived by the polynomial of derivatives.
         """
-        return len(self.c.shape[self.batch_dims :])
+        return len(self.shape_derived_vars)
 
     @property
     def num_vars(self):
