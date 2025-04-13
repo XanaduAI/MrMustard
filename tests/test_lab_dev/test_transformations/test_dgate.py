@@ -39,24 +39,35 @@ class TestDgate:
         assert gate.name == "Dgate"
         assert gate.modes == (modes,)
 
-    def test_to_fock_method(self):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_to_fock_method(self, batch_shape):
         # test stable Dgate in fock basis
         state = SqueezedVacuum(0, r=1.0)
         # displacement gate in fock representation for large displacement
-        dgate = Dgate(0, x=10.0).to_fock(150)
+        x = math.broadcast_to(10.0, batch_shape)
+        dgate = Dgate(0, x=x).to_fock(150)
         assert math.allclose((state.to_fock() >> dgate).probability < 1, True)
         assert math.allclose(math.abs(dgate.fock_array(150)) < 1, True)
 
-    def test_representation(self):
-        rep1 = Dgate(mode=0, x=0.1, y=0.1).ansatz
-        assert math.allclose(rep1.A, [[[0, 1], [1, 0]]])
-        assert math.allclose(rep1.b, [[0.1 + 0.1j, -0.1 + 0.1j]])
-        assert math.allclose(rep1.c, [0.990049833749168])
+    def test_to_fock_lin_sup(self):
+        dgate = (Dgate(0, 0.1) + Dgate(0, -0.1)).to_fock(150)
+        assert dgate.ansatz.batch_dims == 0
+        assert dgate.ansatz.batch_shape == ()
+        assert dgate.ansatz.array.shape == (150, 150)
 
-        rep2 = Dgate(mode=2, x=0.1, y=0.2).ansatz
-        assert math.allclose(rep1.A, [[[0, 1], [1, 0]]])
-        assert math.allclose(rep2.b, [[0.1 + 0.2j, -0.1 + 0.2j]])
-        assert math.allclose(rep2.c, [0.97530991 + 0.0j])
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, batch_shape):
+        x = math.broadcast_to(0.1, batch_shape)
+        y = math.broadcast_to(0.1, batch_shape)
+        rep1 = Dgate(mode=0, x=x, y=y).ansatz
+        assert math.allclose(rep1.A, [[0, 1], [1, 0]])
+        assert math.allclose(rep1.b, [0.1 + 0.1j, -0.1 + 0.1j])
+        assert math.allclose(rep1.c, 0.990049833749168)
+
+        rep2 = Dgate(mode=2, x=x, y=0.2).ansatz
+        assert math.allclose(rep1.A, [[0, 1], [1, 0]])
+        assert math.allclose(rep2.b, [0.1 + 0.2j, -0.1 + 0.2j])
+        assert math.allclose(rep2.c, 0.97530991 + 0.0j)
 
     def test_trainable_parameters(self):
         gate1 = Dgate(0, 1, 1)

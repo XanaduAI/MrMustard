@@ -112,40 +112,34 @@ class Dgate(Unitary):
         Returns:
             array: The Fock representation of this component.
         """
-        if self.ansatz.batch_shape:
-            raise NotImplementedError("Batching not implemented")
         if isinstance(shape, int):
             shape = (shape,) * self.ansatz.num_vars
         auto_shape = self.auto_shape()
         shape = shape or auto_shape
+        shape = tuple(shape)
         if len(shape) != len(auto_shape):
             raise ValueError(
                 f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
             )
-        N = self.n_modes
-        x = self.parameters.x.value * math.ones(N, dtype=self.parameters.x.value.dtype)
-        y = self.parameters.y.value * math.ones(N, dtype=self.parameters.y.value.dtype)
-
-        if N > 1:
-            # calculate displacement unitary for each mode and concatenate with outer product
-            Ud = None
-            for idx, out_in in enumerate(zip(shape[:N], shape[N:])):
-                if Ud is None:
-                    Ud = fock_utils.displacement(x[idx], y[idx], shape=out_in)
-                else:
-                    U_next = fock_utils.displacement(x[idx], y[idx], shape=out_in)
-                    Ud = math.outer(Ud, U_next)
-
-            array = math.transpose(
-                Ud,
-                list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+        if self.ansatz.batch_shape:
+            x, y = math.broadcast_arrays(self.parameters.x.value, self.parameters.y.value)
+            x = math.reshape(x, (-1,))
+            y = math.reshape(y, (-1,))
+            ret = math.astensor(
+                [fock_utils.displacement(xi, yi, shape=shape) for xi, yi in zip(x, y)]
             )
+            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
+            if self.ansatz._lin_sup:
+                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
-            array = fock_utils.displacement(x[0], y[0], shape=shape)
-        return array
+            ret = fock_utils.displacement(
+                self.parameters.x.value, self.parameters.y.value, shape=shape
+            )
+        return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
-        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=0)
+        batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
+        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
         fock._original_abc_data = self.ansatz.triple
         ret = self.__class__(self.modes[0], **self.parameters.to_dict())
         wires = Wires.from_wires(
