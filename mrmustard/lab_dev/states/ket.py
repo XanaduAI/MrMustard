@@ -80,7 +80,6 @@ class Ket(State):
     @property
     def purity(self) -> float:
         if self.ansatz:
-            # TODO: move to class
             shape = (
                 self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
             )
@@ -188,7 +187,6 @@ class Ket(State):
             max_shape: The maximum shape to compute (default from ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
-        # TODO: move to class
         batch_shape = (
             self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
         )
