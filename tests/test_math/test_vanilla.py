@@ -21,15 +21,17 @@ from mrmustard import math
 from ..conftest import skip_tf, skip_jax
 
 
-def random_triple(n, batch=()):
+def random_triple(n, batch=(), rng=None):
     r"""
     Generate random triple of A, b, c for testing the vanilla strategy.
     """
-    A = np.random.random(batch + (n, n)) + 1j * np.random.random(batch + (n, n))
+    if rng is None:
+        rng = np.random.default_rng()
+    A = rng.random(batch + (n, n)) + 1j * rng.random(batch + (n, n))
     A = A + np.swapaxes(A, -1, -2)
     A /= np.abs(np.linalg.eigvals(A)).max() + 0.2
-    b = np.random.random(batch + (n,)) + 1j * np.random.random(batch + (n,))
-    c = np.random.random(batch + ()) + 1j * np.random.random(batch + ())
+    b = rng.random(batch + (n,)) + 1j * rng.random(batch + (n,))
+    c = rng.random(batch + ()) + 1j * rng.random(batch + ())
     return A, b, c
 
 
@@ -92,12 +94,14 @@ class TestVanilla:
         skip_tf()
         skip_jax()
         # Generate the output tensor G
-        A, b, c = random_triple(3, (2,))
+        seed = 673
+        rng = np.random.default_rng(seed)
+        A, b, c = random_triple(3, (2,), rng=rng)
         shape = (1, 2, 3)
         G = strategies.vanilla_batch_numba(shape, A, b, c)
 
         # Generate random upstream gradient with same shape as G
-        dLdG = np.random.randn(*G.shape) + 1j * np.random.randn(*G.shape)  # upstream gradient
+        dLdG = rng.standard_normal(G.shape) + 1j * rng.standard_normal(G.shape)  # upstream gradient
 
         # Compute finite difference for c
         dGdc_fd = np.zeros(G.shape + c.shape, dtype=np.complex128)
