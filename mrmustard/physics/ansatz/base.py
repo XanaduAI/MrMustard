@@ -144,7 +144,7 @@ class Ansatz(ABC):
         """
 
     @abstractmethod
-    def reorder_batch(self, order: Sequence[int]):
+    def reorder_batch(self, order: Sequence[int]) -> Ansatz:
         r"""
         Reorders the batch dimensions of the ansatz.
         The length of ``order`` must equal the number of batch dimensions.

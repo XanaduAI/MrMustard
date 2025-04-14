@@ -141,7 +141,7 @@ class ArrayAnsatz(Ansatz):
     def contract(
         self,
         other: ArrayAnsatz,
-        idx1: Sequence[Union[str, int]],
+        idx1: Sequence[str | int],
         idx2: Sequence[Union[str, int]],
         idx_out: Sequence[Union[str, int]],
     ) -> ArrayAnsatz:

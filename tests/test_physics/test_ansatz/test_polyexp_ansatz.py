@@ -594,7 +594,6 @@ class TestPolyExpAnsatz:
 
     def test_reorder_batch(self):
         fock = PolyExpAnsatz(*Abc_triple(3, (1, 5)))
-        print(fock)
         fock_reordered = fock.reorder_batch([1, 0])
         assert fock_reordered.A.shape == (5, 1, 3, 3)
         assert fock_reordered.b.shape == (5, 1, 3)
