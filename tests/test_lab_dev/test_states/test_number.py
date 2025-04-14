@@ -18,7 +18,7 @@
 
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab_dev.states import Number
 from mrmustard.physics.fock_utils import fock_state
 from mrmustard.physics.wires import ReprEnum
@@ -41,6 +41,11 @@ class TestNumber:
         assert state.modes == (modes,)
         assert all(isinstance(x, int) for x in state.manual_shape)
 
+    def test_auto_shape(self):
+        # meant to cover the case where we have derived variables
+        state = Number(0, 2).to_bargmann().dm()
+        assert state.auto_shape() == (settings.AUTOSHAPE_MAX, settings.AUTOSHAPE_MAX)
+
     @pytest.mark.parametrize("n", [2, 3, 4])
     @pytest.mark.parametrize("cutoffs", [None, 4, 5])
     def test_representation(self, n, cutoffs):
@@ -50,6 +55,15 @@ class TestNumber:
 
         rep2 = Number(0, n, cutoffs).to_fock().ansatz.array
         assert math.allclose(rep2, rep1)
+
+    def test_scalar_bargmann(self):
+        # meant to cover the case where we have derived variables and
+        # no CV variables
+        state = Number(0, 2).to_bargmann()
+        contracted = state.contract(state.dual)
+        assert contracted.ansatz.num_derived_vars == 2
+        assert contracted.ansatz.num_CV_vars == 0
+        assert math.allclose(contracted.ansatz.scalar, 1)
 
     def test_wires(self):
         """Test that the wires are correct."""
