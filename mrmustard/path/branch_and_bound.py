@@ -103,7 +103,7 @@ class GraphComponent:
         m = len(idxA)  # same as len(idxB)
         nA, nB = len(self.shape) - m, len(other.shape) - m
 
-        if self.representation == "Bargmann" and other.representation == "Bargmann":
+        if self.representation == "PolyExpAnsatz" and other.representation == "PolyExpAnsatz":
             cost = (  # +1s to include vector part)
                 m * m * m  # M inverse
                 + (m + 1) * m * nA  # left matmul
@@ -119,8 +119,8 @@ class GraphComponent:
             )
             cost = (
                 prod_A * prod_B * prod_contracted  # matmul
-                + np.prod(self.shape) * (self.representation == "Bargmann")  # conversion
-                + np.prod(other.shape) * (other.representation == "Bargmann")  # conversion
+                + np.prod(self.shape) * (self.representation == "PolyExpAnsatz")  # conversion
+                + np.prod(other.shape) * (other.representation == "PolyExpAnsatz")  # conversion
             )
         return int(cost)
 
@@ -138,7 +138,9 @@ class GraphComponent:
         shape = shape_A + shape_B
         new_shape = [shape[p] for p in perm]
         new_component = GraphComponent(
-            "Bargmann" if self.representation == other.representation == "Bargmann" else "Fock",
+            "PolyExpAnsatz"
+            if self.representation == other.representation == "PolyExpAnsatz"
+            else "ArrayAnsatz",
             new_wires,
             new_shape,
             f"({self.name}@{other.name})",
@@ -222,7 +224,7 @@ def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
         iteration: The iteration number.
         verbose: Whether to print the progress.
     """
-    h = hash(graph)
+    hash_before = hash(graph)
     for A, B in graph.edges:
         wires_A = graph.nodes[A]["component"].wires
         wires_B = graph.nodes[B]["component"].wires
@@ -251,10 +253,13 @@ def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
                     d = a + b
             component.shape = [a, b, c, d]
 
-    if h != hash(graph) and verbose:
+    if hash(graph) == hash_before:
+        return graph
+
+    if verbose:
         print(f"Iteration {iteration}: graph updated")
-        graph = optimize_fock_shapes(graph, iteration + 1, verbose)
-    return graph
+
+    return optimize_fock_shapes(graph, iteration + 1, verbose)
 
 
 def parse_components(components: list[CircuitComponent]) -> Graph:
