@@ -189,6 +189,20 @@ class Graph(nx.DiGraph):
         for n in self.nodes:
             yield self.component(n)
 
+    def optimize_fock_shapes(self, components: list[CircuitComponent], verbose: bool = False):
+        r"""
+        Optimizes the Fock shapes of the components in this circuit.
+        It starts by matching the existing connected wires and keeps the smaller shape,
+        then it enforces the BSgate symmetry (conservation of photon number) to further
+        reduce the shapes across the circuit.
+        This operation acts in place.
+        """
+        if verbose:
+            print("===== Optimizing Fock shapes =====")
+        optimize_fock_shapes(self, 0, verbose=verbose)
+        for i, c in enumerate(components):
+            c.manual_shape = self.component(i).shape
+
     def __lt__(self, other: Graph) -> bool:
         r"""
         Compares two graphs by their cost. Used for sorting in the priority queue.
