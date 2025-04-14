@@ -301,15 +301,15 @@ class DM(State):
         """
         array = super().fock_array(shape or self.auto_shape())
         if standard_order:
-            if self.ansatz.batch_shape:
-                raise NotImplementedError(
-                    "Standard ordering of fock_array is not implemented for batched states."
-                )
             m = self.n_modes
-            axes = tuple(range(m, 2 * m)) + tuple(
-                range(m)
+            batch_dims = self.ansatz.batch_dims
+            axes = (
+                tuple(range(batch_dims))
+                + tuple(range(batch_dims + m, 2 * m + batch_dims))
+                + tuple(range(batch_dims, batch_dims + m))
             )  # to take care of multi-mode case, otherwise, for a single mode we could just use a simple transpose method
             array = math.transpose(array, perm=axes)
+
         return array
 
     def _ipython_display_(self):  # pragma: no cover

@@ -504,10 +504,13 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert Coherent(0, x=[1, 1, 1]).dm().is_physical
 
     def test_fock_array_ordering(self):
-        rho = Number(0, 0) + 1j * Number(0, 1)
         rho = (Number(0, 0) + 1j * Number(0, 1)).dm()
         rho_fock = rho.fock_array(standard_order=True)
 
         assert math.allclose(
             rho_fock, math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]])
+        )
+        assert math.allclose(
+            Coherent(0, x=1).dm().fock_array(8, standard_order=True),
+            Coherent(0, x=[1, 1, 1]).dm().fock_array(8, standard_order=True),
         )

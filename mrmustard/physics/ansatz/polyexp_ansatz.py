@@ -286,7 +286,7 @@ class PolyExpAnsatz(Ansatz):
 
         if self._lin_sup and other._lin_sup:
             batch_shape = self.batch_shape[:-1]
-            flattened = self.batch_shape[-1] ** 2
+            flattened = self.batch_shape[-1] * other.batch_shape[-1]
             A = math.reshape(A, batch_shape + (flattened,) + tuple(A.shape[-2:]))
             b = math.reshape(b, batch_shape + (flattened,) + tuple(b.shape[-1:]))
             c = math.reshape(c, batch_shape + (flattened,) + self.shape_derived_vars)
