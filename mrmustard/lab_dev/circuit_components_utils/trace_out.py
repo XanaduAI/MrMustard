@@ -98,7 +98,11 @@ class TraceOut(CircuitComponent):
                 else other.ansatz.batch_shape[:-1]
             )
             batch_str = zip_batch_strings(self_batch, other_batch)
-            batch_str = lin_sup_batch_str(batch_str) if self.ansatz._lin_sup else batch_str
+            batch_str = (
+                lin_sup_batch_str(batch_str)
+                if self.ansatz._lin_sup and other.ansatz._lin_sup
+                else batch_str
+            )
             ansatz = other.ansatz.conj.contract(other.ansatz, idx_z, idx_z, batch_str=batch_str)
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:

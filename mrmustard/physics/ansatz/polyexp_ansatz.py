@@ -432,7 +432,7 @@ class PolyExpAnsatz(Ansatz):
         b = math.reshape(b, (len(to_keep),) + (self.num_vars,))
         c = math.reshape(c, (len(to_keep),) + self.shape_derived_vars)
 
-        new_ansatz = PolyExpAnsatz(A, b, c)
+        new_ansatz = PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
         new_ansatz._simplified = True
 
         return new_ansatz
