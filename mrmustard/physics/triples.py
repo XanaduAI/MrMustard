@@ -18,7 +18,7 @@ various states and transformations.
 """
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Sequence
 
 import numpy as np
 
@@ -76,7 +76,7 @@ def vacuum_state_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, Comple
 
 
 def bargmann_eigenstate_Abc(
-    alpha: complex | Iterable[complex],
+    alpha: complex | Sequence[complex],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The Abc triple of a Bargmann eigenstate.
@@ -98,7 +98,7 @@ def bargmann_eigenstate_Abc(
 
 
 def coherent_state_Abc(
-    x: float | Iterable[float], y: float | Iterable[float] = 0
+    x: float | Sequence[float], y: float | Sequence[float] = 0
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a pure coherent state.
@@ -123,7 +123,7 @@ def coherent_state_Abc(
 
 
 def squeezed_vacuum_state_Abc(
-    r: float | Iterable[float], phi: float | Iterable[float] = 0
+    r: float | Sequence[float], phi: float | Sequence[float] = 0
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a squeezed vacuum state.
@@ -148,10 +148,10 @@ def squeezed_vacuum_state_Abc(
 
 
 def displaced_squeezed_vacuum_state_Abc(
-    x: float | Iterable[float],
-    y: float | Iterable[float] = 0,
-    r: float | Iterable[float] = 0,
-    phi: float | Iterable[float] = 0,
+    x: float | Sequence[float],
+    y: float | Sequence[float] = 0,
+    r: float | Sequence[float] = 0,
+    phi: float | Sequence[float] = 0,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a displaced squeezed vacuum state.
@@ -187,7 +187,7 @@ def displaced_squeezed_vacuum_state_Abc(
 
 
 def two_mode_squeezed_vacuum_state_Abc(
-    r: float | Iterable[float], phi: float | Iterable[float] = 0
+    r: float | Sequence[float], phi: float | Sequence[float] = 0
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a two mode squeezed vacuum state.
@@ -309,7 +309,7 @@ def sauron_state_Abc(n: int, epsilon: float) -> tuple[ComplexMatrix, ComplexVect
 
 
 def quadrature_eigenstates_Abc(
-    x: float | Iterable[float], phi: float | Iterable[float]
+    x: float | Sequence[float], phi: float | Sequence[float]
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a quadrature eigenstate.
@@ -340,7 +340,7 @@ def quadrature_eigenstates_Abc(
 
 
 def thermal_state_Abc(
-    nbar: int | Iterable[int],
+    nbar: int | Sequence[int],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a thermal state.
@@ -376,7 +376,7 @@ def thermal_state_Abc(
 
 
 def rotation_gate_Abc(
-    theta: float | Iterable[float],
+    theta: float | Sequence[float],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of of a tensor product of a rotation gate.
@@ -407,7 +407,7 @@ def rotation_gate_Abc(
 
 
 def displacement_gate_Abc(
-    x: float | Iterable[float], y: float | Iterable[float] = 0
+    x: float | Sequence[float], y: float | Sequence[float] = 0
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of a displacement gate.
@@ -433,7 +433,7 @@ def displacement_gate_Abc(
 
 
 def squeezing_gate_Abc(
-    r: float | Iterable[float], phi: float | Iterable[float] = 0
+    r: float | Sequence[float], phi: float | Sequence[float] = 0
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a squeezing gate.
@@ -468,7 +468,7 @@ def squeezing_gate_Abc(
 
 
 def beamsplitter_gate_Abc(
-    theta: float | Iterable[float], phi: float | Iterable[float] = 0
+    theta: float | Sequence[float], phi: float | Sequence[float] = 0
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of a two-mode beamsplitter gate.
@@ -505,7 +505,7 @@ def beamsplitter_gate_Abc(
 
 
 def twomode_squeezing_gate_Abc(
-    r: float | Iterable[float], phi: float | Iterable[float] = 0
+    r: float | Sequence[float], phi: float | Sequence[float] = 0
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of a two-mode squeezing gate.
@@ -575,7 +575,7 @@ def identity_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, ComplexTen
 
 
 def attenuator_Abc(
-    eta: float | Iterable[float],
+    eta: float | Sequence[float],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of an attenuator.
@@ -615,7 +615,7 @@ def attenuator_Abc(
     return A, b, c
 
 
-def amplifier_Abc(g: float | Iterable[float]) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
+def amplifier_Abc(g: float | Sequence[float]) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of an amplifier.
 
@@ -655,7 +655,7 @@ def amplifier_Abc(g: float | Iterable[float]) -> tuple[ComplexMatrix, ComplexVec
 
 
 def fock_damping_Abc(
-    beta: float | Iterable[float],
+    beta: float | Sequence[float],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a Fock damper.
@@ -737,7 +737,7 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[ComplexMatrix, ComplexVect
 
 
 def bargmann_to_quadrature_Abc(
-    n_modes: int, phi: float | Iterable[float]
+    n_modes: int, phi: float | Sequence[float]
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between bargmann representation with ABC Ansatz form and quadrature representation with ABC Ansatz.
@@ -787,7 +787,7 @@ def bargmann_to_quadrature_Abc(
 
 
 def displacement_map_s_parametrized_Abc(
-    s: float | Iterable[float], n_modes: int
+    s: float | Sequence[float], n_modes: int
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map.
@@ -872,7 +872,7 @@ def bargmann_to_wigner_Abc(
 
 
 def attenuator_kraus_Abc(
-    eta: float | Iterable[float],
+    eta: float | Sequence[float],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The entire family of Kraus operators of the attenuator (loss) channel as a single ``(A, b, c)`` triple.

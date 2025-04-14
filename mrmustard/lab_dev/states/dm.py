@@ -122,19 +122,17 @@ class DM(State):
         modes: Collection[int],
         triple: tuple,
         name: str | None = None,
-        atol_purity: float | None = 1e-5,  # pylint: disable=unused-argument
+        atol_purity: float | None = None,  # pylint: disable=unused-argument
     ) -> DM:
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
         which parametrize the s-parametrized phase space function
         :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
 
-
         Args:
             modes: The modes of this states.
             triple: The ``(cov, means, coeff)`` triple.
             name: The name of this state.
-            s: The phase space parameter, defaults to 0 (Wigner).
         """
         cov, means, coeff = triple
         cov = math.astensor(cov)

@@ -112,7 +112,7 @@ class Ket(State):
         modes: Collection[int],
         triple: tuple,
         name: str | None = None,
-        atol_purity: float | None = 1e-5,
+        atol_purity: float | None = None,
     ) -> Ket:
         cov, means, coeff = triple
         cov = math.astensor(cov)

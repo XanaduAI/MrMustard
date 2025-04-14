@@ -259,8 +259,8 @@ class State(CircuitComponent):
         cov: ComplexMatrix,
         means: ComplexMatrix,
         name: str | None = None,
-        atol_purity: float | None = 1e-5,
-    ) -> State:  # pylint: disable=abstract-method
+        atol_purity: float | None = None,
+    ) -> State:
         r"""
         Initializes a state from the covariance matrix and the vector of means of a state in
         phase space.
@@ -328,7 +328,7 @@ class State(CircuitComponent):
             The Fock distribution.
         """
         fock_array = self.fock_array(cutoff)
-        if self.wires.ket and not self.wires.bra:
+        if not self.wires.ket or not self.wires.bra:
             return math.reshape(math.abs(fock_array) ** 2, (-1,))
         else:
             return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
@@ -345,7 +345,7 @@ class State(CircuitComponent):
             probability = math.reshape(
                 probability, probability.shape + (1,) * self.ansatz.core_dims
             )
-        if self.wires.ket and not self.wires.bra:
+        if not self.wires.ket or not self.wires.bra:
             return self / math.sqrt(probability)
         else:
             return self / probability
@@ -365,7 +365,7 @@ class State(CircuitComponent):
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
-        if self.wires.ket and not self.wires.bra:
+        if not self.wires.ket or not self.wires.bra:
             new_state = self.adjoint.contract(self.contract(BtoChar(self.modes, s=s), "zip"), "zip")
         else:
             new_state = self.contract(BtoChar(self.modes, s=s), "zip")
@@ -388,7 +388,7 @@ class State(CircuitComponent):
             )
         if len(quad) == 1:
             quad = quad * self.n_modes
-        if self.wires.ket and not self.wires.bra:
+        if not self.wires.ket or not self.wires.bra:
             return math.abs(self.quadrature(*quad, phi=phi)) ** 2
         else:
             return math.abs(self.quadrature(*(quad * 2), phi=phi))

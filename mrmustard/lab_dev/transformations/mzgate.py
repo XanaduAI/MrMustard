@@ -17,7 +17,7 @@ The class representing a Mach-Zehnder gate.
 """
 
 from __future__ import annotations
-from typing import Iterable
+from typing import Sequence
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .base import Unitary
@@ -51,8 +51,8 @@ class MZgate(Unitary):
     def __init__(
         self,
         modes: tuple[int, int],
-        phi_a: float | Iterable[float] = 0.0,
-        phi_b: float | Iterable[float] = 0.0,
+        phi_a: float | Sequence[float] = 0.0,
+        phi_b: float | Sequence[float] = 0.0,
         phi_a_trainable: bool = False,
         phi_b_trainable: bool = False,
         phi_a_bounds: tuple[float | None, float | None] = (None, None),
