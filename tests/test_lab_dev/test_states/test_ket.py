@@ -302,6 +302,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(purity, 1)
         assert state.is_pure
 
+        assert math.allclose(Ket.from_ansatz((0,), None).purity, 1)
+
     def test_purity_lin_sup(self):
         state = Coherent(0, x=1) + Coherent(0, x=-1)
         purity = state.purity

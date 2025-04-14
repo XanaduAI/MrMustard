@@ -129,8 +129,6 @@ class Dgate(Unitary):
                 [fock_utils.displacement(xi, yi, shape=shape) for xi, yi in zip(x, y)]
             )
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
             ret = fock_utils.displacement(
                 self.parameters.x.value, self.parameters.y.value, shape=shape
@@ -147,5 +145,4 @@ class Dgate(Unitary):
             classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
         )
         ret._representation = Representation(fock, wires)
-
         return ret

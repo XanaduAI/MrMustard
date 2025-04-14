@@ -380,6 +380,8 @@ class TestPolyExpAnsatz:
         assert len(new_ansatz.b) == 1
         assert math.allclose(new_ansatz.c, 2 * c)
 
+        assert new_ansatz.simplify() is new_ansatz
+
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_sub(self, n):
         triple1 = Abc_triple(n)
