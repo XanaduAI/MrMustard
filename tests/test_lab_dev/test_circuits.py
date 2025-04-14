@@ -18,7 +18,7 @@
 
 import pytest
 
-import mrmustard.lab_dev.circuit_components_utils.branch_and_bound as bb
+import mrmustard.path.branch_and_bound as bb
 from mrmustard import settings
 from mrmustard.lab_dev import (
     Attenuator,
