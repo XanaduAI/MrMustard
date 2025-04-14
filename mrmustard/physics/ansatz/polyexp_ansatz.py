@@ -489,7 +489,7 @@ class PolyExpAnsatz(Ansatz):
         that correspond to the vector of given CV variables.
         """
         n = self.num_CV_vars
-        A_part = math.einsum("...a, ...b, ...ab->...", z, z, A[..., :n, :n])
+        A_part = math.einsum("...a,...b,...ab->...", z, z, A[..., :n, :n])
         b_part = math.einsum("...a,...a->...", z, b[..., :n])
         return math.exp(1 / 2 * A_part + b_part)
 
@@ -801,7 +801,7 @@ class PolyExpAnsatz(Ansatz):
 
         exp_sum = self._compute_exp_part(z, A, b)
         if self.num_derived_vars == 0:  # purely gaussian
-            return math.einsum("..., ...->...", exp_sum, c)
+            return math.einsum("...,...->...", exp_sum, c)
         else:
             poly = self._compute_polynomial_part(z, A, b)
             return self._combine_exp_and_poly(exp_sum, poly, c)
