@@ -189,7 +189,7 @@ class Ket(State):
         batch_shape = (
             self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
         )
-        if batch_shape:  # pragma: no cover
+        if batch_shape:
             raise NotImplementedError("Batched auto_shape is not implemented.")
         if not self.ansatz._lin_sup:
             try:  # fock
@@ -209,7 +209,6 @@ class Ket(State):
                 else:
                     shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         else:
-            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
