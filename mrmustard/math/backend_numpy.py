@@ -21,6 +21,7 @@ from __future__ import annotations
 from math import lgamma as mlgamma
 from typing import Sequence, Callable
 
+from opt_einsum import contract
 import numpy as np
 import scipy as sp
 from scipy.signal import convolve2d as scipy_convolve2d
@@ -227,7 +228,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return array
 
     def einsum(self, string: str, *tensors, optimize: bool | str = False) -> np.ndarray:
-        return np.einsum(string, *tensors, optimize=optimize)
+        # return np.einsum(string, *tensors, optimize=optimize)
+        return contract(string, *tensors, optimize=optimize)
 
     def exp(self, array: np.ndarray) -> np.ndarray:
         return np.exp(array)
