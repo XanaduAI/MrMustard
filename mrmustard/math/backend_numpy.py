@@ -228,7 +228,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return array
 
     def einsum(self, string: str, *tensors, optimize: bool | str = False) -> np.ndarray:
-        # return np.einsum(string, *tensors, optimize=optimize)
         return contract(string, *tensors, optimize=optimize)
 
     def exp(self, array: np.ndarray) -> np.ndarray:
