@@ -63,6 +63,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def abs(self, array: np.ndarray) -> np.ndarray:
         return np.abs(array)
 
+    def all(self, array: np.ndarray) -> bool:
+        return np.all(array)
+
     def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
         return np.allclose(array1, array2, atol=atol, rtol=rtol)
 

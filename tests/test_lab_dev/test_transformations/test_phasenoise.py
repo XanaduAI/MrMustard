@@ -43,11 +43,11 @@ class TestPhaseNoise:
         x = math.broadcast_to(0.5, batch_shape)
         psi_1 = Ket.random((0, 1)) >> Dgate(0, x, 0.5) >> PhaseNoise(0, 0.2)
         assert isinstance(psi_1, DM)
-        assert math.allclose(psi_1.purity < 1, True)
+        assert math.all(psi_1.purity < 1)
 
         rho = DM.random((0, 1)) >> Dgate(0, 0.5, 0.5) >> PhaseNoise(0, 0.2)
         assert isinstance(rho, DM)
-        assert math.allclose(rho.purity < 1, True)
+        assert math.all(rho.purity < 1)
 
         psi_2 = Coherent(0, 2)
         after_noise_array = (psi_2 >> PhaseNoise(0, 10)).fock_array(10)

@@ -67,7 +67,7 @@ class Ket(State):
             raise NotImplementedError(
                 "Physicality conditions are not implemented for states with ArrayAnsatz."
             )
-        return math.allclose(math.abs(math.eigvals(self.ansatz.A)) < 1, True) and math.allclose(
+        return math.all(math.abs(math.eigvals(self.ansatz.A)) < 1) and math.allclose(
             self.probability, 1, settings.ATOL
         )
 

@@ -46,8 +46,8 @@ class TestDgate:
         # displacement gate in fock representation for large displacement
         x = math.broadcast_to(10.0, batch_shape)
         dgate = Dgate(0, x=x).to_fock(150)
-        assert math.allclose((state.to_fock() >> dgate).probability < 1, True)
-        assert math.allclose(math.abs(dgate.fock_array(150)) < 1, True)
+        assert math.all((state.to_fock() >> dgate).probability < 1)
+        assert math.all(math.abs(dgate.fock_array(150)) < 1)
 
     def test_to_fock_lin_sup(self):
         dgate = (Dgate(0, 0.1) + Dgate(0, -0.1)).to_fock(150)

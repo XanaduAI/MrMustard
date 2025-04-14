@@ -351,7 +351,7 @@ class Channel(Map):
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return math.allclose(math.real(math.eigvals(gamma_A)) > -settings.ATOL, True)
+        return math.all(math.real(math.eigvals(gamma_A)) > -settings.ATOL)
 
     @property
     def is_TP(self) -> bool:
@@ -380,7 +380,7 @@ class Channel(Map):
             @ math.inv(math.eye(m) - math.einsum("...ij->...ji", gamma_A))
             @ lambda_A
         )
-        return math.allclose(math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL, True)
+        return math.all(math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL)
 
     @property
     def is_physical(self) -> bool:

@@ -66,6 +66,9 @@ class BackendJax(BackendBase):  # pragma: no cover
     def abs(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.abs(array)
 
+    def all(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.all(array)
+
     @jax.jit
     def any(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.any(array)

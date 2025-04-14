@@ -763,7 +763,10 @@ def bargmann_to_quadrature_Abc(
         math.stack(
             [
                 math.stack(
-                    [math.broadcast_to(-1 / hbar, batch_shape), -1j * e * np.sqrt(2 / hbar)],
+                    [
+                        math.broadcast_to(-1 / hbar, batch_shape, dtype=math.complex128),
+                        -1j * e * np.sqrt(2 / hbar),
+                    ],
                     batch_dim,
                 ),
                 math.stack([-1j * e * np.sqrt(2 / hbar), e * e], batch_dim),
