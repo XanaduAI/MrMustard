@@ -276,12 +276,6 @@ class Ket(State):
 
         return result
 
-    def normalize(self) -> Ket:
-        r"""
-        Returns a rescaled version of the state such that its probability is 1
-        """
-        return self / math.sqrt(self.probability)
-
     def physical_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[Ket, Unitary]:
         r"""
         Applies the physical stellar decomposition.
