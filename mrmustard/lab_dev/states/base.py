@@ -26,7 +26,7 @@ representation.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Literal, Sequence
+from typing import Sequence
 
 from enum import Enum
 
@@ -51,7 +51,6 @@ from mrmustard.utils.typing import (
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import BtoChar, BtoQ
-
 
 __all__ = ["State"]
 
@@ -130,7 +129,12 @@ class State(CircuitComponent):
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
         """
-        return math.sum(self._compute_L2_norms(mode="kron"))
+        if isinstance(self.ansatz, PolyExpAnsatz) and self.ansatz.num_derived_vars > 0:
+            fock_state = self.to_fock()
+            ret = math.real(fock_state.contract(fock_state.dual, mode="zip").ansatz.scalar)
+        else:
+            ret = math.real(self.contract(self.dual, mode="zip").ansatz.scalar)
+        return ret
 
     @property
     @abstractmethod
@@ -147,20 +151,13 @@ class State(CircuitComponent):
         The purity of this state.
         """
 
-    @property
-    def _L2_norms(self) -> RealVector:
-        r"""
-        The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``,
-        element-wise along the batch dimension.
-        """
-        return self._compute_L2_norms(mode="zip")
-
     @classmethod
     def from_bargmann(
         cls,
         modes: Sequence[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
+        lin_sup: bool = False,
     ) -> State:
         r"""
         Initializes a state of type ``cls`` from an ``(A, b, c)`` triple
@@ -192,7 +189,7 @@ class State(CircuitComponent):
             ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
                 the number of modes.
         """
-        return cls.from_ansatz(modes, PolyExpAnsatz(*triple), name)
+        return cls.from_ansatz(modes, PolyExpAnsatz(*triple, lin_sup=lin_sup), name)
 
     @classmethod
     def from_fock(
@@ -262,8 +259,8 @@ class State(CircuitComponent):
         cov: ComplexMatrix,
         means: ComplexMatrix,
         name: str | None = None,
-        atol_purity: float | None = 1e-5,
-    ) -> State:  # pylint: disable=abstract-method
+        atol_purity: float | None = None,
+    ) -> State:
         r"""
         Initializes a state from the covariance matrix and the vector of means of a state in
         phase space.
@@ -320,21 +317,6 @@ class State(CircuitComponent):
         Q = cls.from_ansatz(modes, PolyExpAnsatz(*triple))
         return cls.from_ansatz(modes, (Q >> QtoB).ansatz, name)
 
-    def _compute_L2_norms(self, mode: Literal["zip", "kron"] = "kron") -> RealVector:
-        r"""
-        Computes the L2 norms of the state.
-
-        Args:
-            mode: The contraction mode to compute the L2 norms in. Either ``"zip"`` or ``"kron"``.
-
-        Returns:
-            The L2 norms.
-        """
-        if isinstance(self.ansatz, PolyExpAnsatz) and self.ansatz.num_derived_vars > 0:
-            fock_state = self.to_fock()
-            return math.real(fock_state.contract(fock_state.dual, mode=mode).ansatz.scalar)
-        return math.real(self.contract(self.dual, mode=mode).ansatz.scalar)
-
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""
         Returns the Fock distribution of the state up to some cutoff.
@@ -346,10 +328,27 @@ class State(CircuitComponent):
             The Fock distribution.
         """
         fock_array = self.fock_array(cutoff)
-        if self.wires.ket and not self.wires.bra:
+        if not self.wires.ket or not self.wires.bra:
             return math.reshape(math.abs(fock_array) ** 2, (-1,))
         else:
             return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
+
+    def normalize(self) -> State:
+        r"""
+        Returns a rescaled version of the state such that its probability is 1.
+        """
+        probability = self.probability
+        if probability.shape != () and isinstance(self.ansatz, PolyExpAnsatz):
+            delta = len(self.ansatz.c.shape) - len(probability.shape)
+            probability = math.reshape(probability, probability.shape + (1,) * delta)
+        elif probability.shape != () and isinstance(self.ansatz, ArrayAnsatz):
+            probability = math.reshape(
+                probability, probability.shape + (1,) * self.ansatz.core_dims
+            )
+        if not self.wires.ket or not self.wires.bra:
+            return self / math.sqrt(probability)
+        else:
+            return self / probability
 
     def phase_space(self, s: float) -> tuple:
         r"""
@@ -363,11 +362,13 @@ class State(CircuitComponent):
             Returns:
                 The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
-
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
-        new_state = self >> BtoChar(self.modes, s=s)
+        if not self.wires.ket or not self.wires.bra:
+            new_state = self.adjoint.contract(self.contract(BtoChar(self.modes, s=s), "zip"), "zip")
+        else:
+            new_state = self.contract(BtoChar(self.modes, s=s), "zip")
         return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple())
 
     def quadrature_distribution(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
@@ -387,7 +388,7 @@ class State(CircuitComponent):
             )
         if len(quad) == 1:
             quad = quad * self.n_modes
-        if self.wires.ket and not self.wires.bra:
+        if not self.wires.ket or not self.wires.bra:
             return math.abs(self.quadrature(*quad, phi=phi)) ** 2
         else:
             return math.abs(self.quadrature(*(quad * 2), phi=phi))
@@ -435,12 +436,7 @@ class State(CircuitComponent):
             raise NotImplementedError("2D visualization not implemented for batched states.")
 
         shape = [max(min_shape, d) for d in self.auto_shape()]
-        state = self.to_fock(tuple(shape)).dm()
-        dm = (
-            math.sum(state.ansatz.array, axis=0)
-            if state.ansatz.batch_dims == 1
-            else state.ansatz.array
-        )
+        dm = self.to_fock(tuple(shape)).dm().ansatz.array
 
         x, prob_x = quadrature_distribution(dm)
         p, prob_p = quadrature_distribution(dm, np.pi / 2)
@@ -556,13 +552,7 @@ class State(CircuitComponent):
         if self.ansatz.batch_dims > 1:
             raise NotImplementedError("3D visualization not implemented for batched states.")
         shape = [max(min_shape, d) for d in self.auto_shape()]
-        state = self.to_fock(tuple(shape)).dm()
-        dm = (
-            math.sum(state.ansatz.array, axis=0)
-            if state.ansatz.batch_dims == 1
-            else state.ansatz.array
-        )
-
+        dm = self.to_fock(tuple(shape)).dm().ansatz.array
         xvec = np.linspace(*xbounds, resolution)
         pvec = np.linspace(*pbounds, resolution)
         z, xs, ps = wigner_discretized(dm, xvec, pvec)
@@ -635,13 +625,7 @@ class State(CircuitComponent):
             raise ValueError("DM visualization not available for multi-mode states.")
         if self.ansatz.batch_dims > 1:
             raise NotImplementedError("DM visualization not implemented for batched states.")
-        state = self.to_fock(cutoff).dm()
-        dm = (
-            math.sum(state.ansatz.array, axis=0)
-            if state.ansatz.batch_dims == 1
-            else state.ansatz.array
-        )
-
+        dm = self.to_fock(cutoff).dm().ansatz.array
         fig = go.Figure(
             data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
         )

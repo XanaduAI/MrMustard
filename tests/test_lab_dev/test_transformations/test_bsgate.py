@@ -16,7 +16,6 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-import numpy as np
 import pytest
 
 from mrmustard import math
@@ -40,32 +39,32 @@ class TestBSgate:
         assert gate.parameters.theta.value == 2
         assert gate.parameters.phi.value == 3
 
-    def test_representation(self):
-        rep1 = BSgate((0, 1), 0.1, 0.2).ansatz
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, batch_shape):
+        theta = math.broadcast_to(0.1, batch_shape)
+        phi = math.broadcast_to(0.2, batch_shape)
+        rep1 = BSgate((0, 1), theta, phi).ansatz
         A_exp = [
-            [
-                [0, 0, 0.99500417, -0.0978434 + 0.01983384j],
-                [0.0, 0, 0.0978434 + 0.01983384j, 0.99500417],
-                [0.99500417, 0.0978434 + 0.01983384j, 0, 0],
-                [-0.0978434 + 0.01983384j, 0.99500417, 0, 0],
-            ]
+            [0, 0, 0.99500417, -0.0978434 + 0.01983384j],
+            [0.0, 0, 0.0978434 + 0.01983384j, 0.99500417],
+            [0.99500417, 0.0978434 + 0.01983384j, 0, 0],
+            [-0.0978434 + 0.01983384j, 0.99500417, 0, 0],
         ]
         assert math.allclose(rep1.A, A_exp)
-        assert math.allclose(rep1.b, np.zeros((1, 4)))
-        assert math.allclose(rep1.c, [1])
+        assert math.allclose(rep1.b, math.zeros((4,)))
+        assert math.allclose(rep1.c, 1)
 
-        rep2 = BSgate((0, 1), 0.1).ansatz
+        theta = math.broadcast_to(0.1, batch_shape)
+        rep2 = BSgate((0, 1), theta).ansatz
         A_exp = [
-            [
-                [0, 0, 9.95004165e-01, -9.98334166e-02],
-                [0.0, 0, 9.98334166e-02, 9.95004165e-01],
-                [9.95004165e-01, 9.98334166e-02, 0, 0],
-                [-9.98334166e-02, 9.95004165e-01, 0, 0],
-            ]
+            [0, 0, 9.95004165e-01, -9.98334166e-02],
+            [0.0, 0, 9.98334166e-02, 9.95004165e-01],
+            [9.95004165e-01, 9.98334166e-02, 0, 0],
+            [-9.98334166e-02, 9.95004165e-01, 0, 0],
         ]
         assert math.allclose(rep2.A, A_exp)
-        assert math.allclose(rep2.b, np.zeros((1, 4)))
-        assert math.allclose(rep2.c, [1])
+        assert math.allclose(rep2.b, math.zeros((4,)))
+        assert math.allclose(rep2.c, 1)
 
     def test_trainable_parameters(self):
         gate1 = BSgate((0, 1), 1, 1)

@@ -70,6 +70,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
 
+    def all(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.experimental.numpy.all(array)
+
     def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
         return tf.experimental.numpy.allclose(array1, array2, atol=atol, rtol=rtol)
 
