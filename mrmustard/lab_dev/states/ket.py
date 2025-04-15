@@ -380,10 +380,7 @@ class Ket(State):
             "...ij, ...jk, ...k -> ...i", R, math.inv(gamma_transpose), bu[..., M:]
         )
 
-        if batch_shape == ():
-            b_core = math.block([bm, bn - b_temp], axes=(0, 0))
-        else:
-            b_core = math.block([bm, bn - b_temp])
+        b_core = math.concat([bm, bn - b_temp], -1)
 
         inverse_order = np.argsort(new_order)
 
