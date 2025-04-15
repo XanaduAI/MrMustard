@@ -581,6 +581,16 @@ class TestKet:  # pylint: disable=too-many-public-methods
         A_c_reordered = A_c_reordered[:, [0, 2]]
         assert math.allclose(A_c_reordered, math.zeros((2, 2)))
 
+        # batching test:
+        psi = Ket.random([0, 1, 2])
+        phi = Ket.random([0, 1, 2])
+
+        (psi + phi).ansatz.batch_shape
+
+        sigma = psi + phi
+        core, U = sigma.physical_stellar_decomposition([0])
+        assert sigma == core.contract(U, mode="zip")
+
     def test_formal_stellar_decomposition(self):
         psi = Ket.random((0, 1, 2))
         core1, phi1 = psi.formal_stellar_decomposition([1])
