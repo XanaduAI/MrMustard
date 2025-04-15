@@ -132,7 +132,9 @@ class Representation:
         ansatz = self.ansatz.contract(
             other.ansatz, list(batch1) + idx1, list(batch2) + idx2, list(batch_out) + idx_out
         )
-        ansatz = ansatz.reorder(perm) if perm else ansatz
+        ansatz = (
+            ansatz.reorder(perm) if perm else ansatz
+        )  # TODO: idx_out could have the right order
         return Representation(ansatz, wires_result)
 
     def fock_array(self, shape: int | Sequence[int]) -> ComplexTensor:
