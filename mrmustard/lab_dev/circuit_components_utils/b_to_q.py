@@ -16,7 +16,7 @@
 The class representing an operation that changes Bargmann into quadrature.
 """
 from __future__ import annotations
-
+from typing import Sequence
 from mrmustard.physics import triples
 
 from ..transformations.base import Operation
@@ -41,7 +41,7 @@ class BtoQ(Operation):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        phi: float = 0.0,
+        phi: float | Sequence[float] = 0.0,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="BtoQ")

@@ -34,6 +34,7 @@ from mrmustard.lab_dev.transformations import (
     Unitary,
 )
 from mrmustard.physics.wires import Wires
+from ...random import Abc_triple
 
 
 class TestOperation:
@@ -41,13 +42,13 @@ class TestOperation:
     Tests the Operation class.
     """
 
-    def test_init_from_bargmann(self):
-        A = np.array([[0, 1, 2], [1, 0, 0], [0, 4, 2]])
-        b = np.array([0, 1, 5])
-        c = 1
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_init_from_bargmann(self, batch_shape):
+        A, b, c = Abc_triple(3, batch_shape)
         operator = Operation.from_bargmann((0,), (1, 2), (A, b, c), "my_operator")
-        assert math.allclose(operator.ansatz.A, A[None, ...])
-        assert math.allclose(operator.ansatz.b, b[None, ...])
+        assert math.allclose(operator.ansatz.A, A)
+        assert math.allclose(operator.ansatz.b, b)
+        assert math.allclose(operator.ansatz.c, c)
 
 
 class TestUnitary:
@@ -87,19 +88,22 @@ class TestUnitary:
             == "CircuitComponent(modes=(0,), name=Dgate, repr=ArrayAnsatz)"
         )
 
-    def test_init_from_bargmann(self):
-        A = np.array([[0, 1], [1, 0]])
-        b = np.array([0, 0])
-        c = 1
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_init_from_bargmann(self, batch_shape):
+        A, b, c = Abc_triple(2, batch_shape)
         gate = Unitary.from_bargmann((2,), (2,), (A, b, c), "my_unitary")
-        assert math.allclose(gate.ansatz.A, A[None, ...])
-        assert math.allclose(gate.ansatz.b, b[None, ...])
+        assert math.allclose(gate.ansatz.A, A)
+        assert math.allclose(gate.ansatz.b, b)
+        assert math.allclose(gate.ansatz.c, c)
 
-    def test_init_from_symplectic(self):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_init_from_symplectic(self, batch_shape):
         S = math.random_symplectic(2)
+        S = math.broadcast_to(S, batch_shape + S.shape)
         u = Unitary.from_symplectic((0, 1), S)
-        assert u >> u.dual == Identity((0, 1))
-        assert u.dual >> u == Identity((0, 1))
+        assert u.ansatz.batch_shape == batch_shape
+        assert u.contract(u.dual, "zip") == Identity((0, 1))
+        assert u.dual.contract(u, "zip") == Identity((0, 1))
 
     def test_init_from_fock(self):
         cutoff = 100
@@ -108,8 +112,13 @@ class TestUnitary:
 
         assert math.allclose((kerr >> kerr.dual).fock_array(), math.eye(cutoff))
 
-    def test_inverse_unitary(self):
-        gate = Sgate(0, 0.1, 0.2) >> Dgate(0, 0.1, 0.2)
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_inverse_unitary(self, batch_shape):
+        r = math.broadcast_to(0.1, batch_shape)
+        phi = math.broadcast_to(0.2, batch_shape)
+        gate = Unitary(
+            Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip").representation
+        )  # TODO: revisit rshift
         gate_inv = gate.inverse()
         gate_inv_inv = gate_inv.inverse()
         assert gate_inv_inv == gate
@@ -127,13 +136,13 @@ class TestMap:
     Tests the Map class.
     """
 
-    def test_init_from_bargmann(self):
-        A = np.arange(16).reshape(4, 4)
-        b = np.array([0, 1, 2, 3])
-        c = 1
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_init_from_bargmann(self, batch_shape):
+        A, b, c = Abc_triple(4, batch_shape)
         map = Map.from_bargmann((0,), (0,), (A, b, c), "my_map")
-        assert math.allclose(map.ansatz.A, A[None, ...])
-        assert math.allclose(map.ansatz.b, b[None, ...])
+        assert math.allclose(map.ansatz.A, A)
+        assert math.allclose(map.ansatz.b, b)
+        assert math.allclose(map.ansatz.c, c)
 
 
 class TestChannel:
@@ -155,13 +164,13 @@ class TestChannel:
             modes_in_ket=modes,
         )
 
-    def test_init_from_bargmann(self):
-        A = np.arange(16).reshape(4, 4)
-        b = np.array([0, 1, 2, 3])
-        c = 1
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_init_from_bargmann(self, batch_shape):
+        A, b, c = Abc_triple(4, batch_shape)
         channel = Channel.from_bargmann((0,), (0,), (A, b, c), "my_channel")
-        assert math.allclose(channel.ansatz.A, A[None, ...])
-        assert math.allclose(channel.ansatz.b, b[None, ...])
+        assert math.allclose(channel.ansatz.A, A)
+        assert math.allclose(channel.ansatz.b, b)
+        assert math.allclose(channel.ansatz.c, c)
 
     def test_rshift(self):
         unitary = Dgate(0, 1) >> Dgate(1, 1)
@@ -182,8 +191,16 @@ class TestChannel:
         assert repr(channel1) == "Attenuator(modes=(0,), name=Att~, repr=PolyExpAnsatz)"
         assert repr(ch_component) == "CircuitComponent(modes=(0,), name=Att~, repr=PolyExpAnsatz)"
 
-    def test_inverse_channel(self):
-        gate = Sgate(0, 0.1, 0.2) >> Dgate(0, 0.1, 0.2) >> Attenuator(0, 0.5)
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_inverse_channel(self, batch_shape):
+        r = math.broadcast_to(0.1, batch_shape)
+        phi = math.broadcast_to(0.2, batch_shape)
+        gate = Channel(
+            Sgate(0, r, phi)
+            .contract(Dgate(0, r, phi), "zip")
+            .contract(Attenuator(0, 0.5), "zip")
+            .representation
+        )  # TODO: revisit rshift
         should_be_identity = gate >> gate.inverse()
         assert should_be_identity.ansatz == Attenuator(0, 1.0).ansatz
 
@@ -202,7 +219,8 @@ class TestChannel:
     def test_is_physical(self):
         assert Channel.random(range(5)).is_physical
 
-    def test_XY(self):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_XY(self, batch_shape):
         U = Unitary.random((0, 1))
         u = U.ansatz
         unitary_channel = Channel.from_ansatz((0, 1), (0, 1), u.conj & u)

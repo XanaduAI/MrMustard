@@ -17,7 +17,6 @@ The class representing a displacement gate.
 """
 
 from __future__ import annotations
-
 from typing import Sequence
 from dataclasses import replace
 
@@ -84,8 +83,8 @@ class Dgate(Unitary):
     def __init__(
         self,
         mode: int,
-        x: float = 0.0,
-        y: float = 0.0,
+        x: float | Sequence[float] = 0.0,
+        y: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: tuple[float | None, float | None] = (None, None),
@@ -102,9 +101,7 @@ class Dgate(Unitary):
             ),
         ).representation
 
-    def fock_array(
-        self, shape: int | Sequence[int] = None, batched=False
-    ) -> ComplexTensor:  # TODO: fix for batch
+    def fock_array(self, shape: int | Sequence[int] = None) -> ComplexTensor:
         r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
         If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
@@ -112,8 +109,6 @@ class Dgate(Unitary):
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is estimated.
-            batched: Whether the returned representation is batched or not. If ``False`` (default)
-                it will squeeze the batch dimension if it is 1.
         Returns:
             array: The Fock representation of this component.
         """
@@ -121,35 +116,28 @@ class Dgate(Unitary):
             shape = (shape,) * self.ansatz.num_vars
         auto_shape = self.auto_shape()
         shape = shape or auto_shape
+        shape = tuple(shape)
         if len(shape) != len(auto_shape):
             raise ValueError(
                 f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
             )
-        N = self.n_modes
-        x = self.parameters.x.value * math.ones(N, dtype=self.parameters.x.value.dtype)
-        y = self.parameters.y.value * math.ones(N, dtype=self.parameters.y.value.dtype)
-
-        if N > 1:
-            # calculate displacement unitary for each mode and concatenate with outer product
-            Ud = None
-            for idx, out_in in enumerate(zip(shape[:N], shape[N:])):
-                if Ud is None:
-                    Ud = fock_utils.displacement(x[idx], y[idx], shape=out_in)
-                else:
-                    U_next = fock_utils.displacement(x[idx], y[idx], shape=out_in)
-                    Ud = math.outer(Ud, U_next)
-
-            array = math.transpose(
-                Ud,
-                list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+        if self.ansatz.batch_shape:
+            x, y = math.broadcast_arrays(self.parameters.x.value, self.parameters.y.value)
+            x = math.reshape(x, (-1,))
+            y = math.reshape(y, (-1,))
+            ret = math.astensor(
+                [fock_utils.displacement(xi, yi, shape=shape) for xi, yi in zip(x, y)]
             )
+            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
         else:
-            array = fock_utils.displacement(x[0], y[0], shape=shape)
-        arrays = math.expand_dims(array, 0) if batched else array
-        return arrays
+            ret = fock_utils.displacement(
+                self.parameters.x.value, self.parameters.y.value, shape=shape
+            )
+        return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
-        fock = ArrayAnsatz(self.fock_array(shape, batched=False), batch_dims=0)
+        batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
+        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
         fock._original_abc_data = self.ansatz.triple
         ret = self.__class__(self.modes[0], **self.parameters.to_dict())
         wires = Wires.from_wires(
@@ -157,5 +145,4 @@ class Dgate(Unitary):
             classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
         )
         ret._representation = Representation(fock, wires)
-
         return ret

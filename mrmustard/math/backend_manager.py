@@ -204,6 +204,19 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("abs", (array,))
 
+    def all(self, array: Tensor) -> bool:
+        r"""
+        Returns ``True`` if all elements of array are ``True``, ``False`` otherwise.
+
+        Args:
+            array: The array to check.
+
+        Returns:
+            ``True`` if all elements of array are ``True``, ``False`` otherwise.
+        """
+        array = self.astensor(array)
+        return self._apply("all", (array,))
+
     def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9, rtol=1e-5) -> bool:
         r"""
         Whether two arrays are equal within tolerance.

@@ -56,7 +56,7 @@ class ArrayAnsatz(Ansatz):
         super().__init__()
         self._array = math.astensor(array) if array is not None else None
         self._batch_dims = batch_dims
-        self._batch_shape = self._array.shape[:batch_dims] if array is not None else ()
+        self._batch_shape = tuple(self._array.shape[:batch_dims]) if array is not None else ()
         self._original_abc_data = None
 
     @property
@@ -70,7 +70,7 @@ class ArrayAnsatz(Ansatz):
     @array.setter
     def array(self, value: Tensor):
         self._array = math.astensor(value)
-        self._batch_shape = value.shape[: self.batch_dims]
+        self._batch_shape = tuple(value.shape[: self.batch_dims])
 
     @property
     def batch_dims(self) -> int:
@@ -82,7 +82,7 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def batch_size(self):
-        return int(np.prod(self.batch_shape)) if self.batch_shape != () else 0  # tensorflow
+        return int(np.prod(self.batch_shape)) if self.batch_shape else 0
 
     @property
     def core_dims(self) -> int:
@@ -349,11 +349,11 @@ class ArrayAnsatz(Ansatz):
             self.array[(...,) + slices], other.array[(...,) + slices], atol=settings.ATOL
         )
 
-    def __mul__(self, other: Scalar) -> ArrayAnsatz:
+    def __mul__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:
         return ArrayAnsatz(array=self.array * other, batch_dims=self.batch_dims)
 
     def __neg__(self) -> ArrayAnsatz:
         return ArrayAnsatz(array=-self.array, batch_dims=self.batch_dims)
 
-    def __truediv__(self, other: Scalar) -> ArrayAnsatz:
+    def __truediv__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:
         return ArrayAnsatz(array=self.array / other, batch_dims=self.batch_dims)

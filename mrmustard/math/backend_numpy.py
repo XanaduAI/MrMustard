@@ -63,6 +63,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def abs(self, array: np.ndarray) -> np.ndarray:
         return np.abs(array)
 
+    def all(self, array: np.ndarray) -> bool:
+        return np.all(array)
+
     def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
         return np.allclose(array1, array2, atol=atol, rtol=rtol)
 
@@ -187,10 +190,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return det
 
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
-        if len(array.shape) == 1:
+        if array.ndim in (1, 2):
             return np.diag(array, k=k)
-        elif len(array.shape) == 2:
-            return np.array([np.diag(l, k=k).tolist() for l in array])
         else:
             # fallback into more complex algorithm
             original_sh = array.shape

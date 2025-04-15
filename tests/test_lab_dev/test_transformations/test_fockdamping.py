@@ -38,23 +38,20 @@ class TestFockDamping:
         assert gate.modes == (modes,)
         assert math.allclose(gate.parameters.damping.value, damping)
 
-    def test_representation(self):
-        rep1 = FockDamping(mode=0, damping=0.1).ansatz
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, batch_shape):
+        damping = math.broadcast_to(0.1, batch_shape)
+        rep1 = FockDamping(mode=0, damping=damping).ansatz
         e = math.exp(-0.1)
         assert math.allclose(
             rep1.A,
             [
-                [
-                    [0, e],
-                    [
-                        e,
-                        0,
-                    ],
-                ]
+                [0, e],
+                [e, 0],
             ],
         )
-        assert math.allclose(rep1.b, math.zeros((1, 2)))
-        assert math.allclose(rep1.c, [1.0])
+        assert math.allclose(rep1.b, math.zeros((2,)))
+        assert math.allclose(rep1.c, 1.0)
 
     def test_trainable_parameters(self):
         gate1 = FockDamping(0, 0.1)

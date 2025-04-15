@@ -16,7 +16,6 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-import numpy as np
 import pytest
 
 from mrmustard import math
@@ -39,47 +38,44 @@ class TestSgate:
         assert gate.name == "Sgate"
         assert gate.modes == (modes,)
 
-    def test_representation(self):
-        rep1 = Sgate(mode=0, r=0.1, phi=0.2).ansatz
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, batch_shape):
+        r = math.broadcast_to(0.1, batch_shape)
+        phi = math.broadcast_to(0.2, batch_shape)
+        rep1 = Sgate(mode=0, r=r, phi=phi).ansatz
         assert math.allclose(
             rep1.A,
             [
-                [
-                    [-0.09768127 - 1.98009738e-02j, 0.99502075],
-                    [0.99502075, 0.09768127 - 0.01980097j],
-                ]
+                [-0.09768127 - 1.98009738e-02j, 0.99502075],
+                [0.99502075, 0.09768127 - 0.01980097j],
             ],
         )
-        assert math.allclose(rep1.b, np.zeros((1, 2)))
-        assert math.allclose(rep1.c, [0.9975072676192522])
+        assert math.allclose(rep1.b, math.zeros((2,)))
+        assert math.allclose(rep1.c, 0.9975072676192522)
 
-        rep2 = (Sgate(mode=0, r=0.1, phi=0.2) >> Sgate(mode=1, r=0.3, phi=0.2)).ansatz
+        rep2 = (Sgate(mode=0, r=r, phi=phi) >> Sgate(mode=1, r=0.3, phi=0.2)).ansatz
         assert math.allclose(
             rep2.A,
             [
-                [
-                    [-0.09768127 - 1.98009738e-02j, 0, 0.99502075, 0],
-                    [0, -0.28550576 - 5.78748818e-02j, 0, 0.95662791],
-                    [0.99502075, 0, 0.09768127 - 1.98009738e-02j, 0],
-                    [0, 0.95662791, 0, 0.28550576 - 5.78748818e-02j],
-                ]
+                [-0.09768127 - 1.98009738e-02j, 0, 0.99502075, 0],
+                [0, -0.28550576 - 5.78748818e-02j, 0, 0.95662791],
+                [0.99502075, 0, 0.09768127 - 1.98009738e-02j, 0],
+                [0, 0.95662791, 0, 0.28550576 - 5.78748818e-02j],
             ],
         )
-        assert math.allclose(rep2.b, np.zeros((1, 4)))
-        assert math.allclose(rep2.c, [0.9756354961606032])
+        assert math.allclose(rep2.b, math.zeros((4,)))
+        assert math.allclose(rep2.c, 0.9756354961606032)
 
-        rep3 = Sgate(mode=1, r=0.1).ansatz
+        rep3 = Sgate(mode=1, r=r).ansatz
         assert math.allclose(
             rep3.A,
             [
-                [
-                    [-0.09966799 + 0.0j, 0.99502075 + 0.0j],
-                    [0.99502075 + 0.0j, 0.09966799 + 0.0j],
-                ]
+                [-0.09966799 + 0.0j, 0.99502075 + 0.0j],
+                [0.99502075 + 0.0j, 0.09966799 + 0.0j],
             ],
         )
-        assert math.allclose(rep3.b, np.zeros((1, 2)))
-        assert math.allclose(rep3.c, [0.9975072676192522])
+        assert math.allclose(rep3.b, math.zeros((2,)))
+        assert math.allclose(rep3.c, 0.9975072676192522)
 
     def test_trainable_parameters(self):
         gate1 = Sgate(0, 1, 1)

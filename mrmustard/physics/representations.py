@@ -28,7 +28,7 @@ from mrmustard.utils.typing import (
 
 from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from .triples import identity_Abc
-from .utils import outer_product_batch_str, zip_batch_strings
+from .utils import outer_product_batch_str, zip_batch_strings, lin_sup_batch_str
 from .wires import Wires, ReprEnum
 
 __all__ = ["Representation"]
@@ -161,40 +161,23 @@ class Representation:
             raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
         try:
             A, b, c = self.ansatz.triple
-
-            As = (
-                math.reshape(A, (-1, *A.shape[-2:])) if self.ansatz.batch_shape != () else A
-            )  # tensorflow
-            bs = (
-                math.reshape(b, (-1, *A.shape[-1:])) if self.ansatz.batch_shape != () else b
-            )  # tensorflow
-            cs = (
-                math.reshape(c, (-1, *c.shape[self.ansatz.batch_dims :]))
-                if self.ansatz.batch_shape != ()  # tensorflow
-                else c
+            G = math.hermite_renormalized(
+                A,
+                b,
+                math.ones(self.ansatz.batch_shape, dtype=math.complex128),
+                shape=shape + self.ansatz.shape_derived_vars,
             )
-
-            batch = (self.ansatz.batch_size,) if self.ansatz.batch_shape != () else ()  # tensorflow
-
-            if self.ansatz.batch_shape != ():  # tensorflow
-                G = math.astensor(
-                    [
-                        math.hermite_renormalized(A, b, complex(1), shape=shape + cs.shape[1:])
-                        for A, b in zip(As, bs)
-                    ]
-                )
-            else:
-                G = math.hermite_renormalized(As, bs, complex(1), shape=shape + cs.shape)
-
-            G = math.reshape(G, batch + shape + (-1,))
-            cs = math.reshape(cs, batch + (-1,))
+            G = math.reshape(G, self.ansatz.batch_shape + shape + (-1,))
+            cs = math.reshape(c, self.ansatz.batch_shape + (-1,))
             core_str = "".join(
-                [chr(i) for i in range(97, 97 + len(G.shape[1:] if batch else G.shape))]
+                [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))]
             )
             ret = math.einsum(f"...{core_str},...{core_str[-1]}->...{core_str[:-1]}", G, cs)
+            if self.ansatz._lin_sup:
+                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         except AttributeError:
             ret = self.ansatz.reduce(shape).array
-        return math.reshape(ret, self.ansatz.batch_shape + shape)
+        return ret
 
     def to_bargmann(self) -> Representation:
         r"""
@@ -222,7 +205,8 @@ class Representation:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=self.ansatz.batch_dims)
+        batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
+        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
         try:
             if self.ansatz.num_derived_vars == 0:
                 fock._original_abc_data = self.ansatz.triple

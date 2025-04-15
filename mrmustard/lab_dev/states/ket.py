@@ -30,7 +30,6 @@ from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
-    RealVector,
     Scalar,
     Batch,
 )
@@ -52,19 +51,23 @@ class Ket(State):
     short_name = "Ket"
 
     @property
-    def is_physical(self) -> bool:  # TODO: revisit this
+    def is_physical(self) -> bool:
         r"""
         Whether the ket object is a physical one.
         """
-        batch_dim = self.ansatz.batch_size
-        if batch_dim > 1:
-            raise ValueError(
-                "Physicality conditions are not implemented for batch dimension larger than 1."
+        if self.ansatz._lin_sup:
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for a linear superposition of states."
             )
         if self.ansatz.num_derived_vars > 0:
-            raise ValueError("Physicality conditions are not implemented for derived variables.")
-        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
-        return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for derived variables."
+            )
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for states with ArrayAnsatz."
+            )
+        return math.all(math.abs(math.eigvals(self.ansatz.A)) < 1) and math.allclose(
             self.probability, 1, settings.ATOL
         )
 
@@ -75,12 +78,13 @@ class Ket(State):
 
     @property
     def purity(self) -> float:
-        return 1.0
-
-    @property
-    def _probabilities(self) -> RealVector:
-        r"""Element-wise L2 norm squared along the batch dimension of this Ket."""
-        return self._L2_norms
+        if self.ansatz:
+            shape = (
+                self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
+            )
+        else:
+            shape = ()
+        return math.ones(shape)
 
     @classmethod
     def from_ansatz(
@@ -108,14 +112,16 @@ class Ket(State):
         modes: Collection[int],
         triple: tuple,
         name: str | None = None,
-        atol_purity: float | None = 1e-5,
+        atol_purity: float | None = None,
     ) -> Ket:
         cov, means, coeff = triple
         cov = math.astensor(cov)
         means = math.astensor(means)
+        if cov.shape[:-2] != ():  # pragma: no cover
+            raise NotImplementedError("Not implemented for batched states.")
         shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
-            p = purity(cov)
+            p = math.cast(purity(cov), math.float64)
             math.error_if(
                 p,
                 p < 1.0 - atol_purity,
@@ -166,7 +172,7 @@ class Ket(State):
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:  # TODO: revisit
+    ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -180,17 +186,18 @@ class Ket(State):
             max_shape: The maximum shape to compute (default from ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
         """
-        if self.ansatz.batch_size <= 1:
+        batch_shape = (
+            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
+        )
+        if batch_shape:
+            raise NotImplementedError("Batched auto_shape is not implemented.")
+        if not self.ansatz._lin_sup:
             try:  # fock
                 shape = self.ansatz.core_shape
             except AttributeError:  # bargmann
                 if self.ansatz.num_derived_vars == 0:
                     ansatz = self.ansatz.conj & self.ansatz
-                    A, b, c = (
-                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
-                        if ansatz.batch_shape != ()  # tensorflow
-                        else ansatz.triple
-                    )
+                    A, b, c = ansatz.triple
                     ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
@@ -202,7 +209,6 @@ class Ket(State):
                 else:
                     shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         else:
-            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
@@ -237,6 +243,10 @@ class Ket(State):
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
         """
+        if (self.ansatz and self.ansatz.batch_shape) or (
+            operator.ansatz and operator.ansatz.batch_shape
+        ):  # pragma: no cover
+            raise NotImplementedError("Batched expectation values are not implemented.")
 
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
@@ -262,12 +272,6 @@ class Ket(State):
             result = (self.contract(operator)) >> self.dual
 
         return result
-
-    def normalize(self) -> Ket:
-        r"""
-        Returns a rescaled version of the state such that its probability is 1
-        """
-        return self / math.sqrt(self.probability)
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
@@ -303,7 +307,6 @@ class Ket(State):
         with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
         and a (batched) scalar if there are no wires left, for convenience.
         """
-
         result = super().__rshift__(other)
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here

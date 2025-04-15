@@ -43,8 +43,25 @@ class TestRepresentation:
         return Representation(ansatz, wires)
 
     @pytest.fixture
+    def d_gate_rep_batch(self):
+        ansatz = PolyExpAnsatz.from_function(fn=displacement_gate_Abc, x=[0.1, 0.1, 0.1], y=0.1)
+        wires = Wires(set(), set(), {0}, {0})
+        return Representation(ansatz, wires)
+
+    @pytest.fixture
     def btoq_rep(self):
         ansatz = PolyExpAnsatz.from_function(fn=bargmann_to_quadrature_Abc, n_modes=1, phi=0.2)
+        wires = Wires(set(), set(), {0}, {0})
+        for w in wires.output:
+            w.repr = ReprEnum.QUADRATURE
+            w.repr_params_func = lambda: [0.2]
+        return Representation(ansatz, wires)
+
+    @pytest.fixture
+    def btoq_rep_batch(self):
+        ansatz = PolyExpAnsatz.from_function(
+            fn=bargmann_to_quadrature_Abc, n_modes=1, phi=[0.2, 0.2, 0.2]
+        )
         wires = Wires(set(), set(), {0}, {0})
         for w in wires.output:
             w.repr = ReprEnum.QUADRATURE
@@ -70,6 +87,10 @@ class TestRepresentation:
         for w in q_dgate.wires.output.wires:
             assert w.repr == ReprEnum.QUADRATURE
             assert w.repr_params_func() == [0.2]
+
+    def test_contract_custom_batch_str(self, d_gate_rep_batch, btoq_rep_batch):
+        q_dgate = d_gate_rep_batch.contract(btoq_rep_batch, mode="i,j->ij")
+        assert q_dgate.ansatz.batch_shape == (3, 3)
 
     def test_to_bargmann(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))

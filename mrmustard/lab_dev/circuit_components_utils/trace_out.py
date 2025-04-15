@@ -22,6 +22,7 @@ from mrmustard.physics import triples
 
 from ..circuit_components import CircuitComponent
 from ...physics.ansatz import PolyExpAnsatz
+from ...physics.utils import zip_batch_strings, lin_sup_batch_str
 from ...physics.representations import Representation
 from ...physics.wires import Wires
 

@@ -18,13 +18,13 @@ various states and transformations.
 """
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Sequence
 
 from mrmustard import math
 from mrmustard.utils.typing import Matrix
 
 
-def cxgate_symplectic(s: float | Iterable[float]) -> Matrix:
+def cxgate_symplectic(s: float | Sequence[float]) -> Matrix:
     r"""
     The symplectic matrix of a controlled X gate.
 
@@ -52,7 +52,7 @@ def cxgate_symplectic(s: float | Iterable[float]) -> Matrix:
     )
 
 
-def czgate_symplectic(s: float | Iterable[float]) -> Matrix:
+def czgate_symplectic(s: float | Sequence[float]) -> Matrix:
     r"""
     The symplectic matrix of a controlled Z gate.
 
@@ -96,7 +96,7 @@ def interferometer_symplectic(unitary: Matrix) -> Matrix:
 
 
 def mzgate_symplectic(
-    phi_a: float | Iterable[float], phi_b: float | Iterable[float], internal: bool
+    phi_a: float | Sequence[float], phi_b: float | Sequence[float], internal: bool
 ) -> Matrix:
     r"""
     The symplectic matrix of a Mach-Zehnder gate.
@@ -148,7 +148,7 @@ def mzgate_symplectic(
     return 0.5 * symplectic
 
 
-def pgate_symplectic(n_modes: int, shearing: float | Iterable[float]) -> Matrix:
+def pgate_symplectic(n_modes: int, shearing: float | Sequence[float]) -> Matrix:
     r"""
     The symplectic matrix of a quadratic phase gate.
 
