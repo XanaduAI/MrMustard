@@ -53,6 +53,13 @@ class Ansatz(ABC):
 
     @property
     @abstractmethod
+    def core_dims(self) -> int:
+        r"""
+        The number of core dimensions of the ansatz.
+        """
+
+    @property
+    @abstractmethod
     def batch_shape(self) -> tuple[int, ...]:
         r"""
         The batch shape of the ansatz.
