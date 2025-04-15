@@ -453,13 +453,15 @@ class Ket(State):
                 [R, An],
             ]
         )
-        bs = math.block([math.zeros(M, dtype=math.complex128), bn], axes=(0, 0))
+
+        bs = math.concat([math.zeros(batch_shape + (M,), dtype=math.complex128), bn], -1)
         cs = c
 
         inverse_order = np.argsort(new_order)
         As = As[..., inverse_order, :]
         As = As[..., :, inverse_order]
-        bs = bs[inverse_order]
+        bs = bs[..., inverse_order]
+
         s = Ket.from_bargmann(self.modes, (As, bs, cs))
 
         if batch_shape != ():
@@ -478,8 +480,8 @@ class Ket(State):
                 ],
             ]
         )
-        bt = math.block([bm, math.zeros(M, dtype=math.complex128)], axes=(0, 0))
-        ct = math.astensor(1, dtype=math.complex128)
+        bt = math.concat([bm, math.zeros(batch_shape + (M,), dtype=math.complex128)], -1)
+        ct = math.ones_like(c)
         t = Operation.from_bargmann(core_modes, core_modes, (At, bt, ct))
 
         return s, t

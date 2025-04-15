@@ -605,3 +605,13 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert psi == core1 >> phi1
         assert psi == core12 >> phi12
         assert (core12 >> Vacuum((0)).dual).normalize() == Vacuum((1, 2))
+
+        psi = Ket.random([0, 1, 2])
+        phi = Ket.random([0, 1, 2])
+
+        (psi + phi).ansatz.batch_shape
+
+        sigma = psi + phi
+        core, U = sigma.formal_stellar_decomposition([0])
+
+        assert sigma == core.contract(U, mode="zip")
