@@ -86,21 +86,17 @@ class TraceOut(CircuitComponent):
         elif not ket or not bra:
             B = other.ansatz.batch_dims
             C = other.ansatz.core_dims
+            batch = [chr(97 + i) for i in range(B)]
             wires = ket + bra
-            _, ovlp, core_out = (wires.adjoint @ wires)[0].contracted_labels(self.wires)
             core1 = list(range(C))
             core2 = list(range(C, 2 * C))
-            for i in ovlp[: len(self.modes)]:
-                core2[i] = core1[i]
-            batch = [chr(97 + i) for i in range(B)]
-            if not bra:
-                ansatz = other.ansatz.conj.contract(
-                    other.ansatz, batch + core1, batch + core2, core_out
-                )
-            else:
-                ansatz = other.ansatz.contract(
-                    other.ansatz.conj, batch + core2, batch + core1, core_out
-                )
+            for i, w in enumerate(wires.output):
+                if w.mode in self.wires.modes:
+                    core2[i] = core1[i]
+            core_out = sorted(set(core1) ^ set(core2))
+            ansatz1 = other.ansatz.conj if not bra else other.ansatz
+            ansatz2 = other.ansatz if not bra else other.ansatz.conj
+            ansatz = ansatz1.contract(ansatz2, batch + core1, batch + core2, batch + core_out)
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
             idx_zconj = [bra[m].indices[0] for m in self.wires.modes & bra.modes]
