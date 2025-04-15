@@ -114,6 +114,7 @@ class PolyExpAnsatz(Ansatz):
         b: ComplexVector | Batch[ComplexVector] | None,
         c: ComplexTensor | Batch[ComplexTensor] | None,
         name: str = "",
+        lin_sup: bool = False,
     ):
         super().__init__()
         self._A = math.astensor(A) if A is not None else None
@@ -121,12 +122,14 @@ class PolyExpAnsatz(Ansatz):
         self._c = math.astensor(c) if c is not None else None
 
         verify_batch_triple(self._A, self._b, self._c)
-        self._batch_shape = self._A.shape[:-2] if A is not None else ()
+
+        self._batch_shape = tuple(self._A.shape[:-2]) if A is not None else ()
 
         self.name = name
         self._simplified = False
         self._fn = None
         self._fn_kwargs = {}
+        self._lin_sup = lin_sup
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -150,11 +153,13 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def batch_shape(self) -> tuple[int, ...]:
+        if self._A is None:
+            self._generate_ansatz()
         return self._batch_shape
 
     @property
     def batch_size(self) -> int:
-        return int(math.prod(self.batch_shape)) if self.batch_shape != () else 0  # tensorflow
+        return int(math.prod(self.batch_shape)) if self.batch_shape else 0
 
     @property
     def c(self) -> Batch[ComplexTensor]:
@@ -166,7 +171,9 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def conj(self):
-        return PolyExpAnsatz(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        return PolyExpAnsatz(
+            math.conj(self.A), math.conj(self.b), math.conj(self.c), lin_sup=self._lin_sup
+        )
 
     @property
     def data(
@@ -188,7 +195,7 @@ class PolyExpAnsatz(Ansatz):
         r"""
         The number of derived variables that are derived by the polynomial of derivatives.
         """
-        return len(self.c.shape[self.batch_dims :])
+        return len(self.shape_derived_vars)
 
     @property
     def num_vars(self):
@@ -200,18 +207,24 @@ class PolyExpAnsatz(Ansatz):
         The scalar part of the ansatz, i.e. F(0)
         """
         if self.num_CV_vars == 0 and self.num_derived_vars == 0:
-            return self.c
+            ret = self.c
         elif self.num_CV_vars == 0:
-            return self()
+            ret = self()
         else:
-            return self(*math.zeros_like(self.b))
+            ret = self(*math.zeros_like(self.b))
+
+        if self._lin_sup:
+            einsum_str = generate_batch_str(self.batch_shape[:-1], 1)
+            ret = math.einsum(einsum_str + "a" + "->" + einsum_str, ret)
+
+        return ret
 
     @property
     def shape_derived_vars(self) -> tuple[int, ...]:
         r"""
         The shape of the coefficients of the polynomial of derivatives.
         """
-        return self.c.shape[self.batch_dims :]
+        return tuple(self.c.shape[self.batch_dims :])
 
     @property
     def triple(
@@ -270,7 +283,15 @@ class PolyExpAnsatz(Ansatz):
                 )
 
         A, b, c = complex_gaussian_integral_2(self.triple, other.triple, idx1, idx2, batch_str)
-        return PolyExpAnsatz(A, b, c)
+
+        if self._lin_sup and other._lin_sup:
+            batch_shape = self.batch_shape[:-1]
+            flattened = self.batch_shape[-1] * other.batch_shape[-1]
+            A = math.reshape(A, batch_shape + (flattened,) + tuple(A.shape[-2:]))
+            b = math.reshape(b, batch_shape + (flattened,) + tuple(b.shape[-1:]))
+            c = math.reshape(c, batch_shape + (flattened,) + self.shape_derived_vars)
+
+        return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup or other._lin_sup)
 
     def decompose_ansatz(self) -> PolyExpAnsatz:
         r"""
@@ -303,18 +324,10 @@ class PolyExpAnsatz(Ansatz):
             ]
         )
         b_core = math.concat((math.zeros(batch_shape + (n,), dtype=b.dtype), b[..., n:]), axis=-1)
-        if batch_shape:
-            batch_size = int(math.prod(A_core.shape[:-2]))  # tensorflow
-            A_core_vectorized = math.reshape(A_core, (batch_size,) + A_core.shape[-2:])
-            b_core_vectorized = math.reshape(b_core, (batch_size,) + b_core.shape[-1:])
-            poly_core = math.astensor(
-                [
-                    math.hermite_renormalized(A, b, complex(1), shape=poly_shape)
-                    for A, b in zip(A_core_vectorized, b_core_vectorized)
-                ]
-            )
-        else:
-            poly_core = math.hermite_renormalized(A_core, b_core, complex(1), poly_shape)
+
+        poly_core = math.hermite_renormalized(
+            A_core, b_core, math.ones(self.batch_shape, dtype=math.complex128), shape=poly_shape
+        )
 
         derived_vars_size = int(math.prod(self.shape_derived_vars))
         poly_core = math.reshape(
@@ -330,7 +343,7 @@ class PolyExpAnsatz(Ansatz):
         I_matrix = math.broadcast_to(math.eye_like(block), block.shape)
         A_decomp = math.block([[block, I_matrix], [I_matrix, math.zeros_like(block)]])
         b_decomp = math.concat((b[..., :n], math.zeros(batch_shape + (n,), dtype=b.dtype)), axis=-1)
-        return PolyExpAnsatz(A_decomp, b_decomp, c_prime)
+        return PolyExpAnsatz(A_decomp, b_decomp, c_prime, lin_sup=self._lin_sup)
 
     def eval(
         self, *z: Vector | None, batch_string: str | None = None
@@ -394,28 +407,35 @@ class PolyExpAnsatz(Ansatz):
         )
         A = math.gather(math.gather(self.A, order, axis=-1), order, axis=-2)
         b = math.gather(self.b, order, axis=-1)
-        return PolyExpAnsatz(A, b, self.c)
+        return PolyExpAnsatz(A, b, self.c, lin_sup=self._lin_sup)
 
-    # TODO: this should be moved to classes responsible for interpreting a batch dimension as a sum
-    def simplify(self) -> None:
+    def simplify(self) -> PolyExpAnsatz:
         r"""
-        Simplifies an ansatz by combining terms that have the same exponential part, i.e. two components
-        of the batch are considered equal if their ``A`` and ``b`` are equal. In this case only one
-        is kept and the corresponding ``c`` are added.
+        Returns a new ansatz simplified by combining terms that have the
+        same exponential part, i.e. two components of the batch are considered equal if their
+        ``A`` and ``b`` are equal. In this case only one is kept and the corresponding ``c`` are added.
 
         Will return immediately if the ansatz has already been simplified, so it is safe to re-call.
         """
-        if self._simplified or self.batch_shape == ():  # tensorflow
-            return
+        if self._simplified or not self._lin_sup:
+            return self
+        batch_shape = self.batch_shape[:-1] if self._lin_sup else self.batch_shape
+        if batch_shape:
+            raise NotImplementedError("Batched simplify is not implemented.")
         (A, b, c), to_keep = self._find_unique_terms_sorted()
+
         A = math.gather(A, to_keep, axis=0)
         b = math.gather(b, to_keep, axis=0)
         c = math.gather(c, to_keep, axis=0)  # already added
-        self._A = math.reshape(A, (len(to_keep),) + (self.num_vars, self.num_vars))
-        self._b = math.reshape(b, (len(to_keep),) + (self.num_vars,))
-        self._c = math.reshape(c, (len(to_keep),) + self.shape_derived_vars)
-        self._batch_shape = (len(to_keep),)
-        self._simplified = True
+
+        A = math.reshape(A, (len(to_keep),) + (self.num_vars, self.num_vars))
+        b = math.reshape(b, (len(to_keep),) + (self.num_vars,))
+        c = math.reshape(c, (len(to_keep),) + self.shape_derived_vars)
+
+        new_ansatz = PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
+        new_ansatz._simplified = True
+
+        return new_ansatz
 
     def to_dict(self) -> dict[str, ArrayLike]:
         r"""Returns a dictionary representation of the ansatz. For serialization purposes."""
@@ -446,7 +466,7 @@ class PolyExpAnsatz(Ansatz):
                 f"All indices must be between 0 and {self.num_CV_vars-1}. Got {idx_z} and {idx_zconj}."
             )
         A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=measure)
-        return PolyExpAnsatz(A, b, c)
+        return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
 
     def _combine_exp_and_poly(
         self, exp_sum: Batch[ComplexTensor], poly: Batch[ComplexTensor], c: Batch[ComplexTensor]
@@ -469,7 +489,7 @@ class PolyExpAnsatz(Ansatz):
         that correspond to the vector of given CV variables.
         """
         n = self.num_CV_vars
-        A_part = math.einsum("...a, ...b, ...ab->...", z, z, A[..., :n, :n])
+        A_part = math.einsum("...a,...b,...ab->...", z, z, A[..., :n, :n])
         b_part = math.einsum("...a,...a->...", z, b[..., :n])
         return math.exp(1 / 2 * A_part + b_part)
 
@@ -481,23 +501,12 @@ class PolyExpAnsatz(Ansatz):
         """
         n = self.num_CV_vars
         batch_shape = z.shape[:-1]
-        batch_size = int(math.prod(A.shape[:-2]))  # for tensorflow and jax
         b_poly = math.einsum("...ab,...a->...b", A[..., :n, n:], z) + b[..., n:]
-        A_poly_vectorized = math.reshape(A[..., n:, n:], (batch_size,) + A[..., n:, n:].shape[-2:])
-        b_poly_vectorized = math.reshape(b_poly, (batch_size,) + b_poly.shape[-1:])
-        ret = math.astensor(
-            [
-                math.hermite_renormalized(A, b, complex(1), shape=self.shape_derived_vars)
-                for A, b in zip(A_poly_vectorized, b_poly_vectorized)
-            ]
-        )
-        return math.reshape(ret, batch_shape + self.shape_derived_vars)
-
-    def _equal_no_array(self, other: PolyExpAnsatz) -> bool:
-        self.simplify()
-        other.simplify()
-        return math.allclose(self.b, other.b, atol=settings.ATOL) and math.allclose(
-            self.A, other.A, atol=settings.ATOL
+        return math.hermite_renormalized(
+            A[..., n:, n:],
+            b_poly,
+            math.ones(batch_shape, dtype=math.complex128),
+            shape=self.shape_derived_vars,
         )
 
     def _find_unique_terms_sorted(
@@ -505,7 +514,6 @@ class PolyExpAnsatz(Ansatz):
     ) -> tuple[tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]], list[int]]:
         r"""
         Finds unique terms by first sorting the batch dimension and adds the corresponding c values.
-        Needed in ``simplify``.
 
         Returns:
             The updated vectorized (A,b,c) triple and a list of indices to keep after simplification.
@@ -545,7 +553,7 @@ class PolyExpAnsatz(Ansatz):
             self._b = math.astensor(b)
             self._c = math.astensor(c)
             verify_batch_triple(self._A, self._b, self._c)
-            self._batch_shape = self._A.shape[:-2]
+            self._batch_shape = tuple(self._A.shape[:-2])
 
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL:
@@ -565,19 +573,11 @@ class PolyExpAnsatz(Ansatz):
         Returns:
             The ordered vectorized (A, b, c) triple.
         """
-        A_vectorized = (
-            math.reshape(self.A, (-1, self.num_vars, self.num_vars))
-            if self.batch_shape != ()
-            else self.A  # tensorflow
-        )
-        b_vectorized = (
-            math.reshape(self.b, (-1, self.num_vars)) if self.batch_shape != () else self.b
-        )  # tensorflow
-        c_vectorized = (
-            math.reshape(self.c, (-1, *self.shape_derived_vars))
-            if self.batch_shape != ()
-            else self.c  # tensorflow
-        )
+        if not self.batch_shape:
+            return self.A, self.b, self.c
+        A_vectorized = math.reshape(self.A, (-1, self.num_vars, self.num_vars))
+        b_vectorized = math.reshape(self.b, (-1, self.num_vars))
+        c_vectorized = math.reshape(self.c, (-1, *self.shape_derived_vars))
         generators = [
             itertools.chain(
                 math.asnumpy(b_vectorized[i]).flat,
@@ -664,6 +664,7 @@ class PolyExpAnsatz(Ansatz):
             new_A,
             new_b,
             new_c2,
+            lin_sup=self._lin_sup,
         )
 
     def _should_regenerate(self):
@@ -688,9 +689,9 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(
                 f"The number of CV variables must match. Got {self.num_CV_vars} and {other.num_CV_vars}."
             )
-        if self.batch_dims > 1 or other.batch_dims > 1:
+        if (self.batch_shape and not self._lin_sup) or (other.batch_shape and not other._lin_sup):
             raise ValueError(
-                f"The batch dimensions must be 0 or 1. Got {self.batch_dims} and {other.batch_dims}."
+                f"Cannot add PolyExpAnsatz with batch dimensions {self.batch_shape} and {other.batch_shape}."
             )
         A_self = self.A if self.batch_dims == 1 else math.expand_dims(self.A, axis=0)
         b_self = self.b if self.batch_dims == 1 else math.expand_dims(self.b, axis=0)
@@ -725,11 +726,11 @@ class PolyExpAnsatz(Ansatz):
             math.atleast_nd(c_self, n_derived_vars + 1),
             math.atleast_nd(c_other, n_derived_vars + 1),
         )
-
         return PolyExpAnsatz(
             combined_matrices,
             combined_vectors,
             combined_arrays,
+            lin_sup=True,
         )
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
@@ -775,7 +776,7 @@ class PolyExpAnsatz(Ansatz):
             math.cast(math.stack(broadcasted_z, axis=-1), dtype=math.complex128)
             if broadcasted_z
             else math.astensor([], dtype=math.complex128)
-        )  # tensorflow
+        )
         if len(z_only) < self.num_CV_vars:
             indices = tuple(i for i, arr in enumerate(z_inputs) if arr is not None)
             return self._partial_eval(z, indices)
@@ -800,20 +801,26 @@ class PolyExpAnsatz(Ansatz):
 
         exp_sum = self._compute_exp_part(z, A, b)
         if self.num_derived_vars == 0:  # purely gaussian
-            return math.einsum("..., ...->...", exp_sum, c)
+            return math.einsum("...,...->...", exp_sum, c)
         else:
             poly = self._compute_polynomial_part(z, A, b)
             return self._combine_exp_and_poly(exp_sum, poly, c)
 
-    def __eq__(self, other: PolyExpAnsatz) -> bool:
+    def __eq__(self, other) -> bool:
         if not isinstance(other, PolyExpAnsatz):
             return False
-        return self._equal_no_array(other) and math.allclose(self.c, other.c, atol=settings.ATOL)
+        self_A, self_b, self_c = self._order_batch()
+        other_A, other_b, other_c = other._order_batch()
+        return (
+            math.allclose(self_A, other_A, atol=settings.ATOL)
+            and math.allclose(self_b, other_b, atol=settings.ATOL)
+            and math.allclose(self_c, other_c, atol=settings.ATOL)
+        )
 
-    def __mul__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
+    def __mul__(self, other: Scalar | ArrayLike | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatz(self.A, self.b, self.c * other)
+                return PolyExpAnsatz(self.A, self.b, self.c * other, lin_sup=self._lin_sup)
             except Exception as e:
                 raise TypeError(f"Cannot multiply PolyExpAnsatz and {other.__class__}.") from e
 
@@ -823,7 +830,7 @@ class PolyExpAnsatz(Ansatz):
             )
 
     def __neg__(self) -> PolyExpAnsatz:
-        return PolyExpAnsatz(self.A, self.b, -self.c)
+        return PolyExpAnsatz(self.A, self.b, -self.c, lin_sup=self._lin_sup)
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the PolyExpAnsatz object."""
@@ -857,10 +864,10 @@ class PolyExpAnsatz(Ansatz):
 
         return "\n".join(repr_str)
 
-    def __truediv__(self, other: Scalar | PolyExpAnsatz) -> PolyExpAnsatz:
+    def __truediv__(self, other: Scalar | ArrayLike | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
-                return PolyExpAnsatz(self.A, self.b, self.c / other)
+                return PolyExpAnsatz(self.A, self.b, self.c / other, lin_sup=self._lin_sup)
             except Exception as e:
                 raise TypeError(f"Cannot divide PolyExpAnsatz and {other.__class__}.") from e
         else:

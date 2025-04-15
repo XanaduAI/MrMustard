@@ -16,7 +16,6 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-import numpy as np
 import pytest
 
 from mrmustard import math
@@ -38,47 +37,43 @@ class TestRgate:
         assert gate.name == "Rgate"
         assert gate.modes == (modes,)
 
-    def test_representation(self):
-        rep1 = Rgate(mode=0, theta=0.1).ansatz
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, batch_shape):
+        theta = math.broadcast_to(0.1, batch_shape)
+        rep1 = Rgate(mode=0, theta=theta).ansatz
         assert math.allclose(
             rep1.A,
             [
-                [
-                    [0.0 + 0.0j, 0.99500417 + 0.09983342j],
-                    [0.99500417 + 0.09983342j, 0.0 + 0.0j],
-                ]
+                [0.0 + 0.0j, 0.99500417 + 0.09983342j],
+                [0.99500417 + 0.09983342j, 0.0 + 0.0j],
             ],
         )
-        assert math.allclose(rep1.b, np.zeros((1, 2)))
-        assert math.allclose(rep1.c, [1.0 + 0.0j])
+        assert math.allclose(rep1.b, math.zeros((2,)))
+        assert math.allclose(rep1.c, 1.0 + 0.0j)
 
-        rep2 = (Rgate(mode=0, theta=0.1) >> Rgate(mode=1, theta=0.3)).ansatz
+        rep2 = (Rgate(mode=0, theta=theta) >> Rgate(mode=1, theta=0.3)).ansatz
         assert math.allclose(
             rep2.A,
             [
-                [
-                    [0.0 + 0.0j, 0.0 + 0.0j, 0.99500417 + 0.09983342j, 0.0 + 0.0j],
-                    [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.95533649 + 0.29552021j],
-                    [0.99500417 + 0.09983342j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
-                    [0.0 + 0.0j, 0.95533649 + 0.29552021j, 0.0 + 0.0j, 0.0 + 0.0j],
-                ]
+                [0.0 + 0.0j, 0.0 + 0.0j, 0.99500417 + 0.09983342j, 0.0 + 0.0j],
+                [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.95533649 + 0.29552021j],
+                [0.99500417 + 0.09983342j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                [0.0 + 0.0j, 0.95533649 + 0.29552021j, 0.0 + 0.0j, 0.0 + 0.0j],
             ],
         )
-        assert math.allclose(rep2.b, np.zeros((1, 4)))
-        assert math.allclose(rep2.c, [1.0 + 0.0j])
+        assert math.allclose(rep2.b, math.zeros((4,)))
+        assert math.allclose(rep2.c, 1.0 + 0.0j)
 
-        rep3 = Rgate(mode=1, theta=0.1).ansatz
+        rep3 = Rgate(mode=1, theta=theta).ansatz
         assert math.allclose(
             rep3.A,
             [
-                [
-                    [0.0 + 0.0j, 0.99500417 + 0.09983342j],
-                    [0.99500417 + 0.09983342j, 0.0 + 0.0j],
-                ]
+                [0.0 + 0.0j, 0.99500417 + 0.09983342j],
+                [0.99500417 + 0.09983342j, 0.0 + 0.0j],
             ],
         )
-        assert math.allclose(rep3.b, np.zeros((1, 2)))
-        assert math.allclose(rep3.c, [1.0 + 0.0j])
+        assert math.allclose(rep3.b, math.zeros((2,)))
+        assert math.allclose(rep3.c, 1.0 + 0.0j)
 
     def test_trainable_parameters(self):
         gate1 = Rgate(0, 1)

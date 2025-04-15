@@ -18,6 +18,7 @@
 
 import pytest
 
+from mrmustard import math
 from mrmustard.lab_dev.states import SqueezedVacuum, Vacuum
 from mrmustard.lab_dev.transformations import Sgate
 
@@ -53,7 +54,10 @@ class TestSqueezedVacuum:
         assert state3.parameters.phi.value == 2
 
     @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
-    def test_representation(self, modes, r, phi):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, modes, r, phi, batch_shape):
+        r = math.broadcast_to(r, batch_shape)
+        phi = math.broadcast_to(phi, batch_shape)
         rep = SqueezedVacuum(modes, r, phi).ansatz
         exp = (Vacuum(modes) >> Sgate(modes, r, phi)).ansatz
         assert rep == exp
