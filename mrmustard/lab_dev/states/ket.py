@@ -25,7 +25,7 @@ from IPython.display import display
 import numpy as np
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
+from mrmustard.math.lattice.autoshape import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
