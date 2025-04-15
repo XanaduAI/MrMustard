@@ -27,16 +27,9 @@ import numpy as np  # pragma: no cover
 import equinox as eqx  # pragma: no cover
 from jax import tree_util  # pragma: no cover
 
-from ..utils.settings import settings  # pragma: no cover
 from .autocast import Autocast  # pragma: no cover
 from .backend_base import BackendBase  # pragma: no cover
-from .lattice.strategies import (  # pragma: no cover
-    binomial,
-    vanilla,
-    vanilla_stable,
-    vanilla_stable_batch,
-    vanilla_batch,
-)
+from .lattice import strategies  # pragma: no cover
 from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cover
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
@@ -533,40 +526,58 @@ class BackendJax(BackendBase):  # pragma: no cover
         return A, B
 
     # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized
+    # hermite_renormalized_unbatched
     # ~~~~~~~~~~~~~~~~~
-    @partial(jax.jit, static_argnames=["shape"])
-    def hermite_renormalized(
-        self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
+    @partial(jax.jit, static_argnames=["shape", "stable"])
+    def hermite_renormalized_unbatched(
+        self,
+        A: jnp.ndarray,
+        b: jnp.ndarray,
+        c: jnp.ndarray,
+        shape: tuple[int],
+        stable: bool = False,
     ) -> jnp.ndarray:
-        if settings.STABLE_FOCK_CONVERSION:
-            function = partial(vanilla_stable, shape)
+        if stable:
+            G = jax.pure_callback(
+                lambda A, b, c: strategies.stable_numba(
+                    shape, np.array(A), np.array(b), np.array(c)
+                ),
+                jax.ShapeDtypeStruct(shape, jnp.complex128),
+                A,
+                b,
+                c,
+            )
         else:
-            function = partial(vanilla, shape)
-        G = jax.pure_callback(
-            lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
-            jax.ShapeDtypeStruct(shape, jnp.complex128),
-            A,
-            b,
-            c,
-        )
+            G = jax.pure_callback(
+                lambda A, b, c: strategies.vanilla_numba(
+                    shape, np.array(A), np.array(b), np.array(c)
+                ),
+                jax.ShapeDtypeStruct(shape, jnp.complex128),
+                A,
+                b,
+                c,
+            )
         return G
 
     # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_batch
+    # hermite_renormalized_batched
     # ~~~~~~~~~~~~~~~~~
-
-    @partial(jax.jit, static_argnames=["shape"])
-    def hermite_renormalized_batch(
-        self, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, shape: tuple[int]
+    @partial(jax.jit, static_argnames=["shape", "stable"])
+    def hermite_renormalized_batched(
+        self,
+        A: jnp.ndarray,
+        b: jnp.ndarray,
+        c: jnp.ndarray,
+        shape: tuple[int],
+        stable: bool = False,
     ) -> jnp.ndarray:
-        if settings.STABLE_FOCK_CONVERSION:
-            function = partial(vanilla_stable_batch, tuple(shape))
-        else:
-            function = partial(vanilla_batch, tuple(shape))
+        batch_size = A.shape[0]
+        output_shape = (batch_size,) + shape
         G = jax.pure_callback(
-            lambda A, b, c: function(np.array(A), np.array(b), np.array(c)),
-            jax.ShapeDtypeStruct((b.shape[0],) + shape, jnp.complex128),
+            lambda A, b, c: strategies.vanilla_batch_numba(
+                shape, np.array(A), np.array(b), np.array(c), stable
+            ),
+            jax.ShapeDtypeStruct(output_shape, jnp.complex128),
             A,
             b,
             c,
@@ -693,7 +704,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        function = partial(binomial, tuple(shape))
+        function = partial(strategies.binomial, tuple(shape))
         G = jax.pure_callback(
             lambda A, B, C, max_l2, global_cutoff: function(
                 np.array(A), np.array(B), np.array(C), max_l2, global_cutoff
