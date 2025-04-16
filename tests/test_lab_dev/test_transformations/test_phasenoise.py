@@ -16,7 +16,6 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-import numpy as np
 import pytest
 
 from mrmustard import math
@@ -38,26 +37,27 @@ class TestPhaseNoise:
         assert ch.modes == (0,)
         assert ch.ansatz is None
 
-    def test_application(self):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_application(self, batch_shape):
         "Tests application of PhaseNoise on Ket and DM"
-        psi_1 = Ket.random((0, 1)) >> Dgate(0, 0.5, 0.5) >> PhaseNoise(0, 0.2)
+        x = math.broadcast_to(0.5, batch_shape)
+        psi_1 = Ket.random((0, 1)) >> Dgate(0, x, 0.5) >> PhaseNoise(0, 0.2)
         assert isinstance(psi_1, DM)
-        assert psi_1.purity < 1
+        assert math.all(psi_1.purity < 1)
+
+        rho = DM.random((0, 1)) >> Dgate(0, 0.5, 0.5) >> PhaseNoise(0, 0.2)
+        assert isinstance(rho, DM)
+        assert math.all(rho.purity < 1)
 
         psi_2 = Coherent(0, 2)
-        phi = psi_2 >> PhaseNoise(0, 10)
-        after_noise_array = phi.fock_array(10)
+        after_noise_array = (psi_2 >> PhaseNoise(0, 10)).fock_array(10)
         assert math.allclose(
-            np.diag(after_noise_array), np.diag(psi_2.dm().fock_array(10))
+            math.diag_part(after_noise_array), math.diag_part(psi_2.dm().fock_array(10))
         )  # the diagonal entries must remain unchanged
         mask = ~math.eye(after_noise_array.shape[0], dtype=bool)
         assert math.allclose(
             after_noise_array[mask], math.zeros_like(after_noise_array[mask])
         )  # the off-diagonal entries must vanish
-
-        rho = DM.random((0, 1)) >> Dgate(0, 0.5, 0.5) >> PhaseNoise(0, 0.2)
-        assert isinstance(rho, DM)
-        assert rho.purity < 1
 
     @pytest.mark.parametrize("sigma", [0.2, 0.5, 0.7])
     def test_numeric(self, sigma):

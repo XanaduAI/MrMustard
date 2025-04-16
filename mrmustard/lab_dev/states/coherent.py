@@ -17,7 +17,7 @@ The class representing a coherent state.
 """
 
 from __future__ import annotations
-
+from typing import Sequence
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .ket import Ket
@@ -65,8 +65,8 @@ class Coherent(Ket):
     def __init__(
         self,
         mode: int,
-        x: float = 0.0,
-        y: float = 0.0,
+        x: float | Sequence[float] = 0.0,
+        y: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: tuple[float | None, float | None] = (None, None),

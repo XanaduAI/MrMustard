@@ -16,7 +16,6 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-import numpy as np
 import pytest
 
 from mrmustard import math
@@ -39,15 +38,17 @@ class TestAmplifier:
         assert gate.name == "Amp~"
         assert gate.modes == (modes,)
 
-    def test_representation(self):
-        rep1 = Amplifier(mode=0, gain=1.1).ansatz
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, batch_shape):
+        gain = math.broadcast_to(1.1, batch_shape)
+        rep1 = Amplifier(mode=0, gain=gain).ansatz
         g1 = 0.95346258
         g2 = 0.09090909
         assert math.allclose(
             rep1.A, [[[0, g1, g2, 0], [g1, 0, 0, 0], [g2, 0, 0, g1], [0, 0, g1, 0]]]
         )
-        assert math.allclose(rep1.b, np.zeros((1, 4)))
-        assert math.allclose(rep1.c, [0.90909090])
+        assert math.allclose(rep1.b, math.zeros((1, 4)))
+        assert math.allclose(rep1.c, 0.90909090)
 
     def test_trainable_parameters(self):
         gate1 = Amplifier(0, 1.2)
@@ -59,24 +60,24 @@ class TestAmplifier:
         gate2.parameters.gain.value = 1.5
         assert gate2.parameters.gain.value == 1.5
 
-    def test_operation(self):
-        amp_channel = Amplifier(mode=0, gain=1.5)
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_operation(self, batch_shape):
+        gain = math.broadcast_to(1.5, batch_shape)
+        amp_channel = Amplifier(mode=0, gain=gain)
         att_channel = Attenuator(mode=0, transmissivity=0.7)
         operation = amp_channel >> att_channel
 
         assert math.allclose(
             operation.ansatz.A,
             [
-                [
-                    [0.0 + 0.0j, 0.75903339 + 0.0j, 0.25925926 + 0.0j, 0.0 + 0.0j],
-                    [0.75903339 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.22222222 + 0.0j],
-                    [0.25925926 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.75903339 + 0.0j],
-                    [0.0 + 0.0j, 0.22222222 + 0.0j, 0.75903339 + 0.0j, 0.0 + 0.0j],
-                ]
+                [0.0 + 0.0j, 0.75903339 + 0.0j, 0.25925926 + 0.0j, 0.0 + 0.0j],
+                [0.75903339 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.22222222 + 0.0j],
+                [0.25925926 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.75903339 + 0.0j],
+                [0.0 + 0.0j, 0.22222222 + 0.0j, 0.75903339 + 0.0j, 0.0 + 0.0j],
             ],
         )
-        assert math.allclose(operation.ansatz.b, np.zeros((1, 4)))
-        assert math.allclose(operation.ansatz.c, [0.74074074 + 0.0j])
+        assert math.allclose(operation.ansatz.b, math.zeros((4,)))
+        assert math.allclose(operation.ansatz.c, 0.74074074 + 0.0j)
 
     def test_circuit_identity(self):
         amp_channel = Amplifier(mode=0, gain=2)

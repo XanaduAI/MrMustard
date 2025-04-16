@@ -66,6 +66,9 @@ class BackendJax(BackendBase):  # pragma: no cover
     def abs(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.abs(array)
 
+    def all(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.all(array)
+
     @jax.jit
     def any(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.any(array)
@@ -259,9 +262,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         return jnp.linalg.det(matrix)
 
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
-        if array.ndim == 0:
-            return array
-        elif array.ndim in [1, 2]:
+        if array.ndim in [1, 2]:
             return jnp.diag(array, k=k)
         else:
             # fallback into more complex algorithm

@@ -79,12 +79,12 @@ class TestPolyExpAnsatz:
 
     def test_add_different_poly_wires(self):
         "tests that A and b are padded correctly"
-        A1 = np.random.random((1, 2, 2))
-        A2 = np.random.random((1, 3, 3))
-        b1 = np.random.random((1, 2))
-        b2 = np.random.random((1, 3))
-        c1 = np.random.random((1,))
-        c2 = np.random.random((1, 11))
+        A1 = np.random.random((2, 2))
+        A2 = np.random.random((3, 3))
+        b1 = np.random.random((2))
+        b2 = np.random.random((3))
+        c1 = np.random.random(())
+        c2 = np.random.random((11))
         ansatz1 = PolyExpAnsatz(A1, b1, c1)
         ansatz2 = PolyExpAnsatz(A2, b2, c2)
         ansatz_sum = ansatz1 + ansatz2
@@ -379,10 +379,12 @@ class TestPolyExpAnsatz:
         assert math.allclose(ansatz.b[0], ansatz.b[1])
         assert math.allclose(ansatz.b[0], b)
 
-        ansatz.simplify()
-        assert len(ansatz.A) == 1
-        assert len(ansatz.b) == 1
-        assert ansatz.c == 2 * c
+        new_ansatz = ansatz.simplify()
+        assert len(new_ansatz.A) == 1
+        assert len(new_ansatz.b) == 1
+        assert math.allclose(new_ansatz.c, 2 * c)
+
+        assert new_ansatz.simplify() is new_ansatz
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_sub(self, n):

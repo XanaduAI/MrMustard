@@ -36,9 +36,12 @@ class TestCZgate:
         assert cz.parameters.s.value == 0.3
 
     @pytest.mark.parametrize("s", [0.1, 0.2, 1.5])
-    def test_application(self, s):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_application(self, s, batch_shape):
         "Tests the application of CZgate"
-        psi = Coherent(0, 0, 1) >> Coherent(1, 1, 0) >> CZgate((0, 1), s)
+        s_batch = math.broadcast_to(s, batch_shape)
+        psi = Coherent(0, 0, 1) >> Coherent(1, 1, 0) >> CZgate((0, 1), s_batch)
         _, d, _ = psi.phase_space(s=0)
         d_by_hand = math.astensor([0, math.sqrt(complex(2)), (1 + s) * math.sqrt(complex(2)), 0])
+        assert d.shape[:-1] == batch_shape
         assert math.allclose(d, d_by_hand)
