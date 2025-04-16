@@ -76,8 +76,10 @@ class TestMmEinsum:
 
     def test_single_mode_with_batch(self):
         """Test that mm_einsum works for a single mode with batch dimensions."""
+        g = self.g0.ansatz + self.g0.ansatz
+        g._lin_sup = False  # disable linear superposition
         res = mm_einsum(
-            (self.g0.ansatz + self.g0.ansatz),
+            g,
             ["hello", 0],
             self.g1.ansatz.conj,
             [0],
@@ -91,8 +93,10 @@ class TestMmEinsum:
 
     def test_multimode_with_batch(self):
         """Test that mm_einsum works for a multimode with batch dimensions."""
+        g = self.g0123.ansatz + self.g0123.ansatz
+        g._lin_sup = False  # disable linear superposition
         res = mm_einsum(
-            (self.g0123.ansatz + self.g0123.ansatz),
+            g,
             ["hello", 0, 1, 2, 3],
             self.g0123.ansatz.conj,
             [0, 1, 2, 3],
@@ -304,14 +308,18 @@ class TestMmEinsum:
         f2 = Ket.random([2]).to_fock()
         d1 = f1.auto_shape()[0]
         d2 = f2.auto_shape()[0]
+        s = (s2_0 + s2_1 + s2_2).ansatz
+        s._lin_sup = False  # disable linear superposition
+        bs = (bs01_0 + bs01_1).ansatz
+        bs._lin_sup = False  # disable linear superposition
         res = mm_einsum(
             s0.ansatz,
             [0],
             s1.ansatz,
             [1],
-            (s2_0 + s2_1 + s2_2).ansatz,
+            s,
             ["hello", 2],
-            (bs01_0 + bs01_1).ansatz,
+            bs,
             ["world", 3, 4, 0, 1],
             bs12.ansatz,
             [5, 6, 4, 2],
@@ -368,3 +376,18 @@ class TestMmEinsum:
         )
         assert isinstance(res, ArrayAnsatz)
         assert res == (f0 >> R).ansatz
+
+    def test_with_linear_superposition(self):
+        """Test that mm_einsum works for a linear superposition."""
+        g = self.g0.ansatz + self.g0.ansatz
+        res = mm_einsum(
+            g,
+            [0],
+            g.conj,
+            [0],
+            output=[],
+            contraction_order=[(0, 1)],
+            fock_dims={0: 10},
+        )
+        assert res.batch_shape == (4,)
+        assert res._lin_sup == True
