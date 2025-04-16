@@ -37,17 +37,48 @@ def mm_einsum(
     fock_dims: dict[int, int],
 ) -> PolyExpAnsatz | ArrayAnsatz | ArrayLike:
     r"""
-    This function contracts a network of Ansatze using a custom contraction order and a dictionary
-    of Fock space dimensions. If a dimension is 0 its ansatz is converted to PolyExpAnsatz.
+    Contracts a network of Ansatze according to a custom contraction order, supporting both Fock
+    and Bargmann representations, batch dimensions, and named indices.
+
+    This function generalizes the concept of Einstein summation (einsum) to quantum states and
+    operators, allowing for flexible contraction of complex tensor networks in quantum optics.
 
     Args:
-        args: Alternating Ansatze and lists of indices.
-        output: The output indices.
-        contraction_order: The order in which to perform the contractions.
-        fock_dims: The Fock space dimensions of the Hilbert space indices.
+        *args: Alternating sequence of Ansatz objects and their associated index lists.
+            Each Ansatz is followed by a list of indices (strings for batch axes, integers for Hilbert space indices).
+        output (list[int | str]): The indices (batch names and Hilbert space indices) to keep in the output.
+        contraction_order (list[tuple[int, int]]): The order in which to contract the Ansatze,
+            specified as pairs of their positions in the input.
+        fock_dims (dict[int, int]): Mapping from Hilbert space indices (int) to Fock space dimensions.
+            If a dimension is 0, the corresponding Ansatz is converted to Bargmann (PolyExpAnsatz) form.
 
     Returns:
-        Ansatz: The resulting Ansatz after performing all the contractions.
+        PolyExpAnsatz | ArrayAnsatz | ArrayLike: The contracted Ansatz or array, depending on the output indices and Fock dimensions.
+
+    Example:
+        >>> from mrmustard.lab_dev import Ket, BSgate
+        >>> from mrmustard.physics.mm_einsum import mm_einsum
+        >>> # Prepare two single-mode states and a beamsplitter
+        >>> ket0 = Ket.random([0])
+        >>> ket1 = Ket.random([1])
+        >>> bs = BSgate((0, 1), theta=0.5, phi=0.3)
+        >>> # Contract the network: (ket0 & ket1) >> BS
+        >>> result = mm_einsum(
+        ...     ket0.ansatz, [0],
+        ...     ket1.ansatz, [1],
+        ...     bs.ansatz, [2, 3, 0, 1],
+        ...     output=[2, 3],
+        ...     contraction_order=[(0, 2), (1, 2)],
+        ...     fock_dims={0: 20, 1: 20, 2: 10, 3: 10},
+        ... )
+        >>> assert isinstance(result, ArrayAnsatz)
+        >>> assert result.shape == (10, 10)
+
+    Notes:
+        - Batch indices (strings) allow for batched contraction over multiple states/operators.
+        - If all Fock dimensions for contracted indices are set to 0, the result is in Bargmann (PolyExpAnsatz) form.
+        - The function raises ValueError if the contraction does not result in a single output Ansatz.
+
     """
     # --- prepare ansatz and indices, convert names to characters ---
     ansatze = {(i,): ansatz for i, ansatz in enumerate(args[::2])}
