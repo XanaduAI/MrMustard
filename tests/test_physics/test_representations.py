@@ -89,7 +89,7 @@ class TestRepresentation:
             assert w.repr_params_func() == [0.2]
 
     def test_contract_custom_batch_str(self, d_gate_rep_batch, btoq_rep_batch):
-        q_dgate = d_gate_rep_batch.contract(btoq_rep_batch, mode="i,j->ij")
+        q_dgate = d_gate_rep_batch.contract(btoq_rep_batch, mode="kron")
         assert q_dgate.ansatz.batch_shape == (3, 3)
 
     def test_to_bargmann(self, d_gate_rep):
