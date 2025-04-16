@@ -548,73 +548,88 @@ class DM(State):
         new_order = core_indices + other_indices
         new_order = math.astensor(core_indices + other_indices)
 
-        A = self.ansatz.reorder(new_order).A
+        A, b, c = self.ansatz.reorder(new_order).triple
+        batch_shape = self.ansatz.batch_shape
 
         M = len(core_modes)
         N = self.n_modes - M
 
-        Am = A[: 2 * M, : 2 * M]
-        An = A[2 * M :, 2 * M :]
-        R = A[2 * M :, : 2 * M]
+        Am = A[..., : 2 * M, : 2 * M]
+        An = A[..., 2 * M :, 2 * M :]
+        R = A[..., 2 * M :, : 2 * M]
 
-        sigma = R[M:, :M]
-        r = R[M:, M:]
-        alpha_m = Am[M:, :M]
-        alpha_n = An[N:, :N]
-        a_n = An[N:, N:]
+        sigma = R[..., M:, :M]
+        r = R[..., M:, M:]
+        alpha_m = Am[..., M:, :M]
+        alpha_n = An[..., N:, :N]
+        a_n = An[..., N:, N:]
+        r_transpose = math.einsum("...ij->...ji", r)
+        sigma_transpose = math.einsum("...ij->...ji", sigma)
+        R_transpose = math.einsum("...ij->...ji", R)
 
-        rank = np.linalg.matrix_rank(r @ math.conj(r).T + sigma @ math.conj(sigma.T))
-        if rank > M:
+        rank = np.linalg.matrix_rank(
+            r @ math.conj(r_transpose) + sigma @ math.conj(sigma_transpose)
+        )
+        if np.any(rank > M):
             raise ValueError(
                 "The physical mixed stellar decomposition is not possible for this DM, "
                 f"as the rank {rank} of the off-diagonal block of the Bargmann matrix is larger than the number "
                 f"of core modes {M}."
             )
 
-        reduced_A = R @ math.inv(math.eye(2 * M) - math.Xmat(M) @ Am) @ math.conj(R.T)
+        I2M = math.stack([math.eye(2 * M) for _ in range(math.prod(batch_shape))])
+        reduced_A = R @ math.inv(I2M - math.Xmat(M) @ Am) @ math.conj(R_transpose)
 
         # computing a low-rank r_c:
-        r_c_squared = reduced_A[N:, N:] + sigma @ math.inv(alpha_m) @ math.conj(sigma.T)
+        r_c_squared = reduced_A[..., N:, N:] + sigma @ math.inv(alpha_m) @ math.conj(
+            sigma_transpose
+        )
         r_c_evals, r_c_evecs = math.eigh(r_c_squared)
         idx = np.argsort(r_c_evals)[::-1]
-        r_c_evals = r_c_evals[idx]
-        r_c_evecs = r_c_evecs[:, idx]
-        r_c = r_c_evecs[:, :M] * math.sqrt(r_c_evals[:M], dtype=math.complex128)
+        r_c_evals = r_c_evals[..., idx]
+        r_c_evecs = r_c_evecs[..., :, idx]
+        r_c = r_c_evecs[..., :, :M] * math.sqrt(r_c_evals[..., :M], dtype=math.complex128)
         R_c = math.block(
             [
-                [math.conj(r_c), math.zeros((N, M), dtype=math.complex128)],
-                [math.zeros((M, N), dtype=math.complex128), r_c],
+                [math.conj(r_c), math.zeros(batch_shape + (N, M), dtype=math.complex128)],
+                [math.zeros(batch_shape + (M, N), dtype=math.complex128), r_c],
             ]
         )
-        alpha_n_c = alpha_n - sigma @ math.inv(alpha_m) @ math.conj(sigma.T)
-        a_n_c = a_n + reduced_A[N:, :N]
+        R_c_transpose = math.einsum("...ij->...ji", R_c)
+        alpha_n_c = alpha_n - sigma @ math.inv(alpha_m) @ math.conj(sigma_transpose)
+        a_n_c = a_n + reduced_A[..., N:, :N]
         An_c = math.block([[math.conj(a_n_c), math.conj(alpha_n_c)], [alpha_n_c, a_n_c]])
         A_core = math.block(
-            [[math.zeros((2 * M, 2 * M), dtype=math.complex128), R_c.T], [R_c, An_c]]
+            [
+                [math.zeros(batch_shape + (2 * M, 2 * M), dtype=math.complex128), R_c_transpose],
+                [R_c, An_c],
+            ]
         )
-        b_core = math.zeros(2 * self.n_modes, dtype=math.complex128)
-        c_core = 1
+        b_core = math.zeros_like(b)
+        c_core = math.ones_like(c)  # to be renormalized
 
         inverse_order = np.argsort(new_order)
 
         temp = math.astensor(inverse_order)
-        A_core = A_core[temp, :]
-        A_core = A_core[:, temp]
-        b_core = b_core[temp]
+        A_core = A_core[..., temp, :]
+        A_core = A_core[..., :, temp]
+        b_core = b_core[..., temp]
         core = DM.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
 
         Aphi_out = Am
         gamma = np.linalg.pinv(R_c) @ R
-        Aphi_in = gamma @ math.inv(Aphi_out - math.Xmat(M)) @ gamma.T + math.Xmat(M)
+        gamma_transpose = math.einsum("...ij->...ji", gamma)
+        Aphi_in = gamma @ math.inv(Aphi_out - math.Xmat(M)) @ gamma_transpose + math.Xmat(M)
 
-        Aphi_oi = math.block([[Aphi_out, gamma.T], [gamma, Aphi_in]])
-        A_tmp = math.reshape(Aphi_oi, (2, 2, M, 2, 2, M))
-        A_tmp = math.transpose(A_tmp, (1, 0, 2, 4, 3, 5))
-        Aphi = math.reshape(A_tmp, (4 * M, 4 * M))
-        bphi = math.zeros(4 * M, dtype=math.complex128)
-        phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, 1.0))
-        renorm = (core >> phi).probability
-        phi = phi / renorm
+        Aphi_oi = math.block([[Aphi_out, gamma_transpose], [gamma, Aphi_in]])
+        A_tmp = math.reshape(Aphi_oi, batch_shape + (2, 2, M, 2, 2, M))
+        A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
+        Aphi = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
+        bphi = math.zeros(batch_shape + (4 * M), dtype=math.complex128)
+        c_phi = math.ones(batch_shape, dtype=math.complex128)
+        phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, c_phi))
+        renorm = phi.contract(TraceOut(self.modes))
+        phi = phi / renorm.ansatz.c
 
         return core, phi
 
