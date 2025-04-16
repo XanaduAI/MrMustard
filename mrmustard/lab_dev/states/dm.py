@@ -405,7 +405,6 @@ class DM(State):
 
         .. code-block::
             >>> from mrmustard.lab_dev import DM, Ket, Vacuum
-
             >>> rho = DM.random([0,1])
             >>> core, phi = rho.physical_stellar_decomposition([0])
 
@@ -427,7 +426,8 @@ class DM(State):
         new_order = core_indices + other_indices
         new_order = math.astensor(core_indices + other_indices)
 
-        A = self.ansatz.reorder(new_order).A
+        batch_shape = self.ansatz.batch_shape
+        A, b, c = self.ansatz.reorder(new_order).triple
 
         m_modes = A.shape[-1] // 2
 
@@ -437,31 +437,39 @@ class DM(State):
             )
 
         M = len(core_modes)
-        Am = A[: 2 * M, : 2 * M]
-        An = A[2 * M :, 2 * M :]
-        R = A[2 * M :, : 2 * M]
-
+        Am = A[..., : 2 * M, : 2 * M]
+        An = A[..., 2 * M :, 2 * M :]
+        R = A[..., 2 * M :, : 2 * M]
+        R_transpose = math.einsum("...ij->...ji", R)
         # computing the core state:
-        reduced_A = An - R @ math.inv(Am - math.Xmat(M)) @ R.T
-        r_squared = reduced_A[:M, M:]
+        reduced_A = An - R @ math.inv(Am - math.Xmat(M)) @ R_transpose
+        r_squared = reduced_A[..., :M, M:]
         r_evals, r_evecs = math.eigh(r_squared)
-        r_core = (r_evecs * math.sqrt(r_evals, dtype=math.complex128) @ math.conj(r_evecs.T)).T
-        a_core = reduced_A[M:, M:]
+
+        r_core_transpose = math.einsum(
+            "...ij, ...j, ...kj -> ...ik",
+            r_evecs,
+            math.sqrt(r_evals),
+            math.conj(r_evecs),
+        )
+        r_core = math.einsum("...ij -> ...ji", r_core_transpose)
+
+        a_core = reduced_A[..., M:, M:]
         A_core = math.block(
             [
-                [math.zeros((M, M), dtype=math.complex128), r_core.T],
+                [math.zeros(batch_shape + (M,) * 2, dtype=math.complex128), r_core_transpose],
                 [r_core, a_core],
             ]
         )
-        b_core = math.zeros(self.n_modes, dtype=math.complex128)
-        c_core = math.astensor(1, dtype=math.complex128)  # to be renormalized
+        b_core = math.zeros_like(b)
+        c_core = math.ones_like(c)  # to be renormalized
 
         inverse_order = np.argsort(core_ket_indices + other_ket_indices)
         inverse_order = [i for i in inverse_order if i < self.n_modes]  # removing double-indices
         temp = math.astensor(inverse_order)
-        A_core = A_core[temp, :]
-        A_core = A_core[:, temp]
-        b_core = b_core[temp]
+        A_core = A_core[..., temp, :]
+        A_core = A_core[..., :, temp]
+        b_core = b_core[..., temp]
         core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
 
         Aphi_out = Am
@@ -471,10 +479,10 @@ class DM(State):
                     [
                         [
                             math.conj(r_core),
-                            math.zeros((M, M), dtype=math.complex128),
+                            math.zeros(batch_shape + (M,) * 2, dtype=math.complex128),
                         ],
                         [
-                            math.zeros((M, M), dtype=math.complex128),
+                            math.zeros(batch_shape + (M,) * 2, dtype=math.complex128),
                             r_core,
                         ],
                     ]
@@ -483,17 +491,22 @@ class DM(State):
             @ R
         )
 
-        Aphi_in = Gamma_phi @ math.inv(Aphi_out - math.Xmat(M)) @ Gamma_phi.T + math.Xmat(M)
+        Gamma_phi_transpose = math.einsum("...ij->...ji", Gamma_phi)
+        Aphi_in = Gamma_phi @ math.inv(Aphi_out - math.Xmat(M)) @ Gamma_phi_transpose + math.Xmat(M)
 
-        Aphi_oi = math.block([[Aphi_out, Gamma_phi.T], [Gamma_phi, Aphi_in]])
-        A_tmp = math.reshape(Aphi_oi, (2, 2, M, 2, 2, M))
-        A_tmp = math.transpose(A_tmp, (1, 0, 2, 4, 3, 5))
-        Aphi = math.reshape(A_tmp, (4 * M, 4 * M))
+        Aphi_oi = math.block([[Aphi_out, Gamma_phi_transpose], [Gamma_phi, Aphi_in]])
+        A_tmp = math.reshape(Aphi_oi, batch_shape + (2, 2, M, 2, 2, M))
+        A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
+        # A_tmp = math.transpose(A_tmp, batch_shape + (1, 0, 2, 4, 3, 5))
+        Aphi = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
 
-        bphi = math.zeros(4 * M, dtype=math.complex128)
-        phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, 1.0))
-        renorm = (core >> phi).probability
-        phi = phi / renorm
+        bphi = math.zeros(batch_shape + (4 * M,), dtype=math.complex128)
+        phi = Channel.from_bargmann(
+            core_modes, core_modes, (Aphi, bphi, math.ones(batch_shape, dtype=math.complex128))
+        )
+        renorm = phi.contract(TraceOut(self.modes))
+        phi = phi / renorm.ansatz.c
+
         return core, phi
 
     def physical_stellar_decomposition_mixed(  # pylint: disable=too-many-statements

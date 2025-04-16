@@ -560,6 +560,15 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert phi.is_physical
         assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3))
 
+        # testing batches:
+        rho1 = DM.random([0, 1, 2, 3])
+        rho2 = DM.random([0, 1, 2, 3])
+
+        sigma = rho1 + rho2
+        core, phi = sigma.physical_stellar_decomposition([0, 1])
+
+        assert core.dm().contract(phi, mode="zip") == sigma
+
     def test_stellar_decomposition_mixed(self):
         rho = DM.random([0, 1])
         core, phi = rho.physical_stellar_decomposition_mixed([0])
