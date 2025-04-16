@@ -18,7 +18,6 @@ from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.path.branch_and_bound import (
     assign_costs,
     optimal_contraction,
-    optimize_fock_shapes,
     parse_components,
     random_solution,
 )

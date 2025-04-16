@@ -38,6 +38,7 @@ def test_graph_children_and_grandchildren():
 
 
 def test_propagate_shapes():
+    """Test that the shapes are propagated correctly."""
     MAX = settings.AUTOSHAPE_MAX
     settings.AUTOSHAPE_PROBABILITY = 0.999
     circ = [Coherent(0, x=1.0), Dgate(0, 0.1)]
@@ -55,6 +56,7 @@ def test_propagate_shapes():
 
 
 def test_path_errors():
+    """Test that parse_components raises errors for invalid paths."""
     vac12 = Vacuum((1, 2))
 
     with pytest.raises(ValueError, match="Overlapping"):
