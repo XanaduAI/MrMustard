@@ -28,7 +28,7 @@ from mrmustard.utils.typing import (
 
 from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from .triples import identity_Abc
-from .utils import outer_product_batch_str, zip_batch_strings, lin_sup_batch_str
+from .utils import outer_product_batch_str, zip_batch_strings
 from .wires import Wires, ReprEnum
 
 __all__ = ["Representation"]
