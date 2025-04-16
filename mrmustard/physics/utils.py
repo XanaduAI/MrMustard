@@ -27,7 +27,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
 #  ~~~~~~~~~
 
 
-def generate_batch_str(batch_shape: tuple[int, ...], offset: int = 0) -> str:
+def generate_batch_str(batch_dim: int, offset: int = 0) -> str:
     r"""
     Generate a string of characters to represent the batch dimensions.
 
@@ -38,19 +38,19 @@ def generate_batch_str(batch_shape: tuple[int, ...], offset: int = 0) -> str:
     Returns:
         A string of characters to represent the batch dimensions.
     """
-    return "".join([chr(i) for i in range(97 + offset, 97 + offset + len(batch_shape))])
+    return "".join([chr(97 + i) for i in range(offset, offset + batch_dim)])
 
 
-def outer_product_batch_str(*batch_shapes: tuple[int, ...]) -> str:
+def outer_product_batch_str(*batch_dims: int) -> str:
     r"""
     Creates the einsum string for the outer product of the given tuple of dimensions.
     E.g. for (2,1,3) it returns ab,c,def->abcdef
     """
     strs = []
     offset = 0
-    for batch_shape in batch_shapes:
-        strs.append(generate_batch_str(batch_shape, offset))
-        offset += len(batch_shape)
+    for batch_dim in batch_dims:
+        strs.append(generate_batch_str(batch_dim, offset))
+        offset += batch_dim
     return ",".join(strs) + "->" + "".join(strs)
 
 
@@ -115,12 +115,12 @@ def verify_batch_triple(
         )
 
 
-def zip_batch_strings(*batch_shapes: tuple[int, ...]) -> str:
+def zip_batch_strings(*batch_dims: int) -> str:
     r"""
     Creates a batch string for zipping over the batch dimensions.
     """
-    input = ",".join([generate_batch_str(batch_shape) for batch_shape in batch_shapes])
-    return input + "->" + generate_batch_str(max(batch_shapes))
+    input = ",".join([generate_batch_str(batch_dim) for batch_dim in batch_dims])
+    return input + "->" + generate_batch_str(max(batch_dims))
 
 
 def lin_sup_batch_str(batch_str: str) -> str:

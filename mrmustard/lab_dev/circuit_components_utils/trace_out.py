@@ -22,7 +22,6 @@ from mrmustard.physics import triples
 
 from ..circuit_components import CircuitComponent
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics.utils import zip_batch_strings, lin_sup_batch_str
 from ...physics.representations import Representation
 from ...physics.wires import Wires
 
@@ -85,23 +84,19 @@ class TraceOut(CircuitComponent):
             ansatz = other.ansatz
             wires = other.wires
         elif not ket or not bra:
-            self_batch = (
-                self.ansatz.batch_shape
-                if not self.ansatz._lin_sup
-                else self.ansatz.batch_shape[:-1]
-            )
-            other_batch = (
-                other.ansatz.batch_shape
-                if not other.ansatz._lin_sup
-                else other.ansatz.batch_shape[:-1]
-            )
-            batch_str = zip_batch_strings(self_batch, other_batch)
-            batch_str = (
-                lin_sup_batch_str(batch_str)
-                if self.ansatz._lin_sup and other.ansatz._lin_sup
-                else batch_str
-            )
-            ansatz = other.ansatz.conj.contract(other.ansatz, idx_z, idx_z, batch_str=batch_str)
+            B = other.ansatz.batch_dims
+            C = other.ansatz.core_dims
+            batch = [chr(97 + i) for i in range(B)]
+            wires = ket + bra
+            core1 = list(range(C))
+            core2 = list(range(C, 2 * C))
+            for i, w in enumerate(wires.output):
+                if w.mode in self.wires.modes:
+                    core2[i] = core1[i]
+            core_out = sorted(set(core1) ^ set(core2))
+            ansatz1 = other.ansatz.conj if not bra else other.ansatz
+            ansatz2 = other.ansatz if not bra else other.ansatz.conj
+            ansatz = ansatz1.contract(ansatz2, batch + core1, batch + core2, batch + core_out)
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
             idx_zconj = [bra[m].indices[0] for m in self.wires.modes & bra.modes]

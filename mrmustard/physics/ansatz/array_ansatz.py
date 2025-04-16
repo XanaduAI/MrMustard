@@ -141,7 +141,7 @@ class ArrayAnsatz(Ansatz):
     def contract(
         self,
         other: ArrayAnsatz,
-        idx1: Sequence[Union[str, int]],
+        idx1: Sequence[str | int],
         idx2: Sequence[Union[str, int]],
         idx_out: Sequence[Union[str, int]],
     ) -> ArrayAnsatz:
@@ -152,7 +152,7 @@ class ArrayAnsatz(Ansatz):
 
         Example:
             `self.contract(other, idx1=['b', 0, 1], idx2=['b', 1, 2], idx_out=[0, 2])`
-            Contracts label 'b' and core index 1.
+            Contracts batch label 'b' and core index 1.
 
         Args:
             other: The other ArrayAnsatz to contract with.

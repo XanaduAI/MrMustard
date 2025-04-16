@@ -222,18 +222,16 @@ class TestChannel:
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_XY(self, batch_shape):
         U = Unitary.random((0, 1))
-        A, b, c = U.adjoint.contract(U, "zip").ansatz.triple
-
-        A = math.broadcast_to(A, batch_shape + A.shape)
-        b = math.broadcast_to(b, batch_shape + b.shape)
-        c = math.broadcast_to(c, batch_shape + c.shape)
-
-        unitary_channel = Channel.from_bargmann((0, 1), (0, 1), (A, b, c))
+        u = U.ansatz
+        unitary_channel = Channel.from_ansatz((0, 1), (0, 1), u.conj & u)
         X, Y = unitary_channel.XY
         assert math.allclose(X, U.symplectic) and math.allclose(Y, math.zeros((4, 4)))
 
-        X, Y = Attenuator(0, 0.2).XY
-        assert math.allclose(X, np.sqrt(0.2) * np.eye(2)) and math.allclose(Y, 0.4 * np.eye(2))
+        transmissivity = math.broadcast_to(0.2, batch_shape)
+        X, Y = Attenuator(0, transmissivity).XY
+        expected_X = math.broadcast_to(np.sqrt(0.2), batch_shape + (2, 2)) * np.eye(2)
+        expected_Y = math.broadcast_to(0.4, batch_shape + (2, 2)) * np.eye(2)
+        assert math.allclose(X, expected_X) and math.allclose(Y, expected_Y)
 
     @pytest.mark.parametrize("nmodes", [1, 2, 3])
     def test_from_XY(self, nmodes):
