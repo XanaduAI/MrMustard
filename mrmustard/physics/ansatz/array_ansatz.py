@@ -334,7 +334,7 @@ class ArrayAnsatz(Ansatz):
         batch_size = int(np.prod(self.batch_shape))
         self_reshaped = math.reshape(self.array, (batch_size, -1))
         other_reshaped = math.reshape(other.array, (batch_size, -1))
-        new = math.einsum("ab,ac -> abc", self_reshaped, other_reshaped)
+        new = math.einsum("ab,ac->abc", self_reshaped, other_reshaped)
         new = math.reshape(new, self.batch_shape + self.core_shape + other.core_shape)
         return ArrayAnsatz(array=new, batch_dims=self.batch_dims)
 
