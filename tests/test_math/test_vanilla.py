@@ -21,15 +21,17 @@ from mrmustard import math
 from ..conftest import skip_tf, skip_jax
 
 
-def random_triple(n, batch=()):
+def random_triple(n, batch=(), seed=None):
     r"""
     Generate random triple of A, b, c for testing the vanilla strategy.
     """
-    A = np.random.random(batch + (n, n)) + 1j * np.random.random(batch + (n, n))
+    rng = np.random.RandomState(seed) if seed is not None else np.random
+
+    A = rng.random(batch + (n, n)) + 1j * rng.random(batch + (n, n))
     A = A + np.swapaxes(A, -1, -2)
     A /= np.abs(np.linalg.eigvals(A)).max() + 0.2
-    b = np.random.random(batch + (n,)) + 1j * np.random.random(batch + (n,))
-    c = np.random.random(batch + ()) + 1j * np.random.random(batch + ())
+    b = rng.random(batch + (n,)) + 1j * rng.random(batch + (n,))
+    c = rng.random(batch + ()) + 1j * rng.random(batch + ())
     return A, b, c
 
 
@@ -46,7 +48,7 @@ class TestVanilla:
         skip_tf()
         skip_jax()
         epsilon = 1e-9
-        A, b, c = random_triple(n, ())
+        A, b, c = random_triple(n, (), seed=42)
         shape = (4,) * n
 
         G = strategies.vanilla_numba(shape, A, b, c)
@@ -92,7 +94,7 @@ class TestVanilla:
         skip_tf()
         skip_jax()
         # Generate the output tensor G
-        A, b, c = random_triple(3, (2,))
+        A, b, c = random_triple(3, (2,), seed=42)
         shape = (1, 2, 3)
         G = strategies.vanilla_batch_numba(shape, A, b, c)
 
@@ -158,7 +160,7 @@ class TestVanilla:
         r"""
         Test the hermite_renormalized function for unbatched inputs.
         """
-        A, b, c = random_triple(2, ())
+        A, b, c = random_triple(2, (), seed=42)
         shape = (3, 3)
         G = math.hermite_renormalized(A, b, c, shape, stable=stable)
         assert G.shape == shape
@@ -168,7 +170,7 @@ class TestVanilla:
         r"""
         Test the hermite_renormalized function for batched b inputs.
         """
-        A, b, c = random_triple(2, (2, 1))
+        A, b, c = random_triple(2, (2, 1), seed=42)
         shape = (4, 5)
         G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape, stable=stable)
         assert G.shape == (2, 1) + shape
@@ -180,7 +182,7 @@ class TestVanilla:
         r"""
         Test the hermite_renormalized function for batched inputs.
         """
-        A, b, c = random_triple(2, (2, 1))
+        A, b, c = random_triple(2, (2, 1), seed=42)
         shape = (4, 5)
         G = math.hermite_renormalized(A, b, c, shape, stable=stable)
         assert G.shape == (2, 1) + shape
