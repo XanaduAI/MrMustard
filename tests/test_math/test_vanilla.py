@@ -94,6 +94,7 @@ class TestVanilla:
         skip_tf()
         skip_jax()
         # Generate the output tensor G
+        epsilon = 1e-9
         A, b, c = random_triple(3, (2,), seed=42)
         shape = (1, 2, 3)
         G = strategies.vanilla_batch_numba(shape, A, b, c)
@@ -105,8 +106,8 @@ class TestVanilla:
         dGdc_fd = np.zeros(G.shape + c.shape, dtype=np.complex128)
         for i in range(c.shape[0]):
             eps = np.zeros_like(c)
-            eps[i] = 1e-6
-            dGdc_fd[..., i] = (strategies.vanilla_batch_numba(shape, A, b, c + eps) - G) / 1e-6
+            eps[i] = epsilon
+            dGdc_fd[..., i] = (strategies.vanilla_batch_numba(shape, A, b, c + eps) - G) / epsilon
 
         # Contract with upstream gradient
         dLdc_fd = np.zeros_like(c)
@@ -118,10 +119,10 @@ class TestVanilla:
         for i in range(b.shape[0]):
             for j in range(b.shape[1]):
                 eps = np.zeros_like(b)
-                eps[i, j] = 1e-6
+                eps[i, j] = epsilon
                 dGdb_fd[..., i, j] = (
                     strategies.vanilla_batch_numba(shape, A, b + eps, c) - G
-                ) / 1e-6
+                ) / epsilon
 
         # Contract with upstream gradient
         dLdb_fd = np.zeros_like(b)
@@ -135,10 +136,10 @@ class TestVanilla:
             for j in range(A.shape[1]):
                 for k in range(A.shape[2]):
                     eps = np.zeros_like(A)
-                    eps[i, j, k] = 1e-6
+                    eps[i, j, k] = epsilon
                     dGdA_fd[..., i, j, k] = (
                         strategies.vanilla_batch_numba(shape, A + eps, b, c) - G
-                    ) / 1e-6
+                    ) / epsilon
 
         # Contract with upstream gradient
         dLdA_fd = np.zeros_like(A)
