@@ -595,8 +595,32 @@ class TestPolyExpAnsatz:
         assert math.allclose(result, direct_result)
 
     def test_reorder_batch(self):
-        fock = PolyExpAnsatz(*Abc_triple(3, (1, 5)))
-        fock_reordered = fock.reorder_batch([1, 0])
-        assert fock_reordered.A.shape == (5, 1, 3, 3)
-        assert fock_reordered.b.shape == (5, 1, 3)
-        assert fock_reordered.c.shape == (5, 1)
+        ansatz = PolyExpAnsatz(*Abc_triple(3, (1, 5)))
+        ansatz_reordered = ansatz.reorder_batch([1, 0])
+        assert ansatz_reordered.A.shape == (5, 1, 3, 3)
+        assert ansatz_reordered.b.shape == (5, 1, 3)
+        assert ansatz_reordered.c.shape == (5, 1)
+
+    def test_and_with_lin_sup_both(self):
+        ansatz1 = PolyExpAnsatz(*Abc_triple(2, (2, 5)), lin_sup=True)
+        ansatz2 = PolyExpAnsatz(*Abc_triple(1, (3, 4)), lin_sup=True)
+        ansatz_and = ansatz1 & ansatz2
+        assert ansatz_and.A.shape == (2, 3, 20, 3, 3)
+        assert ansatz_and.b.shape == (2, 3, 20, 3)
+        assert ansatz_and.c.shape == (2, 3, 20)
+
+    def test_and_with_lin_sup_self(self):
+        ansatz1 = PolyExpAnsatz(*Abc_triple(2, (2, 5)), lin_sup=True)
+        ansatz2 = PolyExpAnsatz(*Abc_triple(1, (3, 4)), lin_sup=False)
+        ansatz_and = ansatz1 & ansatz2
+        assert ansatz_and.A.shape == (2, 3, 4, 5, 3, 3)
+        assert ansatz_and.b.shape == (2, 3, 4, 5, 3)
+        assert ansatz_and.c.shape == (2, 3, 4, 5)
+
+    def test_and_with_lin_sup_other(self):
+        ansatz1 = PolyExpAnsatz(*Abc_triple(2, (2, 5)), lin_sup=False)
+        ansatz2 = PolyExpAnsatz(*Abc_triple(1, (3, 4)), lin_sup=True)
+        ansatz_and = ansatz1 & ansatz2
+        assert ansatz_and.A.shape == (2, 5, 3, 4, 3, 3)
+        assert ansatz_and.b.shape == (2, 5, 3, 4, 3)
+        assert ansatz_and.c.shape == (2, 5, 3, 4)
