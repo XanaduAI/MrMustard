@@ -577,7 +577,7 @@ class DM(State):
                 f"of core modes {M}."
             )
 
-        I2M = math.stack([math.eye(2 * M) for _ in range(math.prod(batch_shape))])
+        I2M = math.stack([math.eye(2 * M) for _ in range(int(math.prod(batch_shape)))])
         reduced_A = R @ math.inv(I2M - math.Xmat(M) @ Am) @ math.conj(R_transpose)
 
         # computing a low-rank r_c:
@@ -585,7 +585,7 @@ class DM(State):
             sigma_transpose
         )
         r_c_evals, r_c_evecs = math.eigh(r_c_squared)
-        idx = np.argsort(r_c_evals)[::-1]
+        idx = np.argsort(r_c_evals)[..., ::-1]
         r_c_evals = r_c_evals[..., idx]
         r_c_evecs = r_c_evecs[..., :, idx]
         r_c = r_c_evecs[..., :, :M] * math.sqrt(r_c_evals[..., :M], dtype=math.complex128)
