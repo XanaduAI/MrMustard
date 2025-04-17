@@ -48,7 +48,7 @@ class TestVanilla:
         skip_tf()
         skip_jax()
         epsilon = 1e-9
-        A, b, c = random_triple(n, (), seed=42)
+        A, b, c = random_triple(n, (), seed=673)
         shape = (4,) * n
 
         G = strategies.vanilla_numba(shape, A, b, c)
@@ -95,7 +95,7 @@ class TestVanilla:
         skip_jax()
         # Generate the output tensor G
         epsilon = 1e-9
-        A, b, c = random_triple(3, (2,), seed=42)
+        A, b, c = random_triple(3, (2,), seed=673)
         shape = (1, 2, 3)
         G = strategies.vanilla_batch_numba(shape, A, b, c)
 
@@ -150,6 +150,9 @@ class TestVanilla:
 
         # Use the VJP function to compute gradients
         dLdA, dLdb, dLdc = strategies.vanilla_batch_vjp_numba(G, c, dLdG)
+        assert not np.isnan(dLdA).any()
+        assert not np.isnan(dLdb).any()
+        assert not np.isnan(dLdc).any()
 
         # Verify results
         assert np.allclose(dLdc, dLdc_fd)
@@ -161,7 +164,7 @@ class TestVanilla:
         r"""
         Test the hermite_renormalized function for unbatched inputs.
         """
-        A, b, c = random_triple(2, (), seed=42)
+        A, b, c = random_triple(2, (), seed=673)
         shape = (3, 3)
         G = math.hermite_renormalized(A, b, c, shape, stable=stable)
         assert G.shape == shape
@@ -171,7 +174,7 @@ class TestVanilla:
         r"""
         Test the hermite_renormalized function for batched b inputs.
         """
-        A, b, c = random_triple(2, (2, 1), seed=42)
+        A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
         G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape, stable=stable)
         assert G.shape == (2, 1) + shape
@@ -183,7 +186,7 @@ class TestVanilla:
         r"""
         Test the hermite_renormalized function for batched inputs.
         """
-        A, b, c = random_triple(2, (2, 1), seed=42)
+        A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
         G = math.hermite_renormalized(A, b, c, shape, stable=stable)
         assert G.shape == (2, 1) + shape
