@@ -577,7 +577,9 @@ class DM(State):
                 f"of core modes {M}."
             )
 
-        I2M = math.stack([math.eye(2 * M) for _ in range(int(math.prod(batch_shape)))])
+        I2M = math.broadcast_to(
+            math.eye(2 * M, dtype=math.complex128), batch_shape + (2 * M, 2 * M)
+        )
         reduced_A = R @ math.inv(I2M - math.Xmat(M) @ Am) @ math.conj(R_transpose)
 
         # computing a low-rank r_c:
@@ -625,7 +627,7 @@ class DM(State):
         A_tmp = math.reshape(Aphi_oi, batch_shape + (2, 2, M, 2, 2, M))
         A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
         Aphi = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
-        bphi = math.zeros(batch_shape + (4 * M), dtype=math.complex128)
+        bphi = math.zeros(batch_shape + (4 * M,), dtype=math.complex128)
         c_phi = math.ones(batch_shape, dtype=math.complex128)
         phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, c_phi))
         renorm = phi.contract(TraceOut(self.modes))
