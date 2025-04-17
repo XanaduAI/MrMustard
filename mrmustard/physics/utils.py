@@ -41,17 +41,32 @@ def generate_batch_str(batch_dim: int, offset: int = 0) -> str:
     return "".join([chr(97 + i) for i in range(offset, offset + batch_dim)])
 
 
-def outer_product_batch_str(*batch_dims: int) -> str:
+def outer_product_batch_str(*batch_dims: int, lin_sup: tuple[int, ...] | None = None) -> str:
     r"""
     Creates the einsum string for the outer product of the given tuple of dimensions.
-    E.g. for (2,1,3) it returns ab,c,def->abcdef
+    E.g. for (2,1,3) it returns ab,c,def->abcdef.
+    If lin_sup is provided, the linear superposition dimensions are moved to the end.
+    E.g. for (2,1,3) and lin_sup=(0,1) it returns ab,c,def->adefbc, as b and c are the linear superposition dimensions
+    of the 0th and 1st tensors.
     """
     strs = []
     offset = 0
     for batch_dim in batch_dims:
         strs.append(generate_batch_str(batch_dim, offset))
         offset += batch_dim
-    return ",".join(strs) + "->" + "".join(strs)
+
+    orig_strs = strs.copy()  # keep original for input part of einsum string
+
+    if lin_sup is not None:
+        lin_sup_chars = []
+        for idx in lin_sup:
+            lin_sup_chars.append(strs[idx][-1])
+            strs[idx] = strs[idx][:-1]
+        output = "".join(strs) + "".join(lin_sup_chars)
+    else:
+        output = "".join(strs)
+
+    return ",".join(orig_strs) + "->" + output
 
 
 def reshape_args_to_batch_string(

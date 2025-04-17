@@ -491,7 +491,7 @@ class PolyExpAnsatz(Ansatz):
         new_b = math.transpose(self.b, list(order) + list(core_dims_indices_b))
         new_c = math.transpose(self.c, list(order) + list(core_dims_indices_c))
 
-        return PolyExpAnsatz(new_A, new_b, new_c)
+        return PolyExpAnsatz(new_A, new_b, new_c, lin_sup=self._lin_sup)
 
     # TODO: this should be moved to classes responsible for interpreting a batch dimension as a sum
     def simplify(self) -> None:
@@ -834,10 +834,16 @@ class PolyExpAnsatz(Ansatz):
             self.triple,
             other.triple,
             outer_product_batch_str(
-                self.batch_dims - self._lin_sup, other.batch_dims - other._lin_sup
+                self.batch_dims,
+                other.batch_dims,
+                lin_sup=[0] * self._lin_sup + [1] * other._lin_sup,
             ),
         )
-        return PolyExpAnsatz(As, bs, cs)
+        if self._lin_sup and other._lin_sup:  # we have two linear superposition dimensions
+            As = math.reshape(As, As.shape[:-4] + (As.shape[-4] * As.shape[-3],) + As.shape[-2:])
+            bs = math.reshape(bs, bs.shape[:-3] + (bs.shape[-3] * bs.shape[-2],) + bs.shape[-1:])
+            cs = math.reshape(cs, cs.shape[:-2] + (cs.shape[-2] * cs.shape[-1],))
+        return PolyExpAnsatz(As, bs, cs, lin_sup=self._lin_sup or other._lin_sup)
 
     def __call__(self: PolyExpAnsatz, *z_inputs: ArrayLike | None) -> Batch[ComplexTensor]:
         r"""
