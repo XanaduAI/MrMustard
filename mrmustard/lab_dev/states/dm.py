@@ -349,36 +349,42 @@ class DM(State):
         A, b, c = self.ansatz.reorder(new_order).triple
 
         M = len(core_modes)
-
+        batch_shape = self.ansatz.batch_shape
         Am = A[..., : 2 * M, : 2 * M]
-        An = A[2 * M :, 2 * M :]
-        R = A[: 2 * M, 2 * M :]
-        bm = b[: 2 * M]
-        bn = b[2 * M :]
+        An = A[..., 2 * M :, 2 * M :]
+        R = A[..., : 2 * M, 2 * M :]
+        bm = b[..., : 2 * M]
+        bn = b[..., 2 * M :]
+        R_transpose = math.einsum("...ij->...ji", R)
 
-        A_core = math.block([[math.zeros((2 * M, 2 * M), dtype=math.complex128), R], [R.T, An]])
-        b_core = math.block([math.zeros(2 * M, dtype=math.complex128), bn], axes=(0, 0))
+        A_core = math.block(
+            [
+                [math.zeros(batch_shape + (2 * M, 2 * M), dtype=math.complex128), R],
+                [R_transpose, An],
+            ]
+        )
+        b_core = math.concat([math.zeros(batch_shape + (2 * M,), dtype=math.complex128), bn], -1)
         c_core = c
 
         inverse_order = np.argsort(new_order)
 
         temp = math.astensor(inverse_order)
-        A_core = A_core[temp, :]
-        A_core = A_core[:, temp]
+        A_core = A_core[..., temp, :]
+        A_core = A_core[..., :, temp]
         b_core = b_core[temp]
         core = DM.from_bargmann(self.modes, (A_core, b_core, c_core))
 
         I = math.eye_like(Am)
         O = math.zeros_like(Am)
         A_out_in = math.block([[Am, I], [I, O]])
-        A_tmp = math.reshape(A_out_in, (2, 2, M, 2, 2, M))
-        A_tmp = math.transpose(A_tmp, (1, 0, 2, 4, 3, 5))
-        A_T = math.reshape(A_tmp, (4 * M, 4 * M))
+        A_tmp = math.reshape(A_out_in, batch_shape + (2, 2, M, 2, 2, M))
+        A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
+        A_T = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
 
-        b_out_in = math.block([bm, math.zeros(2 * M, dtype=math.complex128)], axes=(0, 0))
-        b_temp = math.reshape(b_out_in, (2, 2, M))
-        b_temp = math.transpose(b_temp, (1, 0, 2))
-        b_T = math.reshape(b_temp, (4 * M,))
+        b_out_in = math.concat([bm, math.zeros(2 * M, dtype=math.complex128)], -1)
+        b_temp = math.reshape(b_out_in, batch_shape + (2, 2, M))
+        b_temp = math.einsum("...ijk->...jik", b_temp)
+        b_T = math.reshape(b_temp, batch_shape + (4 * M,))
         c_T = math.astensor(1, dtype=math.complex128)
         phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
         return core, phi
@@ -497,7 +503,6 @@ class DM(State):
         Aphi_oi = math.block([[Aphi_out, Gamma_phi_transpose], [Gamma_phi, Aphi_in]])
         A_tmp = math.reshape(Aphi_oi, batch_shape + (2, 2, M, 2, 2, M))
         A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
-        # A_tmp = math.transpose(A_tmp, batch_shape + (1, 0, 2, 4, 3, 5))
         Aphi = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
 
         bphi = math.zeros(batch_shape + (4 * M,), dtype=math.complex128)
