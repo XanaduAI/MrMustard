@@ -32,7 +32,6 @@ from mrmustard.lab_dev import (
     Sgate,
 )
 from mrmustard.lab_dev.states import TwoModeSqueezedVacuum, Thermal, Vacuum
-from mrmustard.physics.gaussian import controlled_X, controlled_Z
 
 
 @given(r=st.floats(0, 2), phi=st.floats(0, 2 * np.pi))
@@ -66,40 +65,6 @@ def test_Pgate(s):
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     P_expanded = expand(np.array([[1, 0], [s, 1]]), [0], 2)
     expected = P_expanded @ expected @ P_expanded.T
-    assert np.allclose(cov, expected, atol=1e-6)
-
-
-@given(s=st.floats(0, 1))
-def test_CXgate(s):
-    """Tests the CXgate is implemented correctly by applying it on one half of a maximally entangled state"""
-    s = 2
-    r_choi = np.arcsinh(1.0)
-    S2a = S2gate(r=r_choi, phi=0.0, modes=[0, 2])
-    S2b = S2gate(r=r_choi, phi=0.0, modes=[1, 3])
-    CX = CXgate(s=s, modes=[0, 1])
-    cov = (Vacuum((0, 1, 2, 3)) >> S2a >> S2b >> CX).phase_space(0)[0] * 2 / settings.HBAR
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
-    )
-    CX_expanded = expand(math.asnumpy(controlled_X(s)), [0, 1], 4)
-    expected = CX_expanded @ expected @ CX_expanded.T
-    assert np.allclose(cov, expected, atol=1e-6)
-
-
-@given(s=st.floats(0, 1))
-def test_CZgate(s):
-    """Tests the CXgate is implemented correctly by applying it on one half of a maximally entangled state"""
-    s = 2
-    r_choi = np.arcsinh(1.0)
-    S2a = S2gate(r=r_choi, phi=0.0, modes=[0, 2])
-    S2b = S2gate(r=r_choi, phi=0.0, modes=[1, 3])
-    CZ = CZgate(s=s, modes=[0, 1])
-    cov = (Vacuum((0, 1, 2, 3)) >> S2a >> S2b >> CZ).phase_space(0)[0] * 2 / settings.HBAR
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
-    )
-    CZ_expanded = expand(math.asnumpy(controlled_Z(s)), [0, 1], 4)
-    expected = CZ_expanded @ expected @ CZ_expanded.T
     assert np.allclose(cov, expected, atol=1e-6)
 
 

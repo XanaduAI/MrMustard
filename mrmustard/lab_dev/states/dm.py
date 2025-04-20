@@ -24,9 +24,11 @@ from IPython.display import display
 
 from mrmustard import math, settings, widgets
 from mrmustard.math.lattice.autoshape import autoshape_numba
+from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
+from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import ComplexTensor
@@ -271,6 +273,29 @@ class DM(State):
             result = (self.contract(operator)) >> TraceOut(self.modes)
 
         return result
+
+    def fidelity(self, other: State) -> float:
+        r"""
+        The fidelity between this DM and another state.
+
+        Args:
+            other: The other state.
+
+        Returns:
+            The fidelity between this DM and the other state (Ket or DM).
+        """
+        if self.modes != other.modes:
+            raise ValueError("Cannot compute fidelity between states with different modes.")
+        if isinstance(other, DM):
+            try:
+                cov1, mean1, _ = self.phase_space(0)
+                cov2, mean2, _ = other.phase_space(0)
+                return gaussian_fidelity(mean1, cov1, mean2, cov2)
+            except ValueError:  # array ansatz
+                fock1 = self.fock_array()  # TODO: reshape to square
+                fock2 = other.fock_array()  # TODO: reshape to square
+                return fock_dm_fidelity(fock1, fock2)
+        return other.expectation(self)  # assuming other is a ket
 
     def fock_array(
         self, shape: int | Sequence[int] | None = None, standard_order: bool = False

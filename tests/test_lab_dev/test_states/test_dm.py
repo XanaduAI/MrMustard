@@ -29,7 +29,7 @@ from mrmustard.lab_dev import (
     Number,
     TraceOut,
 )
-from mrmustard.physics.gaussian import vacuum_cov
+from thewalrus.symplectic import vacuum_state
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wires import Wires
@@ -206,7 +206,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError):
             DM.from_phase_space((0, 1), (cov, means, 1.0))
 
-        cov = vacuum_cov(1)
+        cov, _ = vacuum_state(1, settings.HBAR)
         means = np.array([1, 2]) * np.sqrt(settings.HBAR * 2 * 0.8)
         state1 = DM.from_phase_space([0], (cov, means, 1.0))
         assert state1 == state

@@ -38,7 +38,6 @@ from mrmustard.lab_dev import (
     TraceOut,
     Vacuum,
 )
-from mrmustard.physics.gaussian import squeezed_vacuum_cov, vacuum_cov, vacuum_means
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wires import Wires

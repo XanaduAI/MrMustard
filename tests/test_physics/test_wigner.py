@@ -19,14 +19,8 @@ import pytest
 from scipy.special import assoc_laguerre
 
 from mrmustard import settings
-from mrmustard.lab import Coherent, Fock, SqueezedVacuum, State
+from mrmustard.lab_dev import Coherent, Number, Ket, SqueezedVacuum
 from mrmustard.physics.wigner import wigner_discretized
-
-# original settings
-autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
-autocutoff_min0 = settings.AUTOCUTOFF_MIN_CUTOFF
-method0 = settings.DISCRETIZATION_METHOD
-hbar0 = settings.HBAR
 
 # ~~~~~~~
 # Helpers
@@ -102,117 +96,109 @@ def W_fock(q_vec, p_vec, n):
 class TestWignerDiscretized:
     r"""Tests discretized Wigner functions (DWF) for various states"""
 
-    hbar0: float = settings.HBAR
-
-    def teardown_method(self, method):
-        r"""Resets `Settings`"""
-        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
-        settings.AUTOCUTOFF_MIN_CUTOFF = autocutoff_min0
-        settings.DISCRETIZATION_METHOD = method0
-        settings._hbar = self.hbar0
-
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     @pytest.mark.parametrize("hbar", [1, 2])
     def test_cat_state(self, method, hbar):
         r"""Tests DWF for cat states"""
-        settings.DISCRETIZATION_METHOD = method
-        settings._hbar = hbar
+        with settings(DISCRETIZATION_METHOD=method, HBAR=hbar):
 
-        q_vec = np.linspace(-4, 4, 100)
-        p_vec = np.linspace(-1.5, 1.5, 100)
+            q_vec = np.linspace(-4, 4, 100)
+            p_vec = np.linspace(-1.5, 1.5, 100)
 
-        q0 = 2.0
-        cat_amps = Coherent(q0).ket([20]) + Coherent(-q0).ket([20])
-        cat_amps = cat_amps / np.linalg.norm(cat_amps)
-        state = State(ket=cat_amps)
-        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
-        W_th = W_cat(q_vec, p_vec, q0)
+            q0 = 2.0
+            cat_amps = (Coherent(0, q0) + Coherent(0, -q0)).fock_array([20])
+            cat_amps = cat_amps / np.linalg.norm(cat_amps)
+            state = Ket.from_fock([0], cat_amps).dm()
+            W_mm, q_mat, p_mat = wigner_discretized(state.fock_array(), q_vec, p_vec)
+            W_th = W_cat(q_vec, p_vec, q0)
 
-        assert np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
-        assert np.allclose(q_mat.T, q_vec)
-        assert np.allclose(p_mat, p_vec)
+            assert np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
+            assert np.allclose(q_mat.T, q_vec)
+            assert np.allclose(p_mat, p_vec)
 
     @pytest.mark.parametrize("alpha", [0 + 0j, 3 + 3j])
     @pytest.mark.parametrize("hbar", [2, 3])
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_coherent_state(self, alpha, hbar, method):
         r"""Tests DWF for coherent states"""
-        settings.AUTOCUTOFF_MIN_CUTOFF = 100
-        settings.AUTOCUTOFF_MAX_CUTOFF = 150
-        settings.DISCRETIZATION_METHOD = method
-        settings._hbar = hbar
 
-        # centering the intervals around alpha--away from the center,
-        # the values are small and unstable.
-        left = (np.real(alpha) * 2**0.5 - 1) * (settings.HBAR) ** 0.5
-        right = (np.real(alpha) * 2**0.5 + 1) * (settings.HBAR) ** 0.5
-        q_vec = np.linspace(left, right, 50)
-        p_vec = np.linspace(left, right, 50)
+        with settings(
+            DISCRETIZATION_METHOD=method,
+            HBAR=hbar,
+            AUTOCUTOFF_MIN_CUTOFF=100,
+            AUTOCUTOFF_MAX_CUTOFF=150,
+        ):
 
-        state = Coherent(np.real(alpha), np.imag(alpha))
-        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
-        W_th = W_coherent(q_vec, p_vec, alpha, 0)
+            # centering the intervals around alpha--away from the center,
+            # the values are small and unstable.
+            left = (np.real(alpha) * 2**0.5 - 1) * (settings.HBAR) ** 0.5
+            right = (np.real(alpha) * 2**0.5 + 1) * (settings.HBAR) ** 0.5
+            q_vec = np.linspace(left, right, 50)
+            p_vec = np.linspace(left, right, 50)
 
-        assert np.allclose(distance(W_mm, W_th), 0)
-        assert np.allclose(q_mat.T, q_vec)
-        assert np.allclose(p_mat, p_vec)
+            state = Coherent(0, np.real(alpha), np.imag(alpha))
+            W_mm, q_mat, p_mat = wigner_discretized(state.dm().fock_array(), q_vec, p_vec)
+            W_th = W_coherent(q_vec, p_vec, alpha, 0)
+
+            assert np.allclose(distance(W_mm, W_th), 0)
+            assert np.allclose(q_mat.T, q_vec)
+            assert np.allclose(p_mat, p_vec)
 
     @pytest.mark.parametrize("n", [2, 6])
     @pytest.mark.parametrize("hbar", [2, 3])
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_fock_state(self, n, hbar, method):
         r"""Tests DWF for fock states"""
-        settings.DISCRETIZATION_METHOD = method
-        settings._hbar = hbar
+        with settings(DISCRETIZATION_METHOD=method, HBAR=hbar):
+            q_vec = np.linspace(-1, 1, 20)
+            p_vec = np.linspace(-1, 1, 20)
 
-        q_vec = np.linspace(-1, 1, 20)
-        p_vec = np.linspace(-1, 1, 20)
+            state = Number(0, n)
+            W_mm, q_mat, p_mat = wigner_discretized(state.dm().fock_array(), q_vec, p_vec)
+            W_th = W_fock(q_vec, p_vec, n)
 
-        state = Fock(n)
-        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
-        W_th = W_fock(q_vec, p_vec, n)
-
-        assert np.allclose(distance(W_mm, W_th), 0)
-        assert np.allclose(q_mat.T, q_vec)
-        assert np.allclose(p_mat, p_vec)
+            assert np.allclose(distance(W_mm, W_th), 0)
+            assert np.allclose(q_mat.T, q_vec)
+            assert np.allclose(p_mat, p_vec)
 
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_squeezed_vacuum_both_method_succeed(self, method):
         r"""Tests DWF for a squeezed vacuum state with squeezing s=1.
         Both discretization methods are expected to pass successfully.
         """
-        settings.AUTOCUTOFF_MIN_CUTOFF = 100
-        settings.AUTOCUTOFF_MAX_CUTOFF = 150
-        settings.DISCRETIZATION_METHOD = method
+        with settings(
+            DISCRETIZATION_METHOD=method, AUTOCUTOFF_MIN_CUTOFF=100, AUTOCUTOFF_MAX_CUTOFF=150
+        ):
+            q_vec = np.linspace(-0.5, 0.5, 50)
+            p_vec = np.linspace(-5, 5, 50)
 
-        q_vec = np.linspace(-0.5, 0.5, 50)
-        p_vec = np.linspace(-5, 5, 50)
+            s = 1
+            state = SqueezedVacuum(0, s)
+            W_mm, q_mat, p_mat = wigner_discretized(
+                state.dm(standard_order=True).fock_array(), q_vec, p_vec
+            )
+            W_th = W_coherent(q_vec, p_vec, 0j, s)
 
-        s = 1
-        state = SqueezedVacuum(s)
-        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
-        W_th = W_coherent(q_vec, p_vec, 0j, s)
-
-        assert np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
-        assert np.allclose(q_mat.T, q_vec)
-        assert np.allclose(p_mat, p_vec)
+            assert np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
+            assert np.allclose(q_mat.T, q_vec)
+            assert np.allclose(p_mat, p_vec)
 
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_squeezed_vacuum_iterative_fails(self, method):
         r"""Tests DWF for a squeezed vacuum state with squeezing s=2.
         The iterative method cannot produce a DWF that matched with the analytical one.
         """
-        settings.AUTOCUTOFF_MIN_CUTOFF = 100
-        settings.AUTOCUTOFF_MAX_CUTOFF = 150
-        settings.DISCRETIZATION_METHOD = method
+        with settings(
+            DISCRETIZATION_METHOD=method, AUTOCUTOFF_MIN_CUTOFF=100, AUTOCUTOFF_MAX_CUTOFF=150
+        ):
 
-        q_vec = np.linspace(-0.2, 0.2, 50)
-        p_vec = np.linspace(-5, 5, 50)
+            q_vec = np.linspace(-0.2, 0.2, 50)
+            p_vec = np.linspace(-5, 5, 50)
 
-        s = 2
-        state = SqueezedVacuum(s)
-        W_mm, _, _ = wigner_discretized(state.dm(), q_vec, p_vec)
-        W_th = W_coherent(q_vec, p_vec, 0j, s)
+            s = 2
+            state = SqueezedVacuum(0, s)
+            W_mm, _, _ = wigner_discretized(state.dm().fock_array(), q_vec, p_vec)
+            W_th = W_coherent(q_vec, p_vec, 0j, s)
 
-        success = np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
-        assert success is False if method == "iterative" else True
+            success = np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
+            assert success is False if method == "iterative" else True

@@ -17,4 +17,3 @@ The point of entry for the tensor wrappers.
 """
 
 from .mmtensor import *
-from .xptensor import *
