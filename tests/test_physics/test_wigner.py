@@ -137,7 +137,9 @@ class TestWignerDiscretized:
             p_vec = np.linspace(left, right, 50)
 
             state = Coherent(0, np.real(alpha), np.imag(alpha))
-            W_mm, q_mat, p_mat = wigner_discretized(state.dm().fock_array(), q_vec, p_vec)
+            W_mm, q_mat, p_mat = wigner_discretized(
+                state.dm().fock_array(100, standard_order=True), q_vec, p_vec
+            )
             W_th = W_coherent(q_vec, p_vec, alpha, 0)
 
             assert np.allclose(distance(W_mm, W_th), 0)
@@ -175,11 +177,11 @@ class TestWignerDiscretized:
             s = 1
             state = SqueezedVacuum(0, s)
             W_mm, q_mat, p_mat = wigner_discretized(
-                state.dm().fock_array(standard_order=True), q_vec, p_vec
+                state.dm().fock_array(100, standard_order=True), q_vec, p_vec
             )
             W_th = W_coherent(q_vec, p_vec, 0j, s)
 
-            assert np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
+            assert np.allclose(distance(W_mm, W_th), 0, atol=1e-4)
             assert np.allclose(q_mat.T, q_vec)
             assert np.allclose(p_mat, p_vec)
 
@@ -198,9 +200,9 @@ class TestWignerDiscretized:
             s = 2
             state = SqueezedVacuum(0, s)
             W_mm, _, _ = wigner_discretized(
-                state.dm().fock_array(standard_order=True), q_vec, p_vec
+                state.dm().fock_array(100, standard_order=True), q_vec, p_vec
             )
             W_th = W_coherent(q_vec, p_vec, 0j, s)
 
-            success = np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
+            success = np.allclose(distance(W_mm, W_th), 0, atol=1e-4)
             assert success is False if method == "iterative" else True
