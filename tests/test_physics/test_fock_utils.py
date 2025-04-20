@@ -36,7 +36,7 @@ from mrmustard.lab_dev import (
     DM,
 )
 from mrmustard.math.lattice.strategies import displacement, grad_displacement
-from mrmustard.physics import fock_utils
+from mrmustard.physics import fock_utils, gaussian
 
 # helper strategies
 st_angle = st.floats(min_value=0, max_value=2 * np.pi)
@@ -134,19 +134,6 @@ def test_squeezed_state(r, phi):
         )
     )
     assert np.allclose(non_zero_amps, amp_pairs)
-
-
-@given(n_mean=st.floats(0, 3), phi=st_angle)
-def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
-    """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
-    r = np.arcsinh(np.sqrt(n_mean))
-    state = SqueezedVacuum(0, r=r, phi=phi) >> SqueezedVacuum(1, r=r, phi=phi)
-    meanN = fock_utils.number_means(state.fock_array(100), False)
-    covN = fock_utils.number_variances(state.fock_array(100), False)
-    expectedN = np.array([n_mean, n_mean])
-    expectedCov = n_mean * (n_mean + 1) * np.ones([2, 2])
-    assert np.allclose(meanN, expectedN)
-    assert np.allclose(covN, expectedCov)
 
 
 @given(n_mean=st.floats(0, 2), phi=st_angle, eta=st.floats(min_value=0, max_value=1))

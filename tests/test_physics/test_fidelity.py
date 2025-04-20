@@ -108,10 +108,10 @@ class TestCovMeansFidelity:
 
 
 class TestMixedStates:
-    state1 = Ket.from_fock([0, 1], 1 / 2 * np.eye(2))
+    state1 = DM.from_fock([0], 1 / 2 * np.eye(2))
     arr = 1 / 3 * np.ones((2, 2))
     arr[1, 1] = 2 / 3
-    state2 = Ket.from_fock([0, 1], arr)
+    state2 = DM.from_fock([0], arr)
 
     def test_fidelity_with_self(self):
         """Test that the fidelity of two identical quantum states is 1"""
