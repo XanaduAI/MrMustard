@@ -27,16 +27,6 @@ from mrmustard.physics.wigner import wigner_discretized
 # ~~~~~~~
 
 
-def distance(W_mm, W_th):
-    r"""Calculates the distance between the discretized Wigner functions W_mm (generated
-    by `mrmustard`) and W_th (computed analytically) as the maximum of `|W_mm-W_th|/|W_th|`,
-    where .
-    """
-    num = np.abs(W_mm - W_th)
-    den = np.abs(W_th)
-    return (num / den).max()
-
-
 def W_cat(q_vec, p_vec, q0):
     r"""Calculates the discretized Wigner function for a cat state with
     coherent states centered in `(q0, 0)`. See Eq. 3.3 in arXiv:0406015.
@@ -112,7 +102,7 @@ class TestWignerDiscretized:
             W_mm, q_mat, p_mat = wigner_discretized(state.fock_array(), q_vec, p_vec)
             W_th = W_cat(q_vec, p_vec, q0)
 
-            assert np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
+            assert np.allclose(W_mm, W_th, atol=1e-4)
             assert np.allclose(q_mat.T, q_vec)
             assert np.allclose(p_mat, p_vec)
 
@@ -142,7 +132,7 @@ class TestWignerDiscretized:
             )
             W_th = W_coherent(q_vec, p_vec, alpha, 0)
 
-            assert np.allclose(distance(W_mm, W_th), 0)
+            assert np.allclose(W_mm, W_th, atol=1e-4)
             assert np.allclose(q_mat.T, q_vec)
             assert np.allclose(p_mat, p_vec)
 
@@ -159,7 +149,7 @@ class TestWignerDiscretized:
             W_mm, q_mat, p_mat = wigner_discretized(state.dm().fock_array(), q_vec, p_vec)
             W_th = W_fock(q_vec, p_vec, n)
 
-            assert np.allclose(distance(W_mm, W_th), 0)
+            assert np.allclose(W_mm, W_th, atol=1e-4)
             assert np.allclose(q_mat.T, q_vec)
             assert np.allclose(p_mat, p_vec)
 
@@ -181,7 +171,7 @@ class TestWignerDiscretized:
             )
             W_th = W_coherent(q_vec, p_vec, 0j, s)
 
-            assert np.allclose(distance(W_mm, W_th), 0, atol=1e-4)
+            assert np.allclose(W_mm, W_th, atol=1e-4)
             assert np.allclose(q_mat.T, q_vec)
             assert np.allclose(p_mat, p_vec)
 
@@ -204,5 +194,5 @@ class TestWignerDiscretized:
             )
             W_th = W_coherent(q_vec, p_vec, 0j, s)
 
-            success = np.allclose(distance(W_mm, W_th), 0, atol=1e-4)
+            success = np.allclose(W_mm, W_th, atol=1e-4)
             assert success is False if method == "iterative" else True
