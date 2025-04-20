@@ -77,126 +77,6 @@ def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = Non
     return math.astensor(array)
 
 
-def autocutoffs(cov: Matrix, means: Vector, probability: float):
-    r"""Returns the cutoffs of a Gaussian state by computing the 1-mode marginals until
-    the probability of the marginal is less than ``probability``.
-
-    Args:
-        cov: the covariance matrix
-        means: the means vector
-        probability: the cutoff probability
-
-    Returns:
-        Tuple[int, ...]: the suggested cutoffs
-    """
-    M = len(means) // 2
-    cutoffs = []
-    for i in range(M):
-        cov_i = np.array([[cov[i, i], cov[i, i + M]], [cov[i + M, i], cov[i + M, i + M]]])
-        means_i = np.array([means[i], means[i + M]])
-        # apply 1-d recursion until probability is less than 0.99
-        A, B, C = [math.astensor(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
-        diag = math.hermite_renormalized_diagonal(
-            A, B, C, cutoffs=tuple([settings.AUTOCUTOFF_MAX_CUTOFF])
-        )
-        # find at what index in the cumsum the probability is more than 0.99
-        for i, val in enumerate(np.cumsum(diag)):
-            if val > probability:
-                cutoffs.append(max(i + 1, settings.AUTOCUTOFF_MIN_CUTOFF))
-                break
-        else:
-            cutoffs.append(settings.AUTOCUTOFF_MAX_CUTOFF)
-    return cutoffs
-
-
-def wigner_to_fock_state(
-    cov: Matrix,
-    means: Vector,
-    shape: Sequence[int],
-    max_prob: float = 1.0,
-    max_photons: int | None = None,
-    return_dm: bool = True,
-) -> Tensor:
-    r"""Returns the Fock representation of a Gaussian state.
-    Use with caution: if the cov matrix is that of a mixed state,
-    setting return_dm to False will produce nonsense.
-    If return_dm=False, we can apply max_prob and max_photons to stop the
-    computation of the Fock representation early, when those conditions are met.
-
-    * If the state is pure it can return the state vector (ket) or the density matrix.
-        The index ordering is going to be [i's] in ket_i
-    * If the state is mixed it can return the density matrix.
-        The index order is going to be [i's,j's] in dm_ij
-
-    Args:
-        cov: the Wigner covariance matrix
-        means: the Wigner means vector
-        shape: the shape of the tensor
-        max_prob: the maximum probability of a the state (applies only if the ket is returned)
-        max_photons: the maximum number of photons in the state (applies only if the ket is returned)
-        return_dm: whether to return the density matrix (otherwise it returns the ket)
-
-    Returns:
-        Tensor: the fock representation
-    """
-    if return_dm:
-        A, B, C = wigner_to_bargmann_rho(cov, means)
-        # NOTE: change the order of the index in AB
-        Xmat = math.Xmat(A.shape[-1] // 2)
-        A = math.matmul(math.matmul(Xmat, A), Xmat)
-        B = math.matvec(Xmat, B)
-        return math.hermite_renormalized(A, B, C, shape=shape)
-    else:  # here we can apply max prob and max photons
-        A, B, C = wigner_to_bargmann_psi(cov, means)
-        if max_photons is None:
-            max_photons = sum(shape) - len(shape)
-        if max_prob < 1.0 or max_photons < sum(shape) - len(shape):
-            return math.hermite_renormalized_binomial(
-                A, B, C, shape=tuple(shape), max_l2=max_prob, global_cutoff=max_photons + 1
-            )
-        return math.hermite_renormalized(A, B, C, shape=tuple(shape))
-
-
-def wigner_to_fock_U(X, d, shape):
-    r"""Returns the Fock representation of a Gaussian unitary transformation.
-    The index order is out_l, in_l, where in_l is to be contracted with the indices of a ket,
-    or with the left indices of a density matrix.
-
-    Arguments:
-        X: the X matrix
-        d: the d vector
-        shape: the shape of the tensor
-
-    Returns:
-        Tensor: the fock representation of the unitary transformation
-    """
-    A, B, C = wigner_to_bargmann_U(X, d)
-    return math.hermite_renormalized(A, B, C, shape=tuple(shape))
-
-
-def wigner_to_fock_Choi(X, Y, d, shape):
-    r"""Returns the Fock representation of a Gaussian Choi matrix.
-    The order of choi indices is :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
-    where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of a density matrix.
-
-    Arguments:
-        X: the X matrix
-        Y: the Y matrix
-        d: the d vector
-        shape: the shape of the tensor
-
-    Returns:
-        Tensor: the fock representation of the Choi matrix
-    """
-    A, B, C = wigner_to_bargmann_Choi(X, Y, d)
-    # NOTE: change the order of the index in AB
-    Xmat = math.Xmat(A.shape[-1] // 2)
-    A = math.matmul(math.matmul(Xmat, A), Xmat)
-    N = B.shape[-1] // 2
-    B = math.concat([B[N:], B[:N]], axis=-1)
-    return math.hermite_renormalized(A, B, C, shape=tuple(shape))
-
-
 def ket_to_dm(ket: Tensor) -> Tensor:
     r"""Maps a ket to a density matrix.
 
@@ -225,7 +105,7 @@ def dm_to_ket(dm: Tensor) -> Tensor:
         ValueError: if ket for mixed states cannot be calculated
     """
 
-    is_pure_dm = np.isclose(purity(dm), 1.0, atol=1e-6)
+    is_pure_dm = np.isclose(math.norm(dm / math.trace(dm)) ** 2, 1.0, atol=1e-6)
     if not is_pure_dm:
         raise ValueError("Cannot calculate ket for mixed states.")
 
@@ -280,7 +160,7 @@ def U_to_choi(U: Tensor, Udual: Tensor | None = None) -> Tensor:
     return math.outer(U, math.conj(U) if Udual is None else Udual)
 
 
-def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
+def fidelity(dm_a, dm_b) -> Scalar:
     r"""Computes the fidelity between two states in Fock representation."""
     # Richard Jozsa (1994) Fidelity for Mixed Quantum States,
     # Journal of Modern Optics, 41:12, 2315-2323, DOI: 10.1080/09500349414552171

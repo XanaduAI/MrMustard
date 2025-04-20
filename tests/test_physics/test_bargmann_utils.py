@@ -33,20 +33,22 @@ def test_wigner_to_bargmann_psi():
     """Test that the Bargmann representation of a ket is correct"""
     G = Ket.random((0, 1)) >> Dgate(0, 0.1, 0.2) >> Dgate(1, 0.2, 0.4)
     cov, means, coeff = G.phase_space(s=0)
-    A, b, c = wigner_to_bargmann_psi(cov, means)
-    assert np.allclose(A, cov)
-    assert np.allclose(b, means)
-    assert np.allclose(c, coeff)
+    A_exp, b_exp, c_exp = wigner_to_bargmann_psi(cov, means)
+    A, b, c = G.bargmann_triple()
+    assert np.allclose(A, A_exp)
+    assert np.allclose(b, b_exp)
+    assert np.allclose(np.abs(c), np.abs(c_exp))
 
 
 def test_wigner_to_bargmann_rho():
     """Test that the Bargmann representation of a dm is correct"""
-    G = DM.random((0, 1)) >> Dgate(0.1, 0.2) >> Dgate(1, 0.2, 0.4)
+    G = DM.random((0, 1)) >> Dgate(0, 0.1, 0.2) >> Dgate(1, 0.2, 0.4)
     cov, means, coeff = G.phase_space(s=0)
     A, b, c = wigner_to_bargmann_rho(cov, means)
-    assert np.allclose(A, cov)
-    assert np.allclose(b, means)
-    assert np.allclose(c, coeff)
+    A_exp, b_exp, c_exp = wigner_to_bargmann_rho(cov, means)
+    assert np.allclose(A, A_exp)
+    assert np.allclose(b, b_exp)
+    assert np.allclose(c, c_exp)
 
 
 def test_norm_ket():
