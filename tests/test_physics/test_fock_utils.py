@@ -141,8 +141,8 @@ def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     r = np.arcsinh(np.sqrt(n_mean))
     state = SqueezedVacuum(0, r=r, phi=phi) >> SqueezedVacuum(1, r=r, phi=phi)
-    meanN = fock_utils.number_means(state.fock_array([100]), False)
-    covN = fock_utils.number_variances(state.fock_array([100]), False)
+    meanN = fock_utils.number_means(state.fock_array(100), False)
+    covN = fock_utils.number_variances(state.fock_array(100), False)
     expectedN = np.array([n_mean, n_mean])
     expectedCov = n_mean * (n_mean + 1) * np.ones([2, 2])
     assert np.allclose(meanN, expectedN)
@@ -155,7 +155,7 @@ def test_lossy_squeezing(n_mean, phi, eta):
     r = np.arcsinh(np.sqrt(n_mean))
     cutoff = 40
     ps = np.diag(
-        (SqueezedVacuum(0, r=r, phi=phi) >> Attenuator(0, transmissivity=eta)).fock_array([cutoff])
+        (SqueezedVacuum(0, r=r, phi=phi) >> Attenuator(0, transmissivity=eta)).fock_array(cutoff)
     )
     expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
     assert np.allclose(ps, expected, atol=1e-5)
@@ -166,8 +166,8 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     """Tests the photon number distribution of a lossy two-mode squeezed state"""
     cutoff = 40
     n = np.arange(cutoff)
-    L = Attenuator(0, transmissivity=[eta_0, eta_1])
-    state = TwoModeSqueezedVacuum(0, r=np.arcsinh(np.sqrt(n_mean)), phi=phi) >> L
+    L = Attenuator(0, transmissivity=eta_0) >> Attenuator(1, transmissivity=eta_1)
+    state = TwoModeSqueezedVacuum((0, 1), r=np.arcsinh(np.sqrt(n_mean)), phi=phi) >> L
     ps0 = np.diag(state.fock_array(cutoff))
     ps1 = np.diag(state.fock_array(cutoff))
     mean_0 = np.sum(n * ps0)
@@ -248,8 +248,8 @@ def test_displacement_values():
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
 def test_number_means(x, y):
     """Tests the mean photon number."""
-    ket = Ket.from_fock([0], Coherent(0, x, y).fock_array(80))
-    dm = DM.from_fock([0], Coherent(0, x, y).dm().fock_array(80))
+    ket = Coherent(0, x, y).fock_array(80)
+    dm = Coherent(0, x, y).dm().fock_array(80)
     assert np.allclose(fock_utils.number_means(ket, False), x * x + y * y)
     assert np.allclose(fock_utils.number_means(dm, True), x * x + y * y)
 
