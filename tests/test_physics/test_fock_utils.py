@@ -168,8 +168,8 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     n = np.arange(cutoff)
     L = Attenuator(0, transmissivity=eta_0) >> Attenuator(1, transmissivity=eta_1)
     state = TwoModeSqueezedVacuum((0, 1), r=np.arcsinh(np.sqrt(n_mean)), phi=phi) >> L
-    ps0 = np.diag(state.fock_array(cutoff))
-    ps1 = np.diag(state.fock_array(cutoff))
+    ps0 = np.diag(state[0].fock_array(cutoff))
+    ps1 = np.diag(state[1].fock_array(cutoff))
     mean_0 = np.sum(n * ps0)
     mean_1 = np.sum(n * ps1)
     assert np.allclose(mean_0, n_mean * eta_0, atol=1e-5)
@@ -258,14 +258,14 @@ def test_number_means(x, y):
 def test_number_variances_coh(x, y):
     """Tests the variance of the number operator."""
     assert np.allclose(
-        fock_utils.number_variances(Coherent(x, y).fock_array([80]), False)[0], x * x + y * y
+        fock_utils.number_variances(Coherent(0, x, y).fock_array(80), False)[0], x * x + y * y
     )
     assert np.allclose(
-        fock_utils.number_variances(Coherent(x, y).dm().fock_array([80]), True)[0], x * x + y * y
+        fock_utils.number_variances(Coherent(0, x, y).dm().fock_array(80), True)[0], x * x + y * y
     )
 
 
 def test_number_variances_fock():
     """Tests the variance of the number operator in Fock."""
-    assert np.allclose(fock_utils.number_variances(Number(0, 1).fock_array(), False), 0)
-    assert np.allclose(fock_utils.number_variances(Number(0, 1).dm().fock_array(), True), 0)
+    assert np.allclose(fock_utils.number_variances(Number(0, 1).fock_array(100), False), 0)
+    assert np.allclose(fock_utils.number_variances(Number(0, 1).dm().fock_array(100), True), 0)
