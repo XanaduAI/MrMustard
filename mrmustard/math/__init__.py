@@ -25,6 +25,5 @@ from .backend_numpy import *
 from .lattice import *
 from .parameters import *
 from .parameter_set import *
-from .tensor_wrappers import *
 
 sys.modules[__name__] = BackendManager()
