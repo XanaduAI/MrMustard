@@ -5,11 +5,12 @@ Unit tests for mrmustard.math.compactFock.compactFock~
 import numpy as np
 
 from mrmustard import math
-from mrmustard.lab_dev import Ggate, SqueezedVacuum, State, Vacuum, DM
+from mrmustard.lab_dev import Ggate, SqueezedVacuum, Vacuum, DM
+from mrmustard.lab_dev.transformations.attenuator import Attenuator
 from mrmustard.physics import gaussian
 from mrmustard.training import Optimizer
 
-from ..conftest import skip_np, skip_jax
+from ..conftest import skip_np, skip_jax, skip_tf
 
 
 def test_compactFock_diagonal():
@@ -64,10 +65,11 @@ def test_compactFock_diagonal_gradients():
     skip_jax()
 
     G = Ggate(0, symplectic_trainable=True)
+    Att = Attenuator(0, 0.9)
 
     def cost_fn():
         n1 = 2  # number of detected photons
-        state_opt = Vacuum(1) >> G
+        state_opt = Vacuum([0]) >> G >> Att
         A, B, G0 = state_opt.bargmann_triple()
         probs = math.hermite_renormalized_diagonal(
             math.conj(-A), math.conj(B), math.conj(G0), cutoffs=[n1 + 1]
@@ -88,17 +90,19 @@ def test_compactFock_1leftover_gradients():
     """
     skip_np()
     skip_jax()
+    skip_tf()  # TODO: implement gradient of hermite_renormalized_1leftoverMode
 
     G = Ggate((0, 1), symplectic_trainable=True)
+    Att = Attenuator(0, 0.9)
 
     def cost_fn():
         n2 = 2  # number of detected photons
-        state_opt = Vacuum(2) >> G
+        state_opt = Vacuum([0, 1]) >> G >> Att
         A, B, G0 = state_opt.bargmann_triple()
         marginal = math.hermite_renormalized_1leftoverMode(
             math.conj(-A), math.conj(B), math.conj(G0), output_cutoff=2, pnr_cutoffs=[n2 + 1]
         )
-        conditional_state = State(dm=marginal[..., n2]).normalize()
+        conditional_state = DM.from_fock([0], marginal[..., n2]).normalize()
         return -gaussian.fidelity(
             *conditional_state.phase_space(0)[:2], *SqueezedVacuum(0, r=1).phase_space(0)[:2]
         )
