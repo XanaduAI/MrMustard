@@ -151,6 +151,14 @@ class TestWires:
         with pytest.raises(ValueError):
             u @ v  # pylint: disable=pointless-statement
 
+    def test_contracted_labels1(self):
+        w1 = Wires({0}, {0}, {2}, {2})
+        w2 = Wires({1}, {}, {3}, {2, 3})
+        idx1, idx2, idx_out = w1.contracted_labels(w2)
+        assert idx1 == [0, 1, 2, 3]
+        assert idx2 == [4, 5, 2, 7]
+        assert idx_out == [0, 4, 1, 5, 3, 7]
+
 
 class TestWiresDisplay:
     """Test the wires _ipython_display_ functionality."""

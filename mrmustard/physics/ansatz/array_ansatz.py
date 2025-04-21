@@ -17,7 +17,7 @@ This module contains the array ansatz.
 """
 
 from __future__ import annotations
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Sequence, Union
 from warnings import warn
 
 import numpy as np
@@ -30,7 +30,6 @@ from mrmustard.math.parameters import Variable
 from mrmustard.utils.typing import Batch, Scalar, Tensor
 
 from .base import Ansatz
-from ..utils import outer_product_batch_str
 
 __all__ = ["ArrayAnsatz"]
 
@@ -142,73 +141,73 @@ class ArrayAnsatz(Ansatz):
     def contract(
         self,
         other: ArrayAnsatz,
-        idx1: int | tuple[int, ...] = tuple(),
-        idx2: int | tuple[int, ...] = tuple(),
-        batch_str: str | None = None,
+        idx1: Sequence[str | int],
+        idx2: Sequence[Union[str, int]],
+        idx_out: Sequence[Union[str, int]],
     ) -> ArrayAnsatz:
-        r"""
-        Contracts two ansatze across the specified variables and batch dimensions.
-        Variables are indexed by integers, while for batch dimensions the string has the same
-        syntax as in ``np.einsum``.
+        r"""Contracts this ansatz with another using einsum-style notation with labels.
+
+        Indices are specified as sequences of labels (str or int). Batch dimensions must
+        be strings, core dimensions must be integers.
+
+        Example:
+            `self.contract(other, idx1=['b', 0, 1], idx2=['b', 1, 2], idx_out=[0, 2])`
+            Contracts batch label 'b' and core index 1.
 
         Args:
             other: The other ArrayAnsatz to contract with.
-            idx1: The variables of the first ansatz to contract.
-            idx2: The variables of the second ansatz to contract.
-            batch_str: The (optional) batch dimensions to contract over with the
-                same syntax as in ``np.einsum``. If not indicated, the batch dimensions
-                are taken in outer product.
+            idx1: Sequence of labels (str/int) for this ansatz's dimensions. Must match rank.
+            idx2: Sequence of labels (str/int) for the other ansatz's dimensions. Must match rank.
+            idx_out: Sequence of labels for the output dimensions. Must be subset of input labels.
 
         Returns:
-            The contracted ansatz.
+            The contracted ArrayAnsatz.
+
+        Raises:
+            ValueError: If index sequences have incorrect length or invalid labels.
         """
-        idx1 = (idx1,) if isinstance(idx1, int) else idx1
-        idx2 = (idx2,) if isinstance(idx2, int) else idx2
-        for i, j in zip(idx1, idx2):
-            if i >= self.core_dims:
-                raise IndexError(f"Valid indices are 0 to {self.core_dims-1}. Got {i}.")
-            if j >= other.core_dims:
-                raise IndexError(f"Valid indices are 0 to {other.core_dims-1}. Got {j}.")
+        if len(idx1) != len(self.array.shape):
+            raise ValueError(f"len(idx1) {len(idx1)} != rank(self) {len(self.array.shape)}")
+        if len(idx2) != len(other.array.shape):
+            raise ValueError(f"len(idx2) {len(idx2)} != rank(other) {len(other.array.shape)}")
 
-        if batch_str is None:
-            batch_str = outer_product_batch_str(self.batch_shape, other.batch_shape)
-        input_str, output_str = batch_str.split("->")
-        input_parts = input_str.split(",")
-        if len(input_parts) != 2:
-            raise ValueError("Batch string must have exactly two input parts")
+        all_labels_in = set(idx1) | set(idx2)
+        if not set(idx_out).issubset(all_labels_in):
+            raise ValueError("Output labels must be present in input labels.")
 
-        # reshape the arrays to match
-        shape_s = self.core_shape
-        shape_o = other.core_shape
+        unique_labels = sorted(list(all_labels_in), key=lambda x: (isinstance(x, int), x))
+        label_to_char = {label: chr(97 + i) for i, label in enumerate(unique_labels)}
 
-        new_shape_s = list(shape_s)
-        new_shape_o = list(shape_o)
-        for s, o in zip(idx1, idx2):
-            new_shape_s[s] = min(shape_s[s], shape_o[o])
-            new_shape_o[o] = min(shape_s[s], shape_o[o])
+        einsum_str1 = "".join([label_to_char[i] for i in idx1])
+        einsum_str2 = "".join([label_to_char[i] for i in idx2])
+        einsum_str_out = "".join([label_to_char[i] for i in idx_out])
+        einsum_str = f"{einsum_str1},{einsum_str2}->{einsum_str_out}"
 
-        reduced_self = self.reduce(new_shape_s)
-        reduced_other = other.reduce(new_shape_o)
+        contracted_labels = set(idx1) & set(idx2)
+        array1 = self.array
+        array2 = other.array
+        slices1 = [slice(None)] * len(idx1)
+        slices2 = [slice(None)] * len(idx2)
 
-        # Start variable indices after batch indices
-        start_idx = max(len(input_parts[0]), len(input_parts[1]), len(output_str))
-        var_idx1 = [chr(i + 97 + start_idx) for i in range(reduced_self.core_dims)]
-        var_idx2 = [
-            chr(i + 97 + start_idx + reduced_self.core_dims) for i in range(reduced_other.core_dims)
-        ]
+        for label in contracted_labels:
+            pos1 = idx1.index(label)
+            dim1 = array1.shape[pos1]
+            pos2 = idx2.index(label)
+            dim2 = array2.shape[pos2]
 
-        # Replace contracted indices in second array with corresponding indices from first
-        for i, j in zip(idx1, idx2):
-            var_idx2[j] = var_idx1[i]
+            if dim1 != dim2:
+                min_dim = min(dim1, dim2)
+                slices1[pos1] = slice(0, min_dim)
+                slices2[pos2] = slice(0, min_dim)
 
-        # Combine batch and variable indices for einsum
-        einsum_str = (
-            f"{input_parts[0]}{''.join(var_idx1)},"
-            f"{input_parts[1]}{''.join(var_idx2)}->"
-            f"{output_str}{''.join([i for i in var_idx1 + var_idx2 if i not in set(var_idx1) & set(var_idx2)])}"
-        )
-        result = math.einsum(einsum_str, reduced_self.array, reduced_other.array)
-        return ArrayAnsatz(result, batch_dims=len(output_str))
+        reduced_array1 = array1[tuple(slices1)]
+        reduced_array2 = array2[tuple(slices2)]
+
+        result = math.einsum(einsum_str, reduced_array1, reduced_array2)
+
+        batch_dims_out = sum(1 for label in idx_out if isinstance(label, str))
+
+        return ArrayAnsatz(result, batch_dims=batch_dims_out)
 
     def reduce(self, shape: Sequence[int]) -> ArrayAnsatz:
         r"""
@@ -254,6 +253,16 @@ class ArrayAnsatz(Ansatz):
     def reorder(self, order: tuple[int, ...] | list[int]) -> ArrayAnsatz:
         order = list(range(self.batch_dims)) + [i + self.batch_dims for i in order]
         return ArrayAnsatz(math.transpose(self.array, order), self.batch_dims)
+
+    def reorder_batch(self, order: Sequence[int]):
+        if len(order) != self.batch_dims:
+            raise ValueError(
+                f"order must have length {self.batch_dims} (number of batch dimensions), got {len(order)}"
+            )
+
+        core_dims_indices = range(self.batch_dims, self.batch_dims + self.core_dims)
+        new_array = math.transpose(self.array, list(order) + list(core_dims_indices))
+        return ArrayAnsatz(new_array, self.batch_dims)
 
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"array": self.data, "batch_dims": self.batch_dims}
