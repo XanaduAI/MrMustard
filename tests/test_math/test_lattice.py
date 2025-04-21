@@ -34,6 +34,7 @@ def test_vanillaNumba_vs_binomial():
     """Test that the vanilla method and the binomial method give the same result."""
 
     A, b, c = Ket.random((0, 1)).bargmann_triple()
+    A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)
 
     ket_vanilla = vanilla_numba(shape=(10, 10), A=A, b=b, c=c)[:5, :5]
     ket_binomial = binomial(local_cutoffs=(5, 5), A=A, b=b, c=c, max_l2=0.9999, global_cutoff=12)[
@@ -47,12 +48,13 @@ def test_binomial_vs_binomialDict():
     """Test that binomial and binomial_dict give the same result."""
 
     A, b, c = Ket.random((0, 1)).bargmann_triple()
+
     max_prob = 0.9
     local_cutoffs = (10, 10)
     global_cutoff = 15
 
-    G, _ = binomial(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
-    D = binomial_dict(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
+    G, _ = binomial(local_cutoffs, A, b, c, max_prob, global_cutoff)
+    D = binomial_dict(local_cutoffs, A, b, complex(c), max_prob, global_cutoff)
 
     for idx in D.keys():
         assert np.isclose(D[idx], G[idx])
