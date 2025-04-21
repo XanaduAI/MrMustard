@@ -32,7 +32,7 @@ from mrmustard.math.lattice.strategies.vanilla import vanilla_numba
 
 def test_vanillaNumba_vs_binomial():
     """Test that the vanilla method and the binomial method give the same result."""
-
+    settings.SEED = 42
     A, b, c = Ket.random((0, 1)).bargmann_triple()
     A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)
 
