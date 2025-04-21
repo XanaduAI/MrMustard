@@ -346,10 +346,7 @@ class Ket(State):
         )
         b_temp2 = math.einsum("...ij, ...j -> ...i", math.inv(gamma), math.conj(bm))
 
-        if batch_shape == ():
-            bu = math.block([bm, -b_temp - b_temp2], axes=(0, 0))
-        else:
-            bu = math.block([bm, -b_temp - b_temp2])
+        bu = math.concat([bm, -b_temp - b_temp2], -1)
 
         cu = math.ones(batch_shape, dtype=math.complex128)
         U = Unitary.from_bargmann(core_modes, core_modes, (Au, bu, cu))
@@ -465,9 +462,9 @@ class Ket(State):
         s = Ket.from_bargmann(self.modes, (As, bs, cs))
 
         if batch_shape != ():
-            Im = math.stack([math.eye(M, dtype=math.complex128)] * math.prod(batch_shape)).reshape(
-                batch_shape + (M,) * 2
-            )
+            Im = math.stack(
+                [math.eye(M, dtype=math.complex128)] * int(math.prod(batch_shape))
+            ).reshape(batch_shape + (M,) * 2)
         else:
             Im = math.eye(M, dtype=math.complex128)
 
