@@ -14,6 +14,7 @@
 
 """Tests for the mm_einsum function."""
 
+import math
 import numpy as np
 import sparse
 from mrmustard.lab_dev import Ket, Unitary, BSgate, SqueezedVacuum, Rgate
@@ -410,3 +411,23 @@ class TestMmEinsum:
         )
         assert isinstance(res, ArrayAnsatz)
         assert np.allclose(res.array, self.g0.fock_array(f0.array.shape) @ f0.array)
+
+    def test_with_sparse_and_sparse_ansatze(self):
+        """Test that mm_einsum works for only sparse ansatz."""
+        f01 = Ket.random([0, 1]).to_fock((20, 20)).ansatz
+        f0 = Ket.random([0]).to_fock((20,)).ansatz
+        sp01 = sparse.COO.from_numpy(f01.array)
+        f01_sparse = ArrayAnsatz(sp01)
+        sp0 = sparse.COO.from_numpy(f0.array)
+        f0_sparse = ArrayAnsatz(sp0)
+        res = mm_einsum(
+            f01_sparse,
+            [0, 1],
+            f0_sparse,
+            [1],
+            output=[0],
+            contraction_order=[(0, 1)],
+            fock_dims={0: 20, 1: 20},
+        )
+        assert isinstance(res, ArrayAnsatz)
+        assert math.allclose(res.array, f01_sparse.array @ f0_sparse.array)
