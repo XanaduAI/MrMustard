@@ -131,17 +131,6 @@ def fidelity(dm_a, dm_b) -> Scalar:
     r"""Computes the fidelity between two states in Fock representation."""
     # Richard Jozsa (1994) Fidelity for Mixed Quantum States,
     # Journal of Modern Optics, 41:12, 2315-2323, DOI: 10.1080/09500349414552171
-
-    # trim states to have same cutoff
-    min_cutoffs = [
-        slice(min(a, b))
-        for a, b in zip(
-            dm_a.shape[: len(dm_a.shape) // 2],
-            dm_b.shape[: len(dm_b.shape) // 2],
-        )
-    ]
-    dm_a = dm_a[tuple(min_cutoffs * 2)]
-    dm_b = dm_b[tuple(min_cutoffs * 2)]
     sqrt_dm_a = math.sqrtm(dm_a)
     return math.abs(math.trace(math.sqrtm(math.matmul(sqrt_dm_a, dm_b, sqrt_dm_a))) ** 2)
 

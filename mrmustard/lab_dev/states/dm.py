@@ -292,9 +292,14 @@ class DM(State):
                 cov2, mean2, _ = other.phase_space(0)
                 return gaussian_fidelity(mean1, cov1, mean2, cov2)
             except ValueError:  # array ansatz
-                fock1 = self.fock_array()  # TODO: reshape to square
-                fock2 = other.fock_array()  # TODO: reshape to square
-                return fock_dm_fidelity(fock1, fock2)
+                shape1 = self.auto_shape()
+                shape2 = other.auto_shape()
+                min_shape = tuple(min(s1, s2) for s1, s2 in zip(shape1, shape2))
+                slc = tuple(slice(None, s) for s in min_shape)
+                side = np.prod([min_shape[i] for i in range(len(min_shape) // 2)])
+                dm1 = math.reshape(self.fock_array(min_shape)[slc], (side, side))
+                dm2 = math.reshape(other.fock_array(min_shape)[slc], (side, side))
+                return fock_dm_fidelity(dm1, dm2)
         return other.expectation(self)  # assuming other is a ket
 
     def fock_array(
