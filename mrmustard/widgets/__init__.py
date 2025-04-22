@@ -19,6 +19,7 @@ import ipywidgets as widgets
 import plotly.graph_objs as go
 from IPython import get_ipython
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
+import sparse
 
 from mrmustard import math
 
@@ -66,6 +67,8 @@ def fock(rep):
 
     shape = rep.core_shape
     rep_array = rep.array[0] if rep.batch_shape else rep.array
+    if isinstance(rep_array, sparse.COO):
+        rep_array = rep_array.todense()
     if len(shape) == 1:
         plot_widget = fock_1d(rep_array)
     elif len(shape) == 2:
