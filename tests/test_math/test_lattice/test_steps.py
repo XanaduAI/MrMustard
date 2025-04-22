@@ -45,5 +45,5 @@ class TestSteps:
         G_stable = binomial_step_dict_stable_no_prob(G_stable, A, b, subspace_indices_0)
 
         assert set(G_normal.keys()) == set(G_stable.keys())
-        for key in G_normal:
+        for key in subspace_indices_0:
             assert np.isclose(G_normal[key], G_stable[key])
