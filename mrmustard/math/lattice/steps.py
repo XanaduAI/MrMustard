@@ -26,8 +26,7 @@ import numpy as np
 from numba import njit, prange, types
 from numba.cpython.unsafe.tuple import tuple_setitem
 
-from mrmustard.math.lattice.neighbors import lower_neighbors
-from mrmustard.math.lattice.pivots import first_available_pivot
+from mrmustard.math.lattice import neighbors, pivots
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))  # precompute sqrt of the first 100k integers
@@ -55,13 +54,13 @@ def vanilla_step(
         complex: the value of the amplitude at the given index
     """
     # get pivot
-    i, pivot = first_available_pivot(index)
+    i, pivot = pivots.first_available_pivot(index)
 
     # pivot contribution
     value_at_index = b[i] * G[pivot]
 
     # neighbors contribution
-    for j, neighbor in lower_neighbors(pivot):
+    for j, neighbor in neighbors.lower_neighbors(pivot):
         value_at_index += A[i, j] * SQRT[pivot[j]] * G[neighbor]
 
     return value_at_index / SQRT[index[i]]
@@ -90,12 +89,12 @@ def vanilla_step_batch(
     Returns:
         array: the value of the amplitude at the given index according to each batch on the first index
     """
-    i, pivot = first_available_pivot(index)
+    i, pivot = pivots.first_available_pivot(index)
 
     # contribution from G[pivot]
     value_at_index = b[..., i] * G[(slice(None),) + pivot]
     # contributions from G[neighbor]
-    for j, neighbor in lower_neighbors(pivot):
+    for j, neighbor in neighbors.lower_neighbors(pivot):
         value_at_index += A[..., i, j] * SQRT[pivot[j]] * G[(slice(None),) + neighbor]
 
     return value_at_index / SQRT[index[i]]
@@ -125,7 +124,7 @@ def vanilla_step_jacobian(
         tuple[array, array]: the dGdB and dGdA tensors updated at the given index
     """
     # index -> pivot
-    i, pivot = first_available_pivot(index)
+    i, pivot = pivots.first_available_pivot(index)
 
     # pivot contribution
     dGdB[index] += b[i] * dGdB[pivot] / SQRT[index[i]]
@@ -133,7 +132,7 @@ def vanilla_step_jacobian(
     dGdA[index] += b[i] * dGdA[pivot] / SQRT[index[i]]
 
     # neighbors contribution
-    for j, neighbor in lower_neighbors(pivot):
+    for j, neighbor in neighbors.lower_neighbors(pivot):
         dGdB[index] += A[i, j] * dGdB[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
         dGdA[index] += A[i, j] * dGdA[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
         dGdA[index + (i, j)] += G[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
@@ -187,18 +186,31 @@ def vanilla_step_dict(
     Returns:
         complex: the value of the amplitude at the given index
     """
-    # index -> pivot
-    i, pivot = first_available_pivot(index)
-
-    # calculate value at index: pivot contribution
+    i, pivot = pivots.first_available_pivot(index)
     denom = SQRT[pivot[i] + 1]
     value_at_index = b[i] / denom * data[pivot]
-
-    # neighbors contribution
-    for j, neighbor in lower_neighbors(pivot):
+    for j, neighbor in neighbors.lower_neighbors(pivot):
         value_at_index += A[i, j] / denom * SQRT[pivot[j]] * data.get(neighbor, 0.0 + 0.0j)
 
     return value_at_index
+
+
+@njit
+def vanilla_step_dict_stable(
+    data: types.DictType, A: ComplexMatrix, b: ComplexVector, index: tuple[int, ...]
+) -> complex:
+    r"""Numerically stable version of the vanilla_step_dict."""
+
+    value_at_index = 0.0
+    N = 0
+    for i, pivot in pivots.all_pivots(index):
+        N += 1
+        denom = SQRT[pivot[i] + 1]
+        value_at_index += b[i] / denom * data[pivot]
+        for j, neighbor in neighbors.lower_neighbors(pivot):
+            value_at_index += A[i, j] / denom * SQRT[pivot[j]] * data.get(neighbor, 0.0 + 0.0j)
+
+    return value_at_index / N
 
 
 @njit
@@ -261,3 +273,35 @@ def binomial_step_dict(
         prob = prob + np.abs(value) ** 2
 
     return G, prob
+
+
+@njit
+def binomial_step_dict_stable(
+    G: types.DictType,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    subspace_indices: list[tuple[int, ...]],
+) -> types.DictType:
+    r"""Numerically stable version of the binomial dict step"""
+    prob = 0.0
+    for i in prange(len(subspace_indices)):
+        value = vanilla_step_dict_stable(G, A, b, subspace_indices[i])
+        G[subspace_indices[i]] = value
+        prob = prob + np.abs(value) ** 2
+    return G, prob
+
+
+@njit
+def binomial_step_dict_stable(
+    G: types.DictType,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    subspace_indices: list[tuple[int, ...]],
+) -> types.DictType:
+    r"""Numerically stable version of the binomial dict step,
+    except it does not return the probability of the subspace.
+    """
+    for i in prange(len(subspace_indices)):
+        value = vanilla_step_dict_stable(G, A, b, subspace_indices[i])
+        G[subspace_indices[i]] = value
+    return G
