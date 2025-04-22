@@ -276,6 +276,11 @@ class Ket(State):
     def fidelity(self, other: State) -> float:
         r"""
         The fidelity between this ket and another state.
+        
+        .. details::
+        
+        .. math::
+            F(|\psi\rangle, \phi\rangle) = |\langle \psi, \phi \rangle|^2
         """
         if self.modes != other.modes:
             raise ValueError("Cannot compute fidelity between states with different modes.")
