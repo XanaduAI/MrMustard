@@ -28,7 +28,6 @@ from mrmustard.math.lattice.strategies.beamsplitter import (
 )
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 from mrmustard.math.lattice.strategies.displacement import displacement
-from mrmustard.math.lattice.strategies.vanilla import vanilla_numba
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 
 
