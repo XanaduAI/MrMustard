@@ -276,7 +276,7 @@ class DM(State):
 
     def fidelity(self, other: State) -> float:
         r"""
-        The fidelity between this DM and another state.
+        The fidelity between this DM and another ket or DM.
 
         Args:
             other: The other state.
