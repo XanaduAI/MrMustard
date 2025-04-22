@@ -18,7 +18,7 @@ import numpy as np
 from numba.typed import Dict
 from numba import types
 
-from mrmustard.math.lattice.steps import binomial_step_dict, binomial_step_dict_stable
+from mrmustard.math.lattice.steps import binomial_step_dict, binomial_step_dict_stable_no_prob
 from mrmustard.math.lattice.paths import binomial_subspace_basis
 from tests.random import Abc_triple
 
@@ -42,7 +42,7 @@ class TestSteps:
         G_stable = G_normal.copy()
 
         G_normal, _ = binomial_step_dict(G_normal, A, b, subspace_indices_0)
-        G_stable = binomial_step_dict_stable(G_stable, A, b, subspace_indices_0)
+        G_stable = binomial_step_dict_stable_no_prob(G_stable, A, b, subspace_indices_0)
 
         assert set(G_normal.keys()) == set(G_stable.keys())
         for key in G_normal:

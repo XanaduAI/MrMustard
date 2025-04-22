@@ -292,7 +292,7 @@ def binomial_step_dict_stable(
 
 
 @njit
-def binomial_step_dict_stable(
+def binomial_step_dict_stable_no_prob(
     G: types.DictType,
     A: ComplexMatrix,
     b: ComplexVector,
