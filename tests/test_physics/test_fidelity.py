@@ -4,7 +4,7 @@ from thewalrus.quantum import real_to_complex_displacements
 from thewalrus.random import random_covariance
 
 from mrmustard import settings
-from mrmustard.lab_dev import Coherent, Number, Ket, DM
+from mrmustard.lab_dev import Coherent, Number, DM, Attenuator
 from mrmustard.physics import fock_utils as fp
 from mrmustard.physics import gaussian as gp
 
@@ -49,6 +49,18 @@ class TestCovMeansFidelity:
             cov = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
             means = np.random.rand(2 * num_modes)
             assert np.allclose(gp.fidelity(means, cov, means, cov), 1, atol=1e-3)
+
+    def test_gaussian_ket_fidelity(self):
+        """Test the fidelity of two gaussian kets"""
+        state1 = Coherent(0, x=1.0)
+        state2 = Coherent(0, x=1.0)
+        assert np.allclose(state1.fidelity(state2), 1)
+
+    def test_gaussian_dm_fidelity(self):
+        """Test the fidelity of two gaussian dms"""
+        state1 = Coherent(0, x=1.0) >> Attenuator(0, 0.9)
+        state2 = Coherent(0, x=1.0) >> Attenuator(0, 0.9)
+        assert np.allclose(state1.fidelity(state2), 1)
 
     @pytest.mark.parametrize("num_modes", np.arange(5, 10))
     @pytest.mark.parametrize("hbar", [0.5, 1.0, 2.0, 1.6])
