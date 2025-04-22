@@ -276,7 +276,13 @@ class DM(State):
 
     def fidelity(self, other: State) -> float:
         r"""
-        The fidelity between this DM and another ket or DM.
+        The fidelity between this DM and another ket or DM. If the other state is a Ket, fidelity
+        is computed as the squared overlap, consistent with the pure state's fidelity.
+        If the other state is a DM and the representation is Fock, the fidelity is computed as in
+        Richard Jozsa (1994) Fidelity for Mixed Quantum States,
+        Journal of Modern Optics, 41:12, 2315-2323, DOI: 10.1080/09500349414552171
+        Otherwise, the fidelity is computed as the Gaussian fidelity as in
+        arXiv:2102.05748 <https://arxiv.org/pdf/2102.05748.pdf> (square definition).
 
         Args:
             other: The other state.
