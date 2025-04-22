@@ -539,7 +539,21 @@ class TestDM:  # pylint:disable=too-many-public-methods
         rho = DM.random([0, 1, 2, 3])
         core, phi = rho.formal_stellar_decomposition([0, 3])
 
+        # displacement test
+        rho = DM.random([0, 1]) >> Dgate(0, 0.5)
+        core, phi = rho.formal_stellar_decomposition([0])
+        assert (core >> Vacuum(1).dual).normalize() == Vacuum((0,)).dm()
         assert rho == core >> phi
+
+        # batch test
+        rho1 = DM.random([0, 1, 2, 3]) >> Dgate(0, 0.7)
+        rho2 = DM.random([0, 1, 2, 3])
+
+        sigma = rho1 + rho2
+        sigma.ansatz._lin_sup = False
+        core, phi = sigma.formal_stellar_decomposition([0, 1])
+
+        assert core.contract(phi, mode="zip") == sigma
 
     def test_physical_stellar_decomposition(self):
         rho = DM.random([0, 1])
@@ -561,12 +575,12 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3))
 
         # testing displacement
-        rho = DM.random([0, 1]) >> Dgate(0, 1)
+        rho = DM.random([0, 1]) >> Dgate(0, 0.5)
         core, phi = rho.physical_stellar_decomposition([0])
         assert (core >> Vacuum(1).dual).normalize() == Vacuum((0,))
 
         # testing batches:
-        rho1 = DM.random([0, 1, 2, 3])
+        rho1 = DM.random([0, 1, 2, 3]) >> Dgate(0, 1)
         rho2 = DM.random([0, 1, 2, 3])
 
         sigma = rho1 + rho2

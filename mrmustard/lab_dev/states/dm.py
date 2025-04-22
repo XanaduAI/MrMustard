@@ -371,21 +371,21 @@ class DM(State):
         temp = math.astensor(inverse_order)
         A_core = A_core[..., temp, :]
         A_core = A_core[..., :, temp]
-        b_core = b_core[temp]
+        b_core = b_core[..., temp]
         core = DM.from_bargmann(self.modes, (A_core, b_core, c_core))
 
-        I = math.eye_like(Am)
+        I = math.broadcast_to(math.eye(2 * M, dtype=math.complex128), batch_shape + (2 * M, 2 * M))
         O = math.zeros_like(Am)
         A_out_in = math.block([[Am, I], [I, O]])
         A_tmp = math.reshape(A_out_in, batch_shape + (2, 2, M, 2, 2, M))
         A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
         A_T = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
 
-        b_out_in = math.concat([bm, math.zeros(2 * M, dtype=math.complex128)], -1)
+        b_out_in = math.concat([bm, math.zeros(batch_shape + (2 * M,), dtype=math.complex128)], -1)
         b_temp = math.reshape(b_out_in, batch_shape + (2, 2, M))
         b_temp = math.einsum("...ijk->...jik", b_temp)
         b_T = math.reshape(b_temp, batch_shape + (4 * M,))
-        c_T = math.astensor(1, dtype=math.complex128)
+        c_T = math.ones_like(c)
         phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
         return core, phi
 
