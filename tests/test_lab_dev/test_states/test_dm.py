@@ -550,7 +550,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert isinstance(core, Ket)
 
         A, _, _ = core.ansatz.triple
-        assert A[0, 0] == 0
+        assert math.allclose(A[0, 0], 0)
 
         # 4-mode example
         rho = DM.random([0, 1, 2, 3])
@@ -560,11 +560,17 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert phi.is_physical
         assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3))
 
+        # testing displacement
+        rho = DM.random([0, 1]) >> Dgate(0, 1)
+        core, phi = rho.physical_stellar_decomposition([0])
+        assert (core >> Vacuum(1).dual).normalize() == Vacuum((0,))
+
         # testing batches:
         rho1 = DM.random([0, 1, 2, 3])
         rho2 = DM.random([0, 1, 2, 3])
 
         sigma = rho1 + rho2
+        sigma.ansatz._lin_sup = False
         core, phi = sigma.physical_stellar_decomposition([0, 1])
 
         assert core.dm().contract(phi, mode="zip") == sigma
@@ -578,7 +584,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert isinstance(core, DM)
 
         A, _, _ = core.ansatz.triple
-        assert A[0, 0] == 0
+        assert math.allclose(A[0, 0], 0)
 
         # 4-mode example
         rho = DM.random([0, 1, 2, 3])

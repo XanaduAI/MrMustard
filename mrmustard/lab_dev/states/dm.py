@@ -34,7 +34,7 @@ from mrmustard.utils.typing import ComplexTensor
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
-from ..transformations import Map, Channel
+from ..transformations import Map, Channel, Dgate
 
 from ..utils import shape_check
 
@@ -479,23 +479,9 @@ class DM(State):
         core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
 
         Aphi_out = Am
-        Gamma_phi = (
-            math.inv(
-                math.block(
-                    [
-                        [
-                            math.conj(r_core),
-                            math.zeros(batch_shape + (M,) * 2, dtype=math.complex128),
-                        ],
-                        [
-                            math.zeros(batch_shape + (M,) * 2, dtype=math.complex128),
-                            r_core,
-                        ],
-                    ]
-                )
-            )
-            @ R
-        )
+        Os = math.zeros(batch_shape + (M,) * 2, dtype=math.complex128)
+        temp = math.block([[math.conj(r_core), Os], [Os, r_core]])
+        Gamma_phi = math.inv(temp) @ R
 
         Gamma_phi_transpose = math.einsum("...ij->...ji", Gamma_phi)
         Aphi_in = Gamma_phi @ math.inv(Aphi_out - math.Xmat(M)) @ Gamma_phi_transpose + math.Xmat(M)
@@ -512,6 +498,22 @@ class DM(State):
         renorm = phi.contract(TraceOut(self.modes))
         phi = phi / renorm.ansatz.c
 
+        # fixing bs
+        rho_p = self.contract(phi.inverse(), mode="zip")
+        alpha = rho_p.ansatz.b[..., core_ket_indices]
+        for i, m in enumerate(core_modes):
+            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
+            d_g_inv = d_g.inverse()
+            d_ch = d_g.contract(d_g.adjoint, mode="zip")
+            d_ch_inverse = d_g_inv.contract(d_g_inv.adjoint, mode="zip")
+
+            rho_p = rho_p.contract(d_ch, mode="zip")
+            phi = (d_ch_inverse).contract(phi, mode="zip")
+        A, b, c = rho_p.ansatz.triple
+        core = Ket.from_bargmann(
+            self.modes, (A[..., m_modes:, m_modes:], b[..., m_modes:], math.sqrt(c))
+        )
+        phi = Channel.from_bargmann(core_modes, core_modes, phi.ansatz.triple)
         return core, phi
 
     def physical_stellar_decomposition_mixed(  # pylint: disable=too-many-statements
