@@ -22,9 +22,11 @@ import numpy as np
 import pytest
 from ipywidgets import HTML, HBox, Tab, VBox
 from plotly.graph_objs import FigureWidget
+import sparse
 
 from mrmustard import math
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
+from mrmustard.lab_dev import Ket, Dgate
 
 
 class TestArrayAnsatz:
@@ -240,3 +242,13 @@ class TestArrayAnsatz:
         fock = ArrayAnsatz(self.array1578, batch_dims=2)
         fock_reordered = fock.reorder_batch([1, 0])
         assert fock_reordered.array.shape == (5, 1, 7, 8)
+
+    def test_sparse_to_dense(self):
+        ket0 = Ket.random([0, 1])
+        sp = sparse.COO.from_numpy(ket0.fock_array((20, 20)))
+        ket1 = Ket.from_ansatz((0, 1), ArrayAnsatz(sp))
+
+        res0 = ket0.to_fock((20, 20)) >> Dgate(0, 0.1)
+        res1 = ket1 >> Dgate(0, 0.1)
+
+        assert res0.ansatz == res1.ansatz
