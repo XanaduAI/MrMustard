@@ -389,9 +389,9 @@ class DM(State):
         phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
         return core, phi
 
-    def physical_stellar_decomposition(
+    def physical_stellar_decomposition(  # pylint: disable=too-many-statements
         self, core_modes: Collection[int]
-    ):  # pylint: disable=too-many-statements
+    ):
         r"""
         Applies the physical stellar decomposition, pulling out a channel from a pure state.
 
