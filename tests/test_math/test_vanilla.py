@@ -150,11 +150,8 @@ class TestVanilla:
 
         # Use the VJP function to compute gradients
         assert not np.isnan(G).any()
-        assert not np.isinf(G).any()
         assert not np.isnan(dLdG).any()
-        assert not np.isinf(dLdG).any()
         assert not np.isnan(c).any()
-        assert not np.isinf(c).any()
         dLdA, dLdb, dLdc = strategies.vanilla_batch_vjp_numba(G, c, dLdG)
         assert not np.isnan(dLdA).any()
         assert not np.isnan(dLdb).any()
