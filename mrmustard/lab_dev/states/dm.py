@@ -460,23 +460,6 @@ class DM(State):
         )
         r_core = math.einsum("...ij -> ...ji", r_core_transpose)
 
-        a_core = reduced_A[..., M:, M:]
-        A_core = math.block(
-            [
-                [math.zeros(batch_shape + (M,) * 2, dtype=math.complex128), r_core_transpose],
-                [r_core, a_core],
-            ]
-        )
-        b_core = math.zeros_like(b)
-        c_core = math.ones_like(c)  # to be renormalized
-
-        inverse_order = np.argsort(core_ket_indices + other_ket_indices)
-        inverse_order = [i for i in inverse_order if i < self.n_modes]  # removing double-indices
-        temp = math.astensor(inverse_order)
-        A_core = A_core[..., temp, :]
-        A_core = A_core[..., :, temp]
-        b_core = b_core[..., temp]
-
         Aphi_out = Am
         Os = math.zeros(batch_shape + (M,) * 2, dtype=math.complex128)
         temp = math.block([[math.conj(r_core), Os], [Os, r_core]])
@@ -597,26 +580,6 @@ class DM(State):
         Os_NM = math.zeros(batch_shape + (N, M), dtype=math.complex128)
         Os_MN = math.zeros(batch_shape + (M, N), dtype=math.complex128)
         R_c = math.block([[math.conj(r_c), Os_NM], [Os_MN, r_c]])
-        R_c_transpose = math.einsum("...ij->...ji", R_c)
-        alpha_n_c = alpha_n - sigma @ math.inv(alpha_m) @ math.conj(sigma_transpose)
-        a_n_c = a_n + reduced_A[..., N:, :N]
-        An_c = math.block([[math.conj(a_n_c), math.conj(alpha_n_c)], [alpha_n_c, a_n_c]])
-        A_core = math.block(
-            [
-                [math.zeros(batch_shape + (2 * M, 2 * M), dtype=math.complex128), R_c_transpose],
-                [R_c, An_c],
-            ]
-        )
-        b_core = math.zeros_like(b)
-        c_core = math.ones_like(c)  # to be renormalized
-
-        inverse_order = np.argsort(new_order)
-
-        temp = math.astensor(inverse_order)
-        A_core = A_core[..., temp, :]
-        A_core = A_core[..., :, temp]
-        b_core = b_core[..., temp]
-        # core = DM.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
 
         Aphi_out = Am
         gamma = np.linalg.pinv(R_c) @ R
@@ -644,7 +607,6 @@ class DM(State):
 
             rho_p = rho_p.contract(d_ch, mode="zip")
             phi = (d_ch_inverse).contract(phi, mode="zip")
-        A, b, c = rho_p.ansatz.triple
         core = DM.from_bargmann(self.modes, rho_p.ansatz.triple)
         phi = Channel.from_bargmann(core_modes, core_modes, phi.ansatz.triple)
         return core, phi
