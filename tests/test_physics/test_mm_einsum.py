@@ -15,6 +15,7 @@
 """Tests for the mm_einsum function."""
 
 import numpy as np
+import sparse
 from mrmustard.lab_dev import Ket, Unitary, BSgate, SqueezedVacuum, Rgate
 from mrmustard.physics.mm_einsum import mm_einsum
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
@@ -391,3 +392,21 @@ class TestMmEinsum:
         )
         assert res.batch_shape == (4,)
         assert res._lin_sup == True
+
+    def test_with_sparse_and_dense_ansatze(self):
+        """Test that mm_einsum works for a sparse and dense ansatz."""
+        g0 = self.g0.ansatz
+        f0 = self.f0.ansatz
+        sp = sparse.COO.from_numpy(f0.array)
+        f0_sparse = ArrayAnsatz(sp)
+        res = mm_einsum(
+            g0,
+            [0],
+            f0_sparse,
+            [0],
+            output=[],
+            contraction_order=[(0, 1)],
+            fock_dims={0: 20},
+        )
+        assert isinstance(res, ArrayAnsatz)
+        assert np.allclose(res.array, self.g0.fock_array(f0.array.shape) @ f0.array)
