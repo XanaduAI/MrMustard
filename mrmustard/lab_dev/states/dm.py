@@ -476,7 +476,6 @@ class DM(State):
         A_core = A_core[..., temp, :]
         A_core = A_core[..., :, temp]
         b_core = b_core[..., temp]
-        core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
 
         Aphi_out = Am
         Os = math.zeros(batch_shape + (M,) * 2, dtype=math.complex128)
