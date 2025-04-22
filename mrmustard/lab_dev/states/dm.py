@@ -593,16 +593,10 @@ class DM(State):
             sigma_transpose
         )
         r_c_evals, r_c_evecs = math.eigh(r_c_squared)
-        idx = np.argsort(r_c_evals)[..., ::-1]
-        r_c_evals = r_c_evals[..., idx]
-        r_c_evecs = r_c_evecs[..., :, idx]
-        r_c = r_c_evecs[..., :, :M] * math.sqrt(r_c_evals[..., :M], dtype=math.complex128)
-        R_c = math.block(
-            [
-                [math.conj(r_c), math.zeros(batch_shape + (N, M), dtype=math.complex128)],
-                [math.zeros(batch_shape + (M, N), dtype=math.complex128), r_c],
-            ]
-        )
+        r_c = r_c_evecs[..., :, -M:] * math.sqrt(r_c_evals[..., -M:], dtype=math.complex128)
+        Os_NM = math.zeros(batch_shape + (N, M), dtype=math.complex128)
+        Os_MN = math.zeros(batch_shape + (M, N), dtype=math.complex128)
+        R_c = math.block([[math.conj(r_c), Os_NM], [Os_MN, r_c]])
         R_c_transpose = math.einsum("...ij->...ji", R_c)
         alpha_n_c = alpha_n - sigma @ math.inv(alpha_m) @ math.conj(sigma_transpose)
         a_n_c = a_n + reduced_A[..., N:, :N]
@@ -622,7 +616,7 @@ class DM(State):
         A_core = A_core[..., temp, :]
         A_core = A_core[..., :, temp]
         b_core = b_core[..., temp]
-        core = DM.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
+        # core = DM.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
 
         Aphi_out = Am
         gamma = np.linalg.pinv(R_c) @ R
@@ -639,6 +633,20 @@ class DM(State):
         renorm = phi.contract(TraceOut(self.modes))
         phi = phi / renorm.ansatz.c
 
+        # fixing bs
+        rho_p = self.contract(phi.inverse(), mode="zip")
+        alpha = rho_p.ansatz.b[..., core_ket_indices]
+        for i, m in enumerate(core_modes):
+            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
+            d_g_inv = d_g.inverse()
+            d_ch = d_g.contract(d_g.adjoint, mode="zip")
+            d_ch_inverse = d_g_inv.contract(d_g_inv.adjoint, mode="zip")
+
+            rho_p = rho_p.contract(d_ch, mode="zip")
+            phi = (d_ch_inverse).contract(phi, mode="zip")
+        A, b, c = rho_p.ansatz.triple
+        core = DM.from_bargmann(self.modes, rho_p.ansatz.triple)
+        phi = Channel.from_bargmann(core_modes, core_modes, phi.ansatz.triple)
         return core, phi
 
     def _ipython_display_(self):  # pragma: no cover

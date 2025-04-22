@@ -607,3 +607,13 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert rho == core >> phi
         assert phi.is_physical
         assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3)).dm()
+
+        # batched displaced example:
+        rho1 = DM.random([0, 1, 2, 3]) >> Dgate(0, 1)
+        rho2 = DM.random([0, 1, 2, 3])
+
+        sigma = rho1 + rho2
+        sigma.ansatz._lin_sup = False
+        core, phi = sigma.physical_stellar_decomposition_mixed([0, 1])
+
+        assert core.dm().contract(phi, mode="zip") == sigma
