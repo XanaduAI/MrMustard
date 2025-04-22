@@ -16,9 +16,13 @@
 
 from rich import print
 
+import os
+
 from ._version import __version__
 from .utils.settings import *
 from .utils.filters import add_complex_warning_filter
+
+os.environ["SPARSE_AUTO_DENSIFY"] = "1"
 
 
 def version():
@@ -31,7 +35,7 @@ def version():
 
 
 def about():
-    """Mr Mustard information.
+    r"""Mr Mustard information.
 
     Prints the installed version numbers for Mr Mustard and its dependencies,
     and some system info. Please include this information in bug reports.

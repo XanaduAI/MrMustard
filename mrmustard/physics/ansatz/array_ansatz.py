@@ -25,6 +25,7 @@ from numpy.typing import ArrayLike
 
 from IPython.display import display
 
+
 from mrmustard import math, widgets, settings
 from mrmustard.math.parameters import Variable
 from mrmustard.utils.typing import Batch, Scalar, Tensor
@@ -32,6 +33,10 @@ from mrmustard.utils.typing import Batch, Scalar, Tensor
 from .base import Ansatz
 
 __all__ = ["ArrayAnsatz"]
+
+import sparse
+
+sparse._settings.AUTO_DENSIFY = True
 
 
 class ArrayAnsatz(Ansatz):
