@@ -389,7 +389,9 @@ class DM(State):
         phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
         return core, phi
 
-    def physical_stellar_decomposition(self, core_modes: Collection[int]):
+    def physical_stellar_decomposition(
+        self, core_modes: Collection[int]
+    ):  # pylint: disable=too-many-statements
         r"""
         Applies the physical stellar decomposition, pulling out a channel from a pure state.
 
@@ -537,21 +539,19 @@ class DM(State):
         new_order = core_indices + other_indices
         new_order = math.astensor(core_indices + other_indices)
 
-        A, b, c = self.ansatz.reorder(new_order).triple
+        A, _, _ = self.ansatz.reorder(new_order).triple
         batch_shape = self.ansatz.batch_shape
 
         M = len(core_modes)
         N = self.n_modes - M
 
         Am = A[..., : 2 * M, : 2 * M]
-        An = A[..., 2 * M :, 2 * M :]
         R = A[..., 2 * M :, : 2 * M]
 
         sigma = R[..., M:, :M]
         r = R[..., M:, M:]
         alpha_m = Am[..., M:, :M]
-        alpha_n = An[..., N:, :N]
-        a_n = An[..., N:, N:]
+
         r_transpose = math.einsum("...ij->...ji", r)
         sigma_transpose = math.einsum("...ij->...ji", sigma)
         R_transpose = math.einsum("...ij->...ji", R)
