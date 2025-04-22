@@ -434,22 +434,8 @@ class Ket(State):
 
         batch_shape = self.ansatz.batch_shape
 
-        As = math.block(
-            [
-                [
-                    math.zeros(
-                        batch_shape
-                        + (
-                            M,
-                            M,
-                        ),
-                        dtype=math.complex128,
-                    ),
-                    R_transpose,
-                ],
-                [R, An],
-            ]
-        )
+        Om = math.zeros(batch_shape + (M, M), dtype=math.complex128)
+        As = math.block([[Om, R_transpose], [R, An]])
 
         bs = math.concat([math.zeros(batch_shape + (M,), dtype=math.complex128), bn], -1)
         cs = c
@@ -468,15 +454,8 @@ class Ket(State):
         else:
             Im = math.eye(M, dtype=math.complex128)
 
-        At = math.block(
-            [
-                [Am, Im],
-                [
-                    Im,
-                    math.zeros(batch_shape + (M, M), dtype=math.complex128),
-                ],
-            ]
-        )
+        At = math.block([[Am, Im], [Im, Om]])
+
         bt = math.concat([bm, math.zeros(batch_shape + (M,), dtype=math.complex128)], -1)
         ct = math.ones_like(c)
         t = Operation.from_bargmann(core_modes, core_modes, (At, bt, ct))
