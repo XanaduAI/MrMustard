@@ -68,48 +68,53 @@ def mm_einsum(
         ...     ket1.ansatz, [1],
         ...     bs.ansatz, [2, 3, 0, 1],
         ...     output=[2, 3],
-        ...     contraction_order=[(0, 2), (1, 2)],
+        ...     contraction_order=[(0, 2), (0, 1)],
         ...     fock_dims={0: 20, 1: 20, 2: 10, 3: 10},
         ... )
         >>> assert isinstance(result, ArrayAnsatz)
-        >>> assert result.shape == (10, 10)
+        >>> assert result.array.shape == (10, 10)
 
     Notes:
         - Batch indices (strings) allow for batched contraction over multiple states/operators.
-        - If all Fock dimensions for contracted indices are set to 0, the result is in Bargmann (PolyExpAnsatz) form.
-        - The function raises ValueError if the contraction does not result in a single output Ansatz.
+        - If the Fock dimensions of the shared indices are set to 0, the result is in Bargmann (PolyExpAnsatz) form.
+        - The function raises ValueError if the Fock dimensions of the shared indices are mixed.
 
     """
     # --- prepare ansatz and indices, convert names to characters ---
-    ansatze = {(i,): ansatz for i, ansatz in enumerate(args[::2])}
+    ansatze = list(args[::2])
     all_batch_names = set(name for index in args[1::2] for name in _strings(index))
     names_to_chars = {name: chr(97 + i) for i, name in enumerate(all_batch_names)}
-    indices = {
-        (i,): [names_to_chars[s] for s in _strings(index)] + _ints(index)
-        for i, index in enumerate(args[1::2])
-    }
+    indices = [[names_to_chars[s] for s in _strings(index)] + _ints(index) for index in args[1::2]]
     output = [names_to_chars[s] for s in _strings(output)] + _ints(output)
 
     # --- perform contractions ---
     for a, b in contraction_order:
-        relevant_ansatze = {ids: ansatz for ids, ansatz in ansatze.items() if a in ids or b in ids}
-        (id_a, ansatz_a), (id_b, ansatz_b) = relevant_ansatze.items()
-        ints_a, ints_b = _ints(indices[id_a]), _ints(indices[id_b])
-        convert = type(ansatz_a) is not type(ansatz_b)
-        ansatz_a = convert_ansatz(ansatz_a, [fock_dims[i] for i in ints_a]) if convert else ansatz_a
-        ansatz_b = convert_ansatz(ansatz_b, [fock_dims[i] for i in ints_b]) if convert else ansatz_b
-        idx_out = prepare_idx_out(indices, id_a, id_b, output)
-        ansatze[id_a + id_b] = ansatz_a.contract(ansatz_b, indices[id_a], indices[id_b], idx_out)
-        indices[id_a + id_b] = idx_out
-        del ansatze[id_a], ansatze[id_b]
-        del indices[id_a], indices[id_b]
+        ansatz_a, ansatz_b = ansatze[a], ansatze[b]
+        core_idx_a, core_idx_b = _ints(indices[a]), _ints(indices[b])
+        common_core_idx = set(core_idx_a) & set(core_idx_b)
+        common_shape = [fock_dims[i] for i in common_core_idx]
+        force_bargmann = all(s == 0 for s in common_shape)
+        force_fock = not any(s == 0 for s in common_shape)
+        if force_bargmann:
+            ansatz_a = to_bargmann(ansatz_a)
+            ansatz_b = to_bargmann(ansatz_b)
+        elif force_fock:
+            ansatz_a = to_fock(ansatz_a, [fock_dims[i] for i in core_idx_a])
+            ansatz_b = to_fock(ansatz_b, [fock_dims[i] for i in core_idx_b])
+        else:
+            raise ValueError(f"Shared indices of mixed type ({common_shape}) for ({a}, {b}).")
+        idx_out = prepare_idx_out(indices, a, b, output)
+        ansatze[a] = ansatz_a.contract(ansatz_b, indices[a], indices[b], idx_out)
+        indices[a] = idx_out
+        ansatze.pop(b)
+        indices.pop(b)
 
     if len(ansatze) > 1:
         raise ValueError("More than one ansatz left after contraction.")
 
     # --- reorder the output ---
-    result = list(ansatze.values())[0]
-    final_idx = list(indices.values())[0]
+    result = ansatze[0]
+    final_idx = indices[0]
 
     if len(output_idx_str := _strings(output)) > 1:
         final_idx_str = _strings(final_idx)
@@ -124,20 +129,22 @@ def mm_einsum(
     return result
 
 
-def prepare_idx_out(indices, id_a, id_b, output):
+def prepare_idx_out(
+    indices: dict[int, list[int | str]], a: int, b: int, output: list[int | str]
+) -> list[int | str]:
     r"""
     Prepares the index of the output of the contraction of two ansatze.
     """
-    other_indices = [index for ids, index in indices.items() if ids not in (id_a, id_b)]
+    other_indices = [index for i, index in enumerate(indices) if i not in (a, b)]
     other_chars = {char for idx in other_indices for char in _strings(idx)} | set(_strings(output))
-    other_ints = {i for idx in other_indices for i in _ints(idx)} | set(_ints(output))
+    other_core_idxs = {i for idx in other_indices for i in _ints(idx)} | set(_ints(output))
 
     idx_out = []
-    for char in _strings(indices[id_a]) + _strings(indices[id_b]):
+    for char in _strings(indices[a]) + _strings(indices[b]):  # first add batch indices
         if char in other_chars and char not in idx_out:
             idx_out.append(char)
-    for i in _ints(indices[id_a]) + _ints(indices[id_b]):
-        if i in other_ints and i not in idx_out:
+    for i in _ints(indices[a]) + _ints(indices[b]):  # then add core indices
+        if i in other_core_idxs and i not in idx_out:
             idx_out.append(i)
     return idx_out
 
@@ -173,9 +180,13 @@ def to_fock(ansatz: Ansatz, shape: tuple[int, ...], stable: bool = False) -> Arr
     Returns:
         ArrayAnsatz: The converted ArrayAnsatz.
     """
+    if 0 in shape:
+        raise ValueError("Fock space dimension is 0.")
     if isinstance(ansatz, ArrayAnsatz):
         return ansatz.reduce(shape)
     array = math.hermite_renormalized(*ansatz.triple, shape, stable)
+    if ansatz._lin_sup:
+        array = math.sum(array, axis=ansatz.batch_dims)
     return ArrayAnsatz(array, ansatz.batch_dims)
 
 
