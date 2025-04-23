@@ -17,19 +17,19 @@
 # pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 import numpy as np
 import pytest
+from thewalrus.symplectic import vacuum_state
 
 from mrmustard import math, settings
 from mrmustard.lab_dev import (
+    DM,
     Attenuator,
     CircuitComponent,
     Coherent,
     Dgate,
-    DM,
     Ket,
     Number,
     TraceOut,
 )
-from mrmustard.physics.gaussian import vacuum_cov
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wires import Wires
@@ -200,16 +200,11 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_from_phase_space(self):
         state = Coherent(0, x=1, y=2) >> Attenuator(0, 0.8)
-        cov, means, _ = state.phase_space(s=0)
-
-        # test error
-        with pytest.raises(ValueError):
-            DM.from_phase_space((0, 1), (cov, means, 1.0))
-
-        cov = vacuum_cov(1)
-        means = np.array([1, 2]) * np.sqrt(settings.HBAR * 2 * 0.8)
-        state1 = DM.from_phase_space([0], (cov, means, 1.0))
+        cov, means, coeff = state.phase_space(s=0)
+        state1 = DM.from_phase_space([0], (cov, means, coeff))
         assert state1 == state
+        with pytest.raises(ValueError):
+            DM.from_phase_space((0, 1), (cov, means, coeff))
 
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     @pytest.mark.parametrize("batch_shape", [(1,), (2, 3)])

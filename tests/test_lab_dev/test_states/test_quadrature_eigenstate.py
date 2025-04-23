@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from mrmustard import settings, math
+from mrmustard import math, settings
 from mrmustard.lab_dev.states import Coherent, QuadratureEigenstate
 from mrmustard.physics.wires import ReprEnum
 

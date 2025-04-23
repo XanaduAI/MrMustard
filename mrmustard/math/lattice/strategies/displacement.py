@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-" This module contains strategies for calculating the matrix elements of the displacement gate. "
+"This module contains strategies for calculating the matrix elements of the displacement gate."
 
 import numpy as np
 from numba import jit

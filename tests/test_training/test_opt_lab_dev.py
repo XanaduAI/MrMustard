@@ -43,7 +43,7 @@ from mrmustard.physics.gaussian import number_means, von_neumann_entropy
 from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
 
-from ..conftest import skip_np, skip_jax
+from ..conftest import skip_jax, skip_np
 
 
 class TestOptimizer:
