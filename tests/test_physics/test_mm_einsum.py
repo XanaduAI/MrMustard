@@ -44,7 +44,7 @@ class TestMmEinsum:
             fock_dims={0: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
-        assert np.isclose(res.scalar, self.g0 >> self.g1.dual)
+        assert math.allclose(res.scalar, self.g0 >> self.g1.dual)
 
     def test_with_two_multimode_gaussians(self):
         """Test that mm_einsum works for two multimode gaussians."""
@@ -58,7 +58,7 @@ class TestMmEinsum:
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
-        assert np.isclose(res.scalar, self.g0123 >> self.g0123.dual)
+        assert math.allclose(res.scalar, self.g0123 >> self.g0123.dual)
 
     def test_with_leftover_indices(self):
         """Test that mm_einsum works for two multimode gaussians."""
@@ -121,10 +121,10 @@ class TestMmEinsum:
             [0],
             output=[],
             contraction_order=[(0, 1)],
-            fock_dims={0: 10},
+            fock_dims={0: 30},
         )
         assert isinstance(res, ArrayAnsatz)
-        assert np.isclose(res.scalar, self.f0 >> self.f0.dual)
+        assert math.allclose(res.scalar, self.f0 >> self.f0.dual)
 
     def test_single_mode_fock_with_batch(self):
         """Test that mm_einsum works for a single mode fock state with batch dimensions."""
