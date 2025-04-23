@@ -520,6 +520,9 @@ class DM(State):
 
         # fixing bs
         rho_p = self.contract(phi.inverse(), mode="zip")
+        c_tmp = math.ones_like(rho_p.ansatz.c)
+        rho_p = DM.from_bargmann(self.modes, (rho_p.ansatz.A, rho_p.ansatz.b, c_tmp))
+
         alpha = rho_p.ansatz.b[..., core_ket_indices]
         for i, m in enumerate(core_modes):
             d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
@@ -530,11 +533,9 @@ class DM(State):
             rho_p = rho_p.contract(d_ch, mode="zip")
             phi = (d_ch_inverse).contract(phi, mode="zip")
         A, b, c = rho_p.ansatz.triple
-        core = Ket.from_bargmann(
-            self.modes, (A[..., m_modes:, m_modes:], b[..., m_modes:], math.sqrt(c))
-        )
+        core = Ket.from_bargmann(self.modes, (A[..., m_modes:, m_modes:], b[..., m_modes:], c_tmp))
         phi = Channel.from_bargmann(core_modes, core_modes, phi.ansatz.triple)
-        return core, phi
+        return core.normalize(), phi
 
     def physical_stellar_decomposition_mixed(  # pylint: disable=too-many-statements
         self, core_modes: Collection[int]
