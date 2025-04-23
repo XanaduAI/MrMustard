@@ -42,6 +42,7 @@ from .lattice.strategies.compactFock.inputValidation import (
 
 np.set_printoptions(legacy="1.25")
 
+
 # pylint: disable=too-many-public-methods
 class BackendNumpy(BackendBase):  # pragma: no cover
     r"""

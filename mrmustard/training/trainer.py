@@ -394,9 +394,9 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
     else:
         # does not block and returns a getter function that returns the available results so far.
         def get_avail_results():
-            results, running_tasks = ray.wait(  # pylint: disable=unused-variable
+            results, running_tasks = ray.wait(
                 promises, num_returns=len(promises)
-            )
+            )  # pylint: disable=unused-variable
             if return_dict:
                 return {r["tag"]: r for r in ray.get(results)}
             else:

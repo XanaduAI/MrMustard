@@ -15,10 +15,13 @@
 """Tests for the jitting functionality within JAX backend."""
 
 import time
+
 import jax
 import jax.numpy as jnp
+
 from mrmustard import math
-from mrmustard.lab_dev import SqueezedVacuum, Attenuator, BSgate
+from mrmustard.lab_dev import Attenuator, BSgate, SqueezedVacuum
+
 from ..conftest import skip_np, skip_tf
 
 

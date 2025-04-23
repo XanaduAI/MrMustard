@@ -34,9 +34,7 @@ class TestTriples:
             match = "Incompatible shapes for broadcasting"
         elif math.backend_name == "tensorflow":
 
-            from tensorflow.errors import (
-                InvalidArgumentError,
-            )
+            from tensorflow.errors import InvalidArgumentError
 
             error = InvalidArgumentError
             match = "Incompatible shape"

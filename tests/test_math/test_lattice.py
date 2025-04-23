@@ -17,9 +17,8 @@
 import numpy as np
 import pytest
 
-from mrmustard import lab_dev as mmld
 from mrmustard import math, settings
-from mrmustard.lab import Dgate, Gaussian
+from mrmustard.lab_dev import DM, Dgate, Ket, Sgate, Unitary
 from mrmustard.math.lattice.strategies.beamsplitter import (
     apply_BS_schwinger,
     beamsplitter,
@@ -28,16 +27,19 @@ from mrmustard.math.lattice.strategies.beamsplitter import (
 )
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 from mrmustard.math.lattice.strategies.displacement import displacement
-from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
+from mrmustard.math.lattice.strategies.vanilla import vanilla_numba
 
 
 def test_vanillaNumba_vs_binomial():
     """Test that the vanilla method and the binomial method give the same result."""
+    settings.SEED = 42
+    A, b, c = Ket.random((0, 1)).bargmann_triple()
+    A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)
 
-    G = Gaussian(2)
-
-    ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
-    ket_binomial = G.ket(max_photons=10)[:5, :5]
+    ket_vanilla = vanilla_numba(shape=(10, 10), A=A, b=b, c=c)[:5, :5]
+    ket_binomial = binomial(local_cutoffs=(5, 5), A=A, b=b, c=c, max_l2=0.9999, global_cutoff=12)[
+        0
+    ][:5, :5]
 
     assert np.allclose(ket_vanilla, ket_binomial)
 
@@ -45,55 +47,34 @@ def test_vanillaNumba_vs_binomial():
 def test_binomial_vs_binomialDict():
     """Test that binomial and binomial_dict give the same result."""
 
-    A, b, c = Gaussian(2).bargmann(numpy=True)
+    A, b, c = Ket.random((0, 1)).bargmann_triple()
+
     max_prob = 0.9
     local_cutoffs = (10, 10)
     global_cutoff = 15
 
-    G, norm = binomial(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
-    D = binomial_dict(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
+    G, _ = binomial(local_cutoffs, A, b, c, max_prob, global_cutoff)
+    D = binomial_dict(local_cutoffs, A, b, complex(c), max_prob, global_cutoff)
 
     for idx in D.keys():
         assert np.isclose(D[idx], G[idx])
 
 
 @pytest.mark.parametrize("batch_size", [1, 3])
-def test_vanillabatchNumba_vs_vanillaNumba(batch_size):
-    """Test the batch version works versus the normal vanilla version."""
-    state = Gaussian(3) >> Dgate([0.0, 0.1, 0.2])
-    A, B, C = wigner_to_bargmann_rho(
-        state.cov, state.means
-    )  # Create random state (M mode Gaussian state with displacement)
-
-    # Vanilla MM
-    G_ref = math.hermite_renormalized(A, B, C, shape=(3, 4, 5, 2, 6, 4))
-
-    # replicate the B
-    B_batched = np.stack((B,) * batch_size, axis=0)
-
-    G_batched = math.hermite_renormalized(A, B_batched, C, shape=(3, 4, 5, 2, 6, 4))
-
-    for nb in range(batch_size):
-        assert np.allclose(G_ref, G_batched[nb, :, :, :, :])
-
-
-@pytest.mark.parametrize("batch_size", [1, 3])
 def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
     """Test the batch version works versus the normal diagonal version."""
-    state = Gaussian(3) >> Dgate([0.0, 0.1, 0.2])
-    A, B, C = wigner_to_bargmann_rho(
-        state.cov, state.means
-    )  # Create random state (M mode Gaussian state with displacement)
+    state = DM.random((0, 1, 2)) >> Dgate(0, 0.0) >> Dgate(1, 0.1) >> Dgate(2, 0.2)
+    A, b, c = state.bargmann_triple()
 
     cutoffs = (18, 19, 20, batch_size)
 
     # Diagonal MM
-    G_ref = math.hermite_renormalized_diagonal(A, B, C, cutoffs=cutoffs[:-1])
+    G_ref = math.hermite_renormalized_diagonal(A, b, c, cutoffs=cutoffs[:-1])
 
     # replicate the B
-    B_batched = math.astensor(np.stack((B,) * batch_size, axis=1))
+    b_batched = math.astensor(np.stack((b,) * batch_size, axis=1))
 
-    G_batched = math.hermite_renormalized_diagonal_batch(A, B_batched, C, cutoffs=cutoffs[:-1])
+    G_batched = math.hermite_renormalized_diagonal_batch(A, b_batched, c, cutoffs=cutoffs[:-1])
 
     for nb in range(batch_size):
         assert np.allclose(G_ref, G_batched[:, :, :, nb])
@@ -101,14 +82,14 @@ def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
 
 def test_bs_schwinger():
     "test that the schwinger method to apply a BS works correctly"
-    G = mmld.Ket.random((0, 1)).fock_array([20, 20])
+    G = Ket.random((0, 1)).fock_array([20, 20])
     G = math.asnumpy(G)
     BS = beamsplitter((20, 20, 20, 20), 1.0, 1.0)
     manual = np.einsum("ab, cdab", G, BS)
     G = apply_BS_schwinger(1.0, 1.0, 0, 1, G)
     assert np.allclose(manual, G)
 
-    Gg = mmld.Unitary.random((0, 1)).fock_array([20, 20, 20, 20])
+    Gg = Unitary.random((0, 1)).fock_array([20, 20, 20, 20])
     Gg = math.asnumpy(Gg)
     BS = beamsplitter((20, 20, 20, 20), 2.0, -1.0)
     manual = np.einsum("cdab, abef", BS, Gg)
@@ -136,8 +117,8 @@ def test_vanilla_stable():
     "tests the vanilla stable against other known stable methods"
     with settings(STABLE_FOCK_CONVERSION=True):
         assert np.allclose(
-            mmld.Dgate(0, x=4.0, y=4.0).fock_array([1000, 1000]),
+            Dgate(0, x=4.0, y=4.0).fock_array([1000, 1000]),
             displacement((1000, 1000), 4.0 + 4.0j),
         )
-        sgate = mmld.Sgate(0, r=4.0, phi=2.0).fock_array([1000, 1000])
+        sgate = Sgate(0, r=4.0, phi=2.0).fock_array([1000, 1000])
         assert np.max(np.abs(sgate)) < 1

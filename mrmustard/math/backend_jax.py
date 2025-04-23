@@ -38,6 +38,7 @@ from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cove
 
 jax.config.update("jax_enable_x64", True)  # pragma: no cover
 
+
 # pylint: disable=too-many-public-methods
 class BackendJax(BackendBase):  # pragma: no cover
     """A JAX backend implementation."""
