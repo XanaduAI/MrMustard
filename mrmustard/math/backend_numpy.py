@@ -30,7 +30,6 @@ from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
 
 from ..utils.settings import settings
-from .autocast import Autocast
 from .backend_base import BackendBase
 from .lattice import strategies
 
@@ -273,22 +272,18 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def make_complex(self, real: np.ndarray, imag: np.ndarray) -> np.ndarray:
         return real + 1j * imag
 
-    @Autocast()
     def matmul(self, *matrices: np.ndarray) -> np.ndarray:
         mat = matrices[0]
         for matrix in matrices[1:]:
             mat = np.matmul(mat, matrix)
         return mat
 
-    @Autocast()
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return self.matmul(a, b[..., None])[..., 0]
 
-    @Autocast()
     def maximum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.maximum(a, b)
 
-    @Autocast()
     def minimum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.minimum(a, b)
 
@@ -335,7 +330,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         if np.any(condition):
             raise ValueError(msg)
 
-    @Autocast()
     def outer(self, array1: np.ndarray, array2: np.ndarray) -> np.ndarray:
         return np.tensordot(array1, array2, [[], []])
 
@@ -354,7 +348,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def pinv(matrix: np.ndarray) -> np.ndarray:
         return np.linalg.pinv(matrix)
 
-    @Autocast()
     def pow(self, x: np.ndarray, y: float) -> np.ndarray:
         return np.power(x, y)
 
@@ -400,7 +393,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
         return np.sum(array, axis=axis)
 
-    @Autocast()
     def tensordot(self, a: np.ndarray, b: np.ndarray, axes: list[int]) -> np.ndarray:
         return np.tensordot(a, b, axes)
 
@@ -413,7 +405,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def transpose(self, a: np.ndarray, perm: Sequence[int] | None = None) -> np.ndarray | None:
         return np.transpose(a, axes=perm)
 
-    @Autocast()
     def update_tensor(
         self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
     ) -> np.ndarray:
@@ -422,7 +413,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             tensor[tuple(i)] = v
         return tensor
 
-    @Autocast()
     def update_add_tensor(
         self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
     ) -> np.ndarray:

@@ -14,6 +14,7 @@
 
 """Path functions"""
 
+from functools import lru_cache
 from numba import njit, typed, typeof, types
 from numba.cpython.unsafe.tuple import tuple_setitem
 
@@ -76,3 +77,84 @@ def BINOMIAL_PATHS_NUMBA_n(modes):
         key_type=typeof(((0,) * modes, 0)),
         value_type=types.ListType(typeof((0,) * modes)),
     )
+
+
+Pair = tuple[int, int]
+Triple = tuple[int, int, int]
+
+
+@lru_cache(maxsize=None)
+def constrained_binomial_subspace(
+    weight: int,
+    zeros: tuple[int, ...],
+    singles: tuple[int, ...],
+    pairs: tuple[tuple[Pair, int], ...],
+    triples: tuple[tuple[Triple, int], ...],
+):
+    r"""Efficient implementation of the subspace basis with cutoffs (not based on filtering).
+
+    Directly builds only the basis elements that satisfy both the weight constraint
+    and the tuple cutoffs constraints, without generating the full basis first.
+
+    Arguments:
+        weight (int): the weight of the subspace
+        zeros (tuple[int, ...]): a tuple of zeros of the same length as the number of modes
+        singles (tuple[int, ...]): constraints on individual axes
+        pairs (tuple[tuple[Pair, int], ...]): constraints on pairs of axes
+        triples (tuple[tuple[Triple, int], ...]): constraints on triples of axes
+
+    Returns:
+        list[tuple[int, ...]]: the list of basis elements of the subspace
+    """
+    # this is just so that numba can infer the type, we remove it at the end
+    basis = typed.List([singles])
+    _recursive(weight, 0, zeros, basis, singles, pairs, triples)
+    return basis[1:]  # remove the dummy element
+
+
+@njit
+def _recursive(
+    photons_left: int,
+    axis: int,
+    current_basis_element: tuple[int, ...],
+    basis: list[tuple[int, ...]],
+    singles: tuple[int, ...],
+    pairs: tuple[tuple[tuple[int, int], int], ...],
+    triples: tuple[tuple[tuple[int, int, int], int], ...],
+):
+    r"""Recursive helper for efficient subspace basis with constraints."""
+
+    if axis == len(singles):
+        if photons_left == 0:
+            basis.append(current_basis_element)
+        return
+
+    # Try different photon number for current basis element and axis
+    for photons in range(singles[axis]):
+        new_basis_element = tuple_setitem(current_basis_element, axis, photons)
+
+        # Only recurse if constraints are not violated
+        if valid(pairs, new_basis_element, axis) and valid(triples, new_basis_element, axis):
+            _recursive(
+                photons_left - photons, axis + 1, new_basis_element, basis, singles, pairs, triples
+            )
+
+
+@njit
+def valid(constraints, new_basis_element, axis):
+    r"""Check if the new basis element satisfies the constraints."""
+    valid = True
+    check = True
+    for axis_tuple, max_sum in constraints:
+        for m in axis_tuple:
+            if m > axis:
+                check = False
+                break
+        if check:
+            constraint_sum = 0
+            for i in axis_tuple:
+                constraint_sum += new_basis_element[i]
+                if constraint_sum >= max_sum:
+                    valid = False
+                    break
+    return valid

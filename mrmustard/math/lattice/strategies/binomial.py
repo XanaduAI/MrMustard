@@ -158,3 +158,35 @@ def binomial_numba(
         if prob > max_prob:
             break
     return G
+
+
+Constraint = tuple[tuple[int, ...], int] | tuple[int, ...]
+
+
+def binomial_custom(
+    A: np.ndarray,
+    b: np.ndarray,
+    c: complex,
+    global_cutoff: int,
+    singles: tuple[int, ...],
+    pairs: tuple[tuple[tuple[int, int], int], ...] = (),
+    triples: tuple[tuple[tuple[int, int, int], int], ...] = (),
+):
+    r"""
+    Binomial strategy with custom constraints.
+    """
+    # init numba output dict
+    G = typed.Dict.empty(
+        key_type=types.UniTuple(types.int64, len(singles)),
+        value_type=types.complex128,
+    )
+
+    # write vacuum amplitude
+    G[(0,) * len(singles)] = c
+
+    # iterate over all other indices in parallel and stop if norm is large enough
+    zeros = (0,) * len(singles)
+    for level in range(1, global_cutoff):
+        indices = paths.constrained_binomial_subspace(level, zeros, singles, pairs, triples)
+        G = steps.binomial_step_dict_stable_no_prob(G, A, b, indices)
+    return G

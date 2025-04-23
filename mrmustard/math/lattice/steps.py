@@ -210,7 +210,7 @@ def vanilla_step_dict_stable(
         for j, neighbor in neighbors.lower_neighbors(pivot):
             value_at_index += A[i, j] / denom * SQRT[pivot[j]] * data.get(neighbor, 0.0 + 0.0j)
 
-    return value_at_index / N
+    return value_at_index / N if N > 0 else 0.0
 
 
 @njit
