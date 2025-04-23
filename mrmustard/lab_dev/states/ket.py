@@ -357,7 +357,10 @@ class Ket(State):
             U = (d_g_inv).contract(U, mode="zip")
 
         core = Ket.from_bargmann(self.modes, core_p.ansatz.triple)
-
+        c_core = core.ansatz.c
+        phase_core = math.angle(c_core)
+        core = core * math.exp(-1j * phase_core)
+        U = U * math.exp(1j * phase_core)
         return core, U
 
     def formal_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[Ket, Operation]:

@@ -69,6 +69,9 @@ class BackendJax(BackendBase):  # pragma: no cover
     def all(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.all(array)
 
+    def angle(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.angle(array)
+
     @jax.jit
     def any(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.any(array)
