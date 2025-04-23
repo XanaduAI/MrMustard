@@ -108,7 +108,7 @@ def vanilla_step_jacobian(
     index: tuple[int, ...],
     dGdA: ComplexTensor,
     dGdB: ComplexTensor,
-) -> tuple[ComplexTensor, ComplexTensor]:
+) -> tuple[ComplexTensor, ComplexTensor]:  # pragma: no cover
     r"""Jacobian contribution of a single Fock-Bargmann recurrence relation step, vanilla version.
     It updates the dGdB and dGdA tensors at the given index.
 
@@ -146,7 +146,7 @@ def vanilla_step_grad(
     index: tuple[int, ...],
     dA: ComplexMatrix,
     db: ComplexVector,
-) -> tuple[ComplexMatrix, ComplexVector]:
+) -> tuple[ComplexMatrix, ComplexVector]:  # pragma: no cover
     r"""Gradient with respect to A and b of a single Fock-Bargmann recurrence relation step,
     vanilla version. dA and db can be used to update the dGdB and dGdA tensors at `index`,
     or as part of the contraction with the gradient of the Gaussian tensor G.
@@ -173,7 +173,7 @@ def vanilla_step_grad(
 @njit
 def vanilla_step_dict(
     data: types.DictType, A: ComplexMatrix, b: ComplexVector, index: tuple[int, ...]
-) -> complex:
+) -> complex:  # pragma: no cover
     r"""Fock-Bargmann recurrence relation step, vanilla version with numba dict.
     This function calculates the index `index` of the Gaussian tensor `G`.
     The appropriate pivot and neighbours must exist.
@@ -198,7 +198,7 @@ def vanilla_step_dict(
 @njit
 def vanilla_step_dict_stable(
     data: types.DictType, A: ComplexMatrix, b: ComplexVector, index: tuple[int, ...]
-) -> complex:
+) -> complex:  # pragma: no cover
     r"""Numerically stable version of the vanilla_step_dict."""
 
     value_at_index = 0.0
@@ -219,7 +219,7 @@ def binomial_step(
     A: ComplexMatrix,
     b: ComplexVector,
     subspace_indices: list[tuple[int, ...]],
-) -> tuple[ComplexTensor, float]:
+) -> tuple[ComplexTensor, float]:  # pragma: no cover
     r"""Computes a whole subspace of the ``G`` tensor at the indices in
     ``subspace_indices`` (a subspace is such that `sum(index) = const`).
     It updates the tensor ``G``.
@@ -250,7 +250,7 @@ def binomial_step_dict(
     A: ComplexMatrix,
     b: ComplexVector,
     subspace_indices: list[tuple[int, ...]],
-) -> tuple[types.DictType, float]:
+) -> tuple[types.DictType, float]:  # pragma: no cover
     r"""Computes a whole subspace of the ``G`` dict at the indices in
     ``subspace_indices`` (a subspace is such that `sum(index) = const`).
     It updates the dict ``G``. It returns the updated G dict
@@ -281,7 +281,7 @@ def binomial_step_dict_stable(
     A: ComplexMatrix,
     b: ComplexVector,
     subspace_indices: list[tuple[int, ...]],
-) -> types.DictType:
+) -> tuple[types.DictType, float]:  # pragma: no cover
     r"""Numerically stable version of the binomial dict step"""
     prob = 0.0
     for i in prange(len(subspace_indices)):
@@ -297,7 +297,7 @@ def binomial_step_dict_stable_no_prob(
     A: ComplexMatrix,
     b: ComplexVector,
     subspace_indices: list[tuple[int, ...]],
-) -> types.DictType:
+) -> types.DictType:  # pragma: no cover
     r"""Numerically stable version of the binomial dict step,
     except it does not return the probability of the subspace.
     """
