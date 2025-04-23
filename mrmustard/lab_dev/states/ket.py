@@ -321,7 +321,6 @@ class Ket(State):
 
         # we pick the blocks according to the naming chosen in the paper
         Am = A[..., :M, :M]
-        bm = b[..., :M]
 
         batch_shape = self.ansatz.batch_shape
 
@@ -338,12 +337,7 @@ class Ket(State):
 
         Au = math.block([[Am, gamma], [gamma_transpose, -math.conj(Am)]])
 
-        b_temp = math.einsum(
-            "...ij, ...jk, ...k -> ...i", math.conj(Am), math.inv(gamma_transpose), bm
-        )
-        b_temp2 = math.einsum("...ij, ...j -> ...i", math.inv(gamma), math.conj(bm))
-
-        bu = math.concat([bm, -b_temp - b_temp2], -1)
+        bu = math.zeros(batch_shape + (2 * M,), dtype=math.complex128)
 
         cu = math.ones(batch_shape, dtype=math.complex128)
         U = Unitary.from_bargmann(core_modes, core_modes, (Au, bu, cu))
