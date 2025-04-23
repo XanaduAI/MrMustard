@@ -105,7 +105,7 @@ class GraphComponent:
         m = len(idxA)  # same as len(idxB)
         nA, nB = len(self.shape) - m, len(other.shape) - m
 
-        if self.representation == "PolyExpAnsatz" and other.representation == "PolyExpAnsatz":
+        if self.representation == "Bargmann" and other.representation == "Bargmann":
             cost = (  # +1s to include vector part)
                 m * m * m  # M inverse
                 + (m + 1) * m * nA  # left matmul
@@ -121,8 +121,8 @@ class GraphComponent:
             )
             cost = (
                 prod_A * prod_B * prod_contracted  # matmul
-                + np.prod(self.shape) * (self.representation == "PolyExpAnsatz")  # conversion
-                + np.prod(other.shape) * (other.representation == "PolyExpAnsatz")  # conversion
+                + np.prod(self.shape) * (self.representation == "Bargmann")  # conversion
+                + np.prod(other.shape) * (other.representation == "Bargmann")  # conversion
             )
         return int(cost)
 
@@ -140,9 +140,7 @@ class GraphComponent:
         shape = shape_A + shape_B
         new_shape = [shape[p] for p in perm]
         new_component = GraphComponent(
-            "PolyExpAnsatz"
-            if self.representation == other.representation == "PolyExpAnsatz"
-            else "ArrayAnsatz",
+            "Bargmann" if self.representation == other.representation == "Bargmann" else "Fock",
             new_wires,
             new_shape,
             f"({self.name}@{other.name})",
@@ -293,7 +291,7 @@ def parse_components(components: list[CircuitComponent]) -> Graph:
     graph = Graph()
     for i, A in enumerate(components):
         comp = GraphComponent.from_circuitcomponent(A)
-        wires = Wires(*A.wires.args)
+        wires = A.wires.copy()
         comp.wires = wires
         for j, B in enumerate(components[i + 1 :]):
             ovlp_bra, ovlp_ket = wires.overlap(B.wires)
