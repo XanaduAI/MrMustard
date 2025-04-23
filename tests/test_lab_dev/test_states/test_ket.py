@@ -20,9 +20,11 @@ import numpy as np
 import pytest
 from ipywidgets import HTML, Box, HBox, VBox
 from plotly.graph_objs import FigureWidget
+from thewalrus.symplectic import vacuum_state
 
 from mrmustard import math, settings
 from mrmustard.lab_dev import (
+    DM,
     DM,
     Attenuator,
     BSgate,
@@ -38,7 +40,6 @@ from mrmustard.lab_dev import (
     TraceOut,
     Vacuum,
 )
-from mrmustard.physics.gaussian import squeezed_vacuum_cov, vacuum_cov, vacuum_means
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wires import Wires
@@ -208,20 +209,16 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     def test_from_phase_space(self, modes):
-        n_modes = len(modes)
 
-        state1 = Ket.from_phase_space(modes, (vacuum_cov(n_modes), vacuum_means(n_modes), 1.0))
-        assert state1 == Vacuum(modes)
+        rnd = Ket.random(modes)
+        cov, means, coeff = rnd.phase_space(s=0)
+        rnd2 = Ket.from_phase_space(modes, (cov, means, coeff))
+        assert rnd == rnd2
 
-        r = [i / 10 for i in range(n_modes)]
-        phi = [(i + 1) / 10 for i in range(n_modes)]
-        state2 = Ket.from_phase_space(
-            modes, (squeezed_vacuum_cov(r, phi), vacuum_means(n_modes), 1.0)
-        )
-        exp_state = Vacuum(modes)
-        for mode, r_i, phi_i in zip(modes, r, phi):
-            exp_state = exp_state >> Sgate(mode, r_i, phi_i)
-        assert state2 == exp_state
+        rnd = DM.random(modes)
+        cov, means, coeff = rnd.phase_space(s=0)
+        rnd2 = DM.from_phase_space(modes, (cov, means, coeff))
+        assert rnd == rnd2
 
     def test_to_from_phase_space(self):
         modes = (0,)

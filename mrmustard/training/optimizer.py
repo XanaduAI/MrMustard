@@ -30,8 +30,6 @@ from mrmustard.math.parameters import (
     update_unitary,
 )
 
-import mrmustard.lab as mrml
-
 from mrmustard.lab_dev import Circuit
 
 __all__ = ["Optimizer"]
@@ -194,11 +192,6 @@ class Optimizer:
                 for j, op in enumerate(item.components):
                     tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
                     tagged_vars = op.parameters.tagged_variables(tag)
-                    trainables.append(tagged_vars.items())
-            elif isinstance(item, mrml.Circuit):
-                for j, op in enumerate(item.ops):
-                    tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
-                    tagged_vars = op.parameter_set.tagged_variables(tag)
                     trainables.append(tagged_vars.items())
             elif hasattr(item, "parameter_set"):
                 tag = f"{owner_tag}:{item.__class__.__qualname__}"

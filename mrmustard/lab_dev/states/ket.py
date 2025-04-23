@@ -276,6 +276,19 @@ class Ket(State):
 
         return result
 
+    def fidelity(self, other: State) -> float:
+        r"""
+        The fidelity between this ket and another state.
+
+        .. details::
+
+        .. math::
+            F(|\psi\rangle, \phi\rangle) = |\langle \psi, \phi \rangle|^2
+        """
+        if self.modes != other.modes:
+            raise ValueError("Cannot compute fidelity between states with different modes.")
+        return self.expectation(other)
+
     def physical_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[Ket, Unitary]:
         r"""
         Applies the physical stellar decomposition.

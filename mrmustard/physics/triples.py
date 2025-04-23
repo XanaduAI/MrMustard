@@ -204,7 +204,7 @@ def two_mode_squeezed_vacuum_state_Abc(
     batch_dim = len(batch_shape)
 
     O_matrix = math.zeros(batch_shape, math.complex128)
-    tanhr = -math.exp(1j * phi) * math.sinh(r) / math.cosh(r)
+    tanhr = math.exp(1j * phi) * math.sinh(r) / math.cosh(r)
 
     A = math.stack(
         [math.stack([O_matrix, tanhr], batch_dim), math.stack([tanhr, O_matrix], batch_dim)],
