@@ -20,10 +20,9 @@ import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.lab_dev.states import Ket
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
-from mrmustard.lab_dev.states import Coherent
+from mrmustard.lab_dev.states import Coherent, Ket
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.triples import identity_Abc
 from mrmustard.physics.wires import Wires

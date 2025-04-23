@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.lab_dev import Dgate, Ket, Unitary, Sgate, DM
+from mrmustard.lab_dev import DM, Dgate, Ket, Sgate, Unitary
 from mrmustard.math.lattice.strategies.beamsplitter import (
     apply_BS_schwinger,
     beamsplitter,

@@ -31,7 +31,7 @@ from mrmustard.lab_dev import (
     S2gate,
     Sgate,
 )
-from mrmustard.lab_dev.states import TwoModeSqueezedVacuum, Thermal, Vacuum
+from mrmustard.lab_dev.states import Thermal, TwoModeSqueezedVacuum, Vacuum
 
 
 @given(r=st.floats(0, 2), phi=st.floats(0, 2 * np.pi))

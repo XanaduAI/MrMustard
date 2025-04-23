@@ -5,12 +5,12 @@ Unit tests for mrmustard.math.compactFock.compactFock~
 import numpy as np
 
 from mrmustard import math
-from mrmustard.lab_dev import Ggate, SqueezedVacuum, Vacuum, DM
+from mrmustard.lab_dev import DM, Ggate, SqueezedVacuum, Vacuum
 from mrmustard.lab_dev.transformations.attenuator import Attenuator
 from mrmustard.physics import gaussian
 from mrmustard.training import Optimizer
 
-from ..conftest import skip_np, skip_jax, skip_tf
+from ..conftest import skip_jax, skip_np, skip_tf
 
 
 def test_compactFock_diagonal():

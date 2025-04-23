@@ -16,9 +16,11 @@
 
 import numpy as np
 import pytest
-from mrmustard.math.lattice import strategies
+
 from mrmustard import math
-from ..conftest import skip_tf, skip_jax
+from mrmustard.math.lattice import strategies
+
+from ..conftest import skip_jax, skip_tf
 
 
 def random_triple(n, batch=(), seed=None):

@@ -19,7 +19,7 @@ import pytest
 from scipy.special import assoc_laguerre
 
 from mrmustard import settings
-from mrmustard.lab_dev import Coherent, Number, Ket, SqueezedVacuum
+from mrmustard.lab_dev import Coherent, Ket, Number, SqueezedVacuum
 from mrmustard.physics.wigner import wigner_discretized
 
 # ~~~~~~~

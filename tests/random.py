@@ -18,7 +18,6 @@ from hypothesis.extra.numpy import arrays
 
 from mrmustard import settings
 from mrmustard.lab_dev import (
-    GaussRandNoise,
     Amplifier,
     Attenuator,
     BSgate,
@@ -26,6 +25,7 @@ from mrmustard.lab_dev import (
     CZgate,
     Dgate,
     DisplacedSqueezed,
+    GaussRandNoise,
     Ggate,
     Interferometer,
     MZgate,

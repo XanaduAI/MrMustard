@@ -24,16 +24,16 @@ from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 
 from mrmustard.lab_dev import (
+    DM,
     Attenuator,
     BSgate,
     Coherent,
+    Ket,
     Number,
     S2gate,
     SqueezedVacuum,
     TwoModeSqueezedVacuum,
     Vacuum,
-    Ket,
-    DM,
 )
 from mrmustard.math.lattice.strategies import displacement, grad_displacement
 from mrmustard.physics import fock_utils, gaussian

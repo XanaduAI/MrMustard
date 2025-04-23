@@ -20,18 +20,16 @@ import numpy as np
 import pytest
 from ipywidgets import HTML, Box, HBox, VBox
 from plotly.graph_objs import FigureWidget
-
 from thewalrus.symplectic import vacuum_state
 
 from mrmustard import math, settings
-
 from mrmustard.lab_dev import (
+    DM,
     Attenuator,
     BSgate,
     CircuitComponent,
     Coherent,
     Dgate,
-    DM,
     Ket,
     Number,
     QuadratureEigenstate,
