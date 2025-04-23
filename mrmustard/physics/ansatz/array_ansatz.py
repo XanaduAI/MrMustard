@@ -172,9 +172,9 @@ class ArrayAnsatz(Ansatz):
             ValueError: If index sequences have incorrect length or invalid labels.
         """
         if len(idx1) != len(self.array.shape):
-            raise ValueError(f"len(idx1) {len(idx1)} != rank(self) {len(self.array.shape)}")
+            raise ValueError(f"expected len(idx1)={self.array.ndim} got {len(idx1)}")
         if len(idx2) != len(other.array.shape):
-            raise ValueError(f"len(idx2) {len(idx2)} != rank(other) {len(other.array.shape)}")
+            raise ValueError(f"expected len(idx2)={other.array.ndim} got {len(idx2)}")
 
         all_labels_in = set(idx1) | set(idx2)
         if not set(idx_out).issubset(all_labels_in):

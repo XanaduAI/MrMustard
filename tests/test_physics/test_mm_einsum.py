@@ -14,9 +14,9 @@
 
 """Tests for the mm_einsum function."""
 
-import math
 import numpy as np
 import sparse
+from mrmustard import math
 from mrmustard.lab_dev import Ket, Unitary, BSgate, SqueezedVacuum, Rgate
 from mrmustard.physics.mm_einsum import mm_einsum
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
@@ -41,7 +41,7 @@ class TestMmEinsum:
             [0],
             output=[],
             contraction_order=[(0, 1)],
-            fock_dims={0: 20},
+            fock_dims={0: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
         assert np.isclose(res.scalar, self.g0 >> self.g1.dual)
@@ -55,7 +55,7 @@ class TestMmEinsum:
             [0, 1, 2, 3],
             output=[],
             contraction_order=[(0, 1)],
-            fock_dims={},
+            fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
         assert np.isclose(res.scalar, self.g0123 >> self.g0123.dual)
@@ -70,8 +70,8 @@ class TestMmEinsum:
             self.u01.ansatz,
             [2, 3, 0, 1],
             output=[2, 3],
-            contraction_order=[(0, 2), (1, 2)],
-            fock_dims={},
+            contraction_order=[(0, 2), (0, 1)],
+            fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
         assert res == (self.g0 >> (self.g0.on(1) >> self.u01)).ansatz
@@ -87,11 +87,11 @@ class TestMmEinsum:
             [0],
             output=["hello"],
             contraction_order=[(0, 1)],
-            fock_dims={},
+            fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
         assert res.batch_shape == (2,)
-        assert np.allclose(res.scalar, self.g0.contract(self.g1.dual, mode="zip").ansatz.scalar)
+        assert math.allclose(res.scalar, self.g0.contract(self.g1.dual, mode="zip").ansatz.scalar)
 
     def test_multimode_with_batch(self):
         """Test that mm_einsum works for a multimode with batch dimensions."""
@@ -104,11 +104,11 @@ class TestMmEinsum:
             [0, 1, 2, 3],
             output=["hello"],
             contraction_order=[(0, 1)],
-            fock_dims={},
+            fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
         assert res.batch_shape == (2,)
-        assert np.allclose(
+        assert math.allclose(
             res.scalar, self.g0123.contract(self.g0123.dual, mode="zip").ansatz.scalar
         )
 
@@ -140,7 +140,7 @@ class TestMmEinsum:
         )
         assert isinstance(res, ArrayAnsatz)
         assert res.batch_shape == (2,)
-        assert np.allclose(res.scalar, self.f0.contract(self.f1.dual, mode="zip").ansatz.scalar)
+        assert math.allclose(res.scalar, self.f0.contract(self.f1.dual, mode="zip").ansatz.scalar)
 
     def test_single_mode_fock_with_double_batch(self):
         """Test that mm_einsum works for a single mode fock state with double batch dimensions."""
@@ -156,7 +156,7 @@ class TestMmEinsum:
             ["hello", 0, 1],
             output=["world"],
             contraction_order=[(0, 1)],
-            fock_dims={},
+            fock_dims={0: 20, 1: 20},
         )
         assert isinstance(res, ArrayAnsatz)
 
@@ -189,7 +189,7 @@ class TestMmEinsum:
             f1.dual.ansatz,
             [3],
             output=[2],
-            contraction_order=[(0, 2), (1, 2), (2, 3)],
+            contraction_order=[(0, 2), (0, 1), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 20, 3: f1.auto_shape()[0]},
         )
         assert isinstance(res, ArrayAnsatz)
@@ -211,7 +211,7 @@ class TestMmEinsum:
             f1.dual.ansatz,
             [3],
             output=[2],
-            contraction_order=[(0, 2), (1, 2), (2, 3)],
+            contraction_order=[(0, 2), (0, 1), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
@@ -244,7 +244,7 @@ class TestMmEinsum:
             f2.dual.ansatz,
             [6],
             output=[3],
-            contraction_order=[(0, 3), (1, 3), (2, 4), (4, 5), (4, 6), (3, 4)],
+            contraction_order=[(0, 3), (0, 1), (1, 2), (1, 2), (1, 2), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 20, 4: d1 + d2, 5: d1, 6: d2},
         )
         assert isinstance(res, ArrayAnsatz)
@@ -282,7 +282,7 @@ class TestMmEinsum:
             f2.dual.ansatz,
             [6],
             output=[3],
-            contraction_order=[(0, 3), (1, 3), (2, 4), (4, 6), (4, 5), (3, 4)],
+            contraction_order=[(0, 3), (0, 1), (1, 2), (1, 2), (1, 2), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
@@ -310,18 +310,18 @@ class TestMmEinsum:
         f2 = Ket.random([2]).to_fock()
         d1 = f1.auto_shape()[0]
         d2 = f2.auto_shape()[0]
-        s = (s2_0 + s2_1 + s2_2).ansatz
-        s._lin_sup = False  # disable linear superposition
-        bs = (bs01_0 + bs01_1).ansatz
-        bs._lin_sup = False  # disable linear superposition
+        s2 = s2_0 + s2_1 + s2_2
+        s2.ansatz._lin_sup = False  # disable linear superposition
+        bs = bs01_0 + bs01_1
+        bs.ansatz._lin_sup = False  # disable linear superposition
         res = mm_einsum(
             s0.ansatz,
             [0],
             s1.ansatz,
             [1],
-            s,
+            s2.ansatz,
             ["hello", 2],
-            bs,
+            bs.ansatz,
             ["world", 3, 4, 0, 1],
             bs12.ansatz,
             [5, 6, 4, 2],
@@ -332,31 +332,31 @@ class TestMmEinsum:
             g0.dual.ansatz,
             [3],
             output=["world", "hello"],
-            contraction_order=[(3, 7), (0, 3), (1, 3), (3, 4), (2, 4), (4, 5), (4, 6)],
-            fock_dims={0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: d1, 6: d2},
+            contraction_order=[(0, 3), (0, 1), (1, 2), (1, 2), (1, 2), (0, 1), (0, 1)],
+            fock_dims={0: 0, 1: 0, 2: 0, 3: 20, 4: d1 + d2, 5: d1, 6: d2},
         )
 
-        assert np.allclose(
+        assert math.allclose(
             res.array[0, 0],
             (s1 >> (s0 >> bs01_0) >> (s2_0 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
-        assert np.allclose(
+        assert math.allclose(
             res.array[0, 1],
             (s1 >> (s0 >> bs01_0) >> (s2_1 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
-        assert np.allclose(
+        assert math.allclose(
             res.array[0, 2],
             (s1 >> (s0 >> bs01_0) >> (s2_2 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
-        assert np.allclose(
+        assert math.allclose(
             res.array[1, 0],
             (s1 >> (s0 >> bs01_1) >> (s2_0 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
-        assert np.allclose(
+        assert math.allclose(
             res.array[1, 1],
             (s1 >> (s0 >> bs01_1) >> (s2_1 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
-        assert np.allclose(
+        assert math.allclose(
             res.array[1, 2],
             (s1 >> (s0 >> bs01_1) >> (s2_2 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
         )
@@ -379,9 +379,9 @@ class TestMmEinsum:
         assert isinstance(res, ArrayAnsatz)
         assert res == (f0 >> R).ansatz
 
-    def test_with_linear_superposition(self):
+    def test_with_linear_superposition_in_fock(self):
         """Test that mm_einsum works for a linear superposition."""
-        g = self.g0.ansatz + self.g0.ansatz
+        g = (self.g0 + self.g1).ansatz
         res = mm_einsum(
             g,
             [0],
@@ -389,7 +389,21 @@ class TestMmEinsum:
             [0],
             output=[],
             contraction_order=[(0, 1)],
-            fock_dims={0: 10},
+            fock_dims={0: 10},  # force fock
+        )
+        assert res.batch_shape == ()
+
+    def test_with_linear_superposition_in_bargmann(self):
+        """Test that mm_einsum works for a linear superposition in bargmann."""
+        g = (self.g0 + self.g1).ansatz
+        res = mm_einsum(
+            g,
+            [0],
+            g.conj,
+            [0],
+            output=[],
+            contraction_order=[(0, 1)],
+            fock_dims={0: 0},  # force bargmann
         )
         assert res.batch_shape == (4,)
         assert res._lin_sup == True
@@ -410,7 +424,7 @@ class TestMmEinsum:
             fock_dims={0: 20},
         )
         assert isinstance(res, ArrayAnsatz)
-        assert np.allclose(res.array, self.g0.fock_array(f0.array.shape) @ f0.array)
+        assert math.allclose(res.array, self.g0.fock_array(f0.array.shape) @ f0.array)
 
     def test_with_sparse_and_sparse_ansatze(self):
         """Test that mm_einsum works for only sparse ansatz."""
