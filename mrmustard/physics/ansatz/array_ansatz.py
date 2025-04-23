@@ -234,7 +234,7 @@ class ArrayAnsatz(Ansatz):
             >>> assert fock3 == ArrayAnsatz(array3)
 
             >>> fock4 = fock1.reduce((1, 3, 1))
-            >>> array4 = [[[0], [3], [6]]]
+            >>> array4 = np.array([[[0], [3], [6]]])
             >>> assert fock4 == ArrayAnsatz(array4)
 
         Args:
