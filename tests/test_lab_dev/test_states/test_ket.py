@@ -25,7 +25,6 @@ from thewalrus.symplectic import vacuum_state
 from mrmustard import math, settings
 from mrmustard.lab_dev import (
     DM,
-    DM,
     Attenuator,
     BSgate,
     CircuitComponent,
@@ -35,7 +34,6 @@ from mrmustard.lab_dev import (
     Ket,
     Number,
     QuadratureEigenstate,
-    Sgate,
     SqueezedVacuum,
     TraceOut,
     Vacuum,
