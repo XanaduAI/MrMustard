@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""TODO: document this module
-"""
+"""TODO: document this module"""
 
 from typing import Sequence
 from mrmustard.utils.typing import Tensor

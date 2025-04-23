@@ -24,7 +24,7 @@ from ipywidgets import HTML
 from mrmustard.lab_dev.states import QuadratureEigenstate
 from mrmustard.physics.wires import Wires
 
-from ..conftest import skip_np, skip_jax
+from ..conftest import skip_jax, skip_np
 
 
 class TestWires:
