@@ -121,7 +121,7 @@ class TestMmEinsum:
             [0],
             output=[],
             contraction_order=[(0, 1)],
-            fock_dims={0: 20},
+            fock_dims={0: 10},
         )
         assert isinstance(res, ArrayAnsatz)
         assert np.isclose(res.scalar, self.f0 >> self.f0.dual)
