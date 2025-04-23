@@ -28,7 +28,7 @@ from mrmustard.utils.typing import (
 
 from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from .triples import identity_Abc
-from .utils import outer_product_batch_str, zip_batch_strings, lin_sup_batch_str
+from .utils import outer_product_batch_str, zip_batch_strings
 from .wires import Wires, ReprEnum
 
 __all__ = ["Representation"]
@@ -121,33 +121,23 @@ class Representation:
                 f"of type {type(other.ansatz)}. Please call either `to_fock` or `to_bargmann` ",
                 "on one of the representations.",
             )
-        wires_result, perm = self.wires @ other.wires
-        idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
-
+        wires_result, _ = self.wires @ other.wires
+        core1, core2, core_out = self.wires.contracted_labels(other.wires)
         if mode == "zip":
-            self_batch = (
-                self.ansatz.batch_shape
-                if not self.ansatz._lin_sup
-                else self.ansatz.batch_shape[:-1]
-            )
-            other_batch = (
-                other.ansatz.batch_shape
-                if not other.ansatz._lin_sup
-                else other.ansatz.batch_shape[:-1]
-            )
-            batch_str = zip_batch_strings(self_batch, other_batch)
-            batch_str = (
-                lin_sup_batch_str(batch_str)
-                if self.ansatz._lin_sup and other.ansatz._lin_sup
-                else batch_str
+            eins_str = zip_batch_strings(
+                self.ansatz.batch_dims - self.ansatz._lin_sup,
+                other.ansatz.batch_dims - other.ansatz._lin_sup,
             )
         elif mode == "kron":
-            batch_str = outer_product_batch_str(self.ansatz.batch_shape, other.ansatz.batch_shape)
-        else:
-            batch_str = mode
-
-        ansatz = self.ansatz.contract(other.ansatz, batch_str=batch_str, idx1=idx_z, idx2=idx_zconj)
-        ansatz = ansatz.reorder(perm) if perm else ansatz
+            eins_str = outer_product_batch_str(
+                self.ansatz.batch_dims - self.ansatz._lin_sup,
+                other.ansatz.batch_dims - other.ansatz._lin_sup,
+            )
+        batch12, batch_out = eins_str.split("->")
+        batch1, batch2 = batch12.split(",")
+        ansatz = self.ansatz.contract(
+            other.ansatz, list(batch1) + core1, list(batch2) + core2, list(batch_out) + core_out
+        )
         return Representation(ansatz, wires_result)
 
     def fock_array(self, shape: int | Sequence[int]) -> ComplexTensor:

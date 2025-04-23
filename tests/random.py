@@ -17,17 +17,15 @@ from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
 from mrmustard import settings
-from mrmustard.lab import (
-    TMSV,
-    AdditiveNoise,
+from mrmustard.lab_dev import (
     Amplifier,
     Attenuator,
     BSgate,
-    Coherent,
     CXgate,
     CZgate,
     Dgate,
     DisplacedSqueezed,
+    GaussRandNoise,
     Ggate,
     Interferometer,
     MZgate,
@@ -170,9 +168,9 @@ prob_bounds = st.tuples(none_or_(prob), none_or_(prob)).filter(bounds_check)
 def random_Rgate(draw, trainable=False):
     r"""Return a random Rgate."""
     return Rgate(
-        angle=draw(angle),
-        angle_bounds=draw(angle_bounds),
-        angle_trainable=trainable,
+        theta=draw(angle),
+        theta_bounds=draw(angle_bounds),
+        theta_trainable=trainable,
     )
 
 
@@ -180,6 +178,7 @@ def random_Rgate(draw, trainable=False):
 def random_Sgate(draw, trainable=False):
     r"""Return a random Sgate."""
     return Sgate(
+        0,
         r=draw(r),
         phi=draw(angle),
         r_bounds=draw(positive_bounds),
@@ -195,6 +194,7 @@ def random_Dgate(draw, trainable=False):
     x = draw(small_float)
     y = draw(small_float)
     return Dgate(
+        0,
         x=x,
         y=y,
         x_bounds=draw(real_bounds),
@@ -208,6 +208,7 @@ def random_Dgate(draw, trainable=False):
 def random_Pgate(draw, trainable=False):
     r"""Return a random Pgate."""
     return Pgate(
+        0,
         shearing=draw(prob),
         shearing_bounds=draw(prob_bounds),
         shearing_trainable=trainable,
@@ -218,6 +219,7 @@ def random_Pgate(draw, trainable=False):
 def random_Attenuator(draw, trainable=False):
     r"""Return a random Attenuator."""
     return Attenuator(
+        0,
         transmissivity=draw(prob),
         transmissivity_bounds=draw(prob_bounds),
         transmissivity_trainable=trainable,
@@ -228,6 +230,7 @@ def random_Attenuator(draw, trainable=False):
 def random_Amplifier(draw, trainable=False):
     r"""Return a random Amplifier."""
     return Amplifier(
+        0,
         gain=draw(gain),
         gain_bounds=draw(gain_bounds),
         gain_trainable=trainable,
@@ -235,12 +238,12 @@ def random_Amplifier(draw, trainable=False):
 
 
 @st.composite
-def random_AdditiveNoise(draw, trainable=False):
-    r"""Return a random AdditiveNoise."""
-    return AdditiveNoise(
-        noise=draw(prob),
-        noise_bounds=draw(prob_bounds),
-        noise_trainable=trainable,
+def random_GaussRandNoise(draw, trainable=False):
+    r"""Return a random GaussRandNoise."""
+    settings.SEED = draw(integer32bits)
+    return GaussRandNoise(
+        0,
+        Y_trainable=trainable,
     )
 
 
@@ -248,6 +251,7 @@ def random_AdditiveNoise(draw, trainable=False):
 def random_S2gate(draw, trainable=False):
     r"""Return a random S2gate."""
     return S2gate(
+        (0, 1),
         r=draw(r),
         phi=draw(angle),
         r_bounds=draw(positive_bounds),
@@ -261,6 +265,7 @@ def random_S2gate(draw, trainable=False):
 def random_CXgate(draw, trainable=False):
     r"""Return a random CXgate."""
     return CXgate(
+        (0, 1),
         s=draw(medium_float),
         s_bounds=draw(real_bounds),
         s_trainable=trainable,
@@ -271,6 +276,7 @@ def random_CXgate(draw, trainable=False):
 def random_CZgate(draw, trainable=False):
     r"""Return a random CZgate."""
     return CZgate(
+        (0, 1),
         s=draw(medium_float),
         s_bounds=draw(real_bounds),
         s_trainable=trainable,
@@ -281,6 +287,7 @@ def random_CZgate(draw, trainable=False):
 def random_BSgate(draw, trainable=False):
     r"""Return a random BSgate."""
     return BSgate(
+        (0, 1),
         theta=draw(angle),
         phi=draw(angle),
         theta_bounds=draw(angle_bounds),
@@ -294,6 +301,7 @@ def random_BSgate(draw, trainable=False):
 def random_MZgate(draw, trainable=False):
     r"""Return a random MZgate."""
     return MZgate(
+        (0, 1),
         phi_a=draw(angle),
         phi_b=draw(angle),
         phi_a_bounds=draw(angle_bounds),
@@ -308,14 +316,14 @@ def random_MZgate(draw, trainable=False):
 def random_Interferometer(draw, num_modes, trainable=False):
     r"""Return a random Interferometer."""
     settings.SEED = draw(integer32bits)
-    return Interferometer(num_modes=num_modes, unitary_trainable=trainable)
+    return Interferometer(modes=list(range(num_modes)), unitary_trainable=trainable)
 
 
 @st.composite
 def random_Ggate(draw, num_modes, trainable=False):
     r"""Return a random Ggate."""
     settings.SEED = draw(integer32bits)
-    return Ggate(num_modes=num_modes, symplectic_trainable=trainable)
+    return Ggate(modes=list(range(num_modes)), symplectic_trainable=trainable)
 
 
 @st.composite
@@ -339,7 +347,7 @@ def single_mode_cv_channel(draw):
         st.one_of(
             random_Attenuator(),
             random_Amplifier(),
-            random_AdditiveNoise(),
+            random_GaussRandNoise(),
         )
     )
 
@@ -370,40 +378,52 @@ def n_mode_unitary_gate(draw, num_modes=None):
 @st.composite
 def squeezed_vacuum(draw, num_modes):
     r"""Return a random squeezed vacuum state."""
-    r_vec = array_of_(r, num_modes, num_modes)
-    phi = array_of_(angle, num_modes, num_modes)
-    return SqueezedVacuum(r=draw(r_vec), phi=draw(phi))
+    r_vec = draw(array_of_(r, num_modes, num_modes))
+    phi = draw(array_of_(angle, num_modes, num_modes))
+    state = SqueezedVacuum(0, r=r_vec[0], phi=phi[0])
+    for i in range(1, num_modes):
+        state = state >> SqueezedVacuum(i, r=r_vec[i], phi=phi[i])
+    return state
 
 
 @st.composite
 def displacedsqueezed(draw, num_modes):
     r"""Return a random displaced squeezed state."""
-    r_vec = array_of_(r, num_modes, num_modes)
-    phi = array_of_(angle, num_modes, num_modes)
-    x = array_of_(medium_float, num_modes, num_modes)
-    y = array_of_(medium_float, num_modes, num_modes)
-    return DisplacedSqueezed(r=draw(r_vec), phi=draw(phi), x=draw(x), y=draw(y))
+    r_vec = draw(array_of_(r, num_modes, num_modes))
+    phi = draw(array_of_(angle, num_modes, num_modes))
+    x = draw(array_of_(medium_float, num_modes, num_modes))
+    y = draw(array_of_(medium_float, num_modes, num_modes))
+    state = DisplacedSqueezed(0, r=r_vec[0], phi=phi[0], x=x[0], y=y[0])
+    for i in range(1, num_modes):
+        state = state >> DisplacedSqueezed(i, r=r_vec[i], phi=phi[i], x=x[i], y=y[i])
+    return state
 
 
 @st.composite
 def coherent(draw, num_modes):
     r"""Return a random coherent state."""
-    x = array_of_(medium_float, num_modes, num_modes)
-    y = array_of_(medium_float, num_modes, num_modes)
-    return Coherent(x=draw(x), y=draw(y))
+    x = draw(array_of_(medium_float, num_modes, num_modes))
+    y = draw(array_of_(medium_float, num_modes, num_modes))
+    state = Coherent(0, x=x[0], y=y[0])
+    for i in range(1, num_modes):
+        state = state >> Coherent(i, x=x[i], y=y[i])
+    return state
 
 
 @st.composite
 def tmsv(draw, phi):
     r"""Return a random two-mode squeezed vacuum state."""
-    return TMSV(r=draw(r), phi=draw(phi))
+    return TMSV((0, 1), r=draw(r), phi=draw(phi))
 
 
 @st.composite
 def thermal(draw, num_modes):
     r"""Return a random thermal state."""
-    n_mean = array_of_(r, num_modes, num_modes)  # using r here
-    return Thermal(n_mean=draw(n_mean))
+    n_mean = draw(array_of_(r, num_modes, num_modes))  # using r here
+    state = Thermal(0, n_mean=n_mean[0])
+    for i in range(1, num_modes):
+        state = state >> Thermal(i, n_mean=n_mean[i])
+    return state
 
 
 # generic states

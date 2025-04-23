@@ -17,6 +17,7 @@
 # pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 
 import pytest
+
 from mrmustard import math
 from mrmustard.lab_dev.states import BargmannEigenstate
 

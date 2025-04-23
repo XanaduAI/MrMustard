@@ -47,7 +47,7 @@ from mrmustard.lab_dev import (
 )
 from mrmustard.utils.serialize import load, save
 
-from ..conftest import skip_np, skip_jax
+from ..conftest import skip_jax, skip_np
 
 
 class Deserialize:

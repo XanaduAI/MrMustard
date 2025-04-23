@@ -21,7 +21,7 @@ import pytest
 from mrmustard import math
 from mrmustard.utils.settings import Settings
 
-from ..conftest import skip_np, skip_jax
+from ..conftest import skip_jax, skip_np
 
 
 class TestSettings:

@@ -22,7 +22,7 @@ import pytest
 from mrmustard import math
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 from mrmustard.lab_dev.circuit_components_utils import TraceOut
-from mrmustard.lab_dev.states import Coherent
+from mrmustard.lab_dev.states import Coherent, Ket
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.triples import identity_Abc
 from mrmustard.physics.wires import Wires
@@ -69,3 +69,7 @@ class TestTraceOut:
 
         no_state = state >> TraceOut((0, 1, 2))
         assert np.isclose(no_state, 1.0)
+
+    def test_trace_out_with_batch(self):
+        state = Ket.from_fock([0], np.random.random((2, 3, 4)), batch_dims=2)
+        assert (state >> TraceOut(0)).shape == (2, 3)

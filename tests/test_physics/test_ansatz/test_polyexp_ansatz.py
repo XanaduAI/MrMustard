@@ -183,13 +183,17 @@ class TestPolyExpAnsatz:
         triple1 = Abc_triple(3)
         triple2 = Abc_triple(3)
 
-        res1 = PolyExpAnsatz(*triple1).contract(PolyExpAnsatz(*triple2))
+        res1 = PolyExpAnsatz(*triple1).contract(
+            PolyExpAnsatz(*triple2), [0, 1, 2], [3, 4, 5], [0, 1, 2, 3, 4, 5]
+        )
         exp1 = complex_gaussian_integral_2(triple1, triple2, [], [])
         assert math.allclose(res1.A, exp1[0])
         assert math.allclose(res1.b, exp1[1])
         assert math.allclose(res1.c, exp1[2])
 
-        res2 = PolyExpAnsatz(*triple1).contract(PolyExpAnsatz(*triple2), idx1=0, idx2=0)
+        res2 = PolyExpAnsatz(*triple1).contract(
+            PolyExpAnsatz(*triple2), [0, 1, 2], [0, 3, 4], [1, 2, 3, 4]
+        )
         exp2 = complex_gaussian_integral_2(triple1, triple2, [0], [0])
         assert math.allclose(res2.A, exp2[0])
         assert math.allclose(res2.b, exp2[1])
@@ -589,3 +593,34 @@ class TestPolyExpAnsatz:
         # Verify the result matches direct evaluation
         direct_result = F(z0, z1)
         assert math.allclose(result, direct_result)
+
+    def test_reorder_batch(self):
+        ansatz = PolyExpAnsatz(*Abc_triple(3, (1, 5)))
+        ansatz_reordered = ansatz.reorder_batch([1, 0])
+        assert ansatz_reordered.A.shape == (5, 1, 3, 3)
+        assert ansatz_reordered.b.shape == (5, 1, 3)
+        assert ansatz_reordered.c.shape == (5, 1)
+
+    def test_and_with_lin_sup_both(self):
+        ansatz1 = PolyExpAnsatz(*Abc_triple(2, (2, 5)), lin_sup=True)
+        ansatz2 = PolyExpAnsatz(*Abc_triple(1, (3, 4)), lin_sup=True)
+        ansatz_and = ansatz1 & ansatz2
+        assert ansatz_and.A.shape == (2, 3, 20, 3, 3)
+        assert ansatz_and.b.shape == (2, 3, 20, 3)
+        assert ansatz_and.c.shape == (2, 3, 20)
+
+    def test_and_with_lin_sup_self(self):
+        ansatz1 = PolyExpAnsatz(*Abc_triple(2, (2, 5)), lin_sup=True)
+        ansatz2 = PolyExpAnsatz(*Abc_triple(1, (3, 4)), lin_sup=False)
+        ansatz_and = ansatz1 & ansatz2
+        assert ansatz_and.A.shape == (2, 3, 4, 5, 3, 3)
+        assert ansatz_and.b.shape == (2, 3, 4, 5, 3)
+        assert ansatz_and.c.shape == (2, 3, 4, 5)
+
+    def test_and_with_lin_sup_other(self):
+        ansatz1 = PolyExpAnsatz(*Abc_triple(2, (2, 5)), lin_sup=False)
+        ansatz2 = PolyExpAnsatz(*Abc_triple(1, (3, 4)), lin_sup=True)
+        ansatz_and = ansatz1 & ansatz2
+        assert ansatz_and.A.shape == (2, 5, 3, 4, 3, 3)
+        assert ansatz_and.b.shape == (2, 5, 3, 4, 3)
+        assert ansatz_and.c.shape == (2, 5, 3, 4)

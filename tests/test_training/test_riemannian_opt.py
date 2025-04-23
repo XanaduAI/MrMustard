@@ -24,7 +24,7 @@ from thewalrus.symplectic import is_symplectic
 from mrmustard import math
 from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 
-from ..conftest import skip_np, skip_jax
+from ..conftest import skip_jax, skip_np
 
 
 def is_unitary(M, rtol=1e-05, atol=1e-08):
