@@ -320,11 +320,7 @@ class Ket(State):
 
         # we pick the blocks according to the naming chosen in the paper
         Am = A[..., :M, :M]
-        R = A[..., M:, :M]
-        R_transpose = math.einsum("...ij->...ji", R)
-        An = A[..., M:, M:]
         bm = b[..., :M]
-        bn = b[..., M:]
 
         batch_shape = self.ansatz.batch_shape
 
