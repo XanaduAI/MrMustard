@@ -16,7 +16,7 @@
 
 import numpy as np
 import sparse
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab_dev import Ket, Unitary, BSgate, SqueezedVacuum, Rgate
 from mrmustard.physics.mm_einsum import mm_einsum
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
@@ -25,6 +25,7 @@ from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 class TestMmEinsum:
     """Unit tests for the mm_einsum function."""
 
+    settings.SEED = 42
     g0 = Ket.random([0])
     g1 = Ket.random([0])
     g0123 = Ket.random([0, 1, 2, 3])
