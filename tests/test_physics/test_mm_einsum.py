@@ -122,7 +122,7 @@ class TestMmEinsum:
             [0],
             output=[],
             contraction_order=[(0, 1)],
-            fock_dims={0: 30},
+            fock_dims={0: 35},
         )
         assert isinstance(res, ArrayAnsatz)
         assert math.allclose(res.scalar, self.f0 >> self.f0.dual)
