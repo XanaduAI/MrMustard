@@ -299,6 +299,7 @@ class Ket(State):
             e.g., being sparse.
 
         .. code-block::
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import Ket
 
             >>> psi = Ket.random([0,1])
@@ -306,7 +307,7 @@ class Ket(State):
             >>> assert psi == core >> U
 
             >>> A_c = core.ansatz.A
-            >>> assert A_c[0,0] == 0
+            >>> assert math.allclose(A_c[0,0], 0)
         """
         # bringing A to the ordering of our interest
         other_modes = [m for m in self.modes if m not in core_modes]
