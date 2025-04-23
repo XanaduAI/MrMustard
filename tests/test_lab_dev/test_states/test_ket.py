@@ -566,7 +566,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert psi == core >> U
 
         A_c, _, _ = core.ansatz.triple
-        assert A_c[0, 0] == 0
+        assert math.allclose(A_c[0, 0], 0)
 
         assert U >> U.dual == Identity([0])
 
@@ -588,8 +588,15 @@ class TestKet:  # pylint: disable=too-many-public-methods
         (psi + phi).ansatz.batch_shape
 
         sigma = psi + phi
+        sigma.ansatz._lin_sup = False
         core, U = sigma.physical_stellar_decomposition([0])
         assert sigma == core.contract(U, mode="zip")
+
+        # displacement test
+        phi = Ket.random(list(range(5))) >> Dgate(0, 2) >> Dgate(1, 1)
+        core, U = phi.physical_stellar_decomposition([0, 2])
+        assert phi == core >> U
+        assert (core >> Vacuum((1, 3, 4)).dual).normalize() == Vacuum((0, 2))
 
     def test_formal_stellar_decomposition(self):
         psi = Ket.random((0, 1, 2))

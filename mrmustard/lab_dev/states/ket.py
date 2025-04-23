@@ -40,7 +40,7 @@ from .base import State, _validate_operator, OperatorType
 from .dm import DM
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
-from ..transformations import Unitary, Operation
+from ..transformations import Unitary, Operation, Dgate
 from ..utils import shape_check
 
 __all__ = ["Ket"]
@@ -355,34 +355,19 @@ class Ket(State):
 
         U /= math.sqrt(u_renorm)
 
-        A_core = math.block(
-            [
-                [
-                    math.zeros(batch_shape + (M,) * 2, dtype=math.complex128),
-                    math.inv(gamma) @ R_transpose,
-                ],
-                [
-                    R @ math.inv(gamma_transpose),
-                    An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R_transpose,
-                ],
-            ]
-        )
-        b_temp = math.einsum(
-            "...ij, ...jk, ...k -> ...i", R, math.inv(gamma_transpose), bu[..., M:]
-        )
+        # addressing the displacement problem
+        core_p = self.contract(U.dual, mode="zip")
+        alpha = core_p.ansatz.b[..., core_indices]
+        for i, m in enumerate(core_modes):
+            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
+            d_g_inv = d_g.dual
 
-        b_core = math.concat([bm, bn - b_temp], -1)
+            core_p = core_p.contract(d_g, mode="zip")
+            U = (d_g_inv).contract(U, mode="zip")
 
-        inverse_order = np.argsort(new_order)
+        core = Ket.from_bargmann(self.modes, core_p.ansatz.triple)
 
-        A_core = A_core[..., inverse_order, :]
-        A_core = A_core[..., inverse_order]
-        b_core = b_core[..., inverse_order]
-        c_core = math.ones(batch_shape, dtype=math.complex128)  # to be renormalized
-
-        psi_core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core)).normalize()
-
-        return psi_core, U
+        return core, U
 
     def formal_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[Ket, Operation]:
         r"""
