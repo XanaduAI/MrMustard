@@ -34,10 +34,6 @@ from .base import Ansatz
 
 __all__ = ["ArrayAnsatz"]
 
-import sparse
-
-sparse._settings.AUTO_DENSIFY = True
-
 
 class ArrayAnsatz(Ansatz):
     r"""
