@@ -14,9 +14,9 @@
 
 """Tests for the mm_einsum function."""
 
-from ..conftest import skip_jax
 import numpy as np
 import sparse
+from ..conftest import skip_jax
 from mrmustard import math, settings
 from mrmustard.lab_dev import Ket, Unitary, BSgate, SqueezedVacuum, Rgate
 from mrmustard.physics.mm_einsum import mm_einsum
