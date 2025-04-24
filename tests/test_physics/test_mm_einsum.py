@@ -14,7 +14,7 @@
 
 """Tests for the mm_einsum function."""
 
-from conftest import skip_jax
+from ..conftest import skip_jax
 import numpy as np
 import sparse
 from mrmustard import math, settings
