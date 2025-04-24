@@ -42,7 +42,6 @@ class S2gate(Unitary):
 
     .. code-block ::
 
-        >>> import numpy as np
         >>> from mrmustard.lab_dev import S2gate
 
         >>> unitary = S2gate(modes=(1, 2), r=1)
