@@ -29,6 +29,7 @@ from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
 )
+from mrmustard.lab_dev.transformations import Identity
 
 from ...random import Abc_triple
 
@@ -624,3 +625,11 @@ class TestPolyExpAnsatz:
         assert ansatz_and.A.shape == (2, 5, 3, 4, 3, 3)
         assert ansatz_and.b.shape == (2, 5, 3, 4, 3)
         assert ansatz_and.c.shape == (2, 5, 3, 4)
+
+    def test_PS(self):
+        ans = Identity(0).ansatz
+
+        x = np.linspace(0, 1, 10)
+        gaussian = np.exp(-(x**2)) / np.pi
+
+        assert math.allclose(ans.PS(x, 0), gaussian)

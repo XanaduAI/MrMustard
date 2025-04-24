@@ -37,7 +37,7 @@ from mrmustard.utils.typing import (
 from .base import State, _validate_operator, OperatorType
 from .dm import DM
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import TraceOut
+from ..circuit_components_utils import BtoPS, TraceOut
 from ..utils import shape_check
 
 __all__ = ["Ket"]
@@ -285,6 +285,20 @@ class Ket(State):
         if self.modes != other.modes:
             raise ValueError("Cannot compute fidelity between states with different modes.")
         return self.expectation(other)
+
+    @property
+    def wigner(self) -> PolyExpAnsatz:
+        r"""
+        The Wigner representation of this ket.
+        """
+        if self.ansatz._lin_sup:
+            raise NotImplementedError(
+                "Wigner representation is not implemented for linear superposition."
+            )
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError("Wigner representation is not implemented for ArrayAnsatz.")
+
+        return (self >> BtoPS(self.modes, s=0)).ansatz.PS
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
