@@ -41,9 +41,10 @@ class RealInterferometer(Unitary):
         orthogonal_trainable: Whether ``orthogonal`` is trainable.
 
     .. code-block::
-        >>> import numpy as np
+
+        >>> from mrmustard import math
         >>> from mrmustard.lab_dev import RealInterferometer, Identity
-        >>> ri = RealInterferometer([0, 1], orthogonal = np.eye(2))
+        >>> ri = RealInterferometer([0, 1], orthogonal = math.eye(2))
         >>> assert ri == Identity((0,1))
     """
 
