@@ -38,7 +38,6 @@ class Thermal(DM):
         nbar_trainable: Whether ``nbar`` is trainable.
         nbar_bounds: The bounds of ``nbar``.
 
-
     Returns:
         A ``DM`` type object that represents the thermal state.
 
