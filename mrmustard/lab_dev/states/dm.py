@@ -450,7 +450,7 @@ class DM(State):
             >>> from mrmustard import math
             >>> from mrmustard.lab_dev import Vacuum, DM
 
-            >>> assert math.allclose(Vacuum([0]).dm().fock_array(), np.array([[1]]))
+            >>> assert math.allclose(Vacuum([0]).dm().fock_array(), math.astensor([[1]]))
         """
         array = super().fock_array(shape or self.auto_shape())
         if standard_order:
