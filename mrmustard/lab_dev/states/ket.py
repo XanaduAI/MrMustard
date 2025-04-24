@@ -94,7 +94,7 @@ class Ket(State):
         Probability of this Ket (L2 norm squared).
 
         Returns:
-            A float number.
+            The probability of this ``Ket``.
 
         Example:
         .. code-block::
