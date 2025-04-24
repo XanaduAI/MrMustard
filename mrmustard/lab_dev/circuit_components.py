@@ -458,9 +458,9 @@ class CircuitComponent:
             ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
         size = int(
             math.prod(
-                ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape != () else ret.shape
+                ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape else ret.shape
             )
-        )  # tensorflow
+        )
         return math.reshape(ret, (size,) + self.ansatz.batch_shape)
 
     @classmethod
@@ -710,9 +710,9 @@ class CircuitComponent:
         Compares representations, but not the other attributes
         (e.g. name and parameter set).
         """
-        if isinstance(other, CircuitComponent):
-            return self._representation == other._representation
-        return False
+        if not isinstance(other, CircuitComponent):
+            return False
+        return self._representation == other._representation
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -800,7 +800,7 @@ class CircuitComponent:
         if only_ket or only_bra or both_sides:
             ret = self.contract(other)
         elif self_needs_bra or self_needs_ket:
-            ret = self.adjoint.contract(self.contract(other))
+            ret = self.adjoint.contract(self.contract(other), "zip")
         elif other_needs_bra or other_needs_ket:
             ret = self.contract(other.adjoint).contract(other)
         else:

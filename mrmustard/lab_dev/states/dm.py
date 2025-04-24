@@ -19,15 +19,16 @@ This module contains the defintion of the density matrix class ``DM``.
 from __future__ import annotations
 from typing import Collection, Sequence
 
-import warnings
 import numpy as np
 from IPython.display import display
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
+from mrmustard.math.lattice.autoshape import autoshape_numba
+from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
+from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
@@ -54,7 +55,7 @@ class DM(State):
     short_name = "DM"
 
     @property
-    def is_positive(self) -> bool:  # TODO: revisit this
+    def is_positive(self) -> bool:
         r"""
         Whether this DM corresponds to a positive operator.
 
@@ -66,23 +67,27 @@ class DM(State):
             >>> from mrmustard.lab_dev import DM
             >>> assert DM.random([0]).is_positive
         """
-        batch_dim = self.ansatz.batch_size
-        if batch_dim > 1:
-            raise ValueError(
-                "Physicality conditions are not implemented for batch dimension larger than 1."
+        if self.ansatz._lin_sup:
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for a mixture of states."
             )
         if self.ansatz.num_derived_vars > 0:
             raise ValueError("Physicality conditions are not implemented for derived variables.")
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for states with ArrayAnsatz."
+            )
         A = self.ansatz.A
         m = A.shape[-1] // 2
         gamma_A = A[..., :m, m:]
 
         if (
-            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+            math.real(math.norm(gamma_A - math.conj(math.einsum("...ij->...ji", gamma_A))))
+            > settings.ATOL
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return all(math.real(math.eigvals(gamma_A)) >= 0)
+        return math.all(math.real(math.eigvals(gamma_A)) >= 0)
 
     @property
     def is_physical(self) -> bool:
@@ -105,15 +110,11 @@ class DM(State):
         r"""
         Probability (trace) of this DM, using the batch dimension of the Ansatz
         as a convex combination of states.
-
-        .. code-block::
-
-            >>> import numpy as np
-            >>> from mrmustard.lab_dev import DM
-
-            >>> assert np.isclose(DM.random([0]).probability, 1.0)
         """
-        return math.sum(self._probabilities)
+        idx_ket = self.wires.output.ket.indices
+        idx_bra = self.wires.output.bra.indices
+        rep = self.ansatz.trace(idx_ket, idx_bra)
+        return math.real(rep.scalar)
 
     @property
     def purity(self) -> float:
@@ -129,23 +130,17 @@ class DM(State):
         return self.L2_norm
 
     @property
-    def _probabilities(self) -> RealVector:
-        r"""
-        Element-wise probabilities along the batch dimension of this DM.
-        Useful for cases where the batch dimension does not mean a convex combination of states.
-        """
-        idx_ket = self.wires.output.ket.indices
-        idx_bra = self.wires.output.bra.indices
-        rep = self.ansatz.trace(idx_ket, idx_bra)
-        return math.real(math.sum(rep.scalar))
+    def purity(self) -> float:
+        r"""Computes the putiry (:math:`tr(rho^2)) of this DM.
 
-    @property
-    def _purities(self) -> RealVector:
-        r"""
-        Element-wise purities along the batch dimension of this DM.
-        Useful for cases where the batch dimension does not mean a convex combination of states.
+        .. code-block::
+
+            >>> import numpy as np
+            >>> from mrmustard.lab_dev import DM, Vacuum
+
+            >>> assert np.isclose(Vacuum([0]).dm().purity, 1.0)
         """
-        return self._L2_norms / self._probabilities
+        return self.L2_norm
 
     @classmethod
     def from_ansatz(
@@ -173,11 +168,12 @@ class DM(State):
         modes: Collection[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
-        atol_purity: None = None,  # pylint: disable=unused-argument
+        atol_purity: float | None = None,  # pylint: disable=unused-argument
     ) -> DM:
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
-        which parametrize the Wigner function.
+        which parametrize the s-parametrized phase space function
+        :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
 
         Args:
             modes: The modes of this states.
@@ -206,6 +202,8 @@ class DM(State):
         cov, means, coeff = triple
         cov = math.astensor(cov)
         means = math.astensor(means)
+        if cov.shape[:-2] != ():
+            raise NotImplementedError("Not implemented for batched states.")
         shape_check(cov, means, 2 * len(modes), "Phase space")
         return coeff * DM.from_ansatz(
             modes,
@@ -249,7 +247,7 @@ class DM(State):
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:  # TODO: revisit
+    ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -277,32 +275,25 @@ class DM(State):
             >>> from mrmustard.lab_dev import Vacuum
             >>> assert Vacuum([0]).dm().auto_shape() == (1,1)
         """
-        # experimental:
-        if self.ansatz.batch_size <= 1:
-            try:  # fock
-                shape = self.ansatz.core_shape
-            except AttributeError:  # bargmann
-                if self.ansatz.num_derived_vars == 0:
-                    ansatz = self.ansatz
-                    A, b, c = (
-                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
-                        if ansatz.batch_shape != ()  # tensorflow
-                        else ansatz.triple
-                    )
-                    ansatz = ansatz / self.probability
-                    shape = autoshape_numba(
-                        math.asnumpy(A),
-                        math.asnumpy(b),
-                        math.asnumpy(c),
-                        max_prob or settings.AUTOSHAPE_PROBABILITY,
-                        max_shape or settings.AUTOSHAPE_MAX,
-                    )
-                    shape = tuple(shape) + tuple(shape)
-                else:
-                    shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
-        else:
-            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
-            shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
+        if self.ansatz.batch_shape:
+            raise NotImplementedError("Batched auto_shape is not implemented.")
+        try:  # fock
+            shape = self.ansatz.core_shape
+        except AttributeError:  # bargmann
+            if self.ansatz.num_derived_vars == 0:
+                ansatz = self.ansatz
+                A, b, c = ansatz.triple
+                ansatz = ansatz / self.probability
+                shape = autoshape_numba(
+                    math.asnumpy(A),
+                    math.asnumpy(b),
+                    math.asnumpy(c),
+                    max_prob or settings.AUTOSHAPE_PROBABILITY,
+                    max_shape or settings.AUTOSHAPE_MAX,
+                )
+                shape = tuple(shape) + tuple(shape)
+            else:
+                shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
         return tuple(shape)
@@ -356,7 +347,10 @@ class DM(State):
 
             >>> assert np.isclose(rho.expectation(Rgate(0, np.pi)), answer)
         """
-
+        if (self.ansatz and self.ansatz.batch_shape) or (
+            operator.ansatz and operator.ansatz.batch_shape
+        ):
+            raise NotImplementedError("Batched expectation values are not implemented.")
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
             raise ValueError(msg)
@@ -379,6 +373,40 @@ class DM(State):
             result = (self.contract(operator)) >> TraceOut(self.modes)
 
         return result
+
+    def fidelity(self, other: State) -> float:
+        r"""
+        The fidelity between this DM and another ket or DM. If the other state is a Ket, fidelity
+        is computed as the squared overlap, consistent with the pure state's fidelity.
+        If the other state is a DM and the representation is Fock, the fidelity is computed as in
+        Richard Jozsa (1994) Fidelity for Mixed Quantum States,
+        Journal of Modern Optics, 41:12, 2315-2323, DOI: 10.1080/09500349414552171
+        Otherwise, the fidelity is computed as the Gaussian fidelity as in
+        arXiv:2102.05748 <https://arxiv.org/pdf/2102.05748.pdf> (square definition).
+
+        Args:
+            other: The other state.
+
+        Returns:
+            The fidelity between this DM and the other state (Ket or DM).
+        """
+        if self.modes != other.modes:
+            raise ValueError("Cannot compute fidelity between states with different modes.")
+        if isinstance(other, DM):
+            try:
+                cov1, mean1, _ = self.phase_space(0)
+                cov2, mean2, _ = other.phase_space(0)
+                return gaussian_fidelity(mean1, cov1, mean2, cov2)
+            except ValueError:  # array ansatz
+                shape1 = self.auto_shape()
+                shape2 = other.auto_shape()
+                min_shape = tuple(min(s1, s2) for s1, s2 in zip(shape1, shape2))
+                slc = tuple(slice(None, s) for s in min_shape)
+                side = np.prod([min_shape[i] for i in range(len(min_shape) // 2)])
+                dm1 = math.reshape(self.fock_array(min_shape)[slc], (side, side))
+                dm2 = math.reshape(other.fock_array(min_shape)[slc], (side, side))
+                return fock_dm_fidelity(dm1, dm2)
+        return other.expectation(self)  # assuming other is a ket
 
     def fock_array(
         self, shape: int | Sequence[int] | None = None, standard_order: bool = False
@@ -427,30 +455,15 @@ class DM(State):
         array = super().fock_array(shape or self.auto_shape())
         if standard_order:
             m = self.n_modes
-            axes = tuple(range(m, 2 * m)) + tuple(
-                range(m)
+            batch_dims = self.ansatz.batch_dims
+            axes = (
+                tuple(range(batch_dims))
+                + tuple(range(batch_dims + m, 2 * m + batch_dims))
+                + tuple(range(batch_dims, batch_dims + m))
             )  # to take care of multi-mode case, otherwise, for a single mode we could just use a simple transpose method
             array = math.transpose(array, perm=axes)
+
         return array
-
-    def normalize(self) -> DM:
-        r"""
-        Normalizes the state so that it has unit trace.
-
-        Returns:
-            A ``DM``.
-
-        .. code-block::
-
-            >>> import numpy as np
-            >>> from mrmustard.lab_dev import DM
-
-            >>> rho = DM.random([0,1]) * 2
-
-            >>> assert np.isclose(rho.probability, 2.0)
-            >>> assert np.isclose(rho.normalize().probability, 1.0)
-        """
-        return self / self.probability
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:

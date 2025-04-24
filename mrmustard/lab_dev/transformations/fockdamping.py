@@ -18,6 +18,8 @@ The class representing a rotation gate.
 
 from __future__ import annotations
 
+from typing import Sequence
+
 from .base import Operation
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
@@ -65,7 +67,7 @@ class FockDamping(Operation):
     def __init__(
         self,
         mode: int,
-        damping: float = 0.0,
+        damping: float | Sequence[float] = 0.0,
         damping_trainable: bool = False,
         damping_bounds: tuple[float | None, float | None] = (0.0, None),
     ):

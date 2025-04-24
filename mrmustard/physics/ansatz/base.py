@@ -18,7 +18,7 @@ This module contains the base ansatz class.
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Any, Callable
+from typing import Any, Callable, Sequence
 
 from numpy.typing import ArrayLike
 
@@ -41,6 +41,7 @@ class Ansatz(ABC):
     """
 
     def __init__(self) -> None:
+        self._lin_sup = False
         self._fn = None
         self._kwargs = {}
 
@@ -49,6 +50,13 @@ class Ansatz(ABC):
     def batch_dims(self) -> tuple[int, ...]:
         r"""
         The number of batch dimensions of the ansatz.
+        """
+
+    @property
+    @abstractmethod
+    def core_dims(self) -> int:
+        r"""
+        The number of core dimensions of the ansatz.
         """
 
     @property
@@ -122,9 +130,9 @@ class Ansatz(ABC):
     def contract(
         self,
         other: Ansatz,
-        idx1: int | tuple[int, ...] = tuple(),
-        idx2: int | tuple[int, ...] = tuple(),
-        batch_str: str | None = None,
+        idx1: int | tuple[str | int, ...],
+        idx2: int | tuple[str | int, ...],
+        idx_out: int | tuple[str | int, ...],
     ) -> Ansatz:
         r"""
         Contract two ansatz together.
@@ -132,9 +140,7 @@ class Ansatz(ABC):
             other: Another ansatz.
             idx1: The (optional) index of the first ansatz to contract.
             idx2: The (optional) index of the second ansatz to contract.
-            batch_str: The (optional) batch dimensions to contract over with the
-                same syntax as in ``np.einsum``. If not indicated, the batch dimensions
-                are taken in outer product.
+            idx_out: The (optional) index of the output ansatz.
         Returns:
             The resulting contracted ansatz.
         """
@@ -143,6 +149,20 @@ class Ansatz(ABC):
     def reorder(self, order: tuple[int, ...] | list[int]) -> Ansatz:
         r"""
         Reorders the ansatz indices.
+        """
+
+    @abstractmethod
+    def reorder_batch(self, order: Sequence[int]) -> Ansatz:
+        r"""
+        Reorders the batch dimensions of the ansatz.
+        The length of ``order`` must equal the number of batch dimensions.
+        This method returns a new ansatz object.
+
+        Args:
+            order: The desired order of the batch dimensions.
+
+        Returns:
+            A new Ansatz with reordered batch dimensions.
         """
 
     @abstractmethod

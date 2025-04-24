@@ -99,46 +99,6 @@ def wigner_to_bargmann_psi(cov, means):
     # NOTE: c for th psi is to calculated from the global phase formula.
 
 
-def wigner_to_bargmann_Choi(X, Y, d):
-    r"""Converts the wigner representation in terms of covariance matrix and mean vector into the Bargmann `A,B,C` triple
-    for a channel (i.e. for M modes, A has shape 4M x 4M and B has shape 4M)."""
-    N = X.shape[-1] // 2
-    I2 = math.eye(2 * N, dtype=X.dtype)
-    XT = math.transpose(X)
-    xi = 0.5 * (I2 + math.matmul(X, XT) + 2 * Y / settings.HBAR)
-    detxi = math.det(xi)
-    xi_inv = math.inv(xi)
-    A = math.block(
-        [
-            [I2 - xi_inv, math.matmul(xi_inv, X)],
-            [math.matmul(XT, xi_inv), I2 - math.matmul(math.matmul(XT, xi_inv), X)],
-        ]
-    )
-    I = math.eye(N, dtype=math.complex128)
-    o = math.zeros_like(I)
-    R = math.block(
-        [[I, 1j * I, o, o], [o, o, I, -1j * I], [I, -1j * I, o, o], [o, o, I, 1j * I]]
-    ) / np.sqrt(2)
-    A = math.matmul(math.matmul(R, A), math.dagger(R))
-    A = math.matmul(math.Xmat(2 * N), A)
-    b = math.matvec(xi_inv, d)
-    B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(
-        settings.HBAR, dtype=R.dtype
-    )
-    C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(detxi, dtype=b.dtype)
-    # now A and B have order [out_r, in_r out_l, in_l].
-    return A, B, math.cast(C, math.complex128)
-
-
-def wigner_to_bargmann_U(X, d):
-    r"""Converts the wigner representation in terms of covariance matrix and mean vector into the Bargmann `A,B,C` triple
-    for a unitary (i.e. for `M` modes, `A` has shape `2M x 2M` and `B` has shape `2M`).
-    """
-    N = X.shape[-1] // 2
-    A, B, C = wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
-    return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
-
-
 def norm_ket(A, b, c):
     r"""Calculates the l2 norm of a Ket with a representation given by the Bargmann triple A,b,c."""
     M = math.block([[math.conj(A), -math.eye_like(A)], [-math.eye_like(A), A]])

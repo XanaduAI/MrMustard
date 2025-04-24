@@ -18,6 +18,7 @@
 
 import pytest
 
+from mrmustard import math
 from mrmustard.lab_dev.states import DisplacedSqueezed, Vacuum
 from mrmustard.lab_dev.transformations import Dgate, Sgate
 
@@ -55,7 +56,12 @@ class TestDisplacedSqueezed:
         assert state3.parameters.y.value == 2
 
     @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
-    def test_representation(self, modes, x, y, r, phi):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, modes, x, y, r, phi, batch_shape):
+        x = math.broadcast_to(x, batch_shape)
+        x, y, r, phi = math.broadcast_arrays(x, y, r, phi)
         rep = DisplacedSqueezed(modes, x, y, r, phi).ansatz
-        exp = (Vacuum(modes) >> Sgate(modes, r, phi) >> Dgate(modes, x, y)).ansatz
+        exp = (
+            Vacuum(modes) >> Sgate(modes, r, phi).contract(Dgate(modes, x, y), "zip")
+        ).ansatz  # TODO: revisit rshift
         assert rep == exp

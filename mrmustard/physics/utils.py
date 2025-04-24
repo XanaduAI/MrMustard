@@ -27,7 +27,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
 #  ~~~~~~~~~
 
 
-def generate_batch_str(batch_shape: tuple[int, ...], offset: int = 0) -> str:
+def generate_batch_str(batch_dim: int, offset: int = 0) -> str:
     r"""
     Generate a string of characters to represent the batch dimensions.
 
@@ -38,20 +38,35 @@ def generate_batch_str(batch_shape: tuple[int, ...], offset: int = 0) -> str:
     Returns:
         A string of characters to represent the batch dimensions.
     """
-    return "".join([chr(i) for i in range(97 + offset, 97 + offset + len(batch_shape))])
+    return "".join([chr(97 + i) for i in range(offset, offset + batch_dim)])
 
 
-def outer_product_batch_str(*batch_shapes: tuple[int, ...]) -> str:
+def outer_product_batch_str(*batch_dims: int, lin_sup: tuple[int, ...] | None = None) -> str:
     r"""
     Creates the einsum string for the outer product of the given tuple of dimensions.
-    E.g. for (2,1,3) it returns ab,c,def->abcdef
+    E.g. for (2,1,3) it returns ab,c,def->abcdef.
+    If lin_sup is provided, the linear superposition dimensions are moved to the end.
+    E.g. for (2,1,3) and lin_sup=(0,1) it returns ab,c,def->adefbc, as b and c are the linear superposition dimensions
+    of the 0th and 1st tensors.
     """
     strs = []
     offset = 0
-    for batch_shape in batch_shapes:
-        strs.append(generate_batch_str(batch_shape, offset))
-        offset += len(batch_shape)
-    return ",".join(strs) + "->" + "".join(strs)
+    for batch_dim in batch_dims:
+        strs.append(generate_batch_str(batch_dim, offset))
+        offset += batch_dim
+
+    orig_strs = strs.copy()  # keep original for input part of einsum string
+
+    if lin_sup is not None:
+        lin_sup_chars = []
+        for idx in lin_sup:
+            lin_sup_chars.append(strs[idx][-1])
+            strs[idx] = strs[idx][:-1]
+        output = "".join(strs) + "".join(lin_sup_chars)
+    else:
+        output = "".join(strs)
+
+    return ",".join(orig_strs) + "->" + output
 
 
 def reshape_args_to_batch_string(
@@ -115,11 +130,28 @@ def verify_batch_triple(
         )
 
 
-def zip_batch_strings(*ndims: int) -> str:
+def zip_batch_strings(*batch_dims: int) -> str:
     r"""
     Creates a batch string for zipping over the batch dimensions.
     """
-    if len(set(ndims)) != 1:
-        raise ValueError(f"Arrays must have the same number of batch dimensions, got {ndims}")
-    str_ = "".join([chr(97 + i) for i in range(ndims[0])])
-    return ",".join([str_] * len(ndims)) + "->" + str_
+    input = ",".join([generate_batch_str(batch_dim) for batch_dim in batch_dims])
+    return input + "->" + generate_batch_str(max(batch_dims))
+
+
+def lin_sup_batch_str(batch_str: str) -> str:
+    r"""
+    Given a batch string, appends the linear superposition batch dimension to the end.
+
+    Args:
+        batch_str: The batch string to append the linear superposition batch dimension to.
+
+    Returns:
+        The batch string with the linear superposition batch dimension appended to the end.
+    """
+    input_str, output_str = batch_str.split("->")
+    inputs = input_str.split(",")
+    max_char = max(ord(i) for i in batch_str)
+    lin_sups = [chr(max_char + offset) for offset in range(1, len(inputs) + 1)]
+    new_input = ",".join([input + lin_sup for input, lin_sup in zip(inputs, lin_sups)])
+    new_output = output_str + "".join(lin_sups)
+    return f"{new_input}->{new_output}"

@@ -145,7 +145,7 @@ class Transformation(CircuitComponent):
             raise NotImplementedError(
                 "Only Transformations with the same number of input and output wires are supported."
             )
-        if not isinstance(self.ansatz, PolyExpAnsatz):
+        if not isinstance(self.ansatz, PolyExpAnsatz):  # pragma: no cover
             raise NotImplementedError("Only Bargmann representation is supported.")
 
         A, b, _ = self.dual.ansatz.conj.triple
@@ -153,17 +153,19 @@ class Transformation(CircuitComponent):
             Representation(
                 PolyExpAnsatz(
                     math.inv(A),
-                    -math.inv(A) @ b,
+                    math.einsum("...ij,...j->...i", -math.inv(A), b),
                     math.ones(self.ansatz.batch_shape, dtype=math.complex128),
                 ),
                 self.wires.copy(new_ids=True),
             )
         )
-        almost_identity = self.contract(almost_inverse)
+        almost_identity = self.contract(almost_inverse, "zip")
         invert_this_c = almost_identity.ansatz.c
         actual_inverse = self._from_attributes(
             Representation(
-                PolyExpAnsatz(math.inv(A), -math.inv(A) @ b, 1 / invert_this_c),
+                PolyExpAnsatz(
+                    math.inv(A), math.einsum("...ij,...j->...i", -math.inv(A), b), 1 / invert_this_c
+                ),
                 self.wires.copy(new_ids=True),
             ),
             self.name + "_inv",
@@ -355,7 +357,7 @@ class Channel(Map):
     short_name = "Ch"
 
     @property
-    def is_CP(self) -> bool:  # TODO: revisit this
+    def is_CP(self) -> bool:
         r"""
         Whether this channel is completely positive (CP).
 
@@ -366,26 +368,32 @@ class Channel(Map):
             >>> channel = Channel.random((0, 1, 2))
             >>> assert channel.is_CP
         """
-        batch_dim = self.ansatz.batch_size
-        if batch_dim > 1:
-            raise ValueError(
-                "Physicality conditions are not implemented for batch dimension larger than 1."
+        if self.ansatz._lin_sup:
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for a mixture of states."
             )
         if self.ansatz.num_derived_vars > 0:
-            raise ValueError("Physicality conditions are not implemented for derived variables.")
-        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for derived variables."
+            )
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for states with ArrayAnsatz."
+            )
+        A = self.ansatz.A
         m = A.shape[-1] // 2
-        gamma_A = A[:m, m:]
+        gamma_A = A[..., :m, m:]
 
         if (
-            math.real(math.norm(gamma_A - math.conj(gamma_A.T))) > settings.ATOL
+            math.real(math.norm(gamma_A - math.conj(math.einsum("...ij->...ji", gamma_A))))
+            > settings.ATOL
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return all(math.real(math.eigvals(gamma_A)) > -settings.ATOL)
+        return math.all(math.real(math.eigvals(gamma_A)) > -settings.ATOL)
 
     @property
-    def is_TP(self) -> bool:  # TODO: revisit this
+    def is_TP(self) -> bool:
         r"""
         Whether this channel is trace preserving (TP).
 
@@ -396,19 +404,29 @@ class Channel(Map):
             >>> channel = Channel.random((0, 1, 2))
             >>> assert channel.is_TP
         """
-        batch_dim = self.ansatz.batch_size
-        if batch_dim > 1:
-            raise ValueError(
-                "Physicality conditions are not implemented for batch dimension larger than 1."
+        if self.ansatz._lin_sup:
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for a mixture of states."
             )
         if self.ansatz.num_derived_vars > 0:
-            raise ValueError("Physicality conditions are not implemented for derived variables.")
-        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for derived variables."
+            )
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for states with ArrayAnsatz."
+            )
+        A = self.ansatz.A
         m = A.shape[-1] // 2
-        gamma_A = A[:m, m:]
-        lambda_A = A[m:, m:]
-        temp_A = gamma_A + math.conj(lambda_A.T) @ math.inv(math.eye(m) - gamma_A.T) @ lambda_A
-        return math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL
+        gamma_A = A[..., :m, m:]
+        lambda_A = A[..., m:, m:]
+        temp_A = (
+            gamma_A
+            + math.conj(math.einsum("...ij->...ji", lambda_A))
+            @ math.inv(math.eye(m) - math.einsum("...ij->...ji", gamma_A))
+            @ lambda_A
+        )
+        return math.all(math.real(math.norm(temp_A - math.eye(m))) < settings.ATOL)
 
     @property
     def is_physical(self) -> bool:
@@ -495,7 +513,8 @@ class Channel(Map):
             This channel has a Bargmann triple that is computed in https://arxiv.org/pdf/2209.06069. We borrow
             the formulas from the paper to implement the corresponding channel.
         """
-
+        if X.shape[:-2]:
+            raise NotImplementedError("Batching is not implemented.")
         if X.shape != (2 * len(modes_out), 2 * len(modes_in)):
             raise ValueError(
                 f"The dimension of X matrix ({X.shape}) and number of modes ({len(modes_in), len(modes_out)}) don't match."
@@ -524,7 +543,12 @@ class Channel(Map):
         U = Unitary.random(range(3 * m), max_r)
         u_psi = Vacuum(range(2 * m)) >> U
         ansatz = u_psi.ansatz
-        kraus = ansatz.conj.contract(ansatz, range(2 * m), range(2 * m))
+        kraus = ansatz.conj.contract(
+            ansatz,
+            idx1=list(range(4 * m)),
+            idx2=list(range(2 * m)) + list(range(4 * m, 6 * m)),
+            idx_out=list(range(2 * m, 6 * m)),
+        )
         return Channel.from_bargmann(modes, modes, kraus.triple)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:

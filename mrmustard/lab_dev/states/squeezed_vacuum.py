@@ -17,7 +17,7 @@ The class representing a squeezed vacuum state.
 """
 
 from __future__ import annotations
-
+from typing import Sequence
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .ket import Ket
@@ -53,8 +53,8 @@ class SqueezedVacuum(Ket):
     def __init__(
         self,
         mode: int,
-        r: float = 0.0,
-        phi: float = 0.0,
+        r: float | Sequence[float] = 0.0,
+        phi: float | Sequence[float] = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
         r_bounds: tuple[float | None, float | None] = (None, None),

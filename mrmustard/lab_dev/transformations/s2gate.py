@@ -17,7 +17,7 @@ The class representing a two-mode squeezing gate.
 """
 
 from __future__ import annotations
-
+from typing import Sequence
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
@@ -68,8 +68,8 @@ class S2gate(Unitary):
     def __init__(
         self,
         modes: tuple[int, int],
-        r: float = 0.0,
-        phi: float = 0.0,
+        r: float | Sequence[float] = 0.0,
+        phi: float | Sequence[float] = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
         r_bounds: tuple[float | None, float | None] = (0, None),

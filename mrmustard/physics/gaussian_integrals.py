@@ -232,32 +232,14 @@ def join_Abc(
     batch_dim1, batch_dim2 = len(batch1), len(batch2)
 
     if batch_string is None:
-        batch_string = outer_product_batch_str(batch1, batch2)
-
-    if "->" not in batch_string:
-        raise ValueError(
-            f"Invalid batch string format: {batch_string}. Expected format: 'in1,in2->out.'"
-        )
+        batch_string = outer_product_batch_str(len(batch1), len(batch2))
 
     input_str, output_str = batch_string.split("->")
     input_parts = input_str.split(",")
-    if len(input_parts) != 2:
-        raise ValueError(f"Expected 2 input parts in batch string, got {len(input_parts)}.")
-
     in1, in2 = input_parts
-
-    if len(in1) != len(batch1):
-        raise ValueError(
-            f"Batch dimensions in first input ({batch_dim1}) don't match the provided string '{in1}'."
-        )
-    if len(in2) != len(batch2):
-        raise ValueError(
-            f"Batch dimensions in second input ({batch_dim2}) don't match the provided string '{in2}'."
-        )
 
     nA1, mA1 = A1.shape[-2:]
     nA2, mA2 = A2.shape[-2:]
-
     nb1 = b1.shape[-1]
     nb2 = b2.shape[-1]
 

@@ -21,7 +21,7 @@ from mrmustard import math, settings
 from mrmustard.lab_dev import BSgate, Circuit, S2gate, Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
 
-from ..conftest import skip_np, skip_jax
+from ..conftest import skip_jax, skip_np
 
 
 def test_tensorboard_callback(tmp_path):

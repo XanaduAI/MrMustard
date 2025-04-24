@@ -111,7 +111,7 @@ class Settings:
         r"""Whether or not to display the progress bar when performing training. Default is ``True``."""
 
         self.STABLE_FOCK_CONVERSION: bool = False
-        r"""Whether to use the ``vanilla_stable`` function when computing Fock amplitudes (more stable, but slower). Default is ``False``."""
+        r"""Whether to use the ``stable`` function when computing Fock amplitudes (more stable, but slower). Default is ``False``."""
 
         self.UNSAFE_ZIP_BATCH: bool = False
         r"""Whether to operate element-wise within a batch of Ansatze. If ``True``, the length of the batch dimension of two circuit components must be the same. Default is ``False``."""

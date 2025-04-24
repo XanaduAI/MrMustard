@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from mrmustard import settings, math
+from mrmustard import math, settings
 from mrmustard.lab_dev.states import Coherent, QuadratureEigenstate
 from mrmustard.physics.wires import ReprEnum
 
@@ -38,8 +38,10 @@ class TestQuadratureEigenstate:
         state = QuadratureEigenstate(0, x=1, phi=0)
         assert state.auto_shape() == state.manual_shape
 
-    def test_dual(self):
-        state = QuadratureEigenstate(0, x=0, phi=0)
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_dual(self, batch_shape):
+        x = math.zeros(batch_shape)
+        state = QuadratureEigenstate(0, x=x)
         assert math.real(state >> state.dual) == np.inf
 
     @pytest.mark.parametrize("modes,x,phi", zip(modes, x, phi))

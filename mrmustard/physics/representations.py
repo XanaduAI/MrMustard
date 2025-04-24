@@ -121,16 +121,23 @@ class Representation:
                 f"of type {type(other.ansatz)}. Please call either `to_fock` or `to_bargmann` ",
                 "on one of the representations.",
             )
-        wires_result, perm = self.wires @ other.wires
-        idx_z, idx_zconj = self.wires.contracted_indices(other.wires)
+        wires_result, _ = self.wires @ other.wires
+        core1, core2, core_out = self.wires.contracted_labels(other.wires)
         if mode == "zip":
             eins_str = zip_batch_strings(
-                len(self.ansatz.batch_shape), len(other.ansatz.batch_shape)
+                self.ansatz.batch_dims - self.ansatz._lin_sup,
+                other.ansatz.batch_dims - other.ansatz._lin_sup,
             )
         elif mode == "kron":
-            eins_str = outer_product_batch_str(self.ansatz.batch_shape, other.ansatz.batch_shape)
-        ansatz = self.ansatz.contract(other.ansatz, batch_str=eins_str, idx1=idx_z, idx2=idx_zconj)
-        ansatz = ansatz.reorder(perm) if perm else ansatz
+            eins_str = outer_product_batch_str(
+                self.ansatz.batch_dims - self.ansatz._lin_sup,
+                other.ansatz.batch_dims - other.ansatz._lin_sup,
+            )
+        batch12, batch_out = eins_str.split("->")
+        batch1, batch2 = batch12.split(",")
+        ansatz = self.ansatz.contract(
+            other.ansatz, list(batch1) + core1, list(batch2) + core2, list(batch_out) + core_out
+        )
         return Representation(ansatz, wires_result)
 
     def fock_array(self, shape: int | Sequence[int]) -> ComplexTensor:
@@ -157,40 +164,23 @@ class Representation:
             raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
         try:
             A, b, c = self.ansatz.triple
-
-            As = (
-                math.reshape(A, (-1, *A.shape[-2:])) if self.ansatz.batch_shape != () else A
-            )  # tensorflow
-            bs = (
-                math.reshape(b, (-1, *A.shape[-1:])) if self.ansatz.batch_shape != () else b
-            )  # tensorflow
-            cs = (
-                math.reshape(c, (-1, *c.shape[self.ansatz.batch_dims :]))
-                if self.ansatz.batch_shape != ()  # tensorflow
-                else c
+            G = math.hermite_renormalized(
+                A,
+                b,
+                math.ones(self.ansatz.batch_shape, dtype=math.complex128),
+                shape=shape + self.ansatz.shape_derived_vars,
             )
-
-            batch = (self.ansatz.batch_size,) if self.ansatz.batch_shape != () else ()  # tensorflow
-
-            if self.ansatz.batch_shape != ():  # tensorflow
-                G = math.astensor(
-                    [
-                        math.hermite_renormalized(A, b, complex(1), shape=shape + cs.shape[1:])
-                        for A, b in zip(As, bs)
-                    ]
-                )
-            else:
-                G = math.hermite_renormalized(As, bs, complex(1), shape=shape + cs.shape)
-
-            G = math.reshape(G, batch + shape + (-1,))
-            cs = math.reshape(cs, batch + (-1,))
+            G = math.reshape(G, self.ansatz.batch_shape + shape + (-1,))
+            cs = math.reshape(c, self.ansatz.batch_shape + (-1,))
             core_str = "".join(
-                [chr(i) for i in range(97, 97 + len(G.shape[1:] if batch else G.shape))]
+                [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))]
             )
             ret = math.einsum(f"...{core_str},...{core_str[-1]}->...{core_str[:-1]}", G, cs)
+            if self.ansatz._lin_sup:
+                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         except AttributeError:
             ret = self.ansatz.reduce(shape).array
-        return math.reshape(ret, self.ansatz.batch_shape + shape)
+        return ret
 
     def to_bargmann(self) -> Representation:
         r"""
@@ -218,7 +208,8 @@ class Representation:
                 an ``int``, it is broadcasted to all the dimensions. If ``None``, it
                 defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
         """
-        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=self.ansatz.batch_dims)
+        batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
+        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
         try:
             if self.ansatz.num_derived_vars == 0:
                 fock._original_abc_data = self.ansatz.triple

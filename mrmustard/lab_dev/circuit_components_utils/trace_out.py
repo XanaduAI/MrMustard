@@ -18,7 +18,6 @@ The class representing a trace out operation.
 
 from __future__ import annotations
 
-from mrmustard import math
 from mrmustard.physics import triples
 
 from ..circuit_components import CircuitComponent
@@ -88,17 +87,29 @@ class TraceOut(CircuitComponent):
         """
         ket = other.wires.output.ket
         bra = other.wires.output.bra
-        idx_zconj = [bra[m].indices[0] for m in self.wires.modes & bra.modes]
-        idx_z = [ket[m].indices[0] for m in self.wires.modes & ket.modes]
         if len(self.wires) == 0:
             ansatz = other.ansatz
             wires = other.wires
         elif not ket or not bra:
-            ansatz = other.ansatz.conj.contract(other.ansatz, idx_z, idx_z)
+            B = other.ansatz.batch_dims
+            C = other.ansatz.core_dims
+            batch = [chr(97 + i) for i in range(B)]
+            wires = ket + bra
+            core1 = list(range(C))
+            core2 = list(range(C, 2 * C))
+            for i, w in enumerate(wires.output):
+                if w.mode in self.wires.modes:
+                    core2[i] = core1[i]
+            core_out = sorted(set(core1) ^ set(core2))
+            ansatz1 = other.ansatz.conj if not bra else other.ansatz
+            ansatz2 = other.ansatz if not bra else other.ansatz.conj
+            ansatz = ansatz1.contract(ansatz2, batch + core1, batch + core2, batch + core_out)
             wires, _ = (other.wires.adjoint @ other.wires)[0] @ self.wires
         else:
+            idx_zconj = [bra[m].indices[0] for m in self.wires.modes & bra.modes]
+            idx_z = [ket[m].indices[0] for m in self.wires.modes & ket.modes]
             ansatz = other.ansatz.trace(idx_z, idx_zconj)
             wires, _ = other.wires @ self.wires
 
         cpt = other._from_attributes(Representation(ansatz, wires))
-        return math.sum(cpt.ansatz.scalar) if len(cpt.wires) == 0 else cpt
+        return cpt.ansatz.scalar if len(cpt.wires) == 0 else cpt

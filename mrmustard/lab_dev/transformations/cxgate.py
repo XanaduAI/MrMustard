@@ -17,7 +17,7 @@ The class representing a controlled-X gate.
 """
 
 from __future__ import annotations
-
+from typing import Sequence
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .base import Unitary
@@ -57,7 +57,7 @@ class CXgate(Unitary):
     def __init__(
         self,
         modes: tuple[int, int],
-        s: float = 0.0,
+        s: float | Sequence[float] = 0.0,
         s_trainable: bool = False,
         s_bounds: tuple[float | None, float | None] = (None, None),
     ):

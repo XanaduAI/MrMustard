@@ -17,7 +17,7 @@ The class representing a rotation gate.
 """
 
 from __future__ import annotations
-
+from typing import Sequence
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
@@ -50,7 +50,7 @@ class Rgate(Unitary):
     def __init__(
         self,
         mode: int,
-        theta: float = 0.0,
+        theta: float | Sequence[float] = 0.0,
         theta_trainable: bool = False,
         theta_bounds: tuple[float | None, float | None] = (0.0, None),
     ):

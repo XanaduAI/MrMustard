@@ -12,9 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-The point of entry for the tensor wrappers.
-"""
+"""Vanilla strategies for Fock representation calculation, including core, batched, and gradient functions."""
 
-from .mmtensor import *
-from .xptensor import *
+from .batch import vanilla_batch_numba
+from .core import vanilla_numba, stable_numba
+from .gradients import vanilla_batch_vjp_numba, vanilla_vjp_numba
+
+__all__ = [
+    "vanilla_numba",
+    "stable_numba",
+    "vanilla_batch_numba",
+    "vanilla_vjp_numba",
+    "vanilla_batch_vjp_numba",
+]

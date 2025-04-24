@@ -17,7 +17,7 @@ The class representing a noisy attenuator channel.
 """
 
 from __future__ import annotations
-
+from typing import Sequence
 from .base import Channel
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
@@ -76,7 +76,7 @@ class Attenuator(Channel):
     def __init__(
         self,
         mode: int,
-        transmissivity: float = 1.0,
+        transmissivity: float | Sequence[float] = 1.0,
         transmissivity_trainable: bool = False,
         transmissivity_bounds: tuple[float | None, float | None] = (0.0, 1.0),
     ):

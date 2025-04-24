@@ -24,14 +24,13 @@ import warnings
 from IPython.display import display
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.lattice.strategies.vanilla import autoshape_numba
+from mrmustard.math.lattice.autoshape import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
-    RealVector,
     Scalar,
     Batch,
     ComplexMatrix,
@@ -55,7 +54,7 @@ class Ket(State):
     short_name = "Ket"
 
     @property
-    def is_physical(self) -> bool:  # TODO: revisit this
+    def is_physical(self) -> bool:
         r"""
         Whether the ket object is a physical one.
 
@@ -73,15 +72,19 @@ class Ket(State):
 
             >>> assert psi.is_physical
         """
-        batch_dim = self.ansatz.batch_size
-        if batch_dim > 1:
-            raise ValueError(
-                "Physicality conditions are not implemented for batch dimension larger than 1."
+        if self.ansatz._lin_sup:
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for a linear superposition of states."
             )
         if self.ansatz.num_derived_vars > 0:
-            raise ValueError("Physicality conditions are not implemented for derived variables.")
-        A = self.ansatz.A[0] if batch_dim == 1 else self.ansatz.A
-        return all(math.abs(math.eigvals(A)) < 1) and math.allclose(
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for derived variables."
+            )
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError(
+                "Physicality conditions are not implemented for states with ArrayAnsatz."
+            )
+        return math.all(math.abs(math.eigvals(self.ansatz.A)) < 1) and math.allclose(
             self.probability, 1, settings.ATOL
         )
 
@@ -117,12 +120,13 @@ class Ket(State):
             >>> from mrmustard.lab_dev import Ket
             >>> assert Ket.random([0]).purity == 1.0
         """
-        return 1.0
-
-    @property
-    def _probabilities(self) -> RealVector:
-        r"""Element-wise L2 norm squared along the batch dimension of this Ket."""
-        return self._L2_norms
+        if self.ansatz:
+            shape = (
+                self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
+            )
+        else:
+            shape = ()
+        return math.ones(shape)
 
     @classmethod
     def from_ansatz(
@@ -150,14 +154,16 @@ class Ket(State):
         modes: Collection[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
-        atol_purity: float | None = 1e-5,
+        atol_purity: float | None = None,
     ) -> Ket:
         cov, means, coeff = triple
         cov = math.astensor(cov)
         means = math.astensor(means)
+        if cov.shape[:-2] != ():  # pragma: no cover
+            raise NotImplementedError("Not implemented for batched states.")
         shape_check(cov, means, 2 * len(modes), "Phase space")
         if atol_purity:
-            p = purity(cov)
+            p = math.cast(purity(cov), math.float64)
             math.error_if(
                 p,
                 p < 1.0 - atol_purity,
@@ -220,7 +226,7 @@ class Ket(State):
 
     def auto_shape(
         self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:  # TODO: revisit
+    ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
@@ -246,18 +252,18 @@ class Ket(State):
 
             >>> assert np.allclose(Vacuum([0]).fock_array(), np.array([1]))
         """
-        # experimental:
-        if self.ansatz.batch_size <= 1:
+        batch_shape = (
+            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
+        )
+        if batch_shape:
+            raise NotImplementedError("Batched auto_shape is not implemented.")
+        if not self.ansatz._lin_sup:
             try:  # fock
                 shape = self.ansatz.core_shape
             except AttributeError:  # bargmann
                 if self.ansatz.num_derived_vars == 0:
                     ansatz = self.ansatz.conj & self.ansatz
-                    A, b, c = (
-                        (ansatz.A[0], ansatz.b[0], ansatz.c[0])
-                        if ansatz.batch_shape != ()  # tensorflow
-                        else ansatz.triple
-                    )
+                    A, b, c = ansatz.triple
                     ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
@@ -269,7 +275,6 @@ class Ket(State):
                 else:
                     shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         else:
-            warnings.warn("auto_shape only looks at the shape of the first element of the batch.")
             shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
@@ -330,6 +335,10 @@ class Ket(State):
 
             >>> assert np.isclose(psi.expectation(Rgate(0, theta)), answer)
         """
+        if (self.ansatz and self.ansatz.batch_shape) or (
+            operator.ansatz and operator.ansatz.batch_shape
+        ):  # pragma: no cover
+            raise NotImplementedError("Batched expectation values are not implemented.")
 
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
@@ -356,24 +365,18 @@ class Ket(State):
 
         return result
 
-    def normalize(self) -> Ket:
+    def fidelity(self, other: State) -> float:
         r"""
-        Scales the state so that it has unit L2 norm.
+        The fidelity between this ket and another state.
 
-        Returns:
-            A ``DM``.
+        .. details::
 
-        .. code-block::
-
-            >>> import numpy as np
-            >>> from mrmustard.lab_dev import Ket
-
-            >>> psi = Ket.random([0,1]) * 2.0
-
-            >>> assert np.isclose(psi.probability , 4.0)
-            >>> assert np.isclose(psi.normalize().probability, 1.0)
+        .. math::
+            F(|\psi\rangle, \phi\rangle) = |\langle \psi, \phi \rangle|^2
         """
-        return self / math.sqrt(self.probability)
+        if self.modes != other.modes:
+            raise ValueError("Cannot compute fidelity between states with different modes.")
+        return self.expectation(other)
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
@@ -427,7 +430,6 @@ class Ket(State):
             >>> assert isinstance(psi >> U, Ket)
             >>> assert isinstance(psi >> channel, DM)
         """
-
         result = super().__rshift__(other)
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here

@@ -32,20 +32,15 @@ from scipy.stats import multivariate_normal
 from ..utils.settings import settings
 from .autocast import Autocast
 from .backend_base import BackendBase
-from .lattice.strategies import (
-    binomial,
-    vanilla,
-    vanilla_stable,
-    vanilla_stable_batch,
-    vanilla_batch,
-    fast_diagonal,
-)
+from .lattice import strategies
+
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
 
 np.set_printoptions(legacy="1.25")
+
 
 # pylint: disable=too-many-public-methods
 class BackendNumpy(BackendBase):  # pragma: no cover
@@ -68,6 +63,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
     def abs(self, array: np.ndarray) -> np.ndarray:
         return np.abs(array)
+
+    def all(self, array: np.ndarray) -> bool:
+        return np.all(array)
 
     def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
         return np.allclose(array1, array2, atol=atol, rtol=rtol)
@@ -193,10 +191,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return det
 
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
-        if len(array.shape) == 1:
+        if array.ndim in (1, 2):
             return np.diag(array, k=k)
-        elif len(array.shape) == 2:
-            return np.array([np.diag(l, k=k).tolist() for l in array])
         else:
             # fallback into more complex algorithm
             original_sh = array.shape
@@ -509,40 +505,17 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def DefaultEuclideanOptimizer() -> None:
         return None
 
-    def hermite_renormalized(
-        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int]
+    def hermite_renormalized_unbatched(
+        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
     ) -> np.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(c + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape.
+        if stable:
+            return strategies.stable_numba(tuple(shape), A, b, c)
+        return strategies.vanilla_numba(tuple(shape), A, b, c)
 
-        Args:
-            A: The A matrix.
-            b: The b vector.
-            c: The c scalar.
-            shape: The shape of the final tensor.
-
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-
-        shape = tuple(int(i) for i in shape)  # ensure each item in the tuple is of the same dtype
-        if settings.STABLE_FOCK_CONVERSION:
-            G = vanilla_stable(shape, A, b, c)
-        else:
-            G = vanilla(shape, A, b, c)
-
-        return G
-
-    def hermite_renormalized_batch(
-        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int]
+    def hermite_renormalized_batched(
+        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
     ) -> np.ndarray:
-        if settings.STABLE_FOCK_CONVERSION:
-            G = vanilla_stable_batch(tuple(shape), A, b, c)
-        else:
-            G = vanilla_batch(tuple(shape), A, b, c)
-        return G
+        return strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable)
 
     def hermite_renormalized_binomial(
         self,
@@ -570,7 +543,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        G, _ = binomial(
+        G, _ = strategies.binomial(
             tuple(shape),
             A,
             B,
@@ -655,8 +628,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         c: np.ndarray,
         output_cutoff: int,
         pnr_cutoffs: tuple[int, ...],
+        stable: bool = False,
     ) -> np.ndarray:
-        return fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs).transpose(
+        return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
             (-2, -1) + tuple(range(len(pnr_cutoffs)))
         )
 

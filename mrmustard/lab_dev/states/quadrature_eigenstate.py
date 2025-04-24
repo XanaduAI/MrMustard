@@ -17,6 +17,7 @@ The class representing a quadrature eigenstate.
 """
 
 from __future__ import annotations
+from typing import Sequence
 
 import numpy as np
 
@@ -61,8 +62,8 @@ class QuadratureEigenstate(Ket):
     def __init__(
         self,
         mode: int,
-        x: float = 0.0,
-        phi: float = 0.0,
+        x: float | Sequence[float] = 0.0,
+        phi: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
         phi_trainable: bool = False,
         x_bounds: tuple[float | None, float | None] = (None, None),

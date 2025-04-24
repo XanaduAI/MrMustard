@@ -17,6 +17,7 @@ The class representing a thermal state.
 """
 
 from __future__ import annotations
+from typing import Sequence
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
@@ -54,7 +55,7 @@ class Thermal(DM):
     def __init__(
         self,
         mode: int,
-        nbar: int = 0,
+        nbar: int | Sequence[int] = 0,
         nbar_trainable: bool = False,
         nbar_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
