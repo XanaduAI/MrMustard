@@ -491,12 +491,12 @@ class DM(State):
         r_evals, r_evecs = math.eigh(r_squared)
 
         r_core_transpose = math.einsum(
-            "...ij, ...j, ...kj -> ...ik",
+            "...ij,...j,...kj->...ik",
             r_evecs,
             math.sqrt(r_evals),
             math.conj(r_evecs),
         )
-        r_core = math.einsum("...ij -> ...ji", r_core_transpose)
+        r_core = math.einsum("...ij->...ji", r_core_transpose)
 
         Aphi_out = Am
         Os = math.zeros(batch_shape + (M,) * 2, dtype=math.complex128)
