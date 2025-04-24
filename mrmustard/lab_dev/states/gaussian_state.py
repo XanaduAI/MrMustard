@@ -45,7 +45,7 @@ class GKet(Ket):
         symplectic: the symplectic representation of the unitary that acts on
         vacuum to produce the desired state. If `None`, a random symplectic matrix
         is chosen.
-        symplectic_trainable: determines if the symplectic matrix can be trained.
+        symplectic_trainable: Whether `symplectic` is trainable.
 
     Returns:
         A ``Ket``.
@@ -127,12 +127,10 @@ class GDM(DM):
         symplectic: The symplectic representation of the unitary that acts on a
         vacuum to produce the desired state. If `None`, a random symplectic matrix
         is chosen.
-
-        symplectic_trainable: determines if the symplectic matrix can be trained.
+        symplectic_trainable: Whether `symplectic` is trainable.
 
     Returns:
         A ``DM``.
-
 
     .. code-block::
 

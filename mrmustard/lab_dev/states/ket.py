@@ -98,12 +98,12 @@ class Ket(State):
 
         Example:
         .. code-block::
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import Ket
 
             >>> psi = Ket.random([0])
 
-            >>> assert np.isclose(psi.probability, 1.0)
+            >>> assert math.allclose(psi.probability, 1.0)
         """
         return self.L2_norm
 
@@ -247,10 +247,10 @@ class Ket(State):
 
         Example:
         .. code-block::
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import Vacuum, Ket
 
-            >>> assert np.allclose(Vacuum([0]).fock_array(), np.array([1]))
+            >>> assert math.allclose(Vacuum([0]).fock_array(), math.astensor([1]))
         """
         batch_shape = (
             self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
@@ -326,14 +326,14 @@ class Ket(State):
 
         .. code-block::
 
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import Number, Rgate
 
             >>> psi = Number(0, 1)
-            >>> theta = np.random.random()
-            >>> answer = np.exp(1j*theta)
+            >>> theta = 0.123
+            >>> answer = math.exp(1j*theta)
 
-            >>> assert np.isclose(psi.expectation(Rgate(0, theta)), answer)
+            >>> assert math.allclose(psi.expectation(Rgate(0, theta)), answer)
         """
         if (self.ansatz and self.ansatz.batch_shape) or (
             operator.ansatz and operator.ansatz.batch_shape
@@ -404,7 +404,7 @@ class Ket(State):
         adding the adjoints when they are missing.
 
         Args:
-            other: the ``CircuitCompunent`` object that we want to contract the state with.
+            other: the ``CircuitComponent`` object that we want to contract the state with.
 
         Returns:
             A ``DM`` or a ``Ket`` when the wires of the resulting components are compatible

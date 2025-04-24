@@ -55,8 +55,6 @@ class QuadratureEigenstate(Ket):
 
         .. math::
             A = -I_{N}\exp(i2\phi)\text{, }b = I_Nx\exp(i\phi)\sqrt{2/\hbar}\text{, and }c = 1/(\pi\hbar)^{-1/4}\exp(-\abs{x}^2/(2\hbar)).
-
-
     """
 
     def __init__(
