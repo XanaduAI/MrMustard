@@ -243,7 +243,7 @@ class Ket(State):
 
         Note:
             If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
-            non-None values in ``manual_shape``.
+            non-``None`` values in ``manual_shape``.
 
         Example:
         .. code-block::
