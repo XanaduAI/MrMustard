@@ -238,6 +238,19 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         array2 = self.astensor(array2)
         return self._apply("allclose", (array1, array2, atol, rtol))
 
+    def angle(self, array: Tensor) -> Tensor:
+        r"""
+        The complex phase of ``array``.
+
+        Args:
+            array: The array to take the complex phase of.
+
+        Returns:
+            The complex phase of ``array``.
+        """
+
+        return self._apply("angle", (array,))
+
     def any(self, array: Tensor) -> bool:
         r"""Returns ``True`` if any element of array is ``True``, ``False`` otherwise.
 

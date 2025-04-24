@@ -71,6 +71,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
         return np.allclose(array1, array2, atol=atol, rtol=rtol)
 
+    def angle(self, array: np.ndarray) -> np.ndarray:
+        return np.angle(array)
+
     def any(self, array: np.ndarray) -> np.ndarray:
         return np.any(array)
 
