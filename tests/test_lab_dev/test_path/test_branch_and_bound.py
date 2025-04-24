@@ -64,3 +64,17 @@ def test_path_errors():
 
     with pytest.raises(ValueError, match="Overlapping"):
         bb.parse_components([vac12.adjoint, vac12.adjoint])
+
+
+@pytest.mark.parametrize(
+    "cc, name",
+    [
+        (Number(0, n=15), "ArrayAnsatz"),
+        (Sgate(0, r=1.0), "PolyExpAnsatz"),
+        (Dgate(0, x=1.0), "PolyExpAnsatz"),
+    ],
+)
+def test_from_circuitcomponent(cc, name):
+    """Test that the from_circuitcomponent parses the ansatz name correctly."""
+    comp = bb.GraphComponent.from_circuitcomponent(cc)
+    assert comp.ansatz == name
