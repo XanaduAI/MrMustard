@@ -557,6 +557,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
         ans = Vacuum(0).wigner
         x = np.linspace(0, 1, 100)
 
-        solution = np.exp(-(x**2)) / 2
+        solution = np.exp(-(x**2)) / np.pi
 
-        assert math.allclose(ans(x), solution)
+        assert math.allclose(ans(x, 0), solution)
