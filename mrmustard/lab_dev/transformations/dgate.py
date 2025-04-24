@@ -49,7 +49,6 @@ class Dgate(Unitary):
 
     .. code-block ::
 
-        >>> import numpy as np
         >>> from mrmustard.lab_dev import Dgate
 
         >>> unitary = Dgate(mode=1, x=0.1, y=0.2)
