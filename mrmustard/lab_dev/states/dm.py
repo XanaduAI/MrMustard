@@ -122,10 +122,10 @@ class DM(State):
 
         .. code-block::
 
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import DM, Vacuum
 
-            >>> assert np.isclose(Vacuum([0]).dm().purity, 1.0)
+            >>> assert math.allclose(Vacuum([0]).dm().purity, 1.0)
         """
         return self.L2_norm
 
@@ -135,10 +135,10 @@ class DM(State):
 
         .. code-block::
 
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import DM, Vacuum
 
-            >>> assert np.isclose(Vacuum([0]).dm().purity, 1.0)
+            >>> assert math.allclose(Vacuum([0]).dm().purity, 1.0)
         """
         return self.L2_norm
 
@@ -187,10 +187,10 @@ class DM(State):
 
         .. code-block::
 
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import DM, Vacuum
 
-            >>> rho = DM.from_phase_space([0], (np.eye(2)/2, [0,0], 1))
+            >>> rho = DM.from_phase_space([0], (math.eye(2)/2, [0,0], 1))
 
             >>> assert rho == Vacuum([0]).dm()
 
@@ -337,15 +337,15 @@ class DM(State):
 
         .. code-block::
 
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import Rgate, GDM
 
             >>> beta = 1
-            >>> symplectic = np.eye(2)
+            >>> symplectic = math.eye(2)
             >>> rho = GDM([0], beta, symplectic)
-            >>> answer = (1-np.exp(-beta))/(1+np.exp(-beta))
+            >>> answer = (1-math.exp(-beta))/(1+math.exp(-beta))
 
-            >>> assert np.isclose(rho.expectation(Rgate(0, np.pi)), answer)
+            >>> assert math.allclose(rho.expectation(Rgate(0, np.pi)), answer)
         """
         if (self.ansatz and self.ansatz.batch_shape) or (
             operator.ansatz and operator.ansatz.batch_shape
@@ -447,10 +447,10 @@ class DM(State):
 
         .. code-block::
 
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import Vacuum, DM
 
-            >>> assert np.allclose(Vacuum([0]).dm().fock_array(), np.array([[1]]))
+            >>> assert math.allclose(Vacuum([0]).dm().fock_array(), np.array([[1]]))
         """
         array = super().fock_array(shape or self.auto_shape())
         if standard_order:
