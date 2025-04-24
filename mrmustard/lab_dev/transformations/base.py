@@ -235,7 +235,7 @@ class Unitary(Operation):
         )
 
     @classmethod
-    def from_symplectic(cls, modes: Sequence[int], S) -> Unitary:
+    def from_symplectic(cls, modes: Sequence[int], S: RealMatrix) -> Unitary:
         r"""
         A method for constructing a ``Unitary`` from its symplectic representation
 
