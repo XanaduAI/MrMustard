@@ -197,7 +197,11 @@ def vanilla_step_dict(
 
 @njit
 def vanilla_step_dict_stable(
-    data: types.DictType, A: ComplexMatrix, b: ComplexVector, index: tuple[int, ...]
+    data1: types.DictType,
+    data2: types.DictType,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    index: tuple[int, ...],
 ) -> complex:  # pragma: no cover
     r"""Numerically stable version of the vanilla_step_dict."""
 
@@ -206,9 +210,9 @@ def vanilla_step_dict_stable(
     for i, pivot in pivots.all_pivots(index):
         N += 1
         denom = SQRT[pivot[i] + 1]
-        value_at_index += b[i] / denom * data[pivot]
+        value_at_index += b[i] / denom * data1[pivot]
         for j, neighbor in neighbors.lower_neighbors(pivot):
-            value_at_index += A[i, j] / denom * SQRT[pivot[j]] * data.get(neighbor, 0.0 + 0.0j)
+            value_at_index += A[i, j] / denom * SQRT[pivot[j]] * data2.get(neighbor, 0.0 + 0.0j)
 
     return value_at_index / N if N > 0 else 0.0
 
@@ -293,7 +297,9 @@ def binomial_step_dict_stable(
 
 @njit
 def binomial_step_dict_stable_no_prob(
-    G: types.DictType,
+    buffer0: types.DictType,
+    buffer1: types.DictType,
+    buffer2: types.DictType,
     A: ComplexMatrix,
     b: ComplexVector,
     subspace_indices: list[tuple[int, ...]],
@@ -302,6 +308,6 @@ def binomial_step_dict_stable_no_prob(
     except it does not return the probability of the subspace.
     """
     for i in prange(len(subspace_indices)):
-        value = vanilla_step_dict_stable(G, A, b, subspace_indices[i])
-        G[subspace_indices[i]] = value
-    return G
+        value = vanilla_step_dict_stable(buffer1, buffer2, A, b, subspace_indices[i])
+        buffer0[subspace_indices[i]] = value
+    return buffer0

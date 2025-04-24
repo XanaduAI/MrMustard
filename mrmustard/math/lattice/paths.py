@@ -123,14 +123,12 @@ def _recursive(
     triples: tuple[tuple[tuple[int, int, int], int], ...],
 ):
     r"""Recursive helper for efficient subspace basis with constraints."""
-
     if axis == len(singles):
         if photons_left == 0:
             basis.append(current_basis_element)
         return
-
     # Try different photon number for current basis element and axis
-    for photons in range(singles[axis]):
+    for photons in range(min(singles[axis], photons_left + 1)):
         new_basis_element = tuple_setitem(current_basis_element, axis, photons)
 
         # Only recurse if constraints are not violated

@@ -173,20 +173,40 @@ def binomial_custom(
     triples: tuple[tuple[tuple[int, int, int], int], ...] = (),
 ):
     r"""
-    Binomial strategy with custom constraints.
+    Binomial strategy with custom constraints. Constraints are organized in three types:
+    1. singles: (i, max_val)  the max value of the i-th index
+    2. pairs: ((i,j), max_sum) the max sum of the i-th and j-th index
+    3. triples: ((i,j,k), max_sum) the max sum of the i-th, j-th and k-th index
+
+    Args:
+        A (np.ndarray): A matrix of the Fock-Bargmann representation
+        b (np.ndarray): B vector of the Fock-Bargmann representation
+        c (complex): vacuum amplitude
+        global_cutoff (int): global cutoff (max total photon number considered).
+        singles (tuple[int, ...]): singles constraints
+        pairs (tuple[tuple[tuple[int, int], int], ...]): pairs constraints
+        triples (tuple[tuple[tuple[int, int, int], int], ...]): triples constraints
+
+    Returns:
+        dict[tuple[int, ...], complex]: Fock representation of the Gaussian tensor.
     """
-    # init numba output dict
-    G = typed.Dict.empty(
-        key_type=types.UniTuple(types.int64, len(singles)),
-        value_type=types.complex128,
-    )
+    # init numba output buffers
+    buffers = [
+        typed.Dict.empty(
+            key_type=types.UniTuple(types.int64, len(singles)), value_type=types.complex128
+        )
+        for _ in range(3)
+    ]
+    buffer0, buffer1, buffer2 = buffers
 
     # write vacuum amplitude
-    G[(0,) * len(singles)] = c
+    buffer0[(0,) * len(singles)] = complex(c)
 
     # iterate over all other indices in parallel and stop if norm is large enough
     zeros = (0,) * len(singles)
     for level in range(1, global_cutoff):
+        buffer2, buffer1, buffer0 = buffer1, buffer0, buffer2
+        buffer0.clear()
         indices = paths.constrained_binomial_subspace(level, zeros, singles, pairs, triples)
-        G = steps.binomial_step_dict_stable_no_prob(G, A, b, indices)
-    return G
+        buffer0 = steps.binomial_step_dict_stable_no_prob(buffer0, buffer1, buffer2, A, b, indices)
+        yield buffer0
