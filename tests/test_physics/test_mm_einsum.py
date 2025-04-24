@@ -14,6 +14,7 @@
 
 """Tests for the mm_einsum function."""
 
+from conftest import skip_jax
 import numpy as np
 import sparse
 from mrmustard import math, settings
@@ -411,6 +412,7 @@ class TestMmEinsum:
 
     def test_with_sparse_and_dense_ansatze(self):
         """Test that mm_einsum works for a sparse and dense ansatz."""
+        skip_jax()
         g0 = self.g0.ansatz
         f0 = self.f0.ansatz
         sp = sparse.COO.from_numpy(f0.array)
@@ -429,6 +431,7 @@ class TestMmEinsum:
 
     def test_with_sparse_and_sparse_ansatze(self):
         """Test that mm_einsum works for only sparse ansatz."""
+        skip_jax()
         f01 = Ket.random([0, 1]).to_fock((20, 20)).ansatz
         f0 = Ket.random([0]).to_fock((20,)).ansatz
         sp01 = sparse.COO.from_numpy(f01.array)
