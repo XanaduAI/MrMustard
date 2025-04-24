@@ -630,6 +630,6 @@ class TestPolyExpAnsatz:
         ans = Identity(0).ansatz
 
         x = np.linspace(0, 1, 10)
-        gaussian = np.exp(-(x**2)) / np.pi
+        gaussian = np.exp((x**2) / 2) / 2
 
         assert math.allclose(ans.PS(x, 0), gaussian)
