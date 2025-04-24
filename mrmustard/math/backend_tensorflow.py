@@ -76,6 +76,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
         return tf.experimental.numpy.allclose(array1, array2, atol=atol, rtol=rtol)
 
+    def angle(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.experimental.numpy.angle(array)
+
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
 
