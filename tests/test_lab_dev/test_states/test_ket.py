@@ -550,3 +550,12 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_is_physical(self):
         assert Ket.random((0, 1)).is_physical
         assert Coherent(0, x=[1, 1, 1]).is_physical
+
+    def test_wigner(self):
+
+        ans = Vacuum(0).wigner
+        x = np.linspace(0, 1, 100)
+
+        solution = np.exp(-(x**2)) / 2
+
+        assert math.allclose(ans(x), solution)
