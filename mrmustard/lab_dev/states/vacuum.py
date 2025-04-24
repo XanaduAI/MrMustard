@@ -31,7 +31,6 @@ class Vacuum(Ket):
     r"""
     The `N`-mode vacuum state in Bargmann representation.
 
-
     Args:
         modes: A tuple of modes.
 
