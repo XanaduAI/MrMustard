@@ -207,43 +207,20 @@ class PolyExpAnsatz(Ansatz):
     @property
     def PS(self) -> PolyExpAnsatz:
         r"""
-        The ansatz defined using real (i.e., phase-space) variables.
+        The ansatz acting on real (i.e., phase-space) variables.
         """
         n = self.A.shape[-1]
         if n % 2:
             raise ValueError(
                 f"A phase space ansatz must have even number of indices. (n={n} is odd)"
             )
+        In = math.eye(n // 2, dtype=math.complex128)
+        W = math.block([[In, -1j * In], [In, 1j * In]]) / complex(math.sqrt(2) * settings.HBAR)
 
-        if self.num_derived_vars == 0:
-            W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
-
-            A = math.einsum("ji,...jk,kl->...il", W, self.A, W)
-            b = math.einsum("ij,...j->...i", W, self.b)
-            c = self.c / (2 * settings.HBAR) ** (n // 2)
-            return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
-
-        else:
-            if self.num_derived_vars != 2:
-                raise ValueError(
-                    f"This transformation supports 2 core and 0 or 2 derived variables"
-                )
-            A_tmp = self.A
-
-            A_tmp = A_tmp[..., [0, 2, 1, 3], :][..., [0, 2, 1, 3]]
-            b = self.b[..., [0, 2, 1, 3]]
-            c = c_in_PS(self.c)  # implements PS transformations on ``c``
-
-            W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
-
-            A = math.einsum("ji,...jk,kl->...il", W, A_tmp, W)
-            b = math.einsum("ij,...j->...i", W, b)
-            c = c / (2 * settings.HBAR)
-
-            A_final = A[..., [0, 2, 1, 3], :][..., :, [0, 2, 1, 3]]
-            b_final = b[..., [0, 2, 1, 3]]
-
-            return PolyExpAnsatz(A_final, b_final, c, lin_sup=self._lin_sup)
+        A = math.einsum("ij, ...jk, kl-> ...il", W.T, self.A, W)
+        b = math.einsum("ij, ...j-> ...i", W, self.b)
+        c = self.c / (2 * settings.HBAR) ** (n // 2)
+        return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
 
     @property
     def scalar(self) -> Scalar:
