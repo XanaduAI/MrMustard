@@ -29,6 +29,7 @@ from mrmustard.lab_dev import (
     Ket,
     Number,
     TraceOut,
+    Vacuum,
 )
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import coherent_state_Abc
@@ -509,3 +510,105 @@ class TestDM:  # pylint:disable=too-many-public-methods
             Coherent(0, x=1).dm().fock_array(8, standard_order=True),
             Coherent(0, x=[1, 1, 1]).dm().fock_array(8, standard_order=True),
         )
+
+    def test_formal_stellar_decomposition(self):
+        rho = DM.random([0, 1])
+        sigma, phi = rho.formal_stellar_decomposition([0])
+
+        assert sigma.modes == (0, 1)
+        assert phi.modes == (0,)
+
+        # testing the validness of contraction equality
+        test_A, test_b, test_c = (sigma >> phi).ansatz.triple
+        A, b, c = rho.ansatz.triple
+
+        assert math.allclose(A, test_A)
+        assert math.allclose(b, test_b)
+        assert math.allclose(c, test_c)
+
+        # testing the core conditions on sigma
+        As, _, _ = sigma.ansatz.triple
+        assert As[0, 0] == 0 and As[0, 2] == 0 and As[2, 2] == 0
+
+        # 4-mode example
+        rho = DM.random([0, 1, 2, 3])
+        core, phi = rho.formal_stellar_decomposition([0, 3])
+
+        # displacement test
+        rho = DM.random([0, 1]) >> Dgate(0, 0.5)
+        core, phi = rho.formal_stellar_decomposition([0])
+        assert (core >> Vacuum(1).dual).normalize() == Vacuum((0,)).dm()
+        assert rho == core >> phi
+
+        # batch test
+        rho1 = DM.random([0, 1, 2, 3]) >> Dgate(0, 0.7)
+        rho2 = DM.random([0, 1, 2, 3])
+
+        sigma = rho1 + rho2
+        sigma.ansatz._lin_sup = False
+        core, phi = sigma.formal_stellar_decomposition([0, 1])
+
+        assert core.contract(phi, mode="zip") == sigma
+
+    def test_physical_stellar_decomposition(self):
+        rho = DM.random([0, 1])
+        core, phi = rho.physical_stellar_decomposition([0])
+
+        assert rho == core >> phi
+        assert core.is_physical
+        assert isinstance(core, Ket)
+
+        A, _, _ = core.ansatz.triple
+        assert math.allclose(A[0, 0], 0)
+
+        # 4-mode example
+        rho = DM.random([0, 1, 2, 3])
+        core, phi = rho.physical_stellar_decomposition([0, 3])
+
+        assert rho == core >> phi
+        assert phi.is_physical
+        assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3))
+
+        # testing displacement
+        rho = DM.random([0, 1]) >> Dgate(0, 0.5)
+        core, phi = rho.physical_stellar_decomposition([0])
+        assert (core >> Vacuum(1).dual).normalize() == Vacuum((0,))
+
+        # testing batches:
+        rho1 = DM.random([0, 1, 2, 3]) >> Dgate(0, 1)
+        rho2 = DM.random([0, 1, 2, 3])
+
+        sigma = rho1 + rho2
+        sigma.ansatz._lin_sup = False
+        core, phi = sigma.physical_stellar_decomposition([0, 1])
+
+        assert core.dm().contract(phi, mode="zip") == sigma
+
+    def test_stellar_decomposition_mixed(self):
+        rho = DM.random([0, 1])
+        core, phi = rho.physical_stellar_decomposition_mixed([0])
+
+        assert rho == core >> phi
+        assert core.is_physical
+        assert isinstance(core, DM)
+
+        A, _, _ = core.ansatz.triple
+        assert math.allclose(A[0, 0], 0)
+
+        # 4-mode example
+        rho = DM.random([0, 1, 2, 3])
+        core, phi = rho.physical_stellar_decomposition_mixed([0, 3])
+
+        assert rho == core >> phi
+        assert phi.is_physical
+        assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3)).dm()
+
+        # batched displaced example:
+        rho1 = DM.random([0, 1, 2, 3]) >> Dgate(0, 1)
+        rho2 = DM.random([0, 1, 2, 3])
+
+        sigma = rho1 + rho2
+        sigma.ansatz._lin_sup = False
+        core, phi = sigma.physical_stellar_decomposition_mixed([0, 1])
+
+        assert core.dm().contract(phi, mode="zip") == sigma
