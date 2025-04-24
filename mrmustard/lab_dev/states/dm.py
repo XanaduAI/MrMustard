@@ -36,6 +36,7 @@ from mrmustard.utils.typing import ComplexTensor
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
+from ..transformations import Map, Channel, Dgate
 
 from ..utils import shape_check
 
@@ -74,7 +75,7 @@ class DM(State):
         ):  # checks if gamma_A is Hermitian
             return False
 
-        return math.all(math.real(math.eigvals(gamma_A)) >= 0)
+        return math.all(math.real(math.eigvals(gamma_A)) >= -settings.ATOL)
 
     @property
     def is_physical(self) -> bool:
@@ -345,6 +346,307 @@ class DM(State):
             array = math.transpose(array, perm=axes)
 
         return array
+
+    def formal_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[DM, Map]:
+        r"""
+        Computes the formal stellar decomposition for the DM.
+
+        Args:
+            core_modes: The set of modes defining core variables.
+
+        Returns:
+            core: The core state (`DM`)
+            phi: The Gaussian `Map` performing the stellar decomposition (not necessarily CPTP).
+
+        Note:
+            This method pulls out the map ``phi`` from the given state on the given modes, so that
+            the remaining state is a core state. Formally, we have
+            .. math::
+
+                \rho = (\phi\otimes\mathcal I) \rho_{\mathrm{core}}
+
+            where the map :math:`phi` acts on the given `core_modes` only.
+            Core states have favorable properties in the Fock representation
+            e.g., being sparse.
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import DM, Vacuum
+
+            >>> rho = DM.random([0,1])
+            >>> core, phi = rho.formal_stellar_decomposition([0])
+            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
+            >>> assert rho == core >> phi
+            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
+        """
+        other_modes = [m for m in self.modes if m not in core_modes]
+        core_indices = self.wires[core_modes].indices
+        other_indices = self.wires[other_modes].indices
+        new_order = core_indices + other_indices
+        A, b, c = self.ansatz.reorder(new_order).triple
+
+        M = len(core_modes)
+        batch_shape = self.ansatz.batch_shape
+        Am = A[..., : 2 * M, : 2 * M]
+        An = A[..., 2 * M :, 2 * M :]
+        R = A[..., : 2 * M, 2 * M :]
+        bm = b[..., : 2 * M]
+        bn = b[..., 2 * M :]
+        R_transpose = math.einsum("...ij->...ji", R)
+
+        A_core = math.block(
+            [
+                [math.zeros(batch_shape + (2 * M, 2 * M), dtype=math.complex128), R],
+                [R_transpose, An],
+            ]
+        )
+        b_core = math.concat([math.zeros(batch_shape + (2 * M,), dtype=math.complex128), bn], -1)
+        c_core = c
+
+        inverse_order = np.argsort(new_order)
+
+        temp = math.astensor(inverse_order)
+        A_core = A_core[..., temp, :]
+        A_core = A_core[..., :, temp]
+        b_core = b_core[..., temp]
+        core = DM.from_bargmann(self.modes, (A_core, b_core, c_core))
+
+        I = math.broadcast_to(math.eye(2 * M, dtype=math.complex128), batch_shape + (2 * M, 2 * M))
+        O = math.zeros_like(Am)
+        A_out_in = math.block([[Am, I], [I, O]])
+        A_tmp = math.reshape(A_out_in, batch_shape + (2, 2, M, 2, 2, M))
+        A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
+        A_T = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
+
+        b_out_in = math.concat([bm, math.zeros(batch_shape + (2 * M,), dtype=math.complex128)], -1)
+        b_temp = math.reshape(b_out_in, batch_shape + (2, 2, M))
+        b_temp = math.einsum("...ijk->...jik", b_temp)
+        b_T = math.reshape(b_temp, batch_shape + (4 * M,))
+        c_T = math.ones_like(c)
+        phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
+        return core, phi
+
+    def physical_stellar_decomposition(  # pylint: disable=too-many-statements
+        self, core_modes: Collection[int]
+    ):
+        r"""
+        Applies the physical stellar decomposition, pulling out a channel from a pure state.
+
+        Args:
+            core_modes: the core modes defining the core variables.
+
+        Returns:
+            core: The core state (`Ket`)
+            phi: The channel acting on the core modes (`Map`)
+
+        Raises:
+            ValueError: if the number of core modes is not half the total number of modes.
+
+        Note:
+            This method writes a given `DM` as a pure state (`Ket`) followed by a `Channel` acting
+            on `core_modes`.
+            The pure state output has the core property, and therefore, has favorable Fock representation.
+            For the method to work, we need the number of core modes to be half of the number of total modes.
+
+        .. code-block::
+            >>> from mrmustard.lab_dev import DM, Ket, Vacuum
+            >>> rho = DM.random([0,1])
+            >>> core, phi = rho.physical_stellar_decomposition([0])
+
+            >>> assert isinstance(core, Ket)
+            >>> assert rho == core >> phi
+            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0)
+        """
+        from .ket import Ket  # pylint: disable=import-outside-toplevel
+
+        other_modes = [m for m in self.modes if m not in core_modes]
+        core_bra_indices = self.wires.bra[core_modes].indices
+        core_ket_indices = self.wires.ket[core_modes].indices
+        core_indices = core_bra_indices + core_ket_indices
+
+        other_bra_indices = self.wires.bra[other_modes].indices
+        other_ket_indices = self.wires.ket[other_modes].indices
+        other_indices = other_bra_indices + other_ket_indices
+
+        new_order = core_indices + other_indices
+        new_order = math.astensor(core_indices + other_indices)
+
+        batch_shape = self.ansatz.batch_shape
+        A, b, c = self.ansatz.reorder(new_order).triple
+
+        m_modes = A.shape[-1] // 2
+
+        if (m_modes % 2) or (m_modes // 2 != len(core_modes)):
+            raise ValueError(
+                f"The number of modes ({m_modes}) must be twice the number of core modes ({len(core_modes)}) for the physical decomposition to work."
+            )
+
+        M = len(core_modes)
+        Am = A[..., : 2 * M, : 2 * M]
+        An = A[..., 2 * M :, 2 * M :]
+        R = A[..., 2 * M :, : 2 * M]
+        R_transpose = math.einsum("...ij->...ji", R)
+        # computing the core state:
+        reduced_A = An - R @ math.inv(Am - math.Xmat(M)) @ R_transpose
+        r_squared = reduced_A[..., :M, M:]
+        r_evals, r_evecs = math.eigh(r_squared)
+
+        r_core_transpose = math.einsum(
+            "...ij, ...j, ...kj -> ...ik",
+            r_evecs,
+            math.sqrt(r_evals),
+            math.conj(r_evecs),
+        )
+        r_core = math.einsum("...ij -> ...ji", r_core_transpose)
+
+        Aphi_out = Am
+        Os = math.zeros(batch_shape + (M,) * 2, dtype=math.complex128)
+        temp = math.block([[math.conj(r_core), Os], [Os, r_core]])
+        Gamma_phi = math.inv(temp) @ R
+
+        Gamma_phi_transpose = math.einsum("...ij->...ji", Gamma_phi)
+        Aphi_in = Gamma_phi @ math.inv(Aphi_out - math.Xmat(M)) @ Gamma_phi_transpose + math.Xmat(M)
+
+        Aphi_oi = math.block([[Aphi_out, Gamma_phi_transpose], [Gamma_phi, Aphi_in]])
+        A_tmp = math.reshape(Aphi_oi, batch_shape + (2, 2, M, 2, 2, M))
+        A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
+        Aphi = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
+
+        bphi = math.zeros(batch_shape + (4 * M,), dtype=math.complex128)
+        phi = Channel.from_bargmann(
+            core_modes, core_modes, (Aphi, bphi, math.ones(batch_shape, dtype=math.complex128))
+        )
+        renorm = phi.contract(TraceOut(self.modes))
+        phi = phi / renorm.ansatz.c
+
+        # fixing bs
+        rho_p = self.contract(phi.inverse(), mode="zip")
+        c_tmp = math.ones_like(rho_p.ansatz.c)
+        rho_p = DM.from_bargmann(self.modes, (rho_p.ansatz.A, rho_p.ansatz.b, c_tmp))
+
+        alpha = rho_p.ansatz.b[..., core_ket_indices]
+        for i, m in enumerate(core_modes):
+            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
+            d_g_inv = d_g.inverse()
+            d_ch = d_g.contract(d_g.adjoint, mode="zip")
+            d_ch_inverse = d_g_inv.contract(d_g_inv.adjoint, mode="zip")
+
+            rho_p = rho_p.contract(d_ch, mode="zip")
+            phi = (d_ch_inverse).contract(phi, mode="zip")
+        A, b, c = rho_p.ansatz.triple
+        core = Ket.from_bargmann(self.modes, (A[..., m_modes:, m_modes:], b[..., m_modes:], c_tmp))
+        phi = Channel.from_bargmann(core_modes, core_modes, phi.ansatz.triple)
+        return core.normalize(), phi
+
+    def physical_stellar_decomposition_mixed(  # pylint: disable=too-many-statements
+        self, core_modes: Collection[int]
+    ) -> tuple[DM, Channel]:
+        r"""
+        Applies the physical stellar decomposition based on the rank condition.
+
+        Args:
+            core_modes: the core modes defining the core variables.
+
+        Returns:
+            core: The core state (`DM`)
+            phi: The channel acting on the core modes (`Channel`)
+
+        Raises:
+            ValueError: if the rank condition is not satisfied.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import DM, Vacuum
+
+            >>> rho = DM.random([0,1])
+            >>> core, phi = rho.physical_stellar_decomposition_mixed([0])
+
+            >>> assert rho == core >> phi
+            >>> assert core.is_physical
+            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
+        """
+        other_modes = [m for m in self.modes if m not in core_modes]
+        core_bra_indices = self.wires.bra[core_modes].indices
+        core_ket_indices = self.wires.ket[core_modes].indices
+        core_indices = core_bra_indices + core_ket_indices
+
+        other_bra_indices = self.wires.bra[other_modes].indices
+        other_ket_indices = self.wires.ket[other_modes].indices
+        other_indices = other_bra_indices + other_ket_indices
+
+        new_order = core_indices + other_indices
+        new_order = math.astensor(core_indices + other_indices)
+
+        A, _, _ = self.ansatz.reorder(new_order).triple
+        batch_shape = self.ansatz.batch_shape
+
+        M = len(core_modes)
+        N = self.n_modes - M
+
+        Am = A[..., : 2 * M, : 2 * M]
+        R = A[..., 2 * M :, : 2 * M]
+
+        sigma = R[..., M:, :M]
+        r = R[..., M:, M:]
+        alpha_m = Am[..., M:, :M]
+
+        r_transpose = math.einsum("...ij->...ji", r)
+        sigma_transpose = math.einsum("...ij->...ji", sigma)
+        R_transpose = math.einsum("...ij->...ji", R)
+
+        rank = np.linalg.matrix_rank(
+            r @ math.conj(r_transpose) + sigma @ math.conj(sigma_transpose)
+        )
+        if np.any(rank > M):
+            raise ValueError(
+                "The physical mixed stellar decomposition is not possible for this DM, "
+                f"as the rank {rank} of the off-diagonal block of the Bargmann matrix is larger than the number "
+                f"of core modes {M}."
+            )
+
+        I2M = math.broadcast_to(
+            math.eye(2 * M, dtype=math.complex128), batch_shape + (2 * M, 2 * M)
+        )
+        reduced_A = R @ math.inv(I2M - math.Xmat(M) @ Am) @ math.conj(R_transpose)
+
+        # computing a low-rank r_c:
+        r_c_squared = reduced_A[..., N:, N:] + sigma @ math.inv(alpha_m) @ math.conj(
+            sigma_transpose
+        )
+        r_c_evals, r_c_evecs = math.eigh(r_c_squared)
+        r_c = r_c_evecs[..., :, -M:] * math.sqrt(r_c_evals[..., -M:], dtype=math.complex128)
+        Os_NM = math.zeros(batch_shape + (N, M), dtype=math.complex128)
+        Os_MN = math.zeros(batch_shape + (M, N), dtype=math.complex128)
+        R_c = math.block([[math.conj(r_c), Os_NM], [Os_MN, r_c]])
+
+        Aphi_out = Am
+        gamma = np.linalg.pinv(R_c) @ R
+        gamma_transpose = math.einsum("...ij->...ji", gamma)
+        Aphi_in = gamma @ math.inv(Aphi_out - math.Xmat(M)) @ gamma_transpose + math.Xmat(M)
+
+        Aphi_oi = math.block([[Aphi_out, gamma_transpose], [gamma, Aphi_in]])
+        A_tmp = math.reshape(Aphi_oi, batch_shape + (2, 2, M, 2, 2, M))
+        A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
+        Aphi = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
+        bphi = math.zeros(batch_shape + (4 * M,), dtype=math.complex128)
+        c_phi = math.ones(batch_shape, dtype=math.complex128)
+        phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, c_phi))
+        renorm = phi.contract(TraceOut(self.modes))
+        phi = phi / renorm.ansatz.c
+
+        # fixing bs
+        rho_p = self.contract(phi.inverse(), mode="zip")
+        alpha = rho_p.ansatz.b[..., core_ket_indices]
+        for i, m in enumerate(core_modes):
+            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
+            d_g_inv = d_g.inverse()
+            d_ch = d_g.contract(d_g.adjoint, mode="zip")
+            d_ch_inverse = d_g_inv.contract(d_g_inv.adjoint, mode="zip")
+
+            rho_p = rho_p.contract(d_ch, mode="zip")
+            phi = (d_ch_inverse).contract(phi, mode="zip")
+        core = DM.from_bargmann(self.modes, rho_p.ansatz.triple)
+        phi = Channel.from_bargmann(core_modes, core_modes, phi.ansatz.triple)
+        return core, phi
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
