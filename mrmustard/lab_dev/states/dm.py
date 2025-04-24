@@ -129,19 +129,6 @@ class DM(State):
         """
         return self.L2_norm
 
-    @property
-    def purity(self) -> float:
-        r"""Computes the putiry (:math:`tr(rho^2)) of this DM.
-
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.lab_dev import DM, Vacuum
-
-            >>> assert math.allclose(Vacuum([0]).dm().purity, 1.0)
-        """
-        return self.L2_norm
-
     @classmethod
     def from_ansatz(
         cls,
