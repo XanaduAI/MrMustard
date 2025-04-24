@@ -113,7 +113,7 @@ class Ket(State):
         The purity of the state.
 
         Returns:
-            The purity of this ``Ket`` (always 1.0). 
+            The purity of this ``Ket`` (always 1.0).
 
         Example:
         .. code-block::
