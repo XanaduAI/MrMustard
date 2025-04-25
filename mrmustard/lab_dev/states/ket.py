@@ -432,7 +432,7 @@ class Ket(State):
         gamma_evals, gamma_evecs = math.eigh(gamma_squared)
 
         gamma = math.einsum(
-            "...ij, ...j, ...kj -> ...ik",
+            "...ij,...j,...kj->...ik",
             gamma_evecs,
             math.sqrt(gamma_evals),
             math.conj(gamma_evecs),

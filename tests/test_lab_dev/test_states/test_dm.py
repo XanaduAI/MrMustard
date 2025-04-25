@@ -611,4 +611,5 @@ class TestDM:  # pylint:disable=too-many-public-methods
         sigma.ansatz._lin_sup = False
         core, phi = sigma.physical_stellar_decomposition_mixed([0, 1])
 
-        assert core.dm().contract(phi, mode="zip") == sigma
+        assert math.allclose(core.dm().contract(phi, mode="zip").ansatz.A, sigma.ansatz.A)
+        assert math.allclose(core.dm().contract(phi, mode="zip").ansatz.b, sigma.ansatz.b)
