@@ -41,10 +41,10 @@ class TestBtoPS:
 
     @pytest.mark.parametrize("hbar", [1.0, 2.0, 3.0])
     def test_application(self, hbar):
-        state = Ket.random((0,)) >> Dgate(0, x=2, y=0.1)
+        state = Ket.random((0,), max_r=0.8) >> Dgate(0, x=2, y=0.1)
 
         dm = state.to_fock(100).dm().ansatz.array
-        vec = np.linspace(-5, 5, 100)
+        vec = np.linspace(-4.5, 4.5, 100)
         wigner, _, _ = wigner_discretized(dm, vec, vec)
 
         settings.HBAR = hbar
