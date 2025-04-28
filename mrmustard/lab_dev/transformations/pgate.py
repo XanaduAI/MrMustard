@@ -31,17 +31,17 @@ class Pgate(Unitary):
     r"""
     Quadratic phase gate.
 
-    .. math::
-
-        P = \exp(i s q^2 / 2 \hbar)
-
-    Reference: https://strawberryfields.ai/photonics/conventions/gates.html
-
     Args:
         modes: The modes this gate is applied to.
         shearing: The shearing parameter.
         shearing_trainable: Whether ``shearing`` is trainable.
         shearing_bounds: The bounds for ``shearing``.
+
+    .. details:: The quadratic phase gate is defined as
+        .. math::
+
+            P = \exp(i s q^2 / 2 \hbar)
+    Reference: https://strawberryfields.ai/photonics/conventions/gates.html
     """
 
     short_name = "P"

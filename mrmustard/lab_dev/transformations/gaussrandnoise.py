@@ -32,6 +32,12 @@ class GaussRandNoise(Channel):
     r"""
     The Gaussian random noise channel.
 
+
+    Args:
+        modes: The modes the channel is applied to. The number of modes must match half of the size of ``Y``.
+        Y: The Y matrix of the Gaussian random noise channel.
+        Y_trainable: Whether ``Y`` is trainable.
+
     .. code-block ::
 
         >>> import numpy as np
@@ -41,20 +47,17 @@ class GaussRandNoise(Channel):
         >>> assert channel.modes == (1, 2)
         >>> assert math.allclose(channel.parameters.Y.value, 0.2 * np.eye(4))
 
-    Args:
-        modes: The modes the channel is applied to. The number of modes must match half of the size of ``Y``.
-        Y: The Y matrix of the Gaussian random noise channel.
-        Y_trainable: Whether ``Y`` is trainable.
-
     Raises:
         ValueError: If the number of modes does not match half of the size of ``Y``.
 
-    ..details::
+    .. details::
         The Bargmann representation of the channel is computed via the formulas provided in the paper:
         https://arxiv.org/pdf/2209.06069
 
         The channel maps an inout covariance matrix ``cov`` as
-        ..math::
+
+        .. math::
+
                 cov \mapsto cov + Y.
     """
 

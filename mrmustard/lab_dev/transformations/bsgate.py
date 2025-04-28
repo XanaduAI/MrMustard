@@ -32,15 +32,6 @@ class BSgate(Unitary):
     r"""
     The beam splitter gate.
 
-    .. code-block ::
-
-        >>> from mrmustard.lab_dev import BSgate
-
-        >>> unitary = BSgate(modes=(1, 2), theta=0.1)
-        >>> assert unitary.modes == (1, 2)
-        >>> assert unitary.parameters.theta.value == 0.1
-        >>> assert unitary.parameters.phi.value == 0.0
-
     Args:
         modes: The pair of modes of the beam splitter gate.
         theta: The transmissivity angle.
@@ -49,6 +40,15 @@ class BSgate(Unitary):
         phi_trainable: Whether ``phi`` is a trainable variable.
         theta_bounds: The bounds for ``theta``.
         phi_bounds: The bounds for ``phi``.
+
+        .. code-block ::
+
+        >>> from mrmustard.lab_dev import BSgate
+
+        >>> unitary = BSgate(modes=(1, 2), theta=0.1)
+        >>> assert unitary.modes == (1, 2)
+        >>> assert unitary.parameters.theta.value == 0.1
+        >>> assert unitary.parameters.phi.value == 0.0
 
     .. details::
 

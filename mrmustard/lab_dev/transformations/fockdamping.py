@@ -32,6 +32,13 @@ class FockDamping(Operation):
     r"""
     The Fock damping operator.
 
+
+    Args:
+        mode: The mode this gate is applied to.
+        damping: The damping parameter.
+        damping_trainable: Whether ``damping`` is trainable.
+        damping_bounds: The bounds for ``damping``.
+
     .. code-block ::
 
         >>> from mrmustard.lab_dev import FockDamping, Coherent
@@ -42,12 +49,6 @@ class FockDamping(Operation):
         >>> assert operator.modes == (0,)
         >>> assert operator.parameters.damping.value == 0.1
         >>> assert output_state.L2_norm < 1
-
-    Args:
-        mode: The mode this gate is applied to.
-        damping: The damping parameter.
-        damping_trainable: Whether ``damping`` is trainable.
-        damping_bounds: The bounds for ``damping``.
 
     .. details::
 
