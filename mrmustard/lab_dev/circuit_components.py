@@ -249,7 +249,7 @@ class CircuitComponent:
 
             >>> coh = Coherent(mode=0, x=1.0)
             >>> assert isinstance(coh.ansatz, PolyExpAnsatz)
-            >>> A, _, _ = coh.ansatz.triple
+            >>> A = coh.ansatz.A
             >>> assert A.shape == (1, 1)
         """
         return self._representation.ansatz
