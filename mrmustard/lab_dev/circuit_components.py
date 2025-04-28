@@ -147,11 +147,11 @@ class CircuitComponent:
 
         .. code-block::
 
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import Ket
 
             >>> psi = Ket.random([0])
-            >>> assert np.isclose(1.0, psi >> psi.dual)
+            >>> assert math.allclose(1.0, psi >> psi.dual)
         """
         ret = CircuitComponent(self.representation.dual, self.name)
         ret.short_name = self.short_name
@@ -301,12 +301,12 @@ class CircuitComponent:
 
         .. code-block::
 
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import CircuitComponent, Identity
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
-            >>> A = np.array([[0, 1], [1, 0]])
-            >>> b = np.array([0, 0])
+            >>> A = math.astensor([[0, 1], [1, 0]])
+            >>> b = math.astensor([0, 0])
             >>> c = 1
             >>> modes_out_bra = {}
             >>> modes_in_bra = {}
@@ -769,8 +769,8 @@ class CircuitComponent:
         part may result from an automated contraction subroutine that involves several components).
 
         .. code-block::
+
             >>> from mrmustard.lab_dev import Coherent, Attenuator, Ket, DM, Channel
-            >>> import numpy as np
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
             >>> assert isinstance(Coherent(0, 1.0) >> Attenuator(0, 0.5), DM)
