@@ -29,7 +29,7 @@ __all__ = ["BtoQ"]
 
 class BtoQ(Operation):
     r"""
-    The Operation that changes the representation of an object from Bargmann (B) into quadrature (Q).
+    The ``Operation`` that changes the representation of an object from Bargmann (B) into quadrature (Q).
     By default it's defined on the output ket side.
 
 
@@ -42,14 +42,14 @@ class BtoQ(Operation):
         An ``Operation`` type object that performs the change of representation.
 
     Note:
-        Be cautious about contractions after change of reresentation as the Abc parametrization has altered.
+        Be cautious about contractions after change of representation as the Abc parametrization has altered.
 
-    Example:
-        .. code-block::
-            >>> import numpy as np
-            >>> from mrmustard.lab_dev import BtoQ, Ket, QuadratureEigenstate
-            >>> psi = Ket.random([0])
-            >>> assert np.isclose(psi >> QuadratureEigenstate(0, x=1).dual, (psi >> BtoQ(0)).ansatz(1))
+    .. code-block::
+
+        >>> from mrmustard import math
+        >>> from mrmustard.lab_dev import BtoQ, Ket, QuadratureEigenstate
+        >>> psi = Ket.random([0])
+        >>> assert math.allclose(psi >> QuadratureEigenstate(0, x=1).dual, (psi >> BtoQ(0)).ansatz(1))
     """
 
     def __init__(

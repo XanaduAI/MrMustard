@@ -119,7 +119,7 @@ class DM(State):
 
     @property
     def purity(self) -> float:
-        r"""Computes the putiry (:math:`tr(rho^2)) of this DM.
+        r"""Computes the purity (:math:`tr(rho^2)) of this DM.
 
         .. code-block::
 
@@ -167,7 +167,7 @@ class DM(State):
             modes: The modes of this states.
             triple: The ``(cov, means, coeff)`` triple.
             name: The name of this state.
-            atol_purity: Should be set to None.
+            atol_purity: Unused argument.
 
         Returns:
             A ``DM`` object from its phase space representation.

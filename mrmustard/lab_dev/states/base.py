@@ -207,7 +207,7 @@ class State(CircuitComponent):
             modes: The modes of this state.
             array: The Fock array.
             name: The name of this state.
-            batched: Whether the given array is batched.
+            batch_dims: The number of batch dimensions in the given array.
 
         Returns:
             A ``State``.
@@ -266,12 +266,12 @@ class State(CircuitComponent):
 
         .. code-block::
 
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import Ket
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
-            >>> A = np.array([[0,.5], [.5,0]])
-            >>> b = np.array([2-1j,2+1j])
+            >>> A = math.astensor([[0,.5], [.5,0]])
+            >>> b = math.astensor([2-1j,2+1j])
             >>> c = 1
             >>> psi = Ket.from_ansatz([0,1], PolyExpAnsatz(A,b,c))
 
@@ -294,7 +294,7 @@ class State(CircuitComponent):
 
         Args:
             modes: The modes of this states.
-            triple: Consists of the covariance matrix, vector of means, and a constant multiple.
+            triple: A covariance matrix, vector of means, and constant multiple triple.
             name: The name of this state.
             atol_purity: If ``atol_purity`` is given, the purity of the state is computed, and an
                 error is raised if its value is smaller than ``1-atol_purity`` or larger than
@@ -312,14 +312,14 @@ class State(CircuitComponent):
         Note:
             If the given covariance matrix and vector of means are consistent with a pure
             state, a ``Ket`` is returned. Otherwise, a ``DM`` is returned. One can skip this check by
-            setting ``atol_purity`` to ``None``.
+            setting ``atol_purity`` to ``None`` (``atol_purity`` defaults to ``None``).
 
         .. code-block::
 
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab_dev import Ket, Vacuum
 
-            >>> assert Ket.from_phase_space([0], (np.eye(2)/2, [0,0], 1)) == Vacuum([0])
+            >>> assert Ket.from_phase_space([0], (math.eye(2)/2, [0,0], 1)) == Vacuum([0])
         """
 
     @classmethod

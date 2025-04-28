@@ -34,7 +34,6 @@ class BtoPS(Map):
 
     Used internally as a ``Channel`` for transformations between representations.
 
-
     Args:
         modes: The modes of this channel.
         s: The `s` parameter of this channel. The case `s=-1`  corresponds to Husimi, `s=0` to Wigner, and `s=1` to Glauber P function.
