@@ -234,11 +234,11 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return array
 
     def einsum(self, string: str, *tensors, optimize: bool | str = False) -> np.ndarray:
-        has_sparse = any(isinstance(t, sparse.COO) for t in tensors)
-        has_dense = any(not isinstance(t, sparse.COO) for t in tensors)
+        # has_sparse = any(isinstance(t, sparse.COO) for t in tensors)
+        # has_dense = any(not isinstance(t, sparse.COO) for t in tensors)
 
-        if has_sparse and has_dense:
-            tensors = [t.todense() if isinstance(t, sparse.COO) else t for t in tensors]
+        # if has_sparse and has_dense:
+        #     tensors = [t.todense() if isinstance(t, sparse.COO) else t for t in tensors]
 
         return contract(string, *tensors, optimize=optimize)
 
