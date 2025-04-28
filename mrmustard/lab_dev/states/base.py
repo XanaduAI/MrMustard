@@ -228,19 +228,6 @@ class State(CircuitComponent):
             >>> assert coh.modes == (0,)
             >>> assert coh.ansatz == ArrayAnsatz(array, batch_dims=0)
             >>> assert isinstance(coh, Ket)
-
-        Args:
-            modes: The modes of this state.
-            array: The Fock array.
-            name: The name of this state.
-            batch_dims: The number of batch dimensions in the given array.
-
-        Returns:
-            A state.
-
-        Raises:
-            ValueError: If the given array has a shape that is inconsistent with the number of
-                modes.
         """
         return cls.from_ansatz(modes, ArrayAnsatz(array, batch_dims=batch_dims), name)
 
