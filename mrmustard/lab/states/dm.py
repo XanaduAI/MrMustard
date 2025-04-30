@@ -34,8 +34,9 @@ from mrmustard.physics.wires import ReprEnum, Wires, WiresType
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import TraceOut
-from ..transformations import Channel, Dgate, Map
+from ..circuit_components_utils import BtoPS, TraceOut
+from ..transformations import Map, Channel, Dgate
+
 from ..utils import shape_check
 from .base import State
 
@@ -751,6 +752,23 @@ class DM(State):
         renorm = phi.contract(TraceOut(self.modes))
         phi = phi / renorm.ansatz.c
         return core, phi
+
+    @property
+    def wigner(self):
+        r"""
+        The Wigner function of this DM on the phase space.
+
+        Returns:
+            An ``Ansatz`` object representing the Wigner function of this DM.
+        """
+        if self.ansatz._lin_sup:
+            raise NotImplementedError(
+                "Wigner representation is not implemented for linear superposition."
+            )
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError("Wigner representation is not implemented for ArrayAnsatz.")
+
+        return (self.contract(BtoPS(self.modes, s=0), mode="zip")).ansatz.PS
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:

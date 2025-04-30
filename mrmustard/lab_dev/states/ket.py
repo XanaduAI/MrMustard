@@ -298,7 +298,7 @@ class Ket(State):
         if isinstance(self.ansatz, ArrayAnsatz):
             raise NotImplementedError("Wigner representation is not implemented for ArrayAnsatz.")
 
-        return (self >> BtoPS(self.modes, s=0)).ansatz.PS
+        return (self.dm().contract(BtoPS(self.modes, s=0), mode="zip")).ansatz.PS
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:

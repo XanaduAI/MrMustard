@@ -215,9 +215,11 @@ class PolyExpAnsatz(Ansatz):
                 f"A phase space ansatz must have even number of indices. (n={n} is odd)"
             )
         In = math.eye(n // 2, dtype=math.complex128)
-        W = math.block([[In, -1j * In], [In, 1j * In]]) / complex(math.sqrt(2) * settings.HBAR)
+        W = math.block([[In, -1j * In], [In, 1j * In]]) / complex(
+            math.sqrt(2, dtype=math.complex128) * settings.HBAR
+        )
 
-        A = math.einsum("ij, ...jk, kl-> ...il", W.T, self.A, W)
+        A = math.einsum("ji, ...jk, kl-> ...il", W, self.A, W)
         b = math.einsum("ij, ...j-> ...i", W, self.b)
         c = self.c / (2 * settings.HBAR) ** (n // 2)
         return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
