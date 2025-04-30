@@ -35,7 +35,7 @@ from mrmustard.utils.typing import ComplexTensor
 
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import TraceOut
+from ..circuit_components_utils import BtoPS, TraceOut
 from ..transformations import Map, Channel, Dgate
 
 from ..utils import shape_check
@@ -649,6 +649,23 @@ class DM(State):
         rho_p = DM.from_bargmann(self.modes, (rho_p.ansatz.A, rho_p.ansatz.b, c_tmp))
         phi = Channel.from_bargmann(core_modes, core_modes, phi.ansatz.triple)
         return rho_p.normalize(), phi
+
+    @property
+    def wigner(self):
+        r"""
+        The Wigner function of this DM on the phase space.
+
+        Returns:
+            An ``Ansatz`` object representing the Wigner function of this DM.
+        """
+        if self.ansatz._lin_sup:
+            raise NotImplementedError(
+                "Wigner representation is not implemented for linear superposition."
+            )
+        if isinstance(self.ansatz, ArrayAnsatz):
+            raise NotImplementedError("Wigner representation is not implemented for ArrayAnsatz.")
+
+        return (self.contract(BtoPS(self.modes, s=0), mode="zip")).ansatz.PS
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
