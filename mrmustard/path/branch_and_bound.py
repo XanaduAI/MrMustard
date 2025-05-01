@@ -21,9 +21,11 @@ import random
 from copy import deepcopy
 from queue import PriorityQueue
 from math import factorial
-import numpy as np
 from typing import Generator
+
+import numpy as np
 import networkx as nx
+
 from mrmustard.physics.wires import Wires
 from mrmustard.lab_dev.circuit_components import CircuitComponent
 
@@ -37,25 +39,23 @@ Edge = tuple[int, int]
 
 class GraphComponent:
     r"""
-    A lightweight "CircuitComponent" without the actual representation.
+    A lightweight "CircuitComponent" without the actual ansatz.
     Basically a wrapper around Wires, so that it can emulate components in
-    a circuit. It exposes the representation, wires, shape, name and cost of obtaining
+    a circuit. It exposes the ansatz, wires, shape, name and cost of obtaining
     the component from previous contractions.
 
     Args:
-        representation: The name of the representation of the component.
+        ansatz: The name of the ansatz of the component.
         wires: The wires of the component.
         shape: The fock shape of the component.
         name: The name of the component.
         cost: The cost of obtaining this component.
     """
 
-    def __init__(
-        self, representation: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0
-    ):
+    def __init__(self, ansatz: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0):
         if None in shape:
             raise ValueError("Detected `None`s in shape. Please provide a full shape.")
-        self.representation = representation
+        self.ansatz = ansatz
         self.wires = wires
         self.shape = list(shape)
         self.name = name
@@ -70,7 +70,7 @@ class GraphComponent:
             c: A CircuitComponent.
         """
         return GraphComponent(
-            representation=str(c.ansatz.__class__.__name__),
+            ansatz=str(c.ansatz.__class__.__name__),
             wires=Wires(*c.wires.args),
             shape=c.auto_shape(),
             name=c.__class__.__name__,
@@ -81,15 +81,15 @@ class GraphComponent:
         Returns the computational cost in approx FLOPS for contracting this component with another
         one. Three cases are possible:
 
-        1. If both components are in Fock representation the cost is the product of the values along
+        1. If both components are in Fock ansatz the cost is the product of the values along
         both shapes, counting only once the shape of the contracted indices. E.g. a tensor with shape
         (20,30,40) contracts its 1,2 indices with the 0,1 indices of a tensor with shape (30,40,50,60).
         The cost is 20 x 30 x 40 x 50 x 60 = 72_000_000 (note 30,40 were counted only once).
 
-        2. If the representations are a mix of Bargmann and Fock, we add the cost of converting the
+        2. If the ansatze are a mix of Bargmann and Fock, we add the cost of converting the
         Bargmann to Fock, which is the product of the shape of the Bargmann component.
 
-        3. If both are in Bargmann representation, the contraction can be a simple a Gaussian integral
+        3. If both are in Bargmann ansatz, the contraction can be a simple a Gaussian integral
         which scales like the cube of the number of contracted indices, i.e. ~ just 8 in the example above.
 
         Arguments:
@@ -103,7 +103,7 @@ class GraphComponent:
         m = len(idxA)  # same as len(idxB)
         nA, nB = len(self.shape) - m, len(other.shape) - m
 
-        if self.representation == "Bargmann" and other.representation == "Bargmann":
+        if self.ansatz == "PolyExpAnsatz" and other.ansatz == "PolyExpAnsatz":
             cost = (  # +1s to include vector part)
                 m * m * m  # M inverse
                 + (m + 1) * m * nA  # left matmul
@@ -119,8 +119,8 @@ class GraphComponent:
             )
             cost = (
                 prod_A * prod_B * prod_contracted  # matmul
-                + np.prod(self.shape) * (self.representation == "Bargmann")  # conversion
-                + np.prod(other.shape) * (other.representation == "Bargmann")  # conversion
+                + np.prod(self.shape) * (self.ansatz == "PolyExpAnsatz")  # conversion
+                + np.prod(other.shape) * (other.ansatz == "PolyExpAnsatz")  # conversion
             )
         return int(cost)
 
@@ -138,7 +138,7 @@ class GraphComponent:
         shape = shape_A + shape_B
         new_shape = [shape[p] for p in perm]
         new_component = GraphComponent(
-            "Bargmann" if self.representation == other.representation == "Bargmann" else "Fock",
+            "PolyExpAnsatz" if self.ansatz == other.ansatz == "PolyExpAnsatz" else "ArrayAnsatz",
             new_wires,
             new_shape,
             f"({self.name}@{other.name})",
@@ -187,6 +187,20 @@ class Graph(nx.DiGraph):
         for n in self.nodes:
             yield self.component(n)
 
+    def optimize_fock_shapes(self, components: list[CircuitComponent], verbose: bool = False):
+        r"""
+        Optimizes the Fock shapes of the components in this circuit.
+        It starts by matching the existing connected wires and keeps the smaller shape,
+        then it enforces the BSgate symmetry (conservation of photon number) to further
+        reduce the shapes across the circuit.
+        This operation acts in place.
+        """
+        if verbose:
+            print("===== Optimizing Fock shapes =====")
+        optimize_fock_shapes(self, 0, verbose=verbose)
+        for i, c in enumerate(components):
+            c.manual_shape = self.component(i).shape
+
     def __lt__(self, other: Graph) -> bool:
         r"""
         Compares two graphs by their cost. Used for sorting in the priority queue.
@@ -222,7 +236,7 @@ def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
         iteration: The iteration number.
         verbose: Whether to print the progress.
     """
-    h = hash(graph)
+    hash_before = hash(graph)
     for A, B in graph.edges:
         wires_A = graph.nodes[A]["component"].wires
         wires_B = graph.nodes[B]["component"].wires
@@ -251,10 +265,13 @@ def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
                     d = a + b
             component.shape = [a, b, c, d]
 
-    if h != hash(graph) and verbose:
+    if hash(graph) == hash_before:
+        return graph
+
+    if verbose:
         print(f"Iteration {iteration}: graph updated")
-        graph = optimize_fock_shapes(graph, iteration + 1, verbose)
-    return graph
+
+    return optimize_fock_shapes(graph, iteration + 1, verbose)
 
 
 def parse_components(components: list[CircuitComponent]) -> Graph:
@@ -272,7 +289,7 @@ def parse_components(components: list[CircuitComponent]) -> Graph:
     graph = Graph()
     for i, A in enumerate(components):
         comp = GraphComponent.from_circuitcomponent(A)
-        wires = Wires(*A.wires.args)
+        wires = A.wires.copy()
         comp.wires = wires
         for j, B in enumerate(components[i + 1 :]):
             ovlp_bra, ovlp_ket = wires.overlap(B.wires)
@@ -392,7 +409,7 @@ def assign_costs(graph: Graph, debug: int = 0) -> None:
         graph.edges[edge]["cost"] = A.contraction_cost(B)
         if debug > 0:
             print(
-                f"cost of edge {edge}: {A.representation}|{A.shape} x {B.representation}|{B.shape} = {graph.edges[edge]['cost']}"
+                f"cost of edge {edge}: {A.ansatz}|{A.shape} x {B.ansatz}|{B.shape} = {graph.edges[edge]['cost']}"
             )
 
 
@@ -416,10 +433,10 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
     r"""
     Reduces the first pair of nodes that match the pattern in the code.
     The first number and letter describe a node with that number of
-    edges and that representation (B for Bargmann, F for Fock), and the last letter
-    describes the representation of the second node.
+    edges and that ansatz (B for Bargmann, F for Fock), and the last letter
+    describes the ansatz of the second node.
     For example 1BB means we will contract the first occurrence of a node
-    that has one edge (a leaf) connected to a node of representation B with an arbitrary
+    that has one edge (a leaf) connected to a node of ansatz B with an arbitrary
     number of edges.
     We typically use codes like 1BB, 2BB, 1FF, 2FF by default because they are
     safe, and codes like 1BF, 1FB optionally as they are not always the best choice.
@@ -434,7 +451,7 @@ def reduce_first(graph: Graph, code: str) -> tuple[Graph, Edge | bool]:
             for edge in list(graph.out_edges(node)) + list(graph.in_edges(node)):
                 A = graph.nodes[edge[0]]["component"]
                 B = graph.nodes[edge[1]]["component"]
-                if A.representation[0] == tA and B.representation[0] == tB:
+                if A.ansatz[0] == tA and B.ansatz[0] == tB:
                     graph = contract(graph, edge)
                     return graph, edge
     return graph, False
