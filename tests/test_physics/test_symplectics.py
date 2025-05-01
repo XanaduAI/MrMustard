@@ -18,7 +18,7 @@ from hypothesis import strategies as st
 from thewalrus.symplectic import beam_splitter, expand, rotation, squeezing, two_mode_squeezing
 
 from mrmustard import math, settings
-from mrmustard.lab_dev import (
+from mrmustard.lab import (
     Amplifier,
     Attenuator,
     BSgate,
@@ -31,7 +31,7 @@ from mrmustard.lab_dev import (
     S2gate,
     Sgate,
 )
-from mrmustard.lab_dev.states import Thermal, TwoModeSqueezedVacuum, Vacuum
+from mrmustard.lab.states import Thermal, TwoModeSqueezedVacuum, Vacuum
 
 
 @given(r=st.floats(0, 2), phi=st.floats(0, 2 * np.pi))

@@ -23,7 +23,7 @@ from hypothesis import strategies as st
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 
-from mrmustard.lab_dev import (
+from mrmustard.lab import (
     DM,
     Attenuator,
     BSgate,

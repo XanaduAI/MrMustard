@@ -1,13 +1,12 @@
 mrmustard.lab
-=============
+=================
 
 .. toctree::
     :maxdepth: 1
 
-    lab/abstract
+    lab/circuit_components
+    lab/states
+    lab/transformations
+    lab/circuits
 
 .. currentmodule:: mrmustard.lab
-
-.. automodapi:: mrmustard.lab
-    :no-heading:
-    :include-all-objects:

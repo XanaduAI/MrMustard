@@ -31,7 +31,7 @@ from mrmustard.math.parameters import (
     update_unitary,
 )
 
-from mrmustard.lab_dev import Circuit
+from mrmustard.lab import Circuit
 
 __all__ = ["Optimizer"]
 

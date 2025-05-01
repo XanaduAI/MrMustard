@@ -1,0 +1,94 @@
+# Copyright 2023 Xanadu Quantum Technologies Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+The class representing a displaced squeezed state.
+"""
+
+from __future__ import annotations
+from typing import Sequence
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics import triples
+from .ket import Ket
+from ..utils import make_parameter
+
+__all__ = ["DisplacedSqueezed"]
+
+
+class DisplacedSqueezed(Ket):
+    r"""
+    The displaced squeezed state in Bargmann representation.
+
+
+    Args:
+        mode: The mode of the displaced squeezed state.
+        x: The displacement along the `x` axis, which represents the position axis in phase space.
+        y: The displacement along the `y` axis, which represents the momentum axis in phase space.
+        r: The squeezing magnitude.
+        phi: The squeezing angle.
+        x_trainable: Whether `x` is a trainable variable.
+        y_trainable: Whether `y` is a trainable variable.
+        r_trainable: Whether `r` is a trainable variable.
+        phi_trainable: Whether `phi` is a trainable variable.
+        x_bounds: The bounds of `x`.
+        y_bounds: The bounds of `y`.
+        r_bounds: The bounds of `r`.
+        phi_bounds: The bounds of `phi`.
+
+
+    Returns:
+        A ``Ket``.
+
+    .. code-block::
+
+        >>> from mrmustard.lab import DisplacedSqueezed, Vacuum, Sgate, Dgate
+
+        >>> state = DisplacedSqueezed(mode=0, x=1, phi=0.2)
+        >>> assert state == Vacuum(0) >> Sgate(0, phi=0.2) >> Dgate(0, x=1)
+    """
+
+    short_name = "DSq"
+
+    def __init__(
+        self,
+        mode: int,
+        x: float | Sequence[float] = 0.0,
+        y: float | Sequence[float] = 0.0,
+        r: float | Sequence[float] = 0.0,
+        phi: float | Sequence[float] = 0.0,
+        x_trainable: bool = False,
+        y_trainable: bool = False,
+        r_trainable: bool = False,
+        phi_trainable: bool = False,
+        x_bounds: tuple[float | None, float | None] = (None, None),
+        y_bounds: tuple[float | None, float | None] = (None, None),
+        r_bounds: tuple[float | None, float | None] = (None, None),
+        phi_bounds: tuple[float | None, float | None] = (None, None),
+    ):
+        super().__init__(name="DisplacedSqueezed")
+        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
+        self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
+        self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+
+        self._representation = self.from_ansatz(
+            modes=(mode,),
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.displaced_squeezed_vacuum_state_Abc,
+                x=self.parameters.x,
+                y=self.parameters.y,
+                r=self.parameters.r,
+                phi=self.parameters.phi,
+            ),
+        ).representation
