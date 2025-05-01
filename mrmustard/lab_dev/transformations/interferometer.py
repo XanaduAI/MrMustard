@@ -43,6 +43,15 @@ class Interferometer(Unitary):
 
     Raises:
         ValueError: If the size of the unitary does not match the number of modes.
+
+    .. code-block ::
+
+        >>> from mrmustard import math
+        >>> from mrmustard.lab_dev import Interferometer
+
+        >>> unitary = Interferometer(modes=(1, 2), unitary=math.eye(2))
+        >>> assert unitary.modes == (1, 2)
+        >>> assert math.allclose(unitary.symplectic, math.eye(4))
     """
 
     short_name = "I"

@@ -34,13 +34,6 @@ class QuadratureEigenstate(Ket):
     r"""
     The Quadrature eigenstate in Bargmann representation.
 
-    .. code-block ::
-
-        >>> from mrmustard.lab_dev import QuadratureEigenstate
-
-        >>> state = QuadratureEigenstate(1, x = 1, phi = 0)
-        >>> assert state.modes == (1,)
-
     Args:
         mode: The mode of the quadrature eigenstate.
         x: The displacement of the state.
@@ -49,6 +42,13 @@ class QuadratureEigenstate(Ket):
         phi_trainable: Whether `phi` is trainable.
         x_bounds: The bounds of `x`.
         phi_bounds: The bounds of `phi`.
+
+    .. code-block ::
+
+        >>> from mrmustard.lab_dev import QuadratureEigenstate
+
+        >>> state = QuadratureEigenstate(1, x = 1, phi = 0)
+        >>> assert state.modes == (1,)
 
     .. details::
         Its ``(A,b,c)`` triple is given by

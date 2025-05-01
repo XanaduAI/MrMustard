@@ -31,12 +31,44 @@ __all__ = ["BtoChar"]
 class BtoChar(Map):
     r"""
     The `s`-parametrized ``Dgate`` as a ``Map``. Also known as the Fourier transform of the Stratonovich-Weyl kernel. See https://arxiv.org/abs/quant-ph/9707010.
-
     This is an unphysical component whose purpose is to modify the internal representation of another component. In particular it transforms between the Bargmann representation and the s-parametrized Characteristic functions. Note that it can be applied to a subset of modes.
 
     Args:
         modes: The modes of this channel.
         s: The `s` parameter of this channel.
+
+    ..details::
+        This class represents the transformation from the Bargmann (B) representation
+        to characteristic function (Char).
+
+        Any operator, say O can be expressed in the displacement basis. Formally, we have that
+        the s-parametrized phase space basis is characterized by the following operators
+
+        .. math::
+
+            D_s(\alpha) = exp(s|\alpha|^2/2) D(\alpha).
+        The s-parametrized phase space representation of an object O, would therefore be
+
+        .. math::
+
+            mathrm{tr}(D_s(\alpha) O).
+
+        Important s-parametrizations include:
+        - s=1: returns the complex Fourier transform (or often
+        called the symplectic Fourier transform) of Galuber-Sudarshan P function.
+
+        - s=0: returns the characteristic function, which is equivalent to the complex Fourier
+        transform of the Wigner function.
+
+        - s=-1: returns the complex Fourier transform of the Q function.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import BtoChar, Ket
+        >>> from mrmustard import math
+
+        >>> chi = (Ket.random([0]) >> BtoChar([0], s=0)).ansatz
+        >>> assert math.allclose(chi(0,0), 1.0)
     """
 
     def __init__(

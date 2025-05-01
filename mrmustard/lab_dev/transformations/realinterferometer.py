@@ -39,6 +39,13 @@ class RealInterferometer(Unitary):
         modes: The modes this gate is applied to.
         orthogonal: A real unitary (orthogonal) matrix.  For N modes it must have shape `(N,N)`. If ``None``, a random orthogonal is generated.
         orthogonal_trainable: Whether ``orthogonal`` is trainable.
+
+    .. code-block::
+
+        >>> from mrmustard import math
+        >>> from mrmustard.lab_dev import RealInterferometer, Identity
+        >>> ri = RealInterferometer([0, 1], orthogonal = math.eye(2))
+        >>> assert ri == Identity((0,1))
     """
 
     short_name = "RI"

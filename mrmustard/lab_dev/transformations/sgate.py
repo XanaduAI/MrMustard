@@ -31,14 +31,6 @@ class Sgate(Unitary):
     r"""
     The squeezing gate.
 
-    .. code-block ::
-
-        >>> from mrmustard.lab_dev import Sgate
-
-        >>> unitary = Sgate(mode=1, r=0.1, phi=0.2)
-        >>> assert unitary.modes == (1,)
-        >>> assert unitary.parameters.r.value == 0.1
-        >>> assert unitary.parameters.phi.value == 0.2
 
     Args:
         mode: The mode this gate is applied to.
@@ -48,6 +40,15 @@ class Sgate(Unitary):
         phi_trainable: Whether ``phi`` is trainable.
         r_bounds: The bounds for ``r``.
         phi_bounds: The bounds for ``phi``.
+
+    .. code-block ::
+
+        >>> from mrmustard.lab_dev import Sgate
+
+        >>> unitary = Sgate(mode=1, r=0.1, phi=0.2)
+        >>> assert unitary.modes == (1,)
+        >>> assert unitary.parameters.r.value == 0.1
+        >>> assert unitary.parameters.phi.value == 0.2
 
     .. details::
 

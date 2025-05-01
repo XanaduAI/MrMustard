@@ -13,15 +13,7 @@
 # limitations under the License.
 
 # pylint: disable=abstract-method, chained-comparison, use-dict-literal, inconsistent-return-statements
-
-"""
-This module contains the base classes for the available quantum states.
-
-In the docstrings defining the available states we provide a definition in terms of
-the covariance matrix :math:`V` and the vector of means :math:`r`. Additionally, we
-provide the ``(A, b, c)`` triples that define the states in the Fock Bargmann
-representation.
-"""
+"The base for the ``State`` class"
 
 from __future__ import annotations
 
@@ -128,6 +120,13 @@ class State(CircuitComponent):
     def L2_norm(self) -> float:
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
+
+        .. code-block::
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Ket
+
+            >>> state = Ket.random([0])
+            >>> assert math.allclose(state.L2_norm, 1.0)
         """
         if isinstance(self.ansatz, PolyExpAnsatz) and self.ansatz.num_derived_vars > 0:
             fock_state = self.to_fock()
@@ -163,6 +162,18 @@ class State(CircuitComponent):
         Initializes a state of type ``cls`` from an ``(A, b, c)`` triple
         parametrizing the Ansatz in Bargmann representation.
 
+        Args:
+            modes: The modes of this state.
+            triple: The ``(A, b, c)`` triple.
+            name: The name of this state.
+
+        Returns:
+            A ``State``.
+
+        Raises:
+            ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
+                the number of modes.
+
         .. code-block::
 
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
@@ -176,18 +187,6 @@ class State(CircuitComponent):
             >>> assert coh.modes == modes
             >>> assert coh.ansatz == PolyExpAnsatz(*triple)
             >>> assert isinstance(coh, Ket)
-
-        Args:
-            modes: The modes of this state.
-            triple: The ``(A, b, c)`` triple.
-            name: The name of this state.
-
-        Returns:
-            A state.
-
-        Raises:
-            ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
-                the number of modes.
         """
         return cls.from_ansatz(modes, PolyExpAnsatz(*triple, lin_sup=lin_sup), name)
 
@@ -203,6 +202,20 @@ class State(CircuitComponent):
         Initializes a state of type ``cls`` from an array parametrizing the
         state in Fock representation.
 
+
+        Args:
+            modes: The modes of this state.
+            array: The Fock array.
+            name: The name of this state.
+            batch_dims: The number of batch dimensions in the given array.
+
+        Returns:
+            A ``State``.
+
+        Raises:
+            ValueError: If the given array has a shape that is inconsistent with the number of
+                modes.
+
         .. code-block::
 
             >>> from mrmustard.physics.ansatz import ArrayAnsatz
@@ -215,19 +228,6 @@ class State(CircuitComponent):
             >>> assert coh.modes == (0,)
             >>> assert coh.ansatz == ArrayAnsatz(array, batch_dims=0)
             >>> assert isinstance(coh, Ket)
-
-        Args:
-            modes: The modes of this state.
-            array: The Fock array.
-            name: The name of this state.
-            batch_dims: The number of batch dimensions in the given array.
-
-        Returns:
-            A state.
-
-        Raises:
-            ValueError: If the given array has a shape that is inconsistent with the number of
-                modes.
         """
         return cls.from_ansatz(modes, ArrayAnsatz(array, batch_dims=batch_dims), name)
 
@@ -249,6 +249,20 @@ class State(CircuitComponent):
 
         Returns:
             A state.
+
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Ket
+            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+
+            >>> A = math.astensor([[0,.5], [.5,0]])
+            >>> b = math.astensor([2-1j,2+1j])
+            >>> c = 1
+            >>> psi = Ket.from_ansatz([0,1], PolyExpAnsatz(A,b,c))
+
+            >>> assert isinstance(psi, Ket)
         """
 
     @classmethod
@@ -256,8 +270,7 @@ class State(CircuitComponent):
     def from_phase_space(
         cls,
         modes: Sequence[int],
-        cov: ComplexMatrix,
-        means: ComplexMatrix,
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
         atol_purity: float | None = None,
     ) -> State:
@@ -265,27 +278,35 @@ class State(CircuitComponent):
         Initializes a state from the covariance matrix and the vector of means of a state in
         phase space.
 
-        Note that if the given covariance matrix and vector of means are consistent with a pure
-        state, a ``Ket`` is returned. Otherwise, a ``DM`` is returned. One can skip this check by
-        setting ``atol_purity`` to ``None``.
 
         Args:
             modes: The modes of this states.
-            cov: The covariance matrix.
-            means: The vector of means.
+            triple: A covariance matrix, vector of means, and constant multiple triple.
             name: The name of this state.
             atol_purity: If ``atol_purity`` is given, the purity of the state is computed, and an
                 error is raised if its value is smaller than ``1-atol_purity`` or larger than
                 ``1+atol_purity``. If ``None``, this check is skipped.
 
         Returns:
-            A state.
+            A ``State``.
 
         Raises:
             ValueError: If the given ``cov`` and ``means`` have shapes that are inconsistent
                 with the number of modes.
             ValueError: If ``atol_purity`` is not ``None`` and the purity of the returned state
                 is smaller than ``1-atol_purity`` or larger than ``1+atol_purity``.
+
+        Note:
+            If the given covariance matrix and vector of means are consistent with a pure
+            state, a ``Ket`` is returned. Otherwise, a ``DM`` is returned. One can skip this check by
+            setting ``atol_purity`` to ``None`` (``atol_purity`` defaults to ``None``).
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Ket, Vacuum
+
+            >>> assert Ket.from_phase_space([0], (math.eye(2)/2, [0,0], 1)) == Vacuum([0])
         """
 
     @classmethod

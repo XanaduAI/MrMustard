@@ -30,12 +30,6 @@ class Coherent(Ket):
     r"""
     The coherent state in Bargmann representation.
 
-    .. code-block::
-
-        >>> from mrmustard.lab_dev import Coherent, Vacuum, Dgate
-
-        >>> state = Coherent(mode=0, x=0.3, y=0.2)
-        >>> assert state == Vacuum(0) >> Dgate(0, x=0.3, y=0.2)
 
     Args:
         mode: The mode of the coherent state.
@@ -45,6 +39,9 @@ class Coherent(Ket):
         y_trainable: Whether the `y` displacement is trainable.
         x_bounds: The bounds of the `x` displacement.
         y_bounds: The bounds of the `y` displacement.
+
+    Returns:
+        A ``Ket`` object representing a coherent state.
 
     .. details::
 
@@ -58,6 +55,18 @@ class Coherent(Ket):
 
         .. math::
             A = O_{N\text{x}N}\text{, }b=\bar{\alpha}\text{, and }c=\text{exp}\big(-|\bar{\alpha}^2|/2\big).
+        Note that vector of means in phase space for a coherent state with parameters ``x,y`` is
+        ``np.sqrt(2)*x, np.sqrt(2)*y`` (with units ``settings.HBAR=1``).
+
+
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import Coherent, Vacuum, Dgate
+
+        >>> state = Coherent(mode=0, x=0.3, y=0.2)
+        >>> assert state == Vacuum(0) >> Dgate(0, x=0.3, y=0.2)
+
     """
 
     short_name = "Coh"

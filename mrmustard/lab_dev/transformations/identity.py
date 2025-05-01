@@ -29,6 +29,9 @@ class Identity(Unitary):
     r"""
     The identity gate.
 
+    Args:
+        modes: The modes this gate is applied to.
+
     .. code-block ::
 
         >>> from mrmustard.lab_dev import Identity
@@ -36,8 +39,23 @@ class Identity(Unitary):
         >>> unitary = Identity(modes=(1, 2))
         >>> assert unitary.modes == (1, 2)
 
-    Args:
-        modes: The modes this gate is applied to.
+    .. details::
+
+        The Abc parametrization of the identity gate is given by (c.f. https://www.scipost.org/10.21468/SciPostPhys.17.3.082)
+        .. math::
+
+            A = \begin{pmatrix}
+                0 & 1 \\
+                1 & 0
+            \end{pmatrix},
+            \quad
+
+            b = \begin{pmatrix}
+                0 \\
+                0
+            \end{pmatrix},
+            \quad
+            c = 1
     """
 
     short_name = "I"

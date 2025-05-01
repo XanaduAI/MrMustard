@@ -30,12 +30,6 @@ class DisplacedSqueezed(Ket):
     r"""
     The displaced squeezed state in Bargmann representation.
 
-    .. code-block::
-
-        >>> from mrmustard.lab_dev import DisplacedSqueezed, Vacuum, Sgate, Dgate
-
-        >>> state = DisplacedSqueezed(mode=0, x=1, phi=0.2)
-        >>> assert state == Vacuum(0) >> Sgate(0, phi=0.2) >> Dgate(0, x=1)
 
     Args:
         mode: The mode of the displaced squeezed state.
@@ -51,6 +45,17 @@ class DisplacedSqueezed(Ket):
         y_bounds: The bounds of `y`.
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
+
+
+    Returns:
+        A ``Ket``.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import DisplacedSqueezed, Vacuum, Sgate, Dgate
+
+        >>> state = DisplacedSqueezed(mode=0, x=1, phi=0.2)
+        >>> assert state == Vacuum(0) >> Sgate(0, phi=0.2) >> Dgate(0, x=1)
     """
 
     short_name = "DSq"
