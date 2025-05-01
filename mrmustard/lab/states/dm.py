@@ -573,7 +573,6 @@ class DM(State):
         other_ket_indices = self.wires.ket[other_modes].indices
         other_indices = other_bra_indices + other_ket_indices
 
-        new_order = core_indices + other_indices
         new_order = math.astensor(core_indices + other_indices)
 
         batch_shape = self.ansatz.batch_shape
@@ -679,7 +678,6 @@ class DM(State):
         other_ket_indices = self.wires.ket[other_modes].indices
         other_indices = other_bra_indices + other_ket_indices
 
-        new_order = core_indices + other_indices
         new_order = math.astensor(core_indices + other_indices)
 
         A = self.ansatz.reorder(new_order).A
