@@ -1,5 +1,5 @@
 mrmustard.lab.circuits
-==========================
+======================
 
 .. currentmodule:: mrmustard.lab.circuits
 

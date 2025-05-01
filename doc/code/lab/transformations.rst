@@ -1,5 +1,5 @@
 mrmustard.lab.transformations
-=================================
+=============================
 
 .. currentmodule:: mrmustard.lab.transformations
 

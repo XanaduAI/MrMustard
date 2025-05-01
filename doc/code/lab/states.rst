@@ -1,5 +1,5 @@
 mrmustard.lab.states
-========================
+====================
 
 .. currentmodule:: mrmustard.lab.states
 

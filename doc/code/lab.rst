@@ -1,5 +1,5 @@
 mrmustard.lab
-=================
+=============
 
 .. toctree::
     :maxdepth: 1
