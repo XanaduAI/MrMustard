@@ -30,13 +30,6 @@ class TwoModeSqueezedVacuum(Ket):
     r"""
     The two-mode squeezed vacuum state.
 
-    .. code-block::
-
-        >>> from mrmustard.lab_dev import TwoModeSqueezedVacuum, S2gate, Vacuum
-
-        >>> state = TwoModeSqueezedVacuum(modes=(0, 1), r=0.3, phi=0.2)
-        >>> assert state == Vacuum((0,1)) >> S2gate((0, 1), r=0.3, phi=0.2)
-
 
     Args:
         modes: The modes of the two-mode squeezed vacuum state.
@@ -46,6 +39,17 @@ class TwoModeSqueezedVacuum(Ket):
         phi_trainable: Whether `phi` is trainable.
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
+
+    Returns:
+        A ``Ket`` type object that represents the two-mode squeezed vacuum state.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import TwoModeSqueezedVacuum, S2gate, Vacuum
+
+        >>> state = TwoModeSqueezedVacuum(modes=(0, 1), r=0.3, phi=0.2)
+        >>> assert state == Vacuum((0,1)) >> S2gate((0, 1), r=0.3, phi=0.2)
+
     """
 
     def __init__(

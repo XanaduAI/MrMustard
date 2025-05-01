@@ -41,7 +41,12 @@ class PhaseNoise(Channel):
         phase_stdev_trainable: Whether ``phase_stdev`` is trainable.
         phase_stdev_bounds: The bounds for ``phase_stdev``.
 
-    ..details::
+    .. code-block::
+        >>> from mrmustard.lab_dev import PhaseNoise, Coherent, DM
+        >>> phase_noise = PhaseNoise(0, phase_stdev=0.5)
+        >>> assert isinstance(Coherent(0, 1) >> phase_noise, DM)
+
+    .. details::
         The Fock representation is connected to the Fourier coefficients of the distribution.
     """
 

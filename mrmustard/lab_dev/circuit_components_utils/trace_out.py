@@ -35,6 +35,12 @@ class TraceOut(CircuitComponent):
     It has input wires on both the ket and bra sides, but no output wires. Its representation is
     the same as that of the identity channel.
 
+    Args:
+        modes: The modes to trace out.
+
+    Returns:
+        A ``CircuitComponent`` object that applies the trace-out operation.
+
     .. code-block::
 
         >>> from mrmustard.lab_dev import *

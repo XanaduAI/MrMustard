@@ -31,6 +31,13 @@ class Number(Ket):
     r"""
     The number state in Fock representation.
 
+
+    Args:
+        mode: The mode of the number state.
+        n: The number of photons.
+        cutoffs: The cutoffs. If ``cutoffs`` is ``None``, it
+            defaults to ``n+1``.
+
     .. code-block::
 
         >>> from mrmustard.lab_dev import Number
@@ -38,12 +45,6 @@ class Number(Ket):
 
         >>> state = Number(mode=0, n=10)
         >>> assert isinstance(state.ansatz, ArrayAnsatz)
-
-    Args:
-        mode: The mode of the number state.
-        n: The number of photons.
-        cutoffs: The cutoffs. If ``cutoffs`` is ``None``, it
-            defaults to ``n+1``.
 
     .. details::
 

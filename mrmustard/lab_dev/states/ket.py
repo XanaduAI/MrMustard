@@ -33,6 +33,8 @@ from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
     Scalar,
     Batch,
+    ComplexMatrix,
+    ComplexVector,
 )
 
 from .base import State, _validate_operator, OperatorType
@@ -56,6 +58,20 @@ class Ket(State):
     def is_physical(self) -> bool:
         r"""
         Whether the ket object is a physical one.
+
+        Returns:
+            A boolean variable.
+
+        Raises:
+            ValueError: if the state is batched (i.e., has batch dimension greater than 1).
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import Ket
+
+            >>> psi = Ket.random([0])
+
+            >>> assert psi.is_physical
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
@@ -75,11 +91,36 @@ class Ket(State):
 
     @property
     def probability(self) -> float:
-        r"""Probability of this Ket (L2 norm squared)."""
+        r"""
+        Probability of this Ket (L2 norm squared).
+
+        Returns:
+            The probability of this ``Ket``.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Ket
+
+            >>> psi = Ket.random([0])
+
+            >>> assert math.allclose(psi.probability, 1.0)
+        """
         return self.L2_norm
 
     @property
     def purity(self) -> float:
+        r"""
+        The purity of the state.
+
+        Returns:
+            The purity of this ``Ket`` (always 1.0).
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import Ket
+            >>> assert Ket.random([0]).purity == 1.0
+        """
         if self.ansatz:
             shape = (
                 self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
@@ -112,7 +153,7 @@ class Ket(State):
     def from_phase_space(
         cls,
         modes: Collection[int],
-        triple: tuple,
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
         atol_purity: float | None = None,
     ) -> Ket:
@@ -143,7 +184,19 @@ class Ket(State):
         Args:
             modes: The modes of the state.
             max_r: Maximum squeezing parameter over which we make random choices.
-        Output is a Ket
+
+        Returns:
+            A ``Ket`` object.
+
+        .. details::
+            The output is a random Gaussian unitary :math:`U` over :math:`modes` with
+            zero displacement and maximum squeezing `max_r` applied to vacuum state over `modes`,
+            i.e., :math:`U|0^{modes}\rangle`.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard.lab_dev import Ket
+            >>> assert isinstance(Ket.random([0,1]), Ket)
         """
 
         m = len(modes)
@@ -180,13 +233,25 @@ class Ket(State):
         array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
         that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
         single-mode marginal (default 99.9%).
-        If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
-        non-None values in ``manual_shape``.
 
         Args:
             max_prob: The maximum probability mass to capture in the shape (default from ``settings.AUTOSHAPE_PROBABILITY``).
             max_shape: The maximum shape to compute (default from ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+
+        Returns:
+            array: The Fock representation of this component.
+
+        Note:
+            If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
+            non-``None`` values in ``manual_shape``.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Vacuum, Ket
+
+            >>> assert math.allclose(Vacuum([0]).fock_array(), math.astensor([1]))
         """
         batch_shape = (
             self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
@@ -219,6 +284,15 @@ class Ket(State):
     def dm(self) -> DM:
         r"""
         The ``DM`` object obtained from this ``Ket``.
+
+        Returns:
+            A ``DM``.
+
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Vacuum, DM
+            >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
         repr = self.representation.contract(self.adjoint.representation, mode="zip")
         ret = DM(repr, self.name)
@@ -229,21 +303,38 @@ class Ket(State):
         r"""
         The expectation value of an operator calculated with respect to this Ket.
 
-        Given the operator `O`, this function returns :math:`Tr\big(|\psi\rangle\langle\psi| O)`\,
-        where :math:`|\psi\rangle` is the vector representing this state.
-
-        The ``operator`` is expected to be a component with ket-like wires (i.e., output wires on
-        the ket side), density matrix-like wires (output wires on both ket and bra sides), or
-        unitary-like wires (input and output wires on the ket side).
-
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
+
+        Returns:
+            Expectation value as a complex number.
 
         Raise:
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
                 component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
+
+        Note:
+            Given the operator `O`, this function returns :math:`Tr\big(|\psi\rangle\langle\psi| O)`\,
+            where :math:`|\psi\rangle` is the vector representing this state.
+
+            The ``operator`` is expected to be a component with ket-like wires (i.e., output wires on
+            the ket side), density matrix-like wires (output wires on both ket and bra sides), or
+            unitary-like wires (input and output wires on the ket side).
+
+        Example:
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Number, Rgate
+
+            >>> psi = Number(0, 1)
+            >>> theta = 0.123
+            >>> answer = math.exp(1j*theta)
+
+            >>> assert math.allclose(psi.expectation(Rgate(0, theta)), answer)
         """
         if (self.ansatz and self.ansatz.batch_shape) or (
             operator.ansatz and operator.ansatz.batch_shape
@@ -476,16 +567,34 @@ class Ket(State):
     def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
-        adding the adjoints when they are missing. Given this is a ``Ket`` object which
-        has only ket wires at the output, in expressions like ``ket >> channel`` where ``channel``
-        has wires on the ket and bra sides the adjoint of ket is automatically added, effectively
-        calling ``ket.adjoint @ (ket @ channel)`` and the method returns a new ``DM``.
-        In expressions lke ``ket >> u`` where ``u`` is a unitary, the adjoint of ``ket`` is
-        not needed and the method returns a new ``Ket``.
+        adding the adjoints when they are missing.
 
-        Returns a ``DM`` or a ``Ket`` when the wires of the resulting components are compatible
-        with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
-        and a (batched) scalar if there are no wires left, for convenience.
+        Args:
+            other: the ``CircuitComponent`` object that we want to contract the state with.
+
+        Returns:
+            A ``DM`` or a ``Ket`` when the wires of the resulting components are compatible
+            with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
+            and a (batched) scalar if there are no wires left, for convenience.
+
+        Note:
+            Given this is a ``Ket`` object which
+            has only ket wires at the output, in expressions like ``ket >> channel`` where ``channel``
+            has wires on the ket and bra sides the adjoint of ket is automatically added, effectively
+            calling ``ket.adjoint @ (ket @ channel)`` and the method returns a new ``DM``.
+            In expressions lke ``ket >> u`` where ``u`` is a unitary, the adjoint of ``ket`` is
+            not needed and the method returns a new ``Ket``.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Ket, DM, Attenuator, Dgate
+
+            >>> psi = Ket.random([0,1])
+            >>> U = Dgate(0, x=1, y=0)
+            >>> channel = Attenuator(0, .5)
+
+            >>> assert isinstance(psi >> U, Ket)
+            >>> assert isinstance(psi >> channel, DM)
         """
         result = super().__rshift__(other)
         if not isinstance(result, CircuitComponent):
