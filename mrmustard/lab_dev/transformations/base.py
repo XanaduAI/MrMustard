@@ -323,7 +323,7 @@ class Unitary(Operation):
 
 class Map(Transformation):
     r"""
-    A CircuitComponent more general than Channels, which are CPTP Maps.
+    A ``CircuitComponent`` more general than ``Channel``, which are CPTP maps.
     """
 
     short_name = "Map"

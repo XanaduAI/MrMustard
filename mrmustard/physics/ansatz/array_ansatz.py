@@ -17,7 +17,7 @@ This module contains the array ansatz.
 """
 
 from __future__ import annotations
-from typing import Any, Callable, Sequence, Union
+from typing import Any, Callable, Sequence
 from warnings import warn
 
 import numpy as np
@@ -142,8 +142,8 @@ class ArrayAnsatz(Ansatz):
         self,
         other: ArrayAnsatz,
         idx1: Sequence[str | int],
-        idx2: Sequence[Union[str, int]],
-        idx_out: Sequence[Union[str, int]],
+        idx2: Sequence[str | int],
+        idx_out: Sequence[str | int],
     ) -> ArrayAnsatz:
         r"""Contracts this ansatz with another using einsum-style notation with labels.
 

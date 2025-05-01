@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Sequence
+from typing import Sequence, Collection
 
 from enum import Enum
 
@@ -43,6 +43,7 @@ from mrmustard.utils.typing import (
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import BtoChar, BtoQ
+from ..transformations import Transformation
 
 __all__ = ["State"]
 
@@ -354,6 +355,21 @@ class State(CircuitComponent):
         else:
             return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
 
+    @abstractmethod
+    def formal_stellar_decomposition(
+        self, core_modes: Collection[int]
+    ) -> tuple[State, Transformation]:
+        r"""
+        Applies the formal stellar decomposition.
+
+        Args:
+            core_modes: The set of modes defining core variables.
+
+        Returns:
+            state: The core state.
+            transformation: The Gaussian transformation performing the stellar decomposition.
+        """
+
     def normalize(self) -> State:
         r"""
         Returns a rescaled version of the state such that its probability is 1.
@@ -391,6 +407,21 @@ class State(CircuitComponent):
         else:
             new_state = self.contract(BtoChar(self.modes, s=s), "zip")
         return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple())
+
+    @abstractmethod
+    def physical_stellar_decomposition(
+        self, core_modes: Collection[int]
+    ) -> tuple[State, Transformation]:
+        r"""
+        Applies the physical stellar decomposition.
+
+        Args:
+            core_modes: The set of modes defining core variables.
+
+        Returns:
+            state: The core state.
+            transformation: The Gaussian transformation performing the stellar decomposition.
+        """
 
     def quadrature_distribution(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
         r"""

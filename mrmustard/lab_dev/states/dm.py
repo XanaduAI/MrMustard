@@ -61,7 +61,9 @@ class DM(State):
         Whether this DM corresponds to a positive operator.
 
         Raises:
-            ValueError: if the batch dimension of the state is greater than 1.
+            NotImplementedError: If the state is mixed.
+            NotImplementedError: If the state has derived variables.
+            NotImplementedError: If the state has an ``ArrayAnsatz``.
 
         .. code-block::
 
@@ -94,10 +96,6 @@ class DM(State):
     def is_physical(self) -> bool:
         r"""
         Whether this DM is a physical density operator.
-
-        Raises:
-            ValueError: if the batch dimension of the state is greater than 1.
-
 
         .. code-block::
 
@@ -254,9 +252,7 @@ class DM(State):
             A ``tuple`` demonstrating the Fock cutoffs along each axis.
 
         Raises:
-            Warning: if the item is batched. In that case, the `auto_shape` will only output the
-            shape computed for the first element in the batch.
-
+            NotImplementedError: If the item is batched.
 
         .. code-block::
 
@@ -318,6 +314,7 @@ class DM(State):
             Expectation value as a complex number.
 
         Raise:
+            NotImplementedError: If the state is batched or ``operator`` is batched.
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
                 component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
@@ -377,7 +374,13 @@ class DM(State):
 
         Returns:
             The fidelity between this DM and the other state (Ket or DM).
+
+        Raises:
+            NotImplementedError: If the state is batched.
+            ValueError: If the states have different modes.
         """
+        if self.ansatz.batch_shape or other.ansatz.batch_shape:
+            raise NotImplementedError("Batched fidelity is not implemented.")
         if self.modes != other.modes:
             raise ValueError("Cannot compute fidelity between states with different modes.")
         if isinstance(other, DM):
@@ -453,7 +456,7 @@ class DM(State):
 
         return array
 
-    def formal_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[DM, Map]:
+    def formal_stellar_decomposition(self, core_modes):
         r"""
         Computes the formal stellar decomposition for the DM.
 
@@ -545,7 +548,7 @@ class DM(State):
             phi: The channel acting on the core modes (`Map`)
 
         Raises:
-            ValueError: if the number of core modes is not half the total number of modes.
+            ValueError: If the number of core modes is not half the total number of modes.
 
         Note:
             This method writes a given `DM` as a pure state (`Ket`) followed by a `Channel` acting
@@ -577,7 +580,7 @@ class DM(State):
         new_order = math.astensor(core_indices + other_indices)
 
         batch_shape = self.ansatz.batch_shape
-        A, b, c = self.ansatz.reorder(new_order).triple
+        A, b, _ = self.ansatz.reorder(new_order).triple
 
         m_modes = A.shape[-1] // 2
 
@@ -638,7 +641,7 @@ class DM(State):
 
             rho_p = rho_p.contract(d_ch, mode="zip")
             phi = (d_ch_inverse).contract(phi, mode="zip")
-        A, b, c = rho_p.ansatz.triple
+        A, b, _ = rho_p.ansatz.triple
         core = Ket.from_bargmann(self.modes, (A[..., m_modes:, m_modes:], b[..., m_modes:], c_tmp))
         phi = Channel.from_bargmann(core_modes, core_modes, phi.ansatz.triple)
         return core.normalize(), phi
@@ -657,7 +660,7 @@ class DM(State):
             phi: The channel acting on the core modes (`Channel`)
 
         Raises:
-            ValueError: if the rank condition is not satisfied.
+            ValueError: If the rank condition is not satisfied.
 
         .. code-block::
 
@@ -682,7 +685,7 @@ class DM(State):
         new_order = core_indices + other_indices
         new_order = math.astensor(core_indices + other_indices)
 
-        A, _, _ = self.ansatz.reorder(new_order).triple
+        A = self.ansatz.reorder(new_order).A
         batch_shape = self.ansatz.batch_shape
 
         M = len(core_modes)
@@ -702,7 +705,7 @@ class DM(State):
         rank = np.linalg.matrix_rank(
             r @ math.conj(r_transpose) + sigma @ math.conj(sigma_transpose)
         )
-        if np.any(rank > M):
+        if math.any(rank > M):
             raise ValueError(
                 "The physical mixed stellar decomposition is not possible for this DM, "
                 f"as the rank {rank} of the off-diagonal block of the Bargmann matrix is larger than the number "

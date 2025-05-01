@@ -558,7 +558,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert core.is_physical
         assert isinstance(core, Ket)
 
-        A, _, _ = core.ansatz.triple
+        A = core.ansatz.A
         assert math.allclose(A[0, 0], 0)
 
         # 4-mode example
@@ -592,7 +592,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert core.is_physical
         assert isinstance(core, DM)
 
-        A, _, _ = core.ansatz.triple
+        A = core.ansatz.A
         assert math.allclose(A[0, 0], 0)
 
         # 4-mode example

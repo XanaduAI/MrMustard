@@ -64,7 +64,9 @@ class Ket(State):
             A boolean variable.
 
         Raises:
-            ValueError: if the state is batched (i.e., has batch dimension greater than 1).
+            NotImplementedError: If the state is in a linear superposition.
+            NotImplementedError: If the state has derived variables.
+            NotImplementedError: If the state has an ``ArrayAnsatz``.
 
         Example:
         .. code-block::
@@ -243,6 +245,9 @@ class Ket(State):
         Returns:
             array: The Fock representation of this component.
 
+        Raises:
+            NotImplementedError: If the state is batched.
+
         Note:
             If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
             non-``None`` values in ``manual_shape``.
@@ -289,7 +294,6 @@ class Ket(State):
         Returns:
             A ``DM``.
 
-
         .. code-block::
 
             >>> from mrmustard.lab_dev import Vacuum, DM
@@ -310,7 +314,8 @@ class Ket(State):
         Returns:
             Expectation value as a complex number.
 
-        Raise:
+        Raises:
+            NotImplementedError: If the state or ``operator`` are batched.
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
                 component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
@@ -380,93 +385,6 @@ class Ket(State):
             raise ValueError("Cannot compute fidelity between states with different modes.")
         return self.expectation(other)
 
-    def physical_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[Ket, Unitary]:
-        r"""
-        Applies the physical stellar decomposition.
-
-        Args:
-            core_modes: The set of modes defining core variables.
-
-        Returns:
-            psi_core: The core state (`Ket`)
-            U: The Gaussian unitary performing the stellar decomposition.
-
-        Note:
-            This method pulls out the unitary ``U`` from the given state on the given modes, so that
-            the remaining state is a core state. Formally, we have
-            .. math::
-
-                \psi = (U\otimes\mathbb I) \psi_{\mathrm{core}}
-
-            where the unitary :math:`U` acts on the given `core_modes` only.
-            Core states have favorable properties in the Fock representation
-            e.g., being sparse.
-
-        .. code-block::
-            >>> from mrmustard import math
-            >>> from mrmustard.lab_dev import Ket
-
-            >>> psi = Ket.random([0,1])
-            >>> core, U = psi.physical_stellar_decomposition([0])
-            >>> assert psi == core >> U
-
-            >>> A_c = core.ansatz.A
-            >>> assert math.allclose(A_c[0,0], 0)
-        """
-        # bringing A to the ordering of our interest
-        other_modes = [m for m in self.modes if m not in core_modes]
-        core_indices = self.wires[core_modes].indices
-        other_indices = self.wires[other_modes].indices
-        new_order = core_indices + other_indices
-
-        A, b, _ = self.ansatz.reorder(new_order).triple
-
-        M = len(core_modes)
-
-        # we pick the blocks according to the naming chosen in the paper
-        Am = A[..., :M, :M]
-
-        batch_shape = self.ansatz.batch_shape
-
-        gamma_squared = math.eye(M, dtype=math.complex128) - Am @ math.conj(Am)
-        gamma_evals, gamma_evecs = math.eigh(gamma_squared)
-
-        gamma = math.einsum(
-            "...ij,...j,...kj->...ik",
-            gamma_evecs,
-            math.sqrt(gamma_evals),
-            math.conj(gamma_evecs),
-        )
-        gamma_transpose = math.einsum("...ij->...ji", gamma)
-
-        Au = math.block([[Am, gamma], [gamma_transpose, -math.conj(Am)]])
-
-        bu = math.zeros(batch_shape + (2 * M,), dtype=math.complex128)
-
-        cu = math.ones(batch_shape, dtype=math.complex128)
-        U = Unitary.from_bargmann(core_modes, core_modes, (Au, bu, cu))
-
-        u_renorm = (U.contract(U.dual, mode="zip")).ansatz.c
-
-        U /= math.sqrt(u_renorm)
-
-        # addressing the displacement problem
-        core_p = self.contract(U.dual, mode="zip")
-        alpha = core_p.ansatz.b[..., core_indices]
-        for i, m in enumerate(core_modes):
-            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
-            d_g_inv = d_g.dual
-
-            core_p = core_p.contract(d_g, mode="zip")
-            U = (d_g_inv).contract(U, mode="zip")
-
-        core = Ket.from_bargmann(self.modes, core_p.ansatz.triple)
-        c_core = core.ansatz.c
-        phase_core = math.angle(c_core)
-        core = core * math.exp(-1j * phase_core)
-        U = U * math.exp(1j * phase_core)
-        return core, U
-
     def formal_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[Ket, Operation]:
         r"""
         Applies the formal stellar decomposition.
@@ -475,7 +393,7 @@ class Ket(State):
             core_modes: The set of modes defining core variables.
 
         Returns:
-            S: The core state (`Ket`)
+            S: The core state (`Ket`).
             T: The Gaussian `Operation` performing the stellar decomposition.
 
         Note:
@@ -494,7 +412,7 @@ class Ket(State):
 
             >>> psi = Ket.random([0,1])
             >>> core, t = psi.formal_stellar_decomposition([0])
-            >>> A_core, _, _ = core.ansatz.triple
+            >>> A_core = core.ansatz.A
 
             >>> assert A_core[0,0] == 0
         """
@@ -544,6 +462,92 @@ class Ket(State):
         t = Operation.from_bargmann(core_modes, core_modes, (At, bt, ct))
 
         return s, t
+
+    def physical_stellar_decomposition(self, core_modes):
+        r"""
+        Applies the physical stellar decomposition.
+
+        Args:
+            core_modes: The set of modes defining core variables.
+
+        Returns:
+            psi_core: The core state (`Ket`)
+            U: The Gaussian unitary performing the stellar decomposition.
+
+        Note:
+            This method pulls out the unitary ``U`` from the given state on the given modes, so that
+            the remaining state is a core state. Formally, we have
+            .. math::
+
+                \psi = (U\otimes\mathbb I) \psi_{\mathrm{core}}
+
+            where the unitary :math:`U` acts on the given `core_modes` only.
+            Core states have favorable properties in the Fock representation
+            e.g., being sparse.
+
+        .. code-block::
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Ket
+
+            >>> psi = Ket.random([0,1])
+            >>> core, U = psi.physical_stellar_decomposition([0])
+            >>> assert psi == core >> U
+
+            >>> A_c = core.ansatz.A
+            >>> assert math.allclose(A_c[0,0], 0)
+        """
+        # bringing A to the ordering of our interest
+        other_modes = [m for m in self.modes if m not in core_modes]
+        core_indices = self.wires[core_modes].indices
+        other_indices = self.wires[other_modes].indices
+        new_order = core_indices + other_indices
+
+        A = self.ansatz.reorder(new_order).A
+        M = len(core_modes)
+
+        # we pick the blocks according to the naming chosen in the paper
+        Am = A[..., :M, :M]
+
+        batch_shape = self.ansatz.batch_shape
+
+        gamma_squared = math.eye(M, dtype=math.complex128) - Am @ math.conj(Am)
+        gamma_evals, gamma_evecs = math.eigh(gamma_squared)
+
+        gamma = math.einsum(
+            "...ij,...j,...kj->...ik",
+            gamma_evecs,
+            math.sqrt(gamma_evals),
+            math.conj(gamma_evecs),
+        )
+        gamma_transpose = math.einsum("...ij->...ji", gamma)
+
+        Au = math.block([[Am, gamma], [gamma_transpose, -math.conj(Am)]])
+
+        bu = math.zeros(batch_shape + (2 * M,), dtype=math.complex128)
+
+        cu = math.ones(batch_shape, dtype=math.complex128)
+        U = Unitary.from_bargmann(core_modes, core_modes, (Au, bu, cu))
+
+        u_renorm = (U.contract(U.dual, mode="zip")).ansatz.c
+
+        U /= math.sqrt(u_renorm)
+
+        # addressing the displacement problem
+        core_p = self.contract(U.dual, mode="zip")
+        alpha = core_p.ansatz.b[..., core_indices]
+        for i, m in enumerate(core_modes):
+            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
+            d_g_inv = d_g.dual
+
+            core_p = core_p.contract(d_g, mode="zip")
+            U = (d_g_inv).contract(U, mode="zip")
+
+        core = Ket.from_bargmann(self.modes, core_p.ansatz.triple)
+        c_core = core.ansatz.c
+        phase_core = math.angle(c_core)
+        core = core * math.exp(-1j * phase_core)
+        U = U * math.exp(1j * phase_core)
+        return core, U
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
