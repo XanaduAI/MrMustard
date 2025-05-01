@@ -31,7 +31,12 @@ from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
-from mrmustard.utils.typing import ComplexTensor
+from mrmustard.utils.typing import (
+    ComplexTensor,
+    RealVector,
+    ComplexMatrix,
+    ComplexVector,
+)
 
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
@@ -53,7 +58,15 @@ class DM(State):
     @property
     def is_positive(self) -> bool:
         r"""
-        Whether this DM is a positive operator.
+        Whether this DM corresponds to a positive operator.
+
+        Raises:
+            ValueError: if the batch dimension of the state is greater than 1.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import DM
+            >>> assert DM.random([0]).is_positive
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
@@ -81,6 +94,15 @@ class DM(State):
     def is_physical(self) -> bool:
         r"""
         Whether this DM is a physical density operator.
+
+        Raises:
+            ValueError: if the batch dimension of the state is greater than 1.
+
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import DM
+            >>> assert DM.random([0]).is_physical
         """
         return self.is_positive and math.allclose(self.probability, 1, settings.ATOL)
 
@@ -97,6 +119,15 @@ class DM(State):
 
     @property
     def purity(self) -> float:
+        r"""Computes the purity (:math:`tr(rho^2)) of this DM.
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import DM, Vacuum
+
+            >>> assert math.allclose(Vacuum([0]).dm().purity, 1.0)
+        """
         return self.L2_norm
 
     @classmethod
@@ -123,7 +154,7 @@ class DM(State):
     def from_phase_space(
         cls,
         modes: Collection[int],
-        triple: tuple,
+        triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
         atol_purity: float | None = None,  # pylint: disable=unused-argument
     ) -> DM:
@@ -136,6 +167,25 @@ class DM(State):
             modes: The modes of this states.
             triple: The ``(cov, means, coeff)`` triple.
             name: The name of this state.
+            atol_purity: Unused argument.
+
+        Returns:
+            A ``DM`` object from its phase space representation.
+
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import DM, Vacuum
+
+            >>> rho = DM.from_phase_space([0], (math.eye(2)/2, [0,0], 1))
+
+            >>> assert rho == Vacuum([0]).dm()
+
+        .. details::
+
+            The Wigner function is considered as
+            :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
         """
         cov, means, coeff = triple
         cov = math.astensor(cov)
@@ -195,9 +245,23 @@ class DM(State):
         non-None values in ``manual_shape``.
 
         Args:
-            max_prob: The maximum probability mass to capture in the shape (default in ``settings.AUTOSHAPE_PROBABILITY``).
+            max_prob: The maximum probability mass to capture in the shape (default in
+            ``settings.AUTOSHAPE_PROBABILITY``).
             max_shape: The maximum shape to compute (default in ``settings.AUTOSHAPE_MAX``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+
+        Returns:
+            A ``tuple`` demonstrating the Fock cutoffs along each axis.
+
+        Raises:
+            Warning: if the item is batched. In that case, the `auto_shape` will only output the
+            shape computed for the first element in the batch.
+
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Vacuum
+            >>> assert Vacuum([0]).dm().auto_shape() == (1,1)
         """
         if self.ansatz.batch_shape:
             raise NotImplementedError("Batched auto_shape is not implemented.")
@@ -225,6 +289,14 @@ class DM(State):
     def dm(self) -> DM:
         r"""
         The ``DM`` object obtained from this ``DM``.
+
+        Returns:
+            A ``DM``.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Vacuum, DM
+            >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
         return self
 
@@ -242,11 +314,26 @@ class DM(State):
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
 
+        Returns:
+            Expectation value as a complex number.
+
         Raise:
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
                 component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
                 modes of this state.
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Rgate, GDM
+
+            >>> beta = 1
+            >>> symplectic = math.eye(2)
+            >>> rho = GDM([0], beta, symplectic)
+            >>> answer = (1-math.exp(-beta))/(1+math.exp(-beta))
+
+            >>> assert math.allclose(rho.expectation(Rgate(0, np.pi)), answer)
         """
         if (self.ansatz and self.ansatz.batch_shape) or (
             operator.ansatz and operator.ansatz.batch_shape
@@ -328,11 +415,30 @@ class DM(State):
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is estimated.
+
             standard_order: The ordering of the wires. If ``standard_order = False``, then the conventional ordering
             of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
             standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
+
         Returns:
             array: The Fock representation of this component.
+
+        Note:
+            The ``standard_order`` boolean argument lets one choose the standard convention for the
+            index ordering of the density matrix. For a single mode, if ``standard_order=True`` the
+            returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket)
+            side of the matrix and the second index to the "right" (bra) side. Otherwise, MrMustard's
+            convention is that the bra index comes before the ket index. In other words, for a single
+            mode, the array returned by ``fock_array`` with ``standard_order=False`` (false by default)
+            is the transpose of the standard density matrix. For multiple modes, the same applies to each
+            pair of indices of each mode.
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Vacuum, DM
+
+            >>> assert math.allclose(Vacuum([0]).dm().fock_array(), math.astensor([[1]]))
         """
         array = super().fock_array(shape or self.auto_shape())
         if standard_order:
@@ -491,12 +597,12 @@ class DM(State):
         r_evals, r_evecs = math.eigh(r_squared)
 
         r_core_transpose = math.einsum(
-            "...ij, ...j, ...kj -> ...ik",
+            "...ij,...j,...kj->...ik",
             r_evecs,
             math.sqrt(r_evals),
             math.conj(r_evecs),
         )
-        r_core = math.einsum("...ij -> ...ji", r_core_transpose)
+        r_core = math.einsum("...ij->...ji", r_core_transpose)
 
         Aphi_out = Am
         Os = math.zeros(batch_shape + (M,) * 2, dtype=math.complex128)
@@ -644,9 +750,10 @@ class DM(State):
 
             rho_p = rho_p.contract(d_ch, mode="zip")
             phi = (d_ch_inverse).contract(phi, mode="zip")
-        core = DM.from_bargmann(self.modes, rho_p.ansatz.triple)
+        c_tmp = math.ones_like(rho_p.ansatz.c)
+        rho_p = DM.from_bargmann(self.modes, (rho_p.ansatz.A, rho_p.ansatz.b, c_tmp))
         phi = Channel.from_bargmann(core_modes, core_modes, phi.ansatz.triple)
-        return core, phi
+        return rho_p.normalize(), phi
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
@@ -679,12 +786,26 @@ class DM(State):
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
-        adding the adjoints when they are missing. Given this is a ``DM`` object which
-        has both ket and bra wires at the output, expressions like ``dm >> u`` where
-        ``u`` is a unitary will automatically apply the adjoint of ``u`` on the bra side.
+        adding the adjoints when they are missing.
 
-        Returns a ``DM`` when the wires of the resulting components are compatible with
-        those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
+        Args:
+            other: the ``CircuitComponent`` we want to contract with.
+
+        Returns:
+            A ``DM`` when the wires of the resulting components are compatible with
+            those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
+
+        Note:
+            Given this is a ``DM`` object which
+            has both ket and bra wires at the output, expressions like ``dm >> u`` where
+            ``u`` is a unitary will automatically apply the adjoint of ``u`` on the bra side.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import CircuitComponent, DM, TraceOut
+
+            >>> assert isinstance(DM.random([0]).dual >> DM.random([0]), CircuitComponent)
+            >>> assert isinstance(DM.random([0,1]) >> TraceOut([0]), DM)
         """
 
         result = super().__rshift__(other)

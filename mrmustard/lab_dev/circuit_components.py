@@ -125,6 +125,13 @@ class CircuitComponent:
         r"""
         The adjoint of this component obtained by conjugating the representation and swapping
         the ket and bra wires.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Ket
+
+            >>> psi = Ket.random([0])
+            >>> assert psi.dm() == psi.contract(psi.adjoint)
         """
         ret = CircuitComponent(self.representation.adjoint, self.name)
         ret.short_name = self.short_name
@@ -137,6 +144,14 @@ class CircuitComponent:
         r"""
         The dual of this component obtained by conjugating the representation and swapping
         the input and output wires.
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import Ket
+
+            >>> psi = Ket.random([0])
+            >>> assert math.allclose(1.0, psi >> psi.dual)
         """
         ret = CircuitComponent(self.representation.dual, self.name)
         ret.short_name = self.short_name
@@ -167,6 +182,13 @@ class CircuitComponent:
     def modes(self) -> list[int]:
         r"""
         The sorted list of modes of this component.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Ket
+
+            >>> ket = Ket.random([0, 1])
+            >>> assert ket.modes == (0, 1)
         """
         return tuple(sorted(self.wires.modes))
 
@@ -174,6 +196,12 @@ class CircuitComponent:
     def name(self) -> str:
         r"""
         The name of this component.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import BtoPS
+
+            >>> assert BtoPS(modes=0, s=0).name == "BtoPS"
         """
         if self._name is None:
             name = self.short_name
@@ -185,6 +213,13 @@ class CircuitComponent:
     def n_modes(self) -> int:
         r"""
         The number of modes spanned by this component across all wires.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Ket
+
+            >>> ket = Ket.random([0, 1])
+            >>> assert ket.n_modes == 2
         """
         return len(self.modes)
 
@@ -192,6 +227,13 @@ class CircuitComponent:
     def parameters(self) -> ParameterSet:
         r"""
         The set of parameters of this component.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Coherent
+
+            >>> coh = Coherent(mode=0, x=1.0)
+            >>> assert coh.parameters.x.value == 1.0
         """
         return self._parameters
 
@@ -199,6 +241,16 @@ class CircuitComponent:
     def ansatz(self) -> Ansatz | None:
         r"""
         The ansatz of this circuit component.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Coherent
+            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+
+            >>> coh = Coherent(mode=0, x=1.0)
+            >>> assert isinstance(coh.ansatz, PolyExpAnsatz)
+            >>> A = coh.ansatz.A
+            >>> assert A.shape == (1, 1)
         """
         return self._representation.ansatz
 
@@ -213,6 +265,13 @@ class CircuitComponent:
     def wires(self) -> Wires:
         r"""
         The wires of this component.
+
+        .. code-block::
+
+            >>> from mrmustard.lab_dev import Coherent
+
+            >>> coh = Coherent(mode=0, x=1.0)
+            >>> assert coh.wires.output.ket.modes == {0}
         """
         return self._representation.wires
 
@@ -239,6 +298,25 @@ class CircuitComponent:
 
         Returns:
             A circuit component with the given Bargmann representation.
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.lab_dev import CircuitComponent, Identity
+            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+
+            >>> A = math.astensor([[0, 1], [1, 0]])
+            >>> b = math.astensor([0, 0])
+            >>> c = 1
+            >>> modes_out_bra = {}
+            >>> modes_in_bra = {}
+            >>> modes_out_ket = {0}
+            >>> modes_in_ket = {0}
+            >>> triple = (A, b, c)
+            >>> cc = CircuitComponent.from_bargmann(triple, modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
+
+            >>> assert isinstance(cc.ansatz, PolyExpAnsatz)
+            >>> assert cc.representation == Identity(modes = 0).representation
         """
         ansatz = PolyExpAnsatz(*triple)
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
@@ -458,7 +536,7 @@ class CircuitComponent:
         the attenuator has two inputs: on the ket and the bra side.
         The ``>>`` operator would automatically add the adjoint of the coherent
         state on the bra side of the input of the attenuator, but the ``@`` operator
-        instead does not:
+        instead does not.
 
         .. code-block::
             >>> from mrmustard.lab_dev import Coherent, Attenuator
@@ -538,6 +616,7 @@ class CircuitComponent:
     def to_bargmann(self) -> CircuitComponent:
         r"""
         Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
+
         .. code-block::
 
             >>> from mrmustard.lab_dev import Dgate
@@ -690,8 +769,8 @@ class CircuitComponent:
         part may result from an automated contraction subroutine that involves several components).
 
         .. code-block::
+
             >>> from mrmustard.lab_dev import Coherent, Attenuator, Ket, DM, Channel
-            >>> import numpy as np
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
             >>> assert isinstance(Coherent(0, 1.0) >> Attenuator(0, 0.5), DM)

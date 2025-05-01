@@ -28,23 +28,29 @@ __all__ = ["BargmannEigenstate"]
 
 class BargmannEigenstate(Ket):
     r"""
-    The Bargmann eigenstate.
+    The `N`-mode Bargmann eigenstate.
 
-    .. code-block ::
+    Args:
+        modes: A list of modes.
+        alpha: The displacement of the state (i.e., the eigen-value).
+
+    Notes:
+        The only difference with ``Coherent(modes, alphas)`` is in its `c` parameter (and hence, does not have unit norm).
+
+    .. code-block::
 
         >>> from mrmustard.lab_dev import BargmannEigenstate
 
         >>> state = BargmannEigenstate(1, 0.1 + 0.5j)
         >>> assert state.modes == (1,)
 
-    Args:
-        mode: The mode of the Bargmann eigenstate.
-        alpha: The displacement of the state (i.e., the eigen-value).
-
     .. details::
+
         Its ``(A,b,c)`` triple is given by
+
         .. math::
-            A = 0 , b = alpha, c = 1.
+            A = 0 , b = \alpha, c = 1.
+
     """
 
     short_name = "Be"

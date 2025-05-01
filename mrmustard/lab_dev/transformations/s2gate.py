@@ -30,15 +30,6 @@ class S2gate(Unitary):
     r"""
     The two-mode squeezing gate.
 
-    .. code-block ::
-
-        >>> import numpy as np
-        >>> from mrmustard.lab_dev import S2gate
-
-        >>> unitary = S2gate(modes=(1, 2), r=1)
-        >>> assert unitary.modes == (1, 2)
-        >>> assert unitary.parameters.r.value == 1
-        >>> assert unitary.parameters.phi.value == 0.0
 
     Args:
         modes: The pair of modes of the two-mode squeezing gate.
@@ -48,6 +39,15 @@ class S2gate(Unitary):
         phi_trainable: Whether ``phi`` is trainable.
         r_bounds: The bounds for ``r``.
         phi_bounds: The bounds for ``phi``.
+
+    .. code-block ::
+
+        >>> from mrmustard.lab_dev import S2gate
+
+        >>> unitary = S2gate(modes=(1, 2), r=1)
+        >>> assert unitary.modes == (1, 2)
+        >>> assert unitary.parameters.r.value == 1
+        >>> assert unitary.parameters.phi.value == 0.0
 
     .. details::
 

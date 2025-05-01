@@ -33,6 +33,11 @@ class Ggate(Unitary):
     r"""
     The generic N-mode Gaussian gate.
 
+    Args:
+        modes: The modes this gate is applied to.
+        symplectic: The symplectic matrix of the gate in the XXPP ordering.
+        symplectic_trainable: Whether ``symplectic`` is trainable.
+
     .. code-block ::
 
         >>> from mrmustard import math
@@ -41,11 +46,6 @@ class Ggate(Unitary):
         >>> U = Ggate(modes=0, symplectic=math.random_symplectic(1))
         >>> assert isinstance(Vacuum(0) >> U, Ket)
         >>> assert U >> U.dual == Identity(0)
-
-    Args:
-        modes: The modes this gate is applied to.
-        symplectic: The symplectic matrix of the gate in the XXPP ordering.
-        symplectic_trainable: Whether ``symplectic`` is trainable.
     """
 
     short_name = "G"

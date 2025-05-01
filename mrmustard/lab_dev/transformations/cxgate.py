@@ -31,18 +31,25 @@ class CXgate(Unitary):
     r"""
     Controlled X gate.
 
-    .. math::
-
-        C_X = \exp(is q_1 \otimes p_2).
-
-    Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
-
-
     Args:
         modes: The pair of modes of the controlled-X gate.
         s: The control parameter.
         s_trainable: Whether ``s`` is trainable.
         s_bounds: The bounds for ``s``.
+
+    .. code-block ::
+        >>> from mrmustard.lab_dev import CXgate
+        >>> gate = CXgate((0, 1), s=0.5)
+        >>> assert gate.modes == (0, 1)
+        >>> assert gate.parameters.s.value == 0.5
+
+    .. details::
+
+        We have that the controlled-X gate is defined as
+            .. math::
+
+                C_X = \exp(is q_1 \otimes p_2).
+        Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
     """
 
     short_name = "CX"

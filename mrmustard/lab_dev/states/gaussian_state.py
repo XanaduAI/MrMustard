@@ -39,19 +39,34 @@ class GKet(Ket):
     r"""
     The `N`-mode pure state described by a Gaussian gate that acts on Vacuum.
 
-    ..details:
-        For a given Gaussian unitary U (that is determined by its symplectic
-        representation), produces the state
-        ..math:
-            |\psi\rangle = U |0\rangle
 
     Args:
         modes: the modes over which the state is defined.
         symplectic: the symplectic representation of the unitary that acts on
         vacuum to produce the desired state. If `None`, a random symplectic matrix
         is chosen.
-        symplectic_trainable: determines if the symplectic matrix can be trained.
+        symplectic_trainable: Whether `symplectic` is trainable.
 
+    Returns:
+        A ``Ket``.
+
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import GKet, Ket
+
+        >>> psi = GKet([0])
+
+        >>> assert isinstance(psi, Ket)
+
+    .. details::
+
+        For a given Gaussian unitary U (that is determined by its symplectic
+        representation), produces the state
+
+        .. math::
+
+            |\psi\rangle = U |0\rangle
     """
 
     short_name = "Gk"
@@ -103,12 +118,6 @@ class GDM(DM):
     The `N`-mode mixed state described by a Gaussian gate that acts on a given
     thermal state.
 
-    ..details:
-        For a given Gaussian unitary U (that is determined by its symplectic
-        representation), and a set of temperatures, produces the state
-        ..math:
-            \rho = U (\bigotimes_i \rho_t(\beta_i))
-        where rho_t are thermal states with temperatures determined by beta.
 
     Args:
         modes: The modes over which the state is defined.
@@ -118,8 +127,28 @@ class GDM(DM):
         symplectic: The symplectic representation of the unitary that acts on a
         vacuum to produce the desired state. If `None`, a random symplectic matrix
         is chosen.
-        beta_trainable: Whether `beta` is trainable.
         symplectic_trainable: Whether `symplectic` is trainable.
+
+    Returns:
+        A ``DM``.
+
+    .. code-block::
+
+        >>> from mrmustard.lab_dev import GDM, DM
+
+        >>> rho = GDM([0], beta = 1.0)
+
+        >>> assert isinstance(rho, DM)
+
+    .. details::
+
+        For a given Gaussian unitary U (that is determined by its symplectic
+        representation), and a set of temperatures, produces the state
+
+        .. math::
+
+            \rho = U (\bigotimes_i \rho_t(\beta_i))
+        where rho_t are thermal states with temperatures determined by beta.
     """
 
     short_name = "Gd"
