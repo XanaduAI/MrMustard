@@ -18,7 +18,6 @@
 
 import pytest
 
-import mrmustard.lab.circuit_components_utils.branch_and_bound as bb
 from mrmustard import settings
 from mrmustard.lab import (
     Attenuator,
@@ -53,20 +52,6 @@ class TestCircuit:
         circ2 = Circuit() >> vac >> sgate >> sgate.on(1) >> bs01 >> bs12
         assert circ2.components == [vac, sgate, sgate.on(1), bs01, bs12]
         assert circ2.path == [(0, 1), (0, 2), (0, 3), (0, 4)]
-
-    def test_propagate_shapes(self):
-        MAX = settings.AUTOSHAPE_MAX
-        settings.AUTOSHAPE_PROBABILITY = 0.999
-        circ = Circuit([Coherent(0, x=1.0), Dgate(0, 0.1)])
-        assert [op.auto_shape() for op in circ] == [(5,), (MAX, MAX)]
-        circ.optimize_fock_shapes(verbose=False)
-        assert [op.auto_shape() for op in circ] == [(5,), (MAX, 5)]
-
-        circ = Circuit([SqueezedVacuum(0, r=0.5), SqueezedVacuum(1, r=-0.5), BSgate((0, 1), 0.9)])
-        assert [op.auto_shape() for op in circ] == [(6,), (6,), (MAX, MAX, MAX, MAX)]
-        circ.optimize_fock_shapes(verbose=True)
-        assert [op.auto_shape() for op in circ] == [(6,), (6,), (12, 12, 6, 6)]
-        settings.AUTOSHAPE_PROBABILITY = 0.99999
 
     def test_lookup_path(self, capfd):
         vac = Vacuum((0, 1, 2))
@@ -120,15 +105,6 @@ class TestCircuit:
         circuit.path = path
 
         assert circuit.path == path
-
-    def test_path_errors(self):
-        vac12 = Vacuum((1, 2))
-
-        with pytest.raises(ValueError, match="Overlapping"):
-            Circuit([vac12, vac12])
-
-        with pytest.raises(ValueError, match="Overlapping"):
-            Circuit([vac12.adjoint, vac12.adjoint])
 
     def test_eq(self):
         vac = Vacuum((0, 1, 2))
@@ -300,18 +276,3 @@ class TestCircuit:
         opt_path = circ.path
         assert opt_path != base_path
         assert load(circ.serialize()).path == opt_path
-
-    def test_graph_children_and_grandchildren(self):
-        """tests that the children function returns the correct graphs"""
-
-        circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Dgate(0, x=1.0)])
-        bb.assign_costs(circ._graph)
-        children_set = bb.children(circ._graph, int(1e20))
-        for child in children_set:
-            assert isinstance(child, bb.Graph)
-            assert len(child.nodes) == 2
-
-        grandchildren_set = bb.grandchildren(circ._graph, int(1e20))
-        for grandchild in grandchildren_set:
-            assert isinstance(grandchild, bb.Graph)
-            assert len(grandchild.nodes) == 1

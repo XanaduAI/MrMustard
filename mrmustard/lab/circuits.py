@@ -20,13 +20,12 @@ A class to simulate quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
-from copy import deepcopy
 from typing import Sequence
 from pydoc import locate
 from mrmustard import math, settings
 from mrmustard.utils.serialize import save
 from mrmustard.lab.circuit_components import CircuitComponent
-import mrmustard.lab.circuit_components_utils.branch_and_bound as bb
+from mrmustard.path import optimal_path
 
 __all__ = ["Circuit"]
 
@@ -79,7 +78,6 @@ class Circuit:
         components: Sequence[CircuitComponent] | None = None,
     ) -> None:
         self.components = [c._light_copy() for c in components] if components else []
-        self._graph = bb.parse_components(self.components)
         self.path: list[tuple[int, int]] = [
             (0, i) for i in range(1, len(self.components))
         ]  # default path (likely not optimal)
@@ -97,24 +95,9 @@ class Circuit:
             with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
             verbose: If True (default), the progress of the optimization is shown.
         """
-        graph = deepcopy(self._graph)
-        bb.assign_costs(graph)
-        G = bb.random_solution(graph)
-        if len(G.nodes) > 1:
-            raise ValueError("Circuit has disconnected components.")
-
-        i = list(G.nodes)[0]
-        if len(G.nodes[i]["component"].wires) > 0:
-            raise NotImplementedError("Cannot optimize a circuit with dangling wires yet.")
-
-        self.optimize_fock_shapes(verbose)
-        heuristics = (
-            ("1BB", "2BB", "1BF", "1FB", "1FF", "2FF")
-            if with_BF_heuristic
-            else ("1BB", "2BB", "1FF", "2FF")
+        self.path = optimal_path(
+            self.components, n_init=n_init, with_BF_heuristic=with_BF_heuristic, verbose=verbose
         )
-        optimized_graph = bb.optimal_contraction(self._graph, n_init, heuristics, verbose)
-        self.path = list(optimized_graph.solution)
 
     def contract(self) -> CircuitComponent:
         r"""
@@ -138,20 +121,6 @@ class Circuit:
             ret[idx0] = ret[idx0] >> ret.pop(idx1)
 
         return list(ret.values())[0]
-
-    def optimize_fock_shapes(self, verbose: bool) -> None:
-        r"""
-        Optimizes the Fock shapes of the components in this circuit.
-        It starts by matching the existing connected wires and keeps the smaller shape,
-        then it enforces the BSgate symmetry (conservation of photon number) to further
-        reduce the shapes across the circuit.
-        This operation acts in place.
-        """
-        if verbose:
-            print("===== Optimizing Fock shapes =====")
-        self._graph = bb.optimize_fock_shapes(self._graph, 0, verbose)
-        for i, c in enumerate(self.components):
-            c.manual_shape = self._graph.component(i).shape
 
     def check_contraction(self, n: int) -> None:
         r"""
