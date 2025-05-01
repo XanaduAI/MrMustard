@@ -48,7 +48,7 @@ from mrmustard.physics.wires import Wires
 __all__ = ["CircuitComponent"]
 
 
-class CircuitComponent:
+class CircuitComponent:  # pylint: disable=too-many-public-methods
     r"""
     A base class for the circuit components (states, transformations, measurements,
     and any component made by combining CircuitComponents). CircuitComponents are
