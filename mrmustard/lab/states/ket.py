@@ -385,7 +385,7 @@ class Ket(State):
             raise ValueError("Cannot compute fidelity between states with different modes.")
         return self.expectation(other)
 
-    def formal_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[Ket, Operation]:
+    def formal_stellar_decomposition(self, core_modes):
         r"""
         Applies the formal stellar decomposition.
 

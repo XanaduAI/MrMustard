@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Sequence, Collection
+from typing import Sequence
 
 from enum import Enum
 
@@ -357,7 +357,7 @@ class State(CircuitComponent):
 
     @abstractmethod
     def formal_stellar_decomposition(
-        self, core_modes: Collection[int]
+        self, core_modes: Sequence[int]
     ) -> tuple[State, Transformation]:
         r"""
         Applies the formal stellar decomposition.
@@ -410,7 +410,7 @@ class State(CircuitComponent):
 
     @abstractmethod
     def physical_stellar_decomposition(
-        self, core_modes: Collection[int]
+        self, core_modes: Sequence[int]
     ) -> tuple[State, Transformation]:
         r"""
         Applies the physical stellar decomposition.
