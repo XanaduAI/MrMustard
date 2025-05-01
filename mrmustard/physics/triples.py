@@ -252,8 +252,9 @@ def gdm_state_Abc(betas: ComplexVector, symplectic: RealMatrix):
     Returns:
         The ``(A,b,c)`` triple of the resulting Gaussian DM state.
     """
-    betas = math.atleast_1d(betas, dtype=math.complex128)
+    batch_shape = symplectic.shape[:-2]
     m = len(betas)
+    betas = math.broadcast_to(betas, batch_shape + (m,), dtype=math.complex128)
     Au = symplectic2Au(symplectic)
     A_udagger_u = math.block(
         [
@@ -270,11 +271,12 @@ def gdm_state_Abc(betas: ComplexVector, symplectic: RealMatrix):
         ]
     )
     c_fd = math.prod((1 - math.exp(-betas)))
-    t_fd = (math.atleast_3d(A_fd), math.zeros((1, 2 * m), dtype=A_fd.dtype), math.atleast_1d(c_fd))
+    t_fd = (A_fd, math.zeros(batch_shape + (2 * m,), dtype=A_fd.dtype), c_fd)
     c_u = (
-        (-1) ** m * math.det(Au[m:, m:] @ math.conj(Au[m:, m:]) - math.eye_like(Au[m:, m:]))
+        (-1) ** m
+        * math.det(Au[..., m:, m:] @ math.conj(Au[..., m:, m:]) - math.eye_like(Au[..., m:, m:]))
     ) ** (0.5)
-    t_u = (math.atleast_3d(A_udagger_u), math.zeros((1, 4 * m)), math.atleast_1d(c_u))
+    t_u = (A_udagger_u, math.zeros(batch_shape + (4 * m,)), c_u)
     return complex_gaussian_integral_2(
         t_fd, t_u, list(range(2 * m)), list(range(m, 2 * m)) + list(range(3 * m, 4 * m))
     )

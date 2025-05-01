@@ -30,6 +30,13 @@ class Attenuator(Channel):
     r"""
     The noisy attenuator channel.
 
+
+    Args:
+        mode: The mode this gate is applied to.
+        transmissivity: The transmissivity.
+        transmissivity_trainable: Whether ``transmissivity`` is trainable.
+        transmissivity_bounds: The bounds for ``transmissivity``.
+
     .. code-block ::
 
         >>> from mrmustard import math
@@ -38,12 +45,6 @@ class Attenuator(Channel):
         >>> channel = Attenuator(mode=1, transmissivity=0.1)
         >>> assert channel.modes == (1,)
         >>> assert channel.parameters.transmissivity.value == 0.1
-
-    Args:
-        mode: The mode this gate is applied to.
-        transmissivity: The transmissivity.
-        transmissivity_trainable: Whether ``transmissivity`` is trainable.
-        transmissivity_bounds: The bounds for ``transmissivity``.
 
     .. details::
 

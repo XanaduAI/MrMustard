@@ -37,15 +37,6 @@ class Dgate(Unitary):
     r"""
     The displacement gate.
 
-    .. code-block ::
-
-        >>> import numpy as np
-        >>> from mrmustard.lab_dev import Dgate
-
-        >>> unitary = Dgate(mode=1, x=0.1, y=0.2)
-        >>> assert unitary.modes == (1,)
-        >>> assert unitary.parameters.x.value == 0.1
-        >>> assert unitary.parameters.y.value == 0.2
 
     Args:
         mode: The mode this gate is applied to.
@@ -56,6 +47,14 @@ class Dgate(Unitary):
         x_bounds: The bounds for ``x``.
         y_bounds: The bounds for ``y``.
 
+    .. code-block ::
+
+        >>> from mrmustard.lab_dev import Dgate
+
+        >>> unitary = Dgate(mode=1, x=0.1, y=0.2)
+        >>> assert unitary.modes == (1,)
+        >>> assert unitary.parameters.x.value == 0.1
+        >>> assert unitary.parameters.y.value == 0.2
 
     .. details::
 

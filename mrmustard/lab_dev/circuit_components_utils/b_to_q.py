@@ -29,13 +29,27 @@ __all__ = ["BtoQ"]
 
 class BtoQ(Operation):
     r"""
-    The Operation that changes the representation of an object from ``Bargmann`` into quadrature.
-    By default it's defined on the output ket side. Note that beyond such gate we cannot place further
-    ones unless they support inner products in quadrature representation.
+    The ``Operation`` that changes the representation of an object from Bargmann (B) into quadrature (Q).
+    By default it's defined on the output ket side.
+
 
     Args:
         modes: The modes of this channel.
         phi: The quadrature angle. 0 corresponds to the `x` quadrature, and :math:`\pi/2` to the `p` quadrature.
+
+
+    Returns:
+        An ``Operation`` type object that performs the change of representation.
+
+    Note:
+        Be cautious about contractions after change of representation as the Abc parametrization has altered.
+
+    .. code-block::
+
+        >>> from mrmustard import math
+        >>> from mrmustard.lab_dev import BtoQ, Ket, QuadratureEigenstate
+        >>> psi = Ket.random([0])
+        >>> assert math.allclose(psi >> QuadratureEigenstate(0, x=1).dual, (psi >> BtoQ(0)).ansatz(1))
     """
 
     def __init__(
