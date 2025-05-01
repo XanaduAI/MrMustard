@@ -70,6 +70,9 @@ class ParameterSet:
 
     @property
     def all_parameters(self) -> dict[str, Constant | Variable]:
+        r"""
+        The constant and variable parameters in this parameter set.
+        """
         return self.constants | self.variables
 
     @property
