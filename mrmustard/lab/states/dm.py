@@ -33,7 +33,6 @@ from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
     ComplexTensor,
-    RealVector,
     ComplexMatrix,
     ComplexVector,
 )

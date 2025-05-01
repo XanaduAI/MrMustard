@@ -24,11 +24,9 @@ from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 
 from mrmustard.lab import (
-    DM,
     Attenuator,
     BSgate,
     Coherent,
-    Ket,
     Number,
     S2gate,
     SqueezedVacuum,
@@ -36,7 +34,7 @@ from mrmustard.lab import (
     Vacuum,
 )
 from mrmustard.math.lattice.strategies import displacement, grad_displacement
-from mrmustard.physics import fock_utils, gaussian
+from mrmustard.physics import fock_utils
 
 # helper strategies
 st_angle = st.floats(min_value=0, max_value=2 * np.pi)
