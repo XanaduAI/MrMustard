@@ -22,7 +22,7 @@ import pytest
 import tensorflow as tf
 
 from mrmustard import __version__, math, settings
-from mrmustard.lab_dev import (
+from mrmustard.lab import (
     Amplifier,
     Attenuator,
     BSgate,

@@ -17,6 +17,7 @@ Branch and bound algorithm for optimal contraction of a tensor network.
 """
 
 from __future__ import annotations
+
 import random
 from copy import deepcopy
 from queue import PriorityQueue
@@ -27,7 +28,7 @@ import numpy as np
 import networkx as nx
 
 from mrmustard.physics.wires import Wires
-from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab.circuit_components import CircuitComponent
 
 Edge = tuple[int, int]
 
@@ -474,7 +475,7 @@ def heuristic(graph: Graph, code: str, verbose: bool) -> Graph:
     return graph
 
 
-def optimal_contraction(
+def optimal_contraction(  # pylint: disable=too-many-branches
     graph: Graph,
     n_init: int,
     heuristics: tuple[str, ...],

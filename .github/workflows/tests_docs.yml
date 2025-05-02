@@ -38,4 +38,4 @@ jobs:
         run: |
           uv run --all-extras --group doc pytest --doctest-modules mrmustard/math/parameter_set.py
           uv run --all-extras --group doc pytest --doctest-modules mrmustard/physics/ansatz
-          uv run --all-extras --group doc pytest --doctest-modules mrmustard/lab_dev
+          uv run --all-extras --group doc pytest --doctest-modules mrmustard/lab

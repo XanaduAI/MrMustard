@@ -15,9 +15,10 @@
 """This module contains the implementation of optimization classes and functions
 used within Mr Mustard.
 """
+from __future__ import annotations
 
 from itertools import chain, groupby
-from typing import List, Callable, Sequence, Union, Mapping, Dict
+from typing import List, Callable, Sequence, Mapping, Dict
 from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.training.callbacks import Callback
@@ -30,7 +31,7 @@ from mrmustard.math.parameters import (
     update_unitary,
 )
 
-from mrmustard.lab_dev import Circuit
+from mrmustard.lab import Circuit
 
 __all__ = ["Optimizer"]
 
@@ -66,9 +67,9 @@ class Optimizer:
     def minimize(
         self,
         cost_fn: Callable,
-        by_optimizing: Sequence[Union[Constant, Variable, Circuit]],
+        by_optimizing: Sequence[Constant | Variable | Circuit],
         max_steps: int = 1000,
-        callbacks: Union[Callable, Sequence[Callable], Mapping[str, Callable]] = None,
+        callbacks: Callable | Sequence[Callable] | Mapping[str, Callable] = None,
     ):
         r"""Minimizes the given cost function by optimizing circuits and/or detectors.
 

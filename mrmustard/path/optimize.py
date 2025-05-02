@@ -14,7 +14,7 @@
 
 """Library for optimizing paths in a quantum circuit."""
 
-from mrmustard.lab_dev.circuit_components import CircuitComponent
+from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.path.branch_and_bound import (
     assign_costs,
     optimal_contraction,
