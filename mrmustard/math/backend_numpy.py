@@ -24,17 +24,17 @@ from typing import Sequence, Callable
 from opt_einsum import contract
 import numpy as np
 import scipy as sp
-import sparse
+
 from scipy.signal import convolve2d as scipy_convolve2d
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
+
 from ..utils.settings import settings
 from .autocast import Autocast
 from .backend_base import BackendBase
 from .lattice import strategies
-
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
@@ -234,12 +234,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return array
 
     def einsum(self, string: str, *tensors, optimize: bool | str = False) -> np.ndarray:
-        # has_sparse = any(isinstance(t, sparse.COO) for t in tensors)
-        # has_dense = any(not isinstance(t, sparse.COO) for t in tensors)
-
-        # if has_sparse and has_dense:
-        #     tensors = [t.todense() if isinstance(t, sparse.COO) else t for t in tensors]
-
         return contract(string, *tensors, optimize=optimize)
 
     def exp(self, array: np.ndarray) -> np.ndarray:

@@ -27,6 +27,8 @@ import numpy as np  # pragma: no cover
 import equinox as eqx  # pragma: no cover
 from jax import tree_util  # pragma: no cover
 
+from sparse import COO
+
 from .autocast import Autocast  # pragma: no cover
 from .backend_base import BackendBase  # pragma: no cover
 from .lattice import strategies  # pragma: no cover
@@ -290,8 +292,8 @@ class BackendJax(BackendBase):  # pragma: no cover
     def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
         return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
-    @partial(jax.jit, static_argnames=["string", "optimize"])
     def einsum(self, string: str, *tensors, optimize: bool | str = False) -> jnp.ndarray:
+        tensors = [t.todense() if isinstance(t, COO) else t for t in tensors]
         return jnp.einsum(string, *tensors, optimize=optimize)
 
     @jax.jit
