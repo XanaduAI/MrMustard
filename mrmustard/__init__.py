@@ -14,9 +14,8 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
-from rich import print
-
 import os
+from rich import print
 
 from ._version import __version__
 from .utils.settings import *

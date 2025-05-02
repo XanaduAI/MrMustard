@@ -16,11 +16,13 @@
 
 import numpy as np
 import sparse
-from ..conftest import skip_jax
+
 from mrmustard import math, settings
 from mrmustard.lab import Ket, Unitary, BSgate, SqueezedVacuum, Rgate
 from mrmustard.physics.mm_einsum import mm_einsum
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+
+from ..conftest import skip_jax
 
 
 class TestMmEinsum:
