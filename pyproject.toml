@@ -92,7 +92,7 @@ line-length = 100
 source = ["mrmustard"]
 
 [tool.coverage.report]
-omit = ["mrmustard/lab/*", "mrmustard/training/*"]
+omit = ["mrmustard/training/*"]
 
 # Regexes for lines to exclude from consideration
 exclude_lines =[

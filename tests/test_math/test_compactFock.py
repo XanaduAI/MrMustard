@@ -5,8 +5,8 @@ Unit tests for mrmustard.math.compactFock.compactFock~
 import numpy as np
 
 from mrmustard import math
-from mrmustard.lab_dev import DM, Ggate, SqueezedVacuum, Vacuum
-from mrmustard.lab_dev.transformations.attenuator import Attenuator
+from mrmustard.lab import DM, Ggate, SqueezedVacuum, Vacuum
+from mrmustard.lab.transformations.attenuator import Attenuator
 from mrmustard.physics import gaussian
 from mrmustard.training import Optimizer
 

@@ -18,7 +18,7 @@
 import numpy as np
 
 from mrmustard import math
-from mrmustard.lab_dev import DM, Dgate
+from mrmustard.lab import DM, Dgate
 from mrmustard.math.lattice.strategies import fast_diagonal
 
 

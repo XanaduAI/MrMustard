@@ -20,7 +20,7 @@ import jax
 import jax.numpy as jnp
 
 from mrmustard import math
-from mrmustard.lab_dev import Attenuator, BSgate, SqueezedVacuum
+from mrmustard.lab import Attenuator, BSgate, SqueezedVacuum
 
 from ..conftest import skip_np, skip_tf
 
