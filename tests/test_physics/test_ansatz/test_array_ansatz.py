@@ -26,7 +26,7 @@ import sparse
 
 from mrmustard import math
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
-from mrmustard.lab_dev import Ket, Dgate
+from mrmustard.lab import Ket, Dgate
 
 
 class TestArrayAnsatz:
