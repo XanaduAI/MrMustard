@@ -150,7 +150,6 @@ def autoshape_numba(A, b, c, max_prob, max_shape, min_shape) -> int:  # pragma: 
             ) / SQRT[k + 2]
             norm += np.abs(buf3[(k + 1) % 2, 1])
             k += 1
-
         shape[m] = k
     shape = np.clip(shape, min_shape, max_shape)
     return shape
