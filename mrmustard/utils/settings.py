@@ -101,7 +101,9 @@ class Settings:
 
     @property
     def CACHE_DIR(self) -> Path:
-        """The directory in which serialized MrMustard objects are saved."""
+        r"""
+        The directory in which serialized MrMustard objects are saved.
+        """
         return self._cache_dir
 
     @CACHE_DIR.setter
@@ -110,7 +112,7 @@ class Settings:
         self._cache_dir.mkdir(exist_ok=True, parents=True)
 
     @property
-    def COMPLEX_WARNING(self):
+    def COMPLEX_WARNING(self) -> bool:
         r"""Whether tensorflow's ``ComplexWarning`` should be raised when a complex is cast to a float. Default is ``False``."""
         return self._complex_warning
 
@@ -123,7 +125,7 @@ class Settings:
             add_complex_warning_filter()
 
     @property
-    def HBAR(self):
+    def HBAR(self) -> float:
         r"""
         The value of the Planck constant. Default is ``1``.
         """
