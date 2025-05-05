@@ -769,10 +769,11 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         .. code-block::
 
             >>> from mrmustard.lab import Coherent, Attenuator, Ket, DM, Channel
+            >>> state = Coherent(0, 1.0)
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
-            >>> assert isinstance(Coherent(0, 1.0) >> Attenuator(0, 0.5), DM)
-            >>> assert isinstance(Coherent(0, 1.0) >> Coherent(0, 1.0).dual, complex)
+            >>> assert isinstance(state >> Attenuator(0, 0.5), DM)
+            >>> assert math.allclose(state >> state.dual, 1+0j)
         """
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)

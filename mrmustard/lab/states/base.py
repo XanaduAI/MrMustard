@@ -387,7 +387,6 @@ class State(CircuitComponent):
                     else:
                         ansatz = self.ansatz
                     A, b, c = ansatz.triple
-                    ansatz = ansatz / self.probability
                     shape = autoshape_numba(
                         math.asnumpy(A),
                         math.asnumpy(b),

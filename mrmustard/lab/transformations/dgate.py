@@ -106,7 +106,8 @@ class Dgate(Unitary):
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
-                it is broadcasted to all the dimensions. If not given, it is generated via ``auto_shape``.
+                it is broadcasted to all the dimensions. If not given, it defaults to
+                ``settings.DEFAULT_FOCK_SIZE``.
         Returns:
             array: The Fock representation of this component.
         """
