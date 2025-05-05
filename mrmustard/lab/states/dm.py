@@ -230,59 +230,6 @@ class DM(State):
         rho = rho.normalize()
         return rho
 
-    def auto_shape(
-        self, max_prob=None, max_shape=None, min_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:
-        r"""
-        A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
-        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
-        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
-        single-mode marginal (default 99.9%).
-        If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
-        non-None values in ``manual_shape``.
-
-        Args:
-            max_prob: The maximum probability mass to capture in the shape (default is
-            ``settings.AUTOSHAPE_PROBABILITY``).
-            max_shape: The maximum shape cutoff (default is ``settings.AUTOSHAPE_MAX``).
-            min_shape: The minimum shape cutoff (default is ``settings.AUTOSHAPE_MIN``).
-            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
-
-        Returns:
-            A ``tuple`` demonstrating the Fock cutoffs along each axis.
-
-        Raises:
-            NotImplementedError: If the item is batched.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import Vacuum
-            >>> assert Vacuum([0]).dm().auto_shape() == (1,1)
-        """
-        if self.ansatz.batch_shape:
-            raise NotImplementedError("Batched auto_shape is not implemented.")
-        try:  # fock
-            shape = self.ansatz.core_shape
-        except AttributeError:  # bargmann
-            if self.ansatz.num_derived_vars == 0:
-                ansatz = self.ansatz
-                A, b, c = ansatz.triple
-                ansatz = ansatz / self.probability
-                shape = autoshape_numba(
-                    math.asnumpy(A),
-                    math.asnumpy(b),
-                    math.asnumpy(c),
-                    max_prob or settings.AUTOSHAPE_PROBABILITY,
-                    max_shape or settings.AUTOSHAPE_MAX,
-                    min_shape or settings.AUTOSHAPE_MIN,
-                )
-                shape = tuple(shape) + tuple(shape)
-            else:
-                shape = [settings.DEFAULT_FOCK_SIZE] * 2 * len(self.modes)
-        if respect_manual_shape:
-            return tuple(c or s for c, s in zip(self.manual_shape, shape))
-        return tuple(shape)
-
     def dm(self) -> DM:
         r"""
         The ``DM`` object obtained from this ``DM``.
