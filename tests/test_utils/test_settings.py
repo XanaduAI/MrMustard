@@ -35,11 +35,9 @@ class TestSettings:
         assert settings.AUTOSHAPE_PROBABILITY == 0.99999
         assert settings.AUTOSHAPE_MAX == 50
         assert settings.AUTOSHAPE_MIN == 1
-        assert settings.CIRCUIT_DECIMALS == 3
         assert settings.DISCRETIZATION_METHOD == "clenshaw"
         assert settings.DEFAULT_FOCK_SIZE == 50
         assert settings.PROGRESSBAR is True
-        assert settings.BS_FOCK_METHOD == "vanilla"
 
     def test_setters(self):
         settings = Settings()
