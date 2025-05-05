@@ -28,11 +28,12 @@ def autoshape_numba(A, b, c, max_prob, max_shape, min_shape) -> int:  # pragma: 
     Details in https://quantum-journal.org/papers/q-2023-08-29-1097/.
 
     Args:
-        A (np.ndarray): 2Mx2M matrix of the Bargmann ansatz
-        b (np.ndarray): 2M-dim vector of the Bargmann ansatz
-        c (float): vacuum amplitude
-        max_prob (float): the probability value to stop at (default 0.999)
-        max_shape (int): max value before stopping (default 100)
+        A (np.ndarray): 2Mx2M matrix of the Bargmann ansatz.
+        b (np.ndarray): 2M-dim vector of the Bargmann ansatz.
+        c (float): The vacuum amplitude.
+        max_prob (float): The probability value to stop at.
+        max_shape (int): The upper limit for clipping the shape.
+        min_shape (int): The lower limit for clipping the shape.
 
     **Details:**
 
