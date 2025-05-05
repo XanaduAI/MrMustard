@@ -81,8 +81,8 @@ class Settings:
         self.ATOL: float = 1e-8
         r"""The absolute tolerance when comparing two values or arrays. Default is ``1e-8``."""
 
-        self.BS_FOCK_METHOD: str = "vanilla"  # can be 'vanilla' or 'schwinger'
-        r"""The method for computing a beam splitter in the Fock basis . Default is ``vanilla``."""
+        self.BS_FOCK_METHOD: str = "vanilla"
+        r"""The method for computing a beam splitter in the Fock basis. Can be ``vanilla`` or ``schwinger``. Default is ``vanilla``."""
 
         self.CIRCUIT_DECIMALS: int = 3
         r"""The number of decimal places to display when drawing a circuit. Default is ``3``."""
