@@ -23,7 +23,6 @@ import numpy as np
 from IPython.display import display
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.lattice.autoshape import autoshape_numba
 from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
