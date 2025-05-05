@@ -44,7 +44,7 @@ class TestNumber:
     def test_auto_shape(self):
         # meant to cover the case where we have derived variables
         state = Number(0, 2).to_bargmann().dm()
-        assert state.auto_shape() == (settings.AUTOSHAPE_MAX, settings.AUTOSHAPE_MAX)
+        assert state.auto_shape() == (settings.DEFAULT_FOCK_SIZE, settings.DEFAULT_FOCK_SIZE)
 
     @pytest.mark.parametrize("n", [2, 3, 4])
     @pytest.mark.parametrize("cutoffs", [None, 4, 5])

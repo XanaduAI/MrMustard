@@ -231,7 +231,7 @@ class DM(State):
         return rho
 
     def auto_shape(
-        self, max_prob=None, max_shape=None, respect_manual_shape=True
+        self, max_prob=None, max_shape=None, min_shape=None, respect_manual_shape=True
     ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
@@ -242,9 +242,10 @@ class DM(State):
         non-None values in ``manual_shape``.
 
         Args:
-            max_prob: The maximum probability mass to capture in the shape (default in
+            max_prob: The maximum probability mass to capture in the shape (default is
             ``settings.AUTOSHAPE_PROBABILITY``).
-            max_shape: The maximum shape to compute (default in ``settings.AUTOSHAPE_MAX``).
+            max_shape: The maximum shape cutoff (default is ``settings.AUTOSHAPE_MAX``).
+            min_shape: The minimum shape cutoff (default is ``settings.AUTOSHAPE_MIN``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
 
         Returns:
@@ -273,10 +274,11 @@ class DM(State):
                     math.asnumpy(c),
                     max_prob or settings.AUTOSHAPE_PROBABILITY,
                     max_shape or settings.AUTOSHAPE_MAX,
+                    min_shape or settings.AUTOSHAPE_MIN,
                 )
                 shape = tuple(shape) + tuple(shape)
             else:
-                shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
+                shape = [settings.DEFAULT_FOCK_SIZE] * 2 * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
         return tuple(shape)
@@ -403,8 +405,7 @@ class DM(State):
     ) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
-        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
-        available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+
         The ``standard_order`` boolean argument lets one choose the standard convention for the
         index ordering of the density matrix. For a single mode, if ``standard_order=True`` the
         returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket)
@@ -416,11 +417,11 @@ class DM(State):
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
-                it is broadcasted to all the dimensions. If not given, it is estimated.
+                it is broadcasted to all the dimensions. If not given, it is generated via ``auto_shape``.
 
             standard_order: The ordering of the wires. If ``standard_order = False``, then the conventional ordering
-            of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
-            standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
+                of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
+                standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
 
         Returns:
             array: The Fock representation of this component.

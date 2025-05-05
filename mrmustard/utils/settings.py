@@ -39,12 +39,19 @@ class Settings:
 
         from mrmustard import settings
 
-        >>> settings.AUTOCUTOFF_MAX_CUTOFF  # check the default values
-        100
+        >>> settings.HBAR  # check the default values
+        1.0
 
-        >>> settings.AUTOCUTOFF_MAX_CUTOFF = 150  # update to new values
-        >>> settings.AUTOCUTOFF_MAX_CUTOFF
-        150
+        >>> settings.HBAR=2.0  # update globally to new values
+        >>> settings.HBAR
+        2.0
+
+        >>> with settings(HBAR=3.0): # update with context manager
+        >>>      settings.HBAR
+        3.0
+
+        >>> settings.HBAR # previous value remains
+        2.0
     """
 
     _frozen = False
@@ -65,14 +72,11 @@ class Settings:
         self.AUTOSHAPE_PROBABILITY: float = 0.99999
         r"""The minimum l2_norm to reach before automatically stopping the Bargmann-to-Fock conversion. Default is ``0.99999``."""
 
-        self.AUTOCUTOFF_MAX_CUTOFF: int = 100  # TODO: remove in MM 1.0
-        r"""The maximum value for autocutoff. Default is ``100``."""
-
-        self.AUTOCUTOFF_MIN_CUTOFF: int = 1  # TODO: remove in MM 1.0
-        r"""The minimum value for autocutoff. Default is ``1``."""
-
         self.AUTOSHAPE_MAX: int = 50
         r"""The max shape for the autoshape. Default is ``50``."""
+
+        self.AUTOSHAPE_MIN: int = 1
+        r"""The min shape for the autoshape. Default is ``1``."""
 
         self.ATOL: float = 1e-8
         r"""The absolute tolerance when comparing two values or arrays. Default is ``1e-8``."""
@@ -83,8 +87,8 @@ class Settings:
         self.CIRCUIT_DECIMALS: int = 3
         r"""The number of decimal places to display when drawing a circuit. Default is ``3``."""
 
-        self.DEBUG: bool = False  # TODO: remove in MM 1.0
-        r"""Whether or not to print the vector of means and the covariance matrix alongside the html representation of a state. Default is ``False``."""
+        self.DEFAULT_FOCK_SIZE: int = 50
+        r"""The default size for the Fock representation. Default is ``50``."""
 
         self.DISCRETIZATION_METHOD: str = "clenshaw"
         r"""The method used to discretize the Wigner function. Can be ``clenshaw`` (better, default) or ``iterative`` (worse, faster). Default is ``clenshaw``."""
@@ -92,29 +96,11 @@ class Settings:
         self.DRAW_CIRCUIT_PARAMS: bool = True
         r"""Whether or not to draw the parameters of a circuit. Default is ``True``."""
 
-        self.EQ_TRANSFORMATION_CUTOFF: int = 3  # TODO: remove in MM 1.0
-        r"""The cutoff used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is ``3``."""
-
-        self.EQ_TRANSFORMATION_RTOL_FOCK: float = 1e-3  # TODO: remove in MM 1.0
-        r"""The relative tolerance used when comparing two transformations via the Choi–Jamiolkowski isomorphism. Default is ``1e-3``."""
-
-        self.EQ_TRANSFORMATION_RTOL_GAUSS: float = 1e-6  # TODO: remove in MM 1.0
-        r"""The relative tolerance used when comparing two transformations on Gaussian states. Default is ``1e-6``."""
-
-        self.HOMODYNE_SQUEEZING: float = 10.0  # TODO: remove in MM 1.0
-        r"""The value of squeezing for homodyne measurements. Default is ``10.0``."""
-
-        self.PNR_INTERNAL_CUTOFF: int = 50  # TODO: remove in MM 1.0
-        r"""The cutoff used when computing the output of a PNR detection. Default is ``50``."""
-
         self.PROGRESSBAR: bool = True
         r"""Whether or not to display the progress bar when performing training. Default is ``True``."""
 
         self.STABLE_FOCK_CONVERSION: bool = False
         r"""Whether to use the ``stable`` function when computing Fock amplitudes (more stable, but slower). Default is ``False``."""
-
-        self.UNSAFE_ZIP_BATCH: bool = False
-        r"""Whether to operate element-wise within a batch of Ansatze. If ``True``, the length of the batch dimension of two circuit components must be the same. Default is ``False``."""
 
         self._original_values = {}
         self._frozen = True

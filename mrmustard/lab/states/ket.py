@@ -229,7 +229,7 @@ class Ket(State):
         return psi.normalize()
 
     def auto_shape(
-        self, max_prob=None, max_shape=None, respect_manual_shape=True
+        self, max_prob=None, max_shape=None, min_shape=None, respect_manual_shape=True
     ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
@@ -239,7 +239,8 @@ class Ket(State):
 
         Args:
             max_prob: The maximum probability mass to capture in the shape (default from ``settings.AUTOSHAPE_PROBABILITY``).
-            max_shape: The maximum shape to compute (default from ``settings.AUTOSHAPE_MAX``).
+            max_shape: The maximum shape cutoff (default is ``settings.AUTOSHAPE_MAX``).
+            min_shape: The minimum shape cutoff (default is ``settings.AUTOSHAPE_MIN``).
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
 
         Returns:
@@ -278,11 +279,12 @@ class Ket(State):
                         math.asnumpy(c),
                         max_prob or settings.AUTOSHAPE_PROBABILITY,
                         max_shape or settings.AUTOSHAPE_MAX,
+                        min_shape or settings.AUTOSHAPE_MIN,
                     )
                 else:
-                    shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
+                    shape = [settings.DEFAULT_FOCK_SIZE] * len(self.modes)
         else:
-            shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
+            shape = [settings.DEFAULT_FOCK_SIZE] * len(self.modes)
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
         return tuple(shape)
