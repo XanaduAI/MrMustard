@@ -40,7 +40,7 @@ class S2gate(Unitary):
         r_bounds: The bounds for ``r``.
         phi_bounds: The bounds for ``phi``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import S2gate
 

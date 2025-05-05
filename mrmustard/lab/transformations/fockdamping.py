@@ -39,7 +39,7 @@ class FockDamping(Operation):
         damping_trainable: Whether ``damping`` is trainable.
         damping_bounds: The bounds for ``damping``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import FockDamping, Coherent
 

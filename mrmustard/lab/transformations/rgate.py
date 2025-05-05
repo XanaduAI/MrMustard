@@ -37,7 +37,7 @@ class Rgate(Unitary):
         theta_trainable: Whether ``theta`` is trainable.
         theta_bounds: The bounds for ``theta``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import Rgate
 

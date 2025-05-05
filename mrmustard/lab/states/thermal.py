@@ -41,7 +41,7 @@ class Thermal(DM):
     Returns:
         A ``DM`` type object that represents the thermal state.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import Vacuum
 

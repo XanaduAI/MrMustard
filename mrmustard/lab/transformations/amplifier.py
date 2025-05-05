@@ -37,7 +37,7 @@ class Amplifier(Channel):
         gain_trainable: Whether ``gain`` is trainable.
         gain_bounds: The bounds for ``gain``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> import numpy as np
         >>> from mrmustard.lab import Amplifier, Coherent

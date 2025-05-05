@@ -38,7 +38,7 @@ class GaussRandNoise(Channel):
         Y: The Y matrix of the Gaussian random noise channel.
         Y_trainable: Whether ``Y`` is trainable.
 
-    .. code-block ::
+    .. code-block::
 
         >>> import numpy as np
         >>> from mrmustard.lab import GaussRandNoise

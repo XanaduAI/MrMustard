@@ -478,6 +478,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         don't get a generic ``CircuitComponent`` but a ``Ket``:
 
         .. code-block::
+
             >>> from mrmustard.lab import Coherent, Ket
             >>> cat = Coherent(mode=0, x=2.0) + Coherent(mode=0, x=-2.0)
             >>> assert isinstance(cat, Ket)
@@ -539,6 +540,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         instead does not.
 
         .. code-block::
+
             >>> from mrmustard.lab import Coherent, Attenuator
             >>> coh = Coherent(0, 1.0)
             >>> att = Attenuator(0, 0.5)

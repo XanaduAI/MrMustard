@@ -45,7 +45,8 @@ class MZgate(Unitary):
         phi_b_bounds: The bounds for ``phi_b``.
         internal: Whether phases are both in the internal arms.
 
-    .. code-block ::
+    .. code-block::
+
         >>> from mrmustard.lab import MZgate
 
         >>> mz = MZgate((0, 1), phi_a=0.1, phi_b=0.2)

@@ -37,7 +37,7 @@ class Attenuator(Channel):
         transmissivity_trainable: Whether ``transmissivity`` is trainable.
         transmissivity_bounds: The bounds for ``transmissivity``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import Attenuator
