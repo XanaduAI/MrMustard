@@ -269,7 +269,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_purity_mixture(self):
         state = Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()
-        assert math.allclose(state.purity, 2.0366312777774684)
+        assert math.allclose(state.purity, state.normalize().purity)
         assert not state.is_pure
 
     def test_quadrature_single_mode_dm(self):

@@ -124,7 +124,7 @@ class DM(State):
 
             >>> assert math.allclose(Vacuum([0]).dm().purity, 1.0)
         """
-        return self.L2_norm
+        return self.L2_norm / self.probability**2
 
     @classmethod
     def from_ansatz(
