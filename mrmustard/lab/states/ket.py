@@ -25,7 +25,6 @@ from IPython.display import display
 import numpy as np
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.lattice.autoshape import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
@@ -227,65 +226,6 @@ class Ket(State):
         b = math.zeros(m, dtype=A.dtype)
         psi = cls.from_bargmann(modes, (A, b, complex(1)))
         return psi.normalize()
-
-    def auto_shape(
-        self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:
-        r"""
-        A good enough estimate of the Fock shape of this Ket, defined as the shape of the Fock
-        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
-        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
-        single-mode marginal (default 99.9%).
-
-        Args:
-            max_prob: The maximum probability mass to capture in the shape (default from ``settings.AUTOSHAPE_PROBABILITY``).
-            max_shape: The maximum shape to compute (default from ``settings.AUTOSHAPE_MAX``).
-            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
-
-        Returns:
-            array: The Fock representation of this component.
-
-        Raises:
-            NotImplementedError: If the state is batched.
-
-        Note:
-            If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
-            non-``None`` values in ``manual_shape``.
-
-        Example:
-        .. code-block::
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import Vacuum, Ket
-
-            >>> assert math.allclose(Vacuum([0]).fock_array(), math.astensor([1]))
-        """
-        batch_shape = (
-            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
-        )
-        if batch_shape:
-            raise NotImplementedError("Batched auto_shape is not implemented.")
-        if not self.ansatz._lin_sup:
-            try:  # fock
-                shape = self.ansatz.core_shape
-            except AttributeError:  # bargmann
-                if self.ansatz.num_derived_vars == 0:
-                    ansatz = self.ansatz.conj & self.ansatz
-                    A, b, c = ansatz.triple
-                    ansatz = ansatz / self.probability
-                    shape = autoshape_numba(
-                        math.asnumpy(A),
-                        math.asnumpy(b),
-                        math.asnumpy(c),
-                        max_prob or settings.AUTOSHAPE_PROBABILITY,
-                        max_shape or settings.AUTOSHAPE_MAX,
-                    )
-                else:
-                    shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
-        else:
-            shape = [settings.AUTOSHAPE_MAX] * len(self.modes)
-        if respect_manual_shape:
-            return tuple(c or s for c, s in zip(self.manual_shape, shape))
-        return tuple(shape)
 
     def dm(self) -> DM:
         r"""

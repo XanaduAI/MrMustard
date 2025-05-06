@@ -23,7 +23,6 @@ import numpy as np
 from IPython.display import display
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.lattice.autoshape import autoshape_numba
 from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
@@ -230,57 +229,6 @@ class DM(State):
         rho = rho.normalize()
         return rho
 
-    def auto_shape(
-        self, max_prob=None, max_shape=None, respect_manual_shape=True
-    ) -> tuple[int, ...]:
-        r"""
-        A good enough estimate of the Fock shape of this DM, defined as the shape of the Fock
-        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
-        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
-        single-mode marginal (default 99.9%).
-        If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
-        non-None values in ``manual_shape``.
-
-        Args:
-            max_prob: The maximum probability mass to capture in the shape (default in
-            ``settings.AUTOSHAPE_PROBABILITY``).
-            max_shape: The maximum shape to compute (default in ``settings.AUTOSHAPE_MAX``).
-            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
-
-        Returns:
-            A ``tuple`` demonstrating the Fock cutoffs along each axis.
-
-        Raises:
-            NotImplementedError: If the item is batched.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import Vacuum
-            >>> assert Vacuum([0]).dm().auto_shape() == (1,1)
-        """
-        if self.ansatz.batch_shape:
-            raise NotImplementedError("Batched auto_shape is not implemented.")
-        try:  # fock
-            shape = self.ansatz.core_shape
-        except AttributeError:  # bargmann
-            if self.ansatz.num_derived_vars == 0:
-                ansatz = self.ansatz
-                A, b, c = ansatz.triple
-                ansatz = ansatz / self.probability
-                shape = autoshape_numba(
-                    math.asnumpy(A),
-                    math.asnumpy(b),
-                    math.asnumpy(c),
-                    max_prob or settings.AUTOSHAPE_PROBABILITY,
-                    max_shape or settings.AUTOSHAPE_MAX,
-                )
-                shape = tuple(shape) + tuple(shape)
-            else:
-                shape = [settings.AUTOSHAPE_MAX] * 2 * len(self.modes)
-        if respect_manual_shape:
-            return tuple(c or s for c, s in zip(self.manual_shape, shape))
-        return tuple(shape)
-
     def dm(self) -> DM:
         r"""
         The ``DM`` object obtained from this ``DM``.
@@ -403,8 +351,7 @@ class DM(State):
     ) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
-        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
-        available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+
         The ``standard_order`` boolean argument lets one choose the standard convention for the
         index ordering of the density matrix. For a single mode, if ``standard_order=True`` the
         returned 2D array :math:`rho_{ij}` has a first index corresponding to the "left" (ket)
@@ -416,11 +363,11 @@ class DM(State):
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
-                it is broadcasted to all the dimensions. If not given, it is estimated.
+                it is broadcasted to all the dimensions. If not given, it is generated via ``auto_shape``.
 
             standard_order: The ordering of the wires. If ``standard_order = False``, then the conventional ordering
-            of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
-            standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
+                of bra-ket is chosen. However, if one wants to get the actual matrix representation in the
+                standard conventions of linear algebra, then ``standard_order=True`` must be chosen.
 
         Returns:
             array: The Fock representation of this component.

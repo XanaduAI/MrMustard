@@ -5,7 +5,6 @@ mrmustard.training
     :maxdepth: 1
 
     training/optimizer
-    training/trainer
     training/callbacks
 
 .. currentmodule:: mrmustard.training

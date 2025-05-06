@@ -27,7 +27,8 @@ from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
-from mrmustard import math
+from mrmustard import math, settings
+from mrmustard.math.lattice.autoshape import autoshape_numba
 from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from mrmustard.physics.bargmann_utils import (
     bargmann_Abc_to_phasespace_cov_means,
@@ -338,6 +339,71 @@ class State(CircuitComponent):
         QtoB = BtoQ(modes, phi).inverse()
         Q = cls.from_ansatz(modes, PolyExpAnsatz(*triple))
         return cls.from_ansatz(modes, (Q >> QtoB).ansatz, name)
+
+    def auto_shape(
+        self, max_prob=None, max_shape=None, min_shape=None, respect_manual_shape=True
+    ) -> tuple[int, ...]:
+        r"""
+        A good enough estimate of the Fock shape of this state, defined as the shape of the Fock
+        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
+        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
+        single-mode marginal (default 99.9%).
+
+        Args:
+            max_prob: The maximum probability mass to capture in the shape (default from ``settings.AUTOSHAPE_PROBABILITY``).
+            max_shape: The maximum shape cutoff (default is ``settings.AUTOSHAPE_MAX``).
+            min_shape: The minimum shape cutoff (default is ``settings.AUTOSHAPE_MIN``).
+            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+
+        Returns:
+            array: The Fock representation of this component.
+
+        Raises:
+            NotImplementedError: If the state is batched.
+
+        Note:
+            If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
+            non-``None`` values in ``manual_shape``.
+
+        Example:
+        .. code-block::
+            >>> from mrmustard import math
+            >>> from mrmustard.lab import Vacuum
+
+            >>> assert math.allclose(Vacuum([0]).fock_array(), 1)
+        """
+        batch_shape = (
+            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
+        )
+        if batch_shape:
+            raise NotImplementedError("Batched auto_shape is not implemented.")
+        if not self.ansatz._lin_sup:
+            try:  # fock
+                shape = self.ansatz.core_shape
+            except AttributeError:  # bargmann
+                if self.ansatz.num_derived_vars == 0:
+                    if not self.wires.ket or not self.wires.bra:
+                        ansatz = self.ansatz.conj & self.ansatz
+                    else:
+                        ansatz = self.ansatz
+                    A, b, c = ansatz.triple
+                    shape = autoshape_numba(
+                        math.asnumpy(A),
+                        math.asnumpy(b),
+                        math.asnumpy(c),
+                        max_prob or settings.AUTOSHAPE_PROBABILITY,
+                        max_shape or settings.AUTOSHAPE_MAX,
+                        min_shape or settings.AUTOSHAPE_MIN,
+                    )
+                    if self.wires.ket and self.wires.bra:
+                        shape = tuple(shape) + tuple(shape)
+                else:
+                    shape = super().auto_shape()
+        else:
+            shape = super().auto_shape()
+        if respect_manual_shape:
+            return tuple(c or s for c, s in zip(self.manual_shape, shape))
+        return tuple(shape)
 
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
         r"""
