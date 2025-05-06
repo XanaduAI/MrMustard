@@ -252,3 +252,11 @@ class TestArrayAnsatz:
         res1 = ket1 >> Dgate(0, 0.1)
 
         assert res0.ansatz == res1.ansatz
+
+    def test_contract_sparse_dense(self):
+        f0 = Ket.random([0]).to_fock((20,)).ansatz
+        f1 = Ket.random([0]).to_fock((20,)).ansatz
+        sp0 = sparse.COO.from_numpy(f0.array)
+        f0_sparse = ArrayAnsatz(sp0)
+        result = f0_sparse.contract(f1, idx1=[0], idx2=[0], idx_out=[])
+        assert np.allclose(result.array, f0.array @ f1.array)
