@@ -40,19 +40,18 @@ def test_graph_children_and_grandchildren():
 def test_propagate_shapes():
     """Test that the shapes are propagated correctly."""
     MAX = settings.AUTOSHAPE_MAX
-    settings.AUTOSHAPE_PROBABILITY = 0.999
-    circ = [Coherent(0, x=1.0), Dgate(0, 0.1)]
-    graph = bb.parse_components(circ)
-    assert [op.auto_shape() for op in circ] == [(5,), (MAX, MAX)]
-    graph.optimize_fock_shapes(circ, verbose=False)
-    assert [op.auto_shape() for op in circ] == [(5,), (MAX, 5)]
+    with settings(AUTOSHAPE_PROBABILITY=0.999):
+        circ = [Coherent(0, x=1.0), Dgate(0, 0.1)]
+        graph = bb.parse_components(circ)
+        assert [op.auto_shape() for op in circ] == [(5,), (MAX, MAX)]
+        graph.optimize_fock_shapes(circ, verbose=False)
+        assert [op.auto_shape() for op in circ] == [(5,), (MAX, 5)]
 
-    circ = [SqueezedVacuum(0, r=0.5), SqueezedVacuum(1, r=-0.5), BSgate((0, 1), 0.9)]
-    graph = bb.parse_components(circ)
-    assert [op.auto_shape() for op in circ] == [(6,), (6,), (MAX, MAX, MAX, MAX)]
-    graph.optimize_fock_shapes(circ, verbose=True)
-    assert [op.auto_shape() for op in circ] == [(6,), (6,), (12, 12, 6, 6)]
-    settings.AUTOSHAPE_PROBABILITY = 0.99999
+        circ = [SqueezedVacuum(0, r=0.5), SqueezedVacuum(1, r=-0.5), BSgate((0, 1), 0.9)]
+        graph = bb.parse_components(circ)
+        assert [op.auto_shape() for op in circ] == [(6,), (6,), (MAX, MAX, MAX, MAX)]
+        graph.optimize_fock_shapes(circ, verbose=True)
+        assert [op.auto_shape() for op in circ] == [(6,), (6,), (12, 12, 6, 6)]
 
 
 def test_path_errors():

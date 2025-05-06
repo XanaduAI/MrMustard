@@ -103,11 +103,11 @@ class Dgate(Unitary):
     def fock_array(self, shape: int | Sequence[int] = None) -> ComplexTensor:
         r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
-        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
-        available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
-                it is broadcasted to all the dimensions. If not given, it is estimated.
+                it is broadcasted to all the dimensions. If not given, it defaults to
+                ``settings.DEFAULT_FOCK_SIZE``.
         Returns:
             array: The Fock representation of this component.
         """
