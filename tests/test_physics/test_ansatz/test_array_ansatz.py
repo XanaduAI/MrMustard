@@ -196,25 +196,27 @@ class TestArrayAnsatz:
     @patch("mrmustard.physics.ansatz.array_ansatz.display")
     def test_ipython_repr(self, mock_display, shape):
         """Test the IPython repr function."""
-        rep = ArrayAnsatz(np.random.random(shape), batch_dims=1)
-        rep._ipython_display_()
-        [hbox] = mock_display.call_args.args
-        assert isinstance(hbox, HBox)
+        rep_np = ArrayAnsatz(np.random.random(shape), batch_dims=1)
+        rep_coo = ArrayAnsatz(sparse.COO.from_numpy(np.random.random(shape)), batch_dims=1)
+        for rep in [rep_np, rep_coo]:
+            rep._ipython_display_()
+            [hbox] = mock_display.call_args.args
+            assert isinstance(hbox, HBox)
 
-        # the CSS, the header+ansatz, and the tabs of plots
-        [css, left, plots] = hbox.children
-        assert isinstance(css, HTML)
-        assert isinstance(left, VBox)
-        assert isinstance(plots, Tab)
+            # the CSS, the header+ansatz, and the tabs of plots
+            [css, left, plots] = hbox.children
+            assert isinstance(css, HTML)
+            assert isinstance(left, VBox)
+            assert isinstance(plots, Tab)
 
-        # left contains header and ansatz
-        left = left.children
-        assert len(left) == 2 and all(isinstance(w, HTML) for w in left)
+            # left contains header and ansatz
+            left = left.children
+            assert len(left) == 2 and all(isinstance(w, HTML) for w in left)
 
-        # one plot for magnitude, another for phase
-        assert plots.titles == ("Magnitude", "Phase")
-        plots = plots.children
-        assert len(plots) == 2 and all(isinstance(p, FigureWidget) for p in plots)
+            # one plot for magnitude, another for phase
+            assert plots.titles == ("Magnitude", "Phase")
+            plots = plots.children
+            assert len(plots) == 2 and all(isinstance(p, FigureWidget) for p in plots)
 
     @patch("mrmustard.physics.ansatz.array_ansatz.display")
     def test_ipython_repr_expects_batch_1(self, mock_display):
