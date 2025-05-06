@@ -30,13 +30,17 @@ def bargmann_Abc_to_phasespace_cov_means(
     Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
 
     The covariance matrix and mean vector can be used to write the characteristic function of a Gaussian state
+
     :math:
         \Chi_G(r) = \exp\left( -\frac{1}{2}r^T \Omega^T cov \Omega r + i r^T\Omega^T mean \right),
+
     and the Wigner function of a Gaussian state:
+
     :math:
         W_G(r) = \frac{1}{\sqrt{\Det(cov)}} \exp\left( -\frac{1}{2}(r - mean)^T cov^{-1} (r-mean) \right).
 
     The internal expression of our Gaussian state :math:`\rho` is in Bargmann representation, one can write the characteristic function of a Gaussian state in Bargmann representation as
+
     :math:
         \Chi_G(\alpha) = \Tr(\rho D) = c \exp\left( -\frac{1}{2}\alpha^T A \alpha + \alpha^T b \right).
 
@@ -44,6 +48,7 @@ def bargmann_Abc_to_phasespace_cov_means(
 
     Args:
         A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
+
     Returns:
         The covariance matrix, mean vector and coefficient of the state in phase space.
     """

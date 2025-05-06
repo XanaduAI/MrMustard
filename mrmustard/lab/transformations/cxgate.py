@@ -49,7 +49,8 @@ class CXgate(Unitary):
         We have that the controlled-X gate is defined as
             .. math::
 
-                C_X = \exp(is q_1 \otimes p_2).
+                C_X = \exp(is q_1 \otimes p_2)
+
         Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
     """
 

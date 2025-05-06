@@ -13,7 +13,3 @@ The `math` module
     math/parameter
     math/backend_manager
     math/vanilla
-
-.. automodapi:: mrmustard.math
-    :no-heading:
-    :include-all-objects:

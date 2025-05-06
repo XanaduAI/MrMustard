@@ -115,7 +115,8 @@ class DM(State):
 
     @property
     def purity(self) -> float:
-        r"""Computes the purity (:math:`tr(rho^2)) of this DM.
+        r"""
+        Computes the purity (:math:`tr(rho^2)`) of this DM.
 
         .. code-block::
 

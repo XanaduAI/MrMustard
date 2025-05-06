@@ -286,6 +286,7 @@ class Unitary(Operation):
         Returns the inverse of the unitary.
 
         .. code-block::
+
             >>> from mrmustard.lab import Unitary, Identity
 
             >>> u = Unitary.random((0, 1, 2))

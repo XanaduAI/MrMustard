@@ -47,7 +47,7 @@ def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = Non
         cutoffs: The cutoffs of the arrays for the number states. If it is given as
             an ``int``, it is broadcasted to all the states. If ``None``, it
             defaults to ``[n1+1, n2+1, ...]``, where ``ni`` is the photon number
-            of the ``i``th mode.
+            of the `i`-th mode.
 
     Returns:
         The Fock array of a tensor product of one-mode ``Number`` states.
@@ -194,14 +194,14 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
         .. admonition:: Definition
             :class: defn
 
-        The q-quadrature eigenstates are defined as
+                The q-quadrature eigenstates are defined as
 
-        .. math::
+                .. math::
 
-            \psi_n(x) = 1/sqrt[2^n n!](\frac{\omega}{\pi \hbar})^{1/4}
-                \exp{-\frac{\omega}{2\hbar} x^2} H_n(\sqrt{\frac{\omega}{\pi}} x)
+                    \psi_n(x) = 1/sqrt[2^n n!](\frac{\omega}{\pi \hbar})^{1/4}
+                        \exp{-\frac{\omega}{2\hbar} x^2} H_n(\sqrt{\frac{\omega}{\pi}} x)
 
-        where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial.
+                where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial.
     """
     hbar = settings.HBAR
     x = math.cast(q / np.sqrt(hbar), math.complex128)  # unit-less vector
@@ -233,19 +233,19 @@ def estimate_dx(cutoff, period_resolution=20):
 
     .. math::
 
-            \psi^{[n]}'(q) = q - sqrt(2*(n + 1))*\psi^{[n+1]}(q)
+        \psi^{[n]}'(q) = q - sqrt(2*(n + 1))*\psi^{[n+1]}(q)
 
-    by setting q = 0, and approximating the oscillation amplitude by `\psi^{[n+1]}(0)
+    by setting q = 0, and approximating the oscillation amplitude by `\psi^{[n+1]}(0)`.
 
     Ref: https://en.wikipedia.org/wiki/Hermite_polynomials#Hermite_functions
 
-    Args
+    Args:
         cutoff (int): Fock cutoff
         period_resolution (int): Number of points used to sample one Fock
             wavefunction oscillation. Larger values yields better approximations
             and thus smaller `dx`.
 
-    Returns
+    Returns:
         (float): discretization value of quadrature
     """
     fock_cutoff_frequency = np.sqrt(2 * (cutoff + 1))
@@ -280,16 +280,16 @@ def estimate_xmax(cutoff, minimum=5):
 
 @lru_cache
 def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
-    """Generates a suitable quadrature axis.
+    r"""Generates a suitable quadrature axis.
 
-    Args
+    Args:
         cutoff (int): Fock cutoff
         minimum (float): Minimum value of the returned xmax
         period_resolution (int): Number of points used to sample one Fock
             wavefunction oscillation. Larger values yields better approximations
             and thus smaller dx.
 
-    Returns
+    Returns:
         (array): quadrature axis
     """
     xmax = estimate_xmax(cutoff, minimum=minimum)
@@ -355,18 +355,19 @@ def quadrature_distribution(
     quadrature_angle: float = 0.0,
     x: Vector | None = None,
 ):
-    r"""Given the ket or density matrix of a single-mode state, it generates the probability
-    density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
-    density matrix of the state and |x_\phi> the quadrature eigenvector with angle `\phi`
+    r"""
+    Given the ket or density matrix of a single-mode state, it generates the probability
+    density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]` where ``\rho`` is the
+    density matrix of the state and ``|x_\phi>`` the quadrature eigenvector with angle ``\phi``
     equal to ``quadrature_angle``.
 
     Args:
-        state (Tensor): single mode state ket or density matrix
-        quadrature_angle (float): angle of the quadrature basis vector
-        x (Vector): points at which the quadrature distribution is evaluated
+        state: A single mode state ket or density matrix.
+        quadrature_angle: The angle of the quadrature basis vector.
+        x: The points at which the quadrature distribution is evaluated.
 
     Returns:
-        tuple(Vector, Vector): coordinates at which the pdf is evaluated and the probability distribution
+        The coordinates at which the pdf is evaluated and the probability distribution.
     """
     cutoff = state.shape[0]
     if x is None:

@@ -322,8 +322,9 @@ class Ket(State):
 
         .. details::
 
-        .. math::
-            F(|\psi\rangle, \phi\rangle) = |\langle \psi, \phi \rangle|^2
+            .. math::
+                F(|\psi\rangle, \phi\rangle) = |\langle \psi, \phi \rangle|^2
+
         """
         if self.modes != other.modes:
             raise ValueError("Cannot compute fidelity between states with different modes.")

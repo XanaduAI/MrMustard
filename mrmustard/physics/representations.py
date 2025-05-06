@@ -97,7 +97,7 @@ class Representation:
         r"""
         The Bargmann parametrization of this representation, if available.
         It returns a triple (A, b, c) such that the Bargmann function of this is
-        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right).
+        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`.
         """
         try:
             return self.ansatz.triple

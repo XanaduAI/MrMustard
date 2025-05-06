@@ -43,6 +43,13 @@ class Coherent(Ket):
     Returns:
         A ``Ket`` object representing a coherent state.
 
+    .. code-block::
+
+        >>> from mrmustard.lab import Coherent, Vacuum, Dgate
+
+        >>> state = Coherent(mode=0, x=0.3, y=0.2)
+        >>> assert state == Vacuum(0) >> Dgate(0, x=0.3, y=0.2)
+
     .. details::
 
         For any :math:`\bar{\alpha} = \bar{x} + i\bar{y}` of length :math:`N`, the :math:`N`-mode
@@ -55,17 +62,9 @@ class Coherent(Ket):
 
         .. math::
             A = O_{N\text{x}N}\text{, }b=\bar{\alpha}\text{, and }c=\text{exp}\big(-|\bar{\alpha}^2|/2\big).
+
         Note that vector of means in phase space for a coherent state with parameters ``x,y`` is
         ``np.sqrt(2)*x, np.sqrt(2)*y`` (with units ``settings.HBAR=1``).
-
-
-
-    .. code-block::
-
-        >>> from mrmustard.lab import Coherent, Vacuum, Dgate
-
-        >>> state = Coherent(mode=0, x=0.3, y=0.2)
-        >>> assert state == Vacuum(0) >> Dgate(0, x=0.3, y=0.2)
 
     """
 

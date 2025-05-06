@@ -37,10 +37,13 @@ class Pgate(Unitary):
         shearing_trainable: Whether ``shearing`` is trainable.
         shearing_bounds: The bounds for ``shearing``.
 
-    .. details:: The quadratic phase gate is defined as
+    .. details::
+        The quadratic phase gate is defined as
+
         .. math::
 
             P = \exp(i s q^2 / 2 \hbar)
+
     Reference: https://strawberryfields.ai/photonics/conventions/gates.html
     """
 
