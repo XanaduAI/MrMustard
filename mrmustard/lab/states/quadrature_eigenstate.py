@@ -43,7 +43,7 @@ class QuadratureEigenstate(Ket):
         x_bounds: The bounds of `x`.
         phi_bounds: The bounds of `phi`.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import QuadratureEigenstate
 

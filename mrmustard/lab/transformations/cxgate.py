@@ -37,7 +37,8 @@ class CXgate(Unitary):
         s_trainable: Whether ``s`` is trainable.
         s_bounds: The bounds for ``s``.
 
-    .. code-block ::
+    .. code-block::
+
         >>> from mrmustard.lab import CXgate
         >>> gate = CXgate((0, 1), s=0.5)
         >>> assert gate.modes == (0, 1)

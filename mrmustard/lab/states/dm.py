@@ -425,6 +425,7 @@ class DM(State):
             e.g., being sparse.
 
         .. code-block::
+
             >>> from mrmustard.lab import DM, Vacuum
 
             >>> rho = DM.random([0,1])
@@ -501,6 +502,7 @@ class DM(State):
             For the method to work, we need the number of core modes to be half of the number of total modes.
 
         .. code-block::
+
             >>> from mrmustard.lab import DM, Ket, Vacuum
             >>> rho = DM.random([0,1])
             >>> core, phi = rho.physical_stellar_decomposition([0])

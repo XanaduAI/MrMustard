@@ -41,7 +41,7 @@ class BSgate(Unitary):
         theta_bounds: The bounds for ``theta``.
         phi_bounds: The bounds for ``phi``.
 
-        .. code-block ::
+        .. code-block::
 
         >>> from mrmustard.lab import BSgate
 

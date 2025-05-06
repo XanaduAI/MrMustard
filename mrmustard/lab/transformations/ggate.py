@@ -38,7 +38,7 @@ class Ggate(Unitary):
         symplectic: The symplectic matrix of the gate in the XXPP ordering.
         symplectic_trainable: Whether ``symplectic`` is trainable.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import Ggate, Vacuum, Identity, Ket
