@@ -16,29 +16,29 @@
 
 # pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
 
-from __future__ import annotations
-from typing import Callable, Sequence
-from functools import partial
+from __future__ import annotations  # pragma: no cover
+from typing import Callable, Sequence  # pragma: no cover
+from functools import partial  # pragma: no cover
 
-import jax
-import jax.numpy as jnp
-import jax.scipy as jsp
-import numpy as np
-import equinox as eqx
-from jax import tree_util
+import jax  # pragma: no cover
+import jax.numpy as jnp  # pragma: no cover
+import jax.scipy as jsp  # pragma: no cover
+import numpy as np  # pragma: no cover
+import equinox as eqx  # pragma: no cover
+from jax import tree_util  # pragma: no cover
 
-from sparse import COO
+from sparse import COO  # pragma: no cover
 
-from .autocast import Autocast
-from .backend_base import BackendBase
-from .lattice import strategies
-from .lattice.strategies.compactFock.inputValidation import (
+from .autocast import Autocast  # pragma: no cover
+from .backend_base import BackendBase  # pragma: no cover
+from .lattice import strategies  # pragma: no cover
+from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cover
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
 
-jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)  # pragma: no cover
 
 
 # pylint: disable=too-many-public-methods
