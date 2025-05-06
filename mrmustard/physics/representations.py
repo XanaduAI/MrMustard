@@ -143,12 +143,10 @@ class Representation:
     def fock_array(self, shape: int | Sequence[int]) -> ComplexTensor:
         r"""
         Returns an array of this representation in the Fock basis with the given shape.
-        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
-        available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
 
         Args:
             shape: The shape of the returned array, not including batch dimensions. If ``shape`` is
-            given as an ``int``, it is broadcast to all the dimensions. If not given, it is estimated.
+            given as an ``int``, it is broadcast to all the dimensions.
         Returns:
             array: The Fock array of this representation.
         """
@@ -204,9 +202,8 @@ class Representation:
         Converts this representation to a Fock representation.
 
         Args:
-            shape: The shape of the returned representation. If ``shape``is given as
-                an ``int``, it is broadcasted to all the dimensions. If ``None``, it
-                defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+            shape: The shape of the returned representation. If ``shape`` is given as
+                an ``int``, it is broadcasted to all the dimensions.
         """
         batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
         fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)

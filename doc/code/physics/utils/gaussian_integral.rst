@@ -1,5 +1,5 @@
 Calculations on Gaussian Integrals
-================================
+==================================
 
 .. currentmodule:: mrmustard.physics.gaussian_integrals
 

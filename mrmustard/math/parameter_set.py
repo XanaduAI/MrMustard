@@ -14,7 +14,7 @@
 
 """This module contains the classes to describe sets of parameters."""
 
-from typing import Any, Sequence, Union
+from typing import Any, Sequence
 import numpy as np
 
 from mrmustard.math.backend_manager import BackendManager
@@ -69,7 +69,10 @@ class ParameterSet:
         return self._variables
 
     @property
-    def all_parameters(self) -> dict[str, Union[Constant, Variable]]:
+    def all_parameters(self) -> dict[str, Constant | Variable]:
+        r"""
+        The constant and variable parameters in this parameter set.
+        """
         return self.constants | self.variables
 
     @property
@@ -80,7 +83,7 @@ class ParameterSet:
         """
         return self._names
 
-    def add_parameter(self, parameter: Union[Constant, Variable]) -> None:
+    def add_parameter(self, parameter: Constant | Variable) -> None:
         r"""
         Adds a parameter to this parameter set.
 
@@ -153,7 +156,7 @@ class ParameterSet:
             strings.append(string)
         return ", ".join(strings)
 
-    def __getitem__(self, items: Union[int, Sequence[int]]):
+    def __getitem__(self, items: int | Sequence[int]):
         r"""
         Returns a parameter set that contains slices of the parameters in this parameter set.
 

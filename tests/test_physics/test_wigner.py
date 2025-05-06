@@ -19,7 +19,7 @@ import pytest
 from scipy.special import assoc_laguerre
 
 from mrmustard import settings
-from mrmustard.lab_dev import Coherent, Ket, Number, SqueezedVacuum
+from mrmustard.lab import Coherent, Ket, Number, SqueezedVacuum
 from mrmustard.physics.wigner import wigner_discretized
 
 # ~~~~~~~
@@ -115,8 +115,8 @@ class TestWignerDiscretized:
         with settings(
             DISCRETIZATION_METHOD=method,
             HBAR=hbar,
-            AUTOCUTOFF_MIN_CUTOFF=100,
-            AUTOCUTOFF_MAX_CUTOFF=150,
+            AUTOSHAPE_MIN=100,
+            AUTOSHAPE_MAX=150,
         ):
 
             # centering the intervals around alpha--away from the center,
@@ -158,9 +158,7 @@ class TestWignerDiscretized:
         r"""Tests DWF for a squeezed vacuum state with squeezing s=1.
         Both discretization methods are expected to pass successfully.
         """
-        with settings(
-            DISCRETIZATION_METHOD=method, AUTOCUTOFF_MIN_CUTOFF=100, AUTOCUTOFF_MAX_CUTOFF=150
-        ):
+        with settings(DISCRETIZATION_METHOD=method, AUTOSHAPE_MIN=100, AUTOSHAPE_MAX=150):
             q_vec = np.linspace(-0.5, 0.5, 50)
             p_vec = np.linspace(-5, 5, 50)
 
@@ -180,9 +178,7 @@ class TestWignerDiscretized:
         r"""Tests DWF for a squeezed vacuum state with squeezing s=2.
         The iterative method cannot produce a DWF that matched with the analytical one.
         """
-        with settings(
-            DISCRETIZATION_METHOD=method, AUTOCUTOFF_MIN_CUTOFF=100, AUTOCUTOFF_MAX_CUTOFF=150
-        ):
+        with settings(DISCRETIZATION_METHOD=method, AUTOSHAPE_MIN=100, AUTOSHAPE_MAX=150):
 
             q_vec = np.linspace(-0.2, 0.2, 50)
             p_vec = np.linspace(-5, 5, 50)

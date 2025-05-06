@@ -17,7 +17,7 @@ from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
 from mrmustard import settings
-from mrmustard.lab_dev import (
+from mrmustard.lab import (
     Amplifier,
     Attenuator,
     BSgate,

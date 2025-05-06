@@ -185,7 +185,7 @@ class Wires:  # pylint: disable=too-many-public-methods
     The wires describe how they connect with the surrounding components in a tensor network picture,
     where states flow from left to right. ``CircuitComponent``\s can have wires on the
     bra and/or on the ket side. Additionally, they may have classical wires. Here are some examples
-    for the types of components available on ``mrmustard.lab_dev``:
+    for the types of components available on ``mrmustard.lab``:
 
     .. code-block::
 
