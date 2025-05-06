@@ -128,7 +128,6 @@ Mr Mustard supports the following in a fully differentiable way:
 
    code/mm
    code/lab
-   code/lab
    code/physics
    code/math
    code/training

@@ -498,12 +498,12 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
         The shape of the Fock representation of this component. If the component has a Fock representation
-        then it is just the shape of the array. If the components is a State in Bargmann
-        representation the shape is calculated using autoshape using the single-mode marginals.
-        If the component is not a State then the shape is a tuple of ``settings.AUTOSHAPE_MAX`` values
-        except where the ``manual_shape`` attribute has been set..
+        then it is just the shape of the array. If the component is a ``State`` in Bargmann
+        then the shape is calculated using ``autoshape`` using single-mode marginals.
+        If the component is not a ``State`` then the shape is a tuple of ``settings.DEFAULT_FOCK_SIZE``
+        values except where the ``manual_shape`` attribute has been set.
         """
-        return tuple(s or settings.AUTOSHAPE_MAX for s in self.manual_shape)
+        return tuple(s or settings.DEFAULT_FOCK_SIZE for s in self.manual_shape)
 
     def bargmann_triple(
         self,
@@ -560,12 +560,11 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
-        If the shape is not given, it defaults to the ``auto_shape`` of the component if it is
-        available, otherwise it defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+        If the shape is not given, it defaults to the ``auto_shape`` of the component.
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
-                it is broadcasted to all the dimensions. If not given, it is estimated.
+                it is broadcasted to all the dimensions. If not given, it is generated via ``auto_shape``.
         Returns:
             array: The Fock representation of this component.
         """
@@ -656,9 +655,9 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
             >>> assert isinstance(d_fock.ansatz, ArrayAnsatz)
 
         Args:
-            shape: The shape of the returned representation. If ``shape``is given as
-                an ``int``, it is broadcasted to all the dimensions. If ``None``, it
-                defaults to the value of ``AUTOSHAPE_MAX`` in the settings.
+            shape: The shape of the returned representation. If ``shape`` is given as
+                an ``int``, it is broadcasted to all dimensions. If ``None``, it
+                is generated via ``auto_shape``.
         """
         rep = self._representation.to_fock(shape or self.auto_shape())
         try:
@@ -690,8 +689,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         "internal convenience method for right-shift, to return the right type of object"
         if len(result.wires) > 0:
             return result
-        scalar = result.ansatz.scalar
-        return math.sum(scalar) if not settings.UNSAFE_ZIP_BATCH else scalar
+        return result.ansatz.scalar
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -771,10 +769,11 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         .. code-block::
 
             >>> from mrmustard.lab import Coherent, Attenuator, Ket, DM, Channel
+            >>> state = Coherent(0, 1.0)
             >>> assert issubclass(Coherent, Ket)
             >>> assert issubclass(Attenuator, Channel)
-            >>> assert isinstance(Coherent(0, 1.0) >> Attenuator(0, 0.5), DM)
-            >>> assert isinstance(Coherent(0, 1.0) >> Coherent(0, 1.0).dual, complex)
+            >>> assert isinstance(state >> Attenuator(0, 0.5), DM)
+            >>> assert math.allclose(state >> state.dual, 1+0j)
         """
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)

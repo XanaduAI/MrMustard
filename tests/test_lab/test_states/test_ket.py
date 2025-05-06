@@ -81,8 +81,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_auto_shape(self):
         ket = Coherent(0, x=1)
         assert ket.auto_shape() == (8,)
+
         ket.manual_shape[0] = 19
         assert ket.auto_shape() == (19,)
+        assert ket.auto_shape(respect_manual_shape=False) == (8,)
 
         ket = Coherent(0, x=1) >> Number(1, 10).dual
         assert ket.auto_shape() == (8, 11)

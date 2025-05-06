@@ -51,10 +51,6 @@ from mrmustard.training import Optimizer
 
 from ..random import Abc_triple
 
-# original settings
-autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
-
-
 # pylint: disable=too-many-public-methods
 class TestCircuitComponent:
     r"""
