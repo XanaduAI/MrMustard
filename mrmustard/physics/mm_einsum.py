@@ -149,24 +149,6 @@ def prepare_idx_out(
     return idx_out
 
 
-def convert_ansatz(ansatz: Ansatz, shape: tuple[int, ...]) -> ArrayAnsatz:
-    r"""
-    Converts an ansatz to PolyExpAnsatz if the shape is all zeros.
-    Otherwise, it converts the ansatz to an ArrayAnsatz with the given shape.
-
-    Args:
-        ansatz: The ansatz to convert.
-        shape: The shape of the ArrayAnsatz.
-
-    Returns:
-        Ansatz: The converted Ansatz.
-    """
-    if all(shape[i] == 0 for i in range(len(shape))):
-        return to_bargmann(ansatz)
-    else:
-        return to_fock(ansatz, shape)
-
-
 def to_fock(ansatz: Ansatz, shape: tuple[int, ...], stable: bool = False) -> ArrayAnsatz:
     r"""
     Converts a PolyExpAnsatz to an ArrayAnsatz.
