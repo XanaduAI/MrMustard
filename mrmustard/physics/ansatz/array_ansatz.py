@@ -214,6 +214,7 @@ class ArrayAnsatz(Ansatz):
             try:
                 result = math.einsum(einsum_str, reduced_array1, reduced_array2)
             except ValueError:
+                assert False
                 result = math.einsum(einsum_str, reduced_array1, reduced_array2, optimize=True)
         else:
             result = math.einsum(einsum_str, reduced_array1, reduced_array2)
