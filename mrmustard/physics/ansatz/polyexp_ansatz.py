@@ -45,6 +45,19 @@ from mrmustard.utils.typing import (
     Vector,
 )
 
+from mrmustard.physics.gaussian_integrals import (
+    complex_gaussian_integral_1,
+    complex_gaussian_integral_2,
+    join_Abc,
+)
+from mrmustard.physics.utils import generate_batch_str, verify_batch_triple
+from mrmustard.physics.fock_utils import c_in_PS
+
+from mrmustard import math, widgets, settings
+from mrmustard.math.parameters import Variable
+
+
+from .base import Ansatz
 from ..utils import outer_product_batch_str, reshape_args_to_batch_string
 from .base import Ansatz
 
@@ -214,15 +227,45 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(
                 f"A phase space ansatz must have even number of indices. (n={n} is odd)"
             )
-        In = math.eye(n // 2, dtype=math.complex128)
-        W = math.block([[In, -1j * In], [In, 1j * In]]) / complex(
-            math.sqrt(2, dtype=math.complex128) * settings.HBAR
-        )
 
-        A = math.einsum("ji, ...jk, kl-> ...il", W, self.A, W)
-        b = math.einsum("ij, ...j-> ...i", W, self.b)
-        c = self.c / (2 * settings.HBAR) ** (n // 2)
-        return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
+        if self.c.shape == ():
+            In = math.eye(n // 2, dtype=math.complex128)
+            W = math.block([[In, -1j * In], [In, 1j * In]]) / complex(
+                math.sqrt(2, dtype=math.complex128) * settings.HBAR
+            )
+
+            A = math.einsum("ji, ...jk, kl-> ...il", W, self.A, W)
+            b = math.einsum("ij, ...j-> ...i", W, self.b)
+            c = self.c / (2 * settings.HBAR) ** (n // 2)
+            return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
+
+        else:
+            if self.A.shape[-1] != 4:
+                raise ValueError(
+                    f"This transformation is written only for 2 core and 2 derived variables"
+                )
+            A_tmp = self.A
+
+            A_tmp = A_tmp[..., [0, 2, 1, 3], :]
+            A_tmp = A_tmp[..., [0, 2, 1, 3]]
+            b = self.b
+            b_tmp = b[..., [0, 2, 1, 3]]
+            c = c_in_PS(self.c)  # implements PS transformations on ``c``
+
+            In = math.eye(n // 2, dtype=math.complex128)
+            W = math.block([[In, -1j * In], [In, 1j * In]]) / complex(
+                math.sqrt(2, dtype=math.complex128) * settings.HBAR
+            )
+
+            A = math.einsum("ji, ...jk, kl-> ...il", W, A_tmp, W)
+            b = math.einsum("ij, ...j-> ...i", W, b_tmp)
+            c = c / (2 * settings.HBAR) ** (n // 2)
+
+            A_final = A[..., [0, 2, 1, 3], :]
+            A_final = A_final[..., :, [0, 2, 1, 3]]
+            b_final = b[..., [0, 2, 1, 3]]
+
+            return PolyExpAnsatz(A_final, b_final, c, lin_sup=self._lin_sup)
 
     @property
     def scalar(self) -> Scalar:
