@@ -236,8 +236,6 @@ class BackendJax(BackendBase):  # pragma: no cover
     def update_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
     ) -> jnp.ndarray:
-        indices = self.atleast_nd(indices, 2)
-        indices = jnp.squeeze(indices, axis=-1)
         return tensor.at[indices].set(values)
 
     @Autocast()
