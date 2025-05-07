@@ -47,9 +47,9 @@ class WiresType(LegibleEnum):
     KET_LIKE = auto()  # only output ket
     UNITARY_LIKE = auto()  # such that can map ket to ket
     CHANNEL_LIKE = auto()  # such that can map dm to dm
-    PROJ_MEAS_LIKE = auto()  # only input ket
     POVM_LIKE = auto()  # only input ket and input bra on same modes
     CLASSICAL_LIKE = auto()  # only classical wires
+    COMPONENT_LIKE = auto()  # anything else
 
 
 @dataclass
@@ -370,6 +370,34 @@ class Wires:  # pylint: disable=too-many-public-methods
         w.classical_wires = set(classical) if not copy else {c.copy() for c in classical}
         return w
 
+    @property
+    def type(self) -> WiresType:
+        r"""
+        Returns the type of the wires.
+        """
+        if not self.classical_wires:
+            if not self.input:
+                if not self.output.bra:
+                    return WiresType.KET_LIKE
+                elif self.output.bra.modes == self.output.ket.modes:
+                    return WiresType.DM_LIKE
+            elif not self.output:
+                if self.input.bra.modes == self.input.ket.modes:
+                    return WiresType.POVM_LIKE
+            else:
+                if not self.bra and (self.input.ket.modes == self.output.ket.modes):
+                    return WiresType.UNITARY_LIKE
+                elif not self.ket and (self.input.bra.modes == self.output.bra.modes):
+                    return WiresType.UNITARY_LIKE
+                elif (self.output.bra.modes == self.output.ket.modes) and (
+                    self.input.bra.modes == self.input.ket.modes
+                ):
+                    return WiresType.CHANNEL_LIKE
+        elif not self.quantum_wires:
+            return WiresType.CLASSICAL_LIKE
+
+        return WiresType.COMPONENT_LIKE
+
     def copy(self, new_ids: bool = False) -> Wires:
         """Returns a deep copy of this Wires object."""
         return Wires.from_wires(
@@ -497,7 +525,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         return tuple(w.index for w in self.wires)
 
     @property
-    def args(self) -> tuple[tuple[int, ...], ...]:
+    def args(self) -> tuple[set[int], set[int], set[int], set[int], set[int], set[int]]:
         r"""
         The arguments needed to create a new ``Wires`` object with the same wires.
         """
