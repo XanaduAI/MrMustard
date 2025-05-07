@@ -204,20 +204,7 @@ class ArrayAnsatz(Ansatz):
 
         reduced_array1 = array1[tuple(slices1)]
         reduced_array2 = array2[tuple(slices2)]
-
-        # this is to handle the case where one of the arrays is sparse and the other is dense
-        # in this case einsum can error when the shapes don't match
-        # this is avoidable by using the optimize flag
-        if (type(reduced_array1) is not type(reduced_array2)) and (
-            isinstance(reduced_array1, COO) or isinstance(reduced_array2, COO)
-        ):
-            try:
-                result = math.einsum(einsum_str, reduced_array1, reduced_array2)
-            except ValueError:
-                assert False
-                result = math.einsum(einsum_str, reduced_array1, reduced_array2, optimize=True)
-        else:
-            result = math.einsum(einsum_str, reduced_array1, reduced_array2)
+        result = math.einsum(einsum_str, reduced_array1, reduced_array2, optimize=True)
 
         batch_dims_out = sum(1 for label in idx_out if isinstance(label, str))
         return ArrayAnsatz(result, batch_dims=batch_dims_out)
