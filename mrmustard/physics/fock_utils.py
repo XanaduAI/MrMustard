@@ -24,6 +24,7 @@ from functools import lru_cache
 from typing import Sequence, Iterable
 
 import numpy as np
+from scipy.special import comb
 
 from mrmustard import math, settings
 from mrmustard.math.lattice import strategies
@@ -512,3 +513,28 @@ def squeezed(r, phi, shape):
         return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
 
     return ret, vjp
+
+
+def c_ps_matrix(m, n, alpha):
+    mu_range = range(max(0, alpha - n), min(m, alpha) + 1)
+    tmp = [comb(m, mu) * comb(n, alpha - mu) * (1j) ** (m - n - 2 * mu + alpha) for mu in mu_range]
+    return np.sum(tmp)
+
+
+def gamma_matrix(c):
+    M = c.shape[0] + c.shape[1] - 1
+    Gamma = np.zeros((M**2, c.shape[0] * c.shape[1]), dtype=np.complex128)
+
+    for m in range(c.shape[0]):
+        for n in range(c.shape[1]):
+            for alpha in range(M):
+                value = c_ps_matrix(m, n, alpha) * math.sqrt(settings.HBAR / 2) ** (m + n)
+                row = alpha * M + (m + n - alpha)
+                col = m * c.shape[0] + n
+                Gamma[row, col] = value
+    return Gamma
+
+
+def c_in_PS(c):
+    M = c.shape[0] + c.shape[1] - 1
+    return np.reshape(gamma_matrix(c) @ np.reshape(c, (c.shape[0] * c.shape[1], 1)), (M, M))
