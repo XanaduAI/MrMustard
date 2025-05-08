@@ -43,7 +43,7 @@ from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.physics.ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
 from mrmustard.physics.fock_utils import oscillator_eigenstate
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.wires import Wires, WiresType
 
 __all__ = ["CircuitComponent"]
 
@@ -572,44 +572,49 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
 
     def on(self, modes: int | Sequence[int]) -> CircuitComponent:
         r"""
-        Creates a light copy of this component that acts on the given ``modes`` instead of the
-        original modes. It only works if the component's wires are all defined on the same modes.
-        As a light copy, the returned component shares the representation with the original one.
+        Creates a light copy of this component on the given ``modes`` instead of the
+        original modes. It only works for components that have only output wires like states
+        or input and output wires on the same modes.
 
-        If a more general rewiring is needed, while maintaining a light copy to the original, use
-        ``._light_copy(new_wires)`` and pass the desired wires.
+        Note that the new modes are going to be sorted in ascending order. So e.g.
+        ``DM.random([0,1,2]).on([0,2,1])`` modifies the Abc triple so that modes 1 and 2 are swapped,
+        but the new component is still defined on modes 0, 1, 2 in ascending order.
 
         Args:
-            modes: The new modes that this component acts on.
+            modes: The new modes for this component.
 
         Returns:
-            The component acting on the specified modes.
+            The component defined on the new modes.
 
         Raises:
-            ValueError: If the component's wires are not all defined on the same modes or if the
-            length of the given modes is different from the length of the original modes.
+            ValueError: If the length of the given modes is different from the length of the original modes.
+            ValueError: If the component's wires are incompatible with the ``.on()`` method.
         """
-        modes = (modes,) if isinstance(modes, int) else modes
-        ob = self.wires.output.bra.modes
-        ib = self.wires.input.bra.modes
-        ok = self.wires.output.ket.modes
-        ik = self.wires.input.ket.modes
-        subsets = [s for s in (ob, ib, ok, ik) if s]
-        if any(s != subsets[0] for s in subsets):
-            raise ValueError(
-                f"Cannot rewire a component with wires on different modes ({ob, ib, ok, ik})."
-            )
-        for subset in subsets:
-            if subset and len(subset) != len(modes):
-                raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
-        ret = self._light_copy(
-            Wires(
-                modes_out_bra=set(modes) if ob else set(),
-                modes_in_bra=set(modes) if ib else set(),
-                modes_out_ket=set(modes) if ok else set(),
-                modes_in_ket=set(modes) if ik else set(),
-            )
+        if not isinstance(modes, Sequence):
+            modes = (modes,)
+        w = self.wires
+        if w.type == WiresType.COMPONENT_LIKE:
+            raise ValueError("Cannot rewire generic components.")
+        if len(w.modes) != len(modes):
+            raise ValueError(f"Expected ``{len(w.modes)}`` modes, found ``{len(modes)}``.")
+
+        perm = np.argsort(modes)
+        global_perm = []
+        offset = 0
+        for subset in w.args:
+            if lst := list(subset):
+                global_perm += [p + offset for p in perm]
+                offset += len(lst)
+        ansatz = self.ansatz.reorder(global_perm)
+        sm = set(modes)
+        wires = Wires(
+            modes_out_bra=sm if w.args[0] else set(),
+            modes_in_bra=sm if w.args[1] else set(),
+            modes_out_ket=sm if w.args[2] else set(),
+            modes_in_ket=sm if w.args[3] else set(),
         )
+        ret = self._light_copy()
+        ret._representation = Representation(ansatz, wires)
         return ret
 
     def to_bargmann(self) -> CircuitComponent:
