@@ -700,12 +700,17 @@ class State(CircuitComponent):
 
         .. code-block::
 
-            >>> from mrmustard import math
+            >>> from numpy import np
             >>> from mrmustard.lab import Ket
 
             >>> state = Ket.random([0])
-            >>> x = math.linspace(-5, 5, 100)
+            >>> x = np.linspace(-5, 5, 100)
 
-            >>> assert math.all(state.wigner(x,0) >= 0)
+            >>> assert np.all(state.wigner(x,0).real >= 0)
         """
-        return (self >> BtoPS(self.modes, s=0)).ansatz.PS
+        if isinstance(self.ansatz, PolyExpAnsatz):
+            return (self >> BtoPS(self.modes, s=0)).ansatz.PS
+        else:
+            raise ValueError(
+                "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()``."
+            )
