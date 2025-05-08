@@ -43,7 +43,7 @@ from mrmustard.utils.typing import (
 )
 
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoChar, BtoQ
+from ..circuit_components_utils import BtoChar, BtoQ, BtoPS
 from ..transformations import Transformation
 
 __all__ = ["State"]
@@ -758,3 +758,20 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
+
+    @property
+    def wigner(self):
+        r"""
+        Returns the Wigner function, as an ``Ansatz``, of this state in the phase space.
+
+        .. code-block::
+
+            >>> from mrmustard import math
+            >>> from mrmustard.lab import Ket
+
+            >>> state = Ket.random([0])
+            >>> x = math.linspace(-5, 5, 100)
+
+            >>> assert math.all(state.wigner(x,0) >= 0)
+        """
+        return (self >> BtoPS(self.modes, s=0)).ansatz.PS
