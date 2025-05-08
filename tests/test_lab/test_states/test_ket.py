@@ -29,6 +29,7 @@ from mrmustard.lab import (
     CircuitComponent,
     Coherent,
     Dgate,
+    Ggate,
     Identity,
     Ket,
     Number,
@@ -39,6 +40,7 @@ from mrmustard.lab import (
 )
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import coherent_state_Abc
+from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.physics.wires import Wires
 from mrmustard.widgets import state as state_widget
 
@@ -623,7 +625,15 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         ans = Vacuum(0).wigner
         x = np.linspace(0, 1, 100)
-
         solution = np.exp(-(x**2)) / np.pi
 
         assert math.allclose(ans(x, 0), solution)
+
+    @pytest.mark.parametrize("n", [1, 2, 13])
+    def test_wigner_poly_exp(self, n):
+
+        psi = (Number(0, n).dm().to_bargmann()) >> Ggate(0)
+        xs = np.linspace(-5, 5, 100)
+        poly_exp_wig = psi.wigner(xs, 0).real
+        wig = wigner_discretized(psi.fock_array(), xs, 0)
+        assert math.allclose(poly_exp_wig[:, None], wig[0], atol=2e-3)
