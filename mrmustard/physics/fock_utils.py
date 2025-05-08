@@ -24,7 +24,7 @@ from functools import lru_cache
 from typing import Sequence, Iterable
 
 import numpy as np
-from scipy.special import comb
+from scipy.special import comb, factorial
 
 from mrmustard import math, settings
 from mrmustard.math.lattice import strategies
@@ -516,25 +516,41 @@ def squeezed(r, phi, shape):
 
 
 def c_ps_matrix(m, n, alpha):
+    """
+    helper function for ``c_in_PS``.
+    """
     mu_range = range(max(0, alpha - n), min(m, alpha) + 1)
     tmp = [comb(m, mu) * comb(n, alpha - mu) * (1j) ** (m - n - 2 * mu + alpha) for mu in mu_range]
     return np.sum(tmp)
 
 
 def gamma_matrix(c):
+    """
+    helper function for ``c_in_PS``.
+    """
     M = c.shape[0] + c.shape[1] - 1
     Gamma = np.zeros((M**2, c.shape[0] * c.shape[1]), dtype=np.complex128)
 
     for m in range(c.shape[0]):
         for n in range(c.shape[1]):
-            for alpha in range(M):
+            for alpha in range(m + n + 1):
+                factor = math.sqrt(
+                    factorial(m) * factorial(n) / (factorial(alpha) * factorial(m + n - alpha))
+                )
                 value = c_ps_matrix(m, n, alpha) * math.sqrt(settings.HBAR / 2) ** (m + n)
                 row = alpha * M + (m + n - alpha)
                 col = m * c.shape[0] + n
-                Gamma[row, col] = value
+                Gamma[row, col] = value / factor
     return Gamma
 
 
 def c_in_PS(c):
+    """
+    Transforms the ``c`` matrix of a ``DM`` object from bargmann to phase-space.
+    It is a helper function used in
+
+    Args:
+        c (Tensor): the ``c`` matrix of the ``DM`` object
+    """
     M = c.shape[0] + c.shape[1] - 1
     return np.reshape(gamma_matrix(c) @ np.reshape(c, (c.shape[0] * c.shape[1], 1)), (M, M))

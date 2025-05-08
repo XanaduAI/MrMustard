@@ -251,7 +251,7 @@ class PolyExpAnsatz(Ansatz):
 
             A = math.einsum("ji, ...jk, kl-> ...il", W, A_tmp, W)
             b = math.einsum("ij, ...j-> ...i", W, b_tmp)
-            c = c / (2 * settings.HBAR) ** (n // 2)
+            c = c / (2 * settings.HBAR)
 
             A_final = A[..., [0, 2, 1, 3], :]
             A_final = A_final[..., :, [0, 2, 1, 3]]
