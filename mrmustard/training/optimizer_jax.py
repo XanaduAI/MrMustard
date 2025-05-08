@@ -20,10 +20,10 @@ from __future__ import annotations
 from typing import Callable, Sequence
 
 import jax
-import optax
 
 import equinox as eqx
 
+from mrmustard import math
 from mrmustard.lab import CircuitComponent
 
 __all__ = ["OptimizerJax"]
@@ -61,15 +61,21 @@ class OptimizerJax:
         return model, opt_state, loss_value
 
     def minimize(self, cost_fn, by_optimizing, max_steps=10):
-        model = Objective(by_optimizing)
-
+        # loss function that accepts parameters and updates the circuit and returns the cost_fn
         def loss(params, static):
             model = eqx.combine(params, static)
             return model(cost_fn, by_optimizing)
 
-        optim = optax.adamw(1e-1)  # TODO: math.euclidean_opt
+        optim = math.euclidean_opt
+        model = Objective(by_optimizing)
         opt_state = optim.init(eqx.filter(model, eqx.is_array))
 
+        # optimize
         for epoch in range(max_steps):
             model, opt_state, loss_value = self.make_step(optim, loss, model, opt_state)
             print(f"epoch: {epoch}, loss: {loss_value}")
+
+        # update vals
+        for vars, comp in zip(model.vars, by_optimizing):
+            for key, val in vars.items():
+                comp.parameters.variables[key].value = val

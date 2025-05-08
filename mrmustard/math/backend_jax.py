@@ -26,6 +26,7 @@ import jax.scipy as jsp  # pragma: no cover
 import numpy as np  # pragma: no cover
 import equinox as eqx  # pragma: no cover
 from jax import tree_util  # pragma: no cover
+import optax  # pragma: no cover
 
 from .autocast import Autocast  # pragma: no cover
 from .backend_base import BackendBase  # pragma: no cover
@@ -513,7 +514,7 @@ class BackendJax(BackendBase):  # pragma: no cover
 
     # Special functions for optimization
     def DefaultEuclideanOptimizer(self):
-        return jax.experimental.optimizers.adam(learning_rate=0.001)
+        return optax.adamw(0.001)
 
     @jax.jit
     def reorder_AB_bargmann(
