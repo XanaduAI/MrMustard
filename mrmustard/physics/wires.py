@@ -43,11 +43,16 @@ class ReprEnum(LegibleEnum):
 class WiresType(LegibleEnum):
     """Enumeration of possible wire types in quantum circuits."""
 
-    DM_LIKE = auto()  # only output ket and bra on same modes
+    SCALAR_LIKE = auto()  # no wires
     KET_LIKE = auto()  # only output ket
-    UNITARY_LIKE = auto()  # such that can map ket to ket
-    CHANNEL_LIKE = auto()  # such that can map dm to dm
-    POVM_LIKE = auto()  # only input ket and input bra on same modes
+    KET_DUAL_LIKE = auto()  # only input ket
+    KET_ADJOINT_LIKE = auto()  # only output bra
+    KET_ADJOINT_DUAL_LIKE = auto()  # only input bra
+    DM_LIKE = auto()  # only output ket and bra on same modes
+    POVM_LIKE = auto()  # only input ket and bra on same modes
+    UNITARY_LIKE = auto()  # only input and output ket on same modes
+    UNITARY_ADJOINT_LIKE = auto()  # only input and output bra on same modes
+    CHANNEL_LIKE = auto()  # all args on the same modes
     CLASSICAL_LIKE = auto()  # only classical wires
     COMPONENT_LIKE = auto()  # anything else
 
@@ -376,24 +381,29 @@ class Wires:  # pylint: disable=too-many-public-methods
         Returns the type of the wires.
         """
         if not self.classical_wires:
-            if not self.input:
+            if not self.quantum_wires:
+                return WiresType.SCALAR_LIKE
+            elif not self.input:
                 if not self.output.bra:
                     return WiresType.KET_LIKE
+                elif not self.output.ket:
+                    return WiresType.KET_ADJOINT_LIKE
                 elif self.output.bra.modes == self.output.ket.modes:
                     return WiresType.DM_LIKE
             elif not self.output:
-                if self.input.bra.modes == self.input.ket.modes:
+                if not self.input.bra:
+                    return WiresType.KET_DUAL_LIKE
+                elif not self.input.ket:
+                    return WiresType.KET_ADJOINT_DUAL_LIKE
+                elif self.input.bra.modes == self.input.ket.modes:
                     return WiresType.POVM_LIKE
             else:
                 if not self.bra and (self.input.ket.modes == self.output.ket.modes):
                     return WiresType.UNITARY_LIKE
                 elif not self.ket and (self.input.bra.modes == self.output.bra.modes):
-                    return WiresType.UNITARY_LIKE
-                elif (
-                    self.output.bra.modes
-                    == self.output.ket.modes
-                    == self.input.bra.modes
-                    == self.input.ket.modes
+                    return WiresType.UNITARY_ADJOINT_LIKE
+                elif (self.output.bra.modes == self.output.ket.modes) and (
+                    self.input.bra.modes == self.input.ket.modes
                 ):
                     return WiresType.CHANNEL_LIKE
         elif not self.quantum_wires:
