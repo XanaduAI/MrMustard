@@ -593,6 +593,8 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         if not isinstance(modes, Sequence):
             modes = (modes,)
         w = self.wires
+        if w.type == WiresType.CHANNEL_LIKE and set.union(*w.args) != w.args[0]:
+            raise ValueError("Cannot rewire channels with different input and output modes.")
         if w.type == WiresType.COMPONENT_LIKE:
             raise ValueError("Cannot rewire generic components.")
         if len(w.modes) != len(modes):
