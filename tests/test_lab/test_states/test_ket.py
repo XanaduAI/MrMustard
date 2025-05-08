@@ -634,6 +634,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         psi = (Number(0, n).dm().to_bargmann()) >> Ggate(0)
         xs = np.linspace(-5, 5, 100)
-        poly_exp_wig = psi.wigner(xs, 0).real
+        poly_exp_wig = math.real(psi.wigner(xs, 0))
         wig = wigner_discretized(psi.fock_array(), xs, 0)
         assert math.allclose(poly_exp_wig[:, None], wig[0], atol=3e-3)

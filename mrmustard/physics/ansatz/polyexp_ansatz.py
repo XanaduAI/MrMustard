@@ -914,10 +914,10 @@ class PolyExpAnsatz(Ansatz):
                - *b are the batch dimensions of the combined inputs.
                - *L is the batch shape of the ansatz.
         """
-        z_only = [arr for arr in z_inputs if arr is not None]
+        z_only = [math.cast(arr, dtype=math.complex128) for arr in z_inputs if arr is not None]
         broadcasted_z = math.broadcast_arrays(*z_only)
         z = (
-            math.cast(math.stack(broadcasted_z, axis=-1), dtype=math.complex128)
+            math.stack(broadcasted_z, axis=-1)
             if broadcasted_z
             else math.astensor([], dtype=math.complex128)
         )
