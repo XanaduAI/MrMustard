@@ -378,7 +378,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         return w
 
     @property
-    def type(self) -> WiresType:
+    def type(self) -> WiresType:  # pylint: disable=too-many-return-statements, too-many-branches
         r"""
         Returns the type of the wires.
         """
