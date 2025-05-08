@@ -696,21 +696,16 @@ class State(CircuitComponent):
     @property
     def wigner(self):
         r"""
-        Returns the Wigner function of this state in phase space as an ``Ansatz``.
+        Returns the Wigner function, as an ``Ansatz``, of this state in the phase space.
 
         .. code-block::
 
-            >>> import numpy as np
+            >>> from mrmustard import math
             >>> from mrmustard.lab import Ket
 
             >>> state = Ket.random([0])
-            >>> x = np.linspace(-5, 5, 100)
+            >>> x = math.linspace(-5, 5, 100)
 
-            >>> assert np.all(state.wigner(x,0).real >= 0)
+            >>> assert math.all(state.wigner(x,0) >= 0)
         """
-        if isinstance(self.ansatz, PolyExpAnsatz):
-            return (self >> BtoPS(self.modes, s=0)).ansatz.PS
-        else:
-            raise ValueError(
-                "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first."
-            )
+        return (self >> BtoPS(self.modes, s=0)).ansatz.PS
