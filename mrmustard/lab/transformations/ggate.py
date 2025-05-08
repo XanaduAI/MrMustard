@@ -22,9 +22,9 @@ from mrmustard import math
 from mrmustard.math.parameters import update_symplectic
 from mrmustard.utils.typing import RealMatrix
 
-from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["Ggate"]
 

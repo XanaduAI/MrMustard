@@ -19,31 +19,32 @@ A base class for the components of quantum circuits.
 # pylint: disable=super-init-not-called, import-outside-toplevel
 from __future__ import annotations
 
-from inspect import signature
-from pydoc import locate
-from typing import Any, Sequence, Literal
 import numbers
 from functools import cached_property
+from inspect import signature
+from pydoc import locate
+from typing import Any, Literal, Sequence
 
-import numpy as np
-from numpy.typing import ArrayLike
 import ipywidgets as widgets
+import numpy as np
 from IPython.display import display
+from numpy.typing import ArrayLike
 
-from mrmustard import settings, math, widgets as mmwidgets
-from mrmustard.utils.typing import (
-    Scalar,
-    ComplexTensor,
-    ComplexMatrix,
-    ComplexVector,
-    RealVector,
-    Batch,
-)
+from mrmustard import math, settings
+from mrmustard import widgets as mmwidgets
 from mrmustard.math.parameter_set import ParameterSet
-from mrmustard.physics.ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
+from mrmustard.physics.ansatz import Ansatz, ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.fock_utils import oscillator_eigenstate
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, WiresType
+from mrmustard.utils.typing import (
+    Batch,
+    ComplexMatrix,
+    ComplexTensor,
+    ComplexVector,
+    RealVector,
+    Scalar,
+)
 
 __all__ = ["CircuitComponent"]
 

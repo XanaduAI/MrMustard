@@ -20,14 +20,21 @@ This module contains the PolyExp ansatz.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence
 import itertools
+from typing import Any, Callable, Sequence
 
 import numpy as np
+from IPython.display import display
 from numpy.typing import ArrayLike
 
-from IPython.display import display
-
+from mrmustard import math, settings, widgets
+from mrmustard.math.parameters import Variable
+from mrmustard.physics.gaussian_integrals import (
+    complex_gaussian_integral_1,
+    complex_gaussian_integral_2,
+    join_Abc,
+)
+from mrmustard.physics.utils import generate_batch_str, verify_batch_triple
 from mrmustard.utils.argsort import argsort_gen
 from mrmustard.utils.typing import (
     Batch,
@@ -38,19 +45,8 @@ from mrmustard.utils.typing import (
     Vector,
 )
 
-from mrmustard.physics.gaussian_integrals import (
-    complex_gaussian_integral_1,
-    complex_gaussian_integral_2,
-    join_Abc,
-)
-from mrmustard.physics.utils import generate_batch_str, verify_batch_triple
-
-from mrmustard import math, widgets, settings
-from mrmustard.math.parameters import Variable
-
-
-from .base import Ansatz
 from ..utils import outer_product_batch_str, reshape_args_to_batch_string
+from .base import Ansatz
 
 __all__ = ["PolyExpAnsatz"]
 

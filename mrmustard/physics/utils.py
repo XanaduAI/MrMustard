@@ -20,7 +20,7 @@ from __future__ import annotations
 from numpy.typing import ArrayLike
 
 from mrmustard import math
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 #  ~~~~~~~~~
 #  Utilities

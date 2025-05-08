@@ -17,8 +17,8 @@
 from rich import print
 
 from ._version import __version__
-from .utils.settings import *
 from .utils.filters import add_complex_warning_filter
+from .utils.settings import *
 
 
 def version():

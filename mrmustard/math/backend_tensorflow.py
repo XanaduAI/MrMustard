@@ -17,14 +17,14 @@
 # pylint: disable = missing-function-docstring, missing-class-docstring, wrong-import-position
 
 from __future__ import annotations
+
+import os
+from importlib import metadata
 from typing import Callable, Sequence
 
-from importlib import metadata
-import os
-
 import numpy as np
-from semantic_version import Version
 import tensorflow_probability as tfp
+from semantic_version import Version
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf

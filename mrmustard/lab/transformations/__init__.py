@@ -24,8 +24,8 @@ from .cxgate import *
 from .czgate import *
 from .dgate import *
 from .fockdamping import *
-from .ggate import *
 from .gaussrandnoise import *
+from .ggate import *
 from .identity import *
 from .interferometer import *
 from .mzgate import *

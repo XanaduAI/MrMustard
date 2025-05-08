@@ -18,29 +18,21 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from enum import Enum
 from typing import Sequence
 
-from enum import Enum
-
 import numpy as np
+import plotly.graph_objects as go
 from IPython.display import display
 from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 
 from mrmustard import math, settings
 from mrmustard.math.lattice.autoshape import autoshape_numba
-from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
-from mrmustard.physics.bargmann_utils import (
-    bargmann_Abc_to_phasespace_cov_means,
-)
+from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from mrmustard.physics.bargmann_utils import bargmann_Abc_to_phasespace_cov_means
 from mrmustard.physics.fock_utils import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
-from mrmustard.utils.typing import (
-    ComplexMatrix,
-    ComplexTensor,
-    ComplexVector,
-    RealVector,
-)
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector, RealVector
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import BtoChar, BtoQ

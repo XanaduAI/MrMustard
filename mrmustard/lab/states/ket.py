@@ -20,29 +20,23 @@ from __future__ import annotations
 
 from typing import Collection, Sequence
 
-from IPython.display import display
-
 import numpy as np
+from IPython.display import display
 
 from mrmustard import math, settings, widgets
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires, ReprEnum, WiresType
-from mrmustard.utils.typing import (
-    Scalar,
-    Batch,
-    ComplexMatrix,
-    ComplexVector,
-)
+from mrmustard.physics.wires import ReprEnum, Wires, WiresType
+from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Scalar
 
-from .base import State
-from .dm import DM
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
-from ..transformations import Unitary, Operation, Dgate
+from ..transformations import Dgate, Operation, Unitary
 from ..utils import shape_check
+from .base import State
+from .dm import DM
 
 __all__ = ["Ket"]
 

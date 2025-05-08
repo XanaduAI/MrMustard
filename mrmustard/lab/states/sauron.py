@@ -18,8 +18,9 @@ The Sauron state is an approximation of the `n`-th Fock states using a ring of `
 from __future__ import annotations
 
 from mrmustard.lab.states.ket import Ket
-from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
+from mrmustard.physics.ansatz import PolyExpAnsatz
+
 from ..utils import make_parameter
 
 
