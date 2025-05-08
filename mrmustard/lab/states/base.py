@@ -766,7 +766,7 @@ class State(CircuitComponent):
 
         .. code-block::
 
-            >>> from numpy import np
+            >>> import numpy as np
             >>> from mrmustard.lab import Ket
 
             >>> state = Ket.random([0])
