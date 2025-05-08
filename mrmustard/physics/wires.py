@@ -398,9 +398,9 @@ class Wires:  # pylint: disable=too-many-public-methods
                 elif self.input.bra.modes == self.input.ket.modes:
                     return WiresType.POVM_LIKE
             else:
-                if not self.bra and (self.input.ket.modes == self.output.ket.modes):
+                if not self.bra and len(self.input.ket.modes) == len(self.output.ket.modes):
                     return WiresType.UNITARY_LIKE
-                elif not self.ket and (self.input.bra.modes == self.output.bra.modes):
+                elif not self.ket and len(self.input.bra.modes) == len(self.output.bra.modes):
                     return WiresType.UNITARY_ADJOINT_LIKE
                 elif (self.output.bra.modes == self.output.ket.modes) and (
                     self.input.bra.modes == self.input.ket.modes
