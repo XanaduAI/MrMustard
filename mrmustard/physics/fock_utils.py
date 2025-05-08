@@ -525,7 +525,8 @@ def c_ps_matrix(m, n, alpha):
 
 def gamma_matrix(c):
     """
-    helper function for ``c_in_PS``.
+    helper function for ``c_in_PS`.
+    constructs the matrix transformation that helps transforming ``c``.
     """
     M = c.shape[0] + c.shape[1] - 1
     Gamma = np.zeros((M**2, c.shape[0] * c.shape[1]), dtype=np.complex128)
