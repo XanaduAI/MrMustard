@@ -163,17 +163,26 @@ class TestWires:
         w = Wires({}, {}, {0}, {})
         assert w.type == WiresType.KET_LIKE
 
+        w = Wires({}, {}, {}, {0})
+        assert w.type == WiresType.KET_DUAL_LIKE
+
+        w = Wires({0}, {}, {}, {})
+        assert w.type == WiresType.KET_ADJOINT_LIKE
+
+        w = Wires({}, {0}, {}, {})
+        assert w.type == WiresType.KET_ADJOINT_DUAL_LIKE
+
         w = Wires({0}, {}, {0}, {})
-        assert w.output.bra.modes == w.output.ket.modes
         assert w.type == WiresType.DM_LIKE
 
         w = Wires({}, {0}, {}, {0})
         assert w.type == WiresType.POVM_LIKE
+
         w = Wires({}, {}, {0}, {0})
         assert w.type == WiresType.UNITARY_LIKE
 
         w = Wires({0}, {0}, {}, {})
-        assert w.type == WiresType.UNITARY_LIKE
+        assert w.type == WiresType.UNITARY_ADJOINT_LIKE
 
         w = Wires({0}, {0}, {0}, {0})
         assert w.type == WiresType.CHANNEL_LIKE
