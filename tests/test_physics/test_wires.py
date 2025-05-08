@@ -175,7 +175,7 @@ class TestWires:
         w = Wires({0}, {0}, {}, {})
         assert w.type == WiresType.UNITARY_LIKE
 
-        w = Wires({0}, {1}, {0}, {1})
+        w = Wires({0}, {0}, {0}, {0})
         assert w.type == WiresType.CHANNEL_LIKE
 
         w = Wires({1}, {2}, {3}, {4})

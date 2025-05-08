@@ -389,8 +389,11 @@ class Wires:  # pylint: disable=too-many-public-methods
                     return WiresType.UNITARY_LIKE
                 elif not self.ket and (self.input.bra.modes == self.output.bra.modes):
                     return WiresType.UNITARY_LIKE
-                elif (self.output.bra.modes == self.output.ket.modes) and (
-                    self.input.bra.modes == self.input.ket.modes
+                elif (
+                    self.output.bra.modes
+                    == self.output.ket.modes
+                    == self.input.bra.modes
+                    == self.input.ket.modes
                 ):
                     return WiresType.CHANNEL_LIKE
         elif not self.quantum_wires:
