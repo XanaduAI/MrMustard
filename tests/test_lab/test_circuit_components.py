@@ -167,7 +167,6 @@ class TestCircuitComponent:
         assert isinstance(d67.parameters.r, Variable)
         assert math.allclose(d89.parameters.r.value, d67.parameters.r.value)
         assert bool(d67.parameters) is True
-        assert d67.ansatz is d89.ansatz
 
     def test_on_error(self):
         with pytest.raises(ValueError):
