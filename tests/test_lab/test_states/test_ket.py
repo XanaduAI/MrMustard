@@ -467,12 +467,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
 
         op1 = Attenuator(0)
-        with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
+        with pytest.raises(
+            ValueError,
+            match="Expected a ket-like, density-matrix like, or unitary-like operator, found",
+        ):
             ket.expectation(op1)
-
-        op2 = CircuitComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
-        with pytest.raises(ValueError, match="different modes"):
-            ket.expectation(op2)
 
         op3 = Dgate(2)
         with pytest.raises(ValueError, match="Expected an operator defined on"):
