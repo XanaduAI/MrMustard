@@ -141,7 +141,7 @@ class BSgate(Unitary):
             phi = math.reshape(phi, (-1,))
             ret = math.astensor(
                 [
-                    fock_utils.beamsplitter(t, p, shape=shape, method="vanilla")
+                    fock_utils.beamsplitter(t, p, shape=shape, method=method)
                     for t, p in zip(theta, phi)
                 ]
             )
@@ -151,7 +151,7 @@ class BSgate(Unitary):
                 self.parameters.theta.value,
                 self.parameters.phi.value,
                 shape=shape,
-                method="vanilla",
+                method=method,
             )
         return ret
 
