@@ -111,26 +111,27 @@ class BSgate(Unitary):
             ),
         ).representation
 
-    def fock_array(self, shape: int | Sequence[int] = None) -> ComplexTensor:
-        """
+    def fock_array(
+        self, shape: int | Sequence[int] = None, method: str = "vanilla"
+    ) -> ComplexTensor:
+        r"""
         Returns the unitary representation of the Beam Splitter gate in the Fock basis.
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it defaults to
                 ``settings.DEFAULT_FOCK_SIZE``.
+            method: The method to use to compute the Fock array. Available methods are:
+                - ``"vanilla"``: The default method.
+                - ``"schwinger"``: Use the Schwinger representation to compute the Fock array.
         Returns:
             array: The Fock representation of this component.
         """
         if isinstance(shape, int):
             shape = (shape,) * (2 * self.ansatz.num_vars)
-        auto_shape = self.auto_shape()
-        shape = shape or auto_shape
-        shape = tuple(shape)
-        if len(shape) != len(auto_shape):
-            raise ValueError(
-                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
-            )
+        shape = tuple(shape) or tuple(self.auto_shape())
+        if len(shape) != 4:
+            raise ValueError(f"Expected Fock shape of length {4}, got length {len(shape)}")
 
         if self.ansatz.batch_shape:
             theta, phi = math.broadcast_arrays(
