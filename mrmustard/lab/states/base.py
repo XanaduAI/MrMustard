@@ -48,63 +48,6 @@ from ..transformations import Transformation
 
 __all__ = ["State"]
 
-# ~~~~~~~
-# Helpers
-# ~~~~~~~
-
-
-class OperatorType(Enum):
-    r"""
-    A convenience Enum class used to tag the type operators in the ``expectation`` method
-    of ``Ket``\s and ``DM``\s.
-    """
-
-    KET_LIKE = 1
-    DM_LIKE = 2
-    UNITARY_LIKE = 3
-    INVALID_TYPE = 4
-
-
-def _validate_operator(operator: CircuitComponent) -> tuple[OperatorType, str]:
-    r"""
-    A function used to validate an operator inside the ``expectation`` method of ``Ket`` and
-    ``DM``.
-
-    If ``operator`` is ket-like, density matrix-like, or unitary-like, returns the corresponding
-    ``OperatorType`` and an empty string. Otherwise, it returns ``INVALID_TYPE`` and an error
-    message.
-    """
-    w = operator.wires
-
-    # check if operator is ket-like
-    if w.ket.output and not w.ket.input and not w.bra:
-        return (
-            OperatorType.KET_LIKE,
-            "",
-        )
-
-    # check if operator is density matrix-like
-    if w.ket.output and w.bra.output and not w.ket.input and not w.bra.input:
-        if not w.ket.output.modes == w.bra.output.modes:
-            msg = "Found DM-like operator with different modes for ket and bra wires."
-            return OperatorType.INVALID_TYPE, msg
-        return OperatorType.DM_LIKE, ""
-
-    # check if operator is unitary-like
-    if w.ket.input and w.ket.output and not w.bra.input and not w.bra.input:
-        if not w.ket.input.modes == w.ket.output.modes:
-            msg = "Found unitary-like operator with different modes for input and output wires."
-            return OperatorType.INVALID_TYPE, msg
-        return OperatorType.UNITARY_LIKE, ""
-
-    msg = "Cannot calculate the expectation value of the given ``operator``."
-    return OperatorType.INVALID_TYPE, msg
-
-
-# ~~~~~~~
-# Classes
-# ~~~~~~~
-
 
 class State(CircuitComponent):
     r"""
