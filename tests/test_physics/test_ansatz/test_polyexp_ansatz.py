@@ -29,7 +29,7 @@ from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
 )
-from mrmustard.lab_dev.transformations import Identity
+from mrmustard.lab.transformations import Identity
 
 from ...random import Abc_triple
 
