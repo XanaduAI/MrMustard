@@ -21,12 +21,12 @@ from __future__ import annotations
 from typing import Sequence
 from dataclasses import replace
 
+from mrmustard import math
+from mrmustard.utils.typing import ComplexTensor
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from ...physics import triples
 from ..utils import make_parameter
-from mrmustard.utils.typing import ComplexTensor
-from mrmustard import math
 from ...physics.wires import Wires, ReprEnum
 from ...physics.representations import Representation
 from ...physics import fock_utils
