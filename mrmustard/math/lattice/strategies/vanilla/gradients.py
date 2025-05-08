@@ -69,12 +69,14 @@ def vanilla_vjp_numba(
             db[i] = SQRT[index_u[i]] * G_lin[pivot]
             dA[i, i] = (
                 0.5 * SQRT[index_u[i]] * SQRT[index_u[i] - 1] * G_lin[pivot - strides[i]]
-                if index_u[i] > 1
+                if index_u[i] > 1 and pivot - strides[i] >= 0
                 else 0.0
             )
             for j in range(i + 1, D):
-                dA[i, j] = SQRT[index_u[i]] * SQRT[index_u[j]] * G_lin[pivot - strides[j]]
-
+                if pivot - strides[j] >= 0:
+                    dA[i, j] = SQRT[index_u[i]] * SQRT[index_u[j]] * G_lin[pivot - strides[j]]
+                else:
+                    dA[i, j] = 0.0
         dLdA += dA * dLdG[index_u]
         dLdb += db * dLdG[index_u]
 
