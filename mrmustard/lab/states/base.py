@@ -778,5 +778,5 @@ class State(CircuitComponent):
             return (self >> BtoPS(self.modes, s=0)).ansatz.PS
         else:
             raise ValueError(
-                "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()``."
+                "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first."
             )
