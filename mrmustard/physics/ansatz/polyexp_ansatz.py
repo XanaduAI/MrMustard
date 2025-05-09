@@ -238,10 +238,8 @@ class PolyExpAnsatz(Ansatz):
                 )
             A_tmp = self.A
 
-            A_tmp = A_tmp[..., [0, 2, 1, 3], :]
-            A_tmp = A_tmp[..., [0, 2, 1, 3]]
-            b = self.b
-            b_tmp = b[..., [0, 2, 1, 3]]
+            A_tmp = A_tmp[..., [0, 2, 1, 3], :][..., [0, 2, 1, 3]]
+            b = self.b[..., [0, 2, 1, 3]]
             c = c_in_PS(self.c)  # implements PS transformations on ``c``
 
             In = math.eye(n // 2, dtype=math.complex128)
