@@ -447,22 +447,23 @@ def displacement_fwd(x, y, shape, tol):
 
     gate = math.conditional(math.sqrt(x * x + y * y) > tol, true_branch, false_branch, x, y)
     ret = math.astensor(gate, dtype=math.float64)
-    return ret, (gate, x, y)  # Return output and residuals needed for backward pass
+    return ret, (gate, shape, x, y)  # Return output and residuals needed for backward pass
 
 
 def displacement_bwd(res, g):
     # Backward pass
-    gate, x, y = res
+    gate, shape, x, y = res
 
     dD_da, dD_dac = jax.pure_callback(
         lambda gate, x, y: strategies.jacobian_displacement(
             math.asnumpy(gate), math.asnumpy(x) + 1j * math.asnumpy(y)
         ),
-        jax.ShapeDtypeStruct((2, 50, 50), jnp.complex128),
+        (jax.ShapeDtypeStruct(shape, jnp.complex128), jax.ShapeDtypeStruct(shape, jnp.complex128)),
         gate,
         x,
         y,
     )
+
     dL_dac = math.sum(math.conj(g) * dD_dac + g * math.conj(dD_da))
     dLdx = 2 * math.real(dL_dac)
     dLdy = 2 * math.imag(dL_dac)
