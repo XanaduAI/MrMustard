@@ -220,7 +220,7 @@ class PolyExpAnsatz(Ansatz):
                 f"A phase space ansatz must have even number of indices. (n={n} is odd)"
             )
 
-        if self.c.shape == ():
+        if self.num_derived_vars == 0:
             In = math.eye(n // 2, dtype=math.complex128)
             W = math.block([[In, -1j * In], [In, 1j * In]]) / complex(
                 math.sqrt(2, dtype=math.complex128) * settings.HBAR
