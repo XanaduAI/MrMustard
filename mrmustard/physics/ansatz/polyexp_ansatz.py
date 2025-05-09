@@ -234,7 +234,7 @@ class PolyExpAnsatz(Ansatz):
         else:
             if self.A.shape[-1] != 4:
                 raise ValueError(
-                    f"This transformation is written only for 2 core and 2 derived variables"
+                    f"This transformation supports 2 core and 0 or 2 derived variables"
                 )
             A_tmp = self.A
 
