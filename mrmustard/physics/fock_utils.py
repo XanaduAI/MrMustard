@@ -24,6 +24,9 @@ from functools import lru_cache
 from typing import Sequence, Iterable
 
 import numpy as np
+import jax
+import jax.numpy as jnp
+from functools import partial
 
 from mrmustard import math, settings
 from mrmustard.math.lattice import strategies
@@ -412,28 +415,61 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float
     return homodyne_sample, probability_sample
 
 
-@math.custom_gradient
+@jax.custom_vjp
 def displacement(x, y, shape, tol=1e-15):
     r"""creates a single mode displacement matrix"""
-    alpha = math.asnumpy(x) + 1j * math.asnumpy(y)
+    shape = tuple(shape)
+    true_branch = partial(temp_true_branch, shape)
+    false_branch = partial(temp_false_branch, shape)
+    gate = math.conditional(math.sqrt(x * x + y * y) > tol, true_branch, false_branch, x, y)
+    return math.astensor(gate, dtype=math.float64)
 
-    if np.sqrt(x * x + y * y) > tol:
-        gate = strategies.displacement(tuple(shape), alpha)
-    else:
-        gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
-    ret = math.astensor(gate, dtype=gate.dtype.name)
-    if math.backend_name in ["numpy", "jax"]:
-        return ret
+def temp_true_branch(shape, x, y):
+    return jax.pure_callback(
+        lambda x, y: strategies.displacement(
+            cutoffs=shape, alpha=math.asnumpy(x) + 1j * math.asnumpy(y), dtype=np.complex128
+        ),
+        jax.ShapeDtypeStruct(shape, jnp.complex128),
+        x,
+        y,
+    )
 
-    def grad(dL_dDc):
-        dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(gate), alpha)
-        dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
-        dLdx = 2 * np.real(dL_dac)
-        dLdy = 2 * np.imag(dL_dac)
-        return math.astensor(dLdx, dtype=x.dtype), math.astensor(dLdy, dtype=y.dtype)
 
-    return ret, grad
+def temp_false_branch(shape, x, y):
+    return math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
+
+
+def displacement_fwd(x, y, shape, tol):
+    # Forward pass - same as the main function
+    true_branch = partial(temp_true_branch, shape)
+    false_branch = partial(temp_false_branch, shape)
+
+    gate = math.conditional(math.sqrt(x * x + y * y) > tol, true_branch, false_branch, x, y)
+    ret = math.astensor(gate, dtype=math.float64)
+    return ret, (gate, x, y)  # Return output and residuals needed for backward pass
+
+
+def displacement_bwd(res, g):
+    # Backward pass
+    gate, x, y = res
+
+    dD_da, dD_dac = jax.pure_callback(
+        lambda gate, x, y: strategies.jacobian_displacement(
+            math.asnumpy(gate), math.asnumpy(x) + 1j * math.asnumpy(y)
+        ),
+        jax.ShapeDtypeStruct((2, 50, 50), jnp.complex128),
+        gate,
+        x,
+        y,
+    )
+    dL_dac = math.sum(math.conj(g) * dD_dac + g * math.conj(dD_da))
+    dLdx = 2 * math.real(dL_dac)
+    dLdy = 2 * math.imag(dL_dac)
+    return (dLdx, dLdy, None, None)
+
+
+displacement.defvjp(displacement_fwd, displacement_bwd)
 
 
 @math.custom_gradient
