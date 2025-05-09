@@ -34,7 +34,7 @@ from mrmustard.physics.wires import ReprEnum, Wires, WiresType
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoPS, TraceOut
+from ..circuit_components_utils import TraceOut
 from ..transformations import Map, Channel, Dgate
 
 from ..utils import shape_check
