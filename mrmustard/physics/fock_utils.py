@@ -422,7 +422,7 @@ def displacement(x, y, shape, tol=1e-15):
     true_branch = partial(temp_true_branch, shape)
     false_branch = partial(temp_false_branch, shape)
     gate = math.conditional(math.sqrt(x * x + y * y) > tol, true_branch, false_branch, x, y)
-    return math.astensor(gate, dtype=math.float64)
+    return math.astensor(gate, dtype=math.complex128)
 
 
 def temp_true_branch(shape, x, y):
@@ -446,7 +446,7 @@ def displacement_fwd(x, y, shape, tol):
     false_branch = partial(temp_false_branch, shape)
 
     gate = math.conditional(math.sqrt(x * x + y * y) > tol, true_branch, false_branch, x, y)
-    ret = math.astensor(gate, dtype=math.float64)
+    ret = math.astensor(gate, dtype=math.complex128)
     return ret, (gate, shape, x, y)  # Return output and residuals needed for backward pass
 
 
