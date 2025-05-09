@@ -232,7 +232,7 @@ class PolyExpAnsatz(Ansatz):
             return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
 
         else:
-            if self.A.shape[-1] != 4:
+            if self.num_derived_vars != 2:
                 raise ValueError(
                     f"This transformation supports 2 core and 0 or 2 derived variables"
                 )
