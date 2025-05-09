@@ -550,7 +550,7 @@ def c_in_PS(c):
     It is a helper function used in
 
     Args:
-        c (Tensor): the ``c`` matrix of the ``DM`` object
+        c (Tensor): the 2-dimensional ``c`` matrix of the ``DM`` object
     """
     M = c.shape[0] + c.shape[1] - 1
     return np.reshape(gamma_matrix(c) @ np.reshape(c, (c.shape[0] * c.shape[1], 1)), (M, M))
