@@ -212,7 +212,7 @@ class PolyExpAnsatz(Ansatz):
     @property
     def PS(self) -> PolyExpAnsatz:
         r"""
-        The ansatz acting on real (i.e., phase-space) variables.
+        The ansatz defined using real (i.e., phase-space) variables.
         """
         n = self.A.shape[-1]
         if n % 2:
@@ -221,10 +221,7 @@ class PolyExpAnsatz(Ansatz):
             )
 
         if self.num_derived_vars == 0:
-            In = math.eye(n // 2, dtype=math.complex128)
-            W = math.block([[In, -1j * In], [In, 1j * In]]) / complex(
-                math.sqrt(2, dtype=math.complex128) * settings.HBAR
-            )
+            W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
 
             A = math.einsum("ji, ...jk, kl-> ...il", W, self.A, W)
             b = math.einsum("ij, ...j-> ...i", W, self.b)
@@ -242,17 +239,13 @@ class PolyExpAnsatz(Ansatz):
             b = self.b[..., [0, 2, 1, 3]]
             c = c_in_PS(self.c)  # implements PS transformations on ``c``
 
-            In = math.eye(n // 2, dtype=math.complex128)
-            W = math.block([[In, -1j * In], [In, 1j * In]]) / complex(
-                math.sqrt(2, dtype=math.complex128) * settings.HBAR
-            )
+            W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
 
             A = math.einsum("ji, ...jk, kl-> ...il", W, A_tmp, W)
-            b = math.einsum("ij, ...j-> ...i", W, b_tmp)
+            b = math.einsum("ij, ...j-> ...i", W, b)
             c = c / (2 * settings.HBAR)
 
-            A_final = A[..., [0, 2, 1, 3], :]
-            A_final = A_final[..., :, [0, 2, 1, 3]]
+            A_final = A[..., [0, 2, 1, 3], :][..., :, [0, 2, 1, 3]]
             b_final = b[..., [0, 2, 1, 3]]
 
             return PolyExpAnsatz(A_final, b_final, c, lin_sup=self._lin_sup)

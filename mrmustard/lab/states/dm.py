@@ -38,7 +38,7 @@ from mrmustard.utils.typing import (
 
 from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoPS, TraceOut
+from ..circuit_components_utils import TraceOut
 from ..transformations import Map, Channel, Dgate
 
 from ..utils import shape_check
