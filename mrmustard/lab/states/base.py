@@ -696,7 +696,7 @@ class State(CircuitComponent):
     @property
     def wigner(self):
         r"""
-        Returns the Wigner function, as an ``Ansatz``, of this state in the phase space.
+        Returns the Wigner function of this state in phase space as an ``Ansatz``.
 
         .. code-block::
 
