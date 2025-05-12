@@ -516,7 +516,7 @@ class BackendJax(BackendBase):  # pragma: no cover
 
     # Special functions for optimization
     def DefaultEuclideanOptimizer(self):
-        return optax.adamw(0.001)
+        return optax.inject_hyperparams(optax.adamw)
 
     @jax.jit
     def reorder_AB_bargmann(

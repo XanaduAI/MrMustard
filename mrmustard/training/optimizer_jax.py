@@ -1,4 +1,4 @@
-# Copyright 2022 Xanadu Quantum Technologies Inc.
+# Copyright 2025 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@ import jax
 
 import equinox as eqx
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab import CircuitComponent
+from mrmustard.training.progress_bar import ProgressBar
+from mrmustard.utils.logger import create_logger
 
 __all__ = ["OptimizerJax"]
 
@@ -46,6 +48,12 @@ class Objective(eqx.Module):
 
 
 class OptimizerJax:
+    def __init__(self, euclidean_lr=0.01, stable_threshold=1e-6):
+        self.euclidean_lr = euclidean_lr
+        self.opt_history = [0]
+        self.log = create_logger(__name__)
+        self.stable_threshold = stable_threshold
+
     @eqx.filter_jit
     def make_step(
         self,
@@ -61,21 +69,47 @@ class OptimizerJax:
         return model, opt_state, loss_value
 
     def minimize(self, cost_fn, by_optimizing, max_steps=10):
-        # loss function that accepts parameters and updates the circuit and returns the cost_fn
-        def loss(params, static):
-            model = eqx.combine(params, static)
-            return model(cost_fn, by_optimizing)
-
-        optim = math.euclidean_opt
-        model = Objective(by_optimizing)
-        opt_state = optim.init(eqx.filter(model, eqx.is_array))
-
-        # optimize
-        for epoch in range(max_steps):
-            model, opt_state, loss_value = self.make_step(optim, loss, model, opt_state)
-            print(f"epoch: {epoch}, loss: {loss_value}")
+        if settings.PROGRESSBAR:
+            progress_bar = ProgressBar(max_steps)
+            with progress_bar:
+                model = self._optimization_loop(
+                    cost_fn, by_optimizing, max_steps=max_steps, progress_bar=progress_bar
+                )
+        else:
+            model = self._optimization_loop(cost_fn, by_optimizing, max_steps=max_steps)
 
         # update vals
         for vars, comp in zip(model.vars, by_optimizing):
             for key, val in vars.items():
                 comp.parameters.variables[key].value = val
+
+    def _optimization_loop(self, cost_fn, by_optimizing, max_steps, progress_bar=None):
+        model = Objective(by_optimizing)
+
+        def loss(params, static):
+            model = eqx.combine(params, static)
+            return model(cost_fn, by_optimizing)
+
+        optim = math.euclidean_opt(learning_rate=self.euclidean_lr)
+        opt_state = optim.init(eqx.filter(model, eqx.is_array))
+
+        # optimize
+        while not self.should_stop(max_steps):
+            model, opt_state, loss_value = self.make_step(optim, loss, model, opt_state)
+            self.opt_history.append(loss_value)
+            if progress_bar is not None:
+                progress_bar.step(math.asnumpy(loss_value))
+
+        return model
+
+    def should_stop(self, max_steps: int) -> bool:
+        if max_steps != 0 and len(self.opt_history) > max_steps:
+            return True
+        if len(self.opt_history) > 20:  # if cost varies less than threshold over 20 steps
+            if (
+                sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
+                < self.stable_threshold
+            ):
+                self.log.info("Loss looks stable, stopping here.")
+                return True
+        return False
