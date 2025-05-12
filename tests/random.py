@@ -193,14 +193,12 @@ def random_Dgate(draw, trainable=False):
     r"""Return a random Dgate."""
     x = draw(small_float)
     y = draw(small_float)
+    alpha = x + 1j * y
     return Dgate(
         0,
-        x=x,
-        y=y,
-        x_bounds=draw(real_bounds),
-        y_bounds=draw(real_bounds),
-        x_trainable=trainable,
-        y_trainable=trainable,
+        alpha=alpha,
+        alpha_bounds=draw(real_bounds),
+        alpha_trainable=trainable,
     )
 
 

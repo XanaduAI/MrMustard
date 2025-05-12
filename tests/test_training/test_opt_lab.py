@@ -515,8 +515,8 @@ class TestOptimizer:
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
-        dgate = Dgate(0, x_trainable=True, y_trainable=True)
-        target_state = DisplacedSqueezed(0, r=0.0, x=0.1, y=0.2).fock_array((40,))
+        dgate = Dgate(0, alpha_trainable=True)
+        target_state = DisplacedSqueezed(0, r=0.0, x=0.1 + 0.2j).fock_array((40,))
 
         def cost_fn():
             state_out = Vacuum(0) >> dgate
@@ -525,8 +525,7 @@ class TestOptimizer:
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[dgate])
 
-        assert np.allclose(dgate.parameters.x.value, 0.1, atol=0.01)
-        assert np.allclose(dgate.parameters.y.value, 0.2, atol=0.01)
+        assert np.allclose(dgate.parameters.alpha.value, 0.1, atol=0.01)
 
     def test_sgate_optimization(self):
         """Test that Sgate is optimized correctly."""
@@ -599,9 +598,8 @@ class TestOptimizer:
         skip_np()
         skip_jax()
 
-        disp = Dgate(0, x=1.0, y=0.5, x_trainable=True, y_trainable=True)
-        og_x = math.asnumpy(disp.parameters.x.value)
-        og_y = math.asnumpy(disp.parameters.y.value)
+        disp = Dgate(0, 1.0 + 0.5j, alpha_trainable=True)
+        og_x = math.asnumpy(disp.parameters.alpha.value)
 
         def cost_fn():
             return -((Number(0, 2) >> disp >> Vacuum(0).dual) ** 2)

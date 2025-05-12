@@ -621,7 +621,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
             >>> from mrmustard.lab import Dgate
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
-            >>> d = Dgate(1, x=0.1, y=0.1)
+            >>> d = Dgate(1, alpha = 0.1+0.1j)
             >>> d_fock = d.to_fock(shape=3)
             >>> d_bargmann = d_fock.to_bargmann()
 
@@ -648,7 +648,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
             >>> from mrmustard.lab import Dgate
             >>> from mrmustard.physics.ansatz import ArrayAnsatz
 
-            >>> d = Dgate(1, x=0.1, y=0.1)
+            >>> d = Dgate(1, alpha = 0.1+0.1j)
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name

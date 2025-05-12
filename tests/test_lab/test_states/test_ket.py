@@ -411,9 +411,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(ket.expectation(dm1), res_dm1)
         assert math.allclose(ket.expectation(dm01), math.sum(res_dm01.ansatz.c))
 
-        u0 = Dgate(0, x=0.1)
-        u1 = Dgate(1, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
+        u0 = Dgate(0, 0.1)
+        u1 = Dgate(1, 0.2)
+        u01 = Dgate(0, 0.3) >> Dgate(1, 0.4)
 
         res_u0 = (ket.contract(u0)) >> ket.dual
         res_u1 = (ket.contract(u1)) >> ket.dual
@@ -451,9 +451,9 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(ket.expectation(dm1), res_dm1)
         assert math.allclose(ket.expectation(dm01), res_dm01)
 
-        u0 = Dgate(1, x=0.1)
-        u1 = Dgate(0, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
+        u0 = Dgate(1, 0.1)
+        u1 = Dgate(0, 0.2)
+        u01 = Dgate(0, 0.3) >> Dgate(1, 0.4)
 
         res_u0 = (ket.contract(u0).contract(ket.dual)).to_fock(10).ansatz.array
         res_u1 = (ket.contract(u1).contract(ket.dual)).to_fock(10).ansatz.array
@@ -504,13 +504,13 @@ class TestKet:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("x", [(0, 1, 2), ([0, 0], [1, 1], [2, 2])])
     def test_get_item(self, m, x):
         x3, x30, x98 = x
-        ket = Vacuum((3, 30, 98)) >> Dgate(3, x=x3) >> Dgate(30, x=x30) >> Dgate(98, x=x98)
+        ket = Vacuum((3, 30, 98)) >> Dgate(3, x3) >> Dgate(30, x30) >> Dgate(98, x98)
         dm = ket.dm()
         assert ket[m] == dm[m]
 
     def test_contract_zip(self):
         coh = Coherent(0, x=[1.0, -1.0])
-        displacements = Dgate(0, x=[1.0, -1.0])
+        displacements = Dgate(0, [1.0, -1.0])
         better_cat = coh.contract(displacements, mode="zip")
         assert better_cat == Coherent(0, x=[2.0, -2.0])
 

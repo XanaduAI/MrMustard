@@ -24,7 +24,7 @@ from mrmustard.path import branch_and_bound as bb
 def test_graph_children_and_grandchildren():
     """Test that the children function returns the correct graphs"""
 
-    graph = bb.parse_components([Number(0, n=15), Sgate(0, r=1.0), Dgate(0, x=1.0)])
+    graph = bb.parse_components([Number(0, n=15), Sgate(0, r=1.0), Dgate(0, 1.0)])
     bb.assign_costs(graph)
     children_set = bb.children(graph, int(1e20))
     for child in children_set:
@@ -70,7 +70,7 @@ def test_path_errors():
     [
         (Number(0, n=15), "ArrayAnsatz"),
         (Sgate(0, r=1.0), "PolyExpAnsatz"),
-        (Dgate(0, x=1.0), "PolyExpAnsatz"),
+        (Dgate(0, 1.0), "PolyExpAnsatz"),
     ],
 )
 def test_from_circuitcomponent(cc, name):

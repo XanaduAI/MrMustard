@@ -365,9 +365,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_expectation_bargmann_u(self):
         dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
-        u0 = Dgate(0, x=0.1)
-        u1 = Dgate(1, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
+        u0 = Dgate(0, 0.1)
+        u1 = Dgate(1, 0.2)
+        u01 = Dgate(0, 0.3) >> Dgate(1, 0.4)
 
         res_u0 = (dm.contract(u0)) >> TraceOut(0) >> TraceOut(1)
         res_u1 = (dm.contract(u1)) >> TraceOut(0) >> TraceOut(1)
@@ -405,9 +405,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(dm.expectation(dm1), res_dm1)
         assert math.allclose(dm.expectation(dm01), res_dm01)
 
-        u0 = Dgate(0, x=0.1).to_fock(10)
-        u1 = Dgate(1, x=0.2).to_fock(10)
-        u01 = (Dgate(0, x=0.3) >> Dgate(1, x=0.4)).to_fock(10)
+        u0 = Dgate(0, 0.1).to_fock(10)
+        u1 = Dgate(1, 0.2).to_fock(10)
+        u01 = (Dgate(0, 0.3) >> Dgate(1, 0.4)).to_fock(10)
 
         res_u0 = (dm.contract(u0)) >> TraceOut(0) >> TraceOut(1)
         res_u1 = (dm.contract(u1)) >> TraceOut(0) >> TraceOut(1)

@@ -577,7 +577,7 @@ class DM(State):
 
         alpha = rho_p.ansatz.b[..., core_ket_indices]
         for i, m in enumerate(core_modes):
-            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
+            d_g = Dgate(m, -alpha[..., i])
             d_g_inv = d_g.inverse()
             d_ch = d_g.contract(d_g.adjoint, mode="zip")
             d_ch_inverse = d_g_inv.contract(d_g_inv.adjoint, mode="zip")
@@ -689,7 +689,7 @@ class DM(State):
 
         alpha = rho_p.ansatz.b[..., core_ket_indices]
         for i, m in enumerate(core_modes):
-            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
+            d_g = Dgate(m, -alpha[..., i])
             d_g_inv = d_g.inverse()
             d_ch = d_g.contract(d_g.adjoint, mode="zip")
             d_ch_inverse = d_g_inv.contract(d_g_inv.adjoint, mode="zip")

@@ -180,7 +180,7 @@ class TestSerialize:
                 Coherent(0, x=1.0),
                 Dgate(0, 0.1),
                 BSgate((1, 2), theta=0.1, theta_trainable=True, theta_bounds=(-0.5, 0.5)),
-                Dgate(0, x=1.1, y=2.2),
+                Dgate(0, 1.1 + 2.2j),
                 Identity((1, 2)),
                 Rgate(1, theta=0.1),
                 S2gate((0, 1), 1, 1),

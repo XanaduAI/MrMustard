@@ -476,7 +476,7 @@ class Ket(State):
         core_p = self.contract(U.dual, mode="zip")
         alpha = core_p.ansatz.b[..., core_indices]
         for i, m in enumerate(core_modes):
-            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
+            d_g = Dgate(m, -alpha[..., i])
             d_g_inv = d_g.dual
 
             core_p = core_p.contract(d_g, mode="zip")
@@ -535,7 +535,7 @@ class Ket(State):
             >>> from mrmustard.lab import Ket, DM, Attenuator, Dgate
 
             >>> psi = Ket.random([0,1])
-            >>> U = Dgate(0, x=1, y=0)
+            >>> U = Dgate(0, alpha=1)
             >>> channel = Attenuator(0, .5)
 
             >>> assert isinstance(psi >> U, Ket)
