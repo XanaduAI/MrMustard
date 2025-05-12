@@ -126,7 +126,9 @@ class Dgate(Unitary):
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
         else:
             ret = fock_utils.displacement(
-                math.real(self.parameters.alpha.value), math.imag(self.parameters.alpha.value)
+                math.real(self.parameters.alpha.value),
+                math.imag(self.parameters.alpha.value),
+                shape=shape,
             )
         return ret
 

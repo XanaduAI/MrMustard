@@ -91,7 +91,7 @@ def test_real_gaussian_integral():
 def test_join_Abc_real():
     """Tests the ``join_Abc_real`` method."""
     A1, b1, c1 = triples.vacuum_state_Abc(1)
-    A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
+    A2, b2, c2 = triples.displacement_gate_Abc(0.1 + 0.3j)
     idx1 = [0]
     idx2 = [0]
 
@@ -200,7 +200,7 @@ def test_reorder_abc():
 def test_complex_gaussian_integral_2_not_batched():
     """Tests the ``complex_gaussian_integral_2`` method for non-batched inputs."""
     A1, b1, c1 = triples.vacuum_state_Abc(2)
-    A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
+    A2, b2, c2 = triples.displacement_gate_Abc(0.1 + 0.3j)
     A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=0.1, y=0.3)
 
     res = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0, 1], [0, 1])
@@ -236,8 +236,8 @@ def test_complex_gaussian_integral_1_not_batched():
     assert math.allclose(res[2], cr)
 
     A1, b1, c1 = triples.vacuum_state_Abc(2)
-    A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
-    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=0.1, y=0.3)
+    A2, b2, c2 = triples.displacement_gate_Abc(0.1 + 0.3j)
+    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(0.1 + 0.3j)
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
 

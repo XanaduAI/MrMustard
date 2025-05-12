@@ -38,13 +38,15 @@ class TestRepresentation:
 
     @pytest.fixture
     def d_gate_rep(self):
-        ansatz = PolyExpAnsatz.from_function(fn=displacement_gate_Abc, x=0.1, y=0.1)
+        ansatz = PolyExpAnsatz.from_function(fn=displacement_gate_Abc, alpha=0.1 + 0.1j)
         wires = Wires(set(), set(), {0}, {0})
         return Representation(ansatz, wires)
 
     @pytest.fixture
     def d_gate_rep_batch(self):
-        ansatz = PolyExpAnsatz.from_function(fn=displacement_gate_Abc, x=[0.1, 0.1, 0.1], y=0.1)
+        ansatz = PolyExpAnsatz.from_function(
+            fn=displacement_gate_Abc, alpha=[0.1 + 0.1j, 0.1 + 0.1j, 0.1 + 0.1j]
+        )
         wires = Wires(set(), set(), {0}, {0})
         return Representation(ansatz, wires)
 
@@ -103,7 +105,7 @@ class TestRepresentation:
     def test_to_fock(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))
         assert d_fock.ansatz == ArrayAnsatz(
-            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
+            math.hermite_renormalized(*displacement_gate_Abc(alpha=0.1 + 0.1j), shape=(4, 6))
         )
         for w in d_fock.wires.wires:
             assert w.repr == ReprEnum.FOCK

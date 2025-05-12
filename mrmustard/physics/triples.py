@@ -409,7 +409,7 @@ def rotation_gate_Abc(
 
 
 def displacement_gate_Abc(
-    x: float | Sequence[float], y: float | Sequence[float] = 0
+    alpha: complex | Sequence[complex],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of a displacement gate.
@@ -421,15 +421,14 @@ def displacement_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the displacement gate.
     """
-    x, y = math.broadcast_arrays(
-        math.astensor(x, dtype=math.complex128), math.astensor(y, dtype=math.complex128)
-    )
-    batch_shape = x.shape
+    alpha = math.astensor(alpha, dtype=math.complex128)
+
+    batch_shape = alpha.shape
     batch_dim = len(batch_shape)
 
     A = math.broadcast_to(_X_matrix_for_unitary(1), batch_shape + (2, 2))
-    b = math.stack([x + 1j * y, -x + 1j * y], batch_dim)
-    c = math.cast(math.exp(-(x**2 + y**2) / 2), math.complex128)
+    b = math.stack([alpha, -math.conj(alpha)], batch_dim)
+    c = math.cast(math.exp(-(math.abs(alpha) ** 2) / 2), math.complex128)
 
     return A, b, c
 

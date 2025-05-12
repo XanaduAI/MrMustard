@@ -61,7 +61,9 @@ class TestCircuitComponent:
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
     def test_init(self, x, y):
         name = "my_component"
-        ansatz = PolyExpAnsatz(*displacement_gate_Abc(x, y))
+        x = math.astensor(x, dtype=math.complex128)
+        y = math.astensor(y, dtype=math.complex128)
+        ansatz = PolyExpAnsatz(*displacement_gate_Abc(+1j * y))
         cc = CircuitComponent(
             Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name
         )
@@ -75,15 +77,16 @@ class TestCircuitComponent:
     def test_missing_name(self):
         cc = CircuitComponent(
             Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2)), Wires(set(), set(), {1, 8}, {1, 8})
+                PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.2j)),
+                Wires(set(), set(), {1, 8}, {1, 8}),
             )
         )
         cc._name = None
         assert cc.name == "CC18"
 
     def test_from_bargmann(self):
-        cc = CircuitComponent.from_bargmann(displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0})
-        assert cc.ansatz == PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2))
+        cc = CircuitComponent.from_bargmann(displacement_gate_Abc(0.1 + 0.2j), {}, {}, {0}, {0})
+        assert cc.ansatz == PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.2j))
 
     def test_from_attributes(self):
         cc = Dgate(1, alpha=0.1 + 0.2j)
@@ -101,7 +104,7 @@ class TestCircuitComponent:
         assert isinstance(cc3, CircuitComponent) and not isinstance(cc3, Unitary)
 
     def test_from_to_quadrature(self):
-        c = Dgate(0, x=0.1 + 0.2j) >> Sgate(0, r=1.0, phi=0.1)
+        c = Dgate(0, alpha=0.1 + 0.2j) >> Sgate(0, r=1.0, phi=0.1)
         cc = CircuitComponent(c.representation, c.name)
         ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature_triple())
         assert cc == ccc
@@ -145,7 +148,7 @@ class TestCircuitComponent:
     def test_light_copy(self):
         d1 = CircuitComponent(
             Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1)), Wires(set(), set(), {1}, {1})
+                PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.1j)), Wires(set(), set(), {1}, {1})
             )
         )
         d1_cp = d1._light_copy()
@@ -192,7 +195,7 @@ class TestCircuitComponent:
         d = Dgate(1, alpha=0.1 + 0.1j)
         d_fock = d.to_fock(shape=(4, 6))
         assert d_fock.ansatz == ArrayAnsatz(
-            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
+            math.hermite_renormalized(*displacement_gate_Abc(0.1 + 0.1j), shape=(4, 6))
         )
 
     def test_to_fock_bargmann_Dgate(self):
@@ -234,7 +237,7 @@ class TestCircuitComponent:
         assert isinstance(d1 * 3, Unitary)
 
     def test_truediv(self):
-        d1 = Dgate(1, x=0.1 + 0.1j)
+        d1 = Dgate(1, alpha=0.1 + 0.1j)
 
         assert (d1 / 3).ansatz == d1.ansatz / 3
         assert isinstance(d1 / 3, Unitary)
@@ -560,7 +563,7 @@ class TestCircuitComponent:
     def test_serialize_default_behaviour(self):
         """Test the default serializer."""
         name = "my_component"
-        ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4))
+        ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.4j))
         cc = CircuitComponent(
             Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name
         )
@@ -589,7 +592,7 @@ class TestCircuitComponent:
                     name="my_component",
                 )
 
-        cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
+        cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.4j)), [0, 1])
         with pytest.raises(
             TypeError, match="MyComponent does not seem to have any wires construction method"
         ):
