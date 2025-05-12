@@ -1,44 +1,66 @@
-from functools import partial  # pragma: no cover
+# Copyright 2025 Xanadu Quantum Technologies Inc.
 
-import jax  # pragma: no cover
-import jax.numpy as jnp  # pragma: no cover
-import numpy as np  # pragma: no cover
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 
-from .lattice import strategies  # pragma: no cover
+#     http://www.apache.org/licenses/LICENSE-2.0
 
-# from mrmustard.math.backend_manager import BackendManager
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-# math = BackendManager()
+"""This module contains jax-specific implementations of the hermite_renormalized functions."""
+
+from __future__ import annotations
+
+from functools import partial
+
+import jax
+import jax.numpy as jnp
+import numpy as np
+
+from .lattice import strategies
+
+
+# ~~~~~~~~~~~~~~~~~
+# hermite_renormalized_unbatched
+# ~~~~~~~~~~~~~~~~~
 
 
 @jax.custom_vjp
-@partial(jax.jit, static_argnames=["shape"])
+@partial(jax.jit, static_argnames=["shape", "stable"])
 def hermite_renormalized_unbatched(
     A: jnp.ndarray,
     b: jnp.ndarray,
     c: jnp.ndarray,
     shape: tuple[int],
+    stable: bool,
 ) -> jnp.ndarray:
     shape = tuple(shape)
-    G = jax.pure_callback(
-        lambda A, b, c: strategies.stable_numba(shape, np.array(A), np.array(b), np.array(c)),
-        jax.ShapeDtypeStruct(shape, jnp.complex128),
-        A,
-        b,
-        c,
-    )
-    return G
+    ret, _ = hermite_renormalized_unbatched_fwd(A, b, c, shape, stable)
+    return ret
 
 
-def hermite_renormalized_unbatched_fwd(A, b, c, shape):
-    G = jax.pure_callback(
-        lambda A, b, c: strategies.stable_numba(shape, np.array(A), np.array(b), np.array(c)),
-        jax.ShapeDtypeStruct(shape, jnp.complex128),
-        A,
-        b,
-        c,
-    )
-
+def hermite_renormalized_unbatched_fwd(A, b, c, shape, stable):
+    if stable:
+        G = jax.pure_callback(
+            lambda A, b, c: strategies.stable_numba(shape, np.array(A), np.array(b), np.array(c)),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            A,
+            b,
+            c,
+        )
+    else:
+        G = jax.pure_callback(
+            lambda A, b, c: strategies.vanilla_numba(shape, np.array(A), np.array(b), np.array(c)),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            A,
+            b,
+            c,
+        )
     return G, (G, A, b, c)
 
 
@@ -55,7 +77,7 @@ def hermite_renormalized_unbatched_bwd(res, g):
         c,
         g,
     )
-    return dLdA, dLdB, dLdC, None
+    return dLdA, dLdB, dLdC, None, None
 
 
 hermite_renormalized_unbatched.defvjp(

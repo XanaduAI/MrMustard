@@ -542,28 +542,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         shape: tuple[int],
         stable: bool = False,
     ) -> jnp.ndarray:
-        return hermite_renormalized_unbatched(A, b, c, shape)
-        # if stable:
-        #     G = jax.pure_callback(
-        #         lambda A, b, c: strategies.stable_numba(
-        #             shape, np.array(A), np.array(b), np.array(c)
-        #         ),
-        #         jax.ShapeDtypeStruct(shape, jnp.complex128),
-        #         A,
-        #         b,
-        #         c,
-        #     )
-        # else:
-        #     G = jax.pure_callback(
-        #         lambda A, b, c: strategies.vanilla_numba(
-        #             shape, np.array(A), np.array(b), np.array(c)
-        #         ),
-        #         jax.ShapeDtypeStruct(shape, jnp.complex128),
-        #         A,
-        #         b,
-        #         c,
-        #     )
-        # return G
+        return hermite_renormalized_unbatched(A, b, c, shape, stable)
 
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_batched

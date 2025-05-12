@@ -419,13 +419,19 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float
 def displacement(x, y, shape, tol=1e-15):
     r"""creates a single mode displacement matrix"""
     shape = tuple(shape)
-    return math.conditional(
+    ret, _ = displacement_fwd(x, y, shape, tol)
+    return ret
+
+
+def displacement_fwd(x, y, shape, tol):
+    gate = math.conditional(
         math.sqrt(x * x + y * y) > tol,
         partial(temp_true_branch, shape),
         partial(temp_false_branch, shape),
         x,
         y,
     )
+    return gate, (gate, shape, x, y)
 
 
 def temp_true_branch(shape, x, y):
@@ -441,17 +447,6 @@ def temp_true_branch(shape, x, y):
 
 def temp_false_branch(shape, x, y):
     return math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
-
-
-def displacement_fwd(x, y, shape, tol):
-    gate = math.conditional(
-        math.sqrt(x * x + y * y) > tol,
-        partial(temp_true_branch, shape),
-        partial(temp_false_branch, shape),
-        x,
-        y,
-    )
-    return gate, (gate, shape, x, y)
 
 
 def displacement_bwd(res, g):
