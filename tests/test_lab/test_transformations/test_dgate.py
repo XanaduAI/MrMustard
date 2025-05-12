@@ -34,7 +34,8 @@ class TestDgate:
 
     @pytest.mark.parametrize("modes,x,y", zip(modes, x, y))
     def test_init(self, modes, x, y):
-        gate = Dgate(modes, x, y)
+        alpha = x + 1j * y
+        gate = Dgate(modes, alpha)
 
         assert gate.name == "Dgate"
         assert gate.modes == (modes,)
@@ -45,7 +46,7 @@ class TestDgate:
         state = SqueezedVacuum(0, r=1.0)
         # displacement gate in fock representation for large displacement
         x = math.broadcast_to(10.0, batch_shape)
-        dgate = Dgate(0, x=x).to_fock(150)
+        dgate = Dgate(0, alpha=x).to_fock(150)
         assert math.all((state.to_fock() >> dgate).probability < 1)
         assert math.all(math.abs(dgate.fock_array(150)) < 1)
 
@@ -59,20 +60,20 @@ class TestDgate:
     def test_representation(self, batch_shape):
         x = math.broadcast_to(0.1, batch_shape)
         y = math.broadcast_to(0.1, batch_shape)
-        rep1 = Dgate(mode=0, x=x, y=y).ansatz
+        rep1 = Dgate(mode=0, alpha=x + 1j * y).ansatz
         assert math.allclose(rep1.A, [[0, 1], [1, 0]])
         assert math.allclose(rep1.b, [0.1 + 0.1j, -0.1 + 0.1j])
         assert math.allclose(rep1.c, 0.990049833749168)
 
-        rep2 = Dgate(mode=2, x=x, y=0.2).ansatz
+        rep2 = Dgate(mode=2, alpha=x + 1j * 0.2).ansatz
         assert math.allclose(rep1.A, [[0, 1], [1, 0]])
         assert math.allclose(rep2.b, [0.1 + 0.2j, -0.1 + 0.2j])
         assert math.allclose(rep2.c, 0.97530991 + 0.0j)
 
     def test_trainable_parameters(self):
-        gate1 = Dgate(0, 1, 1)
-        gate2 = Dgate(0, 1, 1, x_trainable=True, x_bounds=(-2, 2))
-        gate3 = Dgate(0, 1, 1, y_trainable=True, y_bounds=(-2, 2))
+        gate1 = Dgate(0, 1 + 1j)
+        gate2 = Dgate(0, 1 + 1j, x_trainable=True, x_bounds=(-2, 2))
+        gate3 = Dgate(0, 1 + 1j, y_trainable=True, y_bounds=(-2, 2))
 
         with pytest.raises(AttributeError):
             gate1.parameters.x.value = 3
