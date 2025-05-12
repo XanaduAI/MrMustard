@@ -442,11 +442,15 @@ class Ket(State):
         other_indices = self.wires[other_modes].indices
         new_order = core_indices + other_indices
 
-        A = self.ansatz.reorder(new_order).A
+        A, b, c = self.ansatz.reorder(new_order).triple
         M = len(core_modes)
 
         # we pick the blocks according to the naming chosen in the paper
         Am = A[..., :M, :M]
+        An = A[..., M:, M:]
+        R = A[..., M:, :M]
+        bm = b[..., :M]
+        bn = b[..., M:]
 
         batch_shape = self.ansatz.batch_shape
 
@@ -460,11 +464,15 @@ class Ket(State):
             math.conj(gamma_evecs),
         )
         gamma_transpose = math.einsum("...ij->...ji", gamma)
+        gamma_inv = math.inv(gamma)
+        gamma_inv_T = math.einsum("...ij->...ji", gamma_inv)
 
         Au = math.block([[Am, gamma], [gamma_transpose, -math.conj(Am)]])
 
-        bu = math.zeros(batch_shape + (2 * M,), dtype=math.complex128)
-
+        bu_in = -math.einsum(
+            "...ij,...jk,...k->...i", math.conj(Am), gamma_inv_T, bm
+        ) - math.einsum("...ij,...j->...i", gamma_inv, math.conj(bm))
+        bu = math.concat([bm, bu_in], -1)
         cu = math.ones(batch_shape, dtype=math.complex128)
         U = Unitary.from_bargmann(core_modes, core_modes, (Au, bu, cu))
 
@@ -472,21 +480,24 @@ class Ket(State):
 
         U /= math.sqrt(u_renorm)
 
-        # addressing the displacement problem
-        core_p = self.contract(U.dual, mode="zip")
-        alpha = core_p.ansatz.b[..., core_indices]
-        for i, m in enumerate(core_modes):
-            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
-            d_g_inv = d_g.dual
+        R_T = math.einsum("...ij->...ji", R)
+        A_core = math.block(
+            [
+                [math.zeros(batch_shape + (M, M), dtype=math.complex128), gamma_inv @ R_T],
+                [R @ gamma_inv_T, An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R_T],
+            ]
+        )
 
-            core_p = core_p.contract(d_g, mode="zip")
-            U = (d_g_inv).contract(U, mode="zip")
+        Rc = R @ gamma_inv_T
+        b_tmp = bn - math.einsum("...ij,...j->...i", Rc, bu_in)
+        b_core = math.concat([math.zeros_like(bm), b_tmp], -1)
 
-        core = Ket.from_bargmann(self.modes, core_p.ansatz.triple)
-        c_core = core.ansatz.c
-        phase_core = math.angle(c_core)
-        core = core * math.exp(-1j * phase_core)
-        U = U * math.exp(1j * phase_core)
+        inverse_order = np.argsort(new_order)
+        A_core = A_core[..., inverse_order, :][..., :, inverse_order]
+        b_core = b_core[..., inverse_order]
+        c_core = c / U.ansatz.c
+        core = Ket.from_bargmann(self.modes, (A_core, b_core, c_core))
+
         return core, U
 
     def _ipython_display_(self):  # pragma: no cover
