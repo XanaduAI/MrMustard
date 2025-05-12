@@ -37,6 +37,8 @@ from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cove
     hermite_multidimensional_diagonal_batch,
 )
 
+from .hermite import hermite_renormalized_unbatched
+
 jax.config.update("jax_enable_x64", True)  # pragma: no cover
 
 
@@ -532,7 +534,6 @@ class BackendJax(BackendBase):  # pragma: no cover
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_unbatched
     # ~~~~~~~~~~~~~~~~~
-    @partial(jax.jit, static_argnames=["shape", "stable"])
     def hermite_renormalized_unbatched(
         self,
         A: jnp.ndarray,
@@ -541,27 +542,28 @@ class BackendJax(BackendBase):  # pragma: no cover
         shape: tuple[int],
         stable: bool = False,
     ) -> jnp.ndarray:
-        if stable:
-            G = jax.pure_callback(
-                lambda A, b, c: strategies.stable_numba(
-                    shape, np.array(A), np.array(b), np.array(c)
-                ),
-                jax.ShapeDtypeStruct(shape, jnp.complex128),
-                A,
-                b,
-                c,
-            )
-        else:
-            G = jax.pure_callback(
-                lambda A, b, c: strategies.vanilla_numba(
-                    shape, np.array(A), np.array(b), np.array(c)
-                ),
-                jax.ShapeDtypeStruct(shape, jnp.complex128),
-                A,
-                b,
-                c,
-            )
-        return G
+        return hermite_renormalized_unbatched(A, b, c, shape)
+        # if stable:
+        #     G = jax.pure_callback(
+        #         lambda A, b, c: strategies.stable_numba(
+        #             shape, np.array(A), np.array(b), np.array(c)
+        #         ),
+        #         jax.ShapeDtypeStruct(shape, jnp.complex128),
+        #         A,
+        #         b,
+        #         c,
+        #     )
+        # else:
+        #     G = jax.pure_callback(
+        #         lambda A, b, c: strategies.vanilla_numba(
+        #             shape, np.array(A), np.array(b), np.array(c)
+        #         ),
+        #         jax.ShapeDtypeStruct(shape, jnp.complex128),
+        #         A,
+        #         b,
+        #         c,
+        #     )
+        # return G
 
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_batched

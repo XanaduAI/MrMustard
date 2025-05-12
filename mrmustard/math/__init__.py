@@ -25,5 +25,6 @@ from .backend_numpy import *
 from .lattice import *
 from .parameters import *
 from .parameter_set import *
+from .hermite import *
 
 sys.modules[__name__] = BackendManager()

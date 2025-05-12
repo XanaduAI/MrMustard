@@ -419,10 +419,13 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float
 def displacement(x, y, shape, tol=1e-15):
     r"""creates a single mode displacement matrix"""
     shape = tuple(shape)
-    true_branch = partial(temp_true_branch, shape)
-    false_branch = partial(temp_false_branch, shape)
-    gate = math.conditional(math.sqrt(x * x + y * y) > tol, true_branch, false_branch, x, y)
-    return math.astensor(gate, dtype=math.complex128)
+    return math.conditional(
+        math.sqrt(x * x + y * y) > tol,
+        partial(temp_true_branch, shape),
+        partial(temp_false_branch, shape),
+        x,
+        y,
+    )
 
 
 def temp_true_branch(shape, x, y):
@@ -441,17 +444,17 @@ def temp_false_branch(shape, x, y):
 
 
 def displacement_fwd(x, y, shape, tol):
-    # Forward pass - same as the main function
-    true_branch = partial(temp_true_branch, shape)
-    false_branch = partial(temp_false_branch, shape)
-
-    gate = math.conditional(math.sqrt(x * x + y * y) > tol, true_branch, false_branch, x, y)
-    ret = math.astensor(gate, dtype=math.complex128)
-    return ret, (gate, shape, x, y)  # Return output and residuals needed for backward pass
+    gate = math.conditional(
+        math.sqrt(x * x + y * y) > tol,
+        partial(temp_true_branch, shape),
+        partial(temp_false_branch, shape),
+        x,
+        y,
+    )
+    return gate, (gate, shape, x, y)
 
 
 def displacement_bwd(res, g):
-    # Backward pass
     gate, shape, x, y = res
 
     dD_da, dD_dac = jax.pure_callback(
