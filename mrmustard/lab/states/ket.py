@@ -41,7 +41,7 @@ from .base import State, _validate_operator, OperatorType
 from .dm import DM
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
-from ..transformations import Unitary, Operation, Dgate
+from ..transformations import Unitary, Operation
 from ..utils import shape_check
 
 __all__ = ["Ket"]
