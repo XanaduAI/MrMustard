@@ -82,7 +82,6 @@ class Dgate(Unitary):
         alpha: complex | Sequence[complex] = 0.0,
         alpha_trainable: bool = False,
         alpha_bounds: tuple[complex | None, complex | None] = (None, None),
-        y_bounds: tuple[complex | None, complex | None] = (None, None),
     ) -> None:
         super().__init__(name="Dgate")
         self.parameters.add_parameter(make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds))
