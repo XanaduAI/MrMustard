@@ -23,6 +23,8 @@ from typing import Sequence
 from enum import Enum
 
 import numpy as np
+import jax
+import jax.numpy as jnp
 from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -378,22 +380,29 @@ class State(CircuitComponent):
         if batch_shape:
             raise NotImplementedError("Batched auto_shape is not implemented.")
         if not self.ansatz._lin_sup:
-            try:  # fock
+            if isinstance(self.ansatz, ArrayAnsatz):
                 shape = self.ansatz.core_shape
-            except AttributeError:  # bargmann
+            else:
                 if self.ansatz.num_derived_vars == 0:
                     if not self.wires.ket or not self.wires.bra:
                         ansatz = self.ansatz.conj & self.ansatz
                     else:
                         ansatz = self.ansatz
                     A, b, c = ansatz.triple
-                    shape = autoshape_numba(
-                        math.asnumpy(A),
-                        math.asnumpy(b),
-                        math.asnumpy(c),
-                        max_prob or settings.AUTOSHAPE_PROBABILITY,
-                        max_shape or settings.AUTOSHAPE_MAX,
-                        min_shape or settings.AUTOSHAPE_MIN,
+                    temp_shape = (self.n_modes,)
+                    shape = jax.pure_callback(
+                        lambda A, b, c: autoshape_numba(
+                            np.array(A),
+                            np.array(b),
+                            np.array(c),
+                            max_prob or settings.AUTOSHAPE_PROBABILITY,
+                            max_shape or settings.AUTOSHAPE_MAX,
+                            min_shape or settings.AUTOSHAPE_MIN,
+                        ),
+                        jax.ShapeDtypeStruct(temp_shape, jnp.int64),
+                        A,
+                        b,
+                        c,
                     )
                     if self.wires.ket and self.wires.bra:
                         shape = tuple(shape) + tuple(shape)
