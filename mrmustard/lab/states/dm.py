@@ -649,18 +649,23 @@ class DM(State):
 
         new_order = math.astensor(core_indices + other_indices)
 
-        A = self.ansatz.reorder(new_order).A
+        A, b, c = self.ansatz.reorder(new_order).triple
         batch_shape = self.ansatz.batch_shape
 
         M = len(core_modes)
         N = self.n_modes - M
 
         Am = A[..., : 2 * M, : 2 * M]
+        An = A[..., 2 * M :, 2 * M :]
         R = A[..., 2 * M :, : 2 * M]
+        bm = b[..., : 2 * M]
+        bn = b[..., 2 * M :]
 
         sigma = R[..., M:, :M]
         r = R[..., M:, M:]
         alpha_m = Am[..., M:, :M]
+        alpha_n = An[..., N:, :N]
+        a_n = An[..., N:, N:]
 
         r_transpose = math.einsum("...ij->...ji", r)
         sigma_transpose = math.einsum("...ij->...ji", sigma)
@@ -686,10 +691,15 @@ class DM(State):
             sigma_transpose
         )
         r_c_evals, r_c_evecs = math.eigh(r_c_squared)
-        r_c = r_c_evecs[..., :, -M:] * math.sqrt(r_c_evals[..., -M:], dtype=math.complex128)
+        r_c = math.einsum(
+            "...ij,...j->...ij",
+            r_c_evecs[..., -M:],
+            math.sqrt(r_c_evals[..., -M:], dtype=math.complex128),
+        )
         Os_NM = math.zeros(batch_shape + (N, M), dtype=math.complex128)
         Os_MN = math.zeros(batch_shape + (M, N), dtype=math.complex128)
         R_c = math.block([[math.conj(r_c), Os_NM], [Os_MN, r_c]])
+        R_c_transpose = math.einsum("...ij->...ji", R_c)
 
         Aphi_out = Am
         gamma = np.linalg.pinv(R_c) @ R
@@ -701,27 +711,49 @@ class DM(State):
         A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
         Aphi = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
         bphi = math.zeros(batch_shape + (4 * M,), dtype=math.complex128)
-        c_phi = math.ones(batch_shape, dtype=math.complex128)
+        c_phi = math.ones_like(c)
         phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, c_phi))
         renorm = phi.contract(TraceOut(self.modes))
         phi = phi / renorm.ansatz.c
 
-        # fixing bs
-        rho_p = self.contract(phi.inverse(), mode="zip")
+        alpha_core_n = alpha_n - sigma @ math.inv(alpha_m) @ math.conj(sigma_transpose)
+        a_core_n = a_n + reduced_A[..., N:, :N]
+        A_core_n = math.block(
+            [[math.conj(a_core_n), math.conj(alpha_core_n)], [alpha_core_n, a_core_n]]
+        )
 
-        alpha = rho_p.ansatz.b[..., core_ket_indices]
+        A_core = math.block(
+            [
+                [math.zeros(batch_shape + (2 * M, 2 * M), dtype=math.complex128), R_c_transpose],
+                [R_c, A_core_n],
+            ]
+        )
+        b_core_m = math.einsum("...ij,...j->...i", math.inv(gamma_transpose), bm)
+        b_core_n = bn - math.einsum("...ij,...jk,...k->...i", R_c, Aphi_in, b_core_m)
+
+        b_core = math.concat([b_core_m, b_core_n], -1)
+        inverse_order = np.argsort(new_order)
+        A_core = A_core[..., inverse_order, :][..., inverse_order]
+        b_core = b_core[..., inverse_order]
+        core = DM.from_bargmann(
+            self.modes,
+            (A_core, b_core, c_phi),
+        )
+        alpha = b_core[..., core_ket_indices]
         for i, m in enumerate(core_modes):
             d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
             d_g_inv = d_g.inverse()
             d_ch = d_g.contract(d_g.adjoint, mode="zip")
             d_ch_inverse = d_g_inv.contract(d_g_inv.adjoint, mode="zip")
 
-            rho_p = rho_p.contract(d_ch, mode="zip")
+            core = core.contract(d_ch, mode="zip")
             phi = (d_ch_inverse).contract(phi, mode="zip")
-        c_tmp = math.ones_like(rho_p.ansatz.c)
-        rho_p = DM.from_bargmann(self.modes, (rho_p.ansatz.A, rho_p.ansatz.b, c_tmp))
-        phi = Channel.from_bargmann(core_modes, core_modes, phi.ansatz.triple)
-        return rho_p.normalize(), phi
+
+        core = DM.from_bargmann(self.modes, (core.ansatz.A, core.ansatz.b, c_phi)).normalize()
+        phi = Channel.from_bargmann(core_modes, core_modes, (phi.ansatz.A, phi.ansatz.b, c_phi))
+        renorm = phi.contract(TraceOut(self.modes))
+        phi = phi / renorm.ansatz.c
+        return core, phi
 
     def _ipython_display_(self):  # pragma: no cover
         if widgets.IN_INTERACTIVE_SHELL:
