@@ -389,20 +389,14 @@ class State(CircuitComponent):
                     else:
                         ansatz = self.ansatz
                     A, b, c = ansatz.triple
-                    temp_shape = (self.n_modes,)
-                    shape = jax.pure_callback(
-                        lambda A, b, c: autoshape_numba(
-                            np.array(A),
-                            np.array(b),
-                            np.array(c),
-                            max_prob or settings.AUTOSHAPE_PROBABILITY,
-                            max_shape or settings.AUTOSHAPE_MAX,
-                            min_shape or settings.AUTOSHAPE_MIN,
-                        ),
-                        jax.ShapeDtypeStruct(temp_shape, jnp.int64),
+                    shape = ugh(
+                        (self.n_modes,),
                         A,
                         b,
                         c,
+                        max_prob or settings.AUTOSHAPE_PROBABILITY,
+                        max_shape or settings.AUTOSHAPE_MAX,
+                        min_shape or settings.AUTOSHAPE_MIN,
                     )
                     if self.wires.ket and self.wires.bra:
                         shape = tuple(shape) + tuple(shape)
@@ -767,3 +761,33 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
+
+
+@jax.custom_vjp
+def ugh(out_shape, A, b, c, max_prob, max_shape, min_shape):
+    return ugh_fwd(out_shape, A, b, c, max_prob, max_shape, min_shape)
+
+
+def ugh_fwd(out_shape, A, b, c, max_prob, max_shape, min_shape):
+    ret = jax.pure_callback(
+        lambda A, b, c: autoshape_numba(
+            np.array(A),
+            np.array(b),
+            np.array(c),
+            max_prob,
+            max_shape,
+            min_shape,
+        ),
+        jax.ShapeDtypeStruct(out_shape, jnp.int64),
+        A,
+        b,
+        c,
+    )
+    return ret, tuple()
+
+
+def ugh_bwd(res, g):
+    return (None, None, None, None, None, None, None)
+
+
+ugh.defvjp(ugh_fwd, ugh_bwd)
