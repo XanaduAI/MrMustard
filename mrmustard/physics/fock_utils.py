@@ -444,17 +444,17 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
         theta (float): transmittivity angle of the beamsplitter
         phi (float): phase angle of the beamsplitter
         cutoffs (int,int): cutoff dimensions of the two modes
+        method (str): method to compute the beamsplitter ("vanilla", "schwinger" or "stable")
     """
+    t, s = math.asnumpy(theta), math.asnumpy(phi)
     if method == "vanilla":
-        bs_unitary = strategies.beamsplitter(shape, math.asnumpy(theta), math.asnumpy(phi))
+        bs_unitary = strategies.beamsplitter(shape, t, s)
     elif method == "schwinger":
-        bs_unitary = strategies.beamsplitter_schwinger(
-            shape, math.asnumpy(theta), math.asnumpy(phi)
-        )
+        bs_unitary = strategies.beamsplitter_schwinger(shape, t, s)
+    elif method == "stable":
+        bs_unitary = strategies.stable_beamsplitter(shape, t, s)
     else:
-        raise ValueError(
-            f"Unknown beamsplitter method {method}. Options are 'vanilla' and 'schwinger'."
-        )
+        raise ValueError(f"Unknown method {method}. Use 'vanilla', 'schwinger' or 'stable'.")
 
     ret = math.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
     if math.backend_name in ["numpy", "jax"]:

@@ -124,6 +124,7 @@ class BSgate(Unitary):
             method: The method to use to compute the Fock array. Available methods are:
                 - ``"vanilla"``: The default method.
                 - ``"schwinger"``: Use the Schwinger representation to compute the Fock array.
+                - ``"stable"``: Use the stable implementation of the beamsplitter.
         Returns:
             array: The Fock representation of this component.
         """
