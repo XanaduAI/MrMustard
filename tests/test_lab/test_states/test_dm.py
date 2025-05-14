@@ -534,7 +534,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         core, phi = rho.formal_stellar_decomposition([0, 3])
 
         # displacement test
-        rho = DM.random([0, 1]) >> Dgate(0, 0.5)
+        rho = DM.random([0, 1]) >> Dgate(0, 0.5) >> Dgate(1, 0.2)
         core, phi = rho.formal_stellar_decomposition([0])
         assert (core >> Vacuum(1).dual).normalize() == Vacuum((0,)).dm()
         assert rho == core >> phi
