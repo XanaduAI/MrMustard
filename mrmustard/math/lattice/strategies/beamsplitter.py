@@ -30,7 +30,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
 
-__all__ = ["beamsplitter", "beamsplitter_vjp", "beamsplitter_schwinger"]
+__all__ = ["beamsplitter", "stable_beamsplitter", "beamsplitter_vjp", "beamsplitter_schwinger"]
 
 
 @njit
