@@ -65,7 +65,7 @@ class Coherent(Ket):
         >>> from mrmustard.lab import Coherent, Vacuum, Dgate
 
         >>> state = Coherent(mode=0, x=0.3, y=0.2)
-        >>> assert state == Vacuum(0) >> Dgate(0, x=0.3+0.2j)
+        >>> assert state == Vacuum(0) >> Dgate(0, alpha=0.3+0.2j)
 
     """
 
