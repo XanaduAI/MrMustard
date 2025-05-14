@@ -206,7 +206,7 @@ def beamsplitter_vjp(
 
     # rank 3
     for m in range(M):
-        for n in range(N - m):
+        for n in range(min(N, P - m)):
             p = m + n
             if 0 < p < P:
                 dA, db = steps.vanilla_step_grad(G, (m, n, p, 0), dA, db)
@@ -216,7 +216,7 @@ def beamsplitter_vjp(
     # rank 4
     for m in range(M):
         for n in range(N):
-            for p in range(P):
+            for p in range(max(0, m + n - Q), min(P, m + n)):
                 q = m + n - p
                 if 0 < q < Q:
                     dA, db = steps.vanilla_step_grad(G, (m, n, p, q), dA, db)
