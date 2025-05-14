@@ -765,7 +765,8 @@ class State(CircuitComponent):
 
 @jax.custom_vjp
 def ugh(out_shape, A, b, c, max_prob, max_shape, min_shape):
-    return ugh_fwd(out_shape, A, b, c, max_prob, max_shape, min_shape)
+    ret, _ = ugh_fwd(out_shape, A, b, c, max_prob, max_shape, min_shape)
+    return ret
 
 
 def ugh_fwd(out_shape, A, b, c, max_prob, max_shape, min_shape):
