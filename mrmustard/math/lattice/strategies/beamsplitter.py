@@ -90,7 +90,7 @@ def beamsplitter(
 @njit
 def stable_beamsplitter(shape, theta, phi):
     r"""
-    This is a stable implementation of the beamsplitter that uses the averaging trick.
+    Stable implementation of the Fock representation of the beamsplitter.
     It is numerically stable up to arbitrary cutoffs.
     The shape order assuming it's implemented between modes 0 and 1 is (out_0, out_1, in_0, in_1).
 
@@ -157,7 +157,7 @@ def stable_beamsplitter(shape, theta, phi):
                             + st * SQRT[n] / SQRT[p] * G[m, n - 1, p - 1, q]
                         )
                         pivots += 1
-                    if 0 < q:
+                    if q > 0:
                         val += (
                             -stc * SQRT[m] / SQRT[q] * G[m - 1, n, p, q - 1]
                             + ct * SQRT[n] / SQRT[q] * G[m, n - 1, p, q - 1]
