@@ -72,8 +72,8 @@ class TestDgate:
 
     def test_trainable_parameters(self):
         gate1 = Dgate(0, 1 + 1j)
-        gate2 = Dgate(0, 1 + 1j, alpha_trainable=True, alpha_bounds=(-2, 2))
-        gate3 = Dgate(0, 1 + 2j, alpha_trainable=True, alpha_bounds=(-2, 2))
+        gate2 = Dgate(0, 1 + 1j, alpha_trainable=True, alpha_bounds=(0, 2))
+        gate3 = Dgate(0, 1 + 2j, alpha_trainable=True, alpha_bounds=(0, 2))
 
         with pytest.raises(AttributeError):
             gate1.parameters.alpha.value = 3

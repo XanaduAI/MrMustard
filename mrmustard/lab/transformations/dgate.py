@@ -81,10 +81,12 @@ class Dgate(Unitary):
         mode: int,
         alpha: complex | Sequence[complex] = 0.0,
         alpha_trainable: bool = False,
-        alpha_bounds: tuple[complex | None, complex | None] = (None, None),
+        alpha_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
         super().__init__(name="Dgate")
-        self.parameters.add_parameter(make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds))
+        self.parameters.add_parameter(
+            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128)
+        )
         self._representation = self.from_ansatz(
             modes_in=(mode,),
             modes_out=(mode,),
