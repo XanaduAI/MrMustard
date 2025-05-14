@@ -112,7 +112,7 @@ class BSgate(Unitary):
         ).representation
 
     def fock_array(
-        self, shape: int | Sequence[int] = None, method: str = "vanilla"
+        self, shape: int | Sequence[int] = None, method: str = "stable"
     ) -> ComplexTensor:
         r"""
         Returns the unitary representation of the Beam Splitter gate in the Fock basis.
@@ -124,7 +124,7 @@ class BSgate(Unitary):
             method: The method to use to compute the Fock array. Available methods are:
                 - ``"vanilla"``: The default method.
                 - ``"schwinger"``: Use the Schwinger representation to compute the Fock array.
-                - ``"stable"``: Use the stable implementation of the beamsplitter.
+                - ``"stable"``: Use the stable implementation of the beamsplitter. (default)
         Returns:
             array: The Fock representation of this component.
         """
