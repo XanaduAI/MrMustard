@@ -112,7 +112,7 @@ class BSgate(Unitary):
         ).representation
 
     def fock_array(
-        self, shape: int | Sequence[int] = None, method: str = "stable"
+        self, shape: int | Sequence[int] | None = None, method: str = "stable"
     ) -> ComplexTensor:
         r"""
         Returns the unitary representation of the Beam Splitter gate in the Fock basis.
@@ -130,7 +130,8 @@ class BSgate(Unitary):
         """
         if isinstance(shape, int):
             shape = (shape,) * (2 * self.ansatz.num_vars)
-        shape = tuple(shape) or tuple(self.auto_shape())
+        if shape is None:
+            shape = tuple(self.auto_shape())
         if len(shape) != 4:
             raise ValueError(f"Expected Fock shape of length {4}, got length {len(shape)}")
 
