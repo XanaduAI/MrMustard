@@ -92,7 +92,7 @@ def stable_beamsplitter(shape, theta, phi):
     r"""
     Stable implementation of the Fock representation of the beamsplitter.
     It is numerically stable up to arbitrary cutoffs.
-    The shape order assuming it's implemented between modes 0 and 1 is (out_0, out_1, in_0, in_1).
+    The shape order is (out_0, out_1, in_0, in_1), assuming it acts on modes 0 and 1.
 
     Args:
         shape (tuple[int, int, int, int]): shape of the Fock representation
