@@ -33,7 +33,7 @@ from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Scalar
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
-from ..transformations import Dgate, Operation, Unitary
+from ..transformations import Operation, Unitary
 from ..utils import shape_check
 from .base import State
 from .dm import DM

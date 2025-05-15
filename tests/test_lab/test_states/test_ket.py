@@ -30,7 +30,6 @@ from mrmustard.lab import (
     Coherent,
     Dgate,
     Ggate,
-    Identity,
     Ket,
     Number,
     QuadratureEigenstate,
