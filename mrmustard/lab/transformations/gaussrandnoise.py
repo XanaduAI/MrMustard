@@ -18,12 +18,12 @@ The class representing a Gaussian random noise channel.
 from __future__ import annotations
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import RealMatrix
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.utils.typing import RealMatrix
 
-from .base import Channel
 from ...physics import triples
 from ..utils import make_parameter
+from .base import Channel
 
 __all__ = ["GaussRandNoise"]
 

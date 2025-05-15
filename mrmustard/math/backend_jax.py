@@ -17,14 +17,15 @@
 # pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
 
 from __future__ import annotations  # pragma: no cover
-from typing import Callable, Sequence  # pragma: no cover
-from functools import partial  # pragma: no cover
 
+from functools import partial  # pragma: no cover
+from typing import Callable, Sequence  # pragma: no cover
+
+import equinox as eqx  # pragma: no cover
 import jax  # pragma: no cover
 import jax.numpy as jnp  # pragma: no cover
 import jax.scipy as jsp  # pragma: no cover
 import numpy as np  # pragma: no cover
-import equinox as eqx  # pragma: no cover
 from jax import tree_util  # pragma: no cover
 
 from .autocast import Autocast  # pragma: no cover

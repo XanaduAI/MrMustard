@@ -20,10 +20,10 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from .base import Unitary
-from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
+from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["BSgate"]
 

@@ -17,31 +17,28 @@ This module contains the defintion of the density matrix class ``DM``.
 """
 
 from __future__ import annotations
+
 from typing import Collection, Sequence
 
 import numpy as np
 from IPython.display import display
 
 from mrmustard import math, settings, widgets
-from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
-from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
+from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
+from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires, ReprEnum
-from mrmustard.utils.typing import (
-    ComplexTensor,
-    ComplexMatrix,
-    ComplexVector,
-)
+from mrmustard.physics.wires import ReprEnum, Wires, WiresType
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
-from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
 from ..transformations import Map, Channel, Dgate
 
 from ..utils import shape_check
+from .base import State
 
 __all__ = ["DM"]
 
@@ -283,9 +280,14 @@ class DM(State):
             operator.ansatz and operator.ansatz.batch_shape
         ):
             raise NotImplementedError("Batched expectation values are not implemented.")
-        op_type, msg = _validate_operator(operator)
-        if op_type is OperatorType.INVALID_TYPE:
-            raise ValueError(msg)
+        if operator.wires.type not in (
+            WiresType.KET_LIKE,
+            WiresType.DM_LIKE,
+            WiresType.UNITARY_LIKE,
+        ):
+            raise ValueError(
+                f"Expected a ket-like, density-matrix like, or unitary-like operator, found {operator.wires.type}."
+            )
 
         if not operator.wires.modes.issubset(self.wires.modes):
             msg = f"Expected an operator defined on a subset of modes `{self.modes}`, "
@@ -293,11 +295,7 @@ class DM(State):
             raise ValueError(msg)
 
         leftover_modes = self.wires.modes - operator.wires.modes
-        if op_type is OperatorType.KET_LIKE:
-            result = self >> operator.dual
-            if leftover_modes:
-                result >>= TraceOut(leftover_modes)
-        elif op_type is OperatorType.DM_LIKE:
+        if operator.wires.type in (WiresType.KET_LIKE, WiresType.DM_LIKE):
             result = self >> operator.dual
             if leftover_modes:
                 result >>= TraceOut(leftover_modes)

@@ -20,29 +20,23 @@ from __future__ import annotations
 
 from typing import Collection, Sequence
 
-from IPython.display import display
-
 import numpy as np
+from IPython.display import display
 
 from mrmustard import math, settings, widgets
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires, ReprEnum
-from mrmustard.utils.typing import (
-    Scalar,
-    Batch,
-    ComplexMatrix,
-    ComplexVector,
-)
+from mrmustard.physics.wires import ReprEnum, Wires, WiresType
+from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Scalar
 
-from .base import State, _validate_operator, OperatorType
-from .dm import DM
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
-from ..transformations import Unitary, Operation
+from ..transformations import Operation, Unitary
 from ..utils import shape_check
+from .base import State
+from .dm import DM
 
 __all__ = ["Ket"]
 
@@ -287,9 +281,14 @@ class Ket(State):
         ):  # pragma: no cover
             raise NotImplementedError("Batched expectation values are not implemented.")
 
-        op_type, msg = _validate_operator(operator)
-        if op_type is OperatorType.INVALID_TYPE:
-            raise ValueError(msg)
+        if operator.wires.type not in (
+            WiresType.KET_LIKE,
+            WiresType.DM_LIKE,
+            WiresType.UNITARY_LIKE,
+        ):
+            raise ValueError(
+                f"Expected a ket-like, density-matrix like, or unitary-like operator, found {operator.wires.type}."
+            )
 
         if not operator.wires.modes.issubset(self.wires.modes):
             msg = f"Expected an operator defined on a subset of modes `{self.modes}`, "
@@ -297,12 +296,12 @@ class Ket(State):
             raise ValueError(msg)
 
         leftover_modes = self.wires.modes - operator.wires.modes
-        if op_type is OperatorType.KET_LIKE:
+        if operator.wires.type is WiresType.KET_LIKE:
             result = self.contract(operator.dual)
             result = result.contract(result.adjoint)
             result >>= TraceOut(leftover_modes)
 
-        elif op_type is OperatorType.DM_LIKE:
+        elif operator.wires.type is WiresType.DM_LIKE:
             result = (self.adjoint.contract(self.contract(operator.dual))) >> TraceOut(
                 leftover_modes
             )

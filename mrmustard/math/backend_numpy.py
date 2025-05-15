@@ -19,13 +19,13 @@
 from __future__ import annotations
 
 from math import lgamma as mlgamma
-from typing import Sequence, Callable
+from typing import Callable, Sequence
 
 import numpy as np
 import scipy as sp
-from scipy.signal import convolve2d as scipy_convolve2d
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
+from scipy.signal import convolve2d as scipy_convolve2d
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
 
@@ -33,7 +33,6 @@ from ..utils.settings import settings
 from .autocast import Autocast
 from .backend_base import BackendBase
 from .lattice import strategies
-
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,

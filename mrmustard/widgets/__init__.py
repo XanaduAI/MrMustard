@@ -14,15 +14,15 @@
 
 """IPython widgets for various objects in MrMustard."""
 
-import numpy as np
 import ipywidgets as widgets
+import numpy as np
 import plotly.graph_objs as go
 from IPython import get_ipython
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
 
 from mrmustard import math
 
-from .css import FOCK, WIRES, TABLE, STATE
+from .css import FOCK, STATE, TABLE, WIRES
 
 NO_MARGIN = {"l": 0, "r": 0, "t": 0, "b": 0}
 IN_INTERACTIVE_SHELL = isinstance(get_ipython(), TerminalInteractiveShell)

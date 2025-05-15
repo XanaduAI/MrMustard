@@ -20,12 +20,13 @@ A class to simulate quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Sequence
 from pydoc import locate
+from typing import Sequence
+
 from mrmustard import math, settings
-from mrmustard.utils.serialize import save
 from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.path import optimal_path
+from mrmustard.utils.serialize import save
 
 __all__ = ["Circuit"]
 

@@ -1,14 +1,16 @@
 """Module containing wire classes for quantum and classical channels."""
 
 from __future__ import annotations
-from functools import cached_property
-from enum import Enum, auto
-from typing import Any, Callable, Iterable, Iterator
-from dataclasses import dataclass, field
-from random import randint
-from IPython.display import display
-from mrmustard import widgets
 
+from dataclasses import dataclass, field
+from enum import Enum, auto
+from functools import cached_property
+from random import randint
+from typing import Any, Callable, Iterable, Iterator
+
+from IPython.display import display
+
+from mrmustard import widgets
 
 __all__ = ["Wires"]
 
@@ -43,13 +45,18 @@ class ReprEnum(LegibleEnum):
 class WiresType(LegibleEnum):
     """Enumeration of possible wire types in quantum circuits."""
 
-    DM_LIKE = auto()  # only output ket and bra on same modes
+    SCALAR_LIKE = auto()  # no wires
     KET_LIKE = auto()  # only output ket
-    UNITARY_LIKE = auto()  # such that can map ket to ket
-    CHANNEL_LIKE = auto()  # such that can map dm to dm
-    PROJ_MEAS_LIKE = auto()  # only input ket
-    POVM_LIKE = auto()  # only input ket and input bra on same modes
+    KET_DUAL_LIKE = auto()  # only input ket
+    KET_ADJOINT_LIKE = auto()  # only output bra
+    KET_ADJOINT_DUAL_LIKE = auto()  # only input bra
+    DM_LIKE = auto()  # only output ket and bra on same modes
+    POVM_LIKE = auto()  # only input ket and bra on same modes
+    UNITARY_LIKE = auto()  # only input and output ket on same modes
+    UNITARY_ADJOINT_LIKE = auto()  # only input and output bra on same modes
+    CHANNEL_LIKE = auto()  # all args on the same modes
     CLASSICAL_LIKE = auto()  # only classical wires
+    COMPONENT_LIKE = auto()  # anything else
 
 
 @dataclass
@@ -370,6 +377,42 @@ class Wires:  # pylint: disable=too-many-public-methods
         w.classical_wires = set(classical) if not copy else {c.copy() for c in classical}
         return w
 
+    @property
+    def type(self) -> WiresType:  # pylint: disable=too-many-return-statements, too-many-branches
+        r"""
+        Returns the type of the wires.
+        """
+        if not self.classical_wires:
+            if not self.quantum_wires:
+                return WiresType.SCALAR_LIKE
+            elif not self.input:
+                if not self.output.bra:
+                    return WiresType.KET_LIKE
+                elif not self.output.ket:
+                    return WiresType.KET_ADJOINT_LIKE
+                elif self.output.bra.modes == self.output.ket.modes:
+                    return WiresType.DM_LIKE
+            elif not self.output:
+                if not self.input.bra:
+                    return WiresType.KET_DUAL_LIKE
+                elif not self.input.ket:
+                    return WiresType.KET_ADJOINT_DUAL_LIKE
+                elif self.input.bra.modes == self.input.ket.modes:
+                    return WiresType.POVM_LIKE
+            else:
+                if not self.bra and len(self.input.ket.modes) == len(self.output.ket.modes):
+                    return WiresType.UNITARY_LIKE
+                elif not self.ket and len(self.input.bra.modes) == len(self.output.bra.modes):
+                    return WiresType.UNITARY_ADJOINT_LIKE
+                elif (self.output.bra.modes == self.output.ket.modes) and (
+                    self.input.bra.modes == self.input.ket.modes
+                ):
+                    return WiresType.CHANNEL_LIKE
+        elif not self.quantum_wires:
+            return WiresType.CLASSICAL_LIKE
+
+        return WiresType.COMPONENT_LIKE
+
     def copy(self, new_ids: bool = False) -> Wires:
         """Returns a deep copy of this Wires object."""
         return Wires.from_wires(
@@ -497,7 +540,7 @@ class Wires:  # pylint: disable=too-many-public-methods
         return tuple(w.index for w in self.wires)
 
     @property
-    def args(self) -> tuple[tuple[int, ...], ...]:
+    def args(self) -> tuple[set[int], set[int], set[int], set[int], set[int], set[int]]:
         r"""
         The arguments needed to create a new ``Wires`` object with the same wires.
         """

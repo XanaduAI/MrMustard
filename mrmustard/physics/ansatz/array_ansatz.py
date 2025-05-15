@@ -17,15 +17,15 @@ This module contains the array ansatz.
 """
 
 from __future__ import annotations
+
 from typing import Any, Callable, Sequence
 from warnings import warn
 
 import numpy as np
+from IPython.display import display
 from numpy.typing import ArrayLike
 
-from IPython.display import display
-
-from mrmustard import math, widgets, settings
+from mrmustard import math, settings, widgets
 from mrmustard.math.parameters import Variable
 from mrmustard.utils.typing import Batch, Scalar, Tensor
 

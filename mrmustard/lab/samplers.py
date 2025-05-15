@@ -17,19 +17,18 @@ Samplers for measurement devices.
 """
 
 from __future__ import annotations
-from itertools import product
 
 from abc import ABC, abstractmethod
-
+from itertools import product
 from typing import Any, Sequence
 
 import numpy as np
 
 from mrmustard import math, settings
 
-from .states import State, Number, Ket
 from .circuit_components import CircuitComponent
 from .circuit_components_utils import BtoQ
+from .states import Ket, Number, State
 
 __all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
 

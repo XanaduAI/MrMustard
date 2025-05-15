@@ -26,17 +26,17 @@ representation.
 from __future__ import annotations
 
 from abc import abstractmethod
-
 from typing import Sequence
-from mrmustard import math, settings
-from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
-from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires
-from mrmustard.utils.typing import ComplexTensor, ComplexMatrix, RealMatrix, Vector
-from mrmustard.physics.triples import XY_to_channel_Abc
-from mrmustard.physics.bargmann_utils import au2Symplectic, symplectic2Au, XY_of_channel
-from ..circuit_components import CircuitComponent
 
+from mrmustard import math, settings
+from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from mrmustard.physics.bargmann_utils import XY_of_channel, au2Symplectic, symplectic2Au
+from mrmustard.physics.representations import Representation
+from mrmustard.physics.triples import XY_to_channel_Abc
+from mrmustard.physics.wires import Wires
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, RealMatrix, Vector
+
+from ..circuit_components import CircuitComponent
 
 __all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
 

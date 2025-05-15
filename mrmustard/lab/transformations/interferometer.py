@@ -23,9 +23,9 @@ from mrmustard.math.parameters import update_unitary
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.utils.typing import ComplexMatrix
 
-from .base import Unitary
-from ..utils import make_parameter
 from ...physics import symplectics
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["Interferometer"]
 

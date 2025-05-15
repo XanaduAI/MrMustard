@@ -17,19 +17,16 @@ This module contains the class for representations.
 """
 
 from __future__ import annotations
-from typing import Sequence
-from mrmustard import math
-from mrmustard.utils.typing import (
-    ComplexTensor,
-    ComplexMatrix,
-    ComplexVector,
-    Batch,
-)
 
-from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
+from typing import Sequence
+
+from mrmustard import math
+from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
+
+from .ansatz import Ansatz, ArrayAnsatz, PolyExpAnsatz
 from .triples import identity_Abc
 from .utils import outer_product_batch_str, zip_batch_strings
-from .wires import Wires, ReprEnum
+from .wires import ReprEnum, Wires
 
 __all__ = ["Representation"]
 

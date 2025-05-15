@@ -21,16 +21,15 @@ This module contains functions for performing calculations on objects in the Foc
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Sequence, Iterable
+from typing import Iterable, Sequence
 
 import numpy as np
 from scipy.special import comb, factorial
 
 from mrmustard import math, settings
-from mrmustard.math.lattice import strategies
 from mrmustard.math.caching import tensor_int_cache
-
-from mrmustard.utils.typing import Scalar, Tensor, Vector, Batch
+from mrmustard.math.lattice import strategies
+from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
 
 SQRT = np.sqrt(np.arange(1e6))
 

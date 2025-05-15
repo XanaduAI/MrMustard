@@ -30,7 +30,6 @@ from mrmustard.lab import (
     Coherent,
     Dgate,
     Ggate,
-    Identity,
     Ket,
     Number,
     QuadratureEigenstate,
@@ -38,7 +37,6 @@ from mrmustard.lab import (
     TraceOut,
     Vacuum,
 )
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.physics.wires import Wires
@@ -469,12 +467,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
 
         op1 = Attenuator(0)
-        with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
+        with pytest.raises(
+            ValueError,
+            match="Expected a ket-like, density-matrix like, or unitary-like operator, found",
+        ):
             ket.expectation(op1)
-
-        op2 = CircuitComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
-        with pytest.raises(ValueError, match="different modes"):
-            ket.expectation(op2)
 
         op3 = Dgate(2)
         with pytest.raises(ValueError, match="Expected an operator defined on"):
@@ -553,73 +550,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_is_physical(self):
         assert Ket.random((0, 1)).is_physical
         assert Coherent(0, x=[1, 1, 1]).is_physical
-
-    def test_physical_stellar_decomposition(self):
-        r"""
-        Tests the physical stellar decomposition.
-        """
-        # two-mode example:
-        psi = Ket.random([0, 1])
-        core, U = psi.physical_stellar_decomposition([0])
-        assert psi == core >> U
-
-        A_c, _, _ = core.ansatz.triple
-        assert math.allclose(A_c[0, 0], 0)
-
-        assert U >> U.dual == Identity([0])
-
-        # many-mode example:
-        phi = Ket.random(list(range(5)))
-        core, U = phi.physical_stellar_decomposition([0, 2])
-        assert phi == core >> U
-        assert (core >> Vacuum((1, 3, 4)).dual).normalize() == Vacuum((0, 2))
-
-        A_c, _, _ = core.ansatz.triple
-        A_c_reordered = A_c[[0, 2], :]
-        A_c_reordered = A_c_reordered[:, [0, 2]]
-        assert math.allclose(A_c_reordered, math.zeros((2, 2)))
-
-        # batching test:
-        psi = Ket.random([0, 1, 2])
-        phi = Ket.random([0, 1, 2])
-
-        (psi + phi).ansatz.batch_shape
-
-        sigma = psi + phi
-        sigma.ansatz._lin_sup = False
-        core, U = sigma.physical_stellar_decomposition([0])
-        assert sigma == core.contract(U, mode="zip")
-
-        # displacement test
-        phi = Ket.random(list(range(5))) >> Dgate(0, 2) >> Dgate(1, 1)
-        core, U = phi.physical_stellar_decomposition([0, 2])
-        assert phi == core >> U
-        assert (core >> Vacuum((1, 3, 4)).dual).normalize().dm() == Vacuum((0, 2)).dm()
-
-    def test_formal_stellar_decomposition(self):
-        psi = Ket.random((0, 1, 2))
-        core1, phi1 = psi.formal_stellar_decomposition([1])
-        core12, phi12 = psi.formal_stellar_decomposition([1, 2])
-
-        A1, _, _ = phi1.ansatz.triple
-        assert math.allclose(A1[1, 1], 0.0)
-
-        A12, _, _ = phi12.ansatz.triple
-        assert math.allclose(A12[2:, 2:], math.zeros((2, 2), dtype=math.complex128))
-
-        assert psi == core1 >> phi1
-        assert psi == core12 >> phi12
-        assert (core12 >> Vacuum((0)).dual).normalize() == Vacuum((1, 2))
-
-        psi = Ket.random([0, 1, 2])
-        phi = Ket.random([0, 1, 2])
-
-        (psi + phi).ansatz.batch_shape
-
-        sigma = psi + phi
-        core, U = sigma.formal_stellar_decomposition([0])
-
-        assert sigma == core.contract(U, mode="zip")
 
     def test_wigner(self):
 

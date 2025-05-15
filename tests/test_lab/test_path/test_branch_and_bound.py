@@ -17,7 +17,7 @@
 import pytest
 
 from mrmustard import settings
-from mrmustard.lab import Dgate, Number, Sgate, Coherent, SqueezedVacuum, BSgate, Vacuum
+from mrmustard.lab import BSgate, Coherent, Dgate, Number, Sgate, SqueezedVacuum, Vacuum
 from mrmustard.path import branch_and_bound as bb
 
 

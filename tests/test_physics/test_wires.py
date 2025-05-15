@@ -22,7 +22,7 @@ import pytest
 from ipywidgets import HTML
 
 from mrmustard.lab.states import QuadratureEigenstate
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.wires import Wires, WiresType
 
 from ..conftest import skip_jax, skip_np
 
@@ -158,6 +158,37 @@ class TestWires:
         assert idx1 == [0, 1, 2, 3]
         assert idx2 == [4, 5, 2, 7]
         assert idx_out == [0, 4, 1, 5, 3, 7]
+
+    def test_type(self):
+        w = Wires({}, {}, {0}, {})
+        assert w.type == WiresType.KET_LIKE
+
+        w = Wires({}, {}, {}, {0})
+        assert w.type == WiresType.KET_DUAL_LIKE
+
+        w = Wires({0}, {}, {}, {})
+        assert w.type == WiresType.KET_ADJOINT_LIKE
+
+        w = Wires({}, {0}, {}, {})
+        assert w.type == WiresType.KET_ADJOINT_DUAL_LIKE
+
+        w = Wires({0}, {}, {0}, {})
+        assert w.type == WiresType.DM_LIKE
+
+        w = Wires({}, {0}, {}, {0})
+        assert w.type == WiresType.POVM_LIKE
+
+        w = Wires({}, {}, {0}, {0})
+        assert w.type == WiresType.UNITARY_LIKE
+
+        w = Wires({0}, {0}, {}, {})
+        assert w.type == WiresType.UNITARY_ADJOINT_LIKE
+
+        w = Wires({0}, {0}, {0}, {0})
+        assert w.type == WiresType.CHANNEL_LIKE
+
+        w = Wires({1}, {2}, {3}, {4})
+        assert w.type == WiresType.COMPONENT_LIKE
 
 
 class TestWiresDisplay:
