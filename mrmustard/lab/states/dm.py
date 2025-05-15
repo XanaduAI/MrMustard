@@ -592,14 +592,10 @@ class DM(State):
         core = Ket.from_bargmann(self.modes, (Acore, bcore, c_core))
         for i in range(M):
             core = core.contract(
-                Dgate(
-                    core_modes[i], -math.real(bcore_m_ket[..., i]), -math.imag(bcore_m_ket[..., i])
-                ),
+                Dgate(core_modes[i], -bcore_m_ket[..., i]),
                 mode="zip",
             )
-            dgate_u = Dgate(
-                core_modes[i], math.real(bcore_m_ket[..., i]), math.imag(bcore_m_ket[..., i])
-            )
+            dgate_u = Dgate(core_modes[i], bcore_m_ket[..., i])
             dgate_ch = dgate_u.contract(dgate_u.adjoint, mode="zip")
             phi = dgate_ch.contract(phi, mode="zip")
         c_core = math.ones_like(c)
