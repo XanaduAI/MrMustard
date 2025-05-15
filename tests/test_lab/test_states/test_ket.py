@@ -294,7 +294,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_purity(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x=x, y=y)
+        state = Coherent(0, x + 1j * y)
         purity = state.purity
         assert purity.shape == state.ansatz.batch_shape
         assert math.allclose(purity, 1)
@@ -373,8 +373,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     def test_quadrature_batch(self):
         x1, y1, x2, y2 = 1, 2, -1, -2
-        A1, b1, c1 = coherent_state_Abc(x1, y1)
-        A2, b2, c2 = coherent_state_Abc(x2, y2)
+        A1, b1, c1 = coherent_state_Abc(x1 + 1j * y1)
+        A2, b2, c2 = coherent_state_Abc(x2 + 1j * y2)
         A, b, c = math.astensor([A1, A2]), math.astensor([b1, b2]), math.astensor([c1, c2])
         state = Ket.from_bargmann((0,), (A, b, c))
         q = np.linspace(-10, 10, 100)
