@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import Sequence
-
+from functools import partial
 from enum import Enum
 
 import numpy as np
@@ -389,15 +389,19 @@ class State(CircuitComponent):
                     else:
                         ansatz = self.ansatz
                     A, b, c = ansatz.triple
-                    shape = ugh(
-                        (self.n_modes,),
-                        A,
-                        b,
-                        c,
-                        max_prob or settings.AUTOSHAPE_PROBABILITY,
-                        max_shape or settings.AUTOSHAPE_MAX,
-                        min_shape or settings.AUTOSHAPE_MIN,
-                    )
+
+                    if math.backend_name == "jax":
+                        shape = super().auto_shape()
+                    else:
+                        shape = ugh(
+                            A,
+                            b,
+                            c,
+                            (self.n_modes,),
+                            max_prob or settings.AUTOSHAPE_PROBABILITY,
+                            max_shape or settings.AUTOSHAPE_MAX,
+                            min_shape or settings.AUTOSHAPE_MIN,
+                        )
                     if self.wires.ket and self.wires.bra:
                         shape = tuple(shape) + tuple(shape)
                 else:
@@ -763,14 +767,10 @@ class State(CircuitComponent):
         display(fig)
 
 
-@jax.custom_vjp
-def ugh(out_shape, A, b, c, max_prob, max_shape, min_shape):
-    ret, _ = ugh_fwd(out_shape, A, b, c, max_prob, max_shape, min_shape)
-    return ret
-
-
-def ugh_fwd(out_shape, A, b, c, max_prob, max_shape, min_shape):
-    ret = jax.pure_callback(
+@partial(jax.custom_vjp, nondiff_argnums=(3, 4, 5, 6))
+@partial(jax.jit, static_argnums=(3, 4, 5, 6))
+def ugh(A, b, c, out_shape, max_prob, max_shape, min_shape):
+    return jax.pure_callback(
         lambda A, b, c: autoshape_numba(
             np.array(A),
             np.array(b),
@@ -784,11 +784,15 @@ def ugh_fwd(out_shape, A, b, c, max_prob, max_shape, min_shape):
         b,
         c,
     )
+
+
+def ugh_fwd(A, b, c, out_shape, max_prob, max_shape, min_shape):
+    ret = ugh(A, b, c, out_shape, max_prob, max_shape, min_shape)
     return ret, tuple()
 
 
-def ugh_bwd(res, g):
-    return (None, None, None, None, None, None, None)
+def ugh_bwd(out_shape, max_prob, max_shape, min_shape, res, g):
+    return None, None, None
 
 
 ugh.defvjp(ugh_fwd, ugh_bwd)
