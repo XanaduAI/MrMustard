@@ -34,12 +34,9 @@ class Coherent(Ket):
 
     Args:
         mode: The mode of the coherent state.
-        x: The `x` displacement of the coherent state.
-        y: The `y` displacement of the coherent state.
-        x_trainable: Whether the `x` displacement is trainable.
-        y_trainable: Whether the `y` displacement is trainable.
-        x_bounds: The bounds of the `x` displacement.
-        y_bounds: The bounds of the `y` displacement.
+        alpha: The `alpha` displacement of the coherent state.
+        alpha_trainable: Whether the `x` displacement is trainable.
+        alpha_bounds: The bounds on the norm of `alpha` displacement.
 
     Returns:
         A ``Ket`` object representing a coherent state.
@@ -65,7 +62,7 @@ class Coherent(Ket):
 
         >>> from mrmustard.lab import Coherent, Vacuum, Dgate
 
-        >>> state = Coherent(mode=0, x=0.3, y=0.2)
+        >>> state = Coherent(mode=0, alpha=0.3+0.2j)
         >>> assert state == Vacuum(0) >> Dgate(0, alpha=0.3+0.2j)
 
     """
