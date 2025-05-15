@@ -129,7 +129,7 @@ class BSgate(Unitary):
             array: The Fock representation of this component.
         """
         if isinstance(shape, int):
-            shape = (shape,) * (2 * self.ansatz.num_vars)
+            shape = (shape,) * self.ansatz.core_dims
         if shape is None:
             shape = tuple(self.auto_shape())
         if len(shape) != 4:
