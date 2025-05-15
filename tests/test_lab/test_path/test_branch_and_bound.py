@@ -41,7 +41,7 @@ def test_propagate_shapes():
     """Test that the shapes are propagated correctly."""
     MAX = settings.AUTOSHAPE_MAX
     with settings(AUTOSHAPE_PROBABILITY=0.999):
-        circ = [Coherent(0, x=1.0), Dgate(0, 0.1)]
+        circ = [Coherent(0, 1.0), Dgate(0, 0.1)]
         graph = bb.parse_components(circ)
         assert [op.auto_shape() for op in circ] == [(5,), (MAX, MAX)]
         graph.optimize_fock_shapes(circ, verbose=False)

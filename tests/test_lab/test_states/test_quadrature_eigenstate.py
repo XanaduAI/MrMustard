@@ -81,8 +81,8 @@ class TestQuadratureEigenstate:
         assert state3.parameters.phi.value == 2
 
     def test_with_coherent(self):
-        val0 = Coherent(0, 0, 0) >> QuadratureEigenstate(0, 0, 0).dual
-        val1 = Coherent(0, 1, 0) >> QuadratureEigenstate(0, np.sqrt(2 * settings.HBAR), 0).dual
+        val0 = Coherent(0, 0) >> QuadratureEigenstate(0, 0, 0).dual
+        val1 = Coherent(0, 1) >> QuadratureEigenstate(0, np.sqrt(2 * settings.HBAR), 0).dual
         assert math.allclose(val0, val1)
 
     def test_wires(self):

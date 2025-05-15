@@ -47,11 +47,11 @@ class TraceOut(CircuitComponent):
         >>> from mrmustard import math
 
         >>> # initialize a multi-mode state
-        >>> state = Coherent(0, x=1) >> Coherent(1, x=1) >> Coherent(2, x=1)
+        >>> state = Coherent(0, alpha=1) >> Coherent(1, alpha=1) >> Coherent(2, alpha=1)
 
         >>> # trace out some of the modes
-        >>> assert state >> TraceOut(0) == (Coherent(1, x=1) >> Coherent(2, x=1)).dm()
-        >>> assert state >> TraceOut((1, 2)) == Coherent(0, x=1).dm()
+        >>> assert state >> TraceOut(0) == (Coherent(1, alpha=1) >> Coherent(2, alpha=1)).dm()
+        >>> assert state >> TraceOut((1, 2)) == Coherent(0, alpha=1).dm()
 
         >>> # use the trace out to estimate expectation values of operators
         >>> op = Dgate(0, alpha=1)

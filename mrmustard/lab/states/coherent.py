@@ -18,6 +18,7 @@ The class representing a coherent state.
 
 from __future__ import annotations
 from typing import Sequence
+from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .ket import Ket
@@ -74,20 +75,18 @@ class Coherent(Ket):
     def __init__(
         self,
         mode: int,
-        x: float | Sequence[float] = 0.0,
-        y: float | Sequence[float] = 0.0,
-        x_trainable: bool = False,
-        y_trainable: bool = False,
-        x_bounds: tuple[float | None, float | None] = (None, None),
-        y_bounds: tuple[float | None, float | None] = (None, None),
+        alpha: complex | Sequence[complex] = 0.0,
+        alpha_trainable: bool = False,
+        alpha_bounds: tuple[float | None, float | None] = (0, None),
     ):
         super().__init__(name="Coherent")
-        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
-        self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
+        self.parameters.add_parameter(
+            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128)
+        )
 
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.coherent_state_Abc, x=self.parameters.x, y=self.parameters.y
+                fn=triples.coherent_state_Abc, alpha=self.parameters.alpha
             ),
         ).representation

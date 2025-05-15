@@ -402,9 +402,9 @@ def coherent(draw, num_modes):
     r"""Return a random coherent state."""
     x = draw(array_of_(medium_float, num_modes, num_modes))
     y = draw(array_of_(medium_float, num_modes, num_modes))
-    state = Coherent(0, x=x[0], y=y[0])
+    state = Coherent(0, alpha=x[0] + 1j * y[0])
     for i in range(1, num_modes):
-        state = state >> Coherent(i, x=x[i], y=y[i])
+        state = state >> Coherent(i, alpha=x[i] + 1j * y[i])
     return state
 
 

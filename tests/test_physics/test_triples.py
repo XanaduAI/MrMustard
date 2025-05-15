@@ -43,12 +43,6 @@ class TestTriples:
             match = "shape mismatch"
 
         with pytest.raises(error, match=match):
-            triples.coherent_state_Abc([1, 2], [3, 4, 5])
-
-        with pytest.raises(error, match=match):
-            triples.coherent_state_Abc([1, 2], [3, 4, 5])
-
-        with pytest.raises(error, match=match):
             triples.squeezed_vacuum_state_Abc([1, 2], [3, 4, 5])
 
         with pytest.raises(error, match=match):
@@ -63,12 +57,12 @@ class TestTriples:
         assert math.allclose(c, 1.0)
 
     def test_coherent_state_Abc(self):
-        A1, b1, c1 = triples.coherent_state_Abc(0.1, 0.2)
+        A1, b1, c1 = triples.coherent_state_Abc(0.1 + 0.2j)
         assert math.allclose(A1, math.zeros((1, 1)))
         assert math.allclose(b1, [0.1 + 0.2j])
         assert math.allclose(c1, 0.97530991)
 
-        A2, b2, c2 = triples.coherent_state_Abc(0.1, [0.2, 0.3])
+        A2, b2, c2 = triples.coherent_state_Abc([0.1 + 0.2j, 0.1 + 0.3j])
         assert math.allclose(A2, math.zeros((2, 1, 1)))
         assert math.allclose(b2, [[0.1 + 0.2j], [0.1 + 0.3j]])
         assert math.allclose(c2, [0.97530991 + 0.0j, 0.95122942 + 0.0j])

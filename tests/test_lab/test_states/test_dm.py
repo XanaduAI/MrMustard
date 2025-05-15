@@ -65,18 +65,18 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
     def test_manual_shape(self):
-        dm = Coherent(0, x=1).dm()
+        dm = Coherent(0, 1).dm()
         assert dm.manual_shape == [None, None]
         dm.manual_shape[0] = 19
         assert dm.manual_shape == [19, None]
 
     def test_auto_shape(self):
-        dm = Coherent(0, x=1).dm()
+        dm = Coherent(0, 1).dm()
         assert dm.auto_shape() == (8, 8)
         dm.manual_shape[0] = 1
         assert dm.auto_shape() == (1, 8)
 
-        dm = Coherent(0, x=1).dm() >> Number(1, 10).dual
+        dm = Coherent(0, 1).dm() >> Number(1, 10).dual
         assert dm.auto_shape() == (8, 11, 8, 11)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
@@ -84,7 +84,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_to_from_bargmann(self, modes, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state_in = Coherent(modes, x, y) >> Attenuator(modes, 0.7)
+        state_in = Coherent(modes, x + 1j * y) >> Attenuator(modes, 0.7)
         triple_in = state_in.bargmann_triple()
 
         state_out = DM.from_bargmann((modes,), triple_in, "my_dm")
@@ -115,7 +115,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_normalize(self, coeff, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x, y).dm()
+        state = Coherent(0, x + 1j * y).dm()
         state *= coeff
         normalized = state.normalize()
         assert math.allclose(normalized.probability, 1.0)
@@ -125,7 +125,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     @pytest.mark.parametrize("coeff", [0.5, 0.3])
     def test_normalize_mixture(self, coeff):
-        state = Coherent(0, 1, 1).dm() + Coherent(0, -1, -1).dm()
+        state = Coherent(0, 1 + 1j).dm() + Coherent(0, -1 - 1j).dm()
         state *= coeff
         normalized = state.normalize()
         assert math.allclose(normalized.probability, 1.0)
@@ -149,7 +149,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_to_from_fock(self, modes, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state_in = Coherent(modes, x=x, y=y) >> Attenuator(modes, 0.8)
+        state_in = Coherent(modes, x + 1j * y) >> Attenuator(modes, 0.8)
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock_array(5)
 
@@ -161,7 +161,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert state_in_fock == state_out
 
     def test_to_from_fock_mixture(self):
-        state_in = Coherent(0, x=1, y=2).dm() + Coherent(0, x=-1, y=-2).dm()
+        state_in = Coherent(0, 1 + 2j).dm() + Coherent(0, -1 - 2j).dm()
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock_array(5)
 
@@ -189,7 +189,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_phase_space(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state0 = Coherent(0, x=x, y=y) >> Attenuator(0, 1.0)
+        state0 = Coherent(0, x + 1j * y) >> Attenuator(0, 1.0)
         cov, means, coeff = state0.phase_space(s=0)
         assert cov.shape[:-2] == state0.ansatz.batch_shape
         assert means.shape[:-1] == state0.ansatz.batch_shape
@@ -199,7 +199,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(means, math.astensor([1.0, 2.0]) * math.sqrt(settings.HBAR * 2))
 
     def test_from_phase_space(self):
-        state = Coherent(0, x=1, y=2) >> Attenuator(0, 0.8)
+        state = Coherent(0, 1 + 2j) >> Attenuator(0, 0.8)
         cov, means, coeff = state.phase_space(s=0)
         state1 = DM.from_phase_space([0], (cov, means, coeff))
         assert state1 == state
@@ -222,13 +222,13 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_L2_norm(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x=x, y=y).dm()
+        state = Coherent(0, x + 1j * y).dm()
         L2_norm = state.L2_norm
         assert L2_norm.shape == state.ansatz.batch_shape
         assert math.allclose(L2_norm, 1)
 
     def test_L2_norm_mixture(self):
-        state = Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()
+        state = Coherent(0, 1).dm() + Coherent(0, -1).dm()
         L2_norm = state.L2_norm
         assert L2_norm.shape == state.ansatz.batch_shape[:-1]
         assert math.allclose(L2_norm, 2.03663128)
@@ -246,14 +246,14 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_probability(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x=x, y=y).dm()
+        state = Coherent(0, x + 1j * y).dm()
         prob = state.probability
         assert prob.shape == state.ansatz.batch_shape
         assert math.allclose(prob, 1)
         assert math.allclose(state.to_fock(20).probability, 1)
 
     def test_probability_mixture(self):
-        state = (Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()).normalize()
+        state = (Coherent(0, 1).dm() + Coherent(0, -1).dm()).normalize()
         prob = state.probability
         assert prob.shape == state.ansatz.batch_shape[:-1]
         assert math.allclose(prob, 1)
@@ -263,18 +263,18 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_purity(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(mode=0, x=x, y=y).dm()
+        state = Coherent(mode=0, alpha=x + 1j * y).dm()
         assert math.allclose(state.purity, 1)
         assert state.is_pure
 
     def test_purity_mixture(self):
-        state = Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()
+        state = Coherent(0, 1).dm() + Coherent(0, -1).dm()
         assert math.allclose(state.purity, state.normalize().purity)
         assert not state.is_pure
 
     def test_quadrature_single_mode_dm(self):
         x, y = 1, 2
-        state = Coherent(mode=0, x=x, y=y).dm()
+        state = Coherent(mode=0, alpha=x + 1j * y).dm()
         q = np.linspace(-10, 10, 100)
         quad0 = q
         quad1 = q + 1
@@ -287,7 +287,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_quadrature_multimode_dm(self):
         x, y = 1, 2
-        state = (Coherent(mode=0, x=x, y=y) >> Coherent(mode=1, x=x, y=y)).dm()
+        state = (Coherent(mode=0, alpha=x + 1j * y) >> Coherent(mode=1, alpha=x + 1j * y)).dm()
         q = np.linspace(-10, 10, 100)
         ket = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
         bra = math.kron(
@@ -308,7 +308,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
     def test_quadrature_multivariable_dm(self):
         x, y = 1, 2
-        state = Coherent(mode=0, x=x, y=y).dm() >> Coherent(mode=1, x=x, y=y).dm()
+        state = Coherent(mode=0, alpha=x + 1j * y).dm() >> Coherent(mode=1, alpha=x + 1j * y).dm()
         q1 = np.linspace(-10, 10, 100)
         q2 = np.linspace(-10, 10, 100)
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
@@ -335,12 +335,12 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
     def test_expectation_bargmann_ket(self):
-        ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+        ket = Coherent(0, 1 + 2j) >> Coherent(1, 1 + 3j)
         dm = ket.dm()
 
-        k0 = Coherent(0, x=1, y=2)
-        k1 = Coherent(1, x=1, y=3)
-        k01 = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+        k0 = Coherent(0, 1 + 2j)
+        k1 = Coherent(1, 1 + 3j)
+        k01 = Coherent(0, 1 + 2j) >> Coherent(1, 1 + 3j)
 
         res_k0 = (dm.contract(k0.dual).contract(k0.dual.adjoint)) >> TraceOut(1)
         res_k1 = (dm.contract(k1.dual).contract(k1.dual.adjoint)) >> TraceOut(0)
@@ -351,9 +351,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(dm.expectation(k01), res_k01.ansatz.c)
 
     def test_expectation_bargmann_dm(self):
-        dm0 = Coherent(0, x=1, y=2).dm()
-        dm1 = Coherent(1, x=1, y=3).dm()
-        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
+        dm0 = Coherent(0, 1 + 2j).dm()
+        dm1 = Coherent(1, 1 + 3j).dm()
+        dm01 = (Coherent(0, 1 + 2j) >> Coherent(1, 1 + 3j)).dm()
 
         res_dm0 = (dm01.contract(dm0.dual)) >> TraceOut(1)
         res_dm1 = (dm01.contract(dm1.dual)) >> TraceOut(0)
@@ -364,7 +364,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(dm01.expectation(dm01), res_dm01)
 
     def test_expectation_bargmann_u(self):
-        dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
+        dm = (Coherent(0, 1 + 2j) >> Coherent(1, 1 + 3j)).dm()
         u0 = Dgate(0, 0.1)
         u1 = Dgate(1, 0.2)
         u01 = Dgate(0, 0.3) >> Dgate(1, 0.4)
@@ -378,12 +378,12 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(dm.expectation(u01), res_u01)
 
     def test_expectation_fock(self):
-        ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
+        ket = (Coherent(0, 1 + 2j) >> Coherent(1, 1 + 3j)).to_fock(10)
         dm = ket.dm()
 
-        k0 = Coherent(0, x=1, y=2).to_fock(10)
-        k1 = Coherent(1, x=1, y=3).to_fock(10)
-        k01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
+        k0 = Coherent(0, 1 + 2j).to_fock(10)
+        k1 = Coherent(1, 1 + 3j).to_fock(10)
+        k01 = (Coherent(0, 1 + 2j) >> Coherent(1, 1 + 3j)).to_fock(10)
 
         res_k0 = (dm.contract(k0.dual).contract(k0.dual.adjoint)) >> TraceOut(1)
         res_k1 = (dm.contract(k1.dual).contract(k1.dual.adjoint)) >> TraceOut(0)
@@ -393,9 +393,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(dm.expectation(k1), res_k1)
         assert math.allclose(dm.expectation(k01), res_k01)
 
-        dm0 = Coherent(0, x=1, y=2).to_fock(10).dm()
-        dm1 = Coherent(1, x=1, y=3).to_fock(10).dm()
-        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10).dm()
+        dm0 = Coherent(0, 1 + 2j).to_fock(10).dm()
+        dm1 = Coherent(1, 1 + 3j).to_fock(10).dm()
+        dm01 = (Coherent(0, 1 + 2j) >> Coherent(1, 1 + 3j)).to_fock(10).dm()
 
         res_dm0 = (dm.contract(dm0.dual)) >> TraceOut(1)
         res_dm1 = (dm.contract(dm1.dual)) >> TraceOut(0)
@@ -418,7 +418,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(dm.expectation(u01), res_u01)
 
     def test_expectation_error(self):
-        dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
+        dm = (Coherent(0, 1 + 2j) >> Coherent(1, 1 + 3j)).dm()
 
         op1 = Attenuator(0)
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
@@ -436,7 +436,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_fock_distribution(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x=x, y=y)
+        state = Coherent(0, x + 1j * y)
         assert math.allclose(state.fock_distribution(10), state.dm().fock_distribution(10))
 
     def test_rshift(self):
@@ -476,8 +476,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_is_positive(self):
         assert (Ket.random((2, 9)) >> Attenuator(2) >> Attenuator(9)).is_positive
         assert (
-            Coherent(2, x=[1, 1, 1], y=2)
-            >> Coherent(9, x=[1, 1, 1], y=2)
+            Coherent(2, alpha=[1 + 2j, 1 + 2j, 1 + 2j])
+            >> Coherent(9, alpha=[1 + 2j, 1 + 2j, 1 + 2j])
             >> Attenuator(2)
             >> Attenuator(9)
         ).is_positive
@@ -496,7 +496,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         rho = 2 * rho
         assert not rho.is_physical
         assert Ket.random(modes).dm().is_physical
-        assert Coherent(0, x=[1, 1, 1]).dm().is_physical
+        assert Coherent(0, alpha=[1, 1, 1]).dm().is_physical
 
     def test_fock_array_ordering(self):
         rho = (Number(0, 0) + 1j * Number(0, 1)).dm()
@@ -506,8 +506,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
             rho_fock, math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]])
         )
         assert math.allclose(
-            Coherent(0, x=1).dm().fock_array(8, standard_order=True),
-            Coherent(0, x=[1, 1, 1]).dm().fock_array(8, standard_order=True),
+            Coherent(0, alpha=1).dm().fock_array(8, standard_order=True),
+            Coherent(0, alpha=[1, 1, 1]).dm().fock_array(8, standard_order=True),
         )
 
     def test_formal_stellar_decomposition(self):
