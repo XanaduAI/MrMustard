@@ -223,7 +223,7 @@ class PolyExpAnsatz(Ansatz):
         if self.num_derived_vars == 0:
             W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
 
-            A = math.einsum("ji,...jk, kl->...il", W, self.A, W)
+            A = math.einsum("ji,...jk,kl->...il", W, self.A, W)
             b = math.einsum("ij,...j->...i", W, self.b)
             c = self.c / (2 * settings.HBAR) ** (n // 2)
             return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
