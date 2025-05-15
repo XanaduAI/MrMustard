@@ -237,7 +237,7 @@ def test_complex_gaussian_integral_1_not_batched():
 
     A1, b1, c1 = triples.vacuum_state_Abc(2)
     A2, b2, c2 = triples.displacement_gate_Abc(0.1 + 0.3j)
-    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(0.1 + 0.3j)
+    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(0.1, 0.3)
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
 
