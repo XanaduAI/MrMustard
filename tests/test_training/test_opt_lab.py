@@ -606,8 +606,7 @@ class TestOptimizer:
 
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
-        assert og_x != disp.parameters.x.value
-        assert og_y != disp.parameters.y.value
+        assert og_x != disp.parameters.alpha.value
 
     def test_bsgate_grad_from_fock(self):
         """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
