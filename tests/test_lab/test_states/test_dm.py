@@ -532,7 +532,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         core, phi = rho.formal_stellar_decomposition([0, 3])
 
         # displacement test
-        rho = DM.random([0, 1]) >> Dgate(0, 0.5)
+        rho = DM.random([0, 1]) >> Dgate(0, 0.5) >> Dgate(1, 0.2)
         core, phi = rho.formal_stellar_decomposition([0])
         assert (core >> Vacuum(1).dual).normalize() == Vacuum((0,)).dm()
         assert rho == core >> phi
@@ -610,3 +610,12 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert math.allclose(core.dm().contract(phi, mode="zip").ansatz.A, sigma.ansatz.A)
         assert math.allclose(core.dm().contract(phi, mode="zip").ansatz.b, sigma.ansatz.b)
+
+    def test_wigner(self):
+
+        ans = Vacuum(0).dm().wigner
+        x = np.linspace(0, 1, 100)
+
+        solution = np.exp(-(x**2)) / np.pi
+
+        assert math.allclose(ans(x, 0), solution)

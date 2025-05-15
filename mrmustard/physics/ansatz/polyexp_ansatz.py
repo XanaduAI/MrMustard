@@ -205,6 +205,47 @@ class PolyExpAnsatz(Ansatz):
         return self.A.shape[-1]
 
     @property
+    def PS(self) -> PolyExpAnsatz:
+        r"""
+        The ansatz defined using real (i.e., phase-space) variables.
+        """
+        n = self.A.shape[-1]
+        if n % 2:
+            raise ValueError(
+                f"A phase space ansatz must have even number of indices. (n={n} is odd)"
+            )
+
+        if self.num_derived_vars == 0:
+            W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
+
+            A = math.einsum("ji, ...jk, kl-> ...il", W, self.A, W)
+            b = math.einsum("ij, ...j-> ...i", W, self.b)
+            c = self.c / (2 * settings.HBAR) ** (n // 2)
+            return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
+
+        else:
+            if self.num_derived_vars != 2:
+                raise ValueError(
+                    f"This transformation supports 2 core and 0 or 2 derived variables"
+                )
+            A_tmp = self.A
+
+            A_tmp = A_tmp[..., [0, 2, 1, 3], :][..., [0, 2, 1, 3]]
+            b = self.b[..., [0, 2, 1, 3]]
+            c = c_in_PS(self.c)  # implements PS transformations on ``c``
+
+            W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
+
+            A = math.einsum("ji, ...jk, kl-> ...il", W, A_tmp, W)
+            b = math.einsum("ij, ...j-> ...i", W, b)
+            c = c / (2 * settings.HBAR)
+
+            A_final = A[..., [0, 2, 1, 3], :][..., :, [0, 2, 1, 3]]
+            b_final = b[..., [0, 2, 1, 3]]
+
+            return PolyExpAnsatz(A_final, b_final, c, lin_sup=self._lin_sup)
+
+    @property
     def scalar(self) -> Scalar:
         r"""
         The scalar part of the ansatz, i.e. F(0)
@@ -859,10 +900,10 @@ class PolyExpAnsatz(Ansatz):
                - *b are the batch dimensions of the combined inputs.
                - *L is the batch shape of the ansatz.
         """
-        z_only = [arr for arr in z_inputs if arr is not None]
+        z_only = [math.cast(arr, dtype=math.complex128) for arr in z_inputs if arr is not None]
         broadcasted_z = math.broadcast_arrays(*z_only)
         z = (
-            math.cast(math.stack(broadcasted_z, axis=-1), dtype=math.complex128)
+            math.stack(broadcasted_z, axis=-1)
             if broadcasted_z
             else math.astensor([], dtype=math.complex128)
         )
