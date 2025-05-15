@@ -612,3 +612,12 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         assert math.allclose(core.dm().contract(phi, mode="zip").ansatz.A, sigma.ansatz.A)
         assert math.allclose(core.dm().contract(phi, mode="zip").ansatz.b, sigma.ansatz.b)
+
+    def test_wigner(self):
+
+        ans = Vacuum(0).dm().wigner
+        x = np.linspace(0, 1, 100)
+
+        solution = np.exp(-(x**2)) / np.pi
+
+        assert math.allclose(ans(x, 0), solution)

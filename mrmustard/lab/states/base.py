@@ -43,7 +43,7 @@ from mrmustard.utils.typing import (
 )
 
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoChar, BtoQ
+from ..circuit_components_utils import BtoChar, BtoQ, BtoPS
 from ..transformations import Transformation
 
 __all__ = ["State"]
@@ -758,3 +758,25 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
+
+    @property
+    def wigner(self):
+        r"""
+        Returns the Wigner function of this state in phase space as an ``Ansatz``.
+
+        .. code-block::
+
+            >>> import numpy as np
+            >>> from mrmustard.lab import Ket
+
+            >>> state = Ket.random([0])
+            >>> x = np.linspace(-5, 5, 100)
+
+            >>> assert np.all(state.wigner(x,0).real >= 0)
+        """
+        if isinstance(self.ansatz, PolyExpAnsatz):
+            return (self >> BtoPS(self.modes, s=0)).ansatz.PS
+        else:
+            raise ValueError(
+                "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first."
+            )
