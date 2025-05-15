@@ -241,7 +241,7 @@ class PolyExpAnsatz(Ansatz):
 
             W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
 
-            A = math.einsum("ji,...jk, kl->...il", W, A_tmp, W)
+            A = math.einsum("ji,...jk,kl->...il", W, A_tmp, W)
             b = math.einsum("ij,...j->...i", W, b)
             c = c / (2 * settings.HBAR)
 
