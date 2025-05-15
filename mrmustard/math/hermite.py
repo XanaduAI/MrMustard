@@ -30,8 +30,8 @@ from .lattice import strategies
 # ~~~~~~~~~~~~~~~~~
 
 
-@jax.custom_vjp
-@partial(jax.jit, static_argnames=["shape", "stable"])
+@partial(jax.custom_vjp, nondiff_argnums=(3, 4))
+@partial(jax.jit, static_argnums=(3, 4))
 def hermite_renormalized_unbatched(
     A: jnp.ndarray,
     b: jnp.ndarray,
@@ -39,12 +39,6 @@ def hermite_renormalized_unbatched(
     shape: tuple[int],
     stable: bool,
 ) -> jnp.ndarray:
-    shape = tuple(shape)
-    ret, _ = hermite_renormalized_unbatched_fwd(A, b, c, shape, stable)
-    return ret
-
-
-def hermite_renormalized_unbatched_fwd(A, b, c, shape, stable):
     if stable:
         G = jax.pure_callback(
             lambda A, b, c: strategies.stable_numba(shape, np.array(A), np.array(b), np.array(c)),
@@ -61,10 +55,15 @@ def hermite_renormalized_unbatched_fwd(A, b, c, shape, stable):
             b,
             c,
         )
-    return G, (G, A, b, c)
+    return G
 
 
-def hermite_renormalized_unbatched_bwd(res, g):
+def hermite_renormalized_unbatched_fwd(A, b, c, shape, stable):
+    G = hermite_renormalized_unbatched(A, b, c, shape, stable)
+    return (G, (G, A, b, c))
+
+
+def hermite_renormalized_unbatched_bwd(shape, stable, res, g):
     G, A, b, c = res
     dLdA, dLdB, dLdC = jax.pure_callback(
         lambda G, c, g: strategies.vanilla_vjp_numba(np.array(G), np.array(c), np.array(g)),
@@ -77,7 +76,7 @@ def hermite_renormalized_unbatched_bwd(res, g):
         c,
         g,
     )
-    return dLdA, dLdB, dLdC, None, None
+    return dLdA, dLdB, dLdC
 
 
 hermite_renormalized_unbatched.defvjp(
