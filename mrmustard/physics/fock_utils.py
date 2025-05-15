@@ -415,23 +415,22 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float
     return homodyne_sample, probability_sample
 
 
-@jax.custom_vjp
+@partial(jax.custom_vjp, nondiff_argnums=(2, 3))
+@partial(jax.jit, static_argnums=(2, 3))
 def displacement(x, y, shape, tol=1e-15):
     r"""creates a single mode displacement matrix"""
-    shape = tuple(shape)
-    ret, _ = displacement_fwd(x, y, shape, tol)
-    return ret
-
-
-def displacement_fwd(x, y, shape, tol):
-    gate = math.conditional(
+    return math.conditional(
         math.sqrt(x * x + y * y) > tol,
         partial(temp_true_branch, shape),
         partial(temp_false_branch, shape),
         x,
         y,
     )
-    return gate, (gate, shape, x, y)
+
+
+def displacement_fwd(x, y, shape, tol):
+    gate = displacement(x, y, shape, tol)
+    return gate, (gate, x, y)
 
 
 def temp_true_branch(shape, x, y):
@@ -449,8 +448,8 @@ def temp_false_branch(shape, x, y):
     return math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
 
-def displacement_bwd(res, g):
-    gate, shape, x, y = res
+def displacement_bwd(shape, tol, res, g):
+    gate, x, y = res
 
     dD_da, dD_dac = jax.pure_callback(
         lambda gate, x, y: strategies.jacobian_displacement(
@@ -465,7 +464,7 @@ def displacement_bwd(res, g):
     dL_dac = math.sum(math.conj(g) * dD_dac + g * math.conj(dD_da))
     dLdx = 2 * math.real(dL_dac)
     dLdy = 2 * math.imag(dL_dac)
-    return (dLdx, dLdy, None, None)
+    return dLdx, dLdy
 
 
 displacement.defvjp(displacement_fwd, displacement_bwd)
