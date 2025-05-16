@@ -26,7 +26,7 @@ __all__ = ["wigner_discretized"]
 
 
 @njit
-def make_grid(q_vec: np.ndarray, p_vec: np.ndarray, hbar: float):
+def make_grid(q_vec, p_vec, hbar):  # pragma: no cover
     r"""Returns two coordinate matrices `Q` and `P` from coordinate vectors
     `q_vec` and `p_vec`, along with the grid over which Wigner functions can be
     discretized.
