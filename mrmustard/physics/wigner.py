@@ -26,7 +26,7 @@ __all__ = ["wigner_discretized"]
 
 
 @njit
-def make_grid(q_vec, p_vec, hbar):  # pragma: no cover
+def make_grid(q_vec, p_vec, hbar):
     r"""Returns two coordinate matrices `Q` and `P` from coordinate vectors
     `q_vec` and `p_vec`, along with the grid over which Wigner functions can be
     discretized.
@@ -115,6 +115,15 @@ def wigner_discretized(rho, q_vec, p_vec):
     method = settings.DISCRETIZATION_METHOD
 
     rho = math.asnumpy(rho)
+    
+    q_vec = np.asarray(q_vec)
+    p_vec = np.asarray(p_vec)
+    
+    if q_vec.ndim == 0:
+        q_vec = np.array([q_vec])
+    if p_vec.ndim == 0:
+        p_vec = np.array([p_vec])
+    
     if method == "iterative":
         return _wigner_discretized_iterative(rho, q_vec, p_vec, hbar)
     return _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar)
