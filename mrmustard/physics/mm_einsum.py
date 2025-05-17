@@ -15,11 +15,13 @@
 """Implementation of the mm_einsum function."""
 
 from __future__ import annotations
+from typing import Literal
 from mrmustard import math
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.ansatz.base import Ansatz
 from mrmustard.physics.triples import identity_Abc
 from numpy.typing import ArrayLike
+from opt_einsum.paths import ssa_to_linear
 
 
 def _ints(seq: list[int | str]) -> list[int]:
@@ -30,11 +32,24 @@ def _strings(seq: list[int | str]) -> list[str]:
     return [i for i in seq if isinstance(i, str)]
 
 
+def ua_to_linear(ua: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Convert a path with union assignment ids to a path with recycled linear ids."""
+    sets = {frozenset({i}) for pair in ua for i in pair}
+    path = []
+    for a, b in ua:
+        to_union = [s for s in sets if a in s or b in s]
+        sets -= set(to_union)
+        sets.add(to_union[0] | to_union[1])
+        path.append((min(to_union[0]), min(to_union[1])))
+    return path
+
+
 def mm_einsum(
     *args: Ansatz | list[int | str],
     output: list[int | str],
     contraction_order: list[tuple[int, int]],
     fock_dims: dict[int, int],
+    path_type: Literal["SSA", "LA", "UA"] = "LA",
 ) -> PolyExpAnsatz | ArrayAnsatz | ArrayLike:
     r"""
     Contracts a network of Ansatze according to a custom contraction order, supporting both Fock
@@ -43,14 +58,24 @@ def mm_einsum(
     This function generalizes the concept of Einstein summation (einsum) to quantum states and
     operators, allowing for flexible contraction of complex tensor networks in quantum optics.
 
+    The path_type argument controls the style in which the contraction path is expressed.
+    - LA pops the contrated ansatze from the list and adds the result to the end.
+    If [a1,a2,a3] is the list of ansatze the contraction order is [(0,1), (0,2)] means a3 @ (a1 @ a2).
+    - SSA uses a dictionary to keep track of the contracted ansatze, so that there can be static single
+    assignment to each ansatz. If [a1,a2,a3] is the list of ansatze the contraction order [(0,1), (0,2)]
+    means (a1 @ a2) @ a3.
+
     Args:
         *args: Alternating sequence of Ansatz objects and their associated index lists.
             Each Ansatz is followed by a list of indices (strings for batch axes, integers for Hilbert space indices).
         output (list[int | str]): The indices (batch names and Hilbert space indices) to keep in the output.
         contraction_order (list[tuple[int, int]]): The order in which to contract the Ansatze,
             specified as pairs of their positions in the input.
-        fock_dims (dict[int, int]): Mapping from Hilbert space indices (int) to Fock space dimensions.
-            If a dimension is 0, the corresponding Ansatz is converted to Bargmann (PolyExpAnsatz) form.
+        fock_dims (dict[int, int | None]): Mapping from Hilbert space indices (int) to Fock space dimensions.
+            If a dimension is 0, the *entire* corresponding Ansatz is converted to Bargmann (PolyExpAnsatz) form.
+            If a key is not present, the dimension is taken from the Ansatz.
+        path_type (str): Single Static Assigment ("SSA"), Linear Assignment ("LA"), or Union Assignment ("UA").
+            Default is "LA".
 
     Returns:
         PolyExpAnsatz | ArrayAnsatz | ArrayLike: The contracted Ansatz or array, depending on the output indices and Fock dimensions.
@@ -88,45 +113,117 @@ def mm_einsum(
     output = [names_to_chars[s] for s in _strings(output)] + _ints(output)
 
     # --- perform contractions ---
+    if path_type == "SSA":
+        contraction_order = ssa_to_linear(contraction_order)
+    elif path_type == "UA":
+        contraction_order = ua_to_linear(contraction_order)
     for a, b in contraction_order:
-        ansatz_a, ansatz_b = ansatze[a], ansatze[b]
         core_idx_a, core_idx_b = _ints(indices[a]), _ints(indices[b])
         common_core_idx = set(core_idx_a) & set(core_idx_b)
-        common_shape = [fock_dims[i] for i in common_core_idx]
-        force_bargmann = all(s == 0 for s in common_shape)
-        force_fock = not any(s == 0 for s in common_shape)
-        if force_bargmann:
-            ansatz_a = to_bargmann(ansatz_a)
-            ansatz_b = to_bargmann(ansatz_b)
-        elif force_fock:
-            ansatz_a = to_fock(ansatz_a, [fock_dims[i] for i in core_idx_a])
-            ansatz_b = to_fock(ansatz_b, [fock_dims[i] for i in core_idx_b])
-        else:
-            raise ValueError(f"Shared indices of mixed type ({common_shape}) for ({a}, {b}).")
-        idx_out = prepare_idx_out(indices, a, b, output)
-        ansatze[a] = ansatz_a.contract(ansatz_b, indices[a], indices[b], idx_out)
-        indices[a] = idx_out
-        ansatze.pop(b)
-        indices.pop(b)
+        force_bargmann = all(fock_dims[i] == 0 for i in common_core_idx)
+    force_fock = all(fock_dims[i] != 0 for i in common_core_idx)
+    if force_bargmann:
+        ansatz_a = to_bargmann(ansatze[a])
+        ansatz_b = to_bargmann(ansatze[b])
+    elif force_fock:
+        shape_a, shape_b = get_shapes(ansatze[a], ansatze[b], core_idx_a, core_idx_b, fock_dims)
+        ansatz_a = to_fock(ansatze[a], shape_a)
+        ansatz_b = to_fock(ansatze[b], shape_b)
+    else:
+        raise ValueError(f"Attempted contraction of {a} and {b} with mixed-type indices.")
+    idx_out = prepare_idx_out(indices, a, b, output)
+    result = ansatz_a.contract(ansatz_b, indices[a], indices[b], idx_out)
+    ansatze.pop(a), ansatze.pop(b), indices.pop(a), indices.pop(b)
+    ansatze.append(result)
+    indices.append(idx_out)
 
+    # --- reorder and convert the output ---
     if len(ansatze) > 1:
         raise ValueError("More than one ansatz left after contraction.")
 
-    # --- reorder the output ---
     result = ansatze[0]
-    final_idx = indices[0]
+    final_idx_str, final_idx_int = _strings(indices[0]), _ints(indices[0])
+    output_idx_str, output_idx_int = _strings(output), _ints(output)
 
-    if len(output_idx_str := _strings(output)) > 1:
-        final_idx_str = _strings(final_idx)
-        batch_perm = [final_idx_str.index(i) for i in output_idx_str]
-        result = result.reorder_batch(batch_perm)
-
-    if len(output_idx_int := _ints(output)) > 1:
-        final_idx_int = _ints(final_idx)
-        index_perm = [final_idx_int.index(i) for i in output_idx_int]
-        result = result.reorder(index_perm)
-
+    if len(output_idx_str) > 1:
+        result = result.reorder_batch([final_idx_str.index(i) for i in output_idx_str])
+    if len(output_idx_int) > 1:
+        result = result.reorder([final_idx_int.index(i) for i in output_idx_int])
+    if final_idx_int and all(fock_dims[i] == 0 for i in final_idx_int):
+        result = to_bargmann(result)
     return result
+
+
+SHAPE = tuple[int, ...]
+
+
+def get_shapes(
+    ansatz_a: Ansatz,
+    ansatz_b: Ansatz,
+    core_idx_a: list[int],
+    core_idx_b: list[int],
+    fock_dims: dict[int, int],
+) -> tuple[SHAPE, SHAPE]:
+    r"""
+    Gets Fock shapes for two ansatze. If the Fock dimension is not set, it is inferred from the ansatz.
+
+    Args:
+        ansatz_a: The first ansatz.
+        ansatz_b: The second ansatz.
+        core_idx_a: The core indices of the first ansatz.
+        core_idx_b: The core indices of the second ansatz.
+        fock_dims: The Fock dimensions of the indices.
+
+    Returns:
+        tuple[SHAPE, SHAPE]: The Fock shapes of the two ansatze.
+    """
+
+    def get_shape_for_idx(
+        idx: int, ansatz: Ansatz, core_idx: list[int], fock_dims: dict[int, int]
+    ) -> int:
+        if idx in fock_dims:
+            return fock_dims[idx]
+        if not isinstance(ansatz, ArrayAnsatz):
+            raise ValueError(f"Fock dimension of index {idx} is not set.")
+        return ansatz.core_shape[core_idx.index(idx)]
+
+    def get_common_shape(
+        idx: int,
+        ansatz_a: Ansatz,
+        ansatz_b: Ansatz,
+        core_idx_a: list[int],
+        core_idx_b: list[int],
+        fock_dims: dict[int, int],
+    ) -> int:
+        if idx in fock_dims:
+            return fock_dims[idx]
+        dim = 1_000_000_000
+        if isinstance(ansatz_a, ArrayAnsatz):
+            dim = min(dim, ansatz_a.core_shape[core_idx_a.index(idx)])
+        if isinstance(ansatz_b, ArrayAnsatz):
+            dim = min(dim, ansatz_b.core_shape[core_idx_b.index(idx)])
+        return dim
+
+    common_core_idx = set(core_idx_a) & set(core_idx_b)
+    leftover_a = set(core_idx_a) - common_core_idx
+    leftover_b = set(core_idx_b) - common_core_idx
+
+    common_shape = {
+        i: get_common_shape(i, ansatz_a, ansatz_b, core_idx_a, core_idx_b, fock_dims)
+        for i in common_core_idx
+    }
+
+    shape_a = {
+        **common_shape,
+        **{i: get_shape_for_idx(i, ansatz_a, core_idx_a, fock_dims) for i in leftover_a},
+    }
+
+    shape_b = {
+        **common_shape,
+        **{i: get_shape_for_idx(i, ansatz_b, core_idx_b, fock_dims) for i in leftover_b},
+    }
+
+    return tuple(shape_a[i] for i in core_idx_a), tuple(shape_b[i] for i in core_idx_b)
 
 
 def prepare_idx_out(
