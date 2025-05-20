@@ -14,6 +14,7 @@
 
 """Tests for the mm_einsum function."""
 
+import pytest
 import numpy as np
 import sparse
 
@@ -35,6 +36,7 @@ class TestMmEinsum:
     u01 = Unitary.random([0, 1])
     f0 = Ket.random([0]).to_fock()
     f1 = Ket.random([0]).to_fock()
+    f01 = Ket.random([0, 1]).to_fock()
 
     def test_with_two_single_mode_gaussians(self):
         """Test that mm_einsum works for two gaussians."""
@@ -125,10 +127,24 @@ class TestMmEinsum:
             [0],
             output=[],
             contraction_path=[(0, 1)],
-            fock_dims={0: 35},
+            fock_dims={},
         )
         assert isinstance(res, ArrayAnsatz)
         assert math.allclose(res.scalar, self.f0 >> self.f0.dual)
+
+    def test_single_mode_fock_leftover_index(self):
+        """Test that mm_einsum works for a single mode fock state."""
+        res = mm_einsum(
+            self.f0.ansatz,
+            [0],
+            self.f01.ansatz.conj,
+            [0, 1],
+            output=[1],
+            contraction_path=[(0, 1)],
+            fock_dims={},
+        )
+        assert isinstance(res, ArrayAnsatz)
+        assert res == (self.f0 >> self.f01.dual).ansatz
 
     def test_single_mode_fock_with_batch(self):
         """Test that mm_einsum works for a single mode fock state with batch dimensions."""
@@ -198,6 +214,21 @@ class TestMmEinsum:
         )
         assert isinstance(res, ArrayAnsatz)
         assert res == ((s1 >> s0 >> bs01).to_fock((20, 20)) >> f1.dual).ansatz
+
+        with pytest.raises(ValueError):
+            res = mm_einsum(
+                s0.ansatz,
+                [0],
+                s1.ansatz,
+                [1],
+                bs01.ansatz,
+                [2, 3, 0, 1],
+                f1.dual.ansatz,
+                [3],
+                output=[2],
+                contraction_path=[(0, 2), (0, 2), (0, 1)],
+                fock_dims={0: 0, 1: 0, 3: f1.auto_shape()[0]},
+            )
 
     def test_2mode_staircase_bargmann(self):
         """Test that mm_einsum works for a 2 mode staircase bargmann state."""

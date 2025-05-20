@@ -121,8 +121,8 @@ def mm_einsum(
     for a, b in contraction_path:
         core_idx_a, core_idx_b = _ints(indices[a]), _ints(indices[b])
         common_core_idx = set(core_idx_a) & set(core_idx_b)
-        force_bargmann = all(fock_dims[i] == 0 for i in common_core_idx)
-        force_fock = all(fock_dims[i] != 0 for i in common_core_idx)
+        force_bargmann = all(fock_dims.get(i, 1) == 0 for i in common_core_idx)
+        force_fock = all(fock_dims.get(i, 1) != 0 for i in common_core_idx)
         if force_bargmann:
             ansatz_a = to_bargmann(ansatze[a])
             ansatz_b = to_bargmann(ansatze[b])
@@ -152,7 +152,7 @@ def mm_einsum(
         result = result.reorder_batch([final_idx_str.index(i) for i in output_idx_str])
     if len(output_idx_int) > 1:
         result = result.reorder([final_idx_int.index(i) for i in output_idx_int])
-    if final_idx_int and all(fock_dims[i] == 0 for i in final_idx_int):
+    if final_idx_int and all(fock_dims.get(i, 1) == 0 for i in final_idx_int):
         result = to_bargmann(result)
     return result
 
