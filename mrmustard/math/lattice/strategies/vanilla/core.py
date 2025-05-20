@@ -16,6 +16,10 @@
 
 import numpy as np
 from numba import njit
+from jax import jit, lax
+import jax.numpy as jnp
+from math import prod
+from functools import partial
 
 from mrmustard.utils.typing import ComplexTensor
 
@@ -159,7 +163,6 @@ def stable_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: n
     # initialize flat index and n-dim iterator
     flat_index = 0
     nd_index = np.ndindex(shape)
-
     # write vacuum amplitude
     G[flat_index] = c
     next(nd_index)
@@ -193,5 +196,100 @@ def stable_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: n
 
         # write the average
         G[flat_index] = vals / num_pivots
+
+    return G.reshape(shape)
+
+
+@partial(jit, static_argnums=(0,))
+def stable_jax(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
+    r"""JAX version of the stable algorithm for calculating the fock representation of a Gaussian tensor.
+    This implementation works on flattened tensors and reshapes the tensor before returning.
+
+    The algorithm implements the flattened version of the following recursion which
+    calculates the Fock amplitude at index :math:`k` using all available pivots at index :math:`k - 1_i`
+    for all :math:`i`, and their neighbours at indices :math:`k - 1_i - 1_j`:
+
+    .. math::
+
+         G_{k} = \frac{1}{N}\sum_i\frac{1}{\sqrt{k_i}} \left[b_{i} G_{k-1_i} + \sum_j A_{ij} \sqrt{k_j - \delta_{ij}} G_{k-1_i-1_j} \right]
+
+    where :math:`N` is the number of valid pivots for the :math:`k`-th lattice point, :math:`1_i` is
+    the vector of zeros with a 1 at index :math:`i`, and :math:`\delta_{ij}` is the Kronecker delta.
+
+    Args:
+        shape (tuple[int, ...]): shape of the output tensor
+        A (jnp.ndarray): A matrix of the Bargmann representation
+        b (jnp.ndarray): b vector of the Bargmann representation
+        c (complex): vacuum amplitude
+
+    Returns:
+        jnp.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
+    """
+    SQRT = jnp.sqrt(np.arange(100000))
+
+    def temp(vals, num_pivots, flat_index, strides, b, A, nd_idx, G):
+        num_pivots = num_pivots + 1
+        pivot = flat_index - strides[i]
+
+        # contribution from i-th pivot
+        val = b[i] * G[pivot]
+
+        # contributions from lower neighbours of the pivot
+        # note we split lower neighbours in 3 parts (j<i, j==i, i<j)
+        # so that delta_ij is just 1 for j==i, and 0 elsewhere.
+        for j in range(i):
+            val += A[i, j] * SQRT[nd_idx[j]] * G[pivot - strides[j]]
+
+        val += A[i, i] * SQRT[nd_idx[i] - 1] * G[pivot - strides[i]]
+
+        for j in range(i + 1, D):
+            val += A[i, j] * SQRT[nd_idx[j]] * G[pivot - strides[j]]
+
+        # accumulate the contribution from the i-th pivot
+        vals = vals + val / SQRT[nd_idx[i]]
+
+        return vals, num_pivots
+
+    shape_arr = jnp.array(shape)
+    flat_shape = prod(shape)
+
+    D = b.shape[-1]
+
+    # calculate the strides (e.g. (100,10,1) for shape (10,10,10))
+    strides = jnp.ones_like(shape_arr)
+    for i in range(D - 1, 0, -1):
+        strides = strides.at[i - 1].set(strides[i] * shape[i])
+
+    # initialize flat output tensor
+    G = jnp.zeros(flat_shape, dtype=jnp.complex128)
+
+    # initialize flat index and n-dim iterator
+    flat_index = 0
+    nd_index = (jnp.unravel_index(i, shape) for i in range(prod(shape)))
+    # write vacuum amplitude
+    G = G.at[0].set(c)
+    next(nd_index)
+
+    for nd_idx in nd_index:
+        flat_index += 1
+        num_pivots = 0
+        vals = 0 + 0j
+
+        for i in range(D):
+            vals, num_pivots = lax.cond(
+                nd_idx[i] == 0,
+                lambda vals, num_pivots, *args: (vals, num_pivots),
+                temp,
+                vals,
+                num_pivots,
+                flat_index,
+                strides,
+                b,
+                A,
+                nd_idx,
+                G,
+            )
+
+        G = G.at[flat_index].set(vals / num_pivots)
 
     return G.reshape(shape)

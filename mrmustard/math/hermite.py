@@ -40,13 +40,7 @@ def hermite_renormalized_unbatched(
     stable: bool,
 ) -> jnp.ndarray:
     if stable:
-        G = jax.pure_callback(
-            lambda A, b, c: strategies.stable_numba(shape, np.array(A), np.array(b), np.array(c)),
-            jax.ShapeDtypeStruct(shape, jnp.complex128),
-            A,
-            b,
-            c,
-        )
+        G = strategies.stable_jax(shape, A, b, c)
     else:
         G = jax.pure_callback(
             lambda A, b, c: strategies.vanilla_numba(shape, np.array(A), np.array(b), np.array(c)),
