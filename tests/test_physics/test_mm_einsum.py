@@ -44,7 +44,7 @@ class TestMmEinsum:
             self.g1.ansatz.conj,
             [0],
             output=[],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
@@ -58,7 +58,7 @@ class TestMmEinsum:
             self.g0123.ansatz.conj,
             [0, 1, 2, 3],
             output=[],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
@@ -74,7 +74,7 @@ class TestMmEinsum:
             self.u01.ansatz,
             [2, 3, 0, 1],
             output=[2, 3],
-            contraction_order=[(0, 2), (0, 1)],
+            contraction_path=[(0, 2), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
@@ -90,7 +90,7 @@ class TestMmEinsum:
             self.g1.ansatz.conj,
             [0],
             output=["hello"],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
@@ -107,7 +107,7 @@ class TestMmEinsum:
             self.g0123.ansatz.conj,
             [0, 1, 2, 3],
             output=["hello"],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
@@ -124,7 +124,7 @@ class TestMmEinsum:
             self.f0.ansatz.conj,
             [0],
             output=[],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 35},
         )
         assert isinstance(res, ArrayAnsatz)
@@ -139,7 +139,7 @@ class TestMmEinsum:
             self.f1.ansatz.conj,
             [0],
             output=["hello"],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 20},
         )
         assert isinstance(res, ArrayAnsatz)
@@ -159,7 +159,7 @@ class TestMmEinsum:
             f2,
             ["hello", 0, 1],
             output=["world"],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 20, 1: 20},
         )
         assert isinstance(res, ArrayAnsatz)
@@ -172,7 +172,7 @@ class TestMmEinsum:
             self.f0.ansatz.conj,
             [0],
             output=[],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
@@ -193,7 +193,7 @@ class TestMmEinsum:
             f1.dual.ansatz,
             [3],
             output=[2],
-            contraction_order=[(0, 2), (0, 1), (0, 1)],
+            contraction_path=[(0, 2), (0, 2), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 20, 3: f1.auto_shape()[0]},
         )
         assert isinstance(res, ArrayAnsatz)
@@ -215,8 +215,9 @@ class TestMmEinsum:
             f1.dual.ansatz,
             [3],
             output=[2],
-            contraction_order=[(0, 2), (0, 1), (0, 1)],
+            contraction_path=[(0, 2), (1, 2), (2, 3)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
+            path_type="UA",
         )
         assert isinstance(res, PolyExpAnsatz)
         assert res == ((s1 >> s0 >> bs01) >> f1.dual.to_bargmann()).ansatz
@@ -248,8 +249,9 @@ class TestMmEinsum:
             f2.dual.ansatz,
             [6],
             output=[3],
-            contraction_order=[(0, 3), (0, 1), (1, 2), (1, 2), (1, 2), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 20, 4: d1 + d2, 5: d1, 6: d2},
+            contraction_path=[(0, 3), (1, 7), (2, 4), (5, 9), (6, 10), (8, 11)],
+            path_type="SSA",
         )
         assert isinstance(res, ArrayAnsatz)
         assert (
@@ -286,7 +288,7 @@ class TestMmEinsum:
             f2.dual.ansatz,
             [6],
             output=[3],
-            contraction_order=[(0, 3), (0, 1), (1, 2), (1, 2), (1, 2), (0, 1)],
+            contraction_path=[(0, 3), (0, 1), (1, 2), (1, 2), (1, 2), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0},
         )
         assert isinstance(res, PolyExpAnsatz)
@@ -336,8 +338,9 @@ class TestMmEinsum:
             g0.dual.ansatz,
             [3],
             output=["world", "hello"],
-            contraction_order=[(0, 3), (0, 1), (1, 2), (1, 2), (1, 2), (0, 1), (0, 1)],
+            contraction_path=[(0, 3), (0, 6), (4, 5), (0, 1), (2, 3), (1, 2), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 20, 4: d1 + d2, 5: d1, 6: d2},
+            path_type="LA",
         )
 
         assert math.allclose(
@@ -377,7 +380,7 @@ class TestMmEinsum:
             r,
             [0],
             output=[0],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: d},
         )
         assert isinstance(res, ArrayAnsatz)
@@ -392,7 +395,7 @@ class TestMmEinsum:
             g.conj,
             [0],
             output=[],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 10},  # force fock
         )
         assert res.batch_shape == ()
@@ -406,7 +409,7 @@ class TestMmEinsum:
             g.conj,
             [0],
             output=[],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 0},  # force bargmann
         )
         assert res.batch_shape == (4,)
@@ -425,7 +428,7 @@ class TestMmEinsum:
             f0_sparse,
             [0],
             output=[],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 20},
         )
         assert isinstance(res, ArrayAnsatz)
@@ -446,7 +449,7 @@ class TestMmEinsum:
             f0_sparse,
             [1],
             output=[0],
-            contraction_order=[(0, 1)],
+            contraction_path=[(0, 1)],
             fock_dims={0: 20, 1: 20},
         )
         assert isinstance(res, ArrayAnsatz)

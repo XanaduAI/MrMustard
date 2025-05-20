@@ -34,21 +34,22 @@ def _strings(seq: list[int | str]) -> list[str]:
 
 def ua_to_linear(ua: list[tuple[int, int]]) -> list[tuple[int, int]]:
     """Convert a path with union assignment ids to a path with recycled linear ids."""
-    sets = {frozenset({i}) for pair in ua for i in pair}
+    sets = [{i} for i in sorted({j for pair in ua for j in pair})]
     path = []
     for a, b in ua:
         to_union = [s for s in sets if a in s or b in s]
-        sets -= set(to_union)
-        sets.add(to_union[0] | to_union[1])
-        path.append((min(to_union[0]), min(to_union[1])))
+        a_, b_ = sorted([sets.index(u) for u in to_union])
+        sets.pop(b_), sets.pop(a_)
+        sets.append(to_union[0] | to_union[1])
+        path.append((a_, b_))
     return path
 
 
 def mm_einsum(
     *args: Ansatz | list[int | str],
     output: list[int | str],
-    contraction_order: list[tuple[int, int]],
     fock_dims: dict[int, int],
+    contraction_path: list[tuple[int, int]],
     path_type: Literal["SSA", "LA", "UA"] = "LA",
 ) -> PolyExpAnsatz | ArrayAnsatz | ArrayLike:
     r"""
@@ -69,7 +70,7 @@ def mm_einsum(
         *args: Alternating sequence of Ansatz objects and their associated index lists.
             Each Ansatz is followed by a list of indices (strings for batch axes, integers for Hilbert space indices).
         output (list[int | str]): The indices (batch names and Hilbert space indices) to keep in the output.
-        contraction_order (list[tuple[int, int]]): The order in which to contract the Ansatze,
+        contraction_path (list[tuple[int, int]]): The order in which to contract the Ansatze,
             specified as pairs of their positions in the input.
         fock_dims (dict[int, int | None]): Mapping from Hilbert space indices (int) to Fock space dimensions.
             If a dimension is 0, the *entire* corresponding Ansatz is converted to Bargmann (PolyExpAnsatz) form.
@@ -93,7 +94,7 @@ def mm_einsum(
         ...     ket1.ansatz, [1],
         ...     bs.ansatz, [2, 3, 0, 1],
         ...     output=[2, 3],
-        ...     contraction_order=[(0, 2), (0, 1)],
+        ...     contraction_path=[(0, 2), (0, 1)],
         ...     fock_dims={0: 20, 1: 20, 2: 10, 3: 10},
         ... )
         >>> assert isinstance(result, ArrayAnsatz)
@@ -114,30 +115,32 @@ def mm_einsum(
 
     # --- perform contractions ---
     if path_type == "SSA":
-        contraction_order = ssa_to_linear(contraction_order)
+        contraction_path = ssa_to_linear(contraction_path)
     elif path_type == "UA":
-        contraction_order = ua_to_linear(contraction_order)
-    for a, b in contraction_order:
+        contraction_path = ua_to_linear(contraction_path)
+    for a, b in contraction_path:
         core_idx_a, core_idx_b = _ints(indices[a]), _ints(indices[b])
         common_core_idx = set(core_idx_a) & set(core_idx_b)
         force_bargmann = all(fock_dims[i] == 0 for i in common_core_idx)
-    force_fock = all(fock_dims[i] != 0 for i in common_core_idx)
-    if force_bargmann:
-        ansatz_a = to_bargmann(ansatze[a])
-        ansatz_b = to_bargmann(ansatze[b])
-    elif force_fock:
-        shape_a, shape_b = get_shapes(ansatze[a], ansatze[b], core_idx_a, core_idx_b, fock_dims)
-        ansatz_a = to_fock(ansatze[a], shape_a)
-        ansatz_b = to_fock(ansatze[b], shape_b)
-    else:
-        raise ValueError(f"Attempted contraction of {a} and {b} with mixed-type indices.")
-    idx_out = prepare_idx_out(indices, a, b, output)
-    result = ansatz_a.contract(ansatz_b, indices[a], indices[b], idx_out)
-    ansatze.pop(a), ansatze.pop(b), indices.pop(a), indices.pop(b)
-    ansatze.append(result)
-    indices.append(idx_out)
+        force_fock = all(fock_dims[i] != 0 for i in common_core_idx)
+        if force_bargmann:
+            ansatz_a = to_bargmann(ansatze[a])
+            ansatz_b = to_bargmann(ansatze[b])
+        elif force_fock:
+            shape_a, shape_b = get_shapes(ansatze[a], ansatze[b], core_idx_a, core_idx_b, fock_dims)
+            ansatz_a = to_fock(ansatze[a], shape_a)
+            ansatz_b = to_fock(ansatze[b], shape_b)
+        else:
+            raise ValueError(f"Attempted contraction of {a} and {b} with mixed-type indices.")
+        idx_out = prepare_idx_out(indices, a, b, output)
+        result = ansatz_a.contract(ansatz_b, indices[a], indices[b], idx_out)
+        a, b = sorted((a, b))
+        ansatze.pop(b), ansatze.pop(a), indices.pop(b), indices.pop(a)
+        ansatze.append(result)
+        indices.append(idx_out)
 
     # --- reorder and convert the output ---
+
     if len(ansatze) > 1:
         raise ValueError("More than one ansatz left after contraction.")
 
