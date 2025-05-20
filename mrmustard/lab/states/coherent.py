@@ -35,8 +35,8 @@ class Coherent(Ket):
     Args:
         mode: The mode of the coherent state.
         alpha: The `alpha` displacement of the coherent state.
-        alpha_trainable: Whether the `x` displacement is trainable.
-        alpha_bounds: The bounds on the norm of `alpha` displacement.
+        alpha_trainable: Whether the `alpha` displacement is trainable.
+        alpha_bounds: The bounds on the absolute value of `alpha` displacement.
 
     Returns:
         A ``Ket`` object representing a coherent state.

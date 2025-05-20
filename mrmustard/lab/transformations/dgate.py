@@ -42,7 +42,7 @@ class Dgate(Unitary):
         mode: The mode this gate is applied to.
         alpha: The displacement in the complex phase space.
         alpha_trainable: Whether ``alpha`` is a trainable variable.
-        alpha_bounds: The bounds for ``alpha``.
+        alpha_bounds: The bounds for the absolute value of ``alpha``.
 
     .. code-block ::
         >>> from mrmustard.lab import Dgate
