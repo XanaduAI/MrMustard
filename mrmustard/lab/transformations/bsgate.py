@@ -122,7 +122,7 @@ class BSgate(Unitary):
                 it is broadcasted to all the dimensions. If not given, it defaults to
                 ``settings.DEFAULT_FOCK_SIZE``.
             method: The method to use to compute the Fock array. Available methods are:
-                - ``"vanilla"``: The default method.
+                - ``"vanilla"``: standard recurrence relation (not numerically stable, but slightly faster than the stable one).
                 - ``"schwinger"``: Use the Schwinger representation to compute the Fock array.
                 - ``"stable"``: Use the stable implementation of the beamsplitter. (default)
         Returns:
