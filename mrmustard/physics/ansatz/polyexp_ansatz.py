@@ -223,16 +223,14 @@ class PolyExpAnsatz(Ansatz):
         if self.num_derived_vars == 0:
             W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
 
-            A = math.einsum("ji, ...jk, kl-> ...il", W, self.A, W)
-            b = math.einsum("ij, ...j-> ...i", W, self.b)
+            A = math.einsum("ji,...jk,kl->...il", W, self.A, W)
+            b = math.einsum("ij,...j->...i", W, self.b)
             c = self.c / (2 * settings.HBAR) ** (n // 2)
             return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
 
         else:
             if self.num_derived_vars != 2:
-                raise ValueError(
-                    f"This transformation supports 2 core and 0 or 2 derived variables"
-                )
+                raise ValueError("This transformation supports 2 core and 0 or 2 derived variables")
             A_tmp = self.A
 
             A_tmp = A_tmp[..., [0, 2, 1, 3], :][..., [0, 2, 1, 3]]
@@ -241,8 +239,8 @@ class PolyExpAnsatz(Ansatz):
 
             W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
 
-            A = math.einsum("ji, ...jk, kl-> ...il", W, A_tmp, W)
-            b = math.einsum("ij, ...j-> ...i", W, b)
+            A = math.einsum("ji,...jk,kl->...il", W, A_tmp, W)
+            b = math.einsum("ij,...j->...i", W, b)
             c = c / (2 * settings.HBAR)
 
             A_final = A[..., [0, 2, 1, 3], :][..., :, [0, 2, 1, 3]]
