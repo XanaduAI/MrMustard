@@ -230,9 +230,7 @@ class PolyExpAnsatz(Ansatz):
 
         else:
             if self.num_derived_vars != 2:
-                raise ValueError(
-                    f"This transformation supports 2 core and 0 or 2 derived variables"
-                )
+                raise ValueError("This transformation supports 2 core and 0 or 2 derived variables")
             A_tmp = self.A
 
             A_tmp = A_tmp[..., [0, 2, 1, 3], :][..., [0, 2, 1, 3]]
