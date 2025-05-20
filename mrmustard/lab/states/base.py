@@ -19,12 +19,10 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import Sequence
-from functools import partial
 from enum import Enum
+import warnings
 
 import numpy as np
-import jax
-import jax.numpy as jnp
 from IPython.display import display
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -391,13 +389,16 @@ class State(CircuitComponent):
                     A, b, c = ansatz.triple
 
                     if math.backend_name == "jax":
+
+                        warnings.warn(
+                            "Jax backend does not support auto_shape for Bargmann states."
+                        )
                         shape = super().auto_shape()
                     else:
-                        shape = ugh(
-                            A,
-                            b,
-                            c,
-                            (self.n_modes,),
+                        shape = autoshape_numba(
+                            math.asnumpy(A),
+                            math.asnumpy(b),
+                            math.asnumpy(c),
                             max_prob or settings.AUTOSHAPE_PROBABILITY,
                             max_shape or settings.AUTOSHAPE_MAX,
                             min_shape or settings.AUTOSHAPE_MIN,
@@ -765,34 +766,3 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
-
-
-@partial(jax.custom_vjp, nondiff_argnums=(3, 4, 5, 6))
-@partial(jax.jit, static_argnums=(3, 4, 5, 6))
-def ugh(A, b, c, out_shape, max_prob, max_shape, min_shape):
-    return jax.pure_callback(
-        lambda A, b, c: autoshape_numba(
-            np.array(A),
-            np.array(b),
-            np.array(c),
-            max_prob,
-            max_shape,
-            min_shape,
-        ),
-        jax.ShapeDtypeStruct(out_shape, jnp.int64),
-        A,
-        b,
-        c,
-    )
-
-
-def ugh_fwd(A, b, c, out_shape, max_prob, max_shape, min_shape):
-    ret = ugh(A, b, c, out_shape, max_prob, max_shape, min_shape)
-    return ret, tuple()
-
-
-def ugh_bwd(out_shape, max_prob, max_shape, min_shape, res, g):
-    return None, None, None
-
-
-ugh.defvjp(ugh_fwd, ugh_bwd)
