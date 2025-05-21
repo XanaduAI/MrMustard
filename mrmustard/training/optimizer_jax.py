@@ -20,11 +20,13 @@ from __future__ import annotations
 from typing import Callable, Sequence
 
 import jax
-
 import equinox as eqx
 
+from itertools import chain
+from typing import Callable, Sequence
+
 from mrmustard import math, settings
-from mrmustard.lab import CircuitComponent
+from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
 from mrmustard.math.parameters import (
@@ -32,24 +34,22 @@ from mrmustard.math.parameters import (
     update_orthogonal,
     update_symplectic,
     update_unitary,
+    Variable,
 )
 
 __all__ = ["OptimizerJax"]
 
 
 class Objective(eqx.Module):
-    vars: list[dict[str, jax.Array]]
+    vars: dict[str, jax.Array]
 
-    def __init__(self, by_optimizing: Sequence[CircuitComponent]):
-        self.vars = [
-            {key: val.value for key, val in comp.parameters.variables.items()}
-            for comp in by_optimizing
-        ]
+    def __init__(self, trainable_params: dict[str, Variable]):
+        self.vars = {key: val.value for key, val in trainable_params.items()}
 
     def __call__(self, cost_fn: Callable, by_optimizing: Sequence[CircuitComponent]):
-        for vars, comp in zip(self.vars, by_optimizing):
-            for key, val in vars.items():
-                comp.parameters.variables[key].value = val
+        trainable_params = OptimizerJax._get_trainable_params(by_optimizing)
+        for key, val in trainable_params.items():
+            val.value = self.vars[key]
         return cost_fn(*by_optimizing)
 
 
@@ -72,6 +72,36 @@ class OptimizerJax:
         self.log = create_logger(__name__)
         self.stable_threshold = stable_threshold
 
+    @staticmethod
+    def _get_trainable_params(trainable_items, root_tag: str = "optimized") -> dict[str, Variable]:
+        """Traverses all instances of gates, states, detectors, or trainable items that belong to the backend
+        and return a dict of trainables of the form `{tags: trainable_parameters}` where the `tags`
+        are traversal paths of collecting all parent tags for reaching each parameter.
+        """
+        trainables = []
+        for i, item in enumerate(trainable_items):
+            owner_tag = f"{root_tag}[{i}]"
+            if isinstance(item, Circuit):
+                for j, op in enumerate(item.components):
+                    tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
+                    tagged_vars = op.parameters.tagged_variables(tag)
+                    trainables.append(tagged_vars.items())
+            elif hasattr(item, "parameter_set"):
+                tag = f"{owner_tag}:{item.__class__.__qualname__}"
+                tagged_vars = item.parameter_set.tagged_variables(tag)
+                trainables.append(tagged_vars.items())
+            elif hasattr(item, "parameters"):
+                tag = f"{owner_tag}:{item.__class__.__qualname__}"
+                tagged_vars = item.parameters.tagged_variables(tag)
+                trainables.append(tagged_vars.items())
+            elif math.from_backend(item) and math.is_trainable(item):
+                # the created parameter is wrapped into a list because the case above
+                # returns a list, hence ensuring we have a list of lists
+                tag = f"{owner_tag}:{math.__class__.__name__}/{getattr(item, 'name', item.__class__.__name__)}"
+                trainables.append([(tag, Variable(item, name="from _backend"))])
+
+        return dict(chain(*trainables))
+
     @eqx.filter_jit
     def make_step(
         self,
@@ -90,19 +120,16 @@ class OptimizerJax:
         if settings.PROGRESSBAR:
             progress_bar = ProgressBar(max_steps)
             with progress_bar:
-                model = self._optimization_loop(
+                self._optimization_loop(
                     cost_fn, by_optimizing, max_steps=max_steps, progress_bar=progress_bar
                 )
         else:
-            model = self._optimization_loop(cost_fn, by_optimizing, max_steps=max_steps)
-
-        # update vals
-        for vars, comp in zip(model.vars, by_optimizing):
-            for key, val in vars.items():
-                comp.parameters.variables[key].value = val
+            self._optimization_loop(cost_fn, by_optimizing, max_steps=max_steps)
 
     def _optimization_loop(self, cost_fn, by_optimizing, max_steps, progress_bar=None):
-        model = Objective(by_optimizing)
+        trainable_params = self._get_trainable_params(by_optimizing)
+
+        model = Objective(trainable_params)
 
         def loss(params, static):
             model = eqx.combine(params, static)
@@ -118,7 +145,8 @@ class OptimizerJax:
             if progress_bar is not None:
                 progress_bar.step(math.asnumpy(loss_value))
 
-        return model
+        for key, val in trainable_params.items():
+            val.value = model.vars[key]
 
     def should_stop(self, max_steps: int) -> bool:
         if max_steps != 0 and len(self.opt_history) > max_steps:
