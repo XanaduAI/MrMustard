@@ -117,16 +117,12 @@ class Dgate(Unitary):
             alpha = math.astensor(self.parameters.alpha.value)
             alpha = math.reshape(alpha, (-1,))
             ret = math.astensor(
-                [
-                    fock_utils.displacement(math.real(alpha_i), math.imag(alpha_i), shape=shape)
-                    for alpha_i in alpha
-                ]
+                [fock_utils.displacement(alpha_i, shape=shape) for alpha_i in alpha]
             )
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
         else:
             ret = fock_utils.displacement(
-                math.real(self.parameters.alpha.value),
-                math.imag(self.parameters.alpha.value),
+                self.parameters.alpha.value,
                 shape=shape,
             )
         return ret
