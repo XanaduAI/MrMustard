@@ -63,7 +63,7 @@ class TestCircuitComponent:
         name = "my_component"
         x = math.astensor(x, dtype=math.complex128)
         y = math.astensor(y, dtype=math.complex128)
-        ansatz = PolyExpAnsatz(*displacement_gate_Abc(+1j * y))
+        ansatz = PolyExpAnsatz(*displacement_gate_Abc(x + 1j * y))
         cc = CircuitComponent(
             Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name
         )
