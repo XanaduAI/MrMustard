@@ -416,8 +416,7 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float
 @math.custom_gradient
 def displacement(alpha, shape, tol=1e-15):
     r"""creates a single mode displacement matrix"""
-    alpha = math.asnumpy(alpha)
-    alpha = np.array(alpha)
+
     if math.abs(alpha) > tol:
         gate = strategies.displacement(tuple(shape), complex(alpha))
     else:
