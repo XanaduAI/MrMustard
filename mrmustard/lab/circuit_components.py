@@ -557,7 +557,9 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         result = self_rep.contract(other_rep, mode=mode)
         return CircuitComponent(result, None)
 
-    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
+    def fock_array(
+        self, shape: int | Sequence[int] | None = None, out: ComplexTensor | None = None
+    ) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component.
@@ -565,10 +567,11 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is generated via ``auto_shape``.
+            out: if provided, the result will be stored in this tensor.
         Returns:
             array: The Fock representation of this component.
         """
-        return self._representation.fock_array(shape or self.auto_shape())
+        return self._representation.fock_array(shape or self.auto_shape(), out)
 
     def on(self, modes: int | Sequence[int]) -> CircuitComponent:
         r"""

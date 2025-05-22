@@ -486,7 +486,9 @@ class TestCircuitComponent:
     def test_fock_component_no_bargmann(self):
         "tests that a fock component doesn't have a bargmann representation by default"
         coh = Coherent(0, x=1.0)
-        CC = Ket.from_fock((0,), coh.fock_array(20))
+        out = coh.fock_array(20, out=np.zeros((20,), dtype=math.complex128))
+        assert math.allclose(out, coh.fock_array(20))
+        CC = Ket.from_fock((0,), out)
         with pytest.raises(AttributeError):
             CC.bargmann_triple()  # pylint: disable=pointless-statement
 

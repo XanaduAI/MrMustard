@@ -46,7 +46,7 @@ def vanilla_vjp_numba(
         strides[i - 1] = strides[i] * shape_arr[i]
 
     # linearize G
-    G_lin = G.flatten()
+    G_lin = G.ravel()
 
     # init gradients
     dA = np.zeros((D, D), dtype=np.complex128)  # component of dL/dA

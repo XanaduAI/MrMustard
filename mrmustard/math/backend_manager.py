@@ -701,7 +701,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         )
 
     def hermite_renormalized(
-        self, A: Tensor, b: Tensor, c: Tensor, shape: tuple[int], stable: bool = False
+        self,
+        A: Tensor,
+        b: Tensor,
+        c: Tensor,
+        shape: tuple[int],
+        stable: bool = False,
+        out: Tensor | None = None,
     ) -> Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(c + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
@@ -717,25 +723,47 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             A: The A matrix. Can be unbatched (shape D×D) or batched (shape B×D×D).
             b: The b vector. Can be unbatched (shape D) or batched (shape B×D).
             c: The c scalar. Can be scalar or batched (shape B).
-            shape: The shape of the final tensor.
+            shape: The shape of the final tensor (excluding batch dimensions)
             stable: Whether to use the numerically stable version of the algorithm (also slower).
+            out: if provided, the result will be stored in this tensor.
 
         Returns:
             The renormalized Hermite polynomial of given shape preserving the batch dimensions.
         """
+
+        def check_out_shape(batch_shape):
+            if out is not None and any(
+                d_out < d for d_out, d in zip(out.shape, batch_shape + shape)
+            ):
+                raise ValueError(
+                    f"batch+shape {batch_shape + shape} is too large for out.shape={out.shape}"
+                )
+
         stable = stable or settings.STABLE_FOCK_CONVERSION
         if A.ndim > 2 and b.ndim > 1 and c.ndim > 0:
             batch_shape = A.shape[:-2]
+            check_out_shape(batch_shape)
+            if b.shape[:-1] != batch_shape:
+                raise ValueError(f"b.shape={b.shape} must match batch_shape={batch_shape}")
+            if c.shape[: len(batch_shape)] != batch_shape:
+                raise ValueError(f"c.shape={c.shape} must match batch_shape={batch_shape}")
             D = int(np.prod(batch_shape))
             A = self.reshape(A, (D,) + A.shape[-2:])
             b = self.reshape(b, (D,) + b.shape[-1:])
             c = self.reshape(c, (D,))
             result = self._apply(
-                "hermite_renormalized_batched", (A, b, c), {"shape": tuple(shape), "stable": stable}
+                "hermite_renormalized_batched",
+                (A, b, c),
+                {
+                    "shape": tuple(shape),
+                    "stable": stable,
+                    "out": self.reshape(out, (D,) + shape) if out is not None else None,
+                },
             )
             return self.reshape(result, batch_shape + shape)
         elif A.ndim == 2 and b.ndim > 1:  # b-batched case
             batch_shape = b.shape[:-1]
+            check_out_shape(batch_shape)
             D = int(np.prod(batch_shape))
             b = self.reshape(b, (D,) + b.shape[-1:])
             A_broadcast = self.broadcast_to(A, (D,) + A.shape)
@@ -743,14 +771,19 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             result = self._apply(
                 "hermite_renormalized_batched",
                 (A_broadcast, b, c_broadcast),
-                {"shape": tuple(shape), "stable": stable},
+                {
+                    "shape": tuple(shape),
+                    "stable": stable,
+                    "out": self.reshape(out, (D,) + shape) if out is not None else None,
+                },
             )
             return self.reshape(result, batch_shape + shape)
         else:  # Unbatched case
+            check_out_shape(())
             return self._apply(
                 "hermite_renormalized_unbatched",
                 (A, b, c),
-                {"shape": tuple(shape), "stable": stable},
+                {"shape": tuple(shape), "stable": stable, "out": out},
             )
 
     def hermite_renormalized_diagonal(

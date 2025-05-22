@@ -140,13 +140,17 @@ class Representation:
         )
         return Representation(ansatz, wires_result)
 
-    def fock_array(self, shape: int | Sequence[int]) -> ComplexTensor:
+    def fock_array(
+        self, shape: int | Sequence[int], out: ComplexTensor | None = None
+    ) -> ComplexTensor:
         r"""
         Returns an array of this representation in the Fock basis with the given shape.
 
         Args:
             shape: The shape of the returned array, not including batch dimensions. If ``shape`` is
             given as an ``int``, it is broadcast to all the dimensions.
+            out: if provided, the result will be stored in this tensor.
+
         Returns:
             array: The Fock array of this representation.
         """
@@ -167,6 +171,7 @@ class Representation:
                 b,
                 math.ones(self.ansatz.batch_shape, dtype=math.complex128),
                 shape=shape + self.ansatz.shape_derived_vars,
+                out=out,
             )
             G = math.reshape(G, self.ansatz.batch_shape + shape + (-1,))
             cs = math.reshape(c, self.ansatz.batch_shape + (-1,))

@@ -165,35 +165,50 @@ class TestVanilla:
         assert np.allclose(dLdA, (dLdA_fd + np.swapaxes(dLdA_fd, -1, -2)) / 2)
 
     @pytest.mark.parametrize("stable", [True, False])
-    def test_hermite_renormalized_unbatched(self, stable):
+    @pytest.mark.parametrize("out", [True, False])
+    def test_hermite_renormalized_unbatched(self, stable, out):
         r"""
         Test the hermite_renormalized function for unbatched inputs.
         """
         A, b, c = random_triple(2, (), seed=673)
         shape = (3, 3)
-        G = math.hermite_renormalized(A, b, c, shape, stable=stable)
+        if out:
+            out_arr = np.zeros(shape, dtype=math.complex128)
+            G = math.hermite_renormalized(A, b, c, shape, stable=stable, out=out_arr)
+        else:
+            G = math.hermite_renormalized(A, b, c, shape, stable=stable)
         assert G.shape == shape
 
     @pytest.mark.parametrize("stable", [True, False])
-    def test_hermite_renormalized_b_batched(self, stable):
+    @pytest.mark.parametrize("out", [True, False])
+    def test_hermite_renormalized_b_batched(self, stable, out):
         r"""
         Test the hermite_renormalized function for batched b inputs.
         """
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
-        G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape, stable=stable)
+        if out:
+            out_arr = np.zeros((2, 1) + shape, dtype=math.complex128)
+            G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape, stable=stable, out=out_arr)
+        else:
+            G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape, stable=stable)
         assert G.shape == (2, 1) + shape
         assert math.allclose(G[0, 0], math.hermite_renormalized(A[0, 0], b[0, 0], c[0, 0], shape))
         assert math.allclose(G[1, 0], math.hermite_renormalized(A[0, 0], b[1, 0], c[0, 0], shape))
 
     @pytest.mark.parametrize("stable", [True, False])
-    def test_hermite_renormalized_batched(self, stable):
+    @pytest.mark.parametrize("out", [True, False])
+    def test_hermite_renormalized_batched(self, stable, out):
         r"""
         Test the hermite_renormalized function for batched inputs.
         """
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
-        G = math.hermite_renormalized(A, b, c, shape, stable=stable)
+        if out:
+            out_arr = np.zeros((2, 1) + shape, dtype=math.complex128)
+            G = math.hermite_renormalized(A, b, c, shape, stable=stable, out=out_arr)
+        else:
+            G = math.hermite_renormalized(A, b, c, shape, stable=stable)
         assert G.shape == (2, 1) + shape
         assert math.allclose(G[0, 0], math.hermite_renormalized(A[0, 0], b[0, 0], c[0, 0], shape))
         assert math.allclose(G[1, 0], math.hermite_renormalized(A[1, 0], b[1, 0], c[1, 0], shape))

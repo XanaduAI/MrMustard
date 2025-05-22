@@ -509,16 +509,28 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return None
 
     def hermite_renormalized_unbatched(
-        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        c: np.ndarray,
+        shape: tuple[int],
+        stable: bool = False,
+        out: np.ndarray | None = None,
     ) -> np.ndarray:
         if stable:
-            return strategies.stable_numba(tuple(shape), A, b, c)
-        return strategies.vanilla_numba(tuple(shape), A, b, c)
+            return strategies.stable_numba(tuple(shape), A, b, c, out)
+        return strategies.vanilla_numba(tuple(shape), A, b, c, out)
 
     def hermite_renormalized_batched(
-        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        c: np.ndarray,
+        shape: tuple[int],
+        stable: bool = False,
+        out: np.ndarray | None = None,
     ) -> np.ndarray:
-        return strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable)
+        return strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable, out)
 
     def hermite_renormalized_binomial(
         self,
