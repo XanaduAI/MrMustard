@@ -30,7 +30,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
 
-__all__ = ["beamsplitter", "beamsplitter_vjp", "beamsplitter_schwinger"]
+__all__ = ["beamsplitter", "stable_beamsplitter", "beamsplitter_vjp", "beamsplitter_schwinger"]
 
 
 @njit
@@ -88,6 +88,87 @@ def beamsplitter(
 
 
 @njit
+def stable_beamsplitter(shape, theta, phi):  # pragma: no cover # pylint: disable=too-many-branches
+    r"""
+    Stable implementation of the Fock representation of the beamsplitter.
+    It is numerically stable up to arbitrary cutoffs.
+    The shape order is (out_0, out_1, in_0, in_1), assuming it acts on modes 0 and 1.
+
+    Args:
+        shape (tuple[int, int, int, int]): shape of the Fock representation
+        theta (float): beamsplitter angle
+        phi (float): beamsplitter phase
+
+    Returns:
+        array (ComplexTensor): The Fock representation of the gate
+    """
+    ct = np.cos(theta)
+    st = np.sin(theta) * np.exp(1j * phi)
+    stc = np.conj(st)
+
+    M, N, P, Q = shape
+    G = np.zeros(shape, dtype=np.complex128)
+    G[0, 0, 0, 0] = 1.0 + 0.0j
+
+    # rank 3
+    for m in range(M):
+        for n in range(min(N, P - m)):
+            p = m + n
+            val = 0
+            pivots = 0
+            if m > 0:  # pivot at (m-1, n, p, 0)
+                val += ct * SQRT[p] / SQRT[m] * G[m - 1, n, p - 1, 0]
+                pivots += 1
+            if n > 0:  # pivot at (m, n-1, p, 0)
+                val += st * SQRT[p] / SQRT[n] * G[m, n - 1, p - 1, 0]
+                pivots += 1
+            if p > 0:  # pivot at (m, n, p-1, 0)
+                val += (
+                    ct * SQRT[m] / SQRT[p] * G[m - 1, n, p - 1, 0]
+                    + st * SQRT[n] / SQRT[p] * G[m, n - 1, p - 1, 0]
+                )
+                pivots += 1
+            if m > 0 or n > 0 or p > 0:
+                G[m, n, p, 0] = val / pivots
+
+    # rank 4
+    for m in range(M):
+        for n in range(N):
+            for p in range(max(0, m + n - Q), min(P, m + n)):
+                q = m + n - p
+                if 0 < q < Q:
+                    val = 0
+                    pivots = 0
+                    if m > 0:
+                        val += (
+                            ct * SQRT[p] / SQRT[m] * G[m - 1, n, p - 1, q]
+                            - stc * SQRT[q] / SQRT[m] * G[m - 1, n, p, q - 1]
+                        )
+                        pivots += 1
+                    if n > 0:
+                        val += (
+                            st * SQRT[p] / SQRT[n] * G[m, n - 1, p - 1, q]
+                            + ct * SQRT[q] / SQRT[n] * G[m, n - 1, p, q - 1]
+                        )
+                        pivots += 1
+                    if p > 0:
+                        val += (
+                            ct * SQRT[m] / SQRT[p] * G[m - 1, n, p - 1, q]
+                            + st * SQRT[n] / SQRT[p] * G[m, n - 1, p - 1, q]
+                        )
+                        pivots += 1
+                    if q > 0:
+                        val += (
+                            -stc * SQRT[m] / SQRT[q] * G[m - 1, n, p, q - 1]
+                            + ct * SQRT[n] / SQRT[q] * G[m, n - 1, p, q - 1]
+                        )
+                        pivots += 1
+                    if m > 0 or n > 0 or p > 0 or q > 0:
+                        G[m, n, p, q] = val / pivots
+    return G
+
+
+@njit
 def beamsplitter_vjp(
     G: ComplexTensor,
     dLdG: ComplexTensor,
@@ -125,7 +206,7 @@ def beamsplitter_vjp(
 
     # rank 3
     for m in range(M):
-        for n in range(N - m):
+        for n in range(min(N, P - m)):
             p = m + n
             if 0 < p < P:
                 dA, db = steps.vanilla_step_grad(G, (m, n, p, 0), dA, db)
@@ -135,7 +216,7 @@ def beamsplitter_vjp(
     # rank 4
     for m in range(M):
         for n in range(N):
-            for p in range(P):
+            for p in range(max(0, m + n - Q), min(P, m + n)):
                 q = m + n - p
                 if 0 < q < Q:
                     dA, db = steps.vanilla_step_grad(G, (m, n, p, q), dA, db)
