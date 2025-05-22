@@ -41,15 +41,17 @@ __all__ = ["OptimizerJax"]
 
 
 class Objective(eqx.Module):
-    vars: dict[str, jax.Array]
+    static: list[str]
+    dynamic: list[jax.Array]
 
     def __init__(self, trainable_params: dict[str, Variable]):
-        self.vars = {key: val.value for key, val in trainable_params.items()}
+        self.static = [name for name in trainable_params.keys()]
+        self.dynamic = [array.value for array in trainable_params.values()]
 
     def __call__(self, cost_fn: Callable, by_optimizing: Sequence[CircuitComponent]):
         trainable_params = OptimizerJax._get_trainable_params(by_optimizing)
-        for key, val in trainable_params.items():
-            val.value = self.vars[key]
+        for key, val in zip(self.static, self.dynamic):
+            trainable_params[key].value = val
         return cost_fn(*by_optimizing)
 
 
@@ -145,8 +147,8 @@ class OptimizerJax:
             if progress_bar is not None:
                 progress_bar.step(math.asnumpy(loss_value))
 
-        for key, val in trainable_params.items():
-            val.value = model.vars[key]
+        for key, val in zip(model.static, model.dynamic):
+            trainable_params[key].value = val
 
     def should_stop(self, max_steps: int) -> bool:
         if max_steps != 0 and len(self.opt_history) > max_steps:
