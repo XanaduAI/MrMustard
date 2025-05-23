@@ -69,10 +69,13 @@ def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = Non
         raise ValueError(msg)
 
     shape = tuple(c + 1 for c in cutoffs)
-    array = math.zeros(shape, dtype=np.complex128)
+    array = np.zeros(shape, dtype=np.complex128)
+
+    # array = math.zeros(shape, dtype=math.complex64)
 
     try:
-        array = math.update_tensor(array, tuple([i] for i in n), [1 for _ in n])
+        # array = math.update_tensor(array, tuple(n), [1])
+        array[tuple(n)] = 1
     except IndexError as e:
         msg = "Photon numbers cannot be larger than the corresponding cutoffs."
         raise ValueError(msg) from e

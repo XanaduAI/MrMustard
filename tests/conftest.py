@@ -15,14 +15,12 @@
 import os
 from pathlib import Path
 
-import jax
 import pytest
 from hypothesis import Verbosity
 from hypothesis import settings as hyp_settings
 
 from mrmustard import math
 
-jax.config.update("jax_enable_x64", True)
 
 print("pytest.conf -----------------------")
 

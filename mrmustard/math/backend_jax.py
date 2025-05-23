@@ -14,24 +14,24 @@
 
 """This module contains the JAX backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
+# pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments, too-many-public-methods
 
-from __future__ import annotations  # pragma: no cover
-from typing import Callable, Sequence  # pragma: no cover
-from functools import partial  # pragma: no cover
+from __future__ import annotations
+from typing import Callable, Sequence
+from functools import partial
 
-import jax  # pragma: no cover
-import jax.numpy as jnp  # pragma: no cover
-import jax.scipy as jsp  # pragma: no cover
-import numpy as np  # pragma: no cover
-import equinox as eqx  # pragma: no cover
-from jax import tree_util  # pragma: no cover
-import optax  # pragma: no cover
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+import numpy as np
+import equinox as eqx
+from jax import tree_util
+import optax
 
-from .autocast import Autocast  # pragma: no cover
-from .backend_base import BackendBase  # pragma: no cover
-from .lattice import strategies  # pragma: no cover
-from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cover
+from .autocast import Autocast
+from .backend_base import BackendBase
+from .lattice import strategies
+from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
@@ -39,10 +39,13 @@ from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cove
 
 from .jax_vjp.hermite import hermite_renormalized_unbatched
 
-jax.config.update("jax_enable_x64", True)  # pragma: no cover
+jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_compilation_cache_dir", "/tmp/jax_cache")
+jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
+jax.config.update("jax_persistent_cache_min_compile_time_secs", 0)
+jax.config.update("jax_persistent_cache_enable_xla_caches", "xla_gpu_per_fusion_autotune_cache_dir")
 
 
-# pylint: disable=too-many-public-methods
 class BackendJax(BackendBase):  # pragma: no cover
     """A JAX backend implementation."""
 

@@ -20,7 +20,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Sequence
 from enum import Enum
-import warnings
+from jax.errors import TracerArrayConversionError
 
 import numpy as np
 from IPython.display import display
@@ -387,27 +387,7 @@ class State(CircuitComponent):
                     else:
                         ansatz = self.ansatz
                     A, b, c = ansatz.triple
-                    if math.backend_name == "jax":
-                        import jax
-                        import jax.numpy as jnp
-
-                        shape = jax.pure_callback(
-                            lambda A, b, c: autoshape_numba(
-                                np.array(A),
-                                np.array(b),
-                                np.array(c),
-                                max_prob or settings.AUTOSHAPE_PROBABILITY,
-                                max_shape or settings.AUTOSHAPE_MAX,
-                                min_shape or settings.AUTOSHAPE_MIN,
-                                True,
-                            ),
-                            jax.ShapeDtypeStruct((len(self.modes),), jnp.int64),
-                            A,
-                            b,
-                            c,
-                        )
-                        shape = shape.shape
-                    else:
+                    try:
                         shape = autoshape_numba(
                             math.asnumpy(A),
                             math.asnumpy(b),
@@ -415,8 +395,9 @@ class State(CircuitComponent):
                             max_prob or settings.AUTOSHAPE_PROBABILITY,
                             max_shape or settings.AUTOSHAPE_MAX,
                             min_shape or settings.AUTOSHAPE_MIN,
-                            False,
                         )
+                    except TracerArrayConversionError:
+                        shape = super().auto_shape()
                     if self.wires.ket and self.wires.bra:
                         shape = tuple(shape) + tuple(shape)
                 else:
