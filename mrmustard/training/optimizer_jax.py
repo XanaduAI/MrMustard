@@ -18,12 +18,10 @@ used within Mr Mustard.
 from __future__ import annotations
 
 from typing import Callable, Sequence
+from itertools import chain
 
 import jax
 import equinox as eqx
-
-from itertools import chain
-from typing import Callable, Sequence
 
 from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
@@ -41,6 +39,7 @@ __all__ = ["OptimizerJax"]
 
 
 class Objective(eqx.Module):
+    r""" """
     static: list[str]
     dynamic: list[jax.Array]
 
@@ -56,6 +55,8 @@ class Objective(eqx.Module):
 
 
 class OptimizerJax:
+    r""" """
+
     def __init__(
         self,
         symplectic_lr: float = 0.1,
@@ -112,6 +113,7 @@ class OptimizerJax:
         model,
         opt_state,
     ):
+        r""" """
         params, static = eqx.partition(model, eqx.is_array)
         loss_value, grads = jax.value_and_grad(loss)(params, static)
         updates, opt_state = optim.update(grads, opt_state, eqx.filter(model, eqx.is_array))
@@ -119,6 +121,7 @@ class OptimizerJax:
         return model, opt_state, loss_value
 
     def minimize(self, cost_fn, by_optimizing, max_steps=1000):
+        r""" """
         if settings.PROGRESSBAR:
             progress_bar = ProgressBar(max_steps)
             with progress_bar:
@@ -129,6 +132,7 @@ class OptimizerJax:
             self._optimization_loop(cost_fn, by_optimizing, max_steps=max_steps)
 
     def _optimization_loop(self, cost_fn, by_optimizing, max_steps, progress_bar=None):
+        r""" """
         trainable_params = self._get_trainable_params(by_optimizing)
 
         model = Objective(trainable_params)
@@ -151,6 +155,7 @@ class OptimizerJax:
             trainable_params[key].value = val
 
     def should_stop(self, max_steps: int) -> bool:
+        r""" """
         if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
         if len(self.opt_history) > 20:  # if cost varies less than threshold over 20 steps
