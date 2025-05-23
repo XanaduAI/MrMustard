@@ -415,59 +415,28 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float
     return homodyne_sample, probability_sample
 
 
-@partial(jax.custom_vjp, nondiff_argnums=(2, 3))
-@partial(jax.jit, static_argnums=(2, 3))
+@math.custom_gradient
 def displacement(x, y, shape, tol=1e-15):
     r"""creates a single mode displacement matrix"""
-    return math.conditional(
-        math.sqrt(x * x + y * y) > tol,
-        partial(temp_true_branch, shape),
-        partial(temp_false_branch, shape),
-        x,
-        y,
-    )
+    alpha = math.asnumpy(x) + 1j * math.asnumpy(y)
 
+    if np.sqrt(x * x + y * y) > tol:
+        gate = strategies.displacement(tuple(shape), alpha)
+    else:
+        gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
-def displacement_fwd(x, y, shape, tol):
-    gate = displacement(x, y, shape, tol)
-    return gate, (gate, x, y)
+    ret = math.astensor(gate, dtype=gate.dtype.name)
+    if math.backend_name in ["numpy", "jax"]:
+        return ret
 
+    def grad(dL_dDc):
+        dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(gate), alpha)
+        dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
+        dLdx = 2 * np.real(dL_dac)
+        dLdy = 2 * np.imag(dL_dac)
+        return math.astensor(dLdx, dtype=x.dtype), math.astensor(dLdy, dtype=y.dtype)
 
-def temp_true_branch(shape, x, y):
-    return jax.pure_callback(
-        lambda x, y: strategies.displacement(
-            cutoffs=shape, alpha=math.asnumpy(x) + 1j * math.asnumpy(y), dtype=np.complex128
-        ),
-        jax.ShapeDtypeStruct(shape, jnp.complex128),
-        x,
-        y,
-    )
-
-
-def temp_false_branch(shape, x, y):
-    return math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
-
-
-def displacement_bwd(shape, tol, res, g):
-    gate, x, y = res
-
-    dD_da, dD_dac = jax.pure_callback(
-        lambda gate, x, y: strategies.jacobian_displacement(
-            math.asnumpy(gate), math.asnumpy(x) + 1j * math.asnumpy(y)
-        ),
-        (jax.ShapeDtypeStruct(shape, jnp.complex128), jax.ShapeDtypeStruct(shape, jnp.complex128)),
-        gate,
-        x,
-        y,
-    )
-
-    dL_dac = math.sum(math.conj(g) * dD_dac + g * math.conj(dD_da))
-    dLdx = 2 * math.real(dL_dac)
-    dLdy = 2 * math.imag(dL_dac)
-    return dLdx, dLdy
-
-
-displacement.defvjp(displacement_fwd, displacement_bwd)
+    return ret, grad
 
 
 @math.custom_gradient
