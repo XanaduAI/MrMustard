@@ -378,9 +378,9 @@ class State(CircuitComponent):
         if batch_shape:
             raise NotImplementedError("Batched auto_shape is not implemented.")
         if not self.ansatz._lin_sup:
-            if isinstance(self.ansatz, ArrayAnsatz):
+            try:  # fock
                 shape = self.ansatz.core_shape
-            else:
+            except AttributeError:  # bargmann
                 if self.ansatz.num_derived_vars == 0:
                     if not self.wires.ket or not self.wires.bra:
                         ansatz = self.ansatz.conj & self.ansatz

@@ -22,7 +22,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from .lattice import strategies
+from ..lattice import strategies
 
 
 # ~~~~~~~~~~~~~~~~~

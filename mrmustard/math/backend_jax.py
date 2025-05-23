@@ -37,7 +37,7 @@ from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cove
     hermite_multidimensional_diagonal_batch,
 )
 
-from .hermite import hermite_renormalized_unbatched
+from .jax_vjp.hermite import hermite_renormalized_unbatched
 
 jax.config.update("jax_enable_x64", True)  # pragma: no cover
 
