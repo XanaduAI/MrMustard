@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Tests for the Optimizer class"""
-
+import pytest
 import numpy as np
 import tensorflow as tf
 from hypothesis import given
@@ -43,9 +43,8 @@ from mrmustard.physics.gaussian import number_means, von_neumann_entropy
 from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
 
-from ..conftest import skip_jax, skip_np
 
-
+@pytest.mark.requires_backend("tensorflow")
 class TestOptimizer:
     r"""
     Tests for the ``Optimizer`` class.
@@ -54,9 +53,6 @@ class TestOptimizer:
     @given(n=st.integers(0, 3))
     def test_S2gate_coincidence_prob(self, n):
         """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 40
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -93,9 +89,6 @@ class TestOptimizer:
         see Eq. 20 of https://journals.aps.org/prresearch/pdf/10.1103/PhysRevResearch.3.043065
         which lacks a square root in the right hand side.
         """
-        skip_np()
-        skip_jax()
-
         settings.SEED = 42
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -129,9 +122,6 @@ class TestOptimizer:
 
     def test_learning_two_mode_squeezing(self):
         """Finding the optimal beamsplitter transmission to make a pair of single photons"""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 42
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -164,9 +154,6 @@ class TestOptimizer:
 
     def test_learning_two_mode_Ggate(self):
         """Finding the optimal Ggate to make a pair of single photons"""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 42
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -184,9 +171,6 @@ class TestOptimizer:
 
     def test_learning_two_mode_Interferometer(self):
         """Finding the optimal Interferometer to make a pair of single photons"""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 4
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -213,9 +197,6 @@ class TestOptimizer:
 
     def test_learning_two_mode_RealInterferometer(self):
         """Finding the optimal Interferometer to make a pair of single photons"""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 2
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -250,9 +231,6 @@ class TestOptimizer:
 
     def test_learning_four_mode_Interferometer(self):
         """Finding the optimal Interferometer to make a NOON state with N=2"""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 4
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -315,9 +293,6 @@ class TestOptimizer:
 
     def test_learning_four_mode_RealInterferometer(self):
         """Finding the optimal Interferometer to make a NOON state with N=2"""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 6
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -387,9 +362,6 @@ class TestOptimizer:
         """Finding the optimal squeezing parameter to get Hong-Ou-Mandel dip in time
         see https://www.pnas.org/content/117/52/33107/tab-article-info
         """
-        skip_np()
-        skip_jax()
-
         settings.SEED = 42
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -414,9 +386,6 @@ class TestOptimizer:
 
     def test_parameter_passthrough(self):
         """Same as the test above, but with param passthrough"""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 42
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -442,9 +411,6 @@ class TestOptimizer:
     def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum(self):
         """Optimizes a Ggate on two modes so as to prepare a state with the same entropy
         and mean photon number as a thermal state"""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 42
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -481,9 +447,6 @@ class TestOptimizer:
 
     def test_opt_backend_param(self):
         """Test the optimization of a backend parameter defined outside a gate."""
-        skip_np()
-        skip_jax()
-
         # rotated displaced squeezed state
         settings.SEED = 42
         rng = tf.random.get_global_generator()
@@ -508,9 +471,6 @@ class TestOptimizer:
 
     def test_dgate_optimization(self):
         """Test that Dgate is optimized correctly."""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 24
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -530,9 +490,6 @@ class TestOptimizer:
 
     def test_sgate_optimization(self):
         """Test that Sgate is optimized correctly."""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 25
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -553,9 +510,6 @@ class TestOptimizer:
 
     def test_bsgate_optimization(self):
         """Test that Sgate is optimized correctly."""
-        skip_np()
-        skip_jax()
-
         settings.SEED = 25
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
@@ -580,9 +534,6 @@ class TestOptimizer:
 
     def test_squeezing_grad_from_fock(self):
         """Test that the gradient of a squeezing gate is computed from the fock representation."""
-        skip_np()
-        skip_jax()
-
         squeezing = Sgate(0, r=1.0, r_trainable=True)
         og_r = math.asnumpy(squeezing.parameters.r.value)
 
@@ -596,9 +547,6 @@ class TestOptimizer:
 
     def test_displacement_grad_from_fock(self):
         """Test that the gradient of a displacement gate is computed from the fock representation."""
-        skip_np()
-        skip_jax()
-
         disp = Dgate(0, x=1.0, y=0.5, x_trainable=True, y_trainable=True)
         og_x = math.asnumpy(disp.parameters.x.value)
         og_y = math.asnumpy(disp.parameters.y.value)
@@ -613,9 +561,6 @@ class TestOptimizer:
 
     def test_bsgate_grad_from_fock(self):
         """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
-        skip_np()
-        skip_jax()
-
         sq = SqueezedVacuum(0, r=1.0, r_trainable=True)
         og_r = math.asnumpy(sq.parameters.r.value)
 

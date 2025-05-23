@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """callbacks tests"""
-
+import pytest
 import numpy as np
 import tensorflow as tf
 
@@ -21,14 +21,10 @@ from mrmustard import math, settings
 from mrmustard.lab import BSgate, Circuit, S2gate, Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
 
-from ..conftest import skip_jax, skip_np
 
-
+@pytest.mark.requires_backend("tensorflow")
 def test_tensorboard_callback(tmp_path):
     """Tests tensorboard callbacks on hong-ou-mandel optimization."""
-    skip_np()
-    skip_jax()
-
     settings.SEED = 42
     i, k = 2, 3
     r = np.arcsinh(1.0)

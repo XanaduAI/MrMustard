@@ -20,8 +20,6 @@ import pytest
 from mrmustard import math
 from mrmustard.math.lattice import strategies
 
-from ..conftest import skip_jax, skip_tf
-
 
 def random_triple(n, batch=(), seed=None):
     r"""
@@ -42,13 +40,12 @@ class TestVanilla:
     Test the vanilla strategy for calculating the Fock representation of a Gaussian tensor.
     """
 
+    @pytest.mark.requires_backend("numpy")
     @pytest.mark.parametrize("n", [2, 3])
     def test_vanilla_vjp(self, n):
         r"""
         Unit test for vanilla_vjp_numba function by comparing with finite difference approximations.
         """
-        skip_tf()
-        skip_jax()
         epsilon = 1e-9
         A, b, c = random_triple(n, (), seed=673)
         shape = (4,) * n
@@ -89,12 +86,11 @@ class TestVanilla:
         assert np.allclose(dLdb, dLdb_fd)
         assert np.allclose(dLdA, (dLdA_fd + dLdA_fd.T) / 2)
 
+    @pytest.mark.requires_backend("numpy")
     def test_full_batch_vjp(self):
         r"""
         Unit test for vanilla_batch_vjp_numba function by comparing its results with finite difference approximations.
         """
-        skip_tf()
-        skip_jax()
         # Generate the output tensor G
         epsilon = 1e-9
         A, b, c = random_triple(3, (2,), seed=673)

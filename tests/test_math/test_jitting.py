@@ -14,6 +14,7 @@
 
 """Tests for the jitting functionality within JAX backend."""
 
+import pytest
 import time
 
 import jax
@@ -21,8 +22,6 @@ import jax.numpy as jnp
 
 from mrmustard import math
 from mrmustard.lab import Attenuator, BSgate, SqueezedVacuum
-
-from ..conftest import skip_np, skip_tf
 
 
 def evaluate_circuit(params):
@@ -55,11 +54,9 @@ def evaluate_circuit(params):
     return math.real(math.trace(marginal))
 
 
+@pytest.mark.requires_backend("jax")
 def test_jit_complete_circuit():
     r"""Tests if entire circuit with component definitions can be jitted."""
-    skip_np()
-    skip_tf()
-
     unjitted_evaluate_circuit = evaluate_circuit
     start_time = time.time()
     for k in range(100):
@@ -84,11 +81,9 @@ def test_jit_complete_circuit():
     ), "Jitting should be make circuit evaluation faster."
 
 
+@pytest.mark.requires_backend("jax")
 def test_jit_circuit_with_parameters():
     r"""Tests if circuit with pre-defined elements can be jitted."""
-    skip_np()
-    skip_tf()
-
     initial_state = SqueezedVacuum(mode=0, r=0.5, phi=0.5, r_trainable=True, phi_trainable=True)
     BS_01 = BSgate(modes=(0, 1), theta=0.5, phi=0.5, theta_trainable=True, phi_trainable=True)
     BS_12 = BSgate(modes=(1, 2), theta=0.5, phi=0.5, theta_trainable=True, phi_trainable=True)

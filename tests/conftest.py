@@ -73,20 +73,21 @@ def set_backend(backend):
     math.change_backend(f"{backend}")
 
 
-def skip_tf():
-    if math.backend_name == "tensorflow":
-        pytest.skip("tensorflow")
-
-
-def skip_np():
-    if math.backend_name == "numpy":
-        pytest.skip("numpy")
-
-
-def skip_jax():
-    if math.backend_name == "jax":
-        pytest.skip("jax")
+@pytest.fixture(autouse=True)
+def requires_backend(request, backend):
+    r"""
+    Skips test if backend is not a required backend.
+    """
+    if request.node.get_closest_marker("requires_backend"):
+        if backend not in request.node.get_closest_marker("requires_backend").args:
+            pytest.skip(f"Skipped with this backend: {backend}")
 
 
 def pytest_configure(config):
-    pass  # your code goes here
+    r"""
+    Adds the marker ``requires_backend`` to the pytest config.
+    """
+    config.addinivalue_line(
+        "markers",
+        "requires_backend(backend): skips test if backend is not the required backend",
+    )

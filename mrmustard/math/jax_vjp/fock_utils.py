@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=redefined-outer-name
-
 """
 Custom vjps for fock utilities.
 """
@@ -27,10 +25,6 @@ from functools import partial
 
 from mrmustard import math
 from mrmustard.math.lattice import strategies
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 @partial(jax.custom_vjp, nondiff_argnums=(2, 3))

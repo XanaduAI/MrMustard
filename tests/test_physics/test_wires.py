@@ -24,8 +24,6 @@ from ipywidgets import HTML
 from mrmustard.lab.states import QuadratureEigenstate
 from mrmustard.physics.wires import Wires
 
-from ..conftest import skip_jax, skip_np
-
 
 class TestWires:
     r"""
@@ -194,10 +192,9 @@ class TestWiresDisplay:
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(wires)
 
+    @pytest.mark.requires_backend("tensorflow")
     def test_repr_params(self):
         "test that repr params change when the params change"
-        skip_np()
-        skip_jax()
         q = QuadratureEigenstate(mode=0, x=0.0, phi=1.0, phi_trainable=True)
         assert q.representation.wires.output.wires[0].repr_params[1] == 1.0
         q.parameters.phi.value.assign(2.0)

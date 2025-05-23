@@ -1,7 +1,7 @@
 """
 Unit tests for mrmustard.math.compactFock.compactFock~
 """
-
+import pytest
 import numpy as np
 
 from mrmustard import math
@@ -9,8 +9,6 @@ from mrmustard.lab import DM, Ggate, SqueezedVacuum, Vacuum
 from mrmustard.lab.transformations.attenuator import Attenuator
 from mrmustard.physics import gaussian
 from mrmustard.training import Optimizer
-
-from ..conftest import skip_jax, skip_np, skip_tf
 
 
 def test_compactFock_diagonal():
@@ -56,14 +54,12 @@ def test_compactFock_1leftover():
     assert np.allclose(expected, G_leftover)
 
 
+@pytest.mark.requires_backend("tensorflow")
 def test_compactFock_diagonal_gradients():
     r"""
     Test getting Fock amplitudes and gradients if all modes
     are detected (math.hermite_renormalized_diagonal).
     """
-    skip_np()
-    skip_jax()
-
     G = Ggate(0, symplectic_trainable=True)
     Att = Attenuator(0, 0.9)
 
@@ -83,15 +79,12 @@ def test_compactFock_diagonal_gradients():
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
 
 
+@pytest.mark.requires_backend()  # TODO: implement gradient of hermite_renormalized_1leftoverMode
 def test_compactFock_1leftover_gradients():
     r"""
     Test getting Fock amplitudes and if all but the first
     mode are detected (math.hermite_renormalized_1leftoverMode).
     """
-    skip_np()
-    skip_jax()
-    skip_tf()  # TODO: implement gradient of hermite_renormalized_1leftoverMode
-
     G = Ggate((0, 1), symplectic_trainable=True)
     Att = Attenuator(0, 0.9)
 
