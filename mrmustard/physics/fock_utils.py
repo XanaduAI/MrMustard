@@ -27,6 +27,7 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 from functools import partial
+from scipy.special import comb, factorial
 
 from mrmustard import math, settings
 from mrmustard.math.lattice import strategies
@@ -450,17 +451,17 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
         theta (float): transmittivity angle of the beamsplitter
         phi (float): phase angle of the beamsplitter
         cutoffs (int,int): cutoff dimensions of the two modes
+        method (str): method to compute the beamsplitter ("vanilla", "schwinger" or "stable")
     """
+    t, s = math.asnumpy(theta), math.asnumpy(phi)
     if method == "vanilla":
-        bs_unitary = strategies.beamsplitter(shape, math.asnumpy(theta), math.asnumpy(phi))
+        bs_unitary = strategies.beamsplitter(shape, t, s)
     elif method == "schwinger":
-        bs_unitary = strategies.beamsplitter_schwinger(
-            shape, math.asnumpy(theta), math.asnumpy(phi)
-        )
+        bs_unitary = strategies.beamsplitter_schwinger(shape, t, s)
+    elif method == "stable":
+        bs_unitary = strategies.stable_beamsplitter(shape, t, s)
     else:
-        raise ValueError(
-            f"Unknown beamsplitter method {method}. Options are 'vanilla' and 'schwinger'."
-        )
+        raise ValueError(f"Unknown method {method}. Use 'vanilla', 'schwinger' or 'stable'.")
 
     ret = math.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
     if math.backend_name in ["numpy", "jax"]:
@@ -518,3 +519,46 @@ def squeezed(r, phi, shape):
         return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
 
     return ret, vjp
+
+
+def c_ps_matrix(m, n, alpha):
+    """
+    helper function for ``c_in_PS``.
+    """
+    mu_range = range(max(0, alpha - n), min(m, alpha) + 1)
+    tmp = [comb(m, mu) * comb(n, alpha - mu) * (1j) ** (m - n - 2 * mu + alpha) for mu in mu_range]
+    return np.sum(tmp)
+
+
+def gamma_matrix(c):
+    """
+    helper function for ``c_in_PS`.
+    constructs the matrix transformation that helps transforming ``c``.
+    ``c`` here must be 2-dimensional.
+    """
+    M = c.shape[0] + c.shape[1] - 1
+    Gamma = np.zeros((M**2, c.shape[0] * c.shape[1]), dtype=np.complex128)
+
+    for m in range(c.shape[0]):
+        for n in range(c.shape[1]):
+            for alpha in range(m + n + 1):
+                factor = math.sqrt(
+                    factorial(m) * factorial(n) / (factorial(alpha) * factorial(m + n - alpha))
+                )
+                value = c_ps_matrix(m, n, alpha) * math.sqrt(settings.HBAR / 2) ** (m + n)
+                row = alpha * M + (m + n - alpha)
+                col = m * c.shape[0] + n
+                Gamma[row, col] = value / factor
+    return Gamma
+
+
+def c_in_PS(c):
+    """
+    Transforms the ``c`` matrix of a ``DM`` object from bargmann to phase-space.
+    It is a helper function used in
+
+    Args:
+        c (Tensor): the 2-dimensional ``c`` matrix of the ``DM`` object
+    """
+    M = c.shape[0] + c.shape[1] - 1
+    return np.reshape(gamma_matrix(c) @ np.reshape(c, (c.shape[0] * c.shape[1], 1)), (M, M))
