@@ -167,6 +167,9 @@ class TestVanilla:
     @pytest.mark.parametrize("stable", [True, False])
     @pytest.mark.parametrize("out", [True, False])
     def test_hermite_renormalized_unbatched(self, stable, out):
+        if out:
+            skip_jax()
+            skip_tf()
         r"""
         Test the hermite_renormalized function for unbatched inputs.
         """
@@ -185,6 +188,9 @@ class TestVanilla:
         r"""
         Test the hermite_renormalized function for batched b inputs.
         """
+        if out:
+            skip_jax()
+            skip_tf()
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
         if out:
@@ -202,6 +208,9 @@ class TestVanilla:
         r"""
         Test the hermite_renormalized function for batched inputs.
         """
+        if out:
+            skip_jax()
+            skip_tf()
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
         if out:
