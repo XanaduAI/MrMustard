@@ -474,9 +474,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     ) -> tuple[tf.Tensor, Callable]:
         A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
         if stable:
-            G = strategies.stable_numba(tuple(shape), A, b, c, out)
+            G = strategies.stable_numba(
+                tuple(shape), A, b, c, self.asnumpy(out) if out is not None else None
+            )
         else:
-            G = strategies.vanilla_numba(tuple(shape), A, b, c, out)
+            G = strategies.vanilla_numba(
+                tuple(shape), A, b, c, self.asnumpy(out) if out is not None else None
+            )
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp_numba(G, c, np.conj(dLdGconj))
@@ -495,7 +499,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         out: tf.Tensor | None = None,
     ) -> tf.Tensor:
         A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
-        G = strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable, out)
+        G = strategies.vanilla_batch_numba(
+            tuple(shape), A, b, c, stable, self.asnumpy(out) if out is not None else None
+        )
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_batch_vjp_numba(G, c, np.conj(dLdGconj))

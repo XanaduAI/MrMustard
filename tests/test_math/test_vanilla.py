@@ -173,7 +173,7 @@ class TestVanilla:
         A, b, c = random_triple(2, (), seed=673)
         shape = (3, 3)
         if out:
-            out_arr = np.zeros(shape, dtype=math.complex128)
+            out_arr = math.zeros(shape, dtype=math.complex128)
             G = math.hermite_renormalized(A, b, c, shape, stable=stable, out=out_arr)
         else:
             G = math.hermite_renormalized(A, b, c, shape, stable=stable)
@@ -188,7 +188,7 @@ class TestVanilla:
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
         if out:
-            out_arr = np.zeros((2, 1) + shape, dtype=math.complex128)
+            out_arr = math.zeros((2, 1) + shape, dtype=math.complex128)
             G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape, stable=stable, out=out_arr)
         else:
             G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape, stable=stable)
@@ -205,7 +205,7 @@ class TestVanilla:
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
         if out:
-            out_arr = np.zeros((2, 1) + shape, dtype=math.complex128)
+            out_arr = math.zeros((2, 1) + shape, dtype=math.complex128)
             G = math.hermite_renormalized(A, b, c, shape, stable=stable, out=out_arr)
         else:
             G = math.hermite_renormalized(A, b, c, shape, stable=stable)
