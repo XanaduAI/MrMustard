@@ -544,7 +544,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         out: jnp.ndarray | None = None,
     ) -> jnp.ndarray:
         if out is not None:
-            raise ValueError("'out' keyword is not supported for JAX backend")
+            raise ValueError("'out' keyword is not supported in the JAX backend")
         if stable:
             G = jax.pure_callback(
                 lambda A, b, c: strategies.stable_numba(
@@ -583,7 +583,7 @@ class BackendJax(BackendBase):  # pragma: no cover
         batch_size = A.shape[0]
         output_shape = (batch_size,) + shape
         if out is not None:
-            raise ValueError("'out' keyword is not supported for JAX backend")
+            raise ValueError("'out' keyword is not supported in the JAX backend")
         G = jax.pure_callback(
             lambda A, b, c: strategies.vanilla_batch_numba(
                 shape, np.array(A), np.array(b), np.array(c), stable, None
