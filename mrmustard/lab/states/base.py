@@ -378,22 +378,35 @@ class State(CircuitComponent):
         if batch_shape:
             raise NotImplementedError("Batched auto_shape is not implemented.")
         if not self.ansatz._lin_sup:
-            try:  # fock
+            if isinstance(self.ansatz, ArrayAnsatz):  # fock
                 shape = self.ansatz.core_shape
-            except AttributeError:  # bargmann
+            else:  # bargmann
                 if self.ansatz.num_derived_vars == 0:
                     if not self.wires.ket or not self.wires.bra:
                         ansatz = self.ansatz.conj & self.ansatz
                     else:
                         ansatz = self.ansatz
                     A, b, c = ansatz.triple
-
                     if math.backend_name == "jax":
+                        import jax
+                        import jax.numpy as jnp
 
-                        warnings.warn(
-                            "Jax backend does not support auto_shape for Bargmann states."
+                        shape = jax.pure_callback(
+                            lambda A, b, c: autoshape_numba(
+                                np.array(A),
+                                np.array(b),
+                                np.array(c),
+                                max_prob or settings.AUTOSHAPE_PROBABILITY,
+                                max_shape or settings.AUTOSHAPE_MAX,
+                                min_shape or settings.AUTOSHAPE_MIN,
+                                True,
+                            ),
+                            jax.ShapeDtypeStruct((len(self.modes),), jnp.int64),
+                            A,
+                            b,
+                            c,
                         )
-                        shape = super().auto_shape()
+                        shape = shape.shape
                     else:
                         shape = autoshape_numba(
                             math.asnumpy(A),
@@ -402,6 +415,7 @@ class State(CircuitComponent):
                             max_prob or settings.AUTOSHAPE_PROBABILITY,
                             max_shape or settings.AUTOSHAPE_MAX,
                             min_shape or settings.AUTOSHAPE_MIN,
+                            False,
                         )
                     if self.wires.ket and self.wires.bra:
                         shape = tuple(shape) + tuple(shape)

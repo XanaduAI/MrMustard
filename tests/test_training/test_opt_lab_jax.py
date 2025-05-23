@@ -243,17 +243,15 @@ class TestOptimizerJax:
 
     def test_bsgate_grad_from_fock(self):
         """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
-        with settings(DEFAULT_FOCK_SIZE=10):  # TODO: remove once auto_shape fixed
-            sq = SqueezedVacuum(0, r=1.0, r_trainable=True)
-            og_r = math.asnumpy(sq.parameters.r.value)
+        sq = SqueezedVacuum(0, r=1.0, r_trainable=True)
+        og_r = math.asnumpy(sq.parameters.r.value)
 
-            def cost_fn(sq):
-                return -math.real(
-                    (sq >> Number(1, 1) >> BSgate((0, 1), 0.5) >> (Vacuum(0) >> Number(1, 1)).dual)
-                    ** 2
-                )
+        def cost_fn(sq):
+            return -math.real(
+                (sq >> Number(1, 1) >> BSgate((0, 1), 0.5) >> (Vacuum(0) >> Number(1, 1)).dual) ** 2
+            )
 
-            opt = OptimizerJax(euclidean_lr=0.05)
-            opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
+        opt = OptimizerJax(euclidean_lr=0.05)
+        opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
 
-            assert og_r != sq.parameters.r.value
+        assert og_r != sq.parameters.r.value
