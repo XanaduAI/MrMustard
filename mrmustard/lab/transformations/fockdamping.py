@@ -44,7 +44,7 @@ class FockDamping(Operation):
         >>> from mrmustard.lab import FockDamping, Coherent
 
         >>> operator = FockDamping(mode=0, damping=0.1)
-        >>> input_state = Coherent(mode=0, x=1, y=0.5)
+        >>> input_state = Coherent(mode=0, alpha=1+0.5j)
         >>> output_state = input_state >> operator
         >>> assert operator.modes == (0,)
         >>> assert operator.parameters.damping.value == 0.1

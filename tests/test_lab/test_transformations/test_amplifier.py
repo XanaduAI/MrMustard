@@ -82,7 +82,7 @@ class TestAmplifier:
     def test_circuit_identity(self):
         amp_channel = Amplifier(mode=0, gain=2)
         att_channel = Attenuator(mode=0, transmissivity=0.5)
-        input_state = Coherent(mode=0, x=0.5, y=0.7)
+        input_state = Coherent(mode=0, alpha=0.5 + 0.7j)
 
         assert math.allclose(
             (input_state >> amp_channel).ansatz.A,

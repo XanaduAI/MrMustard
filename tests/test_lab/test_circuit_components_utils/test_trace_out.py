@@ -42,10 +42,10 @@ class TestTraceOut:
         assert tr.ansatz == PolyExpAnsatz(*identity_Abc(len(modes)))
 
     def test_trace_out_bargmann_states(self):
-        state = Coherent(0, x=1) >> Coherent(1, x=1) >> Coherent(2, x=1)
+        state = Coherent(0, 1) >> Coherent(1, 1) >> Coherent(2, 1)
 
-        assert state >> TraceOut(0) == (Coherent(1, x=1) >> Coherent(2, x=1)).dm()
-        assert state >> TraceOut((1, 2)) == Coherent(0, x=1).dm()
+        assert state >> TraceOut(0) == (Coherent(1, 1) >> Coherent(2, 1)).dm()
+        assert state >> TraceOut((1, 2)) == Coherent(0, 1).dm()
 
         trace = state >> TraceOut((0, 1, 2))
         assert np.isclose(trace, 1.0)
@@ -63,9 +63,9 @@ class TestTraceOut:
         assert (cc >> TraceOut(0)).dtype == math.complex128
 
     def test_trace_out_fock_states(self):
-        state = (Coherent(0, x=1) >> Coherent(1, x=1) >> Coherent(2, x=1)).to_fock(10)
-        assert state >> TraceOut(0) == (Coherent(1, x=1) >> Coherent(2, x=1)).to_fock(7).dm()
-        assert state >> TraceOut((1, 2)) == Coherent(0, x=1).to_fock(7).dm()
+        state = (Coherent(0, 1) >> Coherent(1, 1) >> Coherent(2, 1)).to_fock(10)
+        assert state >> TraceOut(0) == (Coherent(1, 1) >> Coherent(2, 1)).to_fock(7).dm()
+        assert state >> TraceOut((1, 2)) == Coherent(0, 1).to_fock(7).dm()
 
         no_state = state >> TraceOut((0, 1, 2))
         assert np.isclose(no_state, 1.0)
