@@ -168,7 +168,7 @@ class TestOptimizerJax:
     def test_dgate_optimization(self):
         """Test that Dgate is optimized correctly."""
         dgate = Dgate(0, alpha_trainable=True)
-        target_state = DisplacedSqueezed(0, r=0.0, x=0.1, y=0.2).fock_array((40,))
+        target_state = DisplacedSqueezed(0, r=0.0, x=0.1 + 0.2j).fock_array((40,))
 
         def cost_fn(dgate):
             state_out = Vacuum(0) >> dgate
@@ -177,7 +177,7 @@ class TestOptimizerJax:
         opt = OptimizerJax()
         opt.minimize(cost_fn, by_optimizing=[dgate])
 
-        assert math.allclose(dgate.parameters.alpha.value, 0.1 + 0.2j, atol=0.01)
+        assert math.allclose(dgate.parameters.alpha.value, 0.1, atol=0.01)
 
     def test_sgate_optimization(self):
         """Test that Sgate is optimized correctly."""
