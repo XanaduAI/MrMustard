@@ -38,11 +38,27 @@ jobs:
         id: record_file
         run: echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
 
+      - name: Restore cached Primes
+        id: cache-primes-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            /tmp/jax_cache
+          key: ${{ runner.os }}-primes
+
       - name: Run tests
         run: |
           set -o pipefail
           uv run --all-extras pytest tests --backend=jax -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
+
+      - name: Save Primes
+        id: cache-primes-save
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            /tmp/jax_cache
+          key: ${{ steps.cache-primes-restore.outputs.cache-primary-key }}
 
       - name: configure aws credentials
         if: env.UPLOAD_TIMINGS == 'true'
