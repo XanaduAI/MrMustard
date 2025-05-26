@@ -118,7 +118,7 @@ class TestUnitary:
         r = math.broadcast_to(0.1, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
         gate = Unitary(
-            Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip").representation
+            Sgate(0, r, phi).contract(Dgate(0, r), "zip").representation
         )  # TODO: revisit rshift
         gate_inv = gate.inverse()
         gate_inv_inv = gate_inv.inverse()
@@ -198,7 +198,7 @@ class TestChannel:
         phi = math.broadcast_to(0.2, batch_shape)
         gate = Channel(
             Sgate(0, r, phi)
-            .contract(Dgate(0, r, phi), "zip")
+            .contract(Dgate(0, r), "zip")
             .contract(Attenuator(0, 0.5), "zip")
             .representation
         )  # TODO: revisit rshift

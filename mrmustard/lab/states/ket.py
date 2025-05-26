@@ -546,7 +546,7 @@ class Ket(State):
             >>> from mrmustard.lab import Ket, DM, Attenuator, Dgate
 
             >>> psi = Ket.random([0,1])
-            >>> U = Dgate(0, x=1, y=0)
+            >>> U = Dgate(0, alpha=1)
             >>> channel = Attenuator(0, .5)
 
             >>> assert isinstance(psi >> U, Ket)
