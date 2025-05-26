@@ -38,9 +38,8 @@ jobs:
         id: record_file
         run: echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
 
-      - name: Restore JAX compilation cache
-        id: jax-cache
-        uses: actions/cache/restore@v4
+      - name: JAX compilation cache
+        uses: actions/cache@v4
         with:
           path: /tmp/jax_cache
           key: jax-cache-${{ matrix.python-version }}
@@ -50,12 +49,6 @@ jobs:
           set -o pipefail
           uv run --all-extras pytest tests --backend=jax -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
-
-      - name: Save JAX cache
-        uses: actions/cache/save@v4
-        with:
-          path: /tmp/jax_cache
-          key: jax-cache-${{ matrix.python-version }}
 
       - name: configure aws credentials
         if: env.UPLOAD_TIMINGS == 'true'
