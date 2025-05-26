@@ -38,13 +38,12 @@ jobs:
         id: record_file
         run: echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
 
-      - name: Restore cached Primes
-        id: cache-primes-restore
+      - name: Restore JAX compilation cache
+        id: jax-cache
         uses: actions/cache/restore@v4
         with:
-          path: |
-            /tmp/jax_cache
-          key: ${{ runner.os }}-primes
+          path: /tmp/jax_cache
+          key: jax-cache-${{ matrix.python-version }}
 
       - name: Run tests
         run: |
