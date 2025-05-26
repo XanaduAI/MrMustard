@@ -146,8 +146,7 @@ def squeezed_vacuum_state_Abc(
 
 
 def displaced_squeezed_vacuum_state_Abc(
-    x: float | Sequence[float],
-    y: float | Sequence[float] = 0,
+    alpha: float | Sequence[float],
     r: float | Sequence[float] = 0,
     phi: float | Sequence[float] = 0,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
@@ -163,22 +162,21 @@ def displaced_squeezed_vacuum_state_Abc(
     Returns:
         The ``(A, b, c)`` triple of the squeezed vacuum state.
     """
-    x, y, r, phi = math.broadcast_arrays(
-        math.astensor(x, dtype=math.complex128),
-        math.astensor(y, dtype=math.complex128),
+    alpha, r, phi = math.broadcast_arrays(
+        math.astensor(alpha, dtype=math.complex128),
         math.astensor(r, dtype=math.complex128),
         math.astensor(phi, dtype=math.complex128),
     )
-    batch_shape = x.shape
+    batch_shape = alpha.shape
 
     A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
     b = math.reshape(
-        (x + 1j * y) + (x - 1j * y) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi),
+        (alpha) + math.conj(alpha) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi),
         batch_shape + (1,),
     )
     c = math.exp(
-        -0.5 * (x**2 + y**2)
-        - 0.5 * (x - 1j * y) ** 2 * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
+        -0.5 * math.abs(alpha)
+        - 0.5 * math.conj(alpha) ** 2 * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
     ) / math.sqrt(math.cosh(r))
 
     return A, b, c

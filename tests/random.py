@@ -391,9 +391,10 @@ def displacedsqueezed(draw, num_modes):
     phi = draw(array_of_(angle, num_modes, num_modes))
     x = draw(array_of_(medium_float, num_modes, num_modes))
     y = draw(array_of_(medium_float, num_modes, num_modes))
-    state = DisplacedSqueezed(0, r=r_vec[0], phi=phi[0], x=x[0], y=y[0])
+    alpha = x + 1j * y
+    state = DisplacedSqueezed(0, r=r_vec[0], phi=phi[0], alpha=alpha[0])
     for i in range(1, num_modes):
-        state = state >> DisplacedSqueezed(i, r=r_vec[i], phi=phi[i], x=x[i], y=y[i])
+        state = state >> DisplacedSqueezed(i, r=r_vec[i], phi=phi[i], alpha=alpha[i])
     return state
 
 

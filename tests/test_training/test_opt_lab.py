@@ -516,7 +516,7 @@ class TestOptimizer:
         rng.reset_from_seed(settings.SEED)
 
         dgate = Dgate(0, alpha_trainable=True)
-        target_state = DisplacedSqueezed(0, r=0.0, x=0.1 + 0.2j).fock_array((40,))
+        target_state = DisplacedSqueezed(0, r=0.0, alpha=0.1 + 0.2j).fock_array((40,))
 
         def cost_fn():
             state_out = Vacuum(0) >> dgate
@@ -525,7 +525,7 @@ class TestOptimizer:
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[dgate])
 
-        assert np.allclose(dgate.parameters.alpha.value, 0.1, atol=0.01)
+        assert np.allclose(dgate.parameters.alpha.value, 0.1 + 0.2j, atol=0.01)
 
     def test_sgate_optimization(self):
         """Test that Sgate is optimized correctly."""

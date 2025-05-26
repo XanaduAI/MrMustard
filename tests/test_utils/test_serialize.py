@@ -193,7 +193,7 @@ class TestSerialize:
                 TraceOut((0, 1)),
                 Thermal(0, nbar=3),
                 Coherent(0, 0.3 + 0.2j, alpha_trainable=True, alpha_bounds=(0, 0.5)).dual,
-                DisplacedSqueezed(0, 1, 2, 3, 4, x_bounds=(-1.5, 1.5), x_trainable=True),
+                DisplacedSqueezed(0, 1 + 2j, 3, 4, alpha_bounds=(0, 1.5), alpha_trainable=True),
                 Number(1, n=20),
                 QuadratureEigenstate(2, x=1, phi=0, phi_trainable=True, phi_bounds=(-1, 1)).dual,
                 SqueezedVacuum(3, r=0.4, phi=0.2),

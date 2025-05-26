@@ -31,37 +31,34 @@ class TestDisplacedSqueezed:
     modes = [0, 1, 7]
     x = [1, 2, 3]
     y = [3, 4, 5]
+    alpha = [1 + 3j, 2 + 4j, 3 + 5j]
     r = [1, 2, 3]
     phi = [3, 4, 5]
 
     @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
     def test_init(self, modes, x, y, r, phi):
-        state = DisplacedSqueezed(modes, x, y, r, phi)
+        state = DisplacedSqueezed(modes, x + 1j * y, r, phi)
 
         assert state.name == "DisplacedSqueezed"
         assert state.modes == (modes,)
 
     def test_trainable_parameters(self):
-        state1 = DisplacedSqueezed(0, 1, 1)
-        state2 = DisplacedSqueezed(0, 1, 1, x_trainable=True, x_bounds=(-2, 2))
-        state3 = DisplacedSqueezed(0, 1, 1, y_trainable=True, y_bounds=(-2, 2))
+        state1 = DisplacedSqueezed(0, 1 + 1j)
+        state2 = DisplacedSqueezed(0, 1 + 1j, alpha_trainable=True, alpha_bounds=(0, 2))
 
         with pytest.raises(AttributeError):
-            state1.parameters.x.value = 3
+            state1.parameters.alpha.value = 3
 
-        state2.parameters.x.value = 2
-        assert state2.parameters.x.value == 2
+        state2.parameters.alpha.value = 2
+        assert state2.parameters.alpha.value == 2
 
-        state3.parameters.y.value = 2
-        assert state3.parameters.y.value == 2
-
-    @pytest.mark.parametrize("modes,x,y,r,phi", zip(modes, x, y, r, phi))
+    @pytest.mark.parametrize("modes,alpha,r,phi", zip(modes, alpha, r, phi))
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
-    def test_representation(self, modes, x, y, r, phi, batch_shape):
-        x = math.broadcast_to(x, batch_shape)
-        x, y, r, phi = math.broadcast_arrays(x, y, r, phi)
-        rep = DisplacedSqueezed(modes, x, y, r, phi).ansatz
+    def test_representation(self, modes, alpha, r, phi, batch_shape):
+        alpha = math.broadcast_to(alpha, batch_shape)
+        alpha, r, phi = math.broadcast_arrays(alpha, r, phi)
+        rep = DisplacedSqueezed(modes, alpha, r, phi).ansatz
         exp = (
-            Vacuum(modes) >> Sgate(modes, r, phi).contract(Dgate(modes, x + 1j * y), "zip")
+            Vacuum(modes) >> Sgate(modes, r, phi).contract(Dgate(modes, alpha), "zip")
         ).ansatz  # TODO: revisit rshift
         assert rep == exp

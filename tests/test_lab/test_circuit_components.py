@@ -161,12 +161,11 @@ class TestCircuitComponent:
         assert Vacuum([1, 2]).on([3, 4]).modes == (3, 4)
         assert Number(3, n=4).on(9).modes == (9,)
 
-        d89 = DisplacedSqueezed(8, x=1, y=3, r_trainable=True)
+        d89 = DisplacedSqueezed(8, alpha=1 + 3j, r_trainable=True)
         d67 = d89.on(6)
-        assert isinstance(d67.parameters.x, Constant)
-        assert math.allclose(d89.parameters.x.value, d67.parameters.x.value)
-        assert isinstance(d67.parameters.y, Constant)
-        assert math.allclose(d89.parameters.y.value, d67.parameters.y.value)
+        assert isinstance(d67.parameters.alpha, Constant)
+        assert math.allclose(d89.parameters.alpha.value, d67.parameters.alpha.value)
+        assert isinstance(d67.parameters.alpha, Constant)
         assert isinstance(d67.parameters.r, Variable)
         assert math.allclose(d89.parameters.r.value, d67.parameters.r.value)
         assert bool(d67.parameters) is True
@@ -224,8 +223,8 @@ class TestCircuitComponent:
         assert d12.ansatz == d1.ansatz + d2.ansatz
 
     def test_sub(self):
-        s1 = DisplacedSqueezed(1, x=1.0, y=0.5, r=0.1)
-        s2 = DisplacedSqueezed(1, x=0.5, y=0.2, r=0.2)
+        s1 = DisplacedSqueezed(1, 1 + 0.5j, r=0.1)
+        s2 = DisplacedSqueezed(1, 0.5 + 0.2j, r=0.2)
         s12 = s1 - s2
         assert s12.ansatz == s1.ansatz - s2.ansatz
 
