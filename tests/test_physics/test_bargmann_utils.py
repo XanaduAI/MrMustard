@@ -31,8 +31,8 @@ from mrmustard.physics.bargmann_utils import (
 
 def test_wigner_to_bargmann_psi():
     """Test that the Bargmann representation of a ket is correct"""
-    G = Ket.random((0, 1)) >> Dgate(0, 0.1, 0.2) >> Dgate(1, 0.2, 0.4)
-    cov, means, coeff = G.phase_space(s=0)
+    G = Ket.random((0, 1)) >> Dgate(0, 0.1 + 0.2j) >> Dgate(1, 0.2 + 0.4j)
+    cov, means, _ = G.phase_space(s=0)
     A_exp, b_exp, c_exp = wigner_to_bargmann_psi(cov, means)
     A, b, c = G.bargmann_triple()
     assert np.allclose(A, A_exp)
@@ -42,8 +42,8 @@ def test_wigner_to_bargmann_psi():
 
 def test_wigner_to_bargmann_rho():
     """Test that the Bargmann representation of a dm is correct"""
-    G = DM.random((0, 1)) >> Dgate(0, 0.1, 0.2) >> Dgate(1, 0.2, 0.4)
-    cov, means, coeff = G.phase_space(s=0)
+    G = DM.random((0, 1)) >> Dgate(0, 0.1 + 0.2j) >> Dgate(1, 0.2 + 0.4j)
+    cov, means, _ = G.phase_space(s=0)
     A, b, c = wigner_to_bargmann_rho(cov, means)
     A_exp, b_exp, c_exp = wigner_to_bargmann_rho(cov, means)
     assert np.allclose(A, A_exp)

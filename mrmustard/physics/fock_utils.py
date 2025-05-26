@@ -420,15 +420,13 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float
 
 
 @math.custom_gradient
-def displacement(x, y, shape, tol=1e-15):
+def displacement(alpha, shape, tol=1e-15):
     r"""creates a single mode displacement matrix"""
-    alpha = math.asnumpy(x) + 1j * math.asnumpy(y)
-
-    if np.sqrt(x * x + y * y) > tol:
-        gate = strategies.displacement(tuple(shape), alpha)
+    alpha = math.asnumpy(alpha)
+    if math.abs(alpha) > tol:
+        gate = strategies.displacement(tuple(shape), complex(alpha))
     else:
         gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
-
     ret = math.astensor(gate, dtype=gate.dtype.name)
     if math.backend_name in ["numpy", "jax"]:
         return ret
@@ -436,9 +434,7 @@ def displacement(x, y, shape, tol=1e-15):
     def grad(dL_dDc):
         dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(gate), alpha)
         dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
-        dLdx = 2 * np.real(dL_dac)
-        dLdy = 2 * np.imag(dL_dac)
-        return math.astensor(dLdx, dtype=x.dtype), math.astensor(dLdy, dtype=y.dtype)
+        return math.astensor(dL_dac)
 
     return ret, grad
 

@@ -52,14 +52,14 @@ class TestCovMeansFidelity:
 
     def test_gaussian_ket_fidelity(self):
         """Test the fidelity of two gaussian kets"""
-        state1 = Coherent(0, x=1.0)
-        state2 = Coherent(0, x=1.0)
+        state1 = Coherent(0, 1.0)
+        state2 = Coherent(0, 1.0)
         assert np.allclose(state1.fidelity(state2), 1)
 
     def test_gaussian_dm_fidelity(self):
         """Test the fidelity of two gaussian dms"""
-        state1 = Coherent(0, x=1.0) >> Attenuator(0, 0.9)
-        state2 = Coherent(0, x=1.0) >> Attenuator(0, 0.9)
+        state1 = Coherent(0, 1.0) >> Attenuator(0, 0.9)
+        state2 = Coherent(0, 1.0) >> Attenuator(0, 0.9)
         assert np.allclose(state1.fidelity(state2), 1)
 
     @pytest.mark.parametrize("num_modes", np.arange(5, 10))
@@ -151,24 +151,24 @@ class TestGaussianFock:
 
     def test_fidelity_across_representations_ket_ket(self):
         """Test that the fidelity of these two states is what it should be"""
-        state1ket = Coherent(0, x=1.0)
+        state1ket = Coherent(0, 1.0)
         state2ket = Number(0, n=1)
         assert np.allclose(state1ket.fidelity(state2ket), 0.36787944, atol=1e-4)
 
     def test_fidelity_across_representations_ket_dm(self):
         """Test that the fidelity of these two states is what it should be"""
-        state1ket = Coherent(0, x=1.0)
+        state1ket = Coherent(0, 1.0)
         state2dm = Number(0, n=1).dm()
         assert np.allclose(state1ket.fidelity(state2dm), 0.36787944, atol=1e-4)
 
     def test_fidelity_across_representations_dm_ket(self):
         """Test that the fidelity of these two states is what it should be"""
-        state1ket = Coherent(0, x=1.0)
+        state1ket = Coherent(0, 1.0)
         state2dm = Number(0, n=1).dm()
         assert np.allclose(state2dm.fidelity(state1ket), 0.36787944, atol=1e-4)
 
     def test_fidelity_across_representations_dm_dm(self):
         """Test that the fidelity of these two states is what it should be"""
-        state1dm = Coherent(0, x=1.0).dm()
+        state1dm = Coherent(0, 1.0).dm()
         state2dm = Number(0, n=1).dm()
         assert np.allclose(state1dm.fidelity(state2dm), 0.36787944, atol=1e-4)
