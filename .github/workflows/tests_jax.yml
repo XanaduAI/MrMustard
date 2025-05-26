@@ -51,13 +51,11 @@ jobs:
           uv run --all-extras pytest tests --backend=jax -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
 
-      - name: Save Primes
-        id: cache-primes-save
+      - name: Save JAX cache
         uses: actions/cache/save@v4
         with:
-          path: |
-            /tmp/jax_cache
-          key: ${{ steps.cache-primes-restore.outputs.cache-primary-key }}
+          path: /tmp/jax_cache
+          key: jax-cache-${{ matrix.python-version }}
 
       - name: configure aws credentials
         if: env.UPLOAD_TIMINGS == 'true'
