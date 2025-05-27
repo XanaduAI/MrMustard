@@ -175,7 +175,7 @@ def displaced_squeezed_vacuum_state_Abc(
         batch_shape + (1,),
     )
     c = math.exp(
-        -0.5 * math.abs(alpha)
+        -0.5 * math.abs(alpha) ** 2
         - 0.5 * math.conj(alpha) ** 2 * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
     ) / math.sqrt(math.cosh(r))
 
