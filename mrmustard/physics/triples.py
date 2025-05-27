@@ -146,7 +146,7 @@ def squeezed_vacuum_state_Abc(
 
 
 def displaced_squeezed_vacuum_state_Abc(
-    alpha: float | Sequence[float],
+    alpha: complex | Sequence[complex],
     r: float | Sequence[float] = 0,
     phi: float | Sequence[float] = 0,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
@@ -171,7 +171,7 @@ def displaced_squeezed_vacuum_state_Abc(
 
     A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
     b = math.reshape(
-        (alpha) + math.conj(alpha) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi),
+        alpha + math.conj(alpha) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi),
         batch_shape + (1,),
     )
     c = math.exp(
