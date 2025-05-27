@@ -515,6 +515,8 @@ class TestOptimizer:
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
+        from mrmustard.lab import Coherent
+
         dgate = Dgate(0, alpha_trainable=True)
         target_state = DisplacedSqueezed(0, r=0.0, alpha=0.1 + 0.2j).fock_array((40,))
 
@@ -522,8 +524,8 @@ class TestOptimizer:
             state_out = Vacuum(0) >> dgate
             return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
 
-        opt = Optimizer()
-        opt.minimize(cost_fn, by_optimizing=[dgate])
+        opt = Optimizer(euclidean_lr=0.1)
+        opt.minimize(cost_fn, by_optimizing=[dgate], max_steps=1000)
 
         assert np.allclose(dgate.parameters.alpha.value, 0.1 + 0.2j, atol=0.01)
 
