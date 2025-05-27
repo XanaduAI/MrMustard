@@ -201,7 +201,7 @@ def test_complex_gaussian_integral_2_not_batched():
     """Tests the ``complex_gaussian_integral_2`` method for non-batched inputs."""
     A1, b1, c1 = triples.vacuum_state_Abc(2)
     A2, b2, c2 = triples.displacement_gate_Abc(0.1 + 0.3j)
-    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=0.1, y=0.3)
+    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(0.1 + 0.3j)
 
     res = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0, 1], [0, 1])
     assert math.allclose(res[0], A3)
@@ -237,7 +237,7 @@ def test_complex_gaussian_integral_1_not_batched():
 
     A1, b1, c1 = triples.vacuum_state_Abc(2)
     A2, b2, c2 = triples.displacement_gate_Abc(0.1 + 0.3j)
-    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(0.1, 0.3)
+    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(0.1 + 0.3j)
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
 

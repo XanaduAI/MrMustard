@@ -18,6 +18,7 @@ The class representing a displaced squeezed state.
 
 from __future__ import annotations
 from typing import Sequence
+from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .ket import Ket
@@ -71,7 +72,9 @@ class DisplacedSqueezed(Ket):
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="DisplacedSqueezed")
-        self.parameters.add_parameter(make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds))
+        self.parameters.add_parameter(
+            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128)
+        )
         self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
         self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 

@@ -46,7 +46,7 @@ class TestTriples:
             triples.squeezed_vacuum_state_Abc([1, 2], [3, 4, 5])
 
         with pytest.raises(error, match=match):
-            triples.displaced_squeezed_vacuum_state_Abc([1, 2], [3, 4, 5], 6, 7)
+            triples.displaced_squeezed_vacuum_state_Abc([1, 2], [3, 4, 5], 6)
 
     @pytest.mark.parametrize("n_modes", [1, 3])
     def test_vacuum_state_Abc(self, n_modes):
@@ -89,12 +89,12 @@ class TestTriples:
         assert math.allclose(c3, 0.9975072676192522)
 
     def test_displaced_squeezed_vacuum_state_Abc(self):
-        A1, b1, c1 = triples.displaced_squeezed_vacuum_state_Abc(0.1, 0.2, 0.3, 0.4)
+        A1, b1, c1 = triples.displaced_squeezed_vacuum_state_Abc(0.1 + 0.2j, 0.3, 0.4)
         assert math.allclose(A1, [[-0.26831668 - 0.11344247j]])
         assert math.allclose(b1, [0.14952016 + 0.15768091j])
         assert math.allclose(c1, 0.95557745 + 0.00675411j)
 
-        A2, b2, c2 = triples.displaced_squeezed_vacuum_state_Abc(0.1, 0.2, 0.3, [0.4, 0.5])
+        A2, b2, c2 = triples.displaced_squeezed_vacuum_state_Abc(0.1 + 0.2j, 0.3, [0.4, 0.5])
         assert math.allclose(A2, [[[-0.26831668 - 0.11344247j]], [[-0.25565087 - 0.13966271j]]])
         assert math.allclose(b2, [[0.14952016 + 0.15768091j], [0.15349763 + 0.1628361j]])
         assert math.allclose(c2, [0.95557745 + 0.00675411j, 0.95489408 + 0.00688296j])
