@@ -60,11 +60,14 @@ def mm_einsum(
     operators, allowing for flexible contraction of complex tensor networks in quantum optics.
 
     The path_type argument controls the style in which the contraction path is expressed.
-    - LA pops the contrated ansatze from the list and adds the result to the end.
-    If [a1,a2,a3] is the list of ansatze the contraction order is [(0,1), (0,2)] means a3 @ (a1 @ a2).
     - SSA uses a dictionary to keep track of the contracted ansatze, so that there can be static single
-    assignment to each ansatz. If [a1,a2,a3] is the list of ansatze the contraction order [(0,1), (0,2)]
-    means (a1 @ a2) @ a3.
+      assignment to each ansatz. Every new result is added to the dictionary with a new key.
+      If [a0,a1,a2] is the list of ansatze we compute a2 @ (a0 @ a1) with the contraction order [(0,1), (0,2)].
+    - LA pops the contrated ansatze from the list and adds the result to the end.
+      If [a0,a1,a2] is the list of ansatze, we compute a2 @ (a0 @ a1) with the contraction order [(0,1), (0,1)].
+    - UA (union assignment) is a variant of SSA where we can refer to an intermediate result by any of the indices of the
+      ansatze that participated in its computation.
+      If [a0,a1,a2] is the list of ansatze we compute a2 @ (a0 @ a1) with the contraction order [(0,1), (2,0)] or [(0,1), (2,1)].
 
     Args:
         *args: Alternating sequence of Ansatz objects and their associated index lists.
@@ -140,7 +143,6 @@ def mm_einsum(
         indices.append(idx_out)
 
     # --- reorder and convert the output ---
-
     if len(ansatze) > 1:
         raise ValueError("More than one ansatz left after contraction.")
 
@@ -234,6 +236,15 @@ def prepare_idx_out(
 ) -> list[int | str]:
     r"""
     Prepares the index of the output of the contraction of two ansatze.
+
+    Args:
+        indices: The indices of the ansatze.
+        a: The index of the first ansatz.
+        b: The index of the second ansatz.
+        output: The indices of the output.
+
+    Returns:
+        list[int | str]: The indices of the output.
     """
     other_indices = [index for i, index in enumerate(indices) if i not in (a, b)]
     other_chars = {char for idx in other_indices for char in _strings(idx)} | set(_strings(output))

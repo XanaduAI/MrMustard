@@ -204,7 +204,7 @@ class ArrayAnsatz(Ansatz):
 
         reduced_array1 = array1[tuple(slices1)]
         reduced_array2 = array2[tuple(slices2)]
-        result = math.einsum(einsum_str, reduced_array1, reduced_array2, optimize=True)
+        result = math.einsum(einsum_str, reduced_array1, reduced_array2)
 
         batch_dims_out = sum(1 for label in idx_out if isinstance(label, str))
         return ArrayAnsatz(result, batch_dims=batch_dims_out)
