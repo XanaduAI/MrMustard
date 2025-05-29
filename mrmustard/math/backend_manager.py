@@ -597,7 +597,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("eigh", (tensor,))
 
-    def einsum(self, string: str, *tensors, optimize: bool | str = False) -> Tensor:
+    def einsum(self, string: str, *tensors, optimize: bool | str = "greedy") -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
         Args:
