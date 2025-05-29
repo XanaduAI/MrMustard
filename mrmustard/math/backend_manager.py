@@ -723,7 +723,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             A: The A matrix. Can be unbatched (shape D×D) or batched (shape B×D×D).
             b: The b vector. Can be unbatched (shape D) or batched (shape B×D).
             c: The c scalar. Can be scalar or batched (shape B).
-            shape: The shape of the final tensor (excluding batch dimensions)
+            shape: The shape of the final tensor (excluding batch dimensions).
             stable: Whether to use the numerically stable version of the algorithm (also slower).
             out: if provided, the result will be stored in this tensor.
 
