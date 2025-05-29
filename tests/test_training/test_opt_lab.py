@@ -515,8 +515,6 @@ class TestOptimizer:
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
-        from mrmustard.lab import Coherent
-
         dgate = Dgate(0, alpha_trainable=True)
         target_state = DisplacedSqueezed(0, r=0.0, alpha=0.1 + 0.2j).fock_array((40,))
 
