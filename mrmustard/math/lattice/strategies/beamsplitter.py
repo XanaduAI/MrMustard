@@ -23,7 +23,7 @@
 """Fock-Bargmann recurrence relation steps optimized for beamsplitter."""
 
 import numpy as np
-from numba import njit
+from numba import njit, prange
 
 from mrmustard.math.lattice import steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
@@ -84,6 +84,96 @@ def beamsplitter(
                         -stc * SQRT[m] / SQRT[q] * G[m - 1, n, p, q - 1]
                         + ct * SQRT[n] / SQRT[q] * G[m, n - 1, p, q - 1]
                     )
+    return G
+
+
+@njit
+def stable_beamsplitter_batched(
+    shape, theta, phi, out=None
+):  # pragma: no cover # pylint: disable=too-many-branches
+    r"""
+    Stable implementation of the Fock representation of the beamsplitter, with batch dimension.
+    It is numerically stable up to arbitrary cutoffs.
+    The shape order is (batch, out_0, out_1, in_0, in_1), assuming it acts on modes 0 and 1.
+
+    Args:
+        shape (tuple[int, int, int, int, int]): shape of the Fock representation with batch dimension
+        theta (np.ndarray[float]): batch of beamsplitter angles
+        phi (np.ndarray[float]): batch of beamsplitter phases
+
+    Returns:
+        array (ComplexTensor): The Fock representation of the gate with given shape including batch dimension
+    """
+    ct = np.cos(theta)
+    st = np.sin(theta) * np.exp(1j * phi)
+    stc = np.conj(st)
+
+    *B, M, N, P, Q = shape
+    assert len(B) == 1, "only one batch dimension is supported"
+    assert (
+        theta.shape == phi.shape == B
+    ), "theta and phi must have the same shape as the batch dimension"
+
+    G = np.zeros(shape, dtype=np.complex128) if out is None else out
+    G[:, 0, 0, 0, 0] = 1.0 + 0.0j
+
+    # rank 3
+    for b in prange(B[0]):
+        for m in range(M):
+            for n in range(min(N, P - m)):
+                p = m + n
+                val = 0.0 + 0.0j
+                pivots = 0
+                if m > 0:  # pivot at (m-1, n, p, 0)
+                    val += ct[b] * SQRT[p] / SQRT[m] * G[b, m - 1, n, p - 1, 0]
+                    pivots += 1
+                if n > 0:  # pivot at (m, n-1, p, 0)
+                    val += st[b] * SQRT[p] / SQRT[n] * G[b, m, n - 1, p - 1, 0]
+                    pivots += 1
+                if p > 0:  # pivot at (m, n, p-1, 0)
+                    val += (
+                        ct[b] * SQRT[m] / SQRT[p] * G[b, m - 1, n, p - 1, 0]
+                        + st[b] * SQRT[n] / SQRT[p] * G[b, m, n - 1, p - 1, 0]
+                    )
+                    pivots += 1
+                if m > 0 or n > 0 or p > 0:
+                    G[b, m, n, p, 0] = val / pivots
+
+    # rank 4
+    for b in prange(B[0]):
+        for m in range(M):
+            for n in range(N):
+                for p in range(max(0, m + n - Q), min(P, m + n)):
+                    q = m + n - p
+                    if 0 < q < Q:
+                        val = 0.0 + 0.0j
+                        pivots = 0
+                        if m > 0:
+                            val += (
+                                ct[b] * SQRT[p] / SQRT[m] * G[b, m - 1, n, p - 1, q]
+                                - stc[b] * SQRT[q] / SQRT[m] * G[b, m - 1, n, p, q - 1]
+                            )
+                            pivots += 1
+                        if n > 0:
+                            val += (
+                                st[b] * SQRT[p] / SQRT[n] * G[b, m, n - 1, p - 1, q]
+                                + ct[b] * SQRT[q] / SQRT[n] * G[b, m, n - 1, p, q - 1]
+                            )
+                            pivots += 1
+                        if p > 0:
+                            val += (
+                                ct[b] * SQRT[m] / SQRT[p] * G[b, m - 1, n, p - 1, q]
+                                + st[b] * SQRT[n] / SQRT[p] * G[b, m, n - 1, p - 1, q]
+                            )
+                            pivots += 1
+                        if q > 0:
+                            val += (
+                                -stc[b] * SQRT[m] / SQRT[q] * G[b, m - 1, n, p, q - 1]
+                                + ct[b] * SQRT[n] / SQRT[q] * G[b, m, n - 1, p, q - 1]
+                            )
+                            pivots += 1
+                        if m > 0 or n > 0 or p > 0 or q > 0:
+                            G[b, m, n, p, q] = val / pivots
     return G
 
 
