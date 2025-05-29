@@ -117,7 +117,7 @@ def test_vanilla_stable():
     "tests the vanilla stable against other known stable methods"
     with settings(STABLE_FOCK_CONVERSION=True):
         assert np.allclose(
-            Dgate(0, x=4.0, y=4.0).fock_array([1000, 1000]),
+            Dgate(0, 4 + 4j).fock_array([1000, 1000]),
             displacement((1000, 1000), 4.0 + 4.0j),
         )
         sgate = Sgate(0, r=4.0, phi=2.0).fock_array([1000, 1000])

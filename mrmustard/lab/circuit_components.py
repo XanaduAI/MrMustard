@@ -232,8 +232,8 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
 
             >>> from mrmustard.lab import Coherent
 
-            >>> coh = Coherent(mode=0, x=1.0)
-            >>> assert coh.parameters.x.value == 1.0
+            >>> coh = Coherent(mode=0, alpha=1.0)
+            >>> assert coh.parameters.alpha.value == 1.0
         """
         return self._parameters
 
@@ -247,7 +247,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
             >>> from mrmustard.lab import Coherent
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
-            >>> coh = Coherent(mode=0, x=1.0)
+            >>> coh = Coherent(mode=0, alpha=1.0)
             >>> assert isinstance(coh.ansatz, PolyExpAnsatz)
             >>> A = coh.ansatz.A
             >>> assert A.shape == (1, 1)
@@ -270,7 +270,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
 
             >>> from mrmustard.lab import Coherent
 
-            >>> coh = Coherent(mode=0, x=1.0)
+            >>> coh = Coherent(mode=0, alpha=1.0)
             >>> assert coh.wires.output.ket.modes == {0}
         """
         return self._representation.wires
@@ -479,7 +479,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
 
         .. code-block::
             >>> from mrmustard.lab import Coherent, Ket
-            >>> cat = Coherent(mode=0, x=2.0) + Coherent(mode=0, x=-2.0)
+            >>> cat = Coherent(mode=0, alpha=2.0) + Coherent(mode=0, alpha=-2.0)
             >>> assert isinstance(cat, Ket)
 
         Args:
@@ -518,7 +518,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         .. code-block:: pycon
 
             >>> from mrmustard.lab import CircuitComponent, Coherent
-            >>> coh = Coherent(mode=0, x=1.0)
+            >>> coh = Coherent(mode=0, alpha=1.0)
             >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=(0,))
             >>> assert isinstance(coh_cc, CircuitComponent)
             >>> assert coh == coh_cc  # equality looks at representation and wires
@@ -621,7 +621,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
             >>> from mrmustard.lab import Dgate
             >>> from mrmustard.physics.ansatz import PolyExpAnsatz
 
-            >>> d = Dgate(1, x=0.1, y=0.1)
+            >>> d = Dgate(1, alpha = 0.1+0.1j)
             >>> d_fock = d.to_fock(shape=3)
             >>> d_bargmann = d_fock.to_bargmann()
 
@@ -648,7 +648,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
             >>> from mrmustard.lab import Dgate
             >>> from mrmustard.physics.ansatz import ArrayAnsatz
 
-            >>> d = Dgate(1, x=0.1, y=0.1)
+            >>> d = Dgate(1, alpha = 0.1+0.1j)
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name
