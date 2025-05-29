@@ -32,44 +32,40 @@ class TestCoherent:
     def test_init(self, modes, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(modes, x, y)
+        state = Coherent(modes, x + 1j * y)
 
         assert state.name == "Coherent"
         assert state.modes == (modes,)
         assert state.ansatz.batch_shape == batch_shape
 
     def test_trainable_parameters(self):
-        state1 = Coherent(0, 1, 1)
-        state2 = Coherent(0, 1, 1, x_trainable=True, x_bounds=(-2, 2))
-        state3 = Coherent(0, 1, 1, y_trainable=True, y_bounds=(-2, 2))
+        state1 = Coherent(0, 1 + 1j)
+        state2 = Coherent(0, 1 + 1j, alpha_trainable=True, alpha_bounds=(0, 2))
 
         with pytest.raises(AttributeError):
-            state1.parameters.x.value = 3
+            state1.parameters.alpha.value = 3
 
-        state2.parameters.x.value = 2
-        assert state2.parameters.x.value == 2
-
-        state3.parameters.y.value = 2
-        assert state3.parameters.y.value == 2
+        state2.parameters.alpha.value = 2
+        assert state2.parameters.alpha.value == 2
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_representation(self, batch_shape):
         x = math.broadcast_to(0.1, batch_shape)
         y = math.broadcast_to(0.2, batch_shape)
-        rep1 = Coherent(mode=0, x=x, y=y).ansatz
+        rep1 = Coherent(mode=0, alpha=x + 1j * y).ansatz
         assert math.allclose(rep1.A, math.zeros((1, 1)))
         assert math.allclose(rep1.b, [0.1 + 0.2j])
         assert math.allclose(rep1.c, 0.97530991)
 
-        rep3 = Coherent(mode=1, x=x).ansatz
+        rep3 = Coherent(mode=1, alpha=x).ansatz
         assert math.allclose(rep3.A, math.zeros((1, 1)))
         assert math.allclose(rep3.b, [0.1])
         assert math.allclose(rep3.c, 0.9950124791926823)
 
     def test_linear_combinations(self):
-        state1 = Coherent(0, x=1, y=2)
-        state2 = Coherent(0, x=2, y=3)
-        state3 = Coherent(0, x=3, y=4)
+        state1 = Coherent(0, 1 + 2j)
+        state2 = Coherent(0, 2 + 3j)
+        state3 = Coherent(0, 3 + 4j)
 
         lc = state1 + state2 - state3
         assert lc.ansatz.batch_size == 3
@@ -78,4 +74,4 @@ class TestCoherent:
         assert (lc.contract(lc.dual, mode="zip")).ansatz.batch_size == 9
 
     def test_vacuum_shape(self):
-        assert Coherent(0, x=0.0, y=0.0).auto_shape() == (1,)
+        assert Coherent(0, 0.0).auto_shape() == (1,)

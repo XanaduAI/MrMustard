@@ -102,7 +102,7 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
 def test_coherent_state(alpha):
     """Test that coherent states have the correct photon number statistics"""
     cutoff = 10
-    amps = Coherent(0, alpha.real, alpha.imag).fock_array([cutoff])
+    amps = Coherent(0, alpha).fock_array([cutoff])
     expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array(
         [alpha**n / np.sqrt(factorial(n)) for n in range(cutoff)]
     )
@@ -233,8 +233,8 @@ def test_displacement_values():
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
 def test_number_means(x, y):
     """Tests the mean photon number."""
-    ket = Coherent(0, x, y).fock_array(80)
-    dm = Coherent(0, x, y).dm().fock_array(80)
+    ket = Coherent(0, x + 1j * y).fock_array(80)
+    dm = Coherent(0, x + 1j * y).dm().fock_array(80)
     assert np.allclose(fock_utils.number_means(ket, False), x * x + y * y)
     assert np.allclose(fock_utils.number_means(dm, True), x * x + y * y)
 
@@ -243,10 +243,11 @@ def test_number_means(x, y):
 def test_number_variances_coh(x, y):
     """Tests the variance of the number operator."""
     assert np.allclose(
-        fock_utils.number_variances(Coherent(0, x, y).fock_array(80), False)[0], x * x + y * y
+        fock_utils.number_variances(Coherent(0, x + 1j * y).fock_array(80), False)[0], x * x + y * y
     )
     assert np.allclose(
-        fock_utils.number_variances(Coherent(0, x, y).dm().fock_array(80), True)[0], x * x + y * y
+        fock_utils.number_variances(Coherent(0, x + 1j * y).dm().fock_array(80), True)[0],
+        x * x + y * y,
     )
 
 

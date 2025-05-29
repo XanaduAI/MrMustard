@@ -126,7 +126,7 @@ class TestWignerDiscretized:
             q_vec = np.linspace(left, right, 50)
             p_vec = np.linspace(left, right, 50)
 
-            state = Coherent(0, np.real(alpha), np.imag(alpha))
+            state = Coherent(0, alpha)
             W_mm, q_mat, p_mat = wigner_discretized(
                 state.dm().fock_array(100, standard_order=True), q_vec, p_vec
             )
