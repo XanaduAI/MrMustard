@@ -153,10 +153,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         if bounds != (-np.inf, np.inf):
 
             def constraint(x):
-                if x.dtype in (tf.complex128, tf.complex64):
-                    return tf.clip_by_value(tf.abs(x), bounds[0], bounds[1]) * tf.exp(
-                        1j * tf.math.angle(x)
-                    )
                 return tf.clip_by_value(x, bounds[0], bounds[1])
 
         else:
@@ -191,10 +187,10 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.linalg.diag_part(array, k=k)
 
     @Autocast()
-    def einsum(self, string: str, *tensors) -> tf.Tensor:
-        if isinstance(string, str):
-            return tf.einsum(string, *tensors)
-        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
+    def einsum(self, string: str, *tensors, optimize: str | bool) -> tf.Tensor:
+        if optimize is False:
+            optimize = "greedy"
+        return tf.einsum(string, *tensors, optimize=optimize)
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
