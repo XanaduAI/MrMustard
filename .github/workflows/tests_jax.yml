@@ -41,7 +41,7 @@ jobs:
       - name: JAX compilation cache
         uses: actions/cache@v4
         with:
-          path: ${{github.workspace}}/.cache/mrmustard/jax_cache
+          path: $XDG_CACHE_HOME/mrmustard/jax_cache
           key: jax-cache-${{ matrix.python-version }}-${{ github.sha }}
           restore-keys: |
             jax-cache-${{ matrix.python-version }}-
