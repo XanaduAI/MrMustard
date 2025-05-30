@@ -84,6 +84,11 @@ line-length = 100
 
 [tool.coverage.run]
 source = ["mrmustard"]
+omit = [
+    "mrmustard/math/backend_jax.py",
+    "mrmustard/math/backend_tensorflow.py",
+    "mrmustard/math/backend_numpy.py",
+]
 
 [tool.coverage.report]
 omit = ["mrmustard/training/*"]
