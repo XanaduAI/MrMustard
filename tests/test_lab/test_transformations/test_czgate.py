@@ -40,7 +40,7 @@ class TestCZgate:
     def test_application(self, s, batch_shape):
         "Tests the application of CZgate"
         s_batch = math.broadcast_to(s, batch_shape)
-        psi = Coherent(0, 1j) >> Coherent(1, 1) >> CZgate((0, 1), s_batch)
+        psi = Coherent(0, 0, 1) >> Coherent(1, 1, 0) >> CZgate((0, 1), s_batch)
         _, d, _ = psi.phase_space(s=0)
         d_by_hand = math.astensor([0, math.sqrt(complex(2)), (1 + s) * math.sqrt(complex(2)), 0])
         assert d.shape[:-1] == batch_shape

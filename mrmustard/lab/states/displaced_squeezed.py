@@ -55,7 +55,7 @@ class DisplacedSqueezed(Ket):
         >>> from mrmustard.lab import DisplacedSqueezed, Vacuum, Sgate, Dgate
 
         >>> state = DisplacedSqueezed(mode=0, x=1, phi=0.2)
-        >>> assert state == Vacuum(0) >> Sgate(0, phi=0.2) >> Dgate(0, alpha=1)
+        >>> assert state == Vacuum(0) >> Sgate(0, phi=0.2) >> Dgate(0, x=1)
     """
 
     short_name = "DSq"

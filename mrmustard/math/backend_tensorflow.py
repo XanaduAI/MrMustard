@@ -153,10 +153,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         if bounds != (-np.inf, np.inf):
 
             def constraint(x):
-                if x.dtype in (tf.complex128, tf.complex64):
-                    return tf.clip_by_value(tf.abs(x), bounds[0], bounds[1]) * tf.exp(
-                        1j * tf.math.angle(x)
-                    )
                 return tf.clip_by_value(x, bounds[0], bounds[1])
 
         else:
