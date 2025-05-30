@@ -38,10 +38,15 @@ jobs:
         id: record_file
         run: echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
 
+      - name: Test
+        id: testing
+        run: |
+          ipython -c "from platformdirs import user_cache_dir; print(user_cache_dir('mrmustard'))"
+
       - name: JAX compilation cache
         uses: actions/cache@v4
         with:
-          path: $XDG_CACHE_HOME/mrmustard/jax_cache
+          path: /$XDG_CACHE_HOME/mrmustard/jax_cache/
           key: jax-cache-${{ matrix.python-version }}-${{ github.sha }}
           restore-keys: |
             jax-cache-${{ matrix.python-version }}-
