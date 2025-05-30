@@ -21,5 +21,4 @@ __pycache__/
 coverage.xml
 doc/_build
 doc/code/api/*
-*/jax_cache/
 notebooks/*
