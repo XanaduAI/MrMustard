@@ -96,8 +96,8 @@ class TestCircuit:
     @pytest.mark.parametrize("path", [[(0, 1), (2, 3)], [(0, 1), (2, 3), (0, 2), (0, 4), (0, 5)]])
     def test_path(self, path):
         vac12 = Vacuum((1, 2))
-        d1 = Dgate(1, alpha=0.1 + 0.1j)
-        d2 = Dgate(2, alpha=0.1 + 0.2j)
+        d1 = Dgate(1, x=0.1, y=0.1)
+        d2 = Dgate(2, x=0.1, y=0.2)
         a1 = Attenuator(1, transmissivity=0.8)
         numstate = Number(1, n=1).dual
 
@@ -216,34 +216,34 @@ class TestCircuit:
     def test_optimize_path(self):
         "tests the optimize method"
         # contracting the last two first is better
-        circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Coherent(0, alpha=1.0).dual])
+        circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Coherent(0, x=1.0).dual])
         circ.optimize(with_BF_heuristic=True)  # with default heuristics
         assert circ.path == [(1, 2), (0, 1)]
 
-        circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Coherent(0, alpha=1.0).dual])
+        circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Coherent(0, x=1.0).dual])
         circ.optimize(with_BF_heuristic=False)  # without the BF heuristic
         assert circ.path == [(1, 2), (0, 1)]
 
-        circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Coherent(0, alpha=1.0).dual])
+        circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Coherent(0, x=1.0).dual])
         circ.optimize(n_init=1, verbose=False)
         assert circ.path == [(1, 2), (0, 1)]
 
     def test_wrong_path(self):
         "tests an exception is raised if contract is called with a wrond path"
-        circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Dgate(0, 1.0)])
+        circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Dgate(0, x=1.0)])
         circ.path = [(0, 3)]
         with pytest.raises(ValueError):
             circ.contract()
 
     def test_contract(self):
         "tests the contract method"
-        circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Dgate(0, 1.0)])
-        assert circ.contract() == Number(0, n=15) >> Sgate(0, r=1.0) >> Dgate(0, 1.0)
+        circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Dgate(0, x=1.0)])
+        assert circ.contract() == Number(0, n=15) >> Sgate(0, r=1.0) >> Dgate(0, x=1.0)
 
     def test_serialize_makes_zip(self, tmpdir):
         """Test that serialize makes a JSON and a zip."""
         settings.CACHE_DIR = tmpdir
-        circ = Circuit([Coherent(0, alpha=1.0), Dgate(0, 0.1)])
+        circ = Circuit([Coherent(0, x=1.0), Dgate(0, 0.1)])
         path = circ.serialize()
         assert list(path.parent.glob("*")) == [path]
         assert path.suffix == ".zip"
@@ -254,7 +254,7 @@ class TestCircuit:
     def test_serialize_custom_name(self, tmpdir):
         """Test that circuits can be serialized with custom names."""
         settings.CACHE_DIR = tmpdir
-        circ = Circuit([Coherent(0, alpha=1.0), Dgate(0, 0.1)])
+        circ = Circuit([Coherent(0, x=1.0), Dgate(0, 0.1)])
         path = circ.serialize(filestem="custom_name")
         assert path.name == "custom_name.zip"
 

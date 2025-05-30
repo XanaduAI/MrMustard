@@ -41,7 +41,7 @@ class TestPNRSampler:
         vac_prob = [1.0] + [0.0] * 99
         assert math.allclose(sampler.probabilities(Vacuum((0, 1))), vac_prob)
 
-        coh_state = Coherent(0, alpha=0.5) >> Coherent(1, alpha=1)
+        coh_state = Coherent(0, x=0.5) >> Coherent(1, x=1)
         exp_probs = [
             (coh_state >> Number(0, n0).dual >> Number(1, n1).dual) ** 2
             for n0 in range(10)
@@ -58,7 +58,7 @@ class TestPNRSampler:
         assert not np.any(sampler.sample(Vacuum((0, 1))))
         assert not np.any(sampler.sample_prob_dist(Vacuum((0, 1)))[0])
 
-        state = Coherent(0, alpha=0.1)
+        state = Coherent(0, x=0.1)
         samples = sampler.sample(state, n_samples)
 
         count = np.zeros_like(sampler.meas_outcomes)
@@ -89,7 +89,7 @@ class TestHomodyneSampler:
     def test_probabilties(self):
         sampler = HomodyneSampler()
 
-        state = Coherent(0, alpha=0.1)
+        state = Coherent(0, x=0.1)
 
         exp_probs = (
             state.quadrature_distribution(math.astensor(sampler.meas_outcomes)) * sampler._step
@@ -115,7 +115,9 @@ class TestHomodyneSampler:
         alpha = 1.0 + 1.0j
         tol = settings.ATOL
 
-        state = Coherent(0, alpha) >> Coherent(1, alpha)
+        state = Coherent(0, x=math.real(alpha), y=math.imag(alpha)) >> Coherent(
+            1, x=math.real(alpha), y=math.imag(alpha)
+        )
         sampler = HomodyneSampler()
 
         meas_result = sampler.sample(state, N_MEAS)

@@ -193,12 +193,14 @@ def random_Dgate(draw, trainable=False):
     r"""Return a random Dgate."""
     x = draw(small_float)
     y = draw(small_float)
-    alpha = x + 1j * y
     return Dgate(
         0,
-        alpha=alpha,
-        alpha_bounds=draw(real_bounds),
-        alpha_trainable=trainable,
+        x=x,
+        y=y,
+        x_bounds=draw(real_bounds),
+        y_bounds=draw(real_bounds),
+        x_trainable=trainable,
+        y_trainable=trainable,
     )
 
 
@@ -402,9 +404,9 @@ def coherent(draw, num_modes):
     r"""Return a random coherent state."""
     x = draw(array_of_(medium_float, num_modes, num_modes))
     y = draw(array_of_(medium_float, num_modes, num_modes))
-    state = Coherent(0, alpha=x[0] + 1j * y[0])
+    state = Coherent(0, x=x[0], y=y[0])
     for i in range(1, num_modes):
-        state = state >> Coherent(i, alpha=x[i] + 1j * y[i])
+        state = state >> Coherent(i, x=x[i], y=y[i])
     return state
 
 

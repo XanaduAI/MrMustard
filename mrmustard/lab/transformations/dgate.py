@@ -40,16 +40,21 @@ class Dgate(Unitary):
 
     Args:
         mode: The mode this gate is applied to.
-        alpha: The displacement in the complex phase space.
-        alpha_trainable: Whether ``alpha`` is a trainable variable.
-        alpha_bounds: The bounds for the absolute value of ``alpha``.
+        x: The displacements along the ``x`` axis, which represents the position axis in phase space.
+        y: The displacements along the ``y`` axis, which represents the momentum axis in phase space.
+        x_trainable: Whether ``x`` is a trainable variable.
+        y_trainable: Whether ``y`` is a trainable variable.
+        x_bounds: The bounds for ``x``.
+        y_bounds: The bounds for ``y``.
 
     .. code-block ::
+
         >>> from mrmustard.lab import Dgate
 
-        >>> unitary = Dgate(mode=1, alpha=0.1+0.2j)
+        >>> unitary = Dgate(mode=1, x=0.1, y=0.2)
         >>> assert unitary.modes == (1,)
-        >>> assert unitary.parameters.alpha.value == 0.1+0.2j
+        >>> assert unitary.parameters.x.value == 0.1
+        >>> assert unitary.parameters.y.value == 0.2
 
     .. details::
 
@@ -77,19 +82,21 @@ class Dgate(Unitary):
     def __init__(
         self,
         mode: int,
-        alpha: complex | Sequence[complex] = 0.0,
-        alpha_trainable: bool = False,
-        alpha_bounds: tuple[float | None, float | None] = (0, None),
+        x: float | Sequence[float] = 0.0,
+        y: float | Sequence[float] = 0.0,
+        x_trainable: bool = False,
+        y_trainable: bool = False,
+        x_bounds: tuple[float | None, float | None] = (None, None),
+        y_bounds: tuple[float | None, float | None] = (None, None),
     ) -> None:
         super().__init__(name="Dgate")
-        self.parameters.add_parameter(
-            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128)
-        )
+        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
+        self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
         self._representation = self.from_ansatz(
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_gate_Abc, alpha=self.parameters.alpha
+                fn=triples.displacement_gate_Abc, x=self.parameters.x, y=self.parameters.y
             ),
         ).representation
 
@@ -114,16 +121,16 @@ class Dgate(Unitary):
                 f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
             )
         if self.ansatz.batch_shape:
-            alpha = math.astensor(self.parameters.alpha.value)
-            alpha = math.reshape(alpha, (-1,))
+            x, y = math.broadcast_arrays(self.parameters.x.value, self.parameters.y.value)
+            x = math.reshape(x, (-1,))
+            y = math.reshape(y, (-1,))
             ret = math.astensor(
-                [fock_utils.displacement(alpha_i, shape=shape) for alpha_i in alpha]
+                [fock_utils.displacement(xi, yi, shape=shape) for xi, yi in zip(x, y)]
             )
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
         else:
             ret = fock_utils.displacement(
-                self.parameters.alpha.value,
-                shape=shape,
+                self.parameters.x.value, self.parameters.y.value, shape=shape
             )
         return ret
 
