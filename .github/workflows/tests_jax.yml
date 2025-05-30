@@ -41,7 +41,7 @@ jobs:
       - name: Test
         id: testing
         run: |
-          ipython -c "from platformdirs import user_cache_dir; print(user_cache_dir('mrmustard'))"
+          uv run ipython -c "from platformdirs import user_cache_dir; print(user_cache_dir('mrmustard'))"
 
       - name: JAX compilation cache
         uses: actions/cache@v4
