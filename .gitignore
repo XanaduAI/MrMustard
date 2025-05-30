@@ -21,5 +21,5 @@ __pycache__/
 coverage.xml
 doc/_build
 doc/code/api/*
-mrmustard/math/tmp/jax_cache/
+*/jax_cache/
 notebooks/*
