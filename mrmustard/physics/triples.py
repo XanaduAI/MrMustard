@@ -98,24 +98,26 @@ def bargmann_eigenstate_Abc(
 
 
 def coherent_state_Abc(
-    alpha: complex | Sequence[complex],
+    x: float | Sequence[float], y: float | Sequence[float] = 0
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a pure coherent state.
 
     Args:
-        alpha: The complex displacement.
+        x: The real part of the displacement, in units of :math:`\sqrt{\hbar}`.
+        y: The imaginary part of the displacement, in units of :math:`\sqrt{\hbar}`.
 
     Returns:
         The ``(A, b, c)`` triple of the pure coherent state.
     """
-    alpha = math.astensor(alpha, dtype=math.complex128)
-
-    batch_shape = alpha.shape
+    x, y = math.broadcast_arrays(
+        math.astensor(x, dtype=math.complex128), math.astensor(y, dtype=math.complex128)
+    )
+    batch_shape = x.shape
 
     A = math.broadcast_to(_vacuum_A_matrix(1), batch_shape + (1, 1))
-    b = math.reshape(alpha, batch_shape + (1,))
-    c = math.cast(math.exp(-0.5 * (math.abs(alpha) ** 2)), math.complex128)
+    b = math.reshape(x + 1j * y, batch_shape + (1,))
+    c = math.cast(math.exp(-0.5 * (x**2 + y**2)), math.complex128)
 
     return A, b, c
 
@@ -407,7 +409,7 @@ def rotation_gate_Abc(
 
 
 def displacement_gate_Abc(
-    alpha: complex | Sequence[complex],
+    x: float | Sequence[float], y: float | Sequence[float] = 0
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of a displacement gate.
@@ -419,14 +421,15 @@ def displacement_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the displacement gate.
     """
-    alpha = math.astensor(alpha, dtype=math.complex128)
-
-    batch_shape = alpha.shape
+    x, y = math.broadcast_arrays(
+        math.astensor(x, dtype=math.complex128), math.astensor(y, dtype=math.complex128)
+    )
+    batch_shape = x.shape
     batch_dim = len(batch_shape)
 
     A = math.broadcast_to(_X_matrix_for_unitary(1), batch_shape + (2, 2))
-    b = math.stack([alpha, -math.conj(alpha)], batch_dim)
-    c = math.cast(math.exp(-(math.abs(alpha) ** 2) / 2), math.complex128)
+    b = math.stack([x + 1j * y, -x + 1j * y], batch_dim)
+    c = math.cast(math.exp(-(x**2 + y**2) / 2), math.complex128)
 
     return A, b, c
 
