@@ -33,8 +33,6 @@ from mrmustard.math.caching import tensor_int_cache
 
 from mrmustard.utils.typing import Scalar, Tensor, Vector, Batch
 
-SQRT = np.sqrt(np.arange(1e6))
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

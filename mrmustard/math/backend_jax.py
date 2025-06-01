@@ -235,8 +235,6 @@ class BackendJax(BackendBase):  # pragma: no cover
     def update_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
     ) -> jnp.ndarray:
-        if any(i >= s for i, s in zip(indices, tensor.shape)):
-            raise IndexError("Index out of bounds.")
         return tensor.at[indices].set(values)
 
     @jax.jit
