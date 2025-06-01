@@ -28,7 +28,6 @@ import equinox as eqx
 from jax import tree_util
 import optax
 
-from .autocast import Autocast
 from .backend_base import BackendBase
 from .lattice import strategies
 from .lattice.strategies.compactFock.inputValidation import (
@@ -160,12 +159,10 @@ class BackendJax(BackendBase):  # pragma: no cover
     def clip(self, array: jnp.ndarray, a_min: float, a_max: float) -> jnp.ndarray:
         return jnp.clip(array, a_min, a_max)
 
-    @Autocast()
     @jax.jit
     def maximum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.maximum(a, b)
 
-    @Autocast()
     @jax.jit
     def minimum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.minimum(a, b)
@@ -178,7 +175,6 @@ class BackendJax(BackendBase):  # pragma: no cover
     def conj(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.conj(array)
 
-    @Autocast()
     def pow(self, x: jnp.ndarray, y: float) -> jnp.ndarray:
         return jnp.power(x, y)
 
@@ -222,7 +218,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         value = self.astensor(value, dtype)
         return value
 
-    @Autocast()
     @partial(jax.jit, static_argnames=["data_format", "padding"])
     def convolution(
         self,
@@ -237,14 +232,13 @@ class BackendJax(BackendBase):  # pragma: no cover
     def tile(self, array: jnp.ndarray, repeats: Sequence[int]) -> jnp.ndarray:
         return jnp.tile(array, repeats)
 
-    @Autocast()
-    @jax.jit
     def update_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
     ) -> jnp.ndarray:
+        if any(i >= s for i, s in zip(indices, tensor.shape)):
+            raise IndexError("Index out of bounds.")
         return tensor.at[indices].set(values)
 
-    @Autocast()
     @jax.jit
     def update_add_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
@@ -252,7 +246,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         indices = self.atleast_nd(indices, 2)
         return tensor.at[tuple(indices.T)].add(values)
 
-    @Autocast()
     @jax.jit
     def matvec(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.matmul(a, b[..., None])[..., 0]
@@ -346,7 +339,6 @@ class BackendJax(BackendBase):  # pragma: no cover
     def make_complex(self, real: jnp.ndarray, imag: jnp.ndarray) -> jnp.ndarray:
         return real + 1j * imag
 
-    @Autocast()
     @jax.jit
     def matmul(self, *matrices: jnp.ndarray) -> jnp.ndarray:
         mat = jnp.linalg.multi_dot(matrices)
@@ -461,7 +453,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         scale_tril = scale_tril @ jnp.transpose(scale_tril)
         return Generator(loc, scale_tril, key)
 
-    @Autocast()
     def tensordot(self, a: jnp.ndarray, b: jnp.ndarray, axes: Sequence[int]) -> jnp.ndarray:
         return jnp.tensordot(a, b, axes)
 

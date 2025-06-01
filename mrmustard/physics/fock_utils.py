@@ -24,9 +24,7 @@ from functools import lru_cache
 from typing import Sequence, Iterable
 
 import numpy as np
-import jax
-import jax.numpy as jnp
-from functools import partial
+from tensorflow.python.framework.errors_impl import InvalidArgumentError
 from scipy.special import comb, factorial
 
 from mrmustard import math, settings
@@ -55,6 +53,10 @@ def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = Non
 
     Returns:
         The Fock array of a tensor product of one-mode ``Number`` states.
+
+    Raises:
+        ValueError: If the number of cutoffs does not match the number of photon numbers.
+        ValueError: If the photon numbers are larger than the corresponding cutoffs.
     """
     n = math.atleast_1d(n)
 
@@ -70,18 +72,13 @@ def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = Non
         raise ValueError(msg)
 
     shape = tuple(c + 1 for c in cutoffs)
-    array = np.zeros(shape, dtype=np.complex128)
-
-    # array = math.zeros(shape, dtype=math.complex64)
-
+    array = math.zeros(shape, dtype=math.complex64)
     try:
-        # array = math.update_tensor(array, tuple(n), [1])
-        array[tuple(n)] = 1
-    except IndexError as e:
+        array = math.update_tensor(array, tuple(n), 1)
+    except (IndexError, InvalidArgumentError) as e:
         msg = "Photon numbers cannot be larger than the corresponding cutoffs."
         raise ValueError(msg) from e
-
-    return math.astensor(array)
+    return array
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
