@@ -73,7 +73,7 @@ def beamsplitter_jax_fwd(
 
 
 def beamsplitter_jax_bwd(
-    shape: tuple[int, ...], method: str, res: tuple[jnp.ndarray, float, float], g: jnp.ndarray
+    shape: tuple[int, ...], _, res: tuple[jnp.ndarray, float, float], g: jnp.ndarray
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     r"""
     The jax backward pass for the beamsplitter gate.
@@ -119,7 +119,7 @@ def displacement_jax(x: float, y: float, shape: tuple[int, ...], tol: float) -> 
             y,
         )
 
-    def false_branch(shape, x, y):
+    def false_branch(shape, *_):
         return jnp.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
     return jax.lax.cond(
@@ -142,7 +142,7 @@ def displacement_jax_fwd(
 
 
 def displacement_jax_bwd(
-    shape: tuple[int, ...], tol: float, res: tuple[jnp.ndarray, float, float], g: jnp.ndarray
+    shape: tuple[int, ...], _, res: tuple[jnp.ndarray, float, float], g: jnp.ndarray
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     r"""
     The jax backward pass for the displacement gate.

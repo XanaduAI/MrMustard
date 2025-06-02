@@ -14,8 +14,8 @@
 
 """Tests for the jitting functionality within JAX backend."""
 
-import pytest
 import time
+import pytest
 
 import jax
 import jax.numpy as jnp
