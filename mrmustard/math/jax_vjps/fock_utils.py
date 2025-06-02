@@ -16,6 +16,8 @@
 Custom vjps for fock utilities.
 """
 
+# pylint: disable=unused-argument
+
 from __future__ import annotations
 from functools import partial
 
@@ -76,7 +78,7 @@ def beamsplitter_jax_bwd(
     shape,
     method,
     res: tuple[jnp.ndarray, float, float],
-    g: jnp.ndarray,  # pylint: disable=unused-argument
+    g: jnp.ndarray,
 ) -> tuple[float, float]:
     r"""
     The jax backward pass for the beamsplitter gate.
@@ -149,7 +151,7 @@ def displacement_jax_bwd(
     shape: tuple[int, ...],
     tol,
     res: tuple[jnp.ndarray, float, float],
-    g: jnp.ndarray,  # pylint: disable=unused-argument
+    g: jnp.ndarray,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     r"""
     The jax backward pass for the displacement gate.
