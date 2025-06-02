@@ -24,19 +24,32 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 
-from mrmustard import math
 from mrmustard.math.lattice import strategies
 
 __all__ = ["displacement_jax"]
 
 
+# ~~~~~~~~~~~~~~~~~
+# beamsplitter
+# ~~~~~~~~~~~~~~~~~
+
+
+# ~~~~~~~~~~~~~~~~~
+# displacement
+# ~~~~~~~~~~~~~~~~~
+
+
 @partial(jax.custom_vjp, nondiff_argnums=(2, 3))
 @partial(jax.jit, static_argnums=(2, 3))
 def displacement_jax(x, y, shape, tol):
+    r"""
+    The jax custom gradient for the displacement gate.
+    """
+
     def true_branch(shape, x, y):
         return jax.pure_callback(
             lambda x, y: strategies.displacement(
-                cutoffs=shape, alpha=math.asnumpy(x) + 1j * math.asnumpy(y), dtype=np.complex128
+                cutoffs=shape, alpha=np.asarray(x) + 1j * np.asarray(y), dtype=np.complex128
             ),
             jax.ShapeDtypeStruct(shape, jnp.complex128),
             x,
@@ -44,10 +57,10 @@ def displacement_jax(x, y, shape, tol):
         )
 
     def false_branch(shape, x, y):
-        return math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
+        return jnp.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
-    return math.conditional(
-        math.sqrt(x * x + y * y) > tol,
+    return jax.lax.cond(
+        jnp.sqrt(x * x + y * y) > tol,
         partial(true_branch, shape),
         partial(false_branch, shape),
         x,
@@ -56,26 +69,30 @@ def displacement_jax(x, y, shape, tol):
 
 
 def displacement_jax_fwd(x, y, shape, tol):
+    r"""
+    The jax forward pass for the displacement gate.
+    """
     gate = displacement_jax(x, y, shape, tol)
     return gate, (gate, x, y)
 
 
 def displacement_jax_bwd(shape, tol, res, g):
+    r"""
+    The jax backward pass for the displacement gate.
+    """
     gate, x, y = res
-
     dD_da, dD_dac = jax.pure_callback(
         lambda gate, x, y: strategies.jacobian_displacement(
-            math.asnumpy(gate), math.asnumpy(x) + 1j * math.asnumpy(y)
+            np.asarray(gate), np.asarray(x) + 1j * np.asarray(y)
         ),
         (jax.ShapeDtypeStruct(shape, jnp.complex128), jax.ShapeDtypeStruct(shape, jnp.complex128)),
         gate,
         x,
         y,
     )
-
-    dL_dac = math.sum(math.conj(g) * dD_dac + g * math.conj(dD_da))
-    dLdx = 2 * math.real(dL_dac)
-    dLdy = 2 * math.imag(dL_dac)
+    dL_dac = jnp.sum(jnp.conj(g) * dD_dac + g * jnp.conj(dD_da))
+    dLdx = 2 * jnp.real(dL_dac)
+    dLdy = 2 * jnp.imag(dL_dac)
     return dLdx, dLdy
 
 

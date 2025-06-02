@@ -30,6 +30,7 @@ from scipy.special import comb, factorial
 from mrmustard import math, settings
 from mrmustard.math.lattice import strategies
 from mrmustard.math.caching import tensor_int_cache
+from mrmustard.math.jax_vjps import displacement_jax
 
 from mrmustard.utils.typing import Scalar, Tensor, Vector, Batch
 
@@ -414,9 +415,30 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float
     return homodyne_sample, probability_sample
 
 
+def displacement(x: float, y: float, shape: tuple[int, ...], tol: float = 1e-15):
+    r"""
+    Creates a single mode displacement matrix.
+
+    Args:
+        x: The displacement magnitude.
+        y: The displacement angle.
+        shape: The shape of the displacement matrix.
+        tol: The tolerance to determine if the displacement is small enough to be approximated by the identity.
+
+    Returns:
+        The matrix representing the displacement gate.
+    """
+    if math.backend_name == "jax":
+        return displacement_jax(x, y, shape, tol)
+    else:
+        return displacement_tf(x, y, shape, tol)
+
+
 @math.custom_gradient
-def displacement(x, y, shape, tol=1e-15):
-    r"""creates a single mode displacement matrix"""
+def displacement_tf(x, y, shape, tol):
+    r"""
+    The tensorflow custom gradient for the displacement gate.
+    """
     alpha = math.asnumpy(x) + 1j * math.asnumpy(y)
 
     if np.sqrt(x * x + y * y) > tol:
@@ -425,7 +447,7 @@ def displacement(x, y, shape, tol=1e-15):
         gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
     ret = math.astensor(gate, dtype=gate.dtype.name)
-    if math.backend_name in ["numpy", "jax"]:
+    if math.backend_name in ["numpy"]:
         return ret
 
     def grad(dL_dDc):

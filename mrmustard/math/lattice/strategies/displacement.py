@@ -26,8 +26,8 @@ def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
     Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
 
     Args:
-        alpha (complex): displacement magnitude and angle
         cutoffs (tuple[int, int]): Fock ladder output-input cutoffs
+        alpha (complex): displacement magnitude and angle
         dtype (data type): Specifies the data type used for the calculation
 
     Returns:
