@@ -40,6 +40,9 @@ def hermite_renormalized_unbatched(
     shape: tuple[int],
     stable: bool,
 ) -> jnp.ndarray:
+    r"""
+    The jax custom gradient for hermite_renormalized_unbatched.
+    """
     if stable:
         G = jax.pure_callback(
             lambda A, b, c: strategies.stable_numba(shape, np.array(A), np.array(b), np.array(c)),
@@ -60,11 +63,17 @@ def hermite_renormalized_unbatched(
 
 
 def hermite_renormalized_unbatched_fwd(A, b, c, shape, stable):
+    r"""
+    The jax forward pass for hermite_renormalized_unbatched.
+    """
     G = hermite_renormalized_unbatched(A, b, c, shape, stable)
     return (G, (G, A, b, c))
 
 
 def hermite_renormalized_unbatched_bwd(shape, stable, res, g):
+    r"""
+    The jax backward pass for hermite_renormalized_unbatched.
+    """
     G, A, b, c = res
     dLdA, dLdB, dLdC = jax.pure_callback(
         lambda G, c, g: strategies.vanilla_vjp_numba(np.array(G), np.array(c), np.array(g)),

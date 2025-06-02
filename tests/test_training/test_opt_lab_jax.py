@@ -17,7 +17,6 @@ import pytest
 import numpy as np
 from hypothesis import given
 from hypothesis import strategies as st
-from thewalrus.symplectic import two_mode_squeezing
 
 from mrmustard import math, settings
 from mrmustard.lab import (
@@ -25,20 +24,15 @@ from mrmustard.lab import (
     Circuit,
     Dgate,
     DisplacedSqueezed,
-    Ggate,
     GKet,
-    Interferometer,
     Number,
-    RealInterferometer,
-    Rgate,
     S2gate,
     Sgate,
     SqueezedVacuum,
     TwoModeSqueezedVacuum,
     Vacuum,
 )
-from mrmustard.math.parameters import Variable, update_euclidean
-from mrmustard.physics.gaussian import number_means, von_neumann_entropy
+from mrmustard.math.parameters import Variable
 from mrmustard.training import OptimizerJax
 
 
@@ -241,17 +235,17 @@ class TestOptimizerJax:
         assert og_x != disp.parameters.x.value
         assert og_y != disp.parameters.y.value
 
-    # def test_bsgate_grad_from_fock(self):
-    #     """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
-    #     sq = SqueezedVacuum(0, r=1.0, r_trainable=True)
-    #     og_r = math.asnumpy(sq.parameters.r.value)
+    def test_bsgate_grad_from_fock(self):
+        """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
+        sq = SqueezedVacuum(0, r=1.0, r_trainable=True)
+        og_r = math.asnumpy(sq.parameters.r.value)
 
-    #     def cost_fn(sq):
-    #         return -math.real(
-    #             (sq >> Number(1, 1) >> BSgate((0, 1), 0.5) >> (Vacuum(0) >> Number(1, 1)).dual) ** 2
-    #         )
+        def cost_fn(sq):
+            return -math.real(
+                (sq >> Number(1, 1) >> BSgate((0, 1), 0.5) >> (Vacuum(0) >> Number(1, 1)).dual) ** 2
+            )
 
-    #     opt = OptimizerJax(euclidean_lr=0.05)
-    #     opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
+        opt = OptimizerJax(euclidean_lr=0.05)
+        opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
 
-    #     assert og_r != sq.parameters.r.value
+        assert og_r != sq.parameters.r.value
