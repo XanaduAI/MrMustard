@@ -202,7 +202,7 @@ class TestOptimizerJax:
                 -math.abs(math.sum(math.conj(state_out.fock_array((40, 40))) * target_state)) ** 2
             )
 
-        opt = OptimizerJax(euclidean_lr=0.01)
+        opt = OptimizerJax()
         opt.minimize(cost_fn, by_optimizing=[bsgate])
 
         assert math.allclose(bsgate.parameters.theta.value, 0.1, atol=0.01)

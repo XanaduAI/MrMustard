@@ -30,7 +30,7 @@ from scipy.special import comb, factorial
 from mrmustard import math, settings
 from mrmustard.math.lattice import strategies
 from mrmustard.math.caching import tensor_int_cache
-from mrmustard.math.jax_vjps import displacement_jax
+from mrmustard.math.jax_vjps import beamsplitter_jax, displacement_jax
 
 from mrmustard.utils.typing import Scalar, Tensor, Vector, Batch
 
@@ -454,39 +454,50 @@ def displacement(x: float, y: float, shape: tuple[int, ...], tol: float = 1e-15)
 
 
 @math.custom_gradient
-def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
-    r"""Creates a beamsplitter tensor with given cutoffs using a numba-based fock lattice strategy.
+def beamsplitter(theta: float, phi: float, shape: tuple[int, int], method: str):
+    r"""
+    Creates a beamsplitter tensor with given cutoffs using a numba-based fock lattice strategy.
 
     Args:
-        theta (float): transmittivity angle of the beamsplitter
-        phi (float): phase angle of the beamsplitter
-        cutoffs (int,int): cutoff dimensions of the two modes
-        method (str): method to compute the beamsplitter ("vanilla", "schwinger" or "stable")
+        theta: Transmittivity angle of the beamsplitter.
+        phi: Phase angle of the beamsplitter.
+        shape: Output shape of the two modes.
+        method: Method to compute the beamsplitter ("vanilla", "schwinger" or "stable").
+
+    Returns:
+        The matrix representing the beamsplitter gate.
+
+    Raises:
+        ValueError: If the method is not "vanilla", "schwinger" or "stable".
     """
-    t, s = math.asnumpy(theta), math.asnumpy(phi)
-    if method == "vanilla":
-        bs_unitary = strategies.beamsplitter(shape, t, s)
-    elif method == "schwinger":
-        bs_unitary = strategies.beamsplitter_schwinger(shape, t, s)
-    elif method == "stable":
-        bs_unitary = strategies.stable_beamsplitter(shape, t, s)
-    else:
+    if method not in ["vanilla", "schwinger", "stable"]:
         raise ValueError(f"Unknown method {method}. Use 'vanilla', 'schwinger' or 'stable'.")
 
-    ret = math.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
-    if math.backend_name in ["numpy", "jax"]:
-        return ret
+    if math.backend_name == "jax":
+        return beamsplitter_jax(theta, phi, shape, method)
+    else:
+        t, s = math.asnumpy(theta), math.asnumpy(phi)
+        if method == "vanilla":
+            bs_unitary = strategies.beamsplitter(shape, t, s)
+        elif method == "schwinger":
+            bs_unitary = strategies.beamsplitter_schwinger(shape, t, s)
+        elif method == "stable":
+            bs_unitary = strategies.stable_beamsplitter(shape, t, s)
 
-    def vjp(dLdGc):
-        dtheta, dphi = strategies.beamsplitter_vjp(
-            math.asnumpy(bs_unitary),
-            math.asnumpy(math.conj(dLdGc)),
-            math.asnumpy(theta),
-            math.asnumpy(phi),
-        )
-        return math.astensor(dtheta, dtype=theta.dtype), math.astensor(dphi, dtype=phi.dtype)
+        ret = math.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
+        if math.backend_name in ["numpy"]:
+            return ret
 
-    return ret, vjp
+        def vjp(dLdGc):
+            dtheta, dphi = strategies.beamsplitter_vjp(
+                math.asnumpy(bs_unitary),
+                math.asnumpy(math.conj(dLdGc)),
+                math.asnumpy(theta),
+                math.asnumpy(phi),
+            )
+            return math.astensor(dtheta, dtype=theta.dtype), math.astensor(dphi, dtype=phi.dtype)
+
+        return ret, vjp
 
 
 @math.custom_gradient

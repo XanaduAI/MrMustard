@@ -26,12 +26,72 @@ import jax.numpy as jnp
 
 from mrmustard.math.lattice import strategies
 
-__all__ = ["displacement_jax"]
-
+__all__ = ["beamsplitter_jax", "displacement_jax"]
 
 # ~~~~~~~~~~~~~~~~~
 # beamsplitter
 # ~~~~~~~~~~~~~~~~~
+
+
+@partial(jax.custom_vjp, nondiff_argnums=(2, 3))
+@partial(jax.jit, static_argnums=(2, 3))
+def beamsplitter_jax(theta: float, phi: float, shape: tuple[int, ...], method: str):
+    r"""
+    The jax custom gradient for the beamsplitter gate.
+    """
+    if method == "vanilla":
+        bs_unitary = jax.pure_callback(
+            lambda t, s: strategies.beamsplitter(shape, np.asarray(t), np.asarray(s)),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            theta,
+            phi,
+        )
+    elif method == "schwinger":
+        bs_unitary = jax.pure_callback(
+            lambda t, s: strategies.beamsplitter_schwinger(shape, np.asarray(t), np.asarray(s)),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            theta,
+            phi,
+        )
+    elif method == "stable":
+        bs_unitary = jax.pure_callback(
+            lambda t, s: strategies.stable_beamsplitter(shape, np.asarray(t), np.asarray(s)),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            theta,
+            phi,
+        )
+    return bs_unitary
+
+
+def beamsplitter_jax_fwd(theta, phi, shape, method):
+    r"""
+    The jax forward pass for the beamsplitter gate.
+    """
+    bs_unitary = beamsplitter_jax(theta, phi, shape, method)
+    return bs_unitary, (bs_unitary, theta, phi)
+
+
+def beamsplitter_jax_bwd(shape, method, res, g):
+    r"""
+    The jax backward pass for the beamsplitter gate.
+    """
+    bs_unitary, theta, phi = res
+    dtheta, dphi = jax.pure_callback(
+        lambda bs_unitary, theta, phi: strategies.beamsplitter_vjp(
+            np.asarray(bs_unitary),
+            np.asarray(np.conj(g)),
+            np.asarray(theta),
+            np.asarray(phi),
+        ),
+        (jax.ShapeDtypeStruct(shape, jnp.complex128), jax.ShapeDtypeStruct(shape, jnp.complex128)),
+        bs_unitary,
+        theta,
+        phi,
+    )
+    return dtheta, dphi
+
+
+beamsplitter_jax.defvjp(beamsplitter_jax_fwd, beamsplitter_jax_bwd)
 
 
 # ~~~~~~~~~~~~~~~~~
