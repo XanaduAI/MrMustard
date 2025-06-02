@@ -21,7 +21,6 @@ from hypothesis import settings as hyp_settings
 
 from mrmustard import math
 
-
 print("pytest.conf -----------------------")
 
 # ~~~~~~~~~~

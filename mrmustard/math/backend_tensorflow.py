@@ -48,7 +48,7 @@ from .lattice import strategies
 
 
 # pylint: disable=too-many-public-methods
-class BackendTensorflow(BackendBase):  # pragma: no cover
+class BackendTensorflow(BackendBase):
     r"""
     A base class for backends.
     """
