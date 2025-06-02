@@ -93,6 +93,7 @@ omit = [
     "mrmustard/math/backend_jax.py",
     "mrmustard/math/backend_tensorflow.py",
     "mrmustard/math/backend_numpy.py",
+    "mrmustard/math/jax_vjps/*",
 ]
 
 [tool.coverage.report]
