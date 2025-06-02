@@ -17,7 +17,6 @@ Custom vjps for fock utilities.
 """
 
 from __future__ import annotations
-from typing import Any
 from functools import partial
 
 import numpy as np
@@ -83,7 +82,7 @@ def beamsplitter_jax_bwd(
     dtheta, dphi = jax.pure_callback(
         lambda bs_unitary, theta, phi: strategies.beamsplitter_vjp(
             np.asarray(bs_unitary),
-            np.asarray(np.conj(g)),
+            np.asarray(g),
             np.asarray(theta),
             np.asarray(phi),
         ),
