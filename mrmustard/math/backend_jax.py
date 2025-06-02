@@ -16,31 +16,36 @@
 
 # pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
 
-from __future__ import annotations  # pragma: no cover
-from typing import Callable, Sequence  # pragma: no cover
-from functools import partial  # pragma: no cover
+from __future__ import annotations
+from typing import Callable, Sequence
+from functools import partial
+from platformdirs import user_cache_dir
 
-import jax  # pragma: no cover
-import jax.numpy as jnp  # pragma: no cover
-import jax.scipy as jsp  # pragma: no cover
-import numpy as np  # pragma: no cover
-import equinox as eqx  # pragma: no cover
-from jax import tree_util  # pragma: no cover
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+import numpy as np
+import equinox as eqx
+from jax import tree_util
 
-from .autocast import Autocast  # pragma: no cover
-from .backend_base import BackendBase  # pragma: no cover
-from .lattice import strategies  # pragma: no cover
-from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cover
+from .autocast import Autocast
+from .backend_base import BackendBase
+from .lattice import strategies
+from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
 
-jax.config.update("jax_enable_x64", True)  # pragma: no cover
+jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_compilation_cache_dir", f"{user_cache_dir('mrmustard')}/jax_cache")
+jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
+jax.config.update("jax_persistent_cache_min_compile_time_secs", 0)
+jax.config.update("jax_persistent_cache_enable_xla_caches", "xla_gpu_per_fusion_autotune_cache_dir")
 
 
 # pylint: disable=too-many-public-methods
-class BackendJax(BackendBase):  # pragma: no cover
+class BackendJax(BackendBase):
     """A JAX backend implementation."""
 
     int32 = jnp.int32
@@ -771,6 +776,4 @@ class BackendJax(BackendBase):  # pragma: no cover
 
 # defining the pytree node for the JaxBackend.
 # This allows to skip specifying `self` in static_argnames.
-tree_util.register_pytree_node(
-    BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten
-)  # pragma: no cover
+tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
