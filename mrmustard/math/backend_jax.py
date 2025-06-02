@@ -30,14 +30,13 @@ from jax import tree_util
 import optax
 
 from .backend_base import BackendBase
+from .jax_vjps import hermite_renormalized_unbatched
 from .lattice import strategies
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
-
-from .jax_vjp.hermite import hermite_renormalized_unbatched
 
 jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_compilation_cache_dir", f"{user_cache_dir('mrmustard')}/jax_cache")

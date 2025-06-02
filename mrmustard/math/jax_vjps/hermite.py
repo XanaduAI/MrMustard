@@ -24,6 +24,7 @@ import numpy as np
 
 from ..lattice import strategies
 
+__all__ = ["hermite_renormalized_unbatched"]
 
 # ~~~~~~~~~~~~~~~~~
 # hermite_renormalized_unbatched
