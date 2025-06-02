@@ -415,6 +415,7 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float
     return homodyne_sample, probability_sample
 
 
+@math.custom_gradient
 def displacement(x: float, y: float, shape: tuple[int, ...], tol: float = 1e-15):
     r"""
     Creates a single mode displacement matrix.
@@ -431,33 +432,25 @@ def displacement(x: float, y: float, shape: tuple[int, ...], tol: float = 1e-15)
     if math.backend_name == "jax":
         return displacement_jax(x, y, shape, tol)
     else:
-        return displacement_tf(x, y, shape, tol)
+        alpha = math.asnumpy(x) + 1j * math.asnumpy(y)
 
+        if np.sqrt(x * x + y * y) > tol:
+            gate = strategies.displacement(tuple(shape), alpha)
+        else:
+            gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
-@math.custom_gradient
-def displacement_tf(x, y, shape, tol):
-    r"""
-    The tensorflow custom gradient for the displacement gate.
-    """
-    alpha = math.asnumpy(x) + 1j * math.asnumpy(y)
+        ret = math.astensor(gate, dtype=gate.dtype.name)
+        if math.backend_name in ["numpy"]:
+            return ret
 
-    if np.sqrt(x * x + y * y) > tol:
-        gate = strategies.displacement(tuple(shape), alpha)
-    else:
-        gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
+        def grad(dL_dDc):
+            dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(gate), alpha)
+            dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
+            dLdx = 2 * np.real(dL_dac)
+            dLdy = 2 * np.imag(dL_dac)
+            return math.astensor(dLdx, dtype=x.dtype), math.astensor(dLdy, dtype=y.dtype)
 
-    ret = math.astensor(gate, dtype=gate.dtype.name)
-    if math.backend_name in ["numpy"]:
-        return ret
-
-    def grad(dL_dDc):
-        dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(gate), alpha)
-        dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
-        dLdx = 2 * np.real(dL_dac)
-        dLdy = 2 * np.imag(dL_dac)
-        return math.astensor(dLdx, dtype=x.dtype), math.astensor(dLdy, dtype=y.dtype)
-
-    return ret, grad
+        return ret, grad
 
 
 @math.custom_gradient
