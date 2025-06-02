@@ -17,7 +17,7 @@ Custom vjps for fock utilities.
 """
 
 from __future__ import annotations
-
+from typing import Any
 from functools import partial
 
 import numpy as np
@@ -35,7 +35,7 @@ __all__ = ["beamsplitter_jax", "displacement_jax"]
 
 @partial(jax.custom_vjp, nondiff_argnums=(2, 3))
 @partial(jax.jit, static_argnums=(2, 3))
-def beamsplitter_jax(theta: float, phi: float, shape: tuple[int, ...], method: str):
+def beamsplitter_jax(theta: float, phi: float, shape: tuple[int, ...], method: str) -> jnp.ndarray:
     r"""
     The jax custom gradient for the beamsplitter gate.
     """
@@ -63,7 +63,9 @@ def beamsplitter_jax(theta: float, phi: float, shape: tuple[int, ...], method: s
     return bs_unitary
 
 
-def beamsplitter_jax_fwd(theta, phi, shape, method):
+def beamsplitter_jax_fwd(
+    theta: float, phi: float, shape: tuple[int, ...], method: str
+) -> tuple[jnp.ndarray, tuple[jnp.ndarray, float, float]]:
     r"""
     The jax forward pass for the beamsplitter gate.
     """
@@ -71,7 +73,9 @@ def beamsplitter_jax_fwd(theta, phi, shape, method):
     return bs_unitary, (bs_unitary, theta, phi)
 
 
-def beamsplitter_jax_bwd(shape, method, res, g):
+def beamsplitter_jax_bwd(
+    shape: tuple[int, ...], method: str, res: tuple[jnp.ndarray, float, float], g: jnp.ndarray
+) -> tuple[jnp.ndarray, jnp.ndarray]:
     r"""
     The jax backward pass for the beamsplitter gate.
     """
@@ -101,7 +105,7 @@ beamsplitter_jax.defvjp(beamsplitter_jax_fwd, beamsplitter_jax_bwd)
 
 @partial(jax.custom_vjp, nondiff_argnums=(2, 3))
 @partial(jax.jit, static_argnums=(2, 3))
-def displacement_jax(x, y, shape, tol):
+def displacement_jax(x: float, y: float, shape: tuple[int, ...], tol: float) -> jnp.ndarray:
     r"""
     The jax custom gradient for the displacement gate.
     """
@@ -128,7 +132,9 @@ def displacement_jax(x, y, shape, tol):
     )
 
 
-def displacement_jax_fwd(x, y, shape, tol):
+def displacement_jax_fwd(
+    x: float, y: float, shape: tuple[int, ...], tol: float
+) -> tuple[jnp.ndarray, tuple[jnp.ndarray, float, float]]:
     r"""
     The jax forward pass for the displacement gate.
     """
@@ -136,7 +142,9 @@ def displacement_jax_fwd(x, y, shape, tol):
     return gate, (gate, x, y)
 
 
-def displacement_jax_bwd(shape, tol, res, g):
+def displacement_jax_bwd(
+    shape: tuple[int, ...], tol: float, res: tuple[jnp.ndarray, float, float], g: jnp.ndarray
+) -> tuple[jnp.ndarray, jnp.ndarray]:
     r"""
     The jax backward pass for the displacement gate.
     """
