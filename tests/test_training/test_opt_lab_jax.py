@@ -24,7 +24,6 @@ from mrmustard.lab import (
     Circuit,
     Dgate,
     DisplacedSqueezed,
-    GKet,
     Number,
     S2gate,
     Sgate,
