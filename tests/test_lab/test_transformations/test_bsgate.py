@@ -79,3 +79,15 @@ class TestBSgate:
 
         gate3.parameters.phi.value = 2
         assert gate3.parameters.phi.value == 2
+
+    def test_fock_representation(self):
+        gate = BSgate((0, 1), 2, 3)
+        gate_fock = gate.fock_array(5, method="vanilla")  # int shape
+        gate_fock2 = gate.fock_array((5, 5, 5, 5), method="schwinger")  # tuple shape
+        assert math.allclose(gate_fock, gate_fock2)
+
+        with pytest.raises(ValueError):
+            gate.fock_array((5, 5, 5))  # wrong shape
+
+        bs_with_batch = BSgate((0, 1), math.astensor([[1, 2]]), math.astensor([[3], [4], [5]]))
+        assert bs_with_batch.fock_array(5, method="stable").shape == (3, 2, 5, 5, 5, 5)
