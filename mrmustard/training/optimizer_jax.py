@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This module contains the implementation of optimization classes and functions
-used within Mr Mustard.
+"""
+A Jax based optimizer for any parametrized object.
 """
 from __future__ import annotations
 
@@ -39,12 +39,14 @@ __all__ = ["OptimizerJax"]
 
 
 class Objective(eqx.Module):
-    r""" """
+    r"""
+    A dataclass that contains the static and dynamic parameters of the model.
+    """
     static: list[str]
     dynamic: list[jax.Array]
 
     def __init__(self, trainable_params: dict[str, Variable]):
-        self.static = [name for name in trainable_params.keys()]
+        self.static = list(trainable_params.keys())
         self.dynamic = [array.value for array in trainable_params.values()]
 
     def __call__(self, cost_fn: Callable, by_optimizing: Sequence[CircuitComponent]):
@@ -55,7 +57,9 @@ class Objective(eqx.Module):
 
 
 class OptimizerJax:
-    r""" """
+    r"""
+    A Jax based optimizer for any parametrized object.
+    """
 
     def __init__(
         self,
@@ -113,15 +117,31 @@ class OptimizerJax:
         model,
         opt_state,
     ):
-        r""" """
+        r"""
+        Make a step of the optimization.
+        """
         params, static = eqx.partition(model, eqx.is_array)
         loss_value, grads = jax.value_and_grad(loss)(params, static)
         updates, opt_state = optim.update(grads, opt_state, eqx.filter(model, eqx.is_array))
         model = eqx.apply_updates(model, updates)
         return model, opt_state, loss_value
 
-    def minimize(self, cost_fn, by_optimizing, max_steps=1000):
-        r""" """
+    def minimize(
+        self,
+        cost_fn: Callable,
+        by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
+        max_steps: int = 1000,
+    ) -> None:
+        r"""
+        Minimizes the given cost function by optimizing ``Variable``s either on their own or within a ``CircuitComponent`` / ``Circuit``.
+
+        Args:
+            cost_fn: A function that will be executed in a differentiable context in
+                order to compute gradients as needed.
+            by_optimizing: A list of elements that contain the parameters to optimize.
+            max_steps: The minimization keeps going until the loss is stable or max_steps are
+                reached (if ``max_steps=0`` it will only stop when the loss is stable).
+        """
         if settings.PROGRESSBAR:
             progress_bar = ProgressBar(max_steps)
             with progress_bar:
@@ -131,8 +151,33 @@ class OptimizerJax:
         else:
             self._optimization_loop(cost_fn, by_optimizing, max_steps=max_steps)
 
-    def _optimization_loop(self, cost_fn, by_optimizing, max_steps, progress_bar=None):
-        r""" """
+    def should_stop(self, max_steps: int) -> bool:
+        r"""
+        Returns a boolean indicating whether the optimization should stop.
+        An optimization should stop either because the loss is stable or because
+        the maximum number of steps is reached.
+        """
+        if max_steps != 0 and len(self.opt_history) > max_steps:
+            return True
+        if len(self.opt_history) > 20:  # if cost varies less than threshold over 20 steps
+            if (
+                sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
+                < self.stable_threshold
+            ):
+                self.log.info("Loss looks stable, stopping here.")
+                return True
+        return False
+
+    def _optimization_loop(
+        self,
+        cost_fn: Callable,
+        by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
+        max_steps: int,
+        progress_bar: ProgressBar | None = None,
+    ) -> None:
+        r"""
+        The core optimization loop.
+        """
         trainable_params = self._get_trainable_params(by_optimizing)
 
         model = Objective(trainable_params)
@@ -153,16 +198,3 @@ class OptimizerJax:
 
         for key, val in zip(model.static, model.dynamic):
             trainable_params[key].value = val
-
-    def should_stop(self, max_steps: int) -> bool:
-        r""" """
-        if max_steps != 0 and len(self.opt_history) > max_steps:
-            return True
-        if len(self.opt_history) > 20:  # if cost varies less than threshold over 20 steps
-            if (
-                sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
-                < self.stable_threshold
-            ):
-                self.log.info("Loss looks stable, stopping here.")
-                return True
-        return False
