@@ -73,21 +73,25 @@ def beamsplitter_jax_fwd(
 
 
 def beamsplitter_jax_bwd(
-    shape: tuple[int, ...], _, res: tuple[jnp.ndarray, float, float], g: jnp.ndarray
-) -> tuple[jnp.ndarray, jnp.ndarray]:
+    shape,
+    method,
+    res: tuple[jnp.ndarray, float, float],
+    g: jnp.ndarray,  # pylint: disable=unused-argument
+) -> tuple[float, float]:
     r"""
     The jax backward pass for the beamsplitter gate.
     """
     bs_unitary, theta, phi = res
     dtheta, dphi = jax.pure_callback(
-        lambda bs_unitary, theta, phi: strategies.beamsplitter_vjp(
+        lambda bs_unitary, g, theta, phi: strategies.beamsplitter_vjp(
             np.asarray(bs_unitary),
             np.asarray(g),
             np.asarray(theta),
             np.asarray(phi),
         ),
-        (jax.ShapeDtypeStruct(shape, jnp.complex128), jax.ShapeDtypeStruct(shape, jnp.complex128)),
+        (jax.ShapeDtypeStruct((), jnp.float64), jax.ShapeDtypeStruct((), jnp.float64)),
         bs_unitary,
+        g,
         theta,
         phi,
     )
@@ -142,7 +146,10 @@ def displacement_jax_fwd(
 
 
 def displacement_jax_bwd(
-    shape: tuple[int, ...], _, res: tuple[jnp.ndarray, float, float], g: jnp.ndarray
+    shape: tuple[int, ...],
+    tol,
+    res: tuple[jnp.ndarray, float, float],
+    g: jnp.ndarray,  # pylint: disable=unused-argument
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     r"""
     The jax backward pass for the displacement gate.

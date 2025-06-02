@@ -509,22 +509,16 @@ class TestOptimizer:
         assert np.allclose(sgate.parameters.phi.value, 0.2, atol=0.01)
 
     def test_bsgate_optimization(self):
-        """Test that Sgate is optimized correctly."""
+        """Test that BSgate is optimized correctly."""
         settings.SEED = 25
         rng = tf.random.get_global_generator()
         rng.reset_from_seed(settings.SEED)
 
-        G = GKet((0, 1))
-
         bsgate = BSgate((0, 1), 0.05, 0.1, theta_trainable=True, phi_trainable=True)
-        target_state = (G >> BSgate((0, 1), 0.1, 0.2)).fock_array((40, 40))
+        target_gate = BSgate((0, 1), 0.1, 0.2).fock_array(40)
 
         def cost_fn():
-            state_out = G >> bsgate
-
-            return (
-                -math.abs(math.sum(math.conj(state_out.fock_array((40, 40))) * target_state)) ** 2
-            )
+            return -math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2
 
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[bsgate])
