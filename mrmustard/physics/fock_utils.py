@@ -24,14 +24,13 @@ from functools import lru_cache
 from typing import Sequence, Iterable
 
 import numpy as np
-from tensorflow.python.framework.errors_impl import InvalidArgumentError
 from scipy.special import comb, factorial
+from tensorflow.python.framework.errors_impl import InvalidArgumentError
 
 from mrmustard import math, settings
 from mrmustard.math.lattice import strategies
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.math.jax_vjps import beamsplitter_jax, displacement_jax
-
 from mrmustard.utils.typing import Scalar, Tensor, Vector, Batch
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
