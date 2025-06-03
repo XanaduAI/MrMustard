@@ -484,7 +484,7 @@ def beamsplitter(theta: float, phi: float, shape: tuple[int, int], method: str):
             bs_unitary = strategies.stable_beamsplitter(shape, t, s)
 
         ret = math.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
-        if math.backend_name in ["numpy"]:
+        if math.backend_name in ["numpy"]:  # pragma: no cover
             return ret
 
         def vjp(dLdGc):
