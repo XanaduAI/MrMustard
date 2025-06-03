@@ -428,7 +428,7 @@ def displacement(x: float, y: float, shape: tuple[int, ...], tol: float = 1e-15)
     Returns:
         The matrix representing the displacement gate.
     """
-    if math.backend_name == "jax":
+    if math.backend_name == "jax":  # pragma: no cover
         return displacement_jax(x, y, shape, tol)
     else:
         alpha = math.asnumpy(x) + 1j * math.asnumpy(y)
@@ -439,7 +439,7 @@ def displacement(x: float, y: float, shape: tuple[int, ...], tol: float = 1e-15)
             gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
         ret = math.astensor(gate, dtype=gate.dtype.name)
-        if math.backend_name in ["numpy"]:
+        if math.backend_name in ["numpy"]:  # pragma: no cover
             return ret
 
         def grad(dL_dDc):
@@ -472,7 +472,7 @@ def beamsplitter(theta: float, phi: float, shape: tuple[int, int], method: str):
     if method not in ["vanilla", "schwinger", "stable"]:
         raise ValueError(f"Unknown method {method}. Use 'vanilla', 'schwinger' or 'stable'.")
 
-    if math.backend_name == "jax":
+    if math.backend_name == "jax":  # pragma: no cover
         return beamsplitter_jax(theta, phi, shape, method)
     else:
         t, s = math.asnumpy(theta), math.asnumpy(phi)

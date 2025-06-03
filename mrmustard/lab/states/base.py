@@ -396,7 +396,7 @@ class State(CircuitComponent):
                             max_shape or settings.AUTOSHAPE_MAX,
                             min_shape or settings.AUTOSHAPE_MIN,
                         )
-                    except TracerArrayConversionError:
+                    except TracerArrayConversionError:  # pragma: no cover
                         shape = super().auto_shape()
                     if self.wires.ket and self.wires.bra:
                         shape = tuple(shape) + tuple(shape)
