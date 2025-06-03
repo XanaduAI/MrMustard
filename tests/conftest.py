@@ -74,6 +74,7 @@ def set_backend(backend):
 def requires_backend(request, backend):
     r"""
     Skips test if backend is not a required backend.
+    If no backend is specified skips test entirely.
     """
     if request.node.get_closest_marker("requires_backend"):
         if backend not in request.node.get_closest_marker("requires_backend").args:
