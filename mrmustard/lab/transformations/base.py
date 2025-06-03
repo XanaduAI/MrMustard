@@ -513,7 +513,7 @@ class Channel(Map):
             This channel has a Bargmann triple that is computed in https://arxiv.org/pdf/2209.06069. We borrow
             the formulas from the paper to implement the corresponding channel.
         """
-        if X.shape[:-2]:
+        if X.shape[:-2] != ():
             raise NotImplementedError("Batching is not implemented.")
         if X.shape != (2 * len(modes_out), 2 * len(modes_in)):
             raise ValueError(
