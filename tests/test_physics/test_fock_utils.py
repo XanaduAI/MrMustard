@@ -231,6 +231,10 @@ def test_displacement_values():
     )
     D = displacement((cutoff, cutoff), alpha)
     assert np.allclose(D, expected, atol=1e-5, rtol=0)
+    D2 = fock_utils.displacement(math.real(alpha), math.imag(alpha), (cutoff, cutoff))
+    assert np.allclose(D, D2, atol=1e-5, rtol=0)
+    D3 = fock_utils.displacement(0, 0, (cutoff, cutoff))
+    assert np.allclose(D3, np.eye(cutoff), atol=1e-5, rtol=0)
 
 
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
