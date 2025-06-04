@@ -296,7 +296,6 @@ class BackendJax(BackendBase):
         return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
     def einsum(self, string: str, *tensors, optimize: bool | str = False) -> jnp.ndarray:
-        tensors = [t.todense() if isinstance(t, COO) else t for t in tensors]
         return jnp.einsum(string, *tensors, optimize=optimize)
 
     @jax.jit
