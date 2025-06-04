@@ -22,7 +22,6 @@ import numpy as np
 import pytest
 from ipywidgets import HTML, HBox, Tab, VBox
 from plotly.graph_objs import FigureWidget
-import sparse
 
 from mrmustard import math
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
@@ -197,26 +196,24 @@ class TestArrayAnsatz:
     def test_ipython_repr(self, mock_display, shape):
         """Test the IPython repr function."""
         rep_np = ArrayAnsatz(np.random.random(shape), batch_dims=1)
-        rep_coo = ArrayAnsatz(sparse.COO.from_numpy(np.random.random(shape)), batch_dims=1)
-        for rep in [rep_np, rep_coo]:
-            rep._ipython_display_()
-            [hbox] = mock_display.call_args.args
-            assert isinstance(hbox, HBox)
+        rep_np._ipython_display_()
+        [hbox] = mock_display.call_args.args
+        assert isinstance(hbox, HBox)
 
-            # the CSS, the header+ansatz, and the tabs of plots
-            [css, left, plots] = hbox.children
-            assert isinstance(css, HTML)
-            assert isinstance(left, VBox)
-            assert isinstance(plots, Tab)
+        # the CSS, the header+ansatz, and the tabs of plots
+        [css, left, plots] = hbox.children
+        assert isinstance(css, HTML)
+        assert isinstance(left, VBox)
+        assert isinstance(plots, Tab)
 
-            # left contains header and ansatz
-            left = left.children
-            assert len(left) == 2 and all(isinstance(w, HTML) for w in left)
+        # left contains header and ansatz
+        left = left.children
+        assert len(left) == 2 and all(isinstance(w, HTML) for w in left)
 
-            # one plot for magnitude, another for phase
-            assert plots.titles == ("Magnitude", "Phase")
-            plots = plots.children
-            assert len(plots) == 2 and all(isinstance(p, FigureWidget) for p in plots)
+        # one plot for magnitude, another for phase
+        assert plots.titles == ("Magnitude", "Phase")
+        plots = plots.children
+        assert len(plots) == 2 and all(isinstance(p, FigureWidget) for p in plots)
 
     @patch("mrmustard.physics.ansatz.array_ansatz.display")
     def test_ipython_repr_expects_batch_1(self, mock_display):
@@ -244,21 +241,3 @@ class TestArrayAnsatz:
         fock = ArrayAnsatz(self.array1578, batch_dims=2)
         fock_reordered = fock.reorder_batch([1, 0])
         assert fock_reordered.array.shape == (5, 1, 7, 8)
-
-    def test_sparse_to_dense(self):
-        ket0 = Ket.random([0, 1])
-        sp = sparse.COO.from_numpy(ket0.fock_array((20, 20)))
-        ket1 = Ket.from_ansatz((0, 1), ArrayAnsatz(sp))
-
-        res0 = ket0.to_fock((20, 20)) >> Dgate(0, 0.1)
-        res1 = ket1 >> Dgate(0, 0.1)
-
-        assert res0.ansatz == res1.ansatz
-
-    def test_contract_sparse_dense(self):
-        f0 = Ket.random([0]).to_fock((20,)).ansatz
-        f1 = Ket.random([0]).to_fock((20,)).ansatz
-        sp0 = sparse.COO.from_numpy(f0.array)
-        f0_sparse = ArrayAnsatz(sp0)
-        result = f0_sparse.contract(f1, idx1=[0], idx2=[0], idx_out=[])
-        assert np.allclose(result.array, f0.array @ f1.array)

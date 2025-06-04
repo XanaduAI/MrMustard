@@ -16,7 +16,7 @@
 
 import pytest
 import numpy as np
-import sparse
+
 
 from mrmustard import math, settings
 from mrmustard.lab import Ket, Unitary, BSgate, SqueezedVacuum, Rgate
@@ -445,43 +445,3 @@ class TestMmEinsum:
         )
         assert res.batch_shape == (4,)
         assert res._lin_sup == True
-
-    def test_with_sparse_and_dense_ansatze(self):
-        """Test that mm_einsum works for a sparse and dense ansatz."""
-        skip_jax()
-        g0 = self.g0.ansatz
-        f0 = self.f0.ansatz
-        sp = sparse.COO.from_numpy(f0.array)
-        f0_sparse = ArrayAnsatz(sp)
-        res = mm_einsum(
-            g0,
-            [0],
-            f0_sparse,
-            [0],
-            output=[],
-            contraction_path=[(0, 1)],
-            fock_dims={0: 20},
-        )
-        assert isinstance(res, ArrayAnsatz)
-        assert math.allclose(res.array, self.g0.fock_array(f0.array.shape) @ f0.array)
-
-    def test_with_sparse_and_sparse_ansatze(self):
-        """Test that mm_einsum works for only sparse ansatz."""
-        skip_jax()
-        f01 = Ket.random([0, 1]).to_fock((20, 20)).ansatz
-        f0 = Ket.random([0]).to_fock((20,)).ansatz
-        sp01 = sparse.COO.from_numpy(f01.array)
-        f01_sparse = ArrayAnsatz(sp01)
-        sp0 = sparse.COO.from_numpy(f0.array)
-        f0_sparse = ArrayAnsatz(sp0)
-        res = mm_einsum(
-            f01_sparse,
-            [0, 1],
-            f0_sparse,
-            [1],
-            output=[0],
-            contraction_path=[(0, 1)],
-            fock_dims={0: 20, 1: 20},
-        )
-        assert isinstance(res, ArrayAnsatz)
-        assert math.allclose(res.array, f01_sparse.array @ f0_sparse.array)

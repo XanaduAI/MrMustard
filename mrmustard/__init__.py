@@ -21,8 +21,6 @@ from ._version import __version__
 from .utils.settings import *
 from .utils.filters import add_complex_warning_filter
 
-os.environ["SPARSE_AUTO_DENSIFY"] = "1"
-
 
 def version():
     r"""Version number of Mr Mustard.

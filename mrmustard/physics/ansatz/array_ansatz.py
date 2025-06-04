@@ -22,7 +22,6 @@ from warnings import warn
 
 import numpy as np
 from numpy.typing import ArrayLike
-from sparse import COO
 
 from IPython.display import display
 
