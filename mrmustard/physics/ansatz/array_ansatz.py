@@ -241,7 +241,7 @@ class ArrayAnsatz(Ansatz):
             raise ValueError(f"Expected shape of length {self.core_dims}, got {len(shape)}.")
 
         if any(s > t for s, t in zip(shape, self.core_shape)):
-            warn("Warning: the fock array is being padded with zeros. Is this really necessary?")
+            warn("The fock array is being padded with zeros. Is this really necessary?")
             padded = math.pad(
                 self.array,
                 [(0, 0)] * self.batch_dims + [(0, s - t) for s, t in zip(shape, self.core_shape)],
