@@ -23,8 +23,6 @@ from mrmustard.lab import Ket, Unitary, BSgate, SqueezedVacuum, Rgate
 from mrmustard.physics.mm_einsum import mm_einsum
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 
-from ..conftest import skip_jax
-
 
 class TestMmEinsum:
     """Unit tests for the mm_einsum function."""
