@@ -89,7 +89,7 @@ class BackendNumpy(BackendBase):
         return tensor
 
     def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        array = np.asarray(array, dtype=dtype)
+        return np.asarray(array, dtype=dtype)
 
     def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
         return np.array(array, ndmin=n, dtype=dtype)
