@@ -603,13 +603,15 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Args:
             string: The string of the Einstein summation convention.
             tensors: The tensors to perform the Einstein summation on.
-            optimize: Whether to optimize the contraction order.
-                Allowed values are False, "greedy", "optimal" or "auto".
+            optimize: Optional flag whether to optimize the contraction order.
+                Allowed values are True, False, "greedy", "optimal" or "auto".
                 Note the TF backend does not support False and converts it to "greedy".
+                If None, ``settings.EINSUM_OPTIMIZE`` is used.
 
         Returns:
             The result of the Einstein summation convention.
         """
+        optimize = optimize or settings.EINSUM_OPTIMIZE
         return self._apply("einsum", (string, *tensors), {"optimize": optimize})
 
     def exp(self, array: Tensor) -> Tensor:

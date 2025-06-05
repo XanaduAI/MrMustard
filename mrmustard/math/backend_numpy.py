@@ -233,7 +233,7 @@ class BackendNumpy(BackendBase):
 
         return array
 
-    def einsum(self, string: str, *tensors, optimize: bool | str = False) -> np.ndarray:
+    def einsum(self, string: str, *tensors, optimize: bool | str) -> np.ndarray:
         return contract(string, *tensors, optimize=optimize)
 
     def exp(self, array: np.ndarray) -> np.ndarray:

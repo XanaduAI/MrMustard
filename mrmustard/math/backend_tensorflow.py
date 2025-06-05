@@ -187,8 +187,8 @@ class BackendTensorflow(BackendBase):
         return tf.linalg.diag_part(array, k=k)
 
     @Autocast()
-    def einsum(self, string: str, *tensors, optimize: str | bool = "greedy") -> tf.Tensor:
-        if optimize == False:
+    def einsum(self, string: str, *tensors, optimize: str | bool) -> tf.Tensor:
+        if optimize is False:
             optimize = "greedy"
         return tf.einsum(string, *tensors, optimize=optimize)
 

@@ -295,7 +295,7 @@ class BackendJax(BackendBase):
     def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
         return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
-    def einsum(self, string: str, *tensors, optimize: bool | str = False) -> jnp.ndarray:
+    def einsum(self, string: str, *tensors, optimize: bool | str) -> jnp.ndarray:
         return jnp.einsum(string, *tensors, optimize=optimize)
 
     @jax.jit

@@ -90,6 +90,13 @@ class Settings:
         self.DRAW_CIRCUIT_PARAMS: bool = True
         r"""Whether or not to draw the parameters of a circuit. Default is ``True``."""
 
+        self.EINSUM_OPTIMIZE: bool | str = "greedy"
+        r"""Whether to optimize the contraction order when using the Einstein summation convention.
+        Allowed values are True, False, "greedy", "optimal" or "auto".
+        Note the TF backend does not support False and converts it to "greedy".
+        Default is ``"greedy"``.
+        """
+
         self.PROGRESSBAR: bool = True
         r"""Whether or not to display the progress bar when performing training. Default is ``True``."""
 
