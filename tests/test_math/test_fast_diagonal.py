@@ -24,7 +24,9 @@ from mrmustard.math.lattice.strategies import fast_diagonal
 
 def test_fast_diagonal_2modes():
     r"""Test that the fast diagonal function works for a 2-mode Gaussian state."""
-    A, b, c = (DM.random([0, 1]) >> Dgate(0, 0.4 + 0.6j) >> Dgate(1, 0.4 + 0.6j)).bargmann_triple()
+    A, b, c = (
+        DM.random([0, 1]) >> Dgate(0, x=0.4, y=0.6) >> Dgate(1, x=0.4, y=0.6)
+    ).bargmann_triple()
     fd = math.hermite_renormalized_1leftoverMode(A, b, c, 5, (10,))
     control = math.hermite_renormalized(A, b, c, (6, 11, 6, 11))
     control = control[:, np.arange(11), :, np.arange(11)]  # shape (11,)+(6,6)
@@ -34,7 +36,10 @@ def test_fast_diagonal_2modes():
 def test_fast_diagonal_3modes():
     r"""Test that the fast diagonal function works for a 3-mode Gaussian state."""
     A, b, c = (
-        DM.random([0, 1, 2]) >> Dgate(0, 0.4 + 0.6j) >> Dgate(1, 0.4 + 0.6j) >> Dgate(2, 0.4 + 0.6j)
+        DM.random([0, 1, 2])
+        >> Dgate(0, x=0.4, y=0.6)
+        >> Dgate(1, x=0.4, y=0.6)
+        >> Dgate(2, x=0.4, y=0.6)
     ).bargmann_triple()
     fd_stable = fast_diagonal(A, b, c, 3, (4, 5), stable=True)
     fd = fast_diagonal(A, b, c, 3, (4, 5), stable=False)
