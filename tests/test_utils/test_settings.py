@@ -21,8 +21,6 @@ import pytest
 from mrmustard import math
 from mrmustard.utils.settings import Settings
 
-from ..conftest import skip_jax, skip_np
-
 
 class TestSettings:
     """Tests the Settings class"""
@@ -74,10 +72,9 @@ class TestSettings:
         seq1 = [settings.rng.integers(0, 2**31 - 1) for _ in range(10)]
         assert seq0 == seq1
 
+    @pytest.mark.requires_backend("tensorflow")
     def test_complex_warnings(self, caplog):
         """Tests that complex warnings can be correctly activated and deactivated."""
-        skip_np()
-        skip_jax()
 
         settings = Settings()
 

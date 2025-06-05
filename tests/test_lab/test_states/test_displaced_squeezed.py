@@ -62,6 +62,6 @@ class TestDisplacedSqueezed:
         x, y, r, phi = math.broadcast_arrays(x, y, r, phi)
         rep = DisplacedSqueezed(modes, x, y, r, phi).ansatz
         exp = (
-            Vacuum(modes) >> Sgate(modes, r, phi).contract(Dgate(modes, x + 1j * y), "zip")
+            Vacuum(modes) >> Sgate(modes, r, phi).contract(Dgate(modes, x, y), "zip")
         ).ansatz  # TODO: revisit rshift
         assert rep == exp

@@ -43,6 +43,12 @@ class TestTriples:
             match = "shape mismatch"
 
         with pytest.raises(error, match=match):
+            triples.coherent_state_Abc([1, 2], [3, 4, 5])
+
+        with pytest.raises(error, match=match):
+            triples.coherent_state_Abc([1, 2], [3, 4, 5])
+
+        with pytest.raises(error, match=match):
             triples.squeezed_vacuum_state_Abc([1, 2], [3, 4, 5])
 
         with pytest.raises(error, match=match):
@@ -57,12 +63,12 @@ class TestTriples:
         assert math.allclose(c, 1.0)
 
     def test_coherent_state_Abc(self):
-        A1, b1, c1 = triples.coherent_state_Abc(0.1 + 0.2j)
+        A1, b1, c1 = triples.coherent_state_Abc(0.1, 0.2)
         assert math.allclose(A1, math.zeros((1, 1)))
         assert math.allclose(b1, [0.1 + 0.2j])
         assert math.allclose(c1, 0.97530991)
 
-        A2, b2, c2 = triples.coherent_state_Abc([0.1 + 0.2j, 0.1 + 0.3j])
+        A2, b2, c2 = triples.coherent_state_Abc(0.1, [0.2, 0.3])
         assert math.allclose(A2, math.zeros((2, 1, 1)))
         assert math.allclose(b2, [[0.1 + 0.2j], [0.1 + 0.3j]])
         assert math.allclose(c2, [0.97530991 + 0.0j, 0.95122942 + 0.0j])
@@ -136,12 +142,12 @@ class TestTriples:
         assert math.allclose(c2, math.ones(2))
 
     def test_displacement_gate_Abc(self):
-        A1, b1, c1 = triples.displacement_gate_Abc(0.1 + 0.1j)
+        A1, b1, c1 = triples.displacement_gate_Abc(0.1, 0.1)
         assert math.allclose(A1, [[0, 1], [1, 0]])
         assert math.allclose(b1, [0.1 + 0.1j, -0.1 + 0.1j])
         assert math.allclose(c1, 0.990049833749168)
 
-        A2, b2, c2 = triples.displacement_gate_Abc([0.1 + 0.1j, 0.2 + 0.1j])
+        A2, b2, c2 = triples.displacement_gate_Abc([0.1, 0.2], 0.1)
         assert math.allclose(
             A2,
             [
@@ -152,7 +158,7 @@ class TestTriples:
         assert math.allclose(b2, [[0.1 + 0.1j, -0.1 + 0.1j], [0.2 + 0.1j, -0.2 + 0.1j]])
         assert math.allclose(c2, [0.99004983 + 0.0j, 0.97530991 + 0.0j])
 
-        A3, b3, c3 = triples.displacement_gate_Abc(alpha=[0.1, 0.2])
+        A3, b3, c3 = triples.displacement_gate_Abc(x=[0.1, 0.2])
         assert math.allclose(
             A3,
             [
