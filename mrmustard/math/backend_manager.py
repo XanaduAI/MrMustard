@@ -725,7 +725,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             c: The c scalar. Can be scalar or batched (shape B).
             shape: The shape of the final tensor (excluding batch dimensions).
             stable: Whether to use the numerically stable version of the algorithm (also slower).
-            out: if provided, the result will be stored in this tensor.
+            out: If provided, the result will be stored in this tensor.
 
         Returns:
             The renormalized Hermite polynomial of given shape preserving the batch dimensions.
