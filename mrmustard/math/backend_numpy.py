@@ -82,8 +82,6 @@ class BackendNumpy(BackendBase):
         return np.arange(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: np.ndarray) -> np.ndarray:
-        if isinstance(tensor, np.ndarray):
-            return tensor
         return np.asarray(tensor)
 
     def assign(self, tensor: np.ndarray, value: np.ndarray) -> np.ndarray:
@@ -91,8 +89,7 @@ class BackendNumpy(BackendBase):
         return tensor
 
     def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        array = np.asarray(array)
-        return self.cast(array, dtype=dtype or array.dtype)
+        array = np.asarray(array, dtype=dtype)
 
     def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
         return np.array(array, ndmin=n, dtype=dtype)
@@ -425,7 +422,7 @@ class BackendNumpy(BackendBase):
         return np.zeros(shape, dtype=dtype)
 
     def zeros_like(self, array: np.ndarray) -> np.ndarray:
-        return np.zeros(np.asarray(array).shape, dtype=array.dtype)
+        return np.zeros_like(array, dtype=array.dtype)
 
     def map_fn(self, func, elements):
         # Is this done like this?
