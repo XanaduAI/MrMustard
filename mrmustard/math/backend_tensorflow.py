@@ -187,10 +187,10 @@ class BackendTensorflow(BackendBase):
         return tf.linalg.diag_part(array, k=k)
 
     @Autocast()
-    def einsum(self, string: str, *tensors) -> tf.Tensor:
-        if isinstance(string, str):
-            return tf.einsum(string, *tensors)
-        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
+    def einsum(self, string: str, *tensors, optimize: str | bool) -> tf.Tensor:
+        if optimize is False:
+            optimize = "greedy"
+        return tf.einsum(string, *tensors, optimize=optimize)
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
