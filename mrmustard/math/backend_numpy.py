@@ -21,8 +21,10 @@ from __future__ import annotations
 from math import lgamma as mlgamma
 from typing import Sequence, Callable
 
+from opt_einsum import contract
 import numpy as np
 import scipy as sp
+
 from scipy.signal import convolve2d as scipy_convolve2d
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
@@ -32,7 +34,6 @@ from scipy.stats import multivariate_normal
 from ..utils.settings import settings
 from .backend_base import BackendBase
 from .lattice import strategies
-
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
@@ -231,10 +232,8 @@ class BackendNumpy(BackendBase):
 
         return array
 
-    def einsum(self, string: str, *tensors) -> np.ndarray | None:
-        if type(string) is str:
-            return np.einsum(string, *tensors)
-        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
+    def einsum(self, string: str, *tensors, optimize: bool | str) -> np.ndarray:
+        return contract(string, *tensors, optimize=optimize)
 
     def exp(self, array: np.ndarray) -> np.ndarray:
         return np.exp(array)

@@ -392,7 +392,9 @@ class DM(State):
         array = super().fock_array(shape or self.auto_shape())
         if standard_order:
             m = self.n_modes
-            batch_dims = self.ansatz.batch_dims
+            batch_dims = (
+                self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
+            )
             axes = (
                 tuple(range(batch_dims))
                 + tuple(range(batch_dims + m, 2 * m + batch_dims))
