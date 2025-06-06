@@ -24,7 +24,7 @@ from .core import vanilla_numba, stable_numba
 
 @njit(parallel=True)
 def vanilla_batch_numba(
-    shape: tuple[int, ...], A, b, c, stable: bool = False
+    shape: tuple[int, ...], A, b, c, stable: bool = False, out: ComplexTensor | None = None
 ) -> ComplexTensor:  # pragma: no cover
     r"""Batched version of the vanilla algorithm for calculating the fock representation of a
     Gaussian tensor. This implementation assumes that the batch dimension is on the first
@@ -39,12 +39,13 @@ def vanilla_batch_numba(
         b (np.ndarray): batched b vector of the Bargmann representation
         c (complex): batched vacuum amplitudes
         stable (bool): if ``True``, use the stable algorithm, otherwise use the standard one
+        out (np.ndarray): if provided, the result will be stored in this tensor.
 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``(batch,) + shape``
     """
     batch_size = b.shape[0]
-    G = np.zeros((batch_size,) + shape, dtype=np.complex128)
+    G = out if out is not None else np.zeros((batch_size,) + shape, dtype=np.complex128)
     for k in prange(batch_size):
         if stable:
             G[k] = stable_numba(shape, A[k], b[k], c[k])
