@@ -22,6 +22,7 @@ from itertools import chain
 
 import jax
 import equinox as eqx
+from optax import GradientTransformation, OptState
 
 from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
@@ -34,7 +35,11 @@ __all__ = ["OptimizerJax"]
 
 class Objective(eqx.Module):
     r"""
-    A dataclass that contains the static and dynamic parameters of the model.
+    A dataclass used by equinox to store the Jax arrays of the trainable parameters.
+
+    Args:
+        static: The static parameters of the model. These are the keys associated with the trainable parameters.
+        dynamic: The dynamic parameters of the model. These are the arrays of the trainable parameters.
     """
     static: list[str]
     dynamic: list[jax.Array]
@@ -44,6 +49,11 @@ class Objective(eqx.Module):
         self.dynamic = [array.value for array in trainable_params.values()]
 
     def __call__(self, cost_fn: Callable, by_optimizing: Sequence[CircuitComponent]):
+        r"""
+        Updates the parameters in ``by_optimizing`` with the values in ``self.dynamic``
+        and calls the cost function. This is necessary because Jax does not support
+        in-place updates.
+        """
         trainable_params = OptimizerJax._get_trainable_params(by_optimizing)
         for key, val in zip(self.static, self.dynamic):
             trainable_params[key].value = val
@@ -53,6 +63,10 @@ class Objective(eqx.Module):
 class OptimizerJax:
     r"""
     A Jax based optimizer for any parametrized object.
+
+    Args:
+        euclidean_lr: The learning rate of the euclideanoptimizer.
+        stable_threshold: The threshold for the loss to be considered stable.
     """
 
     def __init__(
@@ -67,9 +81,17 @@ class OptimizerJax:
 
     @staticmethod
     def _get_trainable_params(trainable_items, root_tag: str = "optimized") -> dict[str, Variable]:
-        """Traverses all instances of gates, states, detectors, or trainable items that belong to the backend
+        r"""
+        Traverses all instances of gates, states, detectors, or trainable items that belong to the backend
         and return a dict of trainables of the form `{tags: trainable_parameters}` where the `tags`
         are traversal paths of collecting all parent tags for reaching each parameter.
+
+        Args:
+            trainable_items: A list of trainable items.
+            root_tag: The root tag for the trainable items.
+
+        Returns:
+            A dict of trainables of the form `{tags: trainable_parameters}`.
         """
         trainables = []
         for i, item in enumerate(trainable_items):
@@ -79,10 +101,6 @@ class OptimizerJax:
                     tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
                     tagged_vars = op.parameters.tagged_variables(tag)
                     trainables.append(tagged_vars.items())
-            elif hasattr(item, "parameter_set"):
-                tag = f"{owner_tag}:{item.__class__.__qualname__}"
-                tagged_vars = item.parameter_set.tagged_variables(tag)
-                trainables.append(tagged_vars.items())
             elif hasattr(item, "parameters"):
                 tag = f"{owner_tag}:{item.__class__.__qualname__}"
                 tagged_vars = item.parameters.tagged_variables(tag)
@@ -98,13 +116,22 @@ class OptimizerJax:
     @eqx.filter_jit
     def make_step(
         self,
-        optim,
-        loss,
-        model,
-        opt_state,
+        optim: GradientTransformation,
+        loss: Callable,
+        model: eqx.Module,
+        opt_state: OptState,
     ):
         r"""
         Make a step of the optimization.
+
+        Args:
+            optim: The optimizer to use.
+            loss: The loss function to minimize.
+            model: The model to optimize.
+            opt_state: The current state of the optimizer.
+
+        Returns:
+            The updated model, the updated optimizer state, and the loss value.
         """
         params, static = eqx.partition(model, eqx.is_array)
         loss_value, grads = jax.value_and_grad(loss)(params, static)
@@ -142,6 +169,12 @@ class OptimizerJax:
         Returns a boolean indicating whether the optimization should stop.
         An optimization should stop either because the loss is stable or because
         the maximum number of steps is reached.
+
+        Args:
+            max_steps: The maximum number of steps to run.
+
+        Returns:
+            A boolean indicating whether the optimization should stop.
         """
         if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
