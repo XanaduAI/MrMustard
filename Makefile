@@ -20,6 +20,9 @@ help:
 	@echo "  clean-docs         to delete all built documentation"
 	@echo "  format [check=1]   to run isort and black formatting; use with 'check=1' to check instead of modify"
 	@echo "  test               to run the test suite for entire codebase"
+	@echo "  test numpy         to run the test suite with numpy backend"
+	@echo "  test tensorflow    to run the test suite with tensorflow backend"
+	@echo "  test jax           to run the test suite with jax backend"
 	@echo "  coverage           to generate a coverage report for entire codebase"
 
 .PHONY: install
@@ -74,9 +77,25 @@ format:
 lint:
 	pylint mrmustard
 
+.PHONY: test
 test:
 	@echo "Testing Mr Mustard..."
 	$(PYTHON3) $(TESTRUNNER)
+
+# Backend-specific test targets
+test-%:
+	@echo "Testing Mr Mustard with $* backend..."
+	$(PYTHON3) $(TESTRUNNER) --backend=$*
+
+# Support for "make test <backend>" syntax
+ifneq ($(filter numpy tensorflow jax,$(word 2,$(MAKECMDGOALS))),)
+  BACKEND := $(word 2,$(MAKECMDGOALS))
+  $(BACKEND):
+	@:
+  test:
+	@echo "Testing Mr Mustard with $(BACKEND) backend..."
+	$(PYTHON3) $(TESTRUNNER) --backend=$(BACKEND)
+endif
 
 coverage:
 	@echo "Generating coverage report for Mr Mustard..."
