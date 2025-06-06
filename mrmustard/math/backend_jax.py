@@ -26,11 +26,10 @@ import jax.numpy as jnp
 import jax.scipy as jsp
 import numpy as np
 import equinox as eqx
-from jax import tree_util
 import optax
 
 from .backend_base import BackendBase
-from .jax_vjps import hermite_renormalized_unbatched
+from .jax_vjps import hermite_renormalized_unbatched_jax
 from .lattice import strategies
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
@@ -535,7 +534,7 @@ class BackendJax(BackendBase):
         shape: tuple[int],
         stable: bool = False,
     ) -> jnp.ndarray:
-        return hermite_renormalized_unbatched(A, b, c, shape, stable)
+        return hermite_renormalized_unbatched_jax(A, b, c, shape, stable)
 
     # ~~~~~~~~~~~~~~~~~
     # hermite_renormalized_batched
@@ -744,4 +743,4 @@ class BackendJax(BackendBase):
 
 # defining the pytree node for the JaxBackend.
 # This allows to skip specifying `self` in static_argnames.
-tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
+jax.tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)

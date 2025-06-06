@@ -27,13 +27,7 @@ from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
-from mrmustard.math.parameters import (
-    update_euclidean,
-    update_orthogonal,
-    update_symplectic,
-    update_unitary,
-    Variable,
-)
+from mrmustard.math.parameters import Variable
 
 __all__ = ["OptimizerJax"]
 
@@ -63,18 +57,10 @@ class OptimizerJax:
 
     def __init__(
         self,
-        symplectic_lr: float = 0.1,
-        unitary_lr: float = 0.1,
-        orthogonal_lr: float = 0.1,
         euclidean_lr: float = 0.001,
         stable_threshold=1e-6,
     ):
-        self.learning_rate = {
-            update_euclidean: euclidean_lr,
-            update_symplectic: symplectic_lr,
-            update_unitary: unitary_lr,
-            update_orthogonal: orthogonal_lr,
-        }
+        self.learning_rate = euclidean_lr
         self.opt_history = [0]
         self.log = create_logger(__name__)
         self.stable_threshold = stable_threshold
@@ -186,7 +172,7 @@ class OptimizerJax:
             model = eqx.combine(params, static)
             return model(cost_fn, by_optimizing)
 
-        optim = math.euclidean_opt(learning_rate=self.learning_rate[update_euclidean])
+        optim = math.euclidean_opt(learning_rate=self.learning_rate)
         opt_state = optim.init(eqx.filter(model, eqx.is_array))
 
         # optimize

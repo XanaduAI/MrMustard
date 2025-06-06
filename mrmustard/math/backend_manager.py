@@ -157,6 +157,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._backend.name
 
+    @property
+    def euclidean_opt(self):
+        r"""The configured Euclidean optimizer."""
+        if not self._euclidean_opt:
+            self._euclidean_opt = self.DefaultEuclideanOptimizer()
+        return self._euclidean_opt
+
     def change_backend(self, name: str) -> None:
         r"""
         Changes the backend to a different one.
@@ -1535,17 +1542,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     def DefaultEuclideanOptimizer(self):
         r"""Default optimizer for the Euclidean parameters."""
         return self._apply("DefaultEuclideanOptimizer")
-
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Methods that build on the basic ops and don't need to be overridden in the backend implementation
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    @property
-    def euclidean_opt(self):
-        r"""The configured Euclidean optimizer."""
-        if not self._euclidean_opt:
-            self._euclidean_opt = self.DefaultEuclideanOptimizer()
-        return self._euclidean_opt
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation

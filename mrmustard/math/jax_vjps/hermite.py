@@ -24,7 +24,7 @@ import numpy as np
 
 from ..lattice import strategies
 
-__all__ = ["hermite_renormalized_unbatched"]
+__all__ = ["hermite_renormalized_unbatched_jax"]
 
 # ~~~~~~~~~~~~~~~~~
 # hermite_renormalized_unbatched
@@ -33,7 +33,7 @@ __all__ = ["hermite_renormalized_unbatched"]
 
 @partial(jax.custom_vjp, nondiff_argnums=(3, 4))
 @partial(jax.jit, static_argnums=(3, 4))
-def hermite_renormalized_unbatched(
+def hermite_renormalized_unbatched_jax(
     A: jnp.ndarray,
     b: jnp.ndarray,
     c: jnp.ndarray,
@@ -62,15 +62,17 @@ def hermite_renormalized_unbatched(
     return G
 
 
-def hermite_renormalized_unbatched_fwd(A, b, c, shape, stable):
+def hermite_renormalized_unbatched_jax_fwd(A, b, c, shape, stable):
     r"""
     The jax forward pass for hermite_renormalized_unbatched.
     """
-    G = hermite_renormalized_unbatched(A, b, c, shape, stable)
+    G = hermite_renormalized_unbatched_jax(A, b, c, shape, stable)
     return (G, (G, A, b, c))
 
 
-def hermite_renormalized_unbatched_bwd(shape, stable, res, g):  # pylint: disable=unused-argument
+def hermite_renormalized_unbatched_jax_bwd(
+    shape, stable, res, g
+):  # pylint: disable=unused-argument
     r"""
     The jax backward pass for hermite_renormalized_unbatched.
     """
@@ -89,6 +91,6 @@ def hermite_renormalized_unbatched_bwd(shape, stable, res, g):  # pylint: disabl
     return dLdA, dLdB, dLdC
 
 
-hermite_renormalized_unbatched.defvjp(
-    hermite_renormalized_unbatched_fwd, hermite_renormalized_unbatched_bwd
+hermite_renormalized_unbatched_jax.defvjp(
+    hermite_renormalized_unbatched_jax_fwd, hermite_renormalized_unbatched_jax_bwd
 )
