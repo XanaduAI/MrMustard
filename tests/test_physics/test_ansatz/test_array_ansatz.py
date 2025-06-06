@@ -25,6 +25,7 @@ from plotly.graph_objs import FigureWidget
 
 from mrmustard import math
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
+from mrmustard.lab import Ket, Dgate
 
 
 class TestArrayAnsatz:
@@ -194,8 +195,8 @@ class TestArrayAnsatz:
     @patch("mrmustard.physics.ansatz.array_ansatz.display")
     def test_ipython_repr(self, mock_display, shape):
         """Test the IPython repr function."""
-        rep = ArrayAnsatz(np.random.random(shape), batch_dims=1)
-        rep._ipython_display_()
+        rep_np = ArrayAnsatz(np.random.random(shape), batch_dims=1)
+        rep_np._ipython_display_()
         [hbox] = mock_display.call_args.args
         assert isinstance(hbox, HBox)
 

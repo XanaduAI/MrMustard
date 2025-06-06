@@ -597,17 +597,22 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("eigh", (tensor,))
 
-    def einsum(self, string: str, *tensors) -> Tensor:
+    def einsum(self, string: str, *tensors, optimize: bool | str = "greedy") -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
         Args:
             string: The string of the Einstein summation convention.
             tensors: The tensors to perform the Einstein summation on.
+            optimize: Optional flag whether to optimize the contraction order.
+                Allowed values are True, False, "greedy", "optimal" or "auto".
+                Note the TF backend does not support False and converts it to "greedy".
+                If None, ``settings.EINSUM_OPTIMIZE`` is used.
 
         Returns:
             The result of the Einstein summation convention.
         """
-        return self._apply("einsum", (string, *tensors))
+        optimize = optimize or settings.EINSUM_OPTIMIZE
+        return self._apply("einsum", (string, *tensors), {"optimize": optimize})
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.
@@ -760,7 +765,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                     "out": self.reshape(out, (D,) + shape) if out is not None else None,
                 },
             )
-            return self.reshape(result, batch_shape + shape)
+            return self.reshape(result, batch_shape + tuple(shape))
         elif A.ndim == 2 and b.ndim > 1:  # b-batched case
             batch_shape = b.shape[:-1]
             check_out_shape(batch_shape)
@@ -777,7 +782,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                     "out": self.reshape(out, (D,) + shape) if out is not None else None,
                 },
             )
-            return self.reshape(result, batch_shape + shape)
+            return self.reshape(result, batch_shape + tuple(shape))
         else:  # Unbatched case
             check_out_shape(())
             return self._apply(
