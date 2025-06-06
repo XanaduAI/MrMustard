@@ -90,6 +90,50 @@ all_modules = {
 }
 
 
+class _TemporaryBackendWrapper:
+    """
+    A temporary wrapper that switches to a specific backend for method calls.
+    """
+
+    def __init__(self, backend_manager: "BackendManager", target_backend: str):
+        self._backend_manager = backend_manager
+        self._target_backend = target_backend
+
+    def __getattr__(self, name: str) -> Any:
+        """
+        Get an attribute/method from the backend manager with temporary backend switching.
+        """
+        # Store the current backend
+        original_backend = self._backend_manager.backend_name
+
+        # Switch to the target backend
+        self._backend_manager.change_backend(self._target_backend)
+
+        try:
+            # Get the attribute/method
+            attr = getattr(self._backend_manager, name)
+
+            # If it's a method, wrap it to restore the backend after execution
+            if callable(attr):
+
+                def wrapped_method(*args, **kwargs):
+                    try:
+                        result = attr(*args, **kwargs)
+                        return result
+                    finally:
+                        # Always restore the original backend
+                        self._backend_manager.change_backend(original_backend)
+
+                return wrapped_method
+            else:
+                # For non-callable attributes, restore backend immediately and return the attribute
+                return attr
+        finally:
+            # If we got a non-callable attribute, restore the backend here
+            if not callable(getattr(self._backend_manager, name, None)):
+                self._backend_manager.change_backend(original_backend)
+
+
 class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     r"""
     A class to manage the different backends supported by Mr Mustard.
@@ -142,6 +186,37 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
     def __repr__(self) -> str:
         return f"Backend({self.backend_name})"
+
+    def __call__(self, backend_name: str) -> _TemporaryBackendWrapper:
+        r"""
+        Create a temporary backend context for method calls.
+
+        This allows syntax like math("jax").cos(...) to run cos on the jax backend
+        while preserving the original backend state.
+
+        Args:
+            backend_name: The name of the backend to use temporarily.
+                          Supports "numpy"/"np", "tensorflow"/"tf", and "jax".
+
+        Returns:
+            A temporary wrapper that will execute methods on the specified backend.
+        """
+        # Normalize backend name aliases
+        backend_aliases = {
+            "np": "numpy",
+            "tf": "tensorflow",
+            "tensorflow": "tensorflow",
+            "numpy": "numpy",
+            "jax": "jax",
+        }
+
+        if backend_name not in backend_aliases:
+            supported = list(backend_aliases.keys())
+            msg = f"Backend '{backend_name}' not supported. Supported backends: {supported}"
+            raise ValueError(msg)
+
+        normalized_name = backend_aliases[backend_name]
+        return _TemporaryBackendWrapper(self, normalized_name)
 
     @property
     def backend(self) -> BackendBase:

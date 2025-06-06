@@ -717,3 +717,57 @@ class TestBackendManager:
         probs = np.array([1e-6 for _ in range(300)])
         results = [math.Categorical(probs, "") for _ in range(100)]
         assert len(set(results)) > 1
+
+    def test_call_method_backend_switching(self):
+        r"""
+        Tests the ``__call__`` method for temporary backend switching.
+        """
+        # Store original backend
+        original_backend = math.backend_name
+
+        # Test data
+        x = np.array([0.0, np.pi / 4, np.pi / 2])
+        expected_cos = np.cos(x)
+        expected_sin = np.sin(x)
+
+        # Test all supported backend names and aliases
+        backend_names = ["numpy", "np", "jax", "tensorflow", "tf"]
+
+        for backend_name in backend_names:
+            # Test cos function with temporary backend switching
+            result_cos = math(backend_name).cos(x)
+            assert math.allclose(
+                math.asnumpy(result_cos), expected_cos
+            ), f"cos failed for backend {backend_name}"
+
+            # Verify original backend is restored
+            assert (
+                math.backend_name == original_backend
+            ), f"Backend not restored after {backend_name} call"
+
+            # Test sin function with temporary backend switching
+            result_sin = math(backend_name).sin(x)
+            assert math.allclose(
+                math.asnumpy(result_sin), expected_sin
+            ), f"sin failed for backend {backend_name}"
+
+            # Verify original backend is restored again
+            assert (
+                math.backend_name == original_backend
+            ), f"Backend not restored after {backend_name} call"
+
+        # Test error handling for invalid backend
+        with pytest.raises(ValueError, match="Backend 'invalid' not supported"):
+            math("invalid").cos(x)
+
+        # Test that backend switching works from different starting backends
+        math.change_backend("jax")
+        assert math.backend_name == "jax"
+
+        # Call with numpy backend and verify jax is restored
+        result = math("numpy").cos(x)
+        assert math.allclose(math.asnumpy(result), expected_cos)
+        assert math.backend_name == "jax", "JAX backend not restored after numpy call"
+
+        # Restore original backend
+        math.change_backend(original_backend)
