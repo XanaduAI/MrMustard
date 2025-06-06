@@ -210,8 +210,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             "jax": "jax",
         }
 
-        if backend_name not in backend_aliases:
-            supported = list(backend_aliases.keys())
+        if backend_name.lower() not in backend_aliases:
+            supported = list(set(backend_aliases.values()))
             msg = f"Backend '{backend_name}' not supported. Supported backends: {supported}"
             raise ValueError(msg)
 
