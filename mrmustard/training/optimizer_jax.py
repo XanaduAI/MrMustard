@@ -120,7 +120,7 @@ class OptimizerJax:
         loss: Callable,
         model: eqx.Module,
         opt_state: OptState,
-    ):
+    ) -> tuple[eqx.Module, OptState, float]:
         r"""
         Make a step of the optimization.
 
