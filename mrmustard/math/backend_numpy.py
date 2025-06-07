@@ -623,16 +623,3 @@ class BackendNumpy(BackendBase):
         return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
             (-2, -1) + tuple(range(len(pnr_cutoffs)))
         )
-
-    @staticmethod
-    def getitem(tensor, *, key):
-        value = np.array(tensor)[key]
-        return value
-
-    @staticmethod
-    def setitem(tensor, value, *, key):
-        _tensor = np.array(tensor)
-        value = np.array(value)
-        _tensor[key] = value
-
-        return _tensor
