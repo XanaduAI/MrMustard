@@ -464,13 +464,21 @@ class BackendTensorflow(BackendBase):
 
     @tf.custom_gradient
     def hermite_renormalized_unbatched(
-        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int], stable: bool
+        self,
+        A: tf.Tensor,
+        b: tf.Tensor,
+        c: tf.Tensor,
+        shape: tuple[int],
+        stable: bool,
+        out: tf.Tensor | None = None,
     ) -> tuple[tf.Tensor, Callable]:
         A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
+        if out is not None:
+            raise ValueError("'out' keyword is not supported in the TensorFlow backend")
         if stable:
-            G = strategies.stable_numba(tuple(shape), A, b, c)
+            G = strategies.stable_numba(tuple(shape), A, b, c, None)
         else:
-            G = strategies.vanilla_numba(tuple(shape), A, b, c)
+            G = strategies.vanilla_numba(tuple(shape), A, b, c, None)
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp_numba(G, c, np.conj(dLdGconj))
@@ -480,10 +488,18 @@ class BackendTensorflow(BackendBase):
 
     @tf.custom_gradient
     def hermite_renormalized_batched(
-        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int], stable: bool
+        self,
+        A: tf.Tensor,
+        b: tf.Tensor,
+        c: tf.Tensor,
+        shape: tuple[int],
+        stable: bool,
+        out: tf.Tensor | None = None,
     ) -> tf.Tensor:
         A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
-        G = strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable)
+        if out is not None:
+            raise ValueError("'out' keyword is not supported in the TensorFlow backend")
+        G = strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable, None)
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_batch_vjp_numba(G, c, np.conj(dLdGconj))

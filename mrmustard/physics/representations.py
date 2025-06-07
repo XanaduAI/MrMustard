@@ -147,6 +147,7 @@ class Representation:
         Args:
             shape: The shape of the returned array, not including batch dimensions. If ``shape`` is
             given as an ``int``, it is broadcast to all the dimensions.
+
         Returns:
             array: The Fock array of this representation.
         """
