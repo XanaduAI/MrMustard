@@ -674,3 +674,5 @@ class BackendTensorflow(BackendBase):
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axis=ax)
             dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axis=ax)
             return dLdA, dLdB, dLdC
+
+        return poly0, grad
