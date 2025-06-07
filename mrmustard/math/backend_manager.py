@@ -19,7 +19,6 @@ from __future__ import annotations
 import importlib.util
 import sys
 from functools import lru_cache
-from itertools import product
 from typing import Any, Callable, Sequence
 
 import numpy as np
