@@ -21,6 +21,7 @@ import sys
 from functools import lru_cache
 from typing import Any, Callable, Sequence
 
+from jax.errors import TracerArrayConversionError
 import numpy as np
 from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
@@ -162,6 +163,16 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if not self._euclidean_opt:
             self._euclidean_opt = self.DefaultEuclideanOptimizer()
         return self._euclidean_opt
+
+    @property
+    def BackendError(self):
+        r"""
+        The error class for backend specific errors.
+
+        Note that currently this only applies to the case where
+        ``auto_shape`` is jitted  via the ``jax`` backend.
+        """
+        return TracerArrayConversionError
 
     def change_backend(self, name: str) -> None:
         r"""

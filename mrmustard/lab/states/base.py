@@ -20,7 +20,6 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Sequence
 from enum import Enum
-from jax.errors import TracerArrayConversionError
 
 import numpy as np
 from IPython.display import display
@@ -396,7 +395,8 @@ class State(CircuitComponent):
                             max_shape or settings.AUTOSHAPE_MAX,
                             min_shape or settings.AUTOSHAPE_MIN,
                         )
-                    except TracerArrayConversionError:  # pragma: no cover
+                    # covers the case where auto_shape is jitted
+                    except math.BackendError:  # pragma: no cover
                         shape = super().auto_shape()
                     if self.wires.ket and self.wires.bra:
                         shape = tuple(shape) + tuple(shape)

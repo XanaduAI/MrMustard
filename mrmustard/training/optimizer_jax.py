@@ -48,11 +48,18 @@ class Objective(eqx.Module):
         self.static = list(trainable_params.keys())
         self.dynamic = [array.value for array in trainable_params.values()]
 
-    def __call__(self, cost_fn: Callable, by_optimizing: Sequence[CircuitComponent]):
+    def __call__(self, cost_fn: Callable, by_optimizing: Sequence[CircuitComponent]) -> float:
         r"""
         Updates the parameters in ``by_optimizing`` with the values in ``self.dynamic``
         and calls the cost function. This is necessary because Jax does not support
         in-place updates.
+
+        Args:
+            cost_fn: The cost function to minimize.
+            by_optimizing: The parameters to optimize.
+
+        Returns:
+            The loss value.
         """
         trainable_params = OptimizerJax._get_trainable_params(by_optimizing)
         for key, val in zip(self.static, self.dynamic):
@@ -64,17 +71,19 @@ class OptimizerJax:
     r"""
     A Jax based optimizer for any parametrized object.
 
+    Note that this optimizer currently only supports Euclidean optimizations.
+
     Args:
-        euclidean_lr: The learning rate of the euclideanoptimizer.
+        learning_rate: The learning rate of the optimizer.
         stable_threshold: The threshold for the loss to be considered stable.
     """
 
     def __init__(
         self,
-        euclidean_lr: float = 0.001,
-        stable_threshold=1e-6,
+        learning_rate: float = 0.001,
+        stable_threshold: float = 1e-6,
     ):
-        self.learning_rate = euclidean_lr
+        self.learning_rate = learning_rate
         self.opt_history = [0]
         self.log = create_logger(__name__)
         self.stable_threshold = stable_threshold
@@ -82,7 +91,7 @@ class OptimizerJax:
     @staticmethod
     def _get_trainable_params(trainable_items, root_tag: str = "optimized") -> dict[str, Variable]:
         r"""
-        Traverses all instances of gates, states, detectors, or trainable items that belong to the backend
+        Traverses all instances of ``CircuitComponent``\s or trainable items that belong to the backend
         and return a dict of trainables of the form `{tags: trainable_parameters}` where the `tags`
         are traversal paths of collecting all parent tags for reaching each parameter.
 
@@ -198,7 +207,6 @@ class OptimizerJax:
         The core optimization loop.
         """
         trainable_params = self._get_trainable_params(by_optimizing)
-
         model = Objective(trainable_params)
 
         def loss(params, static):
@@ -215,5 +223,6 @@ class OptimizerJax:
             if progress_bar is not None:
                 progress_bar.step(math.asnumpy(loss_value))
 
+        # update the parameters one last time
         for key, val in zip(model.static, model.dynamic):
             trainable_params[key].value = val
