@@ -711,7 +711,7 @@ class BackendTensorflow(BackendBase):
         return ret, grad
 
     @tf.custom_gradient
-    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int], method: str):
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
         t, s = self.asnumpy(theta), self.asnumpy(phi)
         if method == "vanilla":
             bs_unitary = strategies.beamsplitter(shape, t, s)

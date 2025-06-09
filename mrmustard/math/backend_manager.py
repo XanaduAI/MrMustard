@@ -1567,7 +1567,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def displacement(self, x: float, y: float, shape: tuple[int, ...], tol: float = 1e-15):
+    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float = 1e-15):
         r"""
         Creates a single mode displacement matrix using a numba-based fock lattice strategy.
 
@@ -1582,7 +1582,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("displacement", (x, y), {"shape": shape, "tol": tol})
 
-    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int], method: str):
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
         r"""
         Creates a beamsplitter matrix with given cutoffs using a numba-based fock lattice strategy.
 

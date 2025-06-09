@@ -774,4 +774,11 @@ class TestBackendManager:
         r"""
         Tests the ``beamsplitter`` method.
         """
-        pass
+        cutoffs = (5,) * 4
+        theta = np.pi / 2
+        phi = 0.8
+        bs_vanilla = math.beamsplitter(theta, phi, cutoffs, "vanilla")
+        bs_schwinger = math.beamsplitter(theta, phi, cutoffs, "schwinger")
+        bs_stable = math.beamsplitter(theta, phi, cutoffs, "stable")
+        assert math.allclose(bs_vanilla, bs_schwinger, atol=1e-5, rtol=0)
+        assert math.allclose(bs_vanilla, bs_stable, atol=1e-5, rtol=0)
