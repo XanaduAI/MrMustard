@@ -20,9 +20,9 @@ import numpy as np
 import pytest
 import tensorflow as tf
 from jax import numpy as jnp
+from jax.errors import TracerArrayConversionError
 
 from mrmustard import math
-
 
 # pylint: disable=too-many-public-methods
 class TestBackendManager:
@@ -41,6 +41,12 @@ class TestBackendManager:
     lists = [l1, l2, l3, l4, l5]
 
     types = ["None", "int32", "float32", "float64", "complex128"]
+
+    def test_backend_error(self):
+        r"""
+        Tests the ``BackendError`` property.
+        """
+        assert math.BackendError is TracerArrayConversionError
 
     def test_error(self):
         r"""
