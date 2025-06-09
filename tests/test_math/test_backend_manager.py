@@ -22,7 +22,6 @@ import tensorflow as tf
 from jax import numpy as jnp
 
 from mrmustard import math
-from mrmustard.math.lattice.strategies.displacement import displacement
 
 
 # pylint: disable=too-many-public-methods
@@ -774,17 +773,5 @@ class TestBackendManager:
     def test_beamsplitter(self):
         r"""
         Tests the ``beamsplitter`` method.
-        """
-        pass
-
-    def test_squeezed(self):
-        r"""
-        Tests the ``squeezed`` method.
-        """
-        pass
-
-    def test_squeezer(self):
-        r"""
-        Tests the ``squeezer`` method.
         """
         pass
