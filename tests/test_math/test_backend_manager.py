@@ -767,9 +767,9 @@ class TestBackendManager:
             ]
         )
         D = math.displacement(math.real(alpha), math.imag(alpha), (cutoff, cutoff))
-        assert np.allclose(D, expected, atol=1e-5, rtol=0)
+        assert math.allclose(math.asnumpy(D), expected, atol=1e-5, rtol=0)
         D_identity = math.displacement(0, 0, (cutoff, cutoff))
-        assert np.allclose(D_identity, np.eye(cutoff), atol=1e-5, rtol=0)
+        assert math.allclose(math.asnumpy(D_identity), np.eye(cutoff), atol=1e-5, rtol=0)
 
     def test_beamsplitter(self):
         r"""

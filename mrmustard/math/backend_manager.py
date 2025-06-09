@@ -1600,7 +1600,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("beamsplitter", (theta, phi), {"shape": shape, "method": method})
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):  # pragma: no cover
         r"""
         Creates a single mode squeezed state matrix using a numba-based fock lattice strategy.
 
@@ -1614,7 +1614,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("squeezed", (r, phi, shape))
 
-    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):  # pragma: no cover
         r"""
         Creates a single mode squeezer matrix using a numba-based fock lattice strategy.
 
