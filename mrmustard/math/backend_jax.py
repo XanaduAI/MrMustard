@@ -520,9 +520,6 @@ class BackendJax(BackendBase):
         B = self.gather(B, ordering, axis=0)
         return A, B
 
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_unbatched
-    # ~~~~~~~~~~~~~~~~~
     def hermite_renormalized_unbatched(
         self,
         A: jnp.ndarray,
@@ -536,9 +533,6 @@ class BackendJax(BackendBase):
             raise ValueError("The 'out' keyword is not supported in the JAX backend.")
         return hermite_renormalized_unbatched_jax(A, b, c, shape, stable)
 
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_batched
-    # ~~~~~~~~~~~~~~~~~
     @partial(jax.jit, static_argnames=["shape", "stable"])
     def hermite_renormalized_batched(
         self,
@@ -564,10 +558,6 @@ class BackendJax(BackendBase):
         )
         return G
 
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_diagonal
-    # ~~~~~~~~~~~~~~~~~
-
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
@@ -578,9 +568,6 @@ class BackendJax(BackendBase):
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_diagonal_reorderedAB
-    # ~~~~~~~~~~~~~~~~~
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
@@ -611,10 +598,6 @@ class BackendJax(BackendBase):
         )
         return poly0
 
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_diagonal_batch
-    # ~~~~~~~~~~~~~~~~~
-
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_batch(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
@@ -622,10 +605,6 @@ class BackendJax(BackendBase):
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
-
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_diagonal_reorderedAB_batch
-    # ~~~~~~~~~~~~~~~~~
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB_batch(
@@ -652,10 +631,6 @@ class BackendJax(BackendBase):
         )
 
         return poly0
-
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_binomial
-    # ~~~~~~~~~~~~~~~~~
 
     @partial(jax.jit, static_argnames=["shape", "max_l2", "global_cutoff"])
     def hermite_renormalized_binomial(
@@ -698,19 +673,11 @@ class BackendJax(BackendBase):
         )
         return G
 
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_1leftoverMode_reorderedAB
-    # ~~~~~~~~~~~~~~~~~
-
     @partial(jax.jit, static_argnames=["output_cutoff", "pnr_cutoffs"])
     def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
         A, B = self.reorder_AB_bargmann(A, B)
         cutoffs = (output_cutoff + 1,) + tuple(p + 1 for p in pnr_cutoffs)
         return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
-
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_1leftoverMode_reorderedAB
-    # ~~~~~~~~~~~~~~~~~
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_1leftoverMode_reorderedAB(

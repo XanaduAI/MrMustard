@@ -487,10 +487,6 @@ class BackendNumpy(BackendBase):
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    # ~~~~~~~~~~~~~~~~~
-    # Special functions
-    # ~~~~~~~~~~~~~~~~~
-
     @staticmethod
     def DefaultEuclideanOptimizer() -> None:
         return None

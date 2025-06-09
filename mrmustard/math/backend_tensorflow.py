@@ -436,10 +436,6 @@ class BackendTensorflow(BackendBase):
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    # ~~~~~~~~~~~~~~~~~
-    # Special functions
-    # ~~~~~~~~~~~~~~~~~
-
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
         if Version(metadata.distribution("tensorflow").version) > Version("2.15.0"):
             os.environ["TF_USE_LEGACY_KERAS"] = "True"
@@ -748,6 +744,7 @@ class BackendTensorflow(BackendBase):
 
         return ret, vjp
 
+    @tf.custom_gradient
     def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
         sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
         ret = self.astensor(sq_ket, dtype=sq_ket.dtype.name)
@@ -763,6 +760,7 @@ class BackendTensorflow(BackendBase):
 
         return ret, vjp
 
+    @tf.custom_gradient
     def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
         sq_unitary = strategies.squeezer(shape, self.asnumpy(r), self.asnumpy(phi))
         ret = self.astensor(sq_unitary, dtype=sq_unitary.dtype.name)
