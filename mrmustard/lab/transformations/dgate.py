@@ -26,7 +26,7 @@ from ...physics.wires import Wires, ReprEnum
 from .base import Unitary
 from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
-from ...physics import triples, fock_utils
+from ...physics import triples
 from ..utils import make_parameter
 
 

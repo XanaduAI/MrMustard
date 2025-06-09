@@ -29,7 +29,6 @@ from ...physics import triples
 from ..utils import make_parameter
 from ...physics.wires import Wires, ReprEnum
 from ...physics.representations import Representation
-from ...physics import fock_utils
 
 __all__ = ["BSgate"]
 
