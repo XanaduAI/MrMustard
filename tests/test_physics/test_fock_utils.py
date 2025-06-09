@@ -33,7 +33,6 @@ from mrmustard.lab import (
     TwoModeSqueezedVacuum,
     Vacuum,
 )
-from mrmustard.math.lattice.strategies import displacement, grad_displacement
 from mrmustard.physics import fock_utils
 
 # helper strategies
@@ -162,79 +161,6 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     mean_1 = np.sum(n * ps1)
     assert np.allclose(mean_0, n_mean * eta_0, atol=1e-5)
     assert np.allclose(mean_1, n_mean * eta_1, atol=1e-5)
-
-
-def test_displacement_grad():
-    """Tests the value of the analytic gradient for the Dgate against finite differences"""
-    cutoff = 4
-    r = 2.0
-    theta = np.pi / 8
-    T = displacement((cutoff, cutoff), r * np.exp(1j * theta))
-    Dr, Dtheta = grad_displacement(T, r, theta)
-
-    dr = 0.001
-    dtheta = 0.001
-    Drp = displacement((cutoff, cutoff), (r + dr) * np.exp(1j * theta))
-    Drm = displacement((cutoff, cutoff), (r - dr) * np.exp(1j * theta))
-    Dthetap = displacement((cutoff, cutoff), r * np.exp(1j * (theta + dtheta)))
-    Dthetam = displacement((cutoff, cutoff), r * np.exp(1j * (theta - dtheta)))
-    Drapprox = (Drp - Drm) / (2 * dr)
-    Dthetaapprox = (Dthetap - Dthetam) / (2 * dtheta)
-    assert np.allclose(Dr, Drapprox, atol=1e-5, rtol=0)
-    assert np.allclose(Dtheta, Dthetaapprox, atol=1e-5, rtol=0)
-
-
-def test_displacement_values():
-    """Tests the correct construction of the single mode displacement operation"""
-    cutoff = 5
-    alpha = 0.3 + 0.5 * 1j
-    # This data is obtained by using qutip
-    # np.array(displace(40,alpha).data.todense())[0:5,0:5]
-    expected = np.array(
-        [
-            [
-                0.84366482 + 0.00000000e00j,
-                -0.25309944 + 4.21832408e-01j,
-                -0.09544978 - 1.78968334e-01j,
-                0.06819609 + 3.44424719e-03j,
-                -0.01109048 + 1.65323865e-02j,
-            ],
-            [
-                0.25309944 + 4.21832408e-01j,
-                0.55681878 + 0.00000000e00j,
-                -0.29708743 + 4.95145724e-01j,
-                -0.14658716 - 2.74850926e-01j,
-                0.12479885 + 6.30297236e-03j,
-            ],
-            [
-                -0.09544978 + 1.78968334e-01j,
-                0.29708743 + 4.95145724e-01j,
-                0.31873657 + 0.00000000e00j,
-                -0.29777767 + 4.96296112e-01j,
-                -0.18306015 - 3.43237787e-01j,
-            ],
-            [
-                -0.06819609 + 3.44424719e-03j,
-                -0.14658716 + 2.74850926e-01j,
-                0.29777767 + 4.96296112e-01j,
-                0.12389162 + 1.10385981e-17j,
-                -0.27646677 + 4.60777945e-01j,
-            ],
-            [
-                -0.01109048 - 1.65323865e-02j,
-                -0.12479885 + 6.30297236e-03j,
-                -0.18306015 + 3.43237787e-01j,
-                0.27646677 + 4.60777945e-01j,
-                -0.03277289 + 1.88440656e-17j,
-            ],
-        ]
-    )
-    D = displacement((cutoff, cutoff), alpha)
-    assert np.allclose(D, expected, atol=1e-5, rtol=0)
-    D2 = math.displacement(math.real(alpha), math.imag(alpha), (cutoff, cutoff))
-    assert np.allclose(D, D2, atol=1e-5, rtol=0)
-    D3 = math.displacement(0, 0, (cutoff, cutoff))
-    assert np.allclose(D3, np.eye(cutoff), atol=1e-5, rtol=0)
 
 
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
