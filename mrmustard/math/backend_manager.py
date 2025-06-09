@@ -1580,7 +1580,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The matrix representing the displacement gate.
         """
-        return self._apply("displacement", (x, y, shape, tol))
+        return self._apply("displacement", (x, y), {"shape": shape, "tol": tol})
 
     def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int], method: str):
         r"""
@@ -1598,7 +1598,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Raises:
             ValueError: If the method is not "vanilla", "schwinger" or "stable".
         """
-        return self._apply("beamsplitter", (theta, phi, shape, method))
+        return self._apply("beamsplitter", (theta, phi), {"shape": shape, "method": method})
 
     def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
         r"""

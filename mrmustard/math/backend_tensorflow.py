@@ -706,9 +706,6 @@ class BackendTensorflow(BackendBase):
             return (
                 self.astensor(dLdx, dtype=x.dtype),
                 self.astensor(dLdy, dtype=y.dtype),
-                None,
-                None,
-                None,
             )
 
         return ret, grad
@@ -735,11 +732,6 @@ class BackendTensorflow(BackendBase):
             return (
                 self.astensor(dtheta, dtype=theta.dtype),
                 self.astensor(dphi, dtype=phi.dtype),
-                None,
-                None,
-                None,
-                None,
-                None,
             )
 
         return ret, vjp
