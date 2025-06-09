@@ -692,3 +692,88 @@ class BackendTensorflow(BackendBase):
             return dLdA, dLdB, dLdC
 
         return poly0, grad
+
+    @tf.custom_gradient
+    def displacement(self, x: float, y: float, shape: tuple[int, ...], tol: float):
+        alpha = self.asnumpy(x) + 1j * self.asnumpy(y)
+        if np.sqrt(x * x + y * y) > tol:
+            gate = strategies.displacement(tuple(shape), alpha)
+        else:
+            gate = self.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
+        ret = self.astensor(gate, dtype=gate.dtype.name)
+
+        def grad(dL_dDc):
+            dD_da, dD_dac = strategies.jacobian_displacement(self.asnumpy(gate), alpha)
+            dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
+            dLdx = 2 * np.real(dL_dac)
+            dLdy = 2 * np.imag(dL_dac)
+            return (
+                self.astensor(dLdx, dtype=x.dtype),
+                self.astensor(dLdy, dtype=y.dtype),
+                None,
+                None,
+                None,
+            )
+
+        return ret, grad
+
+    @tf.custom_gradient
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int], method: str):
+        t, s = self.asnumpy(theta), self.asnumpy(phi)
+        if method == "vanilla":
+            bs_unitary = strategies.beamsplitter(shape, t, s)
+        elif method == "schwinger":
+            bs_unitary = strategies.beamsplitter_schwinger(shape, t, s)
+        elif method == "stable":
+            bs_unitary = strategies.stable_beamsplitter(shape, t, s)
+
+        ret = self.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
+
+        def vjp(dLdGc):
+            dtheta, dphi = strategies.beamsplitter_vjp(
+                self.asnumpy(bs_unitary),
+                self.asnumpy(self.conj(dLdGc)),
+                self.asnumpy(theta),
+                self.asnumpy(phi),
+            )
+            return (
+                self.astensor(dtheta, dtype=theta.dtype),
+                self.astensor(dphi, dtype=phi.dtype),
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+
+        return ret, vjp
+
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
+        ret = self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+
+        def vjp(dLdGc):
+            dr, dphi = strategies.squeezed_vjp(
+                self.asnumpy(sq_ket),
+                self.asnumpy(self.conj(dLdGc)),
+                self.asnumpy(r),
+                self.asnumpy(phi),
+            )
+            return self.astensor(dr, dtype=r.dtype), self.astensor(dphi, phi.dtype)
+
+        return ret, vjp
+
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
+        sq_unitary = strategies.squeezer(shape, self.asnumpy(r), self.asnumpy(phi))
+        ret = self.astensor(sq_unitary, dtype=sq_unitary.dtype.name)
+
+        def vjp(dLdGc):
+            dr, dphi = strategies.squeezer_vjp(
+                self.asnumpy(sq_unitary),
+                self.asnumpy(self.conj(dLdGc)),
+                self.asnumpy(r),
+                self.asnumpy(phi),
+            )
+            return self.astensor(dr, dtype=r.dtype), self.astensor(dphi, phi.dtype)
+
+        return ret, vjp

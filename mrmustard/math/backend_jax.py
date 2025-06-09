@@ -29,7 +29,7 @@ import equinox as eqx
 import optax
 
 from .backend_base import BackendBase
-from .jax_vjps import hermite_renormalized_unbatched_jax
+from .jax_vjps import beamsplitter_jax, displacement_jax, hermite_renormalized_unbatched_jax
 from .lattice import strategies
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
@@ -742,6 +742,22 @@ class BackendJax(BackendBase):
             C,
         )
         return poly0
+
+    def displacement(self, x: float, y: float, shape: tuple[int, ...], tol: float):
+        return displacement_jax(x, y, shape, tol)
+
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int], method: str):
+        return beamsplitter_jax(theta, phi, shape, method)
+
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+        # TODO: implement vjps
+        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
+        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
+        # TODO: implement vjps
+        sq_ket = strategies.squeezer(shape, self.asnumpy(r), self.asnumpy(phi))
+        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
 
 
 # defining the pytree node for the JaxBackend.

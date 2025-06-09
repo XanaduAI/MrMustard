@@ -635,3 +635,29 @@ class BackendNumpy(BackendBase):
         return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
             (-2, -1) + tuple(range(len(pnr_cutoffs)))
         )
+
+    def displacement(self, x: float, y: float, shape: tuple[int, ...], tol: float):
+        alpha = self.asnumpy(x) + 1j * self.asnumpy(y)
+        if np.sqrt(x * x + y * y) > tol:
+            gate = strategies.displacement(tuple(shape), alpha)
+        else:
+            gate = self.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
+        return self.astensor(gate, dtype=gate.dtype.name)
+
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int], method: str):
+        t, s = self.asnumpy(theta), self.asnumpy(phi)
+        if method == "vanilla":
+            bs_unitary = strategies.beamsplitter(shape, t, s)
+        elif method == "schwinger":
+            bs_unitary = strategies.beamsplitter_schwinger(shape, t, s)
+        elif method == "stable":
+            bs_unitary = strategies.stable_beamsplitter(shape, t, s)
+        return self.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
+
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
+        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
+        sq_ket = strategies.squeezer(shape, self.asnumpy(r), self.asnumpy(phi))
+        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)

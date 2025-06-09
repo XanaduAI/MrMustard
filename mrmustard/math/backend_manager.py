@@ -1559,23 +1559,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("MultivariateNormalTriL", (loc, scale_tril))
 
-    def custom_gradient(self, func):
-        r"""
-        A decorator to define a function with a custom gradient.
-        """
-
-        def wrapper(*args, **kwargs):
-            if self.backend_name in ["numpy", "jax"]:
-                return func(*args, **kwargs)
-            else:
-                from tensorflow import (  # pylint: disable=import-outside-toplevel
-                    custom_gradient,
-                )
-
-                return custom_gradient(func)(*args, **kwargs)
-
-        return wrapper
-
     def DefaultEuclideanOptimizer(self):
         r"""Default optimizer for the Euclidean parameters."""
         return self._apply("DefaultEuclideanOptimizer")
@@ -1808,3 +1791,64 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         Z = self.matmul(self.conj(self.transpose(U)), dU_euclidean)
         return 0.5 * (Z - self.conj(self.transpose(Z)))
+
+    def displacement(self, x: float, y: float, shape: tuple[int, ...], tol: float = 1e-15):
+        r"""
+        Creates a single mode displacement matrix using a numba-based fock lattice strategy.
+
+        Args:
+            x: The displacement magnitude.
+            y: The displacement angle.
+            shape: The shape of the displacement matrix.
+            tol: The tolerance to determine if the displacement is small enough to be approximated by the identity.
+
+        Returns:
+            The matrix representing the displacement gate.
+        """
+        return self._apply("displacement", (x, y, shape, tol))
+
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int], method: str):
+        r"""
+        Creates a beamsplitter matrix with given cutoffs using a numba-based fock lattice strategy.
+
+        Args:
+            theta: Transmittivity angle of the beamsplitter.
+            phi: Phase angle of the beamsplitter.
+            shape: Output shape of the two modes.
+            method: Method to compute the beamsplitter ("vanilla", "schwinger" or "stable").
+
+        Returns:
+            The matrix representing the beamsplitter gate.
+
+        Raises:
+            ValueError: If the method is not "vanilla", "schwinger" or "stable".
+        """
+        return self._apply("beamsplitter", (theta, phi, shape, method))
+
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+        r"""
+        Creates a single mode squeezed state matrix using a numba-based fock lattice strategy.
+
+        Args:
+            r: Squeezing magnitude.
+            phi: Squeezing angle.
+            shape: Output shape of the two modes.
+
+        Returns:
+            The matrix representing the squeezed state.
+        """
+        return self._apply("squeezed", (r, phi, shape))
+
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
+        r"""
+        Creates a single mode squeezer matrix using a numba-based fock lattice strategy.
+
+        Args:
+            r: Squeezing magnitude.
+            phi: Squeezing angle.
+            shape: Output shape of the two modes.
+
+        Returns:
+            The matrix representing the squeezer.
+        """
+        return self._apply("squeezer", (r, phi, shape))
