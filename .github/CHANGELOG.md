@@ -20,24 +20,18 @@
 
 * New ``lab`` API.
 
-### Improvements
-
-### Bug fixes
-
-### Documentation
-
-### Tests
-
 ### Contributors
+
+[Ali Asadi](https://github.com/maliasadi)
+[Anthony Chytros](https://github.com/apchytr)
+[Hitarth Choubisa](https://github.com/hitarth64)
 [Samuele Ferracin](https://github.com/SamFerracin)
-[Yuan Yao](https://github.com/sylviemonet)
-[Filippo Miatto](https://github.com/ziofil)
 [Austin Lund](https://github.com/aplund)
+[Filippo Miatto](https://github.com/ziofil)
+[Arsalan Motamedi](https://github.com/arsalan-motamedi)
 [Kasper Nielsen](https://github.com/kaspernielsen96)
 [Matthew Silverman](https://github.com/timmysilv)
-[Ali Asadi](https://github.com/maliasadi)
-[Hitarth Choubisa](https://github.com/hitarth64)
-[Anthony Chytros](https://github.com/apchytr)
+[Yuan Yao](https://github.com/sylviemonet)
 
 
 ---
