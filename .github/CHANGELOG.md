@@ -1,64 +1,28 @@
-# Current develop
+# Release 1.0.0a1 (current release)
 
 ### New features
-* Added a new Abc triple for mapping the quadrature representation into Bargmann representation.
-  [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
 
-* Added `sort` function to math backends.
+* Introducing the new ``lab`` module. A more expressive and performant API for simulating quantum optical circuits.
 
-* Added the `serialize` module to save MrMustard objects to file.
-  [(#451)](https://github.com/XanaduAI/MrMustard/pull/451)
+* Add the new ``jax`` backend. ``Jax`` is a Python library that supports array-oriented numerical computations, automatic differentation and JIT compilation.
 
-* Added `isort` to run before black upon `make format` to sort Python imports.
-  [(#506)](https://github.com/XanaduAI/MrMustard/pull/506)
+* New ``OptimizerJax`` class for handling optimizations of Euclidean parameters via the ``jax`` backend.
 
 ### Breaking changes
-* Remove julia code and dependencies. PRECISION_BITS_HERMITE_POLY setting removed.
+
+* Removed ``julia`` and ``ray`` as dependencies.
+
+* Support for ``numpy>=2.0``.
+
+* Replaced ``poetry`` as the prefered installation method with ``uv``.
+
+* Dropped Python 3.9 support.
+
+* New ``lab`` API.
 
 ### Improvements
-* Switch from the `julia` Python package to `juliacall` for easier installation and usage.
-  [(#394)](https://github.com/XanaduAI/MrMustard/pull/394)
-
-* Save pytest timings to an S3 bucket for regression analysis. Also add a script to help
-  visualize the timing results quickly.
-  [(#404)](https://github.com/XanaduAI/MrMustard/pull/404)
-  [(#421)](https://github.com/XanaduAI/MrMustard/pull/421)
-
-* Replace IPython `_repr_html_` `mako`-based implementations
-  with `ipywidgets` and improve the aesthetics.
-  [(#425)](https://github.com/XanaduAI/MrMustard/pull/425)
-  [(#450)](https://github.com/XanaduAI/MrMustard/pull/450)
-
-* Loosen the upper-bound on `thewalrus` and upgrade it.
-  [(#454)](https://github.com/XanaduAI/MrMustard/pull/454)
-
-* Update major version of `rich` dependency to version 13.
-  [(#512)](https://github.com/XanaduAI/MrMustard/pull/512)
-
-* Cast tuples to tensors before initializing the `PolyExpAnsatz` class.
-  [(#545)](https://github.com/XanaduAI/MrMustard/pull/545)
 
 ### Bug fixes
-* Fix the bug in the order of indices of the triples for DsMap CircuitComponent.
-  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
-
-* Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
-
-* Ensured support for TensorFlow 2.16+, which would be chosen when installing with `pip`.
-  [(#406)](https://github.com/XanaduAI/MrMustard/pull/406)
-
-* Fix object visualizations in VS Code Notebooks by using the built-in display tools.
-  [(#425)](https://github.com/XanaduAI/MrMustard/pull/425)
-
-* Fix the TensorFlow issue with the expected number of gradients  in `custom_gradient`.
-  [(#506)](https://github.com/XanaduAI/MrMustard/pull/506)
-
-* Use the default repr when in interactive IPython.
-  [(#531)](https://github.com/XanaduAI/MrMustard/pull/531)
-
-* Increments the version to 1.0.0-dev.
-  [(#553)](https://github.com/XanaduAI/MrMustard/pull/553)
-
 
 ### Documentation
 
@@ -73,10 +37,12 @@
 [Matthew Silverman](https://github.com/timmysilv)
 [Ali Asadi](https://github.com/maliasadi)
 [Hitarth Choubisa](https://github.com/hitarth64)
+[Anthony Chytros](https://github.com/apchytr)
+
 
 ---
 
-# Release 0.7.3 (current release)
+# Release 0.7.3
 
 ### New features
 * Added a function ``to_fock`` to map different representations into Fock representation.
