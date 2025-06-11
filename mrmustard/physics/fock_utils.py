@@ -25,14 +25,13 @@ from typing import Sequence, Iterable
 
 import numpy as np
 from scipy.special import comb, factorial
+from tensorflow.python.framework.errors_impl import InvalidArgumentError
 
 from mrmustard import math, settings
 from mrmustard.math.lattice import strategies
 from mrmustard.math.caching import tensor_int_cache
-
+from mrmustard.math.jax_vjps import beamsplitter_jax, displacement_jax
 from mrmustard.utils.typing import Scalar, Tensor, Vector, Batch
-
-SQRT = np.sqrt(np.arange(1e6))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
@@ -52,6 +51,10 @@ def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = Non
 
     Returns:
         The Fock array of a tensor product of one-mode ``Number`` states.
+
+    Raises:
+        ValueError: If the number of cutoffs does not match the number of photon numbers.
+        ValueError: If the photon numbers are larger than the corresponding cutoffs.
     """
     n = math.atleast_1d(n)
 
@@ -67,15 +70,13 @@ def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = Non
         raise ValueError(msg)
 
     shape = tuple(c + 1 for c in cutoffs)
-    array = np.zeros(shape, dtype=np.complex128)
-
+    array = math.zeros(shape, dtype=math.complex64)
     try:
-        array[tuple(n)] = 1
-    except IndexError as e:
+        array = math.update_tensor(array, tuple(n), 1)
+    except (IndexError, InvalidArgumentError) as e:
         msg = "Photon numbers cannot be larger than the corresponding cutoffs."
         raise ValueError(msg) from e
-
-    return math.astensor(array)
+    return array
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -411,108 +412,6 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float
     probability_sample = math.gather(probs, sample_idx)
 
     return homodyne_sample, probability_sample
-
-
-@math.custom_gradient
-def displacement(x, y, shape, tol=1e-15):
-    r"""creates a single mode displacement matrix"""
-    alpha = math.asnumpy(x) + 1j * math.asnumpy(y)
-
-    if np.sqrt(x * x + y * y) > tol:
-        gate = strategies.displacement(tuple(shape), alpha)
-    else:
-        gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
-
-    ret = math.astensor(gate, dtype=gate.dtype.name)
-    if math.backend_name in ["numpy", "jax"]:
-        return ret
-
-    def grad(dL_dDc):
-        dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(gate), alpha)
-        dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
-        dLdx = 2 * np.real(dL_dac)
-        dLdy = 2 * np.imag(dL_dac)
-        return math.astensor(dLdx, dtype=x.dtype), math.astensor(dLdy, dtype=y.dtype)
-
-    return ret, grad
-
-
-@math.custom_gradient
-def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
-    r"""Creates a beamsplitter tensor with given cutoffs using a numba-based fock lattice strategy.
-
-    Args:
-        theta (float): transmittivity angle of the beamsplitter
-        phi (float): phase angle of the beamsplitter
-        cutoffs (int,int): cutoff dimensions of the two modes
-        method (str): method to compute the beamsplitter ("vanilla", "schwinger" or "stable")
-    """
-    t, s = math.asnumpy(theta), math.asnumpy(phi)
-    if method == "vanilla":
-        bs_unitary = strategies.beamsplitter(shape, t, s)
-    elif method == "schwinger":
-        bs_unitary = strategies.beamsplitter_schwinger(shape, t, s)
-    elif method == "stable":
-        bs_unitary = strategies.stable_beamsplitter(shape, t, s)
-    else:
-        raise ValueError(f"Unknown method {method}. Use 'vanilla', 'schwinger' or 'stable'.")
-
-    ret = math.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
-    if math.backend_name in ["numpy", "jax"]:
-        return ret
-
-    def vjp(dLdGc):
-        dtheta, dphi = strategies.beamsplitter_vjp(
-            math.asnumpy(bs_unitary),
-            math.asnumpy(math.conj(dLdGc)),
-            math.asnumpy(theta),
-            math.asnumpy(phi),
-        )
-        return math.astensor(dtheta, dtype=theta.dtype), math.astensor(dphi, dtype=phi.dtype)
-
-    return ret, vjp
-
-
-@math.custom_gradient
-def squeezer(r, phi, shape):
-    r"""creates a single mode squeezer matrix using a numba-based fock lattice strategy"""
-    sq_unitary = strategies.squeezer(shape, math.asnumpy(r), math.asnumpy(phi))
-
-    ret = math.astensor(sq_unitary, dtype=sq_unitary.dtype.name)
-    if math.backend_name in ["numpy", "jax"]:
-        return ret
-
-    def vjp(dLdGc):
-        dr, dphi = strategies.squeezer_vjp(
-            math.asnumpy(sq_unitary),
-            math.asnumpy(math.conj(dLdGc)),
-            math.asnumpy(r),
-            math.asnumpy(phi),
-        )
-        return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
-
-    return ret, vjp
-
-
-@math.custom_gradient
-def squeezed(r, phi, shape):
-    r"""creates a single mode squeezed state using a numba-based fock lattice strategy"""
-    sq_ket = strategies.squeezed(shape, math.asnumpy(r), math.asnumpy(phi))
-
-    ret = math.astensor(sq_ket, dtype=sq_ket.dtype.name)
-    if math.backend_name in ["numpy", "jax"]:  # pragma: no cover
-        return ret
-
-    def vjp(dLdGc):
-        dr, dphi = strategies.squeezed_vjp(
-            math.asnumpy(sq_ket),
-            math.asnumpy(math.conj(dLdGc)),
-            math.asnumpy(r),
-            math.asnumpy(phi),
-        )
-        return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
-
-    return ret, vjp
 
 
 def c_ps_matrix(m, n, alpha):

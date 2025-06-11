@@ -19,9 +19,9 @@ from __future__ import annotations
 import importlib.util
 import sys
 from functools import lru_cache
-from itertools import product
 from typing import Any, Callable, Sequence
 
+from jax.errors import TracerArrayConversionError
 import numpy as np
 from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
@@ -156,6 +156,23 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         The name of the backend in use.
         """
         return self._backend.name
+
+    @property
+    def euclidean_opt(self):
+        r"""The configured Euclidean optimizer."""
+        if not self._euclidean_opt:
+            self._euclidean_opt = self.DefaultEuclideanOptimizer()
+        return self._euclidean_opt
+
+    @property
+    def BackendError(self):
+        r"""
+        The error class for backend specific errors.
+
+        Note that currently this only applies to the case where
+        ``auto_shape`` is jitted  via the ``jax`` backend.
+        """
+        return TracerArrayConversionError
 
     def change_backend(self, name: str) -> None:
         r"""
@@ -1553,37 +1570,74 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("MultivariateNormalTriL", (loc, scale_tril))
 
-    def custom_gradient(self, func):
-        r"""
-        A decorator to define a function with a custom gradient.
-        """
-
-        def wrapper(*args, **kwargs):
-            if self.backend_name in ["numpy", "jax"]:
-                return func(*args, **kwargs)
-            else:
-                from tensorflow import (  # pylint: disable=import-outside-toplevel
-                    custom_gradient,
-                )
-
-                return custom_gradient(func)(*args, **kwargs)
-
-        return wrapper
-
     def DefaultEuclideanOptimizer(self):
         r"""Default optimizer for the Euclidean parameters."""
         return self._apply("DefaultEuclideanOptimizer")
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Methods that build on the basic ops and don't need to be overridden in the backend implementation
+    # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    @property
-    def euclidean_opt(self):
-        r"""The configured Euclidean optimizer."""
-        if not self._euclidean_opt:
-            self._euclidean_opt = self.DefaultEuclideanOptimizer()
-        return self._euclidean_opt
+    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float = 1e-15):
+        r"""
+        Creates a single mode displacement matrix using a numba-based fock lattice strategy.
+
+        Args:
+            x: The displacement magnitude.
+            y: The displacement angle.
+            shape: The shape of the displacement matrix.
+            tol: The tolerance to determine if the displacement is small enough to be approximated by the identity.
+
+        Returns:
+            The matrix representing the displacement gate.
+        """
+        return self._apply("displacement", (x, y), {"shape": shape, "tol": tol})
+
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
+        r"""
+        Creates a beamsplitter matrix with given cutoffs using a numba-based fock lattice strategy.
+
+        Args:
+            theta: Transmittivity angle of the beamsplitter.
+            phi: Phase angle of the beamsplitter.
+            shape: Output shape of the two modes.
+            method: Method to compute the beamsplitter ("vanilla", "schwinger" or "stable").
+
+        Returns:
+            The matrix representing the beamsplitter gate.
+
+        Raises:
+            ValueError: If the method is not "vanilla", "schwinger" or "stable".
+        """
+        return self._apply("beamsplitter", (theta, phi), {"shape": shape, "method": method})
+
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):  # pragma: no cover
+        r"""
+        Creates a single mode squeezed state matrix using a numba-based fock lattice strategy.
+
+        Args:
+            r: Squeezing magnitude.
+            phi: Squeezing angle.
+            shape: Output shape of the two modes.
+
+        Returns:
+            The matrix representing the squeezed state.
+        """
+        return self._apply("squeezed", (r, phi, shape))
+
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):  # pragma: no cover
+        r"""
+        Creates a single mode squeezer matrix using a numba-based fock lattice strategy.
+
+        Args:
+            r: Squeezing magnitude.
+            phi: Squeezing angle.
+            shape: Output shape of the two modes.
+
+        Returns:
+            The matrix representing the squeezer.
+        """
+        return self._apply("squeezer", (r, phi, shape))
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
@@ -1714,77 +1768,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         I = np.identity(num_modes)
         O = np.zeros_like(I)
         return np.block([[O, I], [-I, O]])
-
-    def add_at_modes(
-        self, old: Tensor, new: Tensor | None, modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        """Adds two phase-space tensors (cov matrices, displacement vectors, etc..) on the specified modes."""
-        if new is None:
-            return old
-        shape = getattr(old, "shape", ())
-        N = (shape[-1] if shape != () else 0) // 2
-        indices = modes + [m + N for m in modes]
-        return self.update_add_tensor(
-            old, list(product(*[indices] * len(new.shape))), self.reshape(new, -1)
-        )
-
-    def left_matmul_at_modes(
-        self, a_partial: Tensor, b_full: Tensor, modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        r"""Left matrix multiplication of a partial matrix and a full matrix.
-
-        It assumes that that ``a_partial`` is a matrix operating on M modes and that ``modes`` is a
-        list of ``M`` integers, i.e., it will apply ``a_partial`` on the corresponding ``M`` modes
-        of ``b_full`` from the left.
-
-        Args:
-            a_partial: The :math:`2M\times 2M` array
-            b_full: The :math:`2N\times 2N` array
-            modes: A list of ``M`` modes to perform the multiplication on
-
-        Returns:
-            The :math:`2N\times 2N` array
-        """
-        if a_partial is None:
-            return b_full
-
-        N = b_full.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype=self.int64)
-        b_rows = self.gather(b_full, indices, axis=0)
-        b_rows = self.matmul(a_partial, b_rows)
-        return self.update_tensor(b_full, indices[:, None], b_rows)
-
-    def right_matmul_at_modes(
-        self, a_full: Tensor, b_partial: Tensor, modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        r"""Right matrix multiplication of a full matrix and a partial matrix.
-
-        It assumes that that ``b_partial`` is a matrix operating on ``M`` modes and that ``modes``
-        is a list of ``M`` integers, i.e., it will apply ``b_partial`` on the corresponding M modes
-        of ``a_full`` from the right.
-
-        Args:
-            a_full: The :math:`2N\times 2N` array
-            b_partial: The :math:`2M\times 2M` array
-            modes: A list of `M` modes to perform the multiplication on
-
-        Returns:
-            The :math:`2N\times 2N` array
-        """
-        return self.transpose(
-            self.left_matmul_at_modes(self.transpose(b_partial), self.transpose(a_full), modes)
-        )
-
-    def matvec_at_modes(
-        self, mat: Tensor | None, vec: Tensor, modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        """Matrix-vector multiplication between a phase-space matrix and a vector in the specified modes."""
-        if mat is None:
-            return vec
-        N = vec.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype=self.int64)
-        updates = self.matvec(mat, self.gather(vec, indices, axis=0))
-        return self.update_tensor(vec, indices[:, None], updates)
 
     def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
         """Returns all the diagonals of a density matrix."""

@@ -42,6 +42,8 @@ dependencies = [
     "networkx >=3.1, <4",
     "numba >=0.59, <1",
     "numpy >=2.0.0, <3",
+    "optax>=0.2.4,<0.3",
+    "platformdirs >=2.2.0",
     "plotly >=5.20.0, <6",
     "rich >=13.9.0, <14",
     "scipy >=1.8.0, <2",
@@ -92,6 +94,7 @@ omit = [
     "mrmustard/math/backend_jax.py",
     "mrmustard/math/backend_tensorflow.py",
     "mrmustard/math/backend_numpy.py",
+    "mrmustard/math/jax_vjps/*",
 ]
 
 [tool.coverage.report]

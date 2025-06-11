@@ -19,7 +19,6 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import Sequence
-
 from enum import Enum
 
 import numpy as np
@@ -387,14 +386,18 @@ class State(CircuitComponent):
                     else:
                         ansatz = self.ansatz
                     A, b, c = ansatz.triple
-                    shape = autoshape_numba(
-                        math.asnumpy(A),
-                        math.asnumpy(b),
-                        math.asnumpy(c),
-                        max_prob or settings.AUTOSHAPE_PROBABILITY,
-                        max_shape or settings.AUTOSHAPE_MAX,
-                        min_shape or settings.AUTOSHAPE_MIN,
-                    )
+                    try:
+                        shape = autoshape_numba(
+                            math.asnumpy(A),
+                            math.asnumpy(b),
+                            math.asnumpy(c),
+                            max_prob or settings.AUTOSHAPE_PROBABILITY,
+                            max_shape or settings.AUTOSHAPE_MAX,
+                            min_shape or settings.AUTOSHAPE_MIN,
+                        )
+                    # covers the case where auto_shape is jitted
+                    except math.BackendError:  # pragma: no cover
+                        shape = super().auto_shape()
                     if self.wires.ket and self.wires.bra:
                         shape = tuple(shape) + tuple(shape)
                 else:
