@@ -3,34 +3,44 @@
 ### New features
 
 * Introducing the new ``lab`` module. A more expressive and performant API for simulating quantum optical circuits.
+[(#579)](https://github.com/XanaduAI/MrMustard/pull/579)
 
 * Add the new ``jax`` backend. ``Jax`` is a Python library that supports array-oriented numerical computations, automatic differentation and JIT compilation.
+[(#546)](https://github.com/XanaduAI/MrMustard/pull/546)
 
 * New ``OptimizerJax`` class for handling optimizations of Euclidean parameters via the ``jax`` backend.
+[(#594)](https://github.com/XanaduAI/MrMustard/pull/594)
 
 ### Breaking changes
 
-* Removed ``julia`` and ``ray`` as dependencies.
+* Removed ``julia``, ``ray`` and ``scikit-optimize`` as dependencies.
+[(#541)](https://github.com/XanaduAI/MrMustard/pull/541)
+[(#585)](https://github.com/XanaduAI/MrMustard/pull/585)
 
-* Support for ``numpy>=2.0``.
+* Support for ``numpy 2``.
+[(#554)](https://github.com/XanaduAI/MrMustard/pull/554)
 
 * Replaced ``poetry`` as the prefered installation method with ``uv``.
+[(#542)](https://github.com/XanaduAI/MrMustard/pull/542)
 
 * Dropped Python 3.9 support.
+[(#562)](https://github.com/XanaduAI/MrMustard/pull/562)
 
 * New ``lab`` API.
+[(#579)](https://github.com/XanaduAI/MrMustard/pull/579)
+
 
 ### Contributors
 
-[Ali Asadi](https://github.com/maliasadi)
-[Anthony Chytros](https://github.com/apchytr)
-[Hitarth Choubisa](https://github.com/hitarth64)
-[Samuele Ferracin](https://github.com/SamFerracin)
-[Austin Lund](https://github.com/aplund)
-[Filippo Miatto](https://github.com/ziofil)
-[Arsalan Motamedi](https://github.com/arsalan-motamedi)
-[Kasper Nielsen](https://github.com/kaspernielsen96)
-[Matthew Silverman](https://github.com/timmysilv)
+[Ali Asadi](https://github.com/maliasadi),
+[Anthony Chytros](https://github.com/apchytr),
+[Hitarth Choubisa](https://github.com/hitarth64),
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Austin Lund](https://github.com/aplund),
+[Filippo Miatto](https://github.com/ziofil),
+[Arsalan Motamedi](https://github.com/arsalan-motamedi),
+[Kasper Nielsen](https://github.com/kaspernielsen96),
+[Matthew Silverman](https://github.com/timmysilv),
 [Yuan Yao](https://github.com/sylviemonet)
 
 
