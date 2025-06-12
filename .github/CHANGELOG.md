@@ -2,7 +2,10 @@
 
 ### New features
 
-* Introducing the new ``lab`` module. A more expressive and performant API for simulating quantum optical circuits.
+* Introducing the new ``lab`` module. A more expressive and performant API for simulating quantum optical circuits. New features include:
+  * Universial interoperability of all representations including ``Bargmann``, ``Fock``, ``Quadrature`` and ``Phase Space``.
+  * Batching functionality allowing for parallelization of computations.
+  * Support for delayed contractions enabling optimizations over the path of contraction.
 [(#579)](https://github.com/XanaduAI/MrMustard/pull/579)
 
 * Add the new ``jax`` backend. ``Jax`` is a Python library that supports array-oriented numerical computations, automatic differentation and JIT compilation.
@@ -17,7 +20,7 @@
 [(#541)](https://github.com/XanaduAI/MrMustard/pull/541)
 [(#585)](https://github.com/XanaduAI/MrMustard/pull/585)
 
-* Support for ``numpy 2``.
+* Support for ``numpy 2+``.
 [(#554)](https://github.com/XanaduAI/MrMustard/pull/554)
 
 * Replaced ``poetry`` as the prefered installation method with ``uv``.
@@ -29,6 +32,9 @@
 * New ``lab`` API.
 [(#579)](https://github.com/XanaduAI/MrMustard/pull/579)
 
+### Documentation
+
+* Updated documentation to reflect the new API.
 
 ### Contributors
 
