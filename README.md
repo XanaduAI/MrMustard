@@ -234,7 +234,9 @@ math.cos(0.1)  # tensorflow
 ```
 
 ### Optimization
-The `mrmustard.training.Optimizer` uses Adam underneath the hood for the optimization of Euclidean parameters, a custom symplectic optimizer for Gaussian gates and states and a unitary/orthogonal optimizer for interferometers.
+The `mrmustard.training.Optimizer` class (supported by the `tensorflow` backend) uses Adam underneath the hood for the optimization of Euclidean parameters, a custom symplectic optimizer for Gaussian gates and states and a unitary/orthogonal optimizer for interferometers.
+
+The `mrmustard.training.OptimizerJax` class (supported by the `jax` backend) operates similarly but only supports Euclidean parameters. The advantage `mrmustard.training.OptimizerJax` has is making use of JIT compilation to speed up optimizations tenfold.
 
 We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a displaced squeezed state.
 
@@ -246,18 +248,18 @@ from mrmustard.training import Optimizer
 
 math.change_backend("tensorflow")
 
-D = Dgate(x = 0.1, y = -0.5, x_trainable=True, y_trainable=True)
-L = Attenuator(transmissivity=0.5)
+D = Dgate(mode=0, x=0.1, y=-0.5, x_trainable=True, y_trainable=True)
+L = Attenuator(mode=0, transmissivity=0.5)
 
 # we write a function that takes no arguments and returns the cost
 def cost_fn_eucl():
-    state_out = Vacuum(1) >> D >> L
-    return 1 - fidelity(state_out, Coherent(0.1, 0.5))
+    state_out = Vacuum(modes=0) >> D >> L
+    return 1 - state_out.fidelity(Coherent(mode=0, x=0.1, y=0.5))
 
-G = Ggate(num_modes=1, symplectic_trainable=True)
+G = Ggate(modes=0, symplectic_trainable=True)
 def cost_fn_sympl():
-    state_out = Vacuum(1) >> G >> D >> L
-    return 1 - fidelity(state_out, DisplacedSqueezed(r=0.3, phi=1.1, x=0.4, y=-0.2))
+    state_out = Vacuum(modes=0) >> G >> D >> L
+    return 1 - state_out.fidelity(DisplacedSqueezed(mode=0, r=0.3, phi=1.1, x=0.4, y=-0.2))
 
 # For illustration, here the Euclidean optimization doesn't include squeezing
 opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
