@@ -32,11 +32,15 @@ Mr Mustard supports:
 - Plug-and-play backends (`numpy` as default)
 
 # The lab module
-The lab module contains things you'd find in a lab: states, transformations, measurements, circuits. States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters.
 
+The lab module contains components you'd find in a lab: states, transformations, measurements, circuits, etc.
 
-## 1. States and Gates
-Here are a few examples of states and gates:
+States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters.
+
+## 1. States and Transformations
+
+Here are a few examples of built-in states and transformations:
+
 ```python
 import numpy as np
 from mrmustard.lab import *
@@ -44,8 +48,8 @@ from mrmustard.lab import *
 vac = Vacuum(modes=(0,1))                      # 2-mode vacuum state
 coh = Coherent(mode=0, x=0.1, y=-0.4)          # coh state |alpha> with alpha = 0.1 - 0.4j
 sq  = SqueezedVacuum(mode=0, r=0.5)            # squeezed vacuum state
-g   = GKet(modes=(0,1))                        # 2-mode Gaussian state
-fock4 = Number(mode=0, n=4)                    # number state |4>
+gket  = GKet(modes=(0,1))                      # 2-mode Gaussian state
+num_4 = Number(mode=0, n=4)                    # number state |4>
 
 D  = Dgate(mode=0, x=1.0, y=-0.4)              # Displacement by 1.0 along x and -0.4 along y
 S  = Sgate(mode=0, r=0.5)                      # Squeezer with r=0.5
@@ -59,167 +63,78 @@ MZ = MZgate(modes=(0,1), phi_a=0.3, phi_b=0.1) # Mach-Zehnder interferometer
 I  = Interferometer(modes = (0,1,2,3))         # 4-mode interferometer
 ```
 
+States can be in linear superpositions of eachother via the addition operator:
+
+```python
+cat = (Coherent(mode=0, x=2) + Coherent(mode=0, x=-2)).normalize() # normalized cat state
+```
+
 The `repr` of single-mode states shows the Wigner function:
 <img width="571" alt="Screen Shot 2021-12-06 at 1 31 17 PM" src="https://user-images.githubusercontent.com/8944955/144902008-8d26d59c-8600-4391-9144-ffcc1b2215c2.png">
 
-```python
-cat_amps = Coherent(mode=0, x=2.0).fock_array(20) + Coherent(mode=0, x=-2.0).fock_array(20)
-cat_amps = cat_amps / np.linalg.norm(cat_amps)
-cat = Ket.from_fock(cat_amps)
-cat
-```
-<img width="538" alt="Screen Shot 2021-12-06 at 8 27 06 PM" src="https://user-images.githubusercontent.com/8944955/144949009-ebf7bbf8-9240-406c-ab99-bf8c36acd3f7.png">
 
-States (even those in Fock representation) are always compatible with gates:
+States can be contracted with transformations via the right shift operator:
+
 ```python
-cat >> Sgate(mode=0, r=0.5)  # squeezed cat
+cat >> Sgate(mode=0, r=0.5) >> Dgate(mode=0, x=0.01, y=-0.1)  # squeezed displaced cat
 ```
 <img width="479" alt="Screen Shot 2021-12-07 at 2 03 14 PM" src="https://user-images.githubusercontent.com/8944955/145090219-298ca2ab-92e9-4ac2-beab-33ee33770fb2.png">
 
 
-
-## 2. Gates and the right shift operator `>>`
-
-Applying gates to states looks natural, thanks to python's right-shift operator `>>`:
-```python
-displaced_squeezed = Vacuum(1) >> Sgate(r=0.5) >> Dgate(x=1.0)
-```
-
-If you want to apply a gate to specific modes, use the `getitem` format. Here are a few examples:
-```python
-D = Dgate(y=-0.4)
-S = Sgate(r=0.1, phi=0.5)
-state = Vacuum(2) >> D[1] >> S[0]  # displacement on mode 1 and squeezing on mode 0
-
-BS = BSgate(theta=1.1)
-state = Vacuum(3) >> BS[0,2]  # applying a beamsplitter to modes 0 and 2
-state = Vacuum(4) >> S[0,1,2]  # applying the same Sgate in parallel to modes 0, 1 and 2 but not to mode 3
-```
-
-## 3. Circuit
-When chaining just gates with the right-shift `>>` operator, we create a circuit:
-```python
-X8 = Sgate(r=[1.0] * 4) >> Interferometer(4)
-output = Vacuum(4) >> X8
-
-# lossy X8
-noise = lambda: np.random.uniform(size=4)
-X8_noisy = (Sgate(r=0.9 + 0.1*noise(), phi=0.1*noise())
-                >> Attenuator(0.89 + 0.01*noise())
-                >> Interferometer(4)
-                >> Attenuator(0.95 + 0.01*noise())
-               )
-
-# 2-mode Bloch Messiah decomposition
-bloch_messiah = Sgate(r=[0.1,0.2]) >> BSgate(theta=-0.1, phi=2.1) >> Dgate(x=[0.1, -0.4])
-my_state = Vacuum(2) >> bloch_messiah
-```
-
-## 4. Measurements
-In order to perform a measurement, we use the left-shift operator, e.g. `coh << sq` (think of the left-shift on a state as "closing" the circuit).
-```python
-leftover = Vacuum(4) >> X8 << SqueezedVacuum(r=10.0, phi=np.pi)[2]  # a homodyne measurement of p=0.0 on mode 2
-```
-
-Transformations can also be applied in the dual sense by using the left-shift operator `<<`:
-```python
-Attenuator(0.5) << Coherent(0.1, 0.2) == Coherent(0.1, 0.2) >> Amplifier(2.0)
-```
-This has the advantage of modelling lossy detectors without applying the loss channel to the state going into the detector, which can be overall faster e.g. if the state is kept pure by doing so.
-
-## 5. Detectors
-There are two types of detectors in Mr Mustard. Fock detectors (PNRDetector and ThresholdDetector) and Gaussian detectors (Homodyne, Heterodyne, Generaldyne).
-
-The PNR and Threshold detectors return an array of unnormalized measurement results, meaning that the elements of the array are the density matrices of the leftover systems, conditioned on the outcomes:
-```python
-results = Gaussian(2) << PNRDetector(efficiency = 0.9, modes = [0])
-results[0]  # unnormalized dm of mode 1 conditioned on measuring 0 in mode 0
-results[1]  # unnormalized dm of mode 1 conditioned on measuring 1 in mode 0
-results[2]  # unnormalized dm of mode 1 conditioned on measuring 2 in mode 0
-# etc...
-```
-The trace of the leftover density matrices will yield the success probability. If multiple modes are measured then there is a corresponding number of indices:
-```python
-results = Gaussian(3) << PNRDetector(efficiency = [0.9, 0.8], modes = [0,1])
-results[2,3]  # unnormalized dm of mode 2 conditioned on measuring 2 in mode 0 and 3 in mode 1
-# etc...
-```
-Set a lower `settings.PNR_INTERNAL_CUTOFF` (default 50) to speed-up computations of the PNR output.
-
-## 6. Comparison operator `==`
-States support the comparison operator:
-```python
->>> bunched = (Coherent(1.0) & Coherent(1.0)) >> BSgate(np.pi/4)
->>> bunched.get_modes(1) == Coherent(np.sqrt(2.0))
-True
-```
-As well as transformations (gates and circuits):
-```python
->>> Dgate(np.sqrt(2)) >> Attenuator(0.5) == Attenuator(0.5) >> Dgate(1.0)
-True
-```
-
-## 7. State operations and properties
-States can be joined using the `&` (and) operator:
-```python
-Coherent(x=1.0, y=1.0) & Coherent(x=2.0, y=2.0)  # A separable two-mode coherent state
-
-s = SqueezedVacuum(r=1.0)
-s4 = s & s & s & s   # four squeezed states
-```
-
-Subsystems can be accessed via `get_modes`:
-```python
-joint = Coherent(x=1.0, y=1.0) & Coherent(x=2.0, y=2.0)
-joint.get_modes(0)  # first mode
-joint.get_modes(1)  # second mode
-
-swapped = joint.get_modes([1,0])
-```
-
-## 8. Fock representation
-The Fock representation of a State is obtained via `.ket(cutoffs)` or `.dm(cutoffs)`. For circuits and gates (transformations in general) it's `.U(cutoffs)` or `.choi(cutoffs)`, if available. The Fock representation is exact and it doesn't break differentiability. This means that one can define cost functions on the Fock representation and backpropagate back to the phase space representation.
+States can be measured via contraction with a dual state.
 
 ```python
-# Fock representation of a coherent state
-Coherent(0.5).ket(cutoffs=[5])   # ket
-Coherent(0.5).dm(cutoffs=[5])    # density matrix
-
-Dgate(x=1.0).U(cutoffs=[15])  # truncated unitary matrix
-Dgate(x=1.0).choi(cutoffs=[15])  # truncated choi tensor
+cat >> Number(mode=0, n=3).dual # equivalent to a PNR measurement of 4 photons
 ```
 
-States can be initialized in Fock representation and used as any other state:
+
+States can also generate samples via the built-in sampler.
+
 ```python
-my_amplitudes = np.array([0.5, 0.25, -0.5, 0.25, 0.25, 0.5, -0.25] + [0.0]*23)  # notice the buffer
-my_state = State(ket=my_amplitudes)
-my_state >> Sgate(r=0.5)  # just works
-```
-<img width="542" alt="Screen Shot 2021-12-06 at 1 44 38 PM" src="https://user-images.githubusercontent.com/8944955/144903799-5b6c1524-4357-4be0-9778-e1f0de6943c1.png">
+pnr = PNRSampler(cutoff=100)
+pnr_samples = pnr.sample(state=cat, n_samples=100, seed=None)
 
-Alternatively,
-```python
-my_amplitudes = np.array([0.5, 0.25, -0.5, 0.25, 0.25, 0.5, -0.25])  # no buffer
-my_state = State(ket=my_amplitudes)
-my_state._cutoffs = [42]  # force the cutoff
-my_state >> Sgate(r=0.5)  # works too
+homodyne = HomodyneSampler(phi=0, bounds=(-10,10), num=1000)
+homodyne_samples = homodyne.sample(state=cat, n_samples=100, seed=None)
 ```
+
+
+## 2. Circuits
+
+More advanced use cases can make use of the ``Circuit`` class. The ``Circuit`` class acts as a wrapper around uncontracted components. Since these components are uncontracted we can optimize over the path of contraction and the Fock shapes with `.optimize`.
+
+```python
+circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Coherent(0, x=1.0).dual])
+circ.optimize(n_init=100, with_BF_heuristic=True, verbose=True)
+assert circ.path == [(1, 2), (0, 1)]
+```
+
+## 3. CircuitComponents, Ansatz and Wires
+
+Under the hood, all built-in components inherit from the ``CircuitComponent`` class. A ``CircuitComponent`` ...
+
+
 
 # The physics module
-The physics module contains all the functionality related to the quantum optics of Mr Mustard. This includes the ``Anstaz`` class which is responsible for handling the numerics of ``CircuitComponent``s.
+
+The physics module contains all the functionality related to the quantum optics of Mr Mustard. This includes the ``Anstaz`` class which is responsible for handling the numerics of a ``CircuitComponent``.
 
 
 # The math module
+
 The math module is the backbone of Mr Mustard. Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow, numpy or jax and your code will be plug-and-play too!
 
 Here's an example where the ``numpy`` backend is used.
+
 ```python
 import mrmustard.math as math
 
 math.cos(0.1)  # numpy
 ```
 
+
 In a different session, we can change the backend to ``tensorflow``.
+
 ```python
 import mrmustard.math as math
 math.change_backend("tensorflow")
@@ -227,7 +142,9 @@ math.change_backend("tensorflow")
 math.cos(0.1)  # tensorflow
 ```
 
+
 And to ``jax`` as well.
+
 ```python
 import mrmustard.math as math
 math.change_backend("jax")
@@ -235,7 +152,9 @@ math.change_backend("jax")
 math.cos(0.1)  # jax
 ```
 
+
 ### Optimization
+
 The `mrmustard.training.Optimizer` class (supported by the `tensorflow` backend) uses Adam underneath the hood for the optimization of Euclidean parameters, a custom symplectic optimizer for Gaussian gates and states and a unitary/orthogonal optimizer for interferometers.
 
 The `mrmustard.training.OptimizerJax` class (supported by the `jax` backend) operates similarly but only supports Euclidean parameters. The advantage `mrmustard.training.OptimizerJax` has is making use of JIT compilation to speed up optimizations tenfold.
