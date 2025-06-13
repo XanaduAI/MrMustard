@@ -15,10 +15,10 @@
 """Tests for the jitting functionality within JAX backend."""
 
 import time
-import pytest
 
 import jax
 import jax.numpy as jnp
+import pytest
 
 from mrmustard import math
 from mrmustard.lab import Attenuator, BSgate, SqueezedVacuum

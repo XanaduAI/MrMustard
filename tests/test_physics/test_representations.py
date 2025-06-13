@@ -19,8 +19,8 @@
 import pytest
 
 from mrmustard import math
-from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.lab.circuit_components import CircuitComponent
+from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.triples import bargmann_to_quadrature_Abc, displacement_gate_Abc
 from mrmustard.physics.wires import ReprEnum, Wires
 

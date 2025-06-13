@@ -52,6 +52,7 @@ from mrmustard.training import Optimizer
 
 from ..random import Abc_triple
 
+
 # pylint: disable=too-many-public-methods
 class TestCircuitComponent:
     r"""
