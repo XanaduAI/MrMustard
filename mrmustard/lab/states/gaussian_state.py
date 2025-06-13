@@ -21,17 +21,16 @@ from __future__ import annotations
 from typing import Sequence
 
 from mrmustard import math
-
 from mrmustard.math.parameters import update_symplectic
-from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
-from .ket import Ket
-from .dm import DM
 from ..circuit_components_utils import TraceOut
 from ..utils import make_parameter, reshape_params
-from mrmustard.physics.wires import Wires
+from .dm import DM
+from .ket import Ket
 
 __all__ = ["GKet", "GDM"]
 

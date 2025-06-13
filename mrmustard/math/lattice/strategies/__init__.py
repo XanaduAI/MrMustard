@@ -15,6 +15,6 @@
 from .beamsplitter import *
 from .binomial import *
 from .displacement import *
+from .fast_diagonal import *
 from .squeezer import *
 from .vanilla import *
-from .fast_diagonal import *

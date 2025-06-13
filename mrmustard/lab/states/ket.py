@@ -19,28 +19,23 @@ This module contains the defintion of the ket class ``Ket``.
 from __future__ import annotations
 
 from typing import Collection, Sequence
-from IPython.display import display
 
 import numpy as np
+from IPython.display import display
 
 from mrmustard import math, settings, widgets
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.wires import Wires, ReprEnum
-from mrmustard.utils.typing import (
-    Scalar,
-    Batch,
-    ComplexMatrix,
-    ComplexVector,
-)
+from mrmustard.physics.wires import ReprEnum, Wires
+from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Scalar
 
-from .base import State, _validate_operator, OperatorType
-from .dm import DM
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
-from ..transformations import Unitary, Operation
+from ..transformations import Operation, Unitary
 from ..utils import shape_check
+from .base import OperatorType, State, _validate_operator
+from .dm import DM
 
 __all__ = ["Ket"]
 

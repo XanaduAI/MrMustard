@@ -20,9 +20,10 @@ from __future__ import annotations
 
 from typing import Collection
 
-from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
+
 from .ket import Ket
 
 __all__ = ["Vacuum"]

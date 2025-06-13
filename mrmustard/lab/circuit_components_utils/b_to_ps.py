@@ -19,12 +19,12 @@ The class representing an operation that changes Bargmann into phase space.
 from __future__ import annotations
 
 from mrmustard.physics import triples
+from mrmustard.physics.wires import Wires
 
-from ..transformations.base import Map
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
+from ..transformations.base import Map
 from ..utils import make_parameter
-from mrmustard.physics.wires import Wires
 
 __all__ = ["BtoPS"]
 

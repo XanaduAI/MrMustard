@@ -17,10 +17,12 @@ This module contains gaussian integral functions and related helper functions.
 """
 
 from typing import Sequence
+
 import numpy as np
+
 from mrmustard import math
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
 from mrmustard.physics.utils import outer_product_batch_str, verify_batch_triple
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 
 def real_gaussian_integral(

@@ -17,13 +17,15 @@ The class representing a controlled-X gate.
 """
 
 from __future__ import annotations
-from typing import Sequence
-from mrmustard.physics.ansatz import PolyExpAnsatz
 
-from .base import Unitary
-from ..utils import make_parameter
-from ...physics import symplectics
+from typing import Sequence
+
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
+
+from ...physics import symplectics
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["CXgate"]
 

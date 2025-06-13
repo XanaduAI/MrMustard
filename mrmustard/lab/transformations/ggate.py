@@ -20,12 +20,12 @@ from __future__ import annotations
 
 from mrmustard import math
 from mrmustard.math.parameters import update_symplectic
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
-from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
-from mrmustard.physics.wires import Wires
+from .base import Unitary
 
 __all__ = ["Ggate"]
 

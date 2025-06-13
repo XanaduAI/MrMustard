@@ -17,13 +17,15 @@ The class representing a coherent state.
 """
 
 from __future__ import annotations
+
 from typing import Sequence
-from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics import triples
-from mrmustard.physics.wires import Wires
-from mrmustard.math.parameter_set import ParameterSet
+
 from mrmustard.lab.states.ket import Ket
 from mrmustard.lab.utils import make_parameter
+from mrmustard.math.parameter_set import ParameterSet
+from mrmustard.physics import triples
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 
 __all__ = ["Coherent"]
 

@@ -1,14 +1,16 @@
 """Module containing wire classes for quantum and classical channels."""
 
 from __future__ import annotations
-from functools import cached_property
-from enum import Enum, auto
-from typing import Any, Callable, Iterable, Iterator
-from dataclasses import dataclass, field
-from random import randint
-from IPython.display import display
-from mrmustard import widgets
 
+from dataclasses import dataclass, field
+from enum import Enum, auto
+from functools import cached_property
+from random import randint
+from typing import Any, Callable, Iterable, Iterator
+
+from IPython.display import display
+
+from mrmustard import widgets
 
 __all__ = ["Wires"]
 

@@ -20,9 +20,9 @@ from __future__ import annotations
 
 from mrmustard.physics import triples
 
-from ..circuit_components import CircuitComponent
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import Wires
+from ..circuit_components import CircuitComponent
 
 __all__ = ["TraceOut"]
 

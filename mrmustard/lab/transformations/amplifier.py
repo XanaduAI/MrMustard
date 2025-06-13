@@ -17,12 +17,15 @@ The class representing a noisy amplifier channel.
 """
 
 from __future__ import annotations
+
 from typing import Sequence
-from .base import Channel
-from ...physics.ansatz import PolyExpAnsatz
-from ...physics import triples
-from ..utils import make_parameter
+
 from mrmustard.physics.wires import Wires
+
+from ...physics import triples
+from ...physics.ansatz import PolyExpAnsatz
+from ..utils import make_parameter
+from .base import Channel
 
 __all__ = ["Amplifier"]
 

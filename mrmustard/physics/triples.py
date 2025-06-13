@@ -23,8 +23,9 @@ from typing import Sequence
 import numpy as np
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, RealMatrix
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector, RealMatrix
+
 from .bargmann_utils import symplectic2Au
 
 #  ~~~~~~~~~

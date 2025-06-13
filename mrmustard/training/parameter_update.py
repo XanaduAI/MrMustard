@@ -15,9 +15,10 @@
 """TODO: document this module"""
 
 from typing import Sequence
-from mrmustard.utils.typing import Tensor
 
 from mrmustard import math
+from mrmustard.utils.typing import Tensor
+
 from ..utils.typing import Trainable
 
 

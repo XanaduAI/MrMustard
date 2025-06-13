@@ -22,7 +22,7 @@ from __future__ import annotations
 from typing import Any, Callable, Generator
 
 from mrmustard import math
-from mrmustard.math.parameters import update_euclidean, Constant, Variable
+from mrmustard.math.parameters import Constant, Variable, update_euclidean
 
 
 def make_parameter(

@@ -14,7 +14,8 @@
 
 """A module containing classes and methods for progress bars."""
 
-from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
+from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
+
 from mrmustard import settings
 
 

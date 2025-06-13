@@ -23,7 +23,7 @@ from zipfile import ZipFile
 
 import numpy as np
 
-from mrmustard import math, settings, __version__
+from mrmustard import __version__, math, settings
 
 
 def save(cls: type, filename=None, do_zip=True, arrays=None, **data) -> Path:

@@ -21,22 +21,15 @@ import sys
 from functools import lru_cache
 from typing import Any, Callable, Sequence
 
-from jax.errors import TracerArrayConversionError
 import numpy as np
+from jax.errors import TracerArrayConversionError
 from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
 
 from ..utils.settings import settings
-from ..utils.typing import (
-    Batch,
-    Matrix,
-    Tensor,
-    Trainable,
-    Vector,
-)
+from ..utils.typing import Batch, Matrix, Tensor, Trainable, Vector
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
-
 
 __all__ = [
     "BackendManager",

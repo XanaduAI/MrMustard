@@ -71,13 +71,13 @@ Examples:
 
 from __future__ import annotations
 
+import hashlib
+import os
 from dataclasses import dataclass
 from datetime import datetime
-import hashlib
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
-import os
 import numpy as np
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"

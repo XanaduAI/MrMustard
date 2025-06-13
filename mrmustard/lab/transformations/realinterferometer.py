@@ -21,12 +21,12 @@ from __future__ import annotations
 from mrmustard import math
 from mrmustard.math.parameters import update_orthogonal
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
-from .base import Unitary
-from ..utils import make_parameter
 from ...physics import symplectics
-from mrmustard.physics.wires import Wires
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["RealInterferometer"]
 

@@ -19,11 +19,12 @@ Custom vjps for fock utilities.
 # pylint: disable=unused-argument
 
 from __future__ import annotations
+
 from functools import partial
 
-import numpy as np
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from mrmustard.math.lattice import strategies
 

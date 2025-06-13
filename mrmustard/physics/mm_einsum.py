@@ -15,13 +15,16 @@
 """Implementation of the mm_einsum function."""
 
 from __future__ import annotations
+
 from typing import Literal
+
+from numpy.typing import ArrayLike
+from opt_einsum.paths import ssa_to_linear
+
 from mrmustard import math
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.ansatz.base import Ansatz
 from mrmustard.physics.triples import identity_Abc
-from numpy.typing import ArrayLike
-from opt_einsum.paths import ssa_to_linear
 
 
 def _ints(seq: list[int | str]) -> list[int]:

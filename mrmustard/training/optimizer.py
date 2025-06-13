@@ -18,20 +18,21 @@ used within Mr Mustard.
 from __future__ import annotations
 
 from itertools import chain, groupby
-from typing import List, Callable, Sequence, Mapping, Dict
+from typing import Callable, Dict, List, Mapping, Sequence
+
 from mrmustard import math, settings
-from mrmustard.math.parameters import Constant, Variable
-from mrmustard.training.callbacks import Callback
-from mrmustard.training.progress_bar import ProgressBar
-from mrmustard.utils.logger import create_logger
+from mrmustard.lab import Circuit
 from mrmustard.math.parameters import (
+    Constant,
+    Variable,
     update_euclidean,
     update_orthogonal,
     update_symplectic,
     update_unitary,
 )
-
-from mrmustard.lab import Circuit
+from mrmustard.training.callbacks import Callback
+from mrmustard.training.progress_bar import ProgressBar
+from mrmustard.utils.logger import create_logger
 
 __all__ = ["Optimizer"]
 

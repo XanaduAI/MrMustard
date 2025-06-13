@@ -17,17 +17,18 @@ The class representing a displacement gate.
 """
 
 from __future__ import annotations
-from typing import Sequence
+
 from dataclasses import replace
+from typing import Sequence
 
-from mrmustard.utils.typing import ComplexTensor
 from mrmustard import math
-from ...physics.wires import Wires, ReprEnum
-from .base import Unitary
-from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
-from ...physics import triples
-from ..utils import make_parameter
+from mrmustard.utils.typing import ComplexTensor
 
+from ...physics import triples
+from ...physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from ...physics.wires import ReprEnum, Wires
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["Dgate"]
 

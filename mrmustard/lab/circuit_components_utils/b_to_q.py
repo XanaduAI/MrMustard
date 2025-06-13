@@ -16,14 +16,16 @@
 The class representing an operation that changes Bargmann into quadrature.
 """
 from __future__ import annotations
-from typing import Sequence
-from mrmustard.physics import triples
 
-from ..transformations.base import Operation
+from typing import Sequence
+
+from mrmustard.physics import triples
+from mrmustard.physics.wires import Wires
+
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
+from ..transformations.base import Operation
 from ..utils import make_parameter
-from mrmustard.physics.wires import Wires
 
 __all__ = ["BtoQ"]
 

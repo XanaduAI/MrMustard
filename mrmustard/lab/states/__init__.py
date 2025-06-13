@@ -16,18 +16,17 @@
 The classes representing states in quantum circuits.
 """
 
-from .base import State
-from .ket import Ket
-from .dm import DM
-
 from .bargmann_eigenstate import BargmannEigenstate
+from .base import State
 from .coherent import Coherent
 from .displaced_squeezed import DisplacedSqueezed
-from .gaussian_state import GKet, GDM
+from .dm import DM
+from .gaussian_state import GDM, GKet
+from .ket import Ket
 from .number import Number
 from .quadrature_eigenstate import QuadratureEigenstate
+from .sauron import Sauron
 from .squeezed_vacuum import SqueezedVacuum
 from .thermal import Thermal
 from .two_mode_squeezed_vacuum import TwoModeSqueezedVacuum
 from .vacuum import Vacuum
-from .sauron import Sauron
