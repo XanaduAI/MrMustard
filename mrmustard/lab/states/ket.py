@@ -237,27 +237,6 @@ class Ket(State):
             >>> from mrmustard.lab import Vacuum, DM
             >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
-        # Contract the ansatzes
-        # from mrmustard.physics.utils import zip_batch_strings
-        # self_ansatz = self.ansatz
-        # other_ansatz = self.adjoint.ansatz
-        # self_wires = self.wires
-        # other_wires = self.adjoint.wires
-
-        # wires_result, _ = self_wires @ other_wires
-        # core1, core2, core_out = self_wires.contracted_labels(other_wires)
-        # eins_str = zip_batch_strings(
-        #     self_ansatz.batch_dims - self_ansatz._lin_sup,
-        #     other_ansatz.batch_dims - other_ansatz._lin_sup,
-        # )
-        # batch12, batch_out = eins_str.split("->")
-        # batch1, batch2 = batch12.split(",")
-        # ansatz = self_ansatz.contract(
-        #     other_ansatz, list(batch1) + core1, list(batch2) + core2, list(batch_out) + core_out
-        # )
-        # ret = DM(ansatz, wires_result, name=self.name)
-        # ret.manual_shape = self.manual_shape + self.manual_shape
-        # return ret
         ret = self.contract(self.adjoint, mode="zip")
         return DM._from_attributes(ret.ansatz, ret.wires, name=self.name)
 
