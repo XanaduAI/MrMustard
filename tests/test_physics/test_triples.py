@@ -419,5 +419,32 @@ class TestTriples:
         assert math.allclose(
             A, A_by_hand, atol=1e-7
         )  # TODO: remove atol when tensorflow is removed
-        assert math.allclose(b, math.zeros((4, 1)))
+        assert math.allclose(b, math.zeros((4,)))
+        assert b.shape == (4,)
         assert math.allclose(c, 1.0)
+
+    def test_XY_to_channel_Abc_batched(self):
+        eta = np.random.random(2)[:, None, None]
+        X = math.sqrt(eta) * math.eye(2)[None, :, :]
+        # Now X has shape (2, 2, 2)
+        Y = settings.HBAR / 2 * (1 - eta) * math.eye(2)[None, :, :]
+
+        A, b, c = triples.XY_to_channel_Abc(X, Y)
+
+        A_by_hand = (
+            math.sqrt(eta)
+            * math.astensor(
+                [[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=math.complex128
+            )[None, :, :]
+            + (1 - eta)
+            * math.astensor(
+                [[0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 0, 0], [0, 1, 0, 0]], dtype=math.complex128
+            )[None, :, :]
+        )
+
+        assert math.allclose(
+            A, A_by_hand, atol=1e-7
+        )  # TODO: remove atol when tensorflow is removed
+        assert math.allclose(b, math.zeros((2, 4)))
+        assert math.allclose(c, math.astensor([1.0, 1.0], dtype=math.complex128))
+        assert c.shape == (2,)
