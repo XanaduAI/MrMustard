@@ -70,8 +70,8 @@ clean-docs:
 
 .PHONY : format
 format:
-	isort --py 312 --profile black -l 100 -p mrmustard/ tests/ $(ICHECK)
-	black -t py310 -t py311 -t py312 -l 100 mrmustard/ tests/ $(CHECK)
+	isort --py 311 --profile black -l 100 -p mrmustard/ tests/ $(ICHECK)
+	black -t py310 -t py311 -l 100 mrmustard/ tests/ $(CHECK)
 
 .PHONY : lint
 lint:
