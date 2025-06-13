@@ -63,7 +63,6 @@ class Vacuum(Ket):
         modes: int | tuple[int, ...],
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
-        # Create the ansatz directly to avoid lazy evaluation during JAX transformations
         A, b, c = triples.vacuum_state_Abc(len(modes))
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket=set(modes))
