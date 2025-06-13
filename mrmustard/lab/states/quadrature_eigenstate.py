@@ -26,6 +26,7 @@ from mrmustard.physics import triples
 from mrmustard.physics.wires import ReprEnum
 from .ket import Ket
 from ..utils import make_parameter
+from mrmustard.physics.wires import Wires
 
 __all__ = ["QuadratureEigenstate"]
 
@@ -69,20 +70,22 @@ class QuadratureEigenstate(Ket):
     ):
         super().__init__(name="QuadratureEigenstate")
 
-        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds)
+        )
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds)
+        )
         self.manual_shape = (50,)
 
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.quadrature_eigenstates_Abc,
-                x=self.parameters.x,
-                phi=self.parameters.phi,
-            ),
-        ).representation
+        self.ansatz = PolyExpAnsatz.from_function(
+            fn=triples.quadrature_eigenstates_Abc,
+            x=self.parameters.x,
+            phi=self.parameters.phi,
+        )
+        self.wires = Wires(modes_out_ket=set([mode]))
 
-        for w in self.representation.wires.output.wires:
+        for w in self.wires.output.wires:
             w.repr = ReprEnum.QUADRATURE
             w.repr_params_func = lambda w=w: [
                 self.parameters.x.value,

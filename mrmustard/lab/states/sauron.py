@@ -21,6 +21,7 @@ from mrmustard.lab.states.ket import Ket
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from ..utils import make_parameter
+from mrmustard.physics.wires import Wires
 
 
 class Sauron(Ket):
@@ -58,12 +59,10 @@ class Sauron(Ket):
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
         self.parameters.add_parameter(make_parameter(False, epsilon, "epsilon", (None, None)))
 
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                triples.sauron_state_Abc,
-                n=self.parameters.n,
-                epsilon=self.parameters.epsilon,
-            ),
-        ).representation
-        self._representation.ansatz._lin_sup = True
+        self.ansatz = PolyExpAnsatz.from_function(
+            triples.sauron_state_Abc,
+            n=self.parameters.n,
+            epsilon=self.parameters.epsilon,
+        )
+        self.wires = Wires(modes_out_ket=set([mode]))
+        self.ansatz._lin_sup = True

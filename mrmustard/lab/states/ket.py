@@ -27,7 +27,6 @@ from mrmustard import math, settings, widgets
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
     Scalar,
@@ -148,7 +147,7 @@ class Ket(State):
         if isinstance(ansatz, ArrayAnsatz):
             for w in wires.quantum_wires:
                 w.repr = ReprEnum.FOCK
-        return Ket(Representation(ansatz, wires), name)
+        return Ket(ansatz, wires, name=name)
 
     @classmethod
     def from_phase_space(
@@ -238,10 +237,29 @@ class Ket(State):
             >>> from mrmustard.lab import Vacuum, DM
             >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
-        repr = self.representation.contract(self.adjoint.representation, mode="zip")
-        ret = DM(repr, self.name)
-        ret.manual_shape = self.manual_shape + self.manual_shape
-        return ret
+        # Contract the ansatzes
+        # from mrmustard.physics.utils import zip_batch_strings
+        # self_ansatz = self.ansatz
+        # other_ansatz = self.adjoint.ansatz
+        # self_wires = self.wires
+        # other_wires = self.adjoint.wires
+
+        # wires_result, _ = self_wires @ other_wires
+        # core1, core2, core_out = self_wires.contracted_labels(other_wires)
+        # eins_str = zip_batch_strings(
+        #     self_ansatz.batch_dims - self_ansatz._lin_sup,
+        #     other_ansatz.batch_dims - other_ansatz._lin_sup,
+        # )
+        # batch12, batch_out = eins_str.split("->")
+        # batch1, batch2 = batch12.split(",")
+        # ansatz = self_ansatz.contract(
+        #     other_ansatz, list(batch1) + core1, list(batch2) + core2, list(batch_out) + core_out
+        # )
+        # ret = DM(ansatz, wires_result, name=self.name)
+        # ret.manual_shape = self.manual_shape + self.manual_shape
+        # return ret
+        ret = self.contract(self.adjoint, mode="zip")
+        return DM._from_attributes(ret.ansatz, ret.wires, name=self.name)
 
     def expectation(self, operator: CircuitComponent):
         r"""
@@ -551,13 +569,16 @@ class Ket(State):
             >>> assert isinstance(psi >> U, Ket)
             >>> assert isinstance(psi >> channel, DM)
         """
-        result = super().__rshift__(other)
+        result = super().__rshift__(
+            other
+        )  # this would be the output if we didn't override __rshift__
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here
 
+        # TODO: Reminder: replace with result.wires.ket_like and result.wires.dm_like
         if not result.wires.input:
             if not result.wires.bra:
-                return Ket(result.representation)
+                return Ket._from_attributes(result.ansatz, result.wires)
             elif result.wires.bra.modes == result.wires.ket.modes:
-                return DM(result.representation)
+                return DM._from_attributes(result.ansatz, result.wires)
         return result

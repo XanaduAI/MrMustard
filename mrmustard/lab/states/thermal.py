@@ -23,6 +23,7 @@ from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
 from .dm import DM
 from ..utils import make_parameter
+from mrmustard.physics.wires import Wires
 
 __all__ = ["Thermal"]
 
@@ -59,10 +60,10 @@ class Thermal(DM):
         nbar_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
         super().__init__(name="Thermal")
-        self.parameters.add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.thermal_state_Abc, nbar=self.parameters.nbar
-            ),
-        ).representation
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=nbar_trainable, value=nbar, name="nbar", bounds=nbar_bounds)
+        )
+        self.ansatz = PolyExpAnsatz.from_function(
+            fn=triples.thermal_state_Abc, nbar=self.parameters.nbar
+        )
+        self.wires = Wires(modes_out_bra=set([mode]), modes_out_ket=set([mode]))
