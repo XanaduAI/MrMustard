@@ -371,39 +371,31 @@ class State(CircuitComponent):
 
             >>> assert math.allclose(Vacuum([0]).fock_array(), 1)
         """
-        batch_shape = (
-            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
-        )
-        if batch_shape:
-            raise NotImplementedError("Batched auto_shape is not implemented.")
-        if not self.ansatz._lin_sup:
-            try:  # fock
-                shape = self.ansatz.core_shape
-            except AttributeError:  # bargmann
-                if self.ansatz.num_derived_vars == 0:
-                    if not self.wires.ket or not self.wires.bra:
-                        ansatz = self.ansatz.conj & self.ansatz
-                    else:
-                        ansatz = self.ansatz
-                    A, b, c = ansatz.triple
-                    try:
-                        shape = autoshape_numba(
-                            math.asnumpy(A),
-                            math.asnumpy(b),
-                            math.asnumpy(c),
-                            max_prob or settings.AUTOSHAPE_PROBABILITY,
-                            max_shape or settings.AUTOSHAPE_MAX,
-                            min_shape or settings.AUTOSHAPE_MIN,
-                        )
-                    # covers the case where auto_shape is jitted
-                    except math.BackendError:  # pragma: no cover
-                        shape = super().auto_shape()
-                    if self.wires.ket and self.wires.bra:
-                        shape = tuple(shape) + tuple(shape)
+        try:
+            shape = self.ansatz.core_shape
+        except AttributeError:
+            if self.ansatz.num_derived_vars == 0 and self.ansatz.batch_dims == 0:
+                if not self.wires.ket or not self.wires.bra:
+                    ansatz = self.ansatz.conj & self.ansatz
                 else:
+                    ansatz = self.ansatz
+                A, b, c = ansatz.triple
+                try:
+                    shape = autoshape_numba(
+                        math.asnumpy(A),
+                        math.asnumpy(b),
+                        math.asnumpy(c),
+                        max_prob or settings.AUTOSHAPE_PROBABILITY,
+                        max_shape or settings.AUTOSHAPE_MAX,
+                        min_shape or settings.AUTOSHAPE_MIN,
+                    )
+                # covers the case where auto_shape is jitted
+                except math.BackendError:  # pragma: no cover
                     shape = super().auto_shape()
-        else:
-            shape = super().auto_shape()
+                if self.wires.ket and self.wires.bra:
+                    shape = tuple(shape) + tuple(shape)
+            else:
+                shape = super().auto_shape()
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
         return tuple(shape)
