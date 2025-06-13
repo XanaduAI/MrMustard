@@ -63,9 +63,11 @@ class Vacuum(Ket):
         modes: int | tuple[int, ...],
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
-        ansatz = PolyExpAnsatz.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes))
+        # Create the ansatz directly to avoid lazy evaluation during JAX transformations
+        A, b, c = triples.vacuum_state_Abc(len(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket=set(modes))
-        super().__init__(ansatz=ansatz, wires=wires, name="Vac")
+        super().__init__(ansatz, wires, name="Vac")
 
         for i in range(len(modes)):
             self.manual_shape[i] = 1
