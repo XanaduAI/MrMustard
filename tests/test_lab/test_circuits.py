@@ -158,7 +158,7 @@ class TestCircuit:
         n0 = Number(0, n=3)
         n1 = Number(1, n=3)
         n2 = Number(2, n=3)
-        cc = CircuitComponent(bs01.representation, "my_cc")
+        cc = CircuitComponent(bs01.ansatz, bs01.wires, "my_cc")
 
         assert repr(Circuit()) == ""
 

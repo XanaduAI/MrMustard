@@ -44,7 +44,8 @@ from mrmustard.lab import (
 )
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.representations import Representation
+
+# Representation class has been removed - functionality moved to CircuitComponent
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.wires import Wires
 from mrmustard.training import Optimizer
@@ -62,9 +63,8 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(x, y))
-        cc = CircuitComponent(
-            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name
-        )
+        wires = Wires(set(), set(), {1, 8}, {1, 8})
+        cc = CircuitComponent(ansatz=ansatz, wires=wires, name=name)
 
         assert cc.name == name
         assert cc.modes == (1, 8)
@@ -73,11 +73,9 @@ class TestCircuitComponent:
         assert cc.manual_shape == [None] * 4
 
     def test_missing_name(self):
-        cc = CircuitComponent(
-            Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2)), Wires(set(), set(), {1, 8}, {1, 8})
-            )
-        )
+        ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2))
+        wires = Wires(set(), set(), {1, 8}, {1, 8})
+        cc = CircuitComponent(ansatz=ansatz, wires=wires)
         cc._name = None
         assert cc.name == "CC18"
 
@@ -88,9 +86,9 @@ class TestCircuitComponent:
     def test_from_attributes(self):
         cc = Dgate(1, x=0.1, y=0.2)
 
-        cc1 = Dgate._from_attributes(cc.representation, cc.name)
-        cc2 = Unitary._from_attributes(cc.representation, cc.name)
-        cc3 = CircuitComponent._from_attributes(cc.representation, cc.name)
+        cc1 = Dgate._from_attributes(cc.ansatz, cc.wires, cc.name)
+        cc2 = Unitary._from_attributes(cc.ansatz, cc.wires, cc.name)
+        cc3 = CircuitComponent._from_attributes(cc.ansatz, cc.wires, cc.name)
 
         assert cc1 == cc
         assert cc2 == cc
@@ -102,7 +100,7 @@ class TestCircuitComponent:
 
     def test_from_to_quadrature(self):
         c = Dgate(0, x=0.1, y=0.2) >> Sgate(0, r=1.0, phi=0.1)
-        cc = CircuitComponent(c.representation, c.name)
+        cc = CircuitComponent(ansatz=c.ansatz, wires=c.wires, name=c.name)
         ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature_triple())
         assert cc == ccc
 
@@ -143,11 +141,9 @@ class TestCircuitComponent:
         assert d1_dual_dual.ansatz == d1.ansatz
 
     def test_light_copy(self):
-        d1 = CircuitComponent(
-            Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1)), Wires(set(), set(), {1}, {1})
-            )
-        )
+        ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1))
+        wires = Wires(set(), set(), {1}, {1})
+        d1 = CircuitComponent(ansatz=ansatz, wires=wires)
         d1_cp = d1._light_copy()
 
         assert d1_cp.parameters is d1.parameters
@@ -175,7 +171,7 @@ class TestCircuitComponent:
 
     def test_to_bargmann_unitary(self):
         d = Dgate(1, x=0.1, y=0.1)
-        fock = Unitary(d.representation.to_fock(shape=(4, 6)))
+        fock = d.to_fock(shape=(4, 6))
         assert fock.to_bargmann() == d
 
     def test_to_fock_ket(self):
@@ -207,7 +203,7 @@ class TestCircuitComponent:
         c = np.random.random(5) + 0.0j
         polyexp = PolyExpAnsatz(A, b, c)
         fock_cc = CircuitComponent(
-            Representation(polyexp, Wires(set(), set(), {0, 1}, set()))
+            ansatz=polyexp, wires=Wires(set(), set(), {0, 1}, set())
         ).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
         assert fock_cc.ansatz._original_abc_data is None
@@ -403,7 +399,7 @@ class TestCircuitComponent:
     def test_rshift_error(self):
         vac012 = Vacuum((0, 1, 2))
         d0 = Dgate(0, x=0.1, y=0.1)
-        d0._representation = Representation(d0.ansatz, Wires())
+        d0.wires = Wires()
 
         with pytest.raises(ValueError, match="not clear"):
             vac012 >> d0
@@ -458,7 +454,7 @@ class TestCircuitComponent:
             >> Attenuator(1, 1 - pnr_loss)
             >> Number(1, outcome).dm().dual
         )
-        assert mm_state.representation == mm_state_dm.representation
+        assert mm_state == mm_state_dm
 
     def test_rshift_scalar(self):
         d0 = Dgate(0, x=0.1, y=0.1)
@@ -469,9 +465,9 @@ class TestCircuitComponent:
         assert math.allclose(result2.ansatz.c, 0.8 * d0.ansatz.c)
 
     def test_repr(self):
-        c1 = CircuitComponent(Representation(wires=Wires(modes_out_ket={0, 1, 2})))
+        c1 = CircuitComponent(ansatz=None, wires=Wires(modes_out_ket={0, 1, 2}))
         c2 = CircuitComponent(
-            Representation(wires=Wires(modes_out_ket={0, 1, 2})), name="my_component"
+            ansatz=None, wires=Wires(modes_out_ket={0, 1, 2}), name="my_component"
         )
 
         assert repr(c1) == "CircuitComponent(modes=(0, 1, 2), name=CC012)"
@@ -559,9 +555,7 @@ class TestCircuitComponent:
         """Test the default serializer."""
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4))
-        cc = CircuitComponent(
-            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name
-        )
+        cc = CircuitComponent(ansatz, Wires(set(), set(), {1, 8}, {1, 8}), name=name)
         kwargs, arrays = cc._serialize()
         assert kwargs == {
             "class": f"{CircuitComponent.__module__}.CircuitComponent",
@@ -583,8 +577,7 @@ class TestCircuitComponent:
 
             def __init__(self, ansatz, custom_modes):
                 super().__init__(
-                    Representation(ansatz, Wires(*tuple(set(m) for m in [custom_modes] * 4))),
-                    name="my_component",
+                    ansatz, Wires(*tuple(set(m) for m in [custom_modes] * 4)), name="my_component"
                 )
 
         cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4)), [0, 1])

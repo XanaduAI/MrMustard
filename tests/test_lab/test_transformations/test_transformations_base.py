@@ -69,9 +69,9 @@ class TestUnitary:
     def test_rshift(self):
         unitary1 = Dgate(0, 1) >> Dgate(1, 1)
         unitary2 = Dgate(1, 2) >> Dgate(2, 2)
-        u_component = CircuitComponent(unitary1.representation, unitary1.name)
+        u_component = CircuitComponent(unitary1.ansatz, unitary1.wires, unitary1.name)
         channel = Attenuator(1, 1)
-        ch_component = CircuitComponent(channel.representation, channel.name)
+        ch_component = CircuitComponent(channel.ansatz, channel.wires, channel.name)
 
         assert isinstance(unitary1 >> unitary2, Unitary)
         assert isinstance(unitary1 >> channel, Channel)
@@ -80,7 +80,7 @@ class TestUnitary:
 
     def test_repr(self):
         unitary1 = Dgate(0, 1)
-        u_component = CircuitComponent(unitary1.representation, unitary1.name)
+        u_component = CircuitComponent(unitary1.ansatz, unitary1.wires, unitary1.name)
         assert repr(unitary1) == "Dgate(modes=(0,), name=Dgate, repr=PolyExpAnsatz)"
         assert repr(unitary1.to_fock(5)) == "Dgate(modes=(0,), name=Dgate, repr=ArrayAnsatz)"
         assert repr(u_component) == "CircuitComponent(modes=(0,), name=Dgate, repr=PolyExpAnsatz)"
@@ -117,9 +117,8 @@ class TestUnitary:
     def test_inverse_unitary(self, batch_shape):
         r = math.broadcast_to(0.1, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
-        gate = Unitary(
-            Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip").representation
-        )  # TODO: revisit rshift
+        u = Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip")
+        gate = Unitary(u.ansatz, u.wires, u.name)
         gate_inv = gate.inverse()
         gate_inv_inv = gate_inv.inverse()
         assert gate_inv_inv == gate
@@ -175,10 +174,10 @@ class TestChannel:
 
     def test_rshift(self):
         unitary = Dgate(0, 1) >> Dgate(1, 1)
-        u_component = CircuitComponent(unitary.representation, unitary.name)
+        u_component = CircuitComponent(unitary.ansatz, unitary.wires, unitary.name)
         channel1 = Attenuator(1, 0.9) >> Attenuator(2, 0.9)
         channel2 = Attenuator(2, 0.9) >> Attenuator(3, 0.9)
-        ch_component = CircuitComponent(channel1.representation, channel1.name)
+        ch_component = CircuitComponent(channel1.ansatz, channel1.wires, channel1.name)
 
         assert isinstance(channel1 >> unitary, Channel)
         assert isinstance(channel1 >> channel2, Channel)
@@ -187,7 +186,7 @@ class TestChannel:
 
     def test_repr(self):
         channel1 = Attenuator(0, 0.9)
-        ch_component = CircuitComponent(channel1.representation, channel1.name)
+        ch_component = CircuitComponent(channel1.ansatz, channel1.wires, channel1.name)
 
         assert repr(channel1) == "Attenuator(modes=(0,), name=Att~, repr=PolyExpAnsatz)"
         assert repr(ch_component) == "CircuitComponent(modes=(0,), name=Att~, repr=PolyExpAnsatz)"
@@ -196,12 +195,8 @@ class TestChannel:
     def test_inverse_channel(self, batch_shape):
         r = math.broadcast_to(0.1, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
-        gate = Channel(
-            Sgate(0, r, phi)
-            .contract(Dgate(0, r, phi), "zip")
-            .contract(Attenuator(0, 0.5), "zip")
-            .representation
-        )  # TODO: revisit rshift
+        g = Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip").contract(Attenuator(0, 0.5), "zip")
+        gate = Channel(g.ansatz, g.wires, g.name)
         should_be_identity = gate >> gate.inverse()
         assert should_be_identity.ansatz == Attenuator(0, 1.0).ansatz
 

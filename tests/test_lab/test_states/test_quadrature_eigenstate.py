@@ -88,5 +88,5 @@ class TestQuadratureEigenstate:
     def test_wires(self):
         """Test that the wires are correct."""
         state = QuadratureEigenstate(0, 0, 0)
-        for w in state.representation.wires:
+        for w in state.wires:
             assert w.repr == ReprEnum.QUADRATURE

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for the Representation class."""
+"""Tests for the CircuitComponent class (formerly Representation)."""
 
 # pylint: disable=missing-function-docstring
 
@@ -20,7 +20,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.representations import Representation
+from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.physics.triples import bargmann_to_quadrature_Abc, displacement_gate_Abc
 from mrmustard.physics.wires import ReprEnum, Wires
 
@@ -40,13 +40,13 @@ class TestRepresentation:
     def d_gate_rep(self):
         ansatz = PolyExpAnsatz.from_function(fn=displacement_gate_Abc, x=0.1, y=0.1)
         wires = Wires(set(), set(), {0}, {0})
-        return Representation(ansatz, wires)
+        return CircuitComponent._from_attributes(ansatz, wires)
 
     @pytest.fixture
     def d_gate_rep_batch(self):
         ansatz = PolyExpAnsatz.from_function(fn=displacement_gate_Abc, x=[0.1, 0.1, 0.1], y=0.1)
         wires = Wires(set(), set(), {0}, {0})
-        return Representation(ansatz, wires)
+        return CircuitComponent._from_attributes(ansatz, wires)
 
     @pytest.fixture
     def btoq_rep(self):
@@ -55,7 +55,7 @@ class TestRepresentation:
         for w in wires.output:
             w.repr = ReprEnum.QUADRATURE
             w.repr_params_func = lambda: [0.2]
-        return Representation(ansatz, wires)
+        return CircuitComponent._from_attributes(ansatz, wires)
 
     @pytest.fixture
     def btoq_rep_batch(self):
@@ -66,17 +66,17 @@ class TestRepresentation:
         for w in wires.output:
             w.repr = ReprEnum.QUADRATURE
             w.repr_params_func = lambda: [0.2]
-        return Representation(ansatz, wires)
+        return CircuitComponent._from_attributes(ansatz, wires)
 
     @pytest.mark.parametrize("triple", [Abc_n1, Abc_n2, Abc_n3])
     def test_init(self, triple):
-        empty_rep = Representation()
+        empty_rep = CircuitComponent()
         assert empty_rep.ansatz is None
         assert empty_rep.wires == Wires()
 
         ansatz = PolyExpAnsatz(*triple)
         wires = Wires({0, 1})
-        rep = Representation(ansatz, wires)
+        rep = CircuitComponent._from_attributes(ansatz, wires)
         assert rep.ansatz == ansatz
         assert rep.wires == wires
 

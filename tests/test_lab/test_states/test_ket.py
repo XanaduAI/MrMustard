@@ -38,7 +38,8 @@ from mrmustard.lab import (
     TraceOut,
     Vacuum,
 )
-from mrmustard.physics.representations import Representation
+
+# Representation class has been removed - functionality moved to CircuitComponent
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.physics.wires import Wires
@@ -472,7 +473,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
-        op2 = CircuitComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
+        op2 = CircuitComponent._from_attributes(None, Wires(set(), set(), {1}, {0}))
         with pytest.raises(ValueError, match="different modes"):
             ket.expectation(op2)
 
@@ -483,10 +484,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_rshift(self):
         ket = Coherent(0, 1) >> Coherent(1, 1)
         unitary = Dgate(0, 1)
-        u_component = CircuitComponent(unitary.representation, unitary.name)
+        u_component = CircuitComponent(unitary.ansatz, unitary.wires, unitary.name)
         channel = Attenuator(1, 1)
         ch_component = CircuitComponent(
-            channel.representation,
+            channel.ansatz,
+            channel.wires,
             channel.name,
         )
 
