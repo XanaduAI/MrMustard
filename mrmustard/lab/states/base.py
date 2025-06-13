@@ -343,10 +343,10 @@ class State(CircuitComponent):
         self, max_prob=None, max_shape=None, min_shape=None, respect_manual_shape=True
     ) -> tuple[int, ...]:
         r"""
-        A good enough estimate of the Fock shape of this state, defined as the shape of the Fock
-        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
-        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
-        single-mode marginal (default 99.9%).
+        Generates an estimate for the Fock shape. If the state is in Fock the core shape is used.
+        If in Bargmann, the shape is computed as the shape that captures at least ``settings.AUTOSHAPE_PROBABILITY``
+        of the probability mass of each single-mode marginal (default 99.9%) so long as the state has no derived variables
+        and is unbatched. Otherwise, defaults to ``settings.DEFAULT_FOCK_SIZE``.
 
         Args:
             max_prob: The maximum probability mass to capture in the shape (default from ``settings.AUTOSHAPE_PROBABILITY``).
@@ -355,10 +355,7 @@ class State(CircuitComponent):
             respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
 
         Returns:
-            array: The Fock representation of this component.
-
-        Raises:
-            NotImplementedError: If the state is batched.
+            The Fock shape of this component..
 
         Note:
             If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
