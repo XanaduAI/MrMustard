@@ -349,18 +349,17 @@ class State(CircuitComponent):
         and is unbatched. Otherwise, defaults to ``settings.DEFAULT_FOCK_SIZE``.
 
         Args:
-            max_prob: The maximum probability mass to capture in the shape (default from ``settings.AUTOSHAPE_PROBABILITY``).
-            max_shape: The maximum shape cutoff (default is ``settings.AUTOSHAPE_MAX``).
-            min_shape: The minimum shape cutoff (default is ``settings.AUTOSHAPE_MIN``).
-            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+            max_prob: The maximum probability mass to capture in the shape. Default is ``settings.AUTOSHAPE_PROBABILITY``.
+            max_shape: The maximum shape cutoff. Default is ``settings.AUTOSHAPE_MAX``.
+            min_shape: The minimum shape cutoff. Default is ``settings.AUTOSHAPE_MIN``.
+            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``. Default is ``True``.
 
         Returns:
-            The Fock shape of this component..
+            The Fock shape of this component.
+
 
         Note:
-            If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
-            non-``None`` values in ``manual_shape``.
-
+            If jited, the shape will default to ``settings.DEFAULT_FOCK_SIZE``.
         Example:
         .. code-block::
             >>> from mrmustard import math
