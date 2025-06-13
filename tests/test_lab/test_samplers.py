@@ -104,6 +104,15 @@ class TestHomodyneSampler:
         )
         assert math.allclose(sampler2.probabilities(state), exp_probs)
 
+    def test_probabilities_cat(self):
+        state = (Coherent(mode=0, x=2) + Coherent(mode=0, x=-2)).normalize()
+        sampler = HomodyneSampler(phi=0, bounds=(-10, 10), num=1000)
+        exp_probs = (
+            state.quadrature_distribution(math.astensor(sampler.meas_outcomes), phi=sampler._phi)
+            * sampler._step
+        )
+        assert math.allclose(sampler.probabilities(state), exp_probs)
+
     def test_sample_mean_coherent(self):
         r"""
         Porting test from strawberry fields:

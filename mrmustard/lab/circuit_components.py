@@ -461,7 +461,8 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
                 ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape else ret.shape
             )
         )
-        return math.reshape(ret, (size,) + self.ansatz.batch_shape)
+        ret = math.reshape(ret, (size,) + self.ansatz.batch_shape)
+        return math.sum(ret, axis=-1) if self.ansatz._lin_sup else ret
 
     @classmethod
     def _from_attributes(

@@ -173,7 +173,7 @@ class Sampler(ABC):
         prob_sum = math.sum(probs)
         math.error_if(
             prob_sum,
-            not math.allclose(prob_sum, 1),
+            not math.allclose(prob_sum, 1, atol=atol),
             f"Probabilities sum to {prob_sum} and not 1.0.",
         )
         return probs / prob_sum
