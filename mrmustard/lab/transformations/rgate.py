@@ -56,14 +56,10 @@ class Rgate(Unitary):
     ):
         super().__init__(name="Rgate")
         self.parameters.add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
-        from mrmustard.physics.wires import Wires
-
-        self.ansatz = PolyExpAnsatz.from_function(
-            fn=triples.rotation_gate_Abc, theta=self.parameters.theta
-        )
-        self.wires = Wires(
-            modes_in_bra=set(),
-            modes_out_bra=set(),
-            modes_in_ket=set([mode]),
-            modes_out_ket=set([mode]),
-        )
+        self._representation = self.from_ansatz(
+            modes_in=(mode,),
+            modes_out=(mode,),
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.rotation_gate_Abc, theta=self.parameters.theta
+            ),
+        ).representation

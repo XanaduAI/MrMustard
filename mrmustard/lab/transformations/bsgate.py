@@ -28,6 +28,7 @@ from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from ...physics import triples
 from ..utils import make_parameter
 from ...physics.wires import Wires, ReprEnum
+from ...physics.representations import Representation
 
 __all__ = ["BSgate"]
 
@@ -97,22 +98,17 @@ class BSgate(Unitary):
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="BSgate")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=theta_trainable, value=theta, name="theta", bounds=theta_bounds
-            )
-        )
-        self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds)
-        )
-        ansatz = PolyExpAnsatz.from_function(
-            fn=triples.beamsplitter_gate_Abc,
-            theta=self.parameters.theta,
-            phi=self.parameters.phi,
-        )
-        wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
-        self.ansatz = ansatz
-        self.wires = wires
+        self.parameters.add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+        self._representation = self.from_ansatz(
+            modes_in=modes,
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(
+                fn=triples.beamsplitter_gate_Abc,
+                theta=self.parameters.theta,
+                phi=self.parameters.phi,
+            ),
+        ).representation
 
     def fock_array(
         self, shape: int | Sequence[int] | None = None, method: str = "stable"
@@ -166,6 +162,5 @@ class BSgate(Unitary):
             quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
             classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
         )
-        ret.ansatz = fock
-        ret.wires = wires
+        ret._representation = Representation(fock, wires)
         return ret

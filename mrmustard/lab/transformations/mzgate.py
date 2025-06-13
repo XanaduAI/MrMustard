@@ -23,7 +23,6 @@ from mrmustard.physics.ansatz import PolyExpAnsatz
 from .base import Unitary
 from ..utils import make_parameter
 from ...physics import symplectics
-from mrmustard.physics.wires import Wires
 
 __all__ = ["MZgate"]
 
@@ -69,23 +68,18 @@ class MZgate(Unitary):
         internal: bool = False,
     ):
         super().__init__(name="MZgate")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_a_trainable, value=phi_a, name="phi_a", bounds=phi_a_bounds
-            )
-        )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_b_trainable, value=phi_b, name="phi_b", bounds=phi_b_bounds
-            )
-        )
+        self.parameters.add_parameter(make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds))
+        self.parameters.add_parameter(make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds))
 
-        self.ansatz = PolyExpAnsatz.from_function(
-            fn=lambda phi_a, phi_b, internal: Unitary.from_symplectic(
-                modes, symplectics.mzgate_symplectic(phi_a, phi_b, internal)
-            ).bargmann_triple(),
-            phi_a=self.parameters.phi_a,
-            phi_b=self.parameters.phi_b,
-            internal=internal,
-        )
-        self.wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        self._representation = self.from_ansatz(
+            modes_in=modes,
+            modes_out=modes,
+            ansatz=PolyExpAnsatz.from_function(
+                fn=lambda phi_a, phi_b, internal: Unitary.from_symplectic(
+                    modes, symplectics.mzgate_symplectic(phi_a, phi_b, internal)
+                ).bargmann_triple(),
+                phi_a=self.parameters.phi_a,
+                phi_b=self.parameters.phi_b,
+                internal=internal,
+            ),
+        ).representation
