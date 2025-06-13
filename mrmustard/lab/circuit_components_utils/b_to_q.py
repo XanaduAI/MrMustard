@@ -23,6 +23,7 @@ from ..transformations.base import Operation
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
 from ..utils import make_parameter
+from mrmustard.physics.wires import Wires
 
 __all__ = ["BtoQ"]
 
@@ -60,23 +61,21 @@ class BtoQ(Operation):
         modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="BtoQ")
         self.parameters.add_parameter(make_parameter(False, phi, "phi", (None, None)))
-        self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.bargmann_to_quadrature_Abc,
-                n_modes=len(modes),
-                phi=self.parameters.phi,
-            ),
-        ).representation
-        for w in self.representation.wires.input.wires:
+
+        self.ansatz = PolyExpAnsatz.from_function(
+            fn=triples.bargmann_to_quadrature_Abc,
+            n_modes=len(modes),
+            phi=self.parameters.phi,
+        )
+        self.wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        for w in self.wires.input.wires:
             w.repr = ReprEnum.BARGMANN
-        for w in self.representation.wires.output.wires:
+        for w in self.wires.output.wires:
             w.repr = ReprEnum.QUADRATURE
             w.repr_params_func = lambda: self.parameters.phi
 
     def inverse(self):
         ret = BtoQ(self.modes, self.parameters.phi)
-        ret._representation = super().inverse().representation
-        ret._representation._wires = ret.representation.wires.dual
+        ret.ansatz = super().inverse().ansatz
+        ret.wires = ret.wires.dual
         return ret
