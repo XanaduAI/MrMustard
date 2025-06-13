@@ -22,6 +22,7 @@ from .base import Channel
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 from ..utils import make_parameter
+from mrmustard.physics.wires import Wires
 
 __all__ = ["Amplifier"]
 
@@ -83,15 +84,16 @@ class Amplifier(Channel):
         super().__init__(name="Amp~")
         self.parameters.add_parameter(
             make_parameter(
-                gain_trainable,
-                gain,
-                "gain",
-                gain_bounds,
-                None,
+                is_trainable=gain_trainable,
+                value=gain,
+                name="gain",
+                bounds=gain_bounds,
             )
         )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain),
-        ).representation
+        self.ansatz = PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain)
+        self.wires = Wires(
+            modes_in_bra=set([mode]),
+            modes_out_bra=set([mode]),
+            modes_in_ket=set([mode]),
+            modes_out_ket=set([mode]),
+        )

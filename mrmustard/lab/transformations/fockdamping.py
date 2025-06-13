@@ -24,6 +24,7 @@ from .base import Operation
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 from ..utils import make_parameter
+from mrmustard.physics.wires import Wires
 
 __all__ = ["FockDamping"]
 
@@ -81,10 +82,7 @@ class FockDamping(Operation):
                 None,
             )
         )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.fock_damping_Abc, beta=self.parameters.damping
-            ),
-        ).representation
+        self.ansatz = PolyExpAnsatz.from_function(
+            fn=triples.fock_damping_Abc, beta=self.parameters.damping
+        )
+        self.wires = Wires(modes_in_ket=set([mode]), modes_out_ket=set([mode]))

@@ -83,17 +83,20 @@ class Attenuator(Channel):
         super().__init__(name="Att~")
         self.parameters.add_parameter(
             make_parameter(
-                transmissivity_trainable,
-                transmissivity,
-                "transmissivity",
-                transmissivity_bounds,
-                None,
+                is_trainable=transmissivity_trainable,
+                value=transmissivity,
+                name="transmissivity",
+                bounds=transmissivity_bounds,
             )
         )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.attenuator_Abc, eta=self.parameters.transmissivity
-            ),
-        ).representation
+        from mrmustard.physics.wires import Wires
+
+        self.ansatz = PolyExpAnsatz.from_function(
+            fn=triples.attenuator_Abc, eta=self.parameters.transmissivity
+        )
+        self.wires = Wires(
+            modes_in_bra=set([mode]),
+            modes_out_bra=set([mode]),
+            modes_in_ket=set([mode]),
+            modes_out_ket=set([mode]),
+        )

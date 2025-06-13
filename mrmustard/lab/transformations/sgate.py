@@ -23,6 +23,7 @@ from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 from ..utils import make_parameter
+from mrmustard.physics.wires import Wires
 
 __all__ = ["Sgate"]
 
@@ -87,14 +88,20 @@ class Sgate(Unitary):
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="Sgate")
-        self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.squeezing_gate_Abc,
-                r=self.parameters.r,
-                phi=self.parameters.phi,
-            ),
-        ).representation
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds)
+        )
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds)
+        )
+        self.ansatz = PolyExpAnsatz.from_function(
+            fn=triples.squeezing_gate_Abc,
+            r=self.parameters.r,
+            phi=self.parameters.phi,
+        )
+        self.wires = Wires(
+            modes_in_bra=set(),
+            modes_out_bra=set(),
+            modes_in_ket=set([mode]),
+            modes_out_ket=set([mode]),
+        )

@@ -26,6 +26,7 @@ from mrmustard.utils.typing import ComplexMatrix
 from .base import Unitary
 from ..utils import make_parameter
 from ...physics import symplectics
+from mrmustard.physics.wires import Wires
 
 __all__ = ["Interferometer"]
 
@@ -71,15 +72,18 @@ class Interferometer(Unitary):
             )
         super().__init__(name="Interferometer")
         self.parameters.add_parameter(
-            make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary)
+            make_parameter(
+                is_trainable=unitary_trainable,
+                value=unitary,
+                name="unitary",
+                bounds=(None, None),
+                update_fn=update_unitary,
+            )
         )
-        self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=lambda uni: Unitary.from_symplectic(
-                    modes, symplectics.interferometer_symplectic(uni)
-                ).bargmann_triple(),
-                uni=self.parameters.unitary,
-            ),
-        ).representation
+        self.ansatz = PolyExpAnsatz.from_function(
+            fn=lambda uni: Unitary.from_symplectic(
+                modes, symplectics.interferometer_symplectic(uni)
+            ).bargmann_triple(),
+            uni=self.parameters.unitary,
+        )
+        self.wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))

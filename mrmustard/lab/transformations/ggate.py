@@ -25,6 +25,7 @@ from mrmustard.utils.typing import RealMatrix
 from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
+from mrmustard.physics.wires import Wires
 
 __all__ = ["Ggate"]
 
@@ -62,17 +63,23 @@ class Ggate(Unitary):
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         self.parameters.add_parameter(
             make_parameter(
-                symplectic_trainable, symplectic, "symplectic", (None, None), update_symplectic
+                is_trainable=symplectic_trainable,
+                value=symplectic,
+                name="symplectic",
+                bounds=(None, None),
+                update_fn=update_symplectic,
             )
         )
-        self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
-                s=self.parameters.symplectic,
-            ),
-        ).representation
+        self.ansatz = PolyExpAnsatz.from_function(
+            fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
+            s=self.parameters.symplectic,
+        )
+        self.wires = Wires(
+            modes_in_bra=set(),
+            modes_out_bra=set(),
+            modes_in_ket=set(modes),
+            modes_out_ket=set(modes),
+        )
 
     @property
     def symplectic(self):

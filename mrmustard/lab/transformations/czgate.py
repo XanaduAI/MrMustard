@@ -25,6 +25,7 @@ from mrmustard.physics.ansatz import PolyExpAnsatz
 from .base import Unitary
 from ..utils import make_parameter
 from ...physics import symplectics
+from mrmustard.physics.wires import Wires
 
 __all__ = ["CZgate"]
 
@@ -66,14 +67,18 @@ class CZgate(Unitary):
         s_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="CZgate")
-        self.parameters.add_parameter(make_parameter(s_trainable, s, "s", s_bounds))
-        self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=lambda s: Unitary.from_symplectic(
-                    modes, symplectics.czgate_symplectic(s)
-                ).bargmann_triple(),
-                s=self.parameters.s,
-            ),
-        ).representation
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=s_trainable, value=s, name="s", bounds=s_bounds)
+        )
+        self.ansatz = PolyExpAnsatz.from_function(
+            fn=lambda s: Unitary.from_symplectic(
+                modes, symplectics.czgate_symplectic(s)
+            ).bargmann_triple(),
+            s=self.parameters.s,
+        )
+        self.wires = Wires(
+            modes_in_bra=set(),
+            modes_out_bra=set(),
+            modes_in_ket=set(modes),
+            modes_out_ket=set(modes),
+        )

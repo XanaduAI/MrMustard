@@ -24,7 +24,6 @@ from mrmustard.utils.typing import ComplexTensor
 from mrmustard import math
 from ...physics.wires import Wires, ReprEnum
 from .base import Unitary
-from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
 from ...physics import triples
 from ..utils import make_parameter
@@ -92,13 +91,10 @@ class Dgate(Unitary):
         super().__init__(name="Dgate")
         self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_gate_Abc, x=self.parameters.x, y=self.parameters.y
-            ),
-        ).representation
+        self.ansatz = PolyExpAnsatz.from_function(
+            fn=triples.displacement_gate_Abc, x=self.parameters.x, y=self.parameters.y
+        )
+        self.wires = Wires(set(), set(), {mode}, {mode})
 
     def fock_array(self, shape: int | Sequence[int] = None) -> ComplexTensor:
         r"""
@@ -139,5 +135,6 @@ class Dgate(Unitary):
             quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
             classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
         )
-        ret._representation = Representation(fock, wires)
+        ret.ansatz = fock
+        ret.wires = wires
         return ret
