@@ -22,6 +22,7 @@ from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
 from ..utils import make_parameter
+from mrmustard.physics.wires import Wires
 
 __all__ = ["Rgate"]
 
@@ -56,10 +57,7 @@ class Rgate(Unitary):
     ):
         super().__init__(name="Rgate")
         self.parameters.add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.rotation_gate_Abc, theta=self.parameters.theta
-            ),
-        ).representation
+        self.ansatz = (
+            PolyExpAnsatz.from_function(fn=triples.rotation_gate_Abc, theta=self.parameters.theta),
+        )
+        self.wires = Wires(modes_in_ket=set([mode]), modes_out_ket=set([mode]))
