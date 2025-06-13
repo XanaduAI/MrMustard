@@ -24,7 +24,6 @@ from ipywidgets import HTML, HBox, Tab, VBox
 from plotly.graph_objs import FigureWidget
 
 from mrmustard import math
-from mrmustard.lab import Dgate, Ket
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 
 

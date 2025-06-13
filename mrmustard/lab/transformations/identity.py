@@ -21,6 +21,7 @@ from __future__ import annotations
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
 from .base import Unitary
+from mrmustard.physics.wires import Wires
 
 __all__ = ["Identity"]
 
@@ -66,7 +67,6 @@ class Identity(Unitary):
     ):
         modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="Identity")
-        from mrmustard.physics.wires import Wires
 
         self.ansatz = PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes))
         self.wires = Wires(

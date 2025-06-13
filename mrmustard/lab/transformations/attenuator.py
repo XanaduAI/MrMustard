@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from mrmustard.physics.wires import Wires
+
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
@@ -91,7 +93,6 @@ class Attenuator(Channel):
                 bounds=transmissivity_bounds,
             )
         )
-        from mrmustard.physics.wires import Wires
 
         self.ansatz = PolyExpAnsatz.from_function(
             fn=triples.attenuator_Abc, eta=self.parameters.transmissivity
