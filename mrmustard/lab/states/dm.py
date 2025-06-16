@@ -807,7 +807,7 @@ class DM(State):
             >>> from mrmustard.lab import CircuitComponent, DM, TraceOut
 
             >>> assert isinstance(DM.random([0]).dual >> DM.random([0]), CircuitComponent)
-            >>> assert isinstance(DM.random([0,1]) >> TraceOut([0]), DM)
+            >>> assert isinstance(DM.random([0,1]) >> TraceOut(0), DM)
         """
 
         result = super().__rshift__(other)

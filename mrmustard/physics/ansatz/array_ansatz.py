@@ -276,7 +276,19 @@ class ArrayAnsatz(Ansatz):
             + [self.batch_dims + i for i in idx_zconj]
         )
         new_array = math.transpose(self.array, order)
-        n = np.prod(new_array.shape[-len(idx_z) :])
+
+        # truncate new_array if the z and zconj dimensions differ
+        z_dims = new_array.shape[-2 * len(idx_z) : -len(idx_z)]
+        zconj_dims = new_array.shape[-len(idx_z) :]
+        slices = [slice(None)] * len(new_array.shape)
+        for i, (z_dim, zconj_dim) in enumerate(zip(z_dims, zconj_dims)):
+            if z_dim != zconj_dim:
+                min_dim = min(z_dim, zconj_dim)
+                slices[-2 * len(idx_z) + i] = slice(0, min_dim)
+                slices[-len(idx_z) + i] = slice(0, min_dim)
+        new_array = new_array[tuple(slices)]
+
+        n = math.prod(new_array.shape[-len(idx_zconj) :])
         new_array = math.reshape(new_array, new_array.shape[: -2 * len(idx_z)] + (n, n))
         trace = math.trace(new_array)
         return ArrayAnsatz(trace, self.batch_dims)
