@@ -384,86 +384,80 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(state.to_fock(40).quadrature(q), psi_q)
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
 
-    def test_expectation_bargmann(self):
+    @pytest.mark.parametrize("fock", [False, True])
+    def test_expectation(self, fock):
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+        ket = ket.to_fock(40) if fock else ket
 
         assert math.allclose(ket.expectation(ket), 1.0)
 
+        # ket operator
         k0 = Coherent(0, x=1, y=2)
         k1 = Coherent(1, x=1, y=3)
         k01 = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
 
-        res_k0 = (ket.contract(k0.dual)) >> TraceOut(1)
-        res_k1 = (ket.contract(k1.dual)) >> TraceOut(0)
-        res_k01 = ket.contract(k01.dual)
+        assert math.allclose(ket.expectation(k0), 1)
+        assert math.allclose(ket.expectation(k1), 1)
+        assert math.allclose(ket.expectation(k01), 1)
 
-        assert math.allclose(ket.expectation(k0), res_k0)
-        assert math.allclose(ket.expectation(k1), res_k1)
-        assert math.allclose(ket.expectation(k01), math.sum(res_k01.ansatz.c))
-
+        # dm operator
         dm0 = Coherent(0, x=1, y=2).dm()
         dm1 = Coherent(1, x=1, y=3).dm()
         dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
 
-        res_dm0 = (ket.contract(ket.adjoint).contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (ket.contract(ket.adjoint).contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = ket.contract(ket.adjoint).contract(dm01.dual)
+        assert math.allclose(ket.expectation(dm0), 1)
+        assert math.allclose(ket.expectation(dm1), 1)
+        assert math.allclose(ket.expectation(dm01), 1)
 
-        assert math.allclose(ket.expectation(dm0), res_dm0)
-        assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), math.sum(res_dm01.ansatz.c))
-
+        # u operator
         u0 = Dgate(0, x=0.1)
         u1 = Dgate(1, x=0.2)
         u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
 
-        res_u0 = (ket.contract(u0)) >> ket.dual
-        res_u1 = (ket.contract(u1)) >> ket.dual
-        res_u01 = (ket.contract(u01)) >> ket.dual
+        assert math.allclose(ket.expectation(u0), 0.91646718 - 0.38747611j)
+        assert math.allclose(ket.expectation(u1), 0.35518259 - 0.91358348j)
+        assert math.allclose(ket.expectation(u01), -0.79138652 + 0.39052292j)
 
-        assert math.allclose(ket.expectation(u0), res_u0)
-        assert math.allclose(ket.expectation(u1), res_u1)
-        assert math.allclose(ket.expectation(u01), res_u01)
+    @pytest.mark.parametrize("fock", [False, True])
+    def test_expectation_batch(self, fock):
+        ket = Coherent(0, x=[1, 1, 1], y=[2, 2, 2])
+        ket = ket.to_fock(40) if fock else ket
 
-    def test_expectation_fock(self):
-        ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
+        # batched ket unbatched ket operator
+        k0 = Coherent(0, x=1, y=2)
+        res_k0 = ket.expectation(k0)
+        assert math.allclose(res_k0, 1.0)
+        assert res_k0.shape == (3,)
 
-        assert math.allclose(ket.expectation(ket), math.abs(ket >> ket.dual) ** 2)
-        k0 = Coherent(0, x=1, y=2).to_fock(10)
-        k1 = Coherent(1, x=1, y=3).to_fock(10)
-        k01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
+        # batched ket batched ket operator
+        res_ket = ket.expectation(ket)
+        assert math.allclose(res_ket, 1.0)
+        assert res_ket.shape == (3, 3)
 
-        res_k0 = (ket.contract(k0.dual)) >> TraceOut(1)
-        res_k1 = (ket.contract(k1.dual)) >> TraceOut(0)
-        res_k01 = (ket >> k01.dual) ** 2
+        # batched ket unbatched dm operator
+        k0 = Coherent(0, x=1, y=2)
+        res_k0 = ket.expectation(k0.dm())
+        assert math.allclose(res_k0, 1.0)
+        assert res_k0.shape == (3,)
 
-        assert math.allclose(ket.expectation(k0), res_k0)
-        assert math.allclose(ket.expectation(k1), res_k1)
-        assert math.allclose(ket.expectation(k01), res_k01)
+        # batched ket batched dm operator
+        res_ket = ket.expectation(ket.dm())
+        assert math.allclose(res_ket, 1.0)
+        assert res_ket.shape == (3, 3)
 
-        dm0 = Coherent(0, x=1, y=0.2).dm().to_fock(10)
-        dm1 = Coherent(1, x=1, y=0.3).dm().to_fock(10)
-        dm01 = (Coherent(0, x=1, y=0.2) >> Coherent(1, x=1, y=0.3)).dm().to_fock(10)
+        # batched ket unbatched u operator
+        u0 = Dgate(0, x=0.1)
+        res_u0 = ket.expectation(u0)
+        assert math.allclose(res_u0, 0.91646718 - 0.38747611j)
+        assert res_u0.shape == (3,)
 
-        res_dm0 = (ket.contract(ket.adjoint).contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (ket.contract(ket.adjoint).contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = (ket.contract(ket.adjoint).contract(dm01.dual)).to_fock(10).ansatz.array
-
-        assert math.allclose(ket.expectation(dm0), res_dm0)
-        assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), res_dm01)
-
-        u0 = Dgate(1, x=0.1)
-        u1 = Dgate(0, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
-
-        res_u0 = (ket.contract(u0).contract(ket.dual)).to_fock(10).ansatz.array
-        res_u1 = (ket.contract(u1).contract(ket.dual)).to_fock(10).ansatz.array
-        res_u01 = (ket.contract(u01).contract(ket.dual)).to_fock(10).ansatz.array
-
-        assert math.allclose(ket.expectation(u0), res_u0)
-        assert math.allclose(ket.expectation(u1), res_u1)
-        assert math.allclose(ket.expectation(u01), res_u01)
+        # batched ket batched u operator
+        u0 = Dgate(0, x=[0.1, 0.2, 0.3])
+        res_u0 = ket.expectation(u0)
+        assert res_u0.shape == (3, 3)
+        assert math.allclose(
+            res_u0, [0.91646718 - 0.38747611j, 0.68291099 - 0.70315149j, 0.3464131 - 0.89102702j]
+        )
 
     def test_expectation_error(self):
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
