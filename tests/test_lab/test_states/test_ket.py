@@ -35,7 +35,6 @@ from mrmustard.lab import (
     Number,
     QuadratureEigenstate,
     SqueezedVacuum,
-    TraceOut,
     Vacuum,
 )
 from mrmustard.physics.representations import Representation

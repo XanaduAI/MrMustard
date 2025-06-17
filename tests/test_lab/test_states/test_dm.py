@@ -27,7 +27,6 @@ from mrmustard.lab import (
     Dgate,
     Ket,
     Number,
-    TraceOut,
     Vacuum,
 )
 from mrmustard.physics.representations import Representation
