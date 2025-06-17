@@ -16,7 +16,7 @@
 
 ### Breaking changes
 
-* Removed ``julia``, ``ray`` and ``scikit-optimize`` as dependencies.
+* Removed ``julia``, ``tqdm``, ``ray`` and ``scikit-optimize`` as dependencies.
 [(#541)](https://github.com/XanaduAI/MrMustard/pull/541)
 [(#585)](https://github.com/XanaduAI/MrMustard/pull/585)
 
