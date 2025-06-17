@@ -334,88 +334,34 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(state.to_fock(40).quadrature(q, q), bra * ket)
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
-    def test_expectation_bargmann_ket(self):
+    @pytest.mark.parametrize("fock", [False, True])
+    def test_expectation(self, fock):
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+        ket = ket.to_fock(40) if fock else ket
         dm = ket.dm()
 
         k0 = Coherent(0, x=1, y=2)
         k1 = Coherent(1, x=1, y=3)
         k01 = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
 
-        res_k0 = (dm.contract(k0.dual).contract(k0.dual.adjoint)) >> TraceOut(1)
-        res_k1 = (dm.contract(k1.dual).contract(k1.dual.adjoint)) >> TraceOut(0)
-        res_k01 = dm.contract(k01.dual).contract(k01.dual.adjoint)
-
-        assert math.allclose(dm.expectation(k0), res_k0)
-        assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.ansatz.c)
-
-    def test_expectation_bargmann_dm(self):
-        dm0 = Coherent(0, x=1, y=2).dm()
-        dm1 = Coherent(1, x=1, y=3).dm()
-        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
-
-        res_dm0 = (dm01.contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (dm01.contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = dm01 >> dm01.dual
-
-        assert math.allclose(dm01.expectation(dm0), res_dm0)
-        assert math.allclose(dm01.expectation(dm1), res_dm1)
-        assert math.allclose(dm01.expectation(dm01), res_dm01)
-
-    def test_expectation_bargmann_u(self):
-        dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
-        u0 = Dgate(0, x=0.1)
-        u1 = Dgate(1, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
-
-        res_u0 = (dm.contract(u0)) >> TraceOut((0, 1))
-        res_u1 = (dm.contract(u1)) >> TraceOut((0, 1))
-        res_u01 = (dm.contract(u01)) >> TraceOut((0, 1))
-
-        assert math.allclose(dm.expectation(u0), res_u0)
-        assert math.allclose(dm.expectation(u1), res_u1)
-        assert math.allclose(dm.expectation(u01), res_u01)
-
-    def test_expectation_fock(self):
-        ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock()
-        dm = ket.dm()
-
-        k0 = Coherent(0, x=1, y=2)
-        k1 = Coherent(1, x=1, y=3)
-        k01 = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
-
-        res_k0 = (dm.contract(k0.dual).contract(k0.dual.adjoint)) >> TraceOut(1)
-        res_k1 = (dm.contract(k1.dual).contract(k1.dual.adjoint)) >> TraceOut(0)
-        res_k01 = dm.contract(k01.dual) >> k01.dual.adjoint
-
-        assert math.allclose(dm.expectation(k0), res_k0)
-        assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01)
+        assert math.allclose(dm.expectation(k0), 1)
+        assert math.allclose(dm.expectation(k1), 1)
+        assert math.allclose(dm.expectation(k01), 1)
 
         dm0 = Coherent(0, x=1, y=2).dm()
         dm1 = Coherent(1, x=1, y=3).dm()
-        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
 
-        res_dm0 = (dm.contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (dm.contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = dm >> dm01.dual
-
-        assert math.allclose(dm.expectation(dm0), res_dm0)
-        assert math.allclose(dm.expectation(dm1), res_dm1)
-        assert math.allclose(dm.expectation(dm01), res_dm01)
+        assert math.allclose(dm.expectation(dm0), 1)
+        assert math.allclose(dm.expectation(dm1), 1)
+        assert math.allclose(dm.expectation(dm), 1)
 
         u0 = Dgate(0, x=0.1)
         u1 = Dgate(1, x=0.2)
         u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
 
-        res_u0 = (dm.contract(u0)) >> TraceOut((0, 1))
-        res_u1 = (dm.contract(u1)) >> TraceOut((0, 1))
-        res_u01 = (dm.contract(u01)) >> TraceOut((0, 1))
-
-        assert math.allclose(dm.expectation(u0), res_u0)
-        assert math.allclose(dm.expectation(u1), res_u1)
-        assert math.allclose(dm.expectation(u01), res_u01)
+        assert math.allclose(dm.expectation(u0), 0.91646718 - 0.38747611j)
+        assert math.allclose(dm.expectation(u1), 0.35518259 - 0.91358348j)
+        assert math.allclose(dm.expectation(u01), -0.79138652 + 0.39052292j)
 
     def test_expectation_error(self):
         dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()

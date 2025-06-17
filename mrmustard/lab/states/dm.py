@@ -243,7 +243,7 @@ class DM(State):
         """
         return self
 
-    def expectation(self, operator: CircuitComponent):
+    def expectation(self, operator: CircuitComponent, mode: str = "kron"):
         r"""
         The expectation value of an operator with respect to this DM.
 
@@ -256,12 +256,12 @@ class DM(State):
 
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
-
+            mode: "zip" the batch dimensions, "kron" the batch dimensions
+                or pass a custom batch string.
         Returns:
             Expectation value as a complex number.
 
         Raise:
-            NotImplementedError: If the state is batched or ``operator`` is batched.
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
                 component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
@@ -279,10 +279,6 @@ class DM(State):
 
             >>> assert math.allclose(rho.expectation(Rgate(0, np.pi)), answer)
         """
-        if (self.ansatz and self.ansatz.batch_shape) or (
-            operator.ansatz and operator.ansatz.batch_shape
-        ):
-            raise NotImplementedError("Batched expectation values are not implemented.")
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
             raise ValueError(msg)
