@@ -459,6 +459,15 @@ class TestKet:  # pylint: disable=too-many-public-methods
             res_u0, [0.91646718 - 0.38747611j, 0.68291099 - 0.70315149j, 0.3464131 - 0.89102702j]
         )
 
+        # linear superposition
+        cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
+        assert math.allclose(cat.expectation(cat, mode="zip"), 1.0)
+        assert math.allclose(cat.expectation(cat.dm(), mode="zip"), 1.0)
+        assert math.allclose(
+            cat.expectation(u0),
+            [0.9059168 - 0.40745428j, 0.64508559 - 0.72913756j, 0.27643809 - 0.89977059j],
+        )
+
     def test_expectation_error(self):
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
 
