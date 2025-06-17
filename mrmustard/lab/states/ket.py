@@ -249,6 +249,8 @@ class Ket(State):
 
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
+            mode: "zip" the batch dimensions, "kron" the batch dimensions
+                or pass a custom batch string.
 
         Returns:
             Expectation value as a complex number.
