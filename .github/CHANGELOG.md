@@ -5,7 +5,7 @@
 * Introducing the new ``lab`` module. A more expressive and performant API for simulating quantum optical circuits. New features include:
   * Universial interoperability of all representations including ``Bargmann``, ``Fock``, ``Quadrature`` and ``Phase Space``.
   * Batching functionality allowing for parallelization of computations.
-  * Support for delayed contractions enabling optimizations over the path of contraction.
+  * Support for delayed contractions enabling optimizations over the path of contraction and choice of representation.
 [(#579)](https://github.com/XanaduAI/MrMustard/pull/579)
 
 * Add the new ``jax`` backend. ``Jax`` is a Python library that supports array-oriented numerical computations, automatic differentation and JIT compilation.
