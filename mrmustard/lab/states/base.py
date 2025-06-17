@@ -346,7 +346,8 @@ class State(CircuitComponent):
         Generates an estimate for the Fock shape. If the state is in Fock the core shape is used.
         If in Bargmann, the shape is computed as the shape that captures at least ``settings.AUTOSHAPE_PROBABILITY``
         of the probability mass of each single-mode marginal (default 99.9%) so long as the state has no derived variables
-        and is unbatched. Otherwise, defaults to ``settings.DEFAULT_FOCK_SIZE``.
+        and is unbatched. Otherwise, defaults to ``settings.DEFAULT_FOCK_SIZE``. If ``respect_manual_shape`` is ``True``,
+        the non-None values in ``self.manual_shape`` are used to override the shape.
 
         Args:
             max_prob: The maximum probability mass to capture in the shape. Default is ``settings.AUTOSHAPE_PROBABILITY``.
