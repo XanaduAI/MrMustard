@@ -363,6 +363,58 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(dm.expectation(u1), 0.35518259 - 0.91358348j)
         assert math.allclose(dm.expectation(u01), -0.79138652 + 0.39052292j)
 
+    @pytest.mark.parametrize("fock", [False, True])
+    def test_expectation_batch(self, fock):
+        ket = Coherent(0, x=[1, 1, 1], y=[2, 2, 2])
+        ket = ket.to_fock(40) if fock else ket
+        dm = ket.dm()
+
+        # unbatched ket operator
+        k0 = Coherent(0, x=1, y=2)
+        res_k0 = dm.expectation(k0)
+        assert math.allclose(res_k0, 1.0)
+        assert res_k0.shape == (3,)
+
+        # batched ket operator
+        res_ket = dm.expectation(ket)
+        assert math.allclose(res_ket, 1.0)
+        assert res_ket.shape == (3, 3)
+
+        # unbatched dm operator
+        k0 = Coherent(0, x=1, y=2)
+        res_k0 = dm.expectation(k0.dm())
+        assert math.allclose(res_k0, 1.0)
+        assert res_k0.shape == (3,)
+
+        # batched dm operator
+        res_ket = dm.expectation(ket.dm())
+        assert math.allclose(res_ket, 1.0)
+        assert res_ket.shape == (3, 3)
+
+        # unbatched u operator
+        u0 = Dgate(0, x=0.1)
+        res_u0 = dm.expectation(u0)
+        assert math.allclose(res_u0, 0.91646718 - 0.38747611j)
+        assert res_u0.shape == (3,)
+
+        # batched u operator
+        u0 = Dgate(0, x=[0.1, 0.2, 0.3])
+        res_u0 = dm.expectation(u0)
+        assert res_u0.shape == (3, 3)
+        assert math.allclose(
+            res_u0, [0.91646718 - 0.38747611j, 0.68291099 - 0.70315149j, 0.3464131 - 0.89102702j]
+        )
+
+        # linear superposition
+        cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
+        cat_dm = cat.dm()
+        assert math.allclose(cat_dm.expectation(cat, mode="zip"), 1.0)
+        assert math.allclose(cat_dm.expectation(cat_dm, mode="zip"), 1.0)
+        assert math.allclose(
+            cat_dm.expectation(u0),
+            [0.9059168 - 0.40745428j, 0.64508559 - 0.72913756j, 0.27643809 - 0.89977059j],
+        )
+
     def test_expectation_error(self):
         dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
 

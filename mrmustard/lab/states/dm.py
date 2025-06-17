@@ -290,15 +290,13 @@ class DM(State):
 
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
-            result = self >> operator.dual
-            if leftover_modes:
-                result >>= TraceOut(leftover_modes)
+            result = self.contract(operator.dual.adjoint, mode=mode).contract(
+                operator.dual, mode="zip"
+            ) >> TraceOut(leftover_modes)
         elif op_type is OperatorType.DM_LIKE:
-            result = self >> operator.dual
-            if leftover_modes:
-                result >>= TraceOut(leftover_modes)
+            result = self.contract(operator.dual, mode=mode) >> TraceOut(leftover_modes)
         else:
-            result = (self.contract(operator)) >> TraceOut(self.modes)
+            result = (self.contract(operator, mode=mode)) >> TraceOut(self.modes)
 
         return result
 

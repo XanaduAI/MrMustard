@@ -429,29 +429,29 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(res_k0, 1.0)
         assert res_k0.shape == (3,)
 
-        # batched ket batched ket operator
+        # batched ket operator
         res_ket = ket.expectation(ket)
         assert math.allclose(res_ket, 1.0)
         assert res_ket.shape == (3, 3)
 
-        # batched ket unbatched dm operator
+        # unbatched dm operator
         k0 = Coherent(0, x=1, y=2)
         res_k0 = ket.expectation(k0.dm())
         assert math.allclose(res_k0, 1.0)
         assert res_k0.shape == (3,)
 
-        # batched ket batched dm operator
+        # batched dm operator
         res_ket = ket.expectation(ket.dm())
         assert math.allclose(res_ket, 1.0)
         assert res_ket.shape == (3, 3)
 
-        # batched ket unbatched u operator
+        # unbatched u operator
         u0 = Dgate(0, x=0.1)
         res_u0 = ket.expectation(u0)
         assert math.allclose(res_u0, 0.91646718 - 0.38747611j)
         assert res_u0.shape == (3,)
 
-        # batched ket batched u operator
+        # batched u operator
         u0 = Dgate(0, x=[0.1, 0.2, 0.3])
         res_u0 = ket.expectation(u0)
         assert res_u0.shape == (3, 3)
