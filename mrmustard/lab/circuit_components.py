@@ -443,7 +443,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
                 [f"{fock_string[idx]}{chr(97 + wire.mode)}," for idx, wire in enumerate(self.wires)]
             )[:-1]
             out_string = "".join([chr(97 + mode) for mode in self.modes])
-            ret = np.einsum(
+            ret = math.einsum(
                 "..." + fock_string + "," + q_string + "->" + out_string + "...",
                 self.ansatz.array,
                 *quad_basis_vecs,
@@ -456,13 +456,12 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
                 + "".join([chr(97 + mode) for mode in self.modes])
             )
             ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
-        size = int(
-            math.prod(
-                ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape else ret.shape
-            )
+        batch_shape = (
+            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
         )
-        ret = math.reshape(ret, (size,) + self.ansatz.batch_shape)
-        return math.sum(ret, axis=-1) if self.ansatz._lin_sup else ret
+        batch_dims = len(batch_shape)
+        size = int(math.prod(ret.shape[:-batch_dims] if batch_shape else ret.shape))
+        return math.reshape(ret, (size,) + batch_shape)
 
     @classmethod
     def _from_attributes(

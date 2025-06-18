@@ -254,16 +254,11 @@ class PolyExpAnsatz(Ansatz):
         The scalar part of the ansatz, i.e. F(0)
         """
         if self.num_CV_vars == 0 and self.num_derived_vars == 0:
-            ret = self.c
+            ret = math.einsum("...a->...", self.c) if self._lin_sup else self.c
         elif self.num_CV_vars == 0:
             ret = self()
         else:
-            ret = self(*math.zeros_like(self.b))
-
-        if self._lin_sup:
-            einsum_str = generate_batch_str(self.batch_dims - 1, 1)
-            ret = math.einsum(einsum_str + "a" + "->" + einsum_str, ret)
-
+            ret = self(*math.zeros(self.num_CV_vars))
         return ret
 
     @property
@@ -934,10 +929,12 @@ class PolyExpAnsatz(Ansatz):
 
         exp_sum = self._compute_exp_part(z, A, b)
         if self.num_derived_vars == 0:  # purely gaussian
-            return math.einsum("...,...->...", exp_sum, c)
+            ret = math.einsum("...,...->...", exp_sum, c)
         else:
             poly = self._compute_polynomial_part(z, A, b)
-            return self._combine_exp_and_poly(exp_sum, poly, c)
+            ret = self._combine_exp_and_poly(exp_sum, poly, c)
+
+        return math.sum(ret, axis=-1) if self._lin_sup else ret
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, PolyExpAnsatz):
