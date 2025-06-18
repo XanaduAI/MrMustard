@@ -206,7 +206,7 @@ class Representation:
             shape: The shape of the returned representation. If ``shape`` is given as
                 an ``int``, it is broadcasted to all the dimensions.
         """
-        batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
+        batch_dims = self.ansatz.batch_dims - self.ansatz._lin_sup
         fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
         try:
             if self.ansatz.num_derived_vars == 0:

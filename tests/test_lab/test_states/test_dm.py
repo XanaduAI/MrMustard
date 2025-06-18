@@ -334,84 +334,75 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
     @pytest.mark.parametrize("fock", [False, True])
-    def test_expectation(self, fock):
-        ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
+    def test_expectation(self, batch_shape, fock):
+        x = math.ones(batch_shape)
+
+        coh_0 = Coherent(0, x=x, y=2 * x)
+        coh_1 = Coherent(1, x=x, y=3 * x)
+        # TODO: clean this up once we have a better way to create batched multimode states
+        ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
         ket = ket.to_fock(40) if fock else ket
         dm = ket.dm()
 
-        k0 = Coherent(0, x=1, y=2)
-        k1 = Coherent(1, x=1, y=3)
-        k01 = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+        # ket operator
+        exp_coh_0 = dm.expectation(coh_0)
+        exp_coh_1 = dm.expectation(coh_1)
+        exp_ket = dm.expectation(ket)
 
-        assert math.allclose(dm.expectation(k0), 1)
-        assert math.allclose(dm.expectation(k1), 1)
-        assert math.allclose(dm.expectation(k01), 1)
+        assert exp_coh_0.shape == batch_shape * 2
+        assert exp_coh_1.shape == batch_shape * 2
+        assert exp_ket.shape == batch_shape * 2
 
-        dm0 = Coherent(0, x=1, y=2).dm()
-        dm1 = Coherent(1, x=1, y=3).dm()
+        assert math.allclose(exp_coh_0, 1)
+        assert math.allclose(exp_coh_1, 1)
+        assert math.allclose(exp_ket, 1)
 
-        assert math.allclose(dm.expectation(dm0), 1)
-        assert math.allclose(dm.expectation(dm1), 1)
-        assert math.allclose(dm.expectation(dm), 1)
+        # dm operator
+        dm0 = coh_0.dm()
+        dm1 = coh_1.dm()
 
+        exp_dm0 = dm.expectation(dm0)
+        exp_dm1 = dm.expectation(dm1)
+        exp_dm01 = dm.expectation(dm)
+
+        assert exp_dm0.shape == batch_shape * 2
+        assert exp_dm1.shape == batch_shape * 2
+        assert exp_dm01.shape == batch_shape * 2
+
+        assert math.allclose(exp_dm0, 1)
+        assert math.allclose(exp_dm1, 1)
+        assert math.allclose(exp_dm01, 1)
+
+        # u operator
         u0 = Dgate(0, x=0.1)
         u1 = Dgate(1, x=0.2)
         u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
 
-        assert math.allclose(dm.expectation(u0), 0.91646718 - 0.38747611j)
-        assert math.allclose(dm.expectation(u1), 0.35518259 - 0.91358348j)
-        assert math.allclose(dm.expectation(u01), -0.79138652 + 0.39052292j)
+        exp_u0 = dm.expectation(u0)
+        exp_u1 = dm.expectation(u1)
+        exp_u01 = dm.expectation(u01)
 
-    @pytest.mark.parametrize("fock", [False, True])
-    def test_expectation_batch(self, fock):
-        ket = Coherent(0, x=[1, 1, 1], y=[2, 2, 2])
-        ket = ket.to_fock(40) if fock else ket
-        dm = ket.dm()
+        assert exp_u0.shape == batch_shape
+        assert exp_u1.shape == batch_shape
+        assert exp_u01.shape == batch_shape
 
-        # unbatched ket operator
-        k0 = Coherent(0, x=1, y=2)
-        res_k0 = dm.expectation(k0)
-        assert math.allclose(res_k0, 1.0)
-        assert res_k0.shape == (3,)
+        assert math.allclose(exp_u0, 0.91646718 - 0.38747611j)
+        assert math.allclose(exp_u1, 0.35518259 - 0.91358348j)
+        assert math.allclose(exp_u01, -0.79138652 + 0.39052292j)
 
-        # batched ket operator
-        res_ket = dm.expectation(ket)
-        assert math.allclose(res_ket, 1.0)
-        assert res_ket.shape == (3, 3)
-
-        # unbatched dm operator
-        k0 = Coherent(0, x=1, y=2)
-        res_k0 = dm.expectation(k0.dm())
-        assert math.allclose(res_k0, 1.0)
-        assert res_k0.shape == (3,)
-
-        # batched dm operator
-        res_ket = dm.expectation(ket.dm())
-        assert math.allclose(res_ket, 1.0)
-        assert res_ket.shape == (3, 3)
-
-        # unbatched u operator
-        u0 = Dgate(0, x=0.1)
-        res_u0 = dm.expectation(u0)
-        assert math.allclose(res_u0, 0.91646718 - 0.38747611j)
-        assert res_u0.shape == (3,)
-
-        # batched u operator
-        u0 = Dgate(0, x=[0.1, 0.2, 0.3])
-        res_u0 = dm.expectation(u0)
-        assert res_u0.shape == (3, 3)
-        assert math.allclose(
-            res_u0, [0.91646718 - 0.38747611j, 0.68291099 - 0.70315149j, 0.3464131 - 0.89102702j]
-        )
-
-        # linear superposition
+    def test_expectation_lin_sup(self):
         cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
         cat_dm = cat.dm()
         assert math.allclose(cat_dm.expectation(cat, mode="zip"), 1.0)
         assert math.allclose(cat_dm.expectation(cat_dm, mode="zip"), 1.0)
         assert math.allclose(
-            cat_dm.expectation(u0),
-            [0.9059168 - 0.40745428j, 0.64508559 - 0.72913756j, 0.27643809 - 0.89977059j],
+            cat_dm.expectation(Dgate(0, x=[0.1, 0.2, 0.3])),
+            [
+                cat_dm.expectation(Dgate(0, x=0.1)),
+                cat_dm.expectation(Dgate(0, x=0.2)),
+                cat_dm.expectation(Dgate(0, x=0.3)),
+            ],
         )
 
     def test_expectation_error(self):
