@@ -16,8 +16,7 @@
 
 import numpy as np
 
-from mrmustard import math
-from mrmustard.lab import DM, Channel, Dgate, Ket, Unitary, Vacuum
+from mrmustard.lab import DM, Channel, Dgate, Ket
 from mrmustard.physics.bargmann_utils import (
     XY_of_channel,
     au2Symplectic,

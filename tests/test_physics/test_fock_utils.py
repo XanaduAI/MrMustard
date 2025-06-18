@@ -27,7 +27,6 @@ from mrmustard.lab import (
     Attenuator,
     BSgate,
     Coherent,
-    Number,
     S2gate,
     SqueezedVacuum,
     TwoModeSqueezedVacuum,

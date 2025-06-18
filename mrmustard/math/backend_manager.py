@@ -89,7 +89,7 @@ all_modules = {
 }
 
 
-class BackendManager:
+class BackendManager:  # pylint: disable=too-many-public-methods
     r"""
     A class to manage the different backends supported by Mr Mustard.
     """
