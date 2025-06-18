@@ -377,7 +377,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         # u operator
         u0 = Dgate(0, x=0.1)
         u1 = Dgate(1, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
+        u01 = u0 >> u1
 
         exp_u0 = dm.expectation(u0)
         exp_u1 = dm.expectation(u1)
@@ -387,9 +387,12 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert exp_u1.shape == batch_shape
         assert exp_u01.shape == batch_shape
 
-        assert math.allclose(exp_u0, 0.91646718 - 0.38747611j)
-        assert math.allclose(exp_u1, 0.35518259 - 0.91358348j)
-        assert math.allclose(exp_u01, -0.79138652 + 0.39052292j)
+        exp_u0_coh = coh_0.expectation(u0)
+        exp_u1_coh = coh_1.expectation(u1)
+
+        assert math.allclose(exp_u0, exp_u0_coh)
+        assert math.allclose(exp_u1, exp_u1_coh)
+        assert math.allclose(exp_u01, exp_u0_coh * exp_u1_coh)
 
     def test_expectation_lin_sup(self):
         cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
