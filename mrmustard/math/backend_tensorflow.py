@@ -229,6 +229,11 @@ class BackendTensorflow(BackendBase):
     def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
         return tf.complex(real, imag)
 
+    def moveaxis(
+        self, array: tf.Tensor, old: int | Sequence[int], new: int | Sequence[int]
+    ) -> tf.Tensor:
+        return tf.experimental.numpy.moveaxis(array, old, new)
+
     def new_variable(
         self,
         value,

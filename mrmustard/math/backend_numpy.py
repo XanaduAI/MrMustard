@@ -201,6 +201,11 @@ class BackendNumpy(BackendBase):
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return self.matmul(a, b[..., None])[..., 0]
 
+    def moveaxis(
+        self, array: np.ndarray, old: int | Sequence[int], new: int | Sequence[int]
+    ) -> np.ndarray:
+        return np.moveaxis(array, old, new)
+
     def new_variable(
         self,
         value,

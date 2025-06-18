@@ -270,6 +270,12 @@ class BackendJax(BackendBase):
         mat = jnp.linalg.multi_dot(matrices)
         return mat
 
+    @partial(jax.jit, static_argnames=["old", "new"])
+    def moveaxis(
+        self, array: jnp.ndarray, old: int | Sequence[int], new: int | Sequence[int]
+    ) -> jnp.ndarray:
+        return jnp.moveaxis(array, old, new)
+
     def ones(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.ones(shape, dtype=dtype)
