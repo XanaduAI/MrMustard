@@ -1445,7 +1445,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods
         A random unitary matrix in :math:`U(N)`.
         """
         if N == 1:
-            return np.exp(1j * settings.rng.uniform(size=(1, 1)))
+            return self.exp(1j * settings.rng.uniform(size=(1, 1)))
         return unitary_group.rvs(dim=N, random_state=settings.rng)
 
     @staticmethod
