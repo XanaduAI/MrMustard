@@ -66,7 +66,7 @@ def reshape_params(n_modes: int, **kwargs) -> Generator:
     names = list(kwargs.keys())
     vars = list(kwargs.values())
 
-    vars = [math.atleast_1d(var) for var in vars]
+    vars = [math.atleast_nd(var, 1) for var in vars]
 
     for i, var in enumerate(vars):
         if len(var) == 1:

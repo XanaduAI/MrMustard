@@ -28,9 +28,7 @@ from scipy.special import comb, factorial
 from tensorflow.python.framework.errors_impl import InvalidArgumentError
 
 from mrmustard import math, settings
-from mrmustard.math.lattice import strategies
 from mrmustard.math.caching import tensor_int_cache
-from mrmustard.math.jax_vjps import beamsplitter_jax, displacement_jax
 from mrmustard.utils.typing import Scalar, Tensor, Vector, Batch
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,14 +54,14 @@ def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = Non
         ValueError: If the number of cutoffs does not match the number of photon numbers.
         ValueError: If the photon numbers are larger than the corresponding cutoffs.
     """
-    n = math.atleast_1d(n)
+    n = math.atleast_nd(n, 1)
 
     if cutoffs is None:
         cutoffs = list(n)
     elif isinstance(cutoffs, int):
         cutoffs = [cutoffs] * len(n)
     else:
-        cutoffs = math.atleast_1d(cutoffs)
+        cutoffs = math.atleast_nd(cutoffs, 1)
 
     if len(cutoffs) != len(n):
         msg = f"Expected ``len(cutoffs)={len(n)}`` but found ``{len(cutoffs)}``."
@@ -79,104 +77,12 @@ def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = Non
     return array
 
 
-def ket_to_dm(ket: Tensor) -> Tensor:
-    r"""Maps a ket to a density matrix.
-
-    Args:
-        ket: the ket
-
-    Returns:
-        Tensor: the density matrix
-    """
-    return math.outer(ket, math.conj(ket))
-
-
-def ket_to_probs(ket: Tensor) -> Tensor:
-    r"""Maps a ket to probabilities.
-
-    Args:
-        ket: the ket
-
-    Returns:
-        Tensor: the probabilities vector
-    """
-    return math.abs(ket) ** 2
-
-
-def dm_to_probs(dm: Tensor) -> Tensor:
-    r"""Extracts the diagonals of a density matrix.
-
-    Args:
-        dm: the density matrix
-
-    Returns:
-        Tensor: the probabilities vector
-    """
-    return math.all_diagonals(dm, real=True)
-
-
-def U_to_choi(U: Tensor, Udual: Tensor | None = None) -> Tensor:
-    r"""Converts a unitary transformation to a Choi tensor.
-
-    Args:
-        U: the unitary transformation
-        Udual: the dual unitary transformation (optional, will use conj U if not provided)
-
-    Returns:
-        Tensor: the Choi tensor. The index order is going to be :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
-        where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of the density matrix.
-    """
-    return math.outer(U, math.conj(U) if Udual is None else Udual)
-
-
 def fidelity(dm_a, dm_b) -> Scalar:
     r"""Computes the fidelity between two states in Fock representation."""
     # Richard Jozsa (1994) Fidelity for Mixed Quantum States,
     # Journal of Modern Optics, 41:12, 2315-2323, DOI: 10.1080/09500349414552171
     sqrt_dm_a = math.sqrtm(dm_a)
     return math.abs(math.trace(math.sqrtm(math.matmul(sqrt_dm_a, dm_b, sqrt_dm_a))) ** 2)
-
-
-def number_means(tensor, is_dm: bool):
-    r"""Returns the mean of the number operator in each mode."""
-    probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
-    modes = list(range(len(probs.shape)))
-    marginals = [math.sum(probs, axis=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    return math.astensor(
-        [
-            math.sum(marginal * math.arange(len(marginal), dtype=math.float64))
-            for marginal in marginals
-        ]
-    )
-
-
-def number_variances(tensor, is_dm: bool):
-    r"""Returns the variance of the number operator in each mode."""
-    probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
-    modes = list(range(len(probs.shape)))
-    marginals = [math.sum(probs, axis=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    return math.astensor(
-        [
-            (
-                math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype) ** 2)
-                - math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype)) ** 2
-            )
-            for marginal in marginals
-        ]
-    )
-
-
-def validate_contraction_indices(in_idx, out_idx, M, name):
-    r"""Validates the indices used for the contraction of a tensor."""
-    if len(set(in_idx)) != len(in_idx):
-        raise ValueError(f"{name}_in_idx should not contain repeated indices.")
-    if len(set(out_idx)) != len(out_idx):
-        raise ValueError(f"{name}_out_idx should not contain repeated indices.")
-    if not set(range(M)).intersection(out_idx).issubset(set(in_idx)):
-        wrong_indices = set(range(M)).intersection(out_idx) - set(in_idx)
-        raise ValueError(
-            f"Indices {wrong_indices} in {name}_out_idx are trying to replace uncontracted indices."
-        )
 
 
 @tensor_int_cache
@@ -383,35 +289,6 @@ def quadrature_distribution(
     pdf = quad_basis if is_dm else math.abs(quad_basis) ** 2
 
     return x, math.real(pdf)
-
-
-def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float, float]:
-    r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
-    where `\rho` is the reduced density matrix of the state.
-
-    Args:
-        state (Tensor): ket or density matrix of the state being measured
-        quadrature_angle (float): angle of the quadrature distribution
-
-    Returns:
-        tuple(float, float): outcome and probability of the outcome
-    """
-    dims = len(state.shape)
-    if dims > 2:
-        raise ValueError(
-            "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
-        )
-
-    x, pdf = quadrature_distribution(state, quadrature_angle)
-    probs = pdf * (x[1] - x[0])
-
-    # draw a sample from the distribution
-    pdf = math.Categorical(probs=probs, name="homodyne_dist")
-    sample_idx = pdf.sample()
-    homodyne_sample = math.gather(x, sample_idx)
-    probability_sample = math.gather(probs, sample_idx)
-
-    return homodyne_sample, probability_sample
 
 
 def c_ps_matrix(m, n, alpha):

@@ -24,7 +24,6 @@ from mrmustard.physics.gaussian_integrals import (
     join_Abc,
     join_Abc_real,
     real_gaussian_integral,
-    reorder_abc,
 )
 
 
@@ -173,28 +172,6 @@ def test_join_Abc_batched_kron():
     )
     assert math.allclose(b, math.astensor([[5, 6, 12, 13], [5, 6, 14, 15]]))
     assert math.allclose(c, math.astensor([70, 700]))
-
-
-def test_reorder_abc():
-    """Test that the reorder_abc function works correctly"""
-    A = math.astensor([[1, 2], [2, 3]])
-    b = math.astensor([4, 5])
-    c = math.astensor(6)
-    same = reorder_abc((A, b, c), (0, 1))
-    assert all(math.allclose(x, y) for x, y in zip(same, (A, b, c)))
-    flipped = reorder_abc((A, b, c), (1, 0))
-    assert all(math.allclose(x, y) for x, y in zip(flipped, (A[::-1, :][:, ::-1], b[::-1], c)))
-
-    A = math.astensor([[[1, 2, 3], [2, 4, 5], [3, 5, 6]]])
-    b = math.astensor([[4, 5, 6]])
-    c = math.astensor([[1, 2, 3]])
-    same = reorder_abc((A, b, c), (0, 1))
-    assert all(math.allclose(x, y) for x, y in zip(same, (A, b, c)))
-    flipped = reorder_abc((A, b, c), (1, 0))
-    assert all(
-        math.allclose(x, y)
-        for x, y in zip(flipped, (A[:, (1, 0, 2), :][:, :, (1, 0, 2)], b[:, (1, 0, 2)], c))
-    )
 
 
 def test_complex_gaussian_integral_2_not_batched():

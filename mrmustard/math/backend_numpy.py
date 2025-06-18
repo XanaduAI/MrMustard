@@ -18,18 +18,14 @@
 
 from __future__ import annotations
 
-from math import lgamma as mlgamma
 from typing import Sequence, Callable
 
 from opt_einsum import contract
 import numpy as np
-import scipy as sp
 
-from scipy.signal import convolve2d as scipy_convolve2d
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import xlogy as scipy_xlogy
-from scipy.stats import multivariate_normal
 
 from ..utils.settings import settings
 from .backend_base import BackendBase
@@ -70,9 +66,6 @@ class BackendNumpy(BackendBase):
     def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
         return np.allclose(array1, array2, atol=atol, rtol=rtol)
 
-    def angle(self, array: np.ndarray) -> np.ndarray:
-        return np.angle(array)
-
     def any(self, array: np.ndarray) -> np.ndarray:
         return np.any(array)
 
@@ -103,12 +96,6 @@ class BackendNumpy(BackendBase):
     def broadcast_arrays(self, *arrays: list[np.ndarray]) -> list[np.ndarray]:
         return np.broadcast_arrays(*arrays)
 
-    def block_diag(self, *blocks: list[np.ndarray]) -> np.ndarray:
-        return sp.linalg.block_diag(*blocks)
-
-    def boolean_mask(self, tensor: np.ndarray, mask: np.ndarray) -> np.ndarray:
-        return np.array([t for i, t in enumerate(tensor) if mask[i]])
-
     def cast(self, array: np.ndarray, dtype=None) -> np.ndarray:
         if dtype is None:
             return array
@@ -128,59 +115,6 @@ class BackendNumpy(BackendBase):
 
     def conj(self, array: np.ndarray) -> np.ndarray:
         return np.conj(array)
-
-    def convolution(
-        self,
-        array: np.ndarray,
-        filters: np.ndarray,
-        padding: str = "VALID",
-        data_format: str | None = None,  # pylint: disable=unused-argument
-    ) -> np.ndarray:
-        """Performs a 2D convolution operation similar to tf.nn.convolution.
-
-        Args:
-            array: Input array of shape (batch, height, width, channels)
-            filters: Filter kernel of shape (kernel_height, kernel_width, in_channels, out_channels)
-            padding: String indicating the padding type ('VALID' or 'SAME')
-            data_format: Unused, kept for API compatibility
-
-        Returns:
-            np.ndarray: Result of the convolution operation with shape (batch, new_height, new_width, out_channels)
-        """
-        # Extract shapes
-        batch, _, _, _ = array.shape
-        kernel_h, kernel_w, _, out_channels = filters.shape
-
-        # Reshape filter to 2D for convolution
-        filter_2d = filters[:, :, 0, 0]
-
-        # For SAME padding, calculate padding sizes
-        if padding == "SAME":
-            pad_h = (kernel_h - 1) // 2
-            pad_w = (kernel_w - 1) // 2
-            array = np.pad(
-                array[:, :, :, 0], ((0, 0), (pad_h, pad_h), (pad_w, pad_w)), mode="constant"
-            )
-        else:
-            array = array[:, :, :, 0]
-
-        # Calculate output dimensions
-        out_height = array.shape[1] - kernel_h + 1
-        out_width = array.shape[2] - kernel_w + 1
-
-        # Initialize output array
-        output = np.zeros((batch, out_height, out_width, out_channels))
-
-        # Perform convolution for each batch
-        for b in range(batch):
-            # Convolve using scipy's convolve2d which is more efficient than np.convolve for 2D
-            output[b, :, :, 0] = scipy_convolve2d(
-                array[b],
-                np.flip(np.flip(filter_2d, 0), 1),  # Flip kernel for proper convolution
-                mode="valid",
-            )
-
-        return output
 
     def cos(self, array: np.ndarray) -> np.ndarray:
         return np.cos(array)
@@ -219,19 +153,6 @@ class BackendNumpy(BackendBase):
         ret.flags.writeable = True
         return ret
 
-    def set_diag(self, array: np.ndarray, diag: np.ndarray, k: int) -> np.ndarray:
-        i = np.arange(0, array.shape[-2] - abs(k))
-        if k < 0:
-            i -= array.shape[-2] - abs(k)
-
-        j = np.arange(abs(k), array.shape[-1])
-        if k < 0:
-            j -= abs(k)
-
-        array[..., i, j] = diag
-
-        return array
-
     def einsum(self, string: str, *tensors, optimize: bool | str) -> np.ndarray:
         return contract(string, *tensors, optimize=optimize)
 
@@ -265,9 +186,6 @@ class BackendNumpy(BackendBase):
     def is_trainable(self, tensor: np.ndarray) -> bool:  # pylint: disable=unused-argument
         return False
 
-    def lgamma(self, x: np.ndarray) -> np.ndarray:
-        return np.array([mlgamma(v) for v in x])
-
     def log(self, x: np.ndarray) -> np.ndarray:
         return np.log(x)
 
@@ -282,17 +200,6 @@ class BackendNumpy(BackendBase):
 
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return self.matmul(a, b[..., None])[..., 0]
-
-    def maximum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
-        return np.maximum(a, b)
-
-    def minimum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
-        return np.minimum(a, b)
-
-    def moveaxis(
-        self, array: np.ndarray, old: int | Sequence[int], new: int | Sequence[int]
-    ) -> np.ndarray:
-        return np.moveaxis(array, old, new)
 
     def new_variable(
         self,
@@ -333,7 +240,7 @@ class BackendNumpy(BackendBase):
             raise ValueError(msg)
 
     def outer(self, array1: np.ndarray, array2: np.ndarray) -> np.ndarray:
-        return np.tensordot(array1, array2, [[], []])
+        return self.tensordot(array1, array2, [[], []])
 
     def pad(
         self,
@@ -364,12 +271,6 @@ class BackendNumpy(BackendBase):
 
     def reshape(self, array: np.ndarray, shape: Sequence[int]) -> np.ndarray:
         return np.reshape(array, shape)
-
-    def repeat(self, array: np.ndarray, repeats: int, axis: int = None) -> np.ndarray:
-        return np.repeat(array, repeats, axis=axis)
-
-    def round(self, array: np.ndarray, decimals: int = 0) -> np.ndarray:
-        return np.round(array, decimals)
 
     def sin(self, array: np.ndarray) -> np.ndarray:
         return np.sin(array)
@@ -430,40 +331,6 @@ class BackendNumpy(BackendBase):
     def map_fn(self, func, elements):
         # Is this done like this?
         return np.array([func(e) for e in elements])
-
-    def squeeze(self, tensor, axis=None):
-        return np.squeeze(tensor, axis=axis)
-
-    def cholesky(self, input: np.ndarray):
-        return np.linalg.cholesky(input)
-
-    def Categorical(self, probs: np.ndarray, name: str):  # pylint: disable=unused-argument
-        class Generator:
-            def __init__(self, probs):
-                self._probs = probs
-
-            def sample(self):
-                idx = [i for i, _ in enumerate(probs)]
-                return np.random.choice(idx, p=probs / sum(probs))
-
-        return Generator(probs)
-
-    def MultivariateNormalTriL(self, loc: np.ndarray, scale_tril: np.ndarray):
-        class Generator:
-            def __init__(self, mean, cov):
-                self._mean = mean
-                self._cov = cov
-
-            def sample(self, dtype=None):  # pylint: disable=unused-argument
-                fn = np.random.default_rng().multivariate_normal
-                ret = fn(self._mean, self._cov)
-                return ret
-
-            def prob(self, x):
-                return multivariate_normal.pdf(x, mean=self._mean, cov=self._cov)
-
-        scale_tril = scale_tril @ np.transpose(scale_tril)
-        return Generator(loc, scale_tril)
 
     @staticmethod
     def eigvals(tensor: np.ndarray) -> np.ndarray:

@@ -42,27 +42,6 @@ def number_means(cov: Matrix, means: Vector) -> Vector:
     ) / (2 * settings.HBAR)
 
 
-def number_cov(cov: Matrix, means: Vector) -> Matrix:
-    r"""Returns the photon number covariance matrix given a Wigner covariance matrix and a means vector.
-
-    Args:
-        cov: the Wigner covariance matrix
-        means: the Wigner means vector
-
-    Returns:
-        Matrix: the photon number covariance matrix
-    """
-    N = means.shape[-1] // 2
-    mCm = cov * means[:, None] * means[None, :]
-    dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (
-        2 * settings.HBAR**2  # TODO: sum(diag_part) is better than diag_part(sum)
-    )
-    CC = (cov**2 + mCm) / (2 * settings.HBAR**2)
-    return (
-        CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
-    )
-
-
 def purity(cov: Matrix) -> Scalar:
     r"""Returns the purity of the state with the given covariance matrix.
 
@@ -165,26 +144,3 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix) -> float:
     _fidelity = f0 * math.exp((-1 / 2) * dot)  # square of equation 95
 
     return math.real(_fidelity)
-
-
-def log_negativity(cov: Matrix) -> float:
-    r"""Returns the log_negativity of a Gaussian state.
-
-    Reference: `https://arxiv.org/abs/quant-ph/0102117 <https://arxiv.org/abs/quant-ph/0102117>`_ , Equation 57, 61.
-
-    Args:
-        cov (Matrix): the covariance matrix
-
-    Returns:
-        float: the log-negativity
-    """
-    vals = symplectic_eigenvals(cov)
-    vals_filtered = math.boolean_mask(
-        vals, vals < 1.0
-    )  # Get rid of terms that would lead to zero contribution.
-    if len(vals_filtered) > 0:
-        return -math.sum(
-            math.log(vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
-        )
-
-    return 0
