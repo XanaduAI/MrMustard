@@ -47,8 +47,6 @@ from mrmustard.lab import (
 )
 from mrmustard.utils.serialize import load, save
 
-from ..conftest import skip_jax, skip_np
-
 
 class Deserialize:
     """Base class with a simple deserialization implementation."""
@@ -142,19 +140,17 @@ class TestSerialize:
         ):
             save(Dummy, arrays={"val": [1]}, val=2)
 
+    @pytest.mark.requires_backend("tensorflow")
     def test_tensorflow_support(self):
         """Test that TensorFlow data is supported."""
-        skip_np()
-        skip_jax()
         x = math.astensor([1.1, 2.2])
         loaded = load(save(DummyOneNP, name="myname", arrays={"array": x}))
         assert tf.is_tensor(loaded.array)
         assert np.array_equal(loaded.array, x)
 
+    @pytest.mark.requires_backend("tensorflow")
     def test_backend_change_error(self, monkeypatch):
         """Test that data must be deserialized with the same backend."""
-        skip_np()
-        skip_jax()
         x = math.astensor([1.1, 2.2])
         path = save(DummyOneNP, name="myname", arrays={"array": x})
         # can be thought of as restarting python and not changing to tensorflow
@@ -177,10 +173,10 @@ class TestSerialize:
         """Test that all circuit components are serializable."""
         circ = Circuit(
             [
-                Coherent(0, 1.0),
+                Coherent(0, x=1.0),
                 Dgate(0, 0.1),
                 BSgate((1, 2), theta=0.1, theta_trainable=True, theta_bounds=(-0.5, 0.5)),
-                Dgate(0, 1.1 + 2.2j),
+                Dgate(0, x=1.1, y=2.2),
                 Identity((1, 2)),
                 Rgate(1, theta=0.1),
                 S2gate((0, 1), 1, 1),

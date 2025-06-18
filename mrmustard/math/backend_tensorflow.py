@@ -48,7 +48,7 @@ from .lattice import strategies
 
 
 # pylint: disable=too-many-public-methods
-class BackendTensorflow(BackendBase):  # pragma: no cover
+class BackendTensorflow(BackendBase):
     r"""
     A base class for backends.
     """
@@ -153,10 +153,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         if bounds != (-np.inf, np.inf):
 
             def constraint(x):
-                if x.dtype in (tf.complex128, tf.complex64):
-                    return tf.clip_by_value(tf.abs(x), bounds[0], bounds[1]) * tf.exp(
-                        1j * tf.math.angle(x)
-                    )
                 return tf.clip_by_value(x, bounds[0], bounds[1])
 
         else:
@@ -191,10 +187,10 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.linalg.diag_part(array, k=k)
 
     @Autocast()
-    def einsum(self, string: str, *tensors) -> tf.Tensor:
-        if isinstance(string, str):
-            return tf.einsum(string, *tensors)
-        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
+    def einsum(self, string: str, *tensors, optimize: str | bool) -> tf.Tensor:
+        if optimize is False:
+            optimize = "greedy"
+        return tf.einsum(string, *tensors, optimize=optimize)
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
@@ -385,11 +381,11 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def transpose(self, a: tf.Tensor, perm: Sequence[int] | None = None) -> tf.Tensor:
         return tf.transpose(a, perm)
 
-    @Autocast()
     def update_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor) -> tf.Tensor:
-        return tf.tensor_scatter_nd_update(tensor, indices, values)
+        indices = tf.convert_to_tensor([indices], dtype=tf.int32)
+        updates = tf.convert_to_tensor([values], dtype=tf.complex64)
+        return tf.tensor_scatter_nd_update(tensor, indices, updates)
 
-    @Autocast()
     def update_add_tensor(
         self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor
     ) -> tf.Tensor:
@@ -440,10 +436,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    # ~~~~~~~~~~~~~~~~~
-    # Special functions
-    # ~~~~~~~~~~~~~~~~~
-
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
         if Version(metadata.distribution("tensorflow").version) > Version("2.15.0"):
             os.environ["TF_USE_LEGACY_KERAS"] = "True"
@@ -468,13 +460,21 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     @tf.custom_gradient
     def hermite_renormalized_unbatched(
-        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int], stable: bool
+        self,
+        A: tf.Tensor,
+        b: tf.Tensor,
+        c: tf.Tensor,
+        shape: tuple[int],
+        stable: bool,
+        out: tf.Tensor | None = None,
     ) -> tuple[tf.Tensor, Callable]:
         A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
+        if out is not None:
+            raise ValueError("'out' keyword is not supported in the TensorFlow backend")
         if stable:
-            G = strategies.stable_numba(tuple(shape), A, b, c)
+            G = strategies.stable_numba(tuple(shape), A, b, c, None)
         else:
-            G = strategies.vanilla_numba(tuple(shape), A, b, c)
+            G = strategies.vanilla_numba(tuple(shape), A, b, c, None)
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp_numba(G, c, np.conj(dLdGconj))
@@ -484,10 +484,18 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     @tf.custom_gradient
     def hermite_renormalized_batched(
-        self, A: tf.Tensor, b: tf.Tensor, c: tf.Tensor, shape: tuple[int], stable: bool
+        self,
+        A: tf.Tensor,
+        b: tf.Tensor,
+        c: tf.Tensor,
+        shape: tuple[int],
+        stable: bool,
+        out: tf.Tensor | None = None,
     ) -> tf.Tensor:
         A, b, c = self.asnumpy(A), self.asnumpy(b), self.asnumpy(c)
-        G = strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable)
+        if out is not None:
+            raise ValueError("'out' keyword is not supported in the TensorFlow backend")
+        G = strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable, None)
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_batch_vjp_numba(G, c, np.conj(dLdGconj))
@@ -682,38 +690,80 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return poly0, grad
 
     @tf.custom_gradient
-    def getitem(tensor, *, key):
-        """A differentiable pure equivalent of numpy's ``value = tensor[key]``."""
-        value = np.array(tensor)[key]
+    def displacement(self, x: float, y: float, shape: tuple[int, ...], tol: float):
+        alpha = self.asnumpy(x) + 1j * self.asnumpy(y)
+        if np.sqrt(x * x + y * y) > tol:
+            gate = strategies.displacement(tuple(shape), alpha)
+        else:
+            gate = self.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
+        ret = self.astensor(gate, dtype=gate.dtype.name)
 
-        def grad(dy):
-            dL_dtensor = np.zeros_like(tensor)
-            dL_dtensor[key] = dy
-            return dL_dtensor
+        def grad(dL_dDc):
+            dD_da, dD_dac = strategies.jacobian_displacement(self.asnumpy(gate), alpha)
+            dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
+            dLdx = 2 * np.real(dL_dac)
+            dLdy = 2 * np.imag(dL_dac)
+            return (
+                self.astensor(dLdx, dtype=x.dtype),
+                self.astensor(dLdy, dtype=y.dtype),
+            )
 
-        return value, grad
+        return ret, grad
 
     @tf.custom_gradient
-    def setitem(tensor, value, *, key):
-        """A differentiable pure equivalent of numpy's ``tensor[key] = value``."""
-        _tensor = np.array(tensor)
-        value = np.array(value)
-        _tensor[key] = value
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
+        t, s = self.asnumpy(theta), self.asnumpy(phi)
+        if method == "vanilla":
+            bs_unitary = strategies.beamsplitter(shape, t, s)
+        elif method == "schwinger":
+            bs_unitary = strategies.beamsplitter_schwinger(shape, t, s)
+        elif method == "stable":
+            bs_unitary = strategies.stable_beamsplitter(shape, t, s)
 
-        def grad(dy):
-            dL_dtensor = np.array(dy)
-            dL_dtensor[key] = 0.0
-            # unbroadcasting the gradient
-            implicit_broadcast = list(range(_tensor.ndim - value.ndim))
-            explicit_broadcast = [
-                _tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1
-            ]
-            dL_dvalue = np.sum(
-                np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast)
-            )
-            dL_dvalue = np.expand_dims(
-                dL_dvalue, [i - len(implicit_broadcast) for i in explicit_broadcast]
-            )
-            return dL_dtensor, dL_dvalue
+        ret = self.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
 
-        return _tensor, grad
+        def vjp(dLdGc):
+            dtheta, dphi = strategies.beamsplitter_vjp(
+                self.asnumpy(bs_unitary),
+                self.asnumpy(self.conj(dLdGc)),
+                self.asnumpy(theta),
+                self.asnumpy(phi),
+            )
+            return (
+                self.astensor(dtheta, dtype=theta.dtype),
+                self.astensor(dphi, dtype=phi.dtype),
+            )
+
+        return ret, vjp
+
+    @tf.custom_gradient
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
+        ret = self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+
+        def vjp(dLdGc):
+            dr, dphi = strategies.squeezed_vjp(
+                self.asnumpy(sq_ket),
+                self.asnumpy(self.conj(dLdGc)),
+                self.asnumpy(r),
+                self.asnumpy(phi),
+            )
+            return self.astensor(dr, dtype=r.dtype), self.astensor(dphi, phi.dtype)
+
+        return ret, vjp
+
+    @tf.custom_gradient
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
+        sq_unitary = strategies.squeezer(shape, self.asnumpy(r), self.asnumpy(phi))
+        ret = self.astensor(sq_unitary, dtype=sq_unitary.dtype.name)
+
+        def vjp(dLdGc):
+            dr, dphi = strategies.squeezer_vjp(
+                self.asnumpy(sq_unitary),
+                self.asnumpy(self.conj(dLdGc)),
+                self.asnumpy(r),
+                self.asnumpy(phi),
+            )
+            return self.astensor(dr, dtype=r.dtype), self.astensor(dphi, phi.dtype)
+
+        return ret, vjp

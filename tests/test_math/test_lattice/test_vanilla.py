@@ -20,8 +20,6 @@ import pytest
 from mrmustard import math
 from mrmustard.math.lattice import strategies
 
-from ..conftest import skip_jax, skip_tf
-
 
 def random_triple(n, batch=(), seed=None):
     r"""
@@ -42,13 +40,12 @@ class TestVanilla:
     Test the vanilla strategy for calculating the Fock representation of a Gaussian tensor.
     """
 
+    @pytest.mark.requires_backend("numpy")
     @pytest.mark.parametrize("n", [2, 3])
     def test_vanilla_vjp(self, n):
         r"""
         Unit test for vanilla_vjp_numba function by comparing with finite difference approximations.
         """
-        skip_tf()
-        skip_jax()
         epsilon = 1e-9
         A, b, c = random_triple(n, (), seed=673)
         shape = (4,) * n
@@ -89,12 +86,11 @@ class TestVanilla:
         assert np.allclose(dLdb, dLdb_fd)
         assert np.allclose(dLdA, (dLdA_fd + dLdA_fd.T) / 2)
 
+    @pytest.mark.requires_backend("numpy")
     def test_full_batch_vjp(self):
         r"""
         Unit test for vanilla_batch_vjp_numba function by comparing its results with finite difference approximations.
         """
-        skip_tf()
-        skip_jax()
         # Generate the output tensor G
         epsilon = 1e-9
         A, b, c = random_triple(3, (2,), seed=673)
@@ -175,9 +171,22 @@ class TestVanilla:
         assert G.shape == shape
 
     @pytest.mark.parametrize("stable", [True, False])
-    def test_hermite_renormalized_b_batched(self, stable):
+    @pytest.mark.requires_backend("numpy")
+    def test_hermite_renormalized_unbatched_out(self, stable):
         r"""
-        Test the hermite_renormalized function for batched b inputs.
+        Test the hermite_renormalized function for unbatched inputs with out.
+        """
+        A, b, c = random_triple(2, (), seed=673)
+        shape = (3, 3)
+        out_arr = math.zeros(shape, dtype=math.complex128)
+        G = math.hermite_renormalized(A, b, c, shape, stable=stable, out=out_arr)
+        assert out_arr is G
+        assert math.allclose(G, math.hermite_renormalized(A, b, c, shape, stable=stable))
+
+    @pytest.mark.parametrize("stable", [True, False])
+    def test_hermite_renormalized_b_batched_no_out(self, stable):
+        r"""
+        Test the hermite_renormalized function for batched b inputs without out parameter.
         """
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
@@ -187,13 +196,41 @@ class TestVanilla:
         assert math.allclose(G[1, 0], math.hermite_renormalized(A[0, 0], b[1, 0], c[0, 0], shape))
 
     @pytest.mark.parametrize("stable", [True, False])
-    def test_hermite_renormalized_batched(self, stable):
+    @pytest.mark.requires_backend("numpy")
+    def test_hermite_renormalized_b_batched_with_out(self, stable):
         r"""
-        Test the hermite_renormalized function for batched inputs.
+        Test the hermite_renormalized function for batched b inputs with out parameter.
+        """
+        A, b, c = random_triple(2, (2, 1), seed=673)
+        shape = (4, 5)
+        out_arr = math.zeros((2, 1) + shape, dtype=math.complex128)
+        G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape, stable=stable, out=out_arr)
+        assert G.shape == (2, 1) + shape
+        assert math.allclose(G[0, 0], math.hermite_renormalized(A[0, 0], b[0, 0], c[0, 0], shape))
+        assert math.allclose(G[1, 0], math.hermite_renormalized(A[0, 0], b[1, 0], c[0, 0], shape))
+
+    @pytest.mark.parametrize("stable", [True, False])
+    def test_hermite_renormalized_batched_no_out(self, stable):
+        r"""
+        Test the hermite_renormalized function for batched inputs without out parameter.
         """
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
         G = math.hermite_renormalized(A, b, c, shape, stable=stable)
+        assert G.shape == (2, 1) + shape
+        assert math.allclose(G[0, 0], math.hermite_renormalized(A[0, 0], b[0, 0], c[0, 0], shape))
+        assert math.allclose(G[1, 0], math.hermite_renormalized(A[1, 0], b[1, 0], c[1, 0], shape))
+
+    @pytest.mark.parametrize("stable", [True, False])
+    @pytest.mark.requires_backend("numpy")
+    def test_hermite_renormalized_batched_with_out(self, stable):
+        r"""
+        Test the hermite_renormalized function for batched inputs with out parameter.
+        """
+        A, b, c = random_triple(2, (2, 1), seed=673)
+        shape = (4, 5)
+        out_arr = math.zeros((2, 1) + shape, dtype=math.complex128)
+        G = math.hermite_renormalized(A, b, c, shape, stable=stable, out=out_arr)
         assert G.shape == (2, 1) + shape
         assert math.allclose(G[0, 0], math.hermite_renormalized(A[0, 0], b[0, 0], c[0, 0], shape))
         assert math.allclose(G[1, 0], math.hermite_renormalized(A[1, 0], b[1, 0], c[1, 0], shape))

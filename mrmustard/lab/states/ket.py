@@ -19,7 +19,6 @@ This module contains the defintion of the ket class ``Ket``.
 from __future__ import annotations
 
 from typing import Collection, Sequence
-
 from IPython.display import display
 
 import numpy as np
@@ -546,7 +545,7 @@ class Ket(State):
             >>> from mrmustard.lab import Ket, DM, Attenuator, Dgate
 
             >>> psi = Ket.random([0,1])
-            >>> U = Dgate(0, alpha=1)
+            >>> U = Dgate(0, x=1, y=0)
             >>> channel = Attenuator(0, .5)
 
             >>> assert isinstance(psi >> U, Ket)

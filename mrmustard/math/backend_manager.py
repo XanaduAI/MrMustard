@@ -19,9 +19,9 @@ from __future__ import annotations
 import importlib.util
 import sys
 from functools import lru_cache
-from itertools import product
 from typing import Any, Callable, Sequence
 
+from jax.errors import TracerArrayConversionError
 import numpy as np
 from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
@@ -156,6 +156,23 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         The name of the backend in use.
         """
         return self._backend.name
+
+    @property
+    def euclidean_opt(self):
+        r"""The configured Euclidean optimizer."""
+        if not self._euclidean_opt:
+            self._euclidean_opt = self.DefaultEuclideanOptimizer()
+        return self._euclidean_opt
+
+    @property
+    def BackendError(self):
+        r"""
+        The error class for backend specific errors.
+
+        Note that currently this only applies to the case where
+        ``auto_shape`` is jitted  via the ``jax`` backend.
+        """
+        return TracerArrayConversionError
 
     def change_backend(self, name: str) -> None:
         r"""
@@ -597,17 +614,22 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("eigh", (tensor,))
 
-    def einsum(self, string: str, *tensors) -> Tensor:
+    def einsum(self, string: str, *tensors, optimize: bool | str = "greedy") -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
         Args:
             string: The string of the Einstein summation convention.
             tensors: The tensors to perform the Einstein summation on.
+            optimize: Optional flag whether to optimize the contraction order.
+                Allowed values are True, False, "greedy", "optimal" or "auto".
+                Note the TF backend does not support False and converts it to "greedy".
+                If None, ``settings.EINSUM_OPTIMIZE`` is used.
 
         Returns:
             The result of the Einstein summation convention.
         """
-        return self._apply("einsum", (string, *tensors))
+        optimize = optimize or settings.EINSUM_OPTIMIZE
+        return self._apply("einsum", (string, *tensors), {"optimize": optimize})
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.
@@ -701,7 +723,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         )
 
     def hermite_renormalized(
-        self, A: Tensor, b: Tensor, c: Tensor, shape: tuple[int], stable: bool = False
+        self,
+        A: Tensor,
+        b: Tensor,
+        c: Tensor,
+        shape: tuple[int],
+        stable: bool = False,
+        out: Tensor | None = None,
     ) -> Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(c + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
@@ -717,25 +745,47 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             A: The A matrix. Can be unbatched (shape D×D) or batched (shape B×D×D).
             b: The b vector. Can be unbatched (shape D) or batched (shape B×D).
             c: The c scalar. Can be scalar or batched (shape B).
-            shape: The shape of the final tensor.
+            shape: The shape of the final tensor (excluding batch dimensions).
             stable: Whether to use the numerically stable version of the algorithm (also slower).
+            out: If provided, the result will be stored in this tensor.
 
         Returns:
             The renormalized Hermite polynomial of given shape preserving the batch dimensions.
         """
+
+        def check_out_shape(batch_shape):
+            if out is not None and any(
+                d_out < d for d_out, d in zip(out.shape, batch_shape + shape)
+            ):
+                raise ValueError(
+                    f"batch+shape {batch_shape + shape} is too large for out.shape={out.shape}"
+                )
+
         stable = stable or settings.STABLE_FOCK_CONVERSION
         if A.ndim > 2 and b.ndim > 1 and c.ndim > 0:
             batch_shape = A.shape[:-2]
+            check_out_shape(batch_shape)
+            if b.shape[:-1] != batch_shape:
+                raise ValueError(f"b.shape={b.shape} must match batch_shape={batch_shape}")
+            if c.shape[: len(batch_shape)] != batch_shape:
+                raise ValueError(f"c.shape={c.shape} must match batch_shape={batch_shape}")
             D = int(np.prod(batch_shape))
             A = self.reshape(A, (D,) + A.shape[-2:])
             b = self.reshape(b, (D,) + b.shape[-1:])
             c = self.reshape(c, (D,))
             result = self._apply(
-                "hermite_renormalized_batched", (A, b, c), {"shape": tuple(shape), "stable": stable}
+                "hermite_renormalized_batched",
+                (A, b, c),
+                {
+                    "shape": tuple(shape),
+                    "stable": stable,
+                    "out": self.reshape(out, (D,) + shape) if out is not None else None,
+                },
             )
-            return self.reshape(result, batch_shape + shape)
+            return self.reshape(result, batch_shape + tuple(shape))
         elif A.ndim == 2 and b.ndim > 1:  # b-batched case
             batch_shape = b.shape[:-1]
+            check_out_shape(batch_shape)
             D = int(np.prod(batch_shape))
             b = self.reshape(b, (D,) + b.shape[-1:])
             A_broadcast = self.broadcast_to(A, (D,) + A.shape)
@@ -743,14 +793,19 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             result = self._apply(
                 "hermite_renormalized_batched",
                 (A_broadcast, b, c_broadcast),
-                {"shape": tuple(shape), "stable": stable},
+                {
+                    "shape": tuple(shape),
+                    "stable": stable,
+                    "out": self.reshape(out, (D,) + shape) if out is not None else None,
+                },
             )
-            return self.reshape(result, batch_shape + shape)
+            return self.reshape(result, batch_shape + tuple(shape))
         else:  # Unbatched case
+            check_out_shape(())
             return self._apply(
                 "hermite_renormalized_unbatched",
                 (A, b, c),
-                {"shape": tuple(shape), "stable": stable},
+                {"shape": tuple(shape), "stable": stable, "out": out},
             )
 
     def hermite_renormalized_diagonal(
@@ -1515,37 +1570,74 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("MultivariateNormalTriL", (loc, scale_tril))
 
-    def custom_gradient(self, func):
-        r"""
-        A decorator to define a function with a custom gradient.
-        """
-
-        def wrapper(*args, **kwargs):
-            if self.backend_name in ["numpy", "jax"]:
-                return func(*args, **kwargs)
-            else:
-                from tensorflow import (  # pylint: disable=import-outside-toplevel
-                    custom_gradient,
-                )
-
-                return custom_gradient(func)(*args, **kwargs)
-
-        return wrapper
-
     def DefaultEuclideanOptimizer(self):
         r"""Default optimizer for the Euclidean parameters."""
         return self._apply("DefaultEuclideanOptimizer")
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Methods that build on the basic ops and don't need to be overridden in the backend implementation
+    # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    @property
-    def euclidean_opt(self):
-        r"""The configured Euclidean optimizer."""
-        if not self._euclidean_opt:
-            self._euclidean_opt = self.DefaultEuclideanOptimizer()
-        return self._euclidean_opt
+    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float = 1e-15):
+        r"""
+        Creates a single mode displacement matrix using a numba-based fock lattice strategy.
+
+        Args:
+            x: The displacement magnitude.
+            y: The displacement angle.
+            shape: The shape of the displacement matrix.
+            tol: The tolerance to determine if the displacement is small enough to be approximated by the identity.
+
+        Returns:
+            The matrix representing the displacement gate.
+        """
+        return self._apply("displacement", (x, y), {"shape": shape, "tol": tol})
+
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
+        r"""
+        Creates a beamsplitter matrix with given cutoffs using a numba-based fock lattice strategy.
+
+        Args:
+            theta: Transmittivity angle of the beamsplitter.
+            phi: Phase angle of the beamsplitter.
+            shape: Output shape of the two modes.
+            method: Method to compute the beamsplitter ("vanilla", "schwinger" or "stable").
+
+        Returns:
+            The matrix representing the beamsplitter gate.
+
+        Raises:
+            ValueError: If the method is not "vanilla", "schwinger" or "stable".
+        """
+        return self._apply("beamsplitter", (theta, phi), {"shape": shape, "method": method})
+
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):  # pragma: no cover
+        r"""
+        Creates a single mode squeezed state matrix using a numba-based fock lattice strategy.
+
+        Args:
+            r: Squeezing magnitude.
+            phi: Squeezing angle.
+            shape: Output shape of the two modes.
+
+        Returns:
+            The matrix representing the squeezed state.
+        """
+        return self._apply("squeezed", (r, phi, shape))
+
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):  # pragma: no cover
+        r"""
+        Creates a single mode squeezer matrix using a numba-based fock lattice strategy.
+
+        Args:
+            r: Squeezing magnitude.
+            phi: Squeezing angle.
+            shape: Output shape of the two modes.
+
+        Returns:
+            The matrix representing the squeezer.
+        """
+        return self._apply("squeezer", (r, phi, shape))
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
@@ -1676,77 +1768,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         I = np.identity(num_modes)
         O = np.zeros_like(I)
         return np.block([[O, I], [-I, O]])
-
-    def add_at_modes(
-        self, old: Tensor, new: Tensor | None, modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        """Adds two phase-space tensors (cov matrices, displacement vectors, etc..) on the specified modes."""
-        if new is None:
-            return old
-        shape = getattr(old, "shape", ())
-        N = (shape[-1] if shape != () else 0) // 2
-        indices = modes + [m + N for m in modes]
-        return self.update_add_tensor(
-            old, list(product(*[indices] * len(new.shape))), self.reshape(new, -1)
-        )
-
-    def left_matmul_at_modes(
-        self, a_partial: Tensor, b_full: Tensor, modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        r"""Left matrix multiplication of a partial matrix and a full matrix.
-
-        It assumes that that ``a_partial`` is a matrix operating on M modes and that ``modes`` is a
-        list of ``M`` integers, i.e., it will apply ``a_partial`` on the corresponding ``M`` modes
-        of ``b_full`` from the left.
-
-        Args:
-            a_partial: The :math:`2M\times 2M` array
-            b_full: The :math:`2N\times 2N` array
-            modes: A list of ``M`` modes to perform the multiplication on
-
-        Returns:
-            The :math:`2N\times 2N` array
-        """
-        if a_partial is None:
-            return b_full
-
-        N = b_full.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype=self.int64)
-        b_rows = self.gather(b_full, indices, axis=0)
-        b_rows = self.matmul(a_partial, b_rows)
-        return self.update_tensor(b_full, indices[:, None], b_rows)
-
-    def right_matmul_at_modes(
-        self, a_full: Tensor, b_partial: Tensor, modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        r"""Right matrix multiplication of a full matrix and a partial matrix.
-
-        It assumes that that ``b_partial`` is a matrix operating on ``M`` modes and that ``modes``
-        is a list of ``M`` integers, i.e., it will apply ``b_partial`` on the corresponding M modes
-        of ``a_full`` from the right.
-
-        Args:
-            a_full: The :math:`2N\times 2N` array
-            b_partial: The :math:`2M\times 2M` array
-            modes: A list of `M` modes to perform the multiplication on
-
-        Returns:
-            The :math:`2N\times 2N` array
-        """
-        return self.transpose(
-            self.left_matmul_at_modes(self.transpose(b_partial), self.transpose(a_full), modes)
-        )
-
-    def matvec_at_modes(
-        self, mat: Tensor | None, vec: Tensor, modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        """Matrix-vector multiplication between a phase-space matrix and a vector in the specified modes."""
-        if mat is None:
-            return vec
-        N = vec.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype=self.int64)
-        updates = self.matvec(mat, self.gather(vec, indices, axis=0))
-        return self.update_tensor(vec, indices[:, None], updates)
 
     def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
         """Returns all the diagonals of a density matrix."""

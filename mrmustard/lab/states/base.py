@@ -19,7 +19,6 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import Sequence
-
 from enum import Enum
 
 import numpy as np
@@ -183,7 +182,7 @@ class State(CircuitComponent):
             >>> from mrmustard.lab.states.ket import Ket
 
             >>> modes = (0,)
-            >>> triple = coherent_state_Abc(alpha=0.1)
+            >>> triple = coherent_state_Abc(x=0.1)
 
             >>> coh = Ket.from_bargmann(modes, triple)
             >>> assert coh.modes == modes
@@ -221,9 +220,10 @@ class State(CircuitComponent):
         .. code-block::
 
             >>> from mrmustard.physics.ansatz import ArrayAnsatz
+            >>> from mrmustard.physics.triples import coherent_state_Abc
             >>> from mrmustard.lab import Coherent, Ket
 
-            >>> array = Coherent(mode=0, alpha=0.1).to_fock().ansatz.array
+            >>> array = Coherent(mode=0, x=0.1).to_fock().ansatz.array
             >>> coh = Ket.from_fock((0,), array, batch_dims=0)
 
             >>> assert coh.modes == (0,)
@@ -386,14 +386,18 @@ class State(CircuitComponent):
                     else:
                         ansatz = self.ansatz
                     A, b, c = ansatz.triple
-                    shape = autoshape_numba(
-                        math.asnumpy(A),
-                        math.asnumpy(b),
-                        math.asnumpy(c),
-                        max_prob or settings.AUTOSHAPE_PROBABILITY,
-                        max_shape or settings.AUTOSHAPE_MAX,
-                        min_shape or settings.AUTOSHAPE_MIN,
-                    )
+                    try:
+                        shape = autoshape_numba(
+                            math.asnumpy(A),
+                            math.asnumpy(b),
+                            math.asnumpy(c),
+                            max_prob or settings.AUTOSHAPE_PROBABILITY,
+                            max_shape or settings.AUTOSHAPE_MAX,
+                            min_shape or settings.AUTOSHAPE_MIN,
+                        )
+                    # covers the case where auto_shape is jitted
+                    except math.BackendError:  # pragma: no cover
+                        shape = super().auto_shape()
                     if self.wires.ket and self.wires.bra:
                         shape = tuple(shape) + tuple(shape)
                 else:
@@ -529,7 +533,7 @@ class State(CircuitComponent):
 
             >>> from mrmustard.lab import Coherent
 
-            >>> state = Coherent(0, alpha=1) / 2**0.5 + Coherent(0, alpha=-1) / 2**0.5
+            >>> state = Coherent(0, x=1) / 2**0.5 + Coherent(0, x=-1) / 2**0.5
             >>> # state.visualize_2d()
 
         Args:

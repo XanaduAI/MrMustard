@@ -91,7 +91,7 @@ def test_real_gaussian_integral():
 def test_join_Abc_real():
     """Tests the ``join_Abc_real`` method."""
     A1, b1, c1 = triples.vacuum_state_Abc(1)
-    A2, b2, c2 = triples.displacement_gate_Abc(0.1 + 0.3j)
+    A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
     idx1 = [0]
     idx2 = [0]
 

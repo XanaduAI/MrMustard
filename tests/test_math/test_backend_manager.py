@@ -20,9 +20,9 @@ import numpy as np
 import pytest
 import tensorflow as tf
 from jax import numpy as jnp
+from jax.errors import TracerArrayConversionError
 
 from mrmustard import math
-
 
 # pylint: disable=too-many-public-methods
 class TestBackendManager:
@@ -41,6 +41,12 @@ class TestBackendManager:
     lists = [l1, l2, l3, l4, l5]
 
     types = ["None", "int32", "float32", "float64", "complex128"]
+
+    def test_backend_error(self):
+        r"""
+        Tests the ``BackendError`` property.
+        """
+        assert math.BackendError is TracerArrayConversionError
 
     def test_error(self):
         r"""
@@ -717,3 +723,68 @@ class TestBackendManager:
         probs = np.array([1e-6 for _ in range(300)])
         results = [math.Categorical(probs, "") for _ in range(100)]
         assert len(set(results)) > 1
+
+    def test_displacement(self):
+        r"""
+        Tests the ``displacement`` method.
+        """
+        cutoff = 5
+        alpha = 0.3 + 0.5 * 1j
+        # This data is obtained by using qutip
+        # np.array(displace(40,alpha).data.todense())[0:5,0:5]
+        expected = np.array(
+            [
+                [
+                    0.84366482 + 0.00000000e00j,
+                    -0.25309944 + 4.21832408e-01j,
+                    -0.09544978 - 1.78968334e-01j,
+                    0.06819609 + 3.44424719e-03j,
+                    -0.01109048 + 1.65323865e-02j,
+                ],
+                [
+                    0.25309944 + 4.21832408e-01j,
+                    0.55681878 + 0.00000000e00j,
+                    -0.29708743 + 4.95145724e-01j,
+                    -0.14658716 - 2.74850926e-01j,
+                    0.12479885 + 6.30297236e-03j,
+                ],
+                [
+                    -0.09544978 + 1.78968334e-01j,
+                    0.29708743 + 4.95145724e-01j,
+                    0.31873657 + 0.00000000e00j,
+                    -0.29777767 + 4.96296112e-01j,
+                    -0.18306015 - 3.43237787e-01j,
+                ],
+                [
+                    -0.06819609 + 3.44424719e-03j,
+                    -0.14658716 + 2.74850926e-01j,
+                    0.29777767 + 4.96296112e-01j,
+                    0.12389162 + 1.10385981e-17j,
+                    -0.27646677 + 4.60777945e-01j,
+                ],
+                [
+                    -0.01109048 - 1.65323865e-02j,
+                    -0.12479885 + 6.30297236e-03j,
+                    -0.18306015 + 3.43237787e-01j,
+                    0.27646677 + 4.60777945e-01j,
+                    -0.03277289 + 1.88440656e-17j,
+                ],
+            ]
+        )
+        D = math.displacement(math.real(alpha), math.imag(alpha), (cutoff, cutoff))
+        assert math.allclose(math.asnumpy(D), expected, atol=1e-5, rtol=0)
+        D_identity = math.displacement(0, 0, (cutoff, cutoff))
+        assert math.allclose(math.asnumpy(D_identity), np.eye(cutoff), atol=1e-5, rtol=0)
+
+    def test_beamsplitter(self):
+        r"""
+        Tests the ``beamsplitter`` method.
+        """
+        cutoffs = (5,) * 4
+        theta = np.pi / 2
+        phi = 0.8
+        bs_vanilla = math.beamsplitter(theta, phi, cutoffs, "vanilla")
+        bs_schwinger = math.beamsplitter(theta, phi, cutoffs, "schwinger")
+        bs_stable = math.beamsplitter(theta, phi, cutoffs, "stable")
+        assert math.allclose(bs_vanilla, bs_schwinger, atol=1e-5, rtol=0)
+        assert math.allclose(bs_vanilla, bs_stable, atol=1e-5, rtol=0)

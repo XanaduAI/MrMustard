@@ -14,6 +14,7 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
+import os
 from rich import print
 
 from ._version import __version__
@@ -31,7 +32,7 @@ def version():
 
 
 def about():
-    """Mr Mustard information.
+    r"""Mr Mustard information.
 
     Prints the installed version numbers for Mr Mustard and its dependencies,
     and some system info. Please include this information in bug reports.
@@ -56,7 +57,6 @@ def about():
         Torch version:             1.10.0+cu102
     """
     # pylint: disable=import-outside-toplevel,consider-using-f-string
-    import os
     import platform
     import sys
 

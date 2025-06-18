@@ -14,33 +14,38 @@
 
 """This module contains the JAX backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
+# pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments, too-many-public-methods
 
-from __future__ import annotations  # pragma: no cover
-from typing import Callable, Sequence  # pragma: no cover
-from functools import partial  # pragma: no cover
+from __future__ import annotations
+from typing import Callable, Sequence
+from functools import partial
+from platformdirs import user_cache_dir
 
-import jax  # pragma: no cover
-import jax.numpy as jnp  # pragma: no cover
-import jax.scipy as jsp  # pragma: no cover
-import numpy as np  # pragma: no cover
-import equinox as eqx  # pragma: no cover
-from jax import tree_util  # pragma: no cover
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+import numpy as np
+import equinox as eqx
+import optax
 
-from .autocast import Autocast  # pragma: no cover
-from .backend_base import BackendBase  # pragma: no cover
-from .lattice import strategies  # pragma: no cover
-from .lattice.strategies.compactFock.inputValidation import (  # pragma: no cover
+from .backend_base import BackendBase
+from .jax_vjps import beamsplitter_jax, displacement_jax, hermite_renormalized_unbatched_jax
+from .lattice import strategies
+from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
 
-jax.config.update("jax_enable_x64", True)  # pragma: no cover
+jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_compilation_cache_dir", f"{user_cache_dir('mrmustard')}/jax_cache")
+jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
+jax.config.update("jax_persistent_cache_min_compile_time_secs", 0)
+jax.config.update("jax_persistent_cache_enable_xla_caches", "xla_gpu_per_fusion_autotune_cache_dir")
 
 
 # pylint: disable=too-many-public-methods
-class BackendJax(BackendBase):  # pragma: no cover
+class BackendJax(BackendBase):
     """A JAX backend implementation."""
 
     int32 = jnp.int32
@@ -154,12 +159,10 @@ class BackendJax(BackendBase):  # pragma: no cover
     def clip(self, array: jnp.ndarray, a_min: float, a_max: float) -> jnp.ndarray:
         return jnp.clip(array, a_min, a_max)
 
-    @Autocast()
     @jax.jit
     def maximum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.maximum(a, b)
 
-    @Autocast()
     @jax.jit
     def minimum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.minimum(a, b)
@@ -172,7 +175,6 @@ class BackendJax(BackendBase):  # pragma: no cover
     def conj(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.conj(array)
 
-    @Autocast()
     def pow(self, x: jnp.ndarray, y: float) -> jnp.ndarray:
         return jnp.power(x, y)
 
@@ -216,7 +218,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         value = self.astensor(value, dtype)
         return value
 
-    @Autocast()
     @partial(jax.jit, static_argnames=["data_format", "padding"])
     def convolution(
         self,
@@ -231,16 +232,11 @@ class BackendJax(BackendBase):  # pragma: no cover
     def tile(self, array: jnp.ndarray, repeats: Sequence[int]) -> jnp.ndarray:
         return jnp.tile(array, repeats)
 
-    @Autocast()
-    @jax.jit
     def update_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
     ) -> jnp.ndarray:
-        indices = self.atleast_nd(indices, 2)
-        indices = jnp.squeeze(indices, axis=-1)
         return tensor.at[indices].set(values)
 
-    @Autocast()
     @jax.jit
     def update_add_tensor(
         self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
@@ -248,7 +244,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         indices = self.atleast_nd(indices, 2)
         return tensor.at[tuple(indices.T)].add(values)
 
-    @Autocast()
     @jax.jit
     def matvec(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.matmul(a, b[..., None])[..., 0]
@@ -290,11 +285,8 @@ class BackendJax(BackendBase):  # pragma: no cover
     def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
         return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
-    @partial(jax.jit, static_argnames=["string"])
-    def einsum(self, string: str, *tensors) -> jnp.ndarray:
-        if isinstance(string, str):
-            return jnp.einsum(string, *tensors)
-        return None
+    def einsum(self, string: str, *tensors, optimize: bool | str) -> jnp.ndarray:
+        return jnp.einsum(string, *tensors, optimize=optimize)
 
     @jax.jit
     def exp(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -342,7 +334,6 @@ class BackendJax(BackendBase):  # pragma: no cover
     def make_complex(self, real: jnp.ndarray, imag: jnp.ndarray) -> jnp.ndarray:
         return real + 1j * imag
 
-    @Autocast()
     @jax.jit
     def matmul(self, *matrices: jnp.ndarray) -> jnp.ndarray:
         mat = jnp.linalg.multi_dot(matrices)
@@ -457,7 +448,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         scale_tril = scale_tril @ jnp.transpose(scale_tril)
         return Generator(loc, scale_tril, key)
 
-    @Autocast()
     def tensordot(self, a: jnp.ndarray, b: jnp.ndarray, axes: Sequence[int]) -> jnp.ndarray:
         return jnp.tensordot(a, b, axes)
 
@@ -515,7 +505,7 @@ class BackendJax(BackendBase):  # pragma: no cover
 
     # Special functions for optimization
     def DefaultEuclideanOptimizer(self):
-        return jax.experimental.optimizers.adam(learning_rate=0.001)
+        return optax.inject_hyperparams(optax.adamw)
 
     @jax.jit
     def reorder_AB_bargmann(
@@ -530,10 +520,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         B = self.gather(B, ordering, axis=0)
         return A, B
 
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_unbatched
-    # ~~~~~~~~~~~~~~~~~
-    @partial(jax.jit, static_argnames=["shape", "stable"])
     def hermite_renormalized_unbatched(
         self,
         A: jnp.ndarray,
@@ -541,32 +527,12 @@ class BackendJax(BackendBase):  # pragma: no cover
         c: jnp.ndarray,
         shape: tuple[int],
         stable: bool = False,
+        out: jnp.ndarray | None = None,
     ) -> jnp.ndarray:
-        if stable:
-            G = jax.pure_callback(
-                lambda A, b, c: strategies.stable_numba(
-                    shape, np.array(A), np.array(b), np.array(c)
-                ),
-                jax.ShapeDtypeStruct(shape, jnp.complex128),
-                A,
-                b,
-                c,
-            )
-        else:
-            G = jax.pure_callback(
-                lambda A, b, c: strategies.vanilla_numba(
-                    shape, np.array(A), np.array(b), np.array(c)
-                ),
-                jax.ShapeDtypeStruct(shape, jnp.complex128),
-                A,
-                b,
-                c,
-            )
-        return G
+        if out is not None:
+            raise ValueError("The 'out' keyword is not supported in the JAX backend.")
+        return hermite_renormalized_unbatched_jax(A, b, c, shape, stable)
 
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_batched
-    # ~~~~~~~~~~~~~~~~~
     @partial(jax.jit, static_argnames=["shape", "stable"])
     def hermite_renormalized_batched(
         self,
@@ -575,12 +541,15 @@ class BackendJax(BackendBase):  # pragma: no cover
         c: jnp.ndarray,
         shape: tuple[int],
         stable: bool = False,
+        out: jnp.ndarray | None = None,
     ) -> jnp.ndarray:
         batch_size = A.shape[0]
         output_shape = (batch_size,) + shape
+        if out is not None:
+            raise ValueError("'out' keyword is not supported in the JAX backend")
         G = jax.pure_callback(
             lambda A, b, c: strategies.vanilla_batch_numba(
-                shape, np.array(A), np.array(b), np.array(c), stable
+                shape, np.array(A), np.array(b), np.array(c), stable, None
             ),
             jax.ShapeDtypeStruct(output_shape, jnp.complex128),
             A,
@@ -588,10 +557,6 @@ class BackendJax(BackendBase):  # pragma: no cover
             c,
         )
         return G
-
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_diagonal
-    # ~~~~~~~~~~~~~~~~~
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal(
@@ -603,9 +568,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_diagonal_reorderedAB
-    # ~~~~~~~~~~~~~~~~~
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
@@ -636,10 +598,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         )
         return poly0
 
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_diagonal_batch
-    # ~~~~~~~~~~~~~~~~~
-
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_batch(
         self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
@@ -647,10 +605,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
-
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_diagonal_reorderedAB_batch
-    # ~~~~~~~~~~~~~~~~~
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB_batch(
@@ -677,10 +631,6 @@ class BackendJax(BackendBase):  # pragma: no cover
         )
 
         return poly0
-
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_binomial
-    # ~~~~~~~~~~~~~~~~~
 
     @partial(jax.jit, static_argnames=["shape", "max_l2", "global_cutoff"])
     def hermite_renormalized_binomial(
@@ -723,19 +673,11 @@ class BackendJax(BackendBase):  # pragma: no cover
         )
         return G
 
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_1leftoverMode_reorderedAB
-    # ~~~~~~~~~~~~~~~~~
-
     @partial(jax.jit, static_argnames=["output_cutoff", "pnr_cutoffs"])
     def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
         A, B = self.reorder_AB_bargmann(A, B)
         cutoffs = (output_cutoff + 1,) + tuple(p + 1 for p in pnr_cutoffs)
         return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
-
-    # ~~~~~~~~~~~~~~~~~
-    # hermite_renormalized_1leftoverMode_reorderedAB
-    # ~~~~~~~~~~~~~~~~~
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_1leftoverMode_reorderedAB(
@@ -768,9 +710,23 @@ class BackendJax(BackendBase):  # pragma: no cover
         )
         return poly0
 
+    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):
+        return displacement_jax(x, y, shape, tol)
+
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
+        return beamsplitter_jax(theta, phi, shape, method)
+
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+        # TODO: implement vjps
+        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
+        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
+        # TODO: implement vjps
+        sq_ket = strategies.squeezer(shape, self.asnumpy(r), self.asnumpy(phi))
+        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+
 
 # defining the pytree node for the JaxBackend.
 # This allows to skip specifying `self` in static_argnames.
-tree_util.register_pytree_node(
-    BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten
-)  # pragma: no cover
+jax.tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
