@@ -386,10 +386,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("fock", [False, True])
     @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
     def test_expectation(self, batch_shape, fock):
-        x = math.ones(batch_shape)
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
 
-        coh_0 = Coherent(0, x=x, y=2 * x)
-        coh_1 = Coherent(1, x=x, y=3 * x)
+        coh_0 = Coherent(0, x=alpha_0.real, y=alpha_0.imag)
+        coh_1 = Coherent(1, x=alpha_1.real, y=alpha_1.imag)
         # TODO: clean this up once we have a better way to create batched multimode states
         ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
         ket = ket.to_fock(40) if fock else ket
@@ -425,8 +426,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(exp_dm01, 1)
 
         # u operator
-        u0 = Dgate(0, x=0.1)
-        u1 = Dgate(1, x=0.2)
+        beta_0 = 0.1
+        beta_1 = 0.2
+
+        u0 = Dgate(0, x=beta_0)
+        u1 = Dgate(1, x=beta_1)
         u01 = u0 >> u1
 
         exp_u0 = ket.expectation(u0)
@@ -436,6 +440,16 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert exp_u0.shape == batch_shape
         assert exp_u1.shape == batch_shape
         assert exp_u01.shape == batch_shape
+
+        expected_u0 = math.exp(-math.abs(beta_0) ** 2 / 2) * math.exp(
+            beta_0 * math.conj(alpha_0) - math.conj(beta_0) * alpha_0
+        )
+        expected_u1 = math.exp(-math.abs(beta_1) ** 2 / 2) * math.exp(
+            beta_1 * math.conj(alpha_1) - math.conj(beta_1) * alpha_1
+        )
+
+        assert math.allclose(exp_u0, expected_u0)
+        assert math.allclose(exp_u1, expected_u1)
 
         exp_u0_coh = coh_0.expectation(u0)
         exp_u1_coh = coh_1.expectation(u1)
