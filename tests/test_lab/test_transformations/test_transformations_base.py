@@ -242,6 +242,15 @@ class TestChannel:
         assert math.allclose(x, X)
         assert math.allclose(y, Y)
 
+    @pytest.mark.parametrize("nmodes", [1, 2, 3])
+    def test_from_XY_batched(self, nmodes):
+
+        ch1 = Channel.random(list(range(nmodes))) + Channel.random(list(range(nmodes)))
+        X, Y = ch1.XY
+
+        ch2 = Channel.from_XY(tuple(range(nmodes)), tuple(range(nmodes)), X, Y)
+        assert ch1 == ch2
+
     def test_from_fock(self):
         # Here we test our from_fock method by a PhaseNoise example
         cutoff = 6
