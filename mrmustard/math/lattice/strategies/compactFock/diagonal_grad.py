@@ -149,7 +149,10 @@ def use_offDiag_pivot_grad(
     # Array11
     for i in range(d + 1, M):
         if params[i] + 1 < cutoffs[i]:
-            (arr1010_dA[d][i - d - 1][params], arr1010_dB[d][i - d - 1][params],) = calc_dA_dB(
+            (
+                arr1010_dA[d][i - d - 1][params],
+                arr1010_dB[d][i - d - 1][params],
+            ) = calc_dA_dB(
                 2 * i,
                 G_in_dA,
                 G_in_dB,
@@ -163,7 +166,10 @@ def use_offDiag_pivot_grad(
                 pivot_val_dA,
                 pivot_val_dB,
             )
-            (arr1001_dA[d][i - d - 1][params], arr1001_dB[d][i - d - 1][params],) = calc_dA_dB(
+            (
+                arr1001_dA[d][i - d - 1][params],
+                arr1001_dB[d][i - d - 1][params],
+            ) = calc_dA_dB(
                 2 * i + 1,
                 G_in_dA,
                 G_in_dB,

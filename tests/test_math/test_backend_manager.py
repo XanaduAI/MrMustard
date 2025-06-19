@@ -24,6 +24,7 @@ from jax.errors import TracerArrayConversionError
 
 from mrmustard import math
 
+
 # pylint: disable=too-many-public-methods
 class TestBackendManager:
     r"""
