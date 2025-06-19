@@ -24,15 +24,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.29"
+          python-version: "3.12"
 
       - name: Run tests
         run: |
