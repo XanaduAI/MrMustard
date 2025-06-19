@@ -17,4 +17,4 @@ jobs:
 
     - name: Check formatting
       run: |
-        uv run --only-dev black -l 100 mrmustard/ tests/ --check
+        uv run --only-dev black mrmustard/ tests/ --check
