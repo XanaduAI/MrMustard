@@ -928,11 +928,15 @@ def XY_to_channel_Abc(
             "The dimension of X and Y matrices are not the same."
             f"X.shape = {X.shape}, Y.shape = {Y.shape}"
         )
-
-    xi = 1 / 2 * math.eye(2 * m, dtype=math.complex128) + 1 / 2 * X @ X.T + Y / settings.HBAR
+    batch_shape = X.shape[:-2]
+    Im = math.broadcast_to(math.eye(2 * m, dtype=math.complex128), batch_shape + (2 * m, 2 * m))
+    im = math.broadcast_to(math.eye(m, dtype=math.complex128), batch_shape + (m, m))
+    Xm = math.broadcast_to(math.Xmat(2 * m), batch_shape + (4 * m, 4 * m))
+    X_transpose = math.einsum("...ij->...ji", X)
+    xi = 1 / 2 * Im + 1 / 2 * X @ X_transpose + Y / settings.HBAR
     xi_inv = math.inv(xi)
     xi_inv_in_blocks = math.block(
-        [[math.eye(2 * m) - xi_inv, xi_inv @ X], [X.T @ xi_inv, math.eye(2 * m) - X.T @ xi_inv @ X]]
+        [[Im - xi_inv, xi_inv @ X], [X_transpose @ xi_inv, Im - X_transpose @ xi_inv @ X]]
     )
     R = (
         1
@@ -940,32 +944,35 @@ def XY_to_channel_Abc(
         * math.block(
             [
                 [
-                    math.eye(m, dtype=math.complex128),
-                    1j * math.eye(m, dtype=math.complex128),
-                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    im,
+                    1j * im,
+                    math.zeros(batch_shape + (m, 2 * m), dtype=math.complex128),
                 ],
                 [
-                    math.zeros((m, 2 * m), dtype=math.complex128),
-                    math.eye(m, dtype=math.complex128),
-                    -1j * math.eye(m, dtype=math.complex128),
+                    math.zeros(batch_shape + (m, 2 * m), dtype=math.complex128),
+                    im,
+                    -1j * im,
                 ],
                 [
-                    math.eye(m, dtype=math.complex128),
-                    -1j * math.eye(m, dtype=math.complex128),
-                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    im,
+                    -1j * im,
+                    math.zeros(batch_shape + (m, 2 * m), dtype=math.complex128),
                 ],
                 [
-                    math.zeros((m, 2 * m), dtype=math.complex128),
-                    math.eye(m, dtype=math.complex128),
-                    1j * math.eye(m, dtype=math.complex128),
+                    math.zeros(batch_shape + (m, 2 * m), dtype=math.complex128),
+                    im,
+                    1j * im,
                 ],
             ]
         )
     )
-
-    A = math.Xmat(2 * m) @ R @ xi_inv_in_blocks @ math.conj(R).T
-    temp = math.block([[(xi_inv @ d).reshape(2 * m, 1)], [(-X.T @ xi_inv @ d).reshape((2 * m, 1))]])
-    b = 1 / math.sqrt(complex(settings.HBAR)) * math.conj(R) @ temp
-    c = math.exp(-0.5 / settings.HBAR * d @ xi_inv @ d) / math.sqrt(math.det(xi))
+    R_transpose = math.einsum("...ij->...ji", R)
+    A = Xm @ R @ xi_inv_in_blocks @ math.conj(R_transpose)
+    xi_inv_d = math.einsum("...ij,...j->...i", xi_inv, d)
+    x_xi_inv_d = math.einsum("...ij,...jk,...k->...i", X_transpose, xi_inv, d)
+    temp = math.concat([xi_inv_d, x_xi_inv_d], -1)
+    b = 1 / math.sqrt(complex(settings.HBAR)) * math.einsum("...ij,...j->...i", math.conj(R), temp)
+    sandwiched_xi_inv = math.einsum("...i,...ij,...j->...", d, xi_inv, d)
+    c = math.exp(-0.5 / settings.HBAR * sandwiched_xi_inv) / math.sqrt(math.det(xi))
 
     return A, b, c
