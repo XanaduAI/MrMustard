@@ -506,6 +506,9 @@ class Channel(Map):
 
             >>> assert channel == Attenuator(0, transmissivity=1)
 
+        Raises:
+            ValueError: If the dimensions of the X,Y matrices and the number of modes don't match.
+
         .. details::
 
             Each Gaussian channel transforms a state with covarince matrix :math:`\Sigma` and mean :math:`\mu`
@@ -513,11 +516,13 @@ class Channel(Map):
             This channel has a Bargmann triple that is computed in https://arxiv.org/pdf/2209.06069. We borrow
             the formulas from the paper to implement the corresponding channel.
         """
-        if X.shape[:-2] != ():
-            raise NotImplementedError("Batching is not implemented.")
-        if X.shape != (2 * len(modes_out), 2 * len(modes_in)):
+
+        if X.shape[-2:] != (2 * len(modes_out), 2 * len(modes_in)) or Y.shape[-2:] != (
+            2 * len(modes_out),
+            2 * len(modes_out),
+        ):
             raise ValueError(
-                f"The dimension of X matrix ({X.shape}) and number of modes ({len(modes_in), len(modes_out)}) don't match."
+                f"The dimension of XY matrices ({X.shape}, {Y.shape}) and number of modes ({len(modes_in), len(modes_out)}) don't match."
             )
 
         return Channel.from_bargmann(modes_out, modes_in, XY_to_channel_Abc(X, Y, d))
