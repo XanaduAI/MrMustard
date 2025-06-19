@@ -389,8 +389,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
         alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
 
-        coh_0 = Coherent(0, x=alpha_0.real, y=alpha_0.imag)
-        coh_1 = Coherent(1, x=alpha_1.real, y=alpha_1.imag)
+        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
+        coh_1 = Coherent(1, x=math.real(alpha_1), y=math.imag(alpha_1))
         # TODO: clean this up once we have a better way to create batched multimode states
         ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
         ket = ket.to_fock(40) if fock else ket
