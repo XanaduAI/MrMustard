@@ -24,6 +24,7 @@ from importlib import metadata
 
 import numpy as np
 import tensorflow_probability as tfp
+from opt_einsum import contract
 from semantic_version import Version
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -188,9 +189,7 @@ class BackendTensorflow(BackendBase):
 
     @Autocast()
     def einsum(self, string: str, *tensors, optimize: str | bool) -> tf.Tensor:
-        if optimize is False:
-            optimize = "greedy"
-        return tf.einsum(string, *tensors, optimize=optimize)
+        return contract(string, *tensors, optimize=optimize, backend="tensorflow")
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)

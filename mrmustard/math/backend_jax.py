@@ -27,6 +27,7 @@ import jax.numpy as jnp
 import jax.scipy as jsp
 import numpy as np
 import optax
+from opt_einsum import contract
 from platformdirs import user_cache_dir
 
 from .backend_base import BackendBase
@@ -287,7 +288,7 @@ class BackendJax(BackendBase):
         return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
     def einsum(self, string: str, *tensors, optimize: bool | str) -> jnp.ndarray:
-        return jnp.einsum(string, *tensors, optimize=optimize)
+        return contract(string, *tensors, optimize=optimize, backend="jax")
 
     @jax.jit
     def exp(self, array: jnp.ndarray) -> jnp.ndarray:
