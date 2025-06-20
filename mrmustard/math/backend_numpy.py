@@ -298,7 +298,7 @@ class BackendNumpy(BackendBase):
         name: str,
         dtype=np.float64,
     ):  # pylint: disable=unused-argument
-        return np.asarray(value, dtype=dtype)
+        return np.array(value, dtype=dtype)
 
     def new_constant(self, value, name: str, dtype=np.float64):  # pylint: disable=unused-argument
         return np.asarray(value, dtype=dtype)
