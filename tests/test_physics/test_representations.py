@@ -88,9 +88,15 @@ class TestRepresentation:
             assert w.repr == ReprEnum.QUADRATURE
             assert w.repr_params_func() == [0.2]
 
-    def test_contract_custom_batch_str(self, d_gate_rep_batch, btoq_rep_batch):
-        q_dgate = d_gate_rep_batch.contract(btoq_rep_batch, mode="kron")
-        assert q_dgate.ansatz.batch_shape == (3, 3)
+    def test_contract_batch_str(self, d_gate_rep_batch, btoq_rep_batch):
+        mode_kron = d_gate_rep_batch.contract(btoq_rep_batch, mode="kron")
+        assert mode_kron.ansatz.batch_shape == (3, 3)
+
+        mode_zip = d_gate_rep_batch.contract(btoq_rep_batch, mode="zip")
+        assert mode_zip.ansatz.batch_shape == (3,)
+
+        mode_custom = d_gate_rep_batch.contract(btoq_rep_batch, mode="a,b->ba")
+        assert mode_custom.ansatz.batch_shape == (3, 3)
 
     def test_to_bargmann(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))
@@ -98,7 +104,7 @@ class TestRepresentation:
         assert d_fock.ansatz._original_abc_data == d_gate_rep.ansatz.triple
         assert d_barg == d_gate_rep
         for w in d_barg.wires.wires:
-            assert w.repr == ReprEnum.BARGMANN
+            assert w.repr == ReprEnum.BARGMANNd
 
     def test_to_fock(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))

@@ -133,6 +133,8 @@ class Representation:
                 self.ansatz.batch_dims - self.ansatz._lin_sup,
                 other.ansatz.batch_dims - other.ansatz._lin_sup,
             )
+        else:
+            eins_str = mode
         batch12, batch_out = eins_str.split("->")
         batch1, batch2 = batch12.split(",")
         ansatz = self.ansatz.contract(
