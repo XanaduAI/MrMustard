@@ -31,7 +31,6 @@ from mrmustard.lab import (
     Vacuum,
 )
 
-# Representation class has been removed - functionality moved to CircuitComponent
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wires import Wires
 
