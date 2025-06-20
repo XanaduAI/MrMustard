@@ -104,15 +104,31 @@ class BackendManager:  # pylint: disable=too-many-public-methods
         # binding types and decorators of numpy backend
         self._bind()
 
-    def _apply(self, fn: str, args: Sequence[Any] | None = (), kwargs: dict | None = None) -> Any:
+    def _apply(
+        self,
+        fn: str,
+        args: Sequence[Any] | None = (),
+        kwargs: dict | None = None,
+        backend_name: str | None = None,
+    ) -> Any:
         r"""
         Applies a function ``fn`` from the backend in use to the given ``args`` and ``kwargs``.
+
+        Args:
+            fn: The function to apply.
+            args: The arguments to pass to the function.
+            kwargs: The keyword arguments to pass to the function.
+            backend_name: The name of the backend to use. If ``None``, the set backend is used.
+
+        Returns:
+            The result of the function application.
         """
         kwargs = kwargs or {}
+        backend = self.get_backend(backend_name) if backend_name else self.backend
         try:
-            attr = getattr(self.backend, fn)
+            attr = getattr(backend, fn)
         except AttributeError:
-            msg = f"Function ``{fn}`` not implemented for backend ``{self.backend_name}``."
+            msg = f"Function ``{fn}`` not implemented for backend ``{backend.name}``."
             # pylint: disable=raise-missing-from
             raise NotImplementedError(msg)
         return attr(*args, **kwargs)
@@ -180,14 +196,29 @@ class BackendManager:  # pylint: disable=too-many-public-methods
         Args:
             name: The name of the new backend.
         """
+        if self.backend_name != name:
+            # switch backend
+            self._backend = self.get_backend(name)
+            # bind
+            self._bind()
+
+    def get_backend(self, name: str | None = None) -> BackendBase:
+        r"""
+        Returns the backend with the given name.
+
+        Args:
+            name: The name of the backend.
+
+        Returns:
+            The backend with the given name.
+
+        Raises:
+            ValueError: If the backend name is not a supported one.
+        """
         if name not in ["numpy", "tensorflow", "jax"]:
-            msg = (
-                "Backend must be either ``numpy`` or ``tensorflow`` or ``jax``"  # pragma: no cover
-            )
-            raise ValueError(msg)
+            raise ValueError("Backend must be either ``numpy`` or ``tensorflow`` or ``jax``.")
 
         if self.backend_name != name:
-
             module = all_modules[name]["module"]
             object = all_modules[name]["object"]
             try:
@@ -197,12 +228,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods
                 loader = all_modules[name]["loader"]
                 loader.exec_module(module)
                 backend = getattr(module, object)()
+        else:
+            backend = self.backend
 
-            # switch backend
-            self._backend = backend
-
-            # bind
-            self._bind()
+        return backend
 
     # ~~~~~~~
     # Methods
@@ -509,7 +538,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods
         """
         return self._apply("eigh", (tensor,))
 
-    def einsum(self, string: str, *tensors, optimize: bool | str = "greedy") -> Tensor:
+    def einsum(
+        self, string: str, *tensors, optimize: bool | str = "greedy", backend: str | None = None
+    ) -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
         Args:
@@ -519,12 +550,15 @@ class BackendManager:  # pylint: disable=too-many-public-methods
                 Allowed values are True, False, "greedy", "optimal" or "auto".
                 Note the TF backend does not support False and converts it to "greedy".
                 If None, ``settings.EINSUM_OPTIMIZE`` is used.
+            backend: The name of the backend to use. If ``None``, the set backend is used.
 
         Returns:
             The result of the Einstein summation convention.
         """
         optimize = optimize or settings.EINSUM_OPTIMIZE
-        return self._apply("einsum", (string, *tensors), {"optimize": optimize})
+        return self._apply(
+            "einsum", (string, *tensors), {"optimize": optimize}, backend_name=backend
+        )
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.

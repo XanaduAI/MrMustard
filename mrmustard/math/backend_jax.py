@@ -27,6 +27,7 @@ import jax.scipy as jsp
 import numpy as np
 import equinox as eqx
 import optax
+from opt_einsum import contract
 
 from .backend_base import BackendBase
 from .jax_vjps import beamsplitter_jax, displacement_jax, hermite_renormalized_unbatched_jax
@@ -225,7 +226,7 @@ class BackendJax(BackendBase):
         return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
     def einsum(self, string: str, *tensors, optimize: bool | str) -> jnp.ndarray:
-        return jnp.einsum(string, *tensors, optimize=optimize)
+        return contract(string, *tensors, optimize=optimize, backend="jax")
 
     @jax.jit
     def exp(self, array: jnp.ndarray) -> jnp.ndarray:

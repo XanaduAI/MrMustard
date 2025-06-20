@@ -158,7 +158,7 @@ class BackendNumpy(BackendBase):
         return ret
 
     def einsum(self, string: str, *tensors, optimize: bool | str) -> np.ndarray:
-        return contract(string, *tensors, optimize=optimize)
+        return contract(string, *tensors, optimize=optimize, backend="numpy")
 
     def exp(self, array: np.ndarray) -> np.ndarray:
         return np.exp(array)

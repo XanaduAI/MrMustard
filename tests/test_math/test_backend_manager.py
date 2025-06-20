@@ -50,6 +50,24 @@ class TestBackendManager:
         """
         assert math.BackendError is TracerArrayConversionError
 
+    def test_get_backend(self):
+        r"""
+        Tests the ``get_backend`` method.
+        """
+        assert math.get_backend("numpy").name == "numpy"
+        assert math.get_backend("tensorflow").name == "tensorflow"
+        assert math.get_backend("jax").name == "jax"
+
+    def test_einsum(self):
+        r"""
+        Tests the ``einsum`` method.
+        """
+        ar = math.astensor([[1, 2], [3, 4]])
+        res = math.astensor([[7, 10], [15, 22]])
+
+        assert math.allclose(math.einsum("ij,jk->ik", ar, ar), res)
+        assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="tensorflow"), res)
+
     def test_error(self):
         r"""
         Tests the error on `_apply`.
