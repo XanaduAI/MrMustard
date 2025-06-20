@@ -9,13 +9,11 @@ jobs:
     secrets: inherit
 
   jax:
-    needs: numpy
     name: Run JAX Tests
     uses: ./.github/workflows/tests_jax.yml
     secrets: inherit
 
   tf:
-    needs: jax
     name: Run Tensorflow Tests
     uses: ./.github/workflows/tests_tensorflow.yml
     secrets: inherit

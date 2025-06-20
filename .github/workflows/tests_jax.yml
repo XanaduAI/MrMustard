@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_call:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-jax
+  cancel-in-progress: true
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
@@ -14,12 +18,9 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.10', '3.12']
-    concurrency:
-      group: ${{ github.workflow }}-${{ matrix.python-version }}-${{ github.ref }}
-      cancel-in-progress: true
     env:
       HYPOTHESIS_PROFILE: ci
-      UPLOAD_TIMINGS: ${{ ( github.event_name == 'push' || github.event_name == 'workflow_call' ) && matrix.python-version == '3.12' && 'true' || 'false' }}
+      UPLOAD_TIMINGS: ${{ github.event_name != 'pull_request' && matrix.python-version == '3.12' && 'true' || 'false' }}
 
     steps:
       - name: Checkout repo
