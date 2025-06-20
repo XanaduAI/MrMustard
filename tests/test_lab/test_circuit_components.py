@@ -45,7 +45,6 @@ from mrmustard.lab import (
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 
-# Representation class has been removed - functionality moved to CircuitComponent
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.wires import Wires
 from mrmustard.training import Optimizer
