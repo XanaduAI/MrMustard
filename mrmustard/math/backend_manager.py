@@ -856,6 +856,44 @@ class BackendManager:  # pylint: disable=too-many-public-methods
         """
         return self._apply("matvec", (a, b))
 
+    def maximum(self, a: Tensor, b: Tensor) -> Tensor:
+        r"""
+        The element-wise maximum of ``a`` and ``b``.
+
+        Args:
+            a: The first array to take the maximum of.
+            b: The second array to take the maximum of.
+
+        Returns:
+            The element-wise maximum of ``a`` and ``b``
+        """
+        return self._apply(
+            "maximum",
+            (
+                a,
+                b,
+            ),
+        )
+
+    def minimum(self, a: Tensor, b: Tensor) -> Tensor:
+        r"""
+        The element-wise minimum of ``a`` and ``b``.
+
+        Args:
+            a: The first array to take the minimum of.
+            b: The second array to take the minimum of.
+
+        Returns:
+            The element-wise minimum of ``a`` and ``b``
+        """
+        return self._apply(
+            "minimum",
+            (
+                a,
+                b,
+            ),
+        )
+
     def moveaxis(self, array: Tensor, old: Tensor, new: Tensor) -> Tensor:
         r"""
         Moves the axes of an array to a new position.

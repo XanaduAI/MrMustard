@@ -461,6 +461,24 @@ class TestBackendManager:
         arr1_moved2 = math.moveaxis(arr1_moved1, 1, 0)
         assert math.allclose(arr1, arr1_moved2)
 
+    def test_maximum(self):
+        r"""
+        Tests the ``maximum`` method.
+        """
+        arr1 = np.eye(3)
+        arr2 = 2 * np.eye(3)
+        res = math.asnumpy(math.maximum(arr1, arr2))
+        assert math.allclose(res, arr2)
+
+    def test_minimum(self):
+        r"""
+        Tests the ``minimum`` method.
+        """
+        arr1 = np.eye(3)
+        arr2 = 2 * np.eye(3)
+        res = math.asnumpy(math.minimum(arr1, arr2))
+        assert math.allclose(res, arr1)
+
     @pytest.mark.parametrize("t", types)
     def test_new_variable(self, t):
         r"""

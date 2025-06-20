@@ -204,6 +204,12 @@ class BackendNumpy(BackendBase):
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return self.matmul(a, b[..., None])[..., 0]
 
+    def maximum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return np.maximum(a, b)
+
+    def minimum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return np.minimum(a, b)
+
     def moveaxis(
         self, array: np.ndarray, old: int | Sequence[int], new: int | Sequence[int]
     ) -> np.ndarray:

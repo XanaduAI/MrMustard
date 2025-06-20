@@ -274,6 +274,14 @@ class BackendJax(BackendBase):
         mat = jnp.linalg.multi_dot(matrices)
         return mat
 
+    @jax.jit
+    def maximum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return jnp.maximum(a, b)
+
+    @jax.jit
+    def minimum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return jnp.minimum(a, b)
+
     @partial(jax.jit, static_argnames=["old", "new"])
     def moveaxis(
         self, array: jnp.ndarray, old: int | Sequence[int], new: int | Sequence[int]

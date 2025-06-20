@@ -232,6 +232,14 @@ class BackendTensorflow(BackendBase):
     def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
         return tf.complex(real, imag)
 
+    @Autocast()
+    def maximum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+        return tf.maximum(a, b)
+
+    @Autocast()
+    def minimum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+        return tf.minimum(a, b)
+
     def moveaxis(
         self, array: tf.Tensor, old: int | Sequence[int], new: int | Sequence[int]
     ) -> tf.Tensor:
