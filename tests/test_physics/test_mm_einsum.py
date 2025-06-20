@@ -442,4 +442,4 @@ class TestMmEinsum:
             fock_dims={0: 0},  # force bargmann
         )
         assert res.batch_shape == (4,)
-        assert res._lin_sup == True
+        assert res._lin_sup

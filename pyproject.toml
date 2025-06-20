@@ -140,5 +140,8 @@ directory = "coverage_html_report"
 [tool.ruff]
 line-length = 100
 
+[tool.ruff.lint]
+ignore = ["E741", "F403"]
+
 [tool.setuptools.packages.find]
 where = ["."]

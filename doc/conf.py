@@ -13,7 +13,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os, sys, re
+import os
+import sys
+import re
 
 sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("_ext"))
@@ -31,7 +33,7 @@ author = "Filippo Miatto"
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-import mrmustard as mm
+import mrmustard as mm  # noqa: E402
 
 release = mm.__version__
 

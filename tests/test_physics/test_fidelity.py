@@ -5,7 +5,6 @@ from thewalrus.random import random_covariance
 
 from mrmustard import settings
 from mrmustard.lab import DM, Attenuator, Coherent, Number
-from mrmustard.physics import fock_utils as fp
 from mrmustard.physics import gaussian as gp
 
 

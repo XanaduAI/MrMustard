@@ -21,6 +21,7 @@ from mrmustard.lab import (
     Amplifier,
     Attenuator,
     BSgate,
+    Coherent,
     CXgate,
     CZgate,
     Dgate,
@@ -36,6 +37,7 @@ from mrmustard.lab import (
     SqueezedVacuum,
     Thermal,
     Vacuum,
+    TwoModeSqueezedVacuum,
 )
 
 # numbers
@@ -413,7 +415,7 @@ def coherent(draw, num_modes):
 @st.composite
 def tmsv(draw, phi):
     r"""Return a random two-mode squeezed vacuum state."""
-    return TMSV((0, 1), r=draw(r), phi=draw(phi))
+    return TwoModeSqueezedVacuum((0, 1), r=draw(r), phi=draw(phi))
 
 
 @st.composite
