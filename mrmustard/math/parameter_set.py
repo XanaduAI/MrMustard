@@ -15,6 +15,7 @@
 """This module contains the classes to describe sets of parameters."""
 
 from typing import Any, Sequence
+
 import numpy as np
 
 from mrmustard.math.backend_manager import BackendManager

@@ -19,7 +19,7 @@ from numba import njit, prange
 
 from mrmustard.utils.typing import ComplexTensor
 
-from .core import vanilla_numba, stable_numba
+from .core import stable_numba, vanilla_numba
 
 
 @njit(parallel=True)

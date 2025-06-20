@@ -15,12 +15,13 @@
 """A module containing global settings."""
 
 from __future__ import annotations
-from pathlib import Path
-import warnings
 
-from rich import print
-import rich.table
+import warnings
+from pathlib import Path
+
 import numpy as np
+import rich.table
+from rich import print
 
 from mrmustard.utils.filters import (
     add_complex_warning_filter,

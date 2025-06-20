@@ -2,8 +2,8 @@
 Unit tests for mrmustard.math.compactFock.compactFock~
 """
 
-import pytest
 import numpy as np
+import pytest
 
 from mrmustard import math
 from mrmustard.lab import DM, Ggate, SqueezedVacuum, Vacuum

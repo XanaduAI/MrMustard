@@ -14,8 +14,8 @@
 
 """optimization tests"""
 
-import pytest
 import numpy as np
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from scipy.stats import unitary_group

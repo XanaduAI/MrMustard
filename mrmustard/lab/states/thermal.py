@@ -17,12 +17,14 @@ The class representing a thermal state.
 """
 
 from __future__ import annotations
+
 from typing import Sequence
 
-from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
-from .dm import DM
+from mrmustard.physics.ansatz import PolyExpAnsatz
+
 from ..utils import make_parameter
+from .dm import DM
 
 __all__ = ["Thermal"]
 

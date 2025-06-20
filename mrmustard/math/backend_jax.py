@@ -17,16 +17,17 @@
 # pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments, too-many-public-methods
 
 from __future__ import annotations
-from typing import Callable, Sequence
-from functools import partial
-from platformdirs import user_cache_dir
 
+from functools import partial
+from typing import Callable, Sequence
+
+import equinox as eqx
 import jax
 import jax.numpy as jnp
 import jax.scipy as jsp
 import numpy as np
-import equinox as eqx
 import optax
+from platformdirs import user_cache_dir
 
 from .backend_base import BackendBase
 from .jax_vjps import beamsplitter_jax, displacement_jax, hermite_renormalized_unbatched_jax

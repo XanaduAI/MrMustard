@@ -16,9 +16,11 @@
 This module contains the fast diagonal strategy for computing the conditional density matrices.
 """
 
-from itertools import product
 from functools import lru_cache
+from itertools import product
+
 import numpy as np
+
 from mrmustard.math.lattice.strategies.vanilla import stable_numba, vanilla_numba
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector
 

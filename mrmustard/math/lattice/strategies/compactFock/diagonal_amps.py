@@ -3,14 +3,15 @@ This module calculates the diagonal of the Fock representation (i.e. the PNR det
 by applying the recursion relation in a selective manner.
 """
 
-import numpy as np
 import numba
-from numba import njit, int64
+import numpy as np
+from numba import int64, njit
 from numba.cpython.unsafe.tuple import tuple_setitem
+
 from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
     SQRT,
-    repeat_twice,
     construct_dict_params,
+    repeat_twice,
 )
 
 

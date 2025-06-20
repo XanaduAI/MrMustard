@@ -20,7 +20,7 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
-from mrmustard.utils.typing import ComplexMatrix, Matrix, Vector, Scalar
+from mrmustard.utils.typing import ComplexMatrix, Matrix, Scalar, Vector
 
 
 def bargmann_Abc_to_phasespace_cov_means(

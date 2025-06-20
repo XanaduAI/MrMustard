@@ -36,8 +36,8 @@ from mrmustard.lab import (
     Sgate,
     SqueezedVacuum,
     Thermal,
-    Vacuum,
     TwoModeSqueezedVacuum,
+    Vacuum,
 )
 
 # numbers

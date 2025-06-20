@@ -19,15 +19,14 @@
 from __future__ import annotations
 
 from math import lgamma as mlgamma
-from typing import Sequence, Callable
+from typing import Callable, Sequence
 
-from opt_einsum import contract
 import numpy as np
 import scipy as sp
-
-from scipy.signal import convolve2d as scipy_convolve2d
+from opt_einsum import contract
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
+from scipy.signal import convolve2d as scipy_convolve2d
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
 

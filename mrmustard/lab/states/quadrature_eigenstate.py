@@ -17,15 +17,17 @@ The class representing a quadrature eigenstate.
 """
 
 from __future__ import annotations
+
 from typing import Sequence
 
 import numpy as np
 
-from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import ReprEnum
-from .ket import Ket
+
 from ..utils import make_parameter
+from .ket import Ket
 
 __all__ = ["QuadratureEigenstate"]
 

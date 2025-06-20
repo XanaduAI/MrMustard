@@ -20,15 +20,15 @@ from __future__ import annotations
 
 import random
 from copy import deepcopy
-from queue import PriorityQueue
 from math import factorial
+from queue import PriorityQueue
 from typing import Generator
 
-import numpy as np
 import networkx as nx
+import numpy as np
 
-from mrmustard.physics.wires import Wires
 from mrmustard.lab.circuit_components import CircuitComponent
+from mrmustard.physics.wires import Wires
 
 Edge = tuple[int, int]
 

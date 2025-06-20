@@ -24,12 +24,12 @@ from ipywidgets import HTML, Box, IntSlider, IntText, Stack, VBox
 from plotly.graph_objs import FigureWidget
 
 from mrmustard import math
+from mrmustard.lab.transformations import Identity
 from mrmustard.physics.ansatz.polyexp_ansatz import PolyExpAnsatz
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
 )
-from mrmustard.lab.transformations import Identity
 
 from ...random import Abc_triple
 

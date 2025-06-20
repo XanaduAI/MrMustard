@@ -18,17 +18,17 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Sequence
 from enum import Enum
+from typing import Sequence
 
 import numpy as np
+import plotly.graph_objects as go
 from IPython.display import display
 from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 
 from mrmustard import math, settings
 from mrmustard.math.lattice.autoshape import autoshape_numba
-from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
+from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import (
     bargmann_Abc_to_phasespace_cov_means,
 )
@@ -42,7 +42,7 @@ from mrmustard.utils.typing import (
 )
 
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoChar, BtoQ, BtoPS
+from ..circuit_components_utils import BtoChar, BtoPS, BtoQ
 from ..transformations import Transformation
 
 __all__ = ["State"]

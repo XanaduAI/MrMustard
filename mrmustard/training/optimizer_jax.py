@@ -18,18 +18,18 @@ A Jax based optimizer for any parametrized object.
 
 from __future__ import annotations
 
-from typing import Callable, Sequence
 from itertools import chain
+from typing import Callable, Sequence
 
-import jax
 import equinox as eqx
+import jax
 from optax import GradientTransformation, OptState
 
 from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
+from mrmustard.math.parameters import Variable
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
-from mrmustard.math.parameters import Variable
 
 __all__ = ["OptimizerJax"]
 
