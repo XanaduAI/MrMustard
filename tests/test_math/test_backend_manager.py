@@ -21,6 +21,7 @@ import pytest
 import tensorflow as tf
 from jax import numpy as jnp
 from jax.errors import TracerArrayConversionError
+from scipy.special import loggamma as scipy_loggamma
 
 from mrmustard import math
 
@@ -432,6 +433,13 @@ class TestBackendManager:
         assert math.is_trainable(arr3) is (math.backend_name == "tensorflow")
         if math.backend_name == "jax":
             assert not math.is_trainable(arr4)
+
+    def test_lgamma(self):
+        r"""
+        Tests the ``lgamma`` method.
+        """
+        arr = np.array([1.0, 2.0, 3.0, 4.0])
+        assert math.allclose(math.asnumpy(math.lgamma(arr)), scipy_loggamma(arr))
 
     def test_log(self):
         r"""

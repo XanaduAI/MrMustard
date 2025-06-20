@@ -215,6 +215,9 @@ class BackendTensorflow(BackendBase):
     def is_trainable(self, tensor: tf.Tensor) -> bool:
         return isinstance(tensor, tf.Variable)
 
+    def lgamma(self, x: tf.Tensor) -> tf.Tensor:
+        return tf.math.lgamma(x)
+
     def log(self, x: tf.Tensor) -> tf.Tensor:
         return tf.math.log(x)
 

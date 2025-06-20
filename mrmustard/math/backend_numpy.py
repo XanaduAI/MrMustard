@@ -25,6 +25,7 @@ import numpy as np
 
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
+from scipy.special import loggamma as scipy_loggamma
 from scipy.special import xlogy as scipy_xlogy
 
 from ..utils.settings import settings
@@ -188,6 +189,9 @@ class BackendNumpy(BackendBase):
 
     def is_trainable(self, tensor: np.ndarray) -> bool:  # pylint: disable=unused-argument
         return False
+
+    def lgamma(self, x: np.ndarray) -> np.ndarray:
+        return scipy_loggamma(x)
 
     def log(self, x: np.ndarray) -> np.ndarray:
         return np.log(x)

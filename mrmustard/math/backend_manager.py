@@ -809,6 +809,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods
         """
         return self._apply("is_trainable", (tensor,))
 
+    def lgamma(self, x: Tensor) -> Tensor:
+        r"""
+        The natural logarithm of the gamma function of ``x``.
+
+        Args:
+            x: The array to take the natural logarithm of the gamma function of.
+
+        Returns:
+            The natural logarithm of the gamma function of ``x``.
+        """
+        return self._apply("lgamma", (x,))
+
     def log(self, x: Tensor) -> Tensor:
         r"""The natural logarithm of ``x``.
 

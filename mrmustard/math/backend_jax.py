@@ -266,6 +266,10 @@ class BackendJax(BackendBase):
         return False
 
     @jax.jit
+    def lgamma(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jax.lax.lgamma(array)
+
+    @jax.jit
     def make_complex(self, real: jnp.ndarray, imag: jnp.ndarray) -> jnp.ndarray:
         return real + 1j * imag
 
