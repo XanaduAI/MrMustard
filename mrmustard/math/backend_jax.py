@@ -76,6 +76,10 @@ class BackendJax(BackendBase):
         return jnp.all(array)
 
     @jax.jit
+    def angle(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.angle(array)
+
+    @jax.jit
     def any(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.any(array)
 

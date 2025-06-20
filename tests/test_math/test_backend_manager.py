@@ -103,6 +103,13 @@ class TestBackendManager:
             with pytest.raises(ValueError, match="Incompatible shapes"):
                 math.allclose(arr2, arr1)
 
+    def test_angle(self):
+        r"""
+        Tests the ``angle`` method.
+        """
+        arr = math.astensor([1.0 + 1.0j, 2.0 + 2.0j, 3.0 + 3.0j, 4.0 + 4.0j])
+        assert math.allclose(math.asnumpy(math.angle(arr)), np.angle(arr))
+
     @pytest.mark.parametrize("l", lists)
     def test_any(self, l):
         r"""
