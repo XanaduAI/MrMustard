@@ -18,17 +18,7 @@ from hypothesis import strategies as st
 from thewalrus.symplectic import beam_splitter, expand, rotation, squeezing, two_mode_squeezing
 
 from mrmustard import settings
-from mrmustard.lab import (
-    Amplifier,
-    Attenuator,
-    BSgate,
-    Dgate,
-    MZgate,
-    Pgate,
-    Rgate,
-    S2gate,
-    Sgate,
-)
+from mrmustard.lab import Amplifier, Attenuator, BSgate, Dgate, MZgate, Pgate, Rgate, S2gate, Sgate
 from mrmustard.lab.states import Thermal, TwoModeSqueezedVacuum, Vacuum
 
 
