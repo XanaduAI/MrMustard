@@ -202,11 +202,7 @@ class BackendNumpy(BackendBase):
             ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
             array = array.ravel().reshape(*ravelled_sh)
 
-            ret = []
-            for line in array:
-                ret.append(np.diag(line, k))
-
-            ret = np.array(ret)
+            ret = np.array([np.diag(line, k) for line in array])
             inner_shape = (
                 original_sh[-1] + abs(k),
                 original_sh[-1] + abs(k),

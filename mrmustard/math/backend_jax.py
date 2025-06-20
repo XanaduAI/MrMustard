@@ -271,12 +271,7 @@ class BackendJax(BackendBase):
 
             ravelled_sh = (jnp.prod(original_sh[:-1]), original_sh[-1])
             array = array.ravel().reshape(*ravelled_sh)
-
-            ret = []
-            for line in array:
-                ret.append(jnp.diag(line, k))
-
-            ret = jnp.array(ret)
+            ret = jnp.array([jnp.diag(line, k) for line in array])
             inner_shape = (
                 original_sh[-1] + abs(k),
                 original_sh[-1] + abs(k),

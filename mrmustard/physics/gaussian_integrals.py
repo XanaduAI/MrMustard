@@ -260,9 +260,7 @@ def join_Abc(
     c2_flat = math.reshape(c2, c2_flat_shape)
 
     # Step 1 & 2: Determine broadcast shape based on batch_string and broadcast tensors
-    broadcast_dims = {}
-    for dim, batch in zip(in1, batch1):
-        broadcast_dims[dim] = batch
+    broadcast_dims = dict(zip(in1, batch1))
     for dim, batch in zip(in2, batch2):
         if dim in broadcast_dims and broadcast_dims[dim] != batch:
             raise ValueError(f"Dimension mismatch for {dim}: {broadcast_dims[dim]} != {batch}")

@@ -106,8 +106,7 @@ class Sampler(ABC):
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob
             reduced_state = (state >> meas_op) / norm
             samples = self.sample(reduced_state, count)
-            for sample in samples:
-                ret.append(np.append([unique_sample], sample))
+            ret.extend(np.append([unique_sample], sample) for sample in samples)
         return np.array(ret)
 
     def sample_prob_dist(
@@ -243,6 +242,5 @@ class HomodyneSampler(Sampler):
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob
             normalized_reduced_state = reduced_state / norm
             samples = self.sample(normalized_reduced_state, count)
-            for sample in samples:
-                ret.append(np.append([unique_sample], sample))
+            ret.extend(np.append([unique_sample], sample) for sample in samples)
         return np.array(ret)
