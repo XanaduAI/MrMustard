@@ -16,7 +16,7 @@
 This module contains gaussian integral functions and related helper functions.
 """
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 

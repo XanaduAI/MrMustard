@@ -20,7 +20,8 @@ This module contains the utility functions used by the classes in ``mrmustard.la
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generator
+from collections.abc import Callable, Generator
+from typing import Any
 
 from mrmustard import math
 from mrmustard.math.parameters import Constant, Variable, update_euclidean

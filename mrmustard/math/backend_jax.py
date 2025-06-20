@@ -18,8 +18,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from functools import partial
-from typing import Callable, Sequence
 
 import equinox as eqx
 import jax

@@ -18,7 +18,7 @@ Classes representing Gaussian states.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from mrmustard import math
 from mrmustard.math.parameters import update_symplectic

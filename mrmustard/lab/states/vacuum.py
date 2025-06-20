@@ -18,7 +18,7 @@ The class repesenting a vacuum state.
 
 from __future__ import annotations
 
-from typing import Collection
+from collections.abc import Collection
 
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz

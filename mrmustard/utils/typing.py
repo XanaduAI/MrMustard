@@ -34,10 +34,9 @@ __all__ = [
     "Tensor",
     "Trainable",
 ]
+from collections.abc import Iterator
 from typing import (
-    Iterator,
     Protocol,
-    Tuple,
     TypeVar,
     Union,
     runtime_checkable,
@@ -51,24 +50,24 @@ Z = TypeVar("Z", np.int16, np.int32, np.int64)
 N = TypeVar("N", np.uint16, np.uint32, np.uint64)
 
 Scalar = Union[R, C, Z, N]
-Vector = np.ndarray[Tuple[int], Scalar]
-Matrix = np.ndarray[Tuple[int, int], Scalar]
-Tensor = np.ndarray[Tuple[int, ...], Scalar]
+Vector = np.ndarray[tuple[int], Scalar]
+Matrix = np.ndarray[tuple[int, int], Scalar]
+Tensor = np.ndarray[tuple[int, ...], Scalar]
 
-RealVector = np.ndarray[Tuple[int], R]
-ComplexVector = np.ndarray[Tuple[int], C]
-IntVector = np.ndarray[Tuple[int], Z]
-UIntVector = np.ndarray[Tuple[int], N]
+RealVector = np.ndarray[tuple[int], R]
+ComplexVector = np.ndarray[tuple[int], C]
+IntVector = np.ndarray[tuple[int], Z]
+UIntVector = np.ndarray[tuple[int], N]
 
-RealMatrix = np.ndarray[Tuple[int, int], R]
-ComplexMatrix = np.ndarray[Tuple[int, int], C]
-IntMatrix = np.ndarray[Tuple[int, int], Z]
-UIntMatrix = np.ndarray[Tuple[int, int], N]
+RealMatrix = np.ndarray[tuple[int, int], R]
+ComplexMatrix = np.ndarray[tuple[int, int], C]
+IntMatrix = np.ndarray[tuple[int, int], Z]
+UIntMatrix = np.ndarray[tuple[int, int], N]
 
-RealTensor = np.ndarray[Tuple[int, ...], R]
-ComplexTensor = np.ndarray[Tuple[int, ...], C]
-IntTensor = np.ndarray[Tuple[int, ...], Z]
-UIntTensor = np.ndarray[Tuple[int, ...], N]
+RealTensor = np.ndarray[tuple[int, ...], R]
+ComplexTensor = np.ndarray[tuple[int, ...], C]
+IntTensor = np.ndarray[tuple[int, ...], Z]
+UIntTensor = np.ndarray[tuple[int, ...], N]
 
 
 # Revisit when requiring python 3.12 (see PEP 695)

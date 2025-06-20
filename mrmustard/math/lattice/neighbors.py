@@ -15,7 +15,7 @@
 
 """neighbours functions"""
 
-from typing import Iterator
+from collections.abc import Iterator
 
 from numba import njit
 from numba.cpython.unsafe.tuple import tuple_setitem

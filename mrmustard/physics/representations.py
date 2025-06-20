@@ -18,7 +18,7 @@ This module contains the class for representations.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from mrmustard import math
 from mrmustard.utils.typing import (

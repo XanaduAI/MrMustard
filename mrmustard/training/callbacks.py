@@ -73,10 +73,10 @@ from __future__ import annotations
 
 import hashlib
 import os
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Mapping, Sequence
 
 import numpy as np
 

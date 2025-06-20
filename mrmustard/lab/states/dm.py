@@ -18,7 +18,7 @@ This module contains the defintion of the density matrix class ``DM``.
 
 from __future__ import annotations
 
-from typing import Collection, Sequence
+from collections.abc import Collection, Sequence
 
 import numpy as np
 from IPython.display import display

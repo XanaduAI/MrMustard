@@ -18,8 +18,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from math import lgamma as mlgamma
-from typing import Callable, Sequence
 
 import numpy as np
 import scipy as sp

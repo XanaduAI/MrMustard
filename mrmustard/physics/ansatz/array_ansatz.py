@@ -18,7 +18,8 @@ This module contains the array ansatz.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any
 from warnings import warn
 
 import numpy as np

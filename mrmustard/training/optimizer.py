@@ -18,8 +18,8 @@ used within Mr Mustard.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping, Sequence
 from itertools import chain, groupby
-from typing import Callable, Dict, List, Mapping, Sequence
 
 from mrmustard import math, settings
 from mrmustard.lab import Circuit
@@ -62,8 +62,8 @@ class Optimizer:
             update_unitary: unitary_lr,
             update_orthogonal: orthogonal_lr,
         }
-        self.opt_history: List[float] = [0]
-        self.callback_history: Dict[str, List] = {}
+        self.opt_history: list[float] = [0]
+        self.callback_history: dict[str, list] = {}
         self.log = create_logger(__name__)
 
     def minimize(
@@ -230,7 +230,7 @@ class Optimizer:
         return grouped
 
     @staticmethod
-    def compute_loss_and_gradients(cost_fn: Callable, parameters: List[Variable]):
+    def compute_loss_and_gradients(cost_fn: Callable, parameters: list[Variable]):
         r"""Uses the backend to compute the loss and gradients of the parameters
         given a cost function.
 

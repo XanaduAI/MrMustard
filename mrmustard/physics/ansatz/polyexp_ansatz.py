@@ -21,7 +21,8 @@ This module contains the PolyExp ansatz.
 from __future__ import annotations
 
 import itertools
-from typing import Any, Callable, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import numpy as np
 from IPython.display import display

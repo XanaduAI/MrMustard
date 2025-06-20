@@ -20,8 +20,8 @@ A class to simulate quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Sequence
 from pydoc import locate
-from typing import Sequence
 
 from mrmustard import math, settings
 from mrmustard.lab.circuit_components import CircuitComponent

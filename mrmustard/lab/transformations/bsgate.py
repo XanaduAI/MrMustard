@@ -18,8 +18,8 @@ The class representing a beam splitter gate.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import replace
-from typing import Sequence
 
 from mrmustard import math
 from mrmustard.utils.typing import ComplexTensor

@@ -14,7 +14,7 @@
 
 """TODO: document this module"""
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from mrmustard import math
 from mrmustard.utils.typing import Tensor

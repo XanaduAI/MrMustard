@@ -4,7 +4,7 @@ diagonal_amps.py, diagonal_grad.py, singleLeftoverMode_amps.py and singleLeftove
 to validate the input provided by the user.
 """
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 

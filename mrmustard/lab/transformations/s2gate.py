@@ -18,7 +18,7 @@ The class representing a two-mode squeezing gate.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz

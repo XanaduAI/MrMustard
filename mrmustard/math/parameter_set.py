@@ -14,7 +14,8 @@
 
 """This module contains the classes to describe sets of parameters."""
 
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 

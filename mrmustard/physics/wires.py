@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from functools import cached_property
 from random import randint
-from typing import Any, Callable, Iterable, Iterator
+from typing import Any
 
 from IPython.display import display
 

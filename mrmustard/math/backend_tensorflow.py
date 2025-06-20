@@ -19,8 +19,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable, Sequence
 from importlib import metadata
-from typing import Callable, Sequence
 
 import numpy as np
 import tensorflow_probability as tfp

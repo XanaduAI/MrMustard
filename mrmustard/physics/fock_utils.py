@@ -20,8 +20,8 @@ This module contains functions for performing calculations on objects in the Foc
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from functools import lru_cache
-from typing import Iterable, Sequence
 
 import numpy as np
 from scipy.special import comb, factorial

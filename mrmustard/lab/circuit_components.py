@@ -20,10 +20,11 @@ A base class for the components of quantum circuits.
 from __future__ import annotations
 
 import numbers
+from collections.abc import Sequence
 from functools import cached_property
 from inspect import signature
 from pydoc import locate
-from typing import Any, Literal, Sequence
+from typing import Any, Literal
 
 import ipywidgets as widgets
 import numpy as np

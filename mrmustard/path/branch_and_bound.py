@@ -19,10 +19,10 @@ Branch and bound algorithm for optimal contraction of a tensor network.
 from __future__ import annotations
 
 import random
+from collections.abc import Generator
 from copy import deepcopy
 from math import factorial
 from queue import PriorityQueue
-from typing import Generator
 
 import networkx as nx
 import numpy as np

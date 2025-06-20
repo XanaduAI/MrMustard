@@ -18,8 +18,9 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+from collections.abc import Callable, Sequence
 from functools import lru_cache
-from typing import Any, Callable, Sequence
+from typing import Any
 
 import numpy as np
 from jax.errors import TracerArrayConversionError
