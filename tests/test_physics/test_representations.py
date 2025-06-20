@@ -104,7 +104,7 @@ class TestRepresentation:
         assert d_fock.ansatz._original_abc_data == d_gate_rep.ansatz.triple
         assert d_barg == d_gate_rep
         for w in d_barg.wires.wires:
-            assert w.repr == ReprEnum.BARGMANNd
+            assert w.repr == ReprEnum.BARGMANN
 
     def test_to_fock(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))
