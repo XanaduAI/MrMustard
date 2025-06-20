@@ -217,7 +217,7 @@ class TestTriples:
             [-0.0978434 + 0.01983384j, 0.99500417, 0, 0],
         ]
         assert math.allclose(A1, A_exp)
-        assert math.allclose(b1, math.zeros((4)))
+        assert math.allclose(b1, math.zeros(4))
         assert math.allclose(c1, 1)
 
         A2, b2, c2 = triples.beamsplitter_gate_Abc(0.1, [0.2, 0.2])
@@ -248,7 +248,7 @@ class TestTriples:
             [-9.98334166e-02, 9.95004165e-01, 0, 0],
         ]
         assert math.allclose(A3, A_exp)
-        assert math.allclose(b3, math.zeros((4)))
+        assert math.allclose(b3, math.zeros(4))
         assert math.allclose(c3, 1)
 
     def test_identity_Abc(self):
@@ -266,7 +266,7 @@ class TestTriples:
         A1, b1, c1 = triples.attenuator_Abc(0.1)
         e = 0.31622777
         assert math.allclose(A1, [[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]])
-        assert math.allclose(b1, math.zeros((4)))
+        assert math.allclose(b1, math.zeros(4))
         assert math.allclose(c1, 1.0)
 
         A2, b2, c2 = triples.attenuator_Abc([0.1, 1])

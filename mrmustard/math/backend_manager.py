@@ -1797,7 +1797,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
         if prob.ndim > 3 or len(other_probs) > 3:
             raise ValueError("cannot convolve arrays with more than 3 axes")
-        if not all((q.ndim == 1 for q in other_probs)):
+        if not all(q.ndim == 1 for q in other_probs):
             raise ValueError("other_probs must contain 1d arrays")
         if not all((len(q) == s for q, s in zip(other_probs, prob.shape))):
             raise ValueError("The length of the 1d prob vectors must match shape of prob")

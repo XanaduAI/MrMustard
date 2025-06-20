@@ -272,7 +272,7 @@ def gdm_state_Abc(betas: ComplexVector, symplectic: RealMatrix):
             [D, math.zeros((m, m), dtype=math.complex128)],
         ]
     )
-    c_fd = math.prod((1 - math.exp(-betas)))
+    c_fd = math.prod(1 - math.exp(-betas))
     t_fd = (A_fd, math.zeros(batch_shape + (2 * m,), dtype=A_fd.dtype), c_fd)
     c_u = (
         (-1) ** m

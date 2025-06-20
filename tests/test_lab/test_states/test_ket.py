@@ -606,7 +606,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         assert psi == core1 >> phi1
         assert psi == core12 >> phi12
-        assert (core12 >> Vacuum((0)).dual).normalize() == Vacuum((1, 2))
+        assert (core12 >> Vacuum(0).dual).normalize() == Vacuum((1, 2))
 
         psi = Ket.random([0, 1, 2])
         phi = Ket.random([0, 1, 2])
