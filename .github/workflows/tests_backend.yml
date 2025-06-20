@@ -2,7 +2,7 @@ name: Test Timings
 on:
   push:
     branches:
-      - develop
+      - update-test-timings
   workflow_dispatch:
 
 jobs:
