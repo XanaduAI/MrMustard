@@ -256,8 +256,8 @@ class DM(State):
 
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
-            mode: "zip" the batch dimensions, "kron" the batch dimensions
-                or pass a custom batch string.
+            mode: "zip" the batch dimensions (in which case they should match), or "kron" the batch dimensions,
+                or pass a custom einsum-style batch string like "ab,ab->a".
         Returns:
             Expectation value as a complex number.
 
