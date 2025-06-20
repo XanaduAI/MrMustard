@@ -196,7 +196,7 @@ class ParameterSet:
             >>> assert np.allclose(ps[1, 2].variables["v2"].value, [7, 8])
         """
         if isinstance(items, int):
-            items = list([items])
+            items = [items]
         items = math.astensor(items)
 
         ret = ParameterSet()

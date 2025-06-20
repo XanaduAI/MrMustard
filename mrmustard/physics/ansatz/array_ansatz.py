@@ -176,7 +176,7 @@ class ArrayAnsatz(Ansatz):
         if not set(idx_out).issubset(all_labels_in):
             raise ValueError("Output labels must be present in input labels.")
 
-        unique_labels = sorted(list(all_labels_in), key=lambda x: (isinstance(x, int), x))
+        unique_labels = sorted(all_labels_in, key=lambda x: (isinstance(x, int), x))
         label_to_char = {label: chr(97 + i) for i, label in enumerate(unique_labels)}
 
         einsum_str1 = "".join([label_to_char[i] for i in idx1])

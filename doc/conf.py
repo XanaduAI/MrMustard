@@ -125,7 +125,7 @@ edit_on_github_branch = "master/doc"
 autodoc_member_order = "bysource"
 
 # inheritance_diagram graphviz attributes
-inheritance_node_attrs = dict(color="lightskyblue1", style="filled")
+inheritance_node_attrs = {"color": "lightskyblue1", "style": "filled"}
 
 
 # -- Xanadu theme ---------------------------------------------------------

@@ -44,7 +44,7 @@ def argsort_gen(generators: list[Generator[float, None, None]]) -> list[int]:
             vals.append(np.inf)
 
     if np.allclose(vals, np.inf):
-        return [i for i in range(len(generators))]
+        return list(range(len(generators)))
 
     # dict with values and indices where they occur
     vals_dict = defaultdict(list)

@@ -603,13 +603,13 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
+        fig_11 = go.Scatter(x=x, y=prob_x, line={"color": "steelblue", "width": 2}, name="Prob(x)")
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(x=prob_p, y=p, line=dict(color="steelblue", width=2), name="Prob(p)")
+        fig_22 = go.Scatter(x=prob_p, y=p, line={"color": "steelblue", "width": 2}, name="Prob(p)")
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -618,7 +618,7 @@ class State(CircuitComponent):
             height=500,
             width=580,
             plot_bgcolor="aliceblue",
-            margin=dict(l=20, r=20, t=30, b=20),
+            margin={"l": 20, "r": 20, "t": 30, "b": 20},
             showlegend=False,
             coloraxis={"colorscale": colorscale, "cmid": 0},
         )
@@ -696,20 +696,33 @@ class State(CircuitComponent):
             autosize=False,
             width=500,
             height=500,
-            margin=dict(l=0, r=0, b=0, t=0),
-            scene_camera_eye=dict(x=-2.1, y=0.88, z=0.64),
+            margin={"l": 0, "r": 0, "b": 0, "t": 0},
+            scene_camera_eye={"x": -2.1, "y": 0.88, "z": 0.64},
             coloraxis={"colorscale": colorscale, "cmid": 0},
         )
         fig.update_traces(
-            contours_z=dict(
-                show=True, usecolormap=True, highlightcolor="limegreen", project_z=False
-            )
+            contours_z={
+                "show": True,
+                "usecolormap": True,
+                "highlightcolor": "limegreen",
+                "project_z": False,
+            }
         )
         fig.update_traces(
-            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
+            contours_y={
+                "show": True,
+                "usecolormap": True,
+                "highlightcolor": "red",
+                "project_y": False,
+            }
         )
         fig.update_traces(
-            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
+            contours_x={
+                "show": True,
+                "usecolormap": True,
+                "highlightcolor": "yellow",
+                "project_x": False,
+            }
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -754,7 +767,7 @@ class State(CircuitComponent):
         fig.update_layout(
             height=257,
             width=257,
-            margin=dict(l=30, r=30, t=30, b=20),
+            margin={"l": 30, "r": 30, "t": 30, "b": 20},
         )
         fig.update_xaxes(title_text=f"abs(ρ), cutoff={dm.shape[0]}")
 

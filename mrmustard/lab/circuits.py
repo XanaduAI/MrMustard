@@ -356,7 +356,7 @@ class Circuit:
         if len(self) == 0:
             return ""
 
-        modes = set(sorted([m for c in self.components for m in c.modes]))
+        modes = set(m for c in self.components for m in c.modes)  # noqa: C401
         n_modes = len(modes)
 
         # update this when new controlled gates are added
@@ -371,7 +371,7 @@ class Circuit:
 
         # create a dictionary ``wires`` that maps height ``h`` to "──" if the line contains
         # a mode, or to "  " if the line does not contain a mode
-        wires = {h: "  " for h in range(n_modes)}
+        wires = dict.fromkeys(range(n_modes), "  ")
 
         # generate a dictionary to map x-axis coordinates to the components drawn at
         # those coordinates
@@ -389,7 +389,7 @@ class Circuit:
             layers[x].append(c1)
 
         # store the returned drawing in a dictionary mapping heigths to strings
-        drawing_dict = {height: "" for height in range(n_modes)}
+        drawing_dict = dict.fromkeys(range(n_modes), "")
 
         # loop through the layers and add the components to ``drawing_dict``
         for layer in layers.values():
