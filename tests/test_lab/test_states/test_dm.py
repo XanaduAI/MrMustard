@@ -60,7 +60,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_init(self, name, modes):
         state = DM.from_ansatz(modes, None, name)
 
-        assert state.name in ("DM0", "DM01", "DM2319") if not name else name
+        assert name if name else state.name in ("DM0", "DM01", "DM2319")
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 

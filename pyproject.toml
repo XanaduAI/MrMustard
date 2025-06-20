@@ -139,9 +139,11 @@ directory = "coverage_html_report"
 line-length = 100
 
 [tool.ruff.lint]
-# default ruff rules plus isort and flake8 bugbear
-select = ["E4", "E7", "E9", "F", "I", "B", "UP", "BLE", "C4"]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP", "BLE", "C4", "ISC", "SIM"]
 ignore = ["E741", "F403", "B905"]
+
+[tool.pytest.ini_options]
+filterwarnings = "ignore::DeprecationWarning"
 
 [tool.setuptools.packages.find]
 where = ["."]

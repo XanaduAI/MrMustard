@@ -241,22 +241,23 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
 
     # Array1
     for i in range(2 * M):
-        if params[i // 2] + 1 < cutoffs_tail[i // 2]:
+        if params[i // 2] + 1 < cutoffs_tail[i // 2] and (
+            i != 1 or params[0] + 2 < cutoffs_tail[0]
+        ):
             # this if statement prevents a few elements from being written that will never be read
-            if i != 1 or params[0] + 2 < cutoffs_tail[0]:
-                write = (i,) + params
-                arr1 = write_block(
-                    i + 2,
-                    arr1,
-                    write,
-                    arr0,
-                    read_GB,
-                    G_in,
-                    GB,
-                    A,
-                    K_i,
-                    cutoff_leftoverMode,
-                )
+            write = (i,) + params
+            arr1 = write_block(
+                i + 2,
+                arr1,
+                write,
+                arr0,
+                read_GB,
+                G_in,
+                GB,
+                A,
+                K_i,
+                cutoff_leftoverMode,
+            )
 
     return arr1
 

@@ -70,7 +70,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_init(self, name, modes):
         state = Ket.from_ansatz(modes, None, name)
 
-        assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
+        assert name if name else state.name in ("Ket0", "Ket01", "Ket2319")
         assert state.modes == modes
         assert state.wires == Wires(modes_out_ket=set(modes))
 

@@ -500,7 +500,7 @@ class TestCircuitComponent:
     def test_quadrature_channel(self):
         C = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2) >> Attenuator(0, 0.9)
         back = Channel.from_quadrature((0,), (0,), C.quadrature_triple())
-        assert C == back
+        assert back == C
 
     def test_quadrature_dm(self):
         "tests that transforming to quadrature and back gives the same density matrix"
@@ -511,17 +511,17 @@ class TestCircuitComponent:
     def test_quadrature_map(self):
         C = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2) >> Attenuator(0, 0.9)
         back = Map.from_quadrature((0,), (0,), C.quadrature_triple())
-        assert C == back
+        assert back == C
 
     def test_quadrature_operation(self):
         U = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2)
         back = Operation.from_quadrature((0,), (0,), U.quadrature_triple())
-        assert U == back
+        assert back == U
 
     def test_quadrature_unitary(self):
         U = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2)
         back = Unitary.from_quadrature((0,), (0,), U.quadrature_triple())
-        assert U == back
+        assert back == U
 
     @pytest.mark.parametrize("is_fock,widget_cls", [(False, Box), (True, HBox)])
     @patch("mrmustard.lab.circuit_components.display")

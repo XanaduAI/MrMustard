@@ -293,11 +293,7 @@ class DM(State):
             raise ValueError(msg)
 
         leftover_modes = self.wires.modes - operator.wires.modes
-        if op_type is OperatorType.KET_LIKE:
-            result = self >> operator.dual
-            if leftover_modes:
-                result >>= TraceOut(leftover_modes)
-        elif op_type is OperatorType.DM_LIKE:
+        if op_type is OperatorType.KET_LIKE or op_type is OperatorType.DM_LIKE:
             result = self >> operator.dual
             if leftover_modes:
                 result >>= TraceOut(leftover_modes)

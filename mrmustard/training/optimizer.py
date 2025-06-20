@@ -255,13 +255,14 @@ class Optimizer:
         the loss is stable or because the maximum number of steps is reached)."""
         if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
-        if len(self.opt_history) > 20:  # if cost varies less than 10e-6 over 20 steps
-            if (
-                sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
-                < 1e-6
-            ):
-                self.log.info("Loss looks stable, stopping here.")
-                return True
+        # if cost varies less than 10e-6 over 20 steps
+        if (
+            len(self.opt_history) > 20
+            and sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
+            < 1e-6
+        ):
+            self.log.info("Loss looks stable, stopping here.")
+            return True
         return False
 
     @staticmethod

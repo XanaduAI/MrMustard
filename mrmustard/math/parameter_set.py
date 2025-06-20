@@ -221,9 +221,7 @@ class ParameterSet:
         r"""
         ``False`` if this parameter set is empty, ``True`` otherwise.
         """
-        if self._constants or self._variables:
-            return True
-        return False
+        return bool(self._constants or self._variables)
 
     def __eq__(self, other: Any) -> bool:
         r"""

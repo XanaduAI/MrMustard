@@ -245,10 +245,7 @@ class TestBackendManager:
 
         res = math.asnumpy(math.atleast_nd(arr, n, dtype=dtype))
 
-        if arr.ndim < n:
-            exp_shape = (1,) * (n - arr.ndim) + arr.shape
-        else:
-            exp_shape = arr.shape
+        exp_shape = (1,) * (n - arr.ndim) + arr.shape if arr.ndim < n else arr.shape
         assert res.shape == exp_shape
 
     def test_boolean_mask(self):

@@ -124,10 +124,9 @@ def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):  # pragma: no cover
 
     # Array1
     for i in range(2 * M):
-        if params[i // 2] + 1 < cutoffs[i // 2]:
+        if params[i // 2] + 1 < cutoffs[i // 2] and (i != 1 or params[0] + 2 < cutoffs[0]):
             # this prevents a few elements from being written that will never be read
-            if i != 1 or params[0] + 2 < cutoffs[0]:
-                arr1[(i,) + params] = (GB[i] + A[i] @ G_in) / K_i[i]
+            arr1[(i,) + params] = (GB[i] + A[i] @ G_in) / K_i[i]
 
     return arr1
 

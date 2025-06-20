@@ -237,23 +237,22 @@ def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, 
 
     # Array1
     for i in range(2 * M):
-        if params[i // 2] + 1 < cutoffs[i // 2]:
+        if params[i // 2] + 1 < cutoffs[i // 2] and (i != 1 or params[0] + 2 < cutoffs[0]):
             # this if statement prevents a few elements from being written that will never be read
-            if i != 1 or params[0] + 2 < cutoffs[0]:
-                arr1_dA[i][params], arr1_dB[i][params] = calc_dA_dB(
-                    i,
-                    G_in_dA,
-                    G_in_dB,
-                    G_in,
-                    A,
-                    B,
-                    K_l,
-                    K_i,
-                    M,
-                    pivot_val,
-                    pivot_val_dA,
-                    pivot_val_dB,
-                )
+            arr1_dA[i][params], arr1_dB[i][params] = calc_dA_dB(
+                i,
+                G_in_dA,
+                G_in_dB,
+                G_in,
+                A,
+                B,
+                K_l,
+                K_i,
+                M,
+                pivot_val,
+                pivot_val_dA,
+                pivot_val_dB,
+            )
 
     return arr1_dA, arr1_dB
 

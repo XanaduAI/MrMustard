@@ -177,7 +177,7 @@ def enumerate_diagonal_coords(weight: int, m: tuple[int]) -> list[tuple[int, ...
             u = s // 2 + 1
             d = s // 2
             if s % 2 == 0:
-                delta2_options.append([(l, u), (u, l)] if 0 <= l and u <= max_val else [])
+                delta2_options.append([(l, u), (u, l)] if l >= 0 and u <= max_val else [])
                 non_delta2_options.append([(d, d)] if d <= max_val else [])
             else:
                 delta2_options.append([])

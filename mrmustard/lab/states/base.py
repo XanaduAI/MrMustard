@@ -84,14 +84,14 @@ def _validate_operator(operator: CircuitComponent) -> tuple[OperatorType, str]:
 
     # check if operator is density matrix-like
     if w.ket.output and w.bra.output and not w.ket.input and not w.bra.input:
-        if not w.ket.output.modes == w.bra.output.modes:
+        if w.ket.output.modes != w.bra.output.modes:
             msg = "Found DM-like operator with different modes for ket and bra wires."
             return OperatorType.INVALID_TYPE, msg
         return OperatorType.DM_LIKE, ""
 
     # check if operator is unitary-like
     if w.ket.input and w.ket.output and not w.bra.input and not w.bra.input:
-        if not w.ket.input.modes == w.ket.output.modes:
+        if w.ket.input.modes != w.ket.output.modes:
             msg = "Found unitary-like operator with different modes for input and output wires."
             return OperatorType.INVALID_TYPE, msg
         return OperatorType.UNITARY_LIKE, ""
@@ -686,9 +686,7 @@ class State(CircuitComponent):
                 y=ps,
                 z=z,
                 coloraxis="coloraxis",
-                hovertemplate="x: %{x:.3f}"
-                + "<br>p: %{y:.3f}"
-                + "<br>W(x, p): %{z:.3f}<extra></extra>",
+                hovertemplate="x: %{x:.3f}<br>p: %{y:.3f}<br>W(x, p): %{z:.3f}<extra></extra>",
             )
         )
 

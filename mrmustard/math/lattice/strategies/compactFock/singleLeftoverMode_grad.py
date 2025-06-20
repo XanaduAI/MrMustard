@@ -549,28 +549,29 @@ def use_diag_pivot_grad(
 
     # Array1
     for i in range(2 * M):
-        if params[i // 2] + 1 < cutoffs_tail[i // 2]:
+        if params[i // 2] + 1 < cutoffs_tail[i // 2] and (
+            i != 1 or params[0] + 2 < cutoffs_tail[0]
+        ):
             # this prevents a few elements from being written that will never be read
-            if i != 1 or params[0] + 2 < cutoffs_tail[0]:
-                write = (i,) + params
-                arr1_dA, arr1_dB = write_block_grad(
-                    i + 2,
-                    write,
-                    arr0,
-                    read_GB,
-                    G_in,
-                    A,
-                    B,
-                    K_i,
-                    K_l,
-                    cutoff_leftoverMode,
-                    arr1_dA,
-                    arr0_dA,
-                    G_in_dA,
-                    arr1_dB,
-                    arr0_dB,
-                    G_in_dB,
-                )
+            write = (i,) + params
+            arr1_dA, arr1_dB = write_block_grad(
+                i + 2,
+                write,
+                arr0,
+                read_GB,
+                G_in,
+                A,
+                B,
+                K_i,
+                K_l,
+                cutoff_leftoverMode,
+                arr1_dA,
+                arr0_dA,
+                G_in_dA,
+                arr1_dB,
+                arr0_dB,
+                G_in_dB,
+            )
 
     return arr1_dA, arr1_dB
 
