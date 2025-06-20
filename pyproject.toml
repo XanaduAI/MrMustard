@@ -58,12 +58,11 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "black==25.1.0",
     "hypothesis==6.31.6",
     "pre-commit==3.7.1",
-    "pylint>=3.0,<4",
     "pytest-cov==3.0.0",
     "pytest==8.0",
+    "ruff>=0.12.0",
 ]
 
 doc = [
@@ -81,12 +80,6 @@ interactive = [
     "ipykernel >=6.21.2, <7.0.0",
     "ipywidgets >=8.0.4, <9.0.0"
 ]
-
-[tool.setuptools.packages.find]
-where = ["."]
-
-[tool.black]
-line-length = 100
 
 [tool.coverage.run]
 source = ["mrmustard"]
@@ -144,5 +137,8 @@ ignore_errors = true
 [tool.coverage.html]
 directory = "coverage_html_report"
 
-[tool.pytest.ini_options]
-filterwarnings = "ignore::DeprecationWarning"
+[tool.ruff]
+line-length = 100
+
+[tool.setuptools.packages.find]
+where = ["."]

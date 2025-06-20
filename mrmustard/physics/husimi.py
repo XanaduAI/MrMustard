@@ -17,6 +17,7 @@
 """
 This module contains functions for transforming to the Husimi representation.
 """
+
 from mrmustard import math, settings
 
 

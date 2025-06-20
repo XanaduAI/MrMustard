@@ -33,7 +33,6 @@ class TestTriples:
             error = ValueError
             match = "Incompatible shapes for broadcasting"
         elif math.backend_name == "tensorflow":
-
             from tensorflow.errors import InvalidArgumentError
 
             error = InvalidArgumentError
@@ -382,7 +381,6 @@ class TestTriples:
         assert B.contract(B, [0, 1, 2], [3, 4, 2], [0, 1, 3, 4]) == Att
 
     def test_gaussian_random_noise_Abc(self):
-
         A, b, c = triples.gaussian_random_noise_Abc(np.eye(2))
         A_by_hand = math.astensor(
             [
@@ -400,7 +398,6 @@ class TestTriples:
         assert math.allclose(c, c_by_hand)
 
     def test_XY_to_channel_Abc(self):
-
         # Creating an attenuator object and testing its Abc triple
         eta = np.random.random()
         X = math.sqrt(eta) * math.eye(2)

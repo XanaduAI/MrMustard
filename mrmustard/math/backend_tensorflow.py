@@ -223,9 +223,7 @@ class BackendTensorflow(BackendBase):
         else:
             return false_fn(*args)
 
-    def error_if(
-        self, array: tf.Tensor, condition: tf.Tensor, msg: str
-    ):  # pylint: disable=unused-argument
+    def error_if(self, array: tf.Tensor, condition: tf.Tensor, msg: str):  # pylint: disable=unused-argument
         if tf.reduce_any(condition):
             raise ValueError(msg)
 

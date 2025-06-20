@@ -15,6 +15,7 @@
 """
 The class representing a Gaussian random noise channel.
 """
+
 from __future__ import annotations
 
 from mrmustard import math, settings

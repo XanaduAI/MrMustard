@@ -15,6 +15,7 @@
 """
 A Jax based optimizer for any parametrized object.
 """
+
 from __future__ import annotations
 
 from typing import Callable, Sequence

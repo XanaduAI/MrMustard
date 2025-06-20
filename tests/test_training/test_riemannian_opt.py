@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """optimization tests"""
+
 import pytest
 import numpy as np
 from hypothesis import given
@@ -52,9 +53,9 @@ def test_update_symplectic(n):
             bounds=None,
         )
         update_symplectic([[dS_euclidean, S]], 0.01)
-        assert is_symplectic(
-            math.asnumpy(S)
-        ), "training step does not result in a symplectic matrix"
+        assert is_symplectic(math.asnumpy(S)), (
+            "training step does not result in a symplectic matrix"
+        )
 
 
 @pytest.mark.requires_backend("tensorflow")

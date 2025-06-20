@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """callbacks tests"""
+
 import pytest
 import numpy as np
 import tensorflow as tf

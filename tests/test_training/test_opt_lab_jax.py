@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Tests for the Optimizer class"""
+
 import pytest
 import numpy as np
 from hypothesis import given
@@ -49,7 +50,7 @@ class TestOptimizerJax:
         )
 
         def cost_fn(S):
-            return -math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2
+            return -(math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2)
 
         opt = OptimizerJax(learning_rate=0.01)
         opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
@@ -109,7 +110,7 @@ class TestOptimizerJax:
 
         def cost_fn(circ):
             amps = circ.contract().fock_array((2, 2))
-            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
         opt = OptimizerJax(learning_rate=0.05)
 
@@ -165,7 +166,7 @@ class TestOptimizerJax:
 
         def cost_fn(dgate):
             state_out = Vacuum(0) >> dgate
-            return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
+            return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
         opt = OptimizerJax()
         opt.minimize(cost_fn, by_optimizing=[dgate])
@@ -180,7 +181,7 @@ class TestOptimizerJax:
 
         def cost_fn(sgate):
             state_out = Vacuum(0) >> sgate
-            return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
+            return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
         opt = OptimizerJax()
         opt.minimize(cost_fn, by_optimizing=[sgate])
@@ -194,7 +195,7 @@ class TestOptimizerJax:
         target_gate = BSgate((0, 1), 0.1, 0.2).fock_array(40)
 
         def cost_fn(bsgate):
-            return -math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2
+            return -(math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2)
 
         opt = OptimizerJax()
         opt.minimize(cost_fn, by_optimizing=[bsgate])

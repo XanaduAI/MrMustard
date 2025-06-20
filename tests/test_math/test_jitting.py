@@ -76,9 +76,9 @@ def test_jit_complete_circuit():
     end_time = time.time()
     jitted_routine_time = end_time - start_time
 
-    assert (
-        jitted_routine_time < unjitted_routine_time
-    ), "Jitting should be make circuit evaluation faster."
+    assert jitted_routine_time < unjitted_routine_time, (
+        "Jitting should be make circuit evaluation faster."
+    )
 
 
 @pytest.mark.requires_backend("jax")
@@ -130,6 +130,6 @@ def test_jit_circuit_with_parameters():
     end_time = time.time()
     jitted_routine_time = end_time - start_time
 
-    assert (
-        jitted_routine_time < unjitted_routine_time
-    ), "Jitting should be make circuit evaluation faster."
+    assert jitted_routine_time < unjitted_routine_time, (
+        "Jitting should be make circuit evaluation faster."
+    )

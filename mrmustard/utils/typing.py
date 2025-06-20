@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """A module containing all base type annotations."""
+
 __all__ = [
     "RealVector",
     "ComplexVector",

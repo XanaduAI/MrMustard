@@ -15,6 +15,7 @@
 """
 This module contains the utility functions used by the classes in ``mrmustard.physics``.
 """
+
 from __future__ import annotations
 
 from numpy.typing import ArrayLike

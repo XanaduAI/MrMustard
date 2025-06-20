@@ -210,7 +210,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     def test_from_phase_space(self, modes):
-
         rnd = Ket.random(modes)
         cov, means, coeff = rnd.phase_space(s=0)
         rnd2 = Ket.from_phase_space(modes, (cov, means, coeff))
@@ -622,7 +621,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert sigma == core.contract(U, mode="zip")
 
     def test_wigner(self):
-
         ans = Vacuum(0).wigner
         x = np.linspace(0, 1, 100)
         solution = np.exp(-(x**2)) / np.pi
@@ -631,7 +629,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_wigner_poly_exp(self, n):
-
         psi = (Number(0, n).dm().to_bargmann()) >> Ggate(0)
         xs = np.linspace(-5, 5, 100)
         poly_exp_wig = math.real(psi.wigner(xs, 0))

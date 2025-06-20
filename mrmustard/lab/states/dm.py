@@ -138,7 +138,7 @@ class DM(State):
         modes = set(modes)
         if ansatz and ansatz.num_vars != 2 * len(modes):
             raise ValueError(
-                f"Expected an ansatz with {2*len(modes)} variables, found {ansatz.num_vars}."
+                f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.num_vars}."
             )
         wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
         if isinstance(ansatz, ArrayAnsatz):

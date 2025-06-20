@@ -178,7 +178,7 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
         raise ValueError(f"order must have length {n}, got {len(order)}")
 
     if any(i >= n or n < 0 for i in order):
-        raise ValueError(f"elements in `order` must be between 0 and {n-1}, got {order}")
+        raise ValueError(f"elements in `order` must be between 0 and {n - 1}, got {order}")
     order += list(range(len(order), len(order) + dim_poly))
     order = math.astensor(order)
     A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)

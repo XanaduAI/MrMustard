@@ -325,7 +325,6 @@ class Wires:  # pylint: disable=too-many-public-methods
         classical_out: set[int] | None = None,
         classical_in: set[int] | None = None,
     ):
-
         modes_out_bra = modes_out_bra or set()
         modes_in_bra = modes_in_bra or set()
         modes_out_ket = modes_out_ket or set()

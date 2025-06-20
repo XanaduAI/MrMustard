@@ -188,7 +188,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             raise ValueError(msg)
 
         if self.backend_name != name:
-
             module = all_modules[name]["module"]
             object = all_modules[name]["object"]
             try:

@@ -75,7 +75,7 @@ def fock(rep):
 
     header_widget = widgets.HTML("<h1 class=h1-fock>Fock Representation</h1>")
     table_widget = widgets.HTML(
-        TABLE + "<table class=table-fock>" f"<tr><th>Shape</th><td>{shape}</td></tr>" "</table>"
+        TABLE + f"<table class=table-fock><tr><th>Shape</th><td>{shape}</td></tr></table>"
     )
     left_widget = widgets.VBox(children=[header_widget, table_widget])
     plot_widget.layout.padding = "10px"
@@ -256,8 +256,8 @@ def state(obj, is_ket, is_fock):
         </tr>
 
         <tr>
-            <td>{f"{obj.purity}" if obj.purity == 1 else f"{obj.purity :.2e}"}</td>
-            <td>{f"{100*obj.probability:.3e} %" if obj.probability < 0.001 else f"{obj.probability:.2%}"}</td></td>
+            <td>{f"{obj.purity}" if obj.purity == 1 else f"{obj.purity:.2e}"}</td>
+            <td>{f"{100 * obj.probability:.3e} %" if obj.probability < 0.001 else f"{obj.probability:.2%}"}</td></td>
             <td>{obj.n_modes}</td></td>
             <td>{"Ket" if is_ket else "DM"}</td></td>
             <td>{bargmann_yn}</td></td>

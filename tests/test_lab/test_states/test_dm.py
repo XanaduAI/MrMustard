@@ -614,7 +614,6 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(core.dm().contract(phi, mode="zip").ansatz.b, sigma.ansatz.b)
 
     def test_wigner(self):
-
         ans = Vacuum(0).dm().wigner
         x = np.linspace(0, 1, 100)
 

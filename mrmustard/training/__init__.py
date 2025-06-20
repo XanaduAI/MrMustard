@@ -63,6 +63,7 @@ Then, we can see the optimized value of the parameters, for example
         np.cos(bs.theta.value) ** 2
 
 """
+
 from .callbacks import TensorboardCallback
 from .optimizer import Optimizer
 from .optimizer_jax import OptimizerJax

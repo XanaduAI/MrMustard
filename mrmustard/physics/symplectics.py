@@ -16,6 +16,7 @@
 This module contains the symplectic matrices for the Fock-Bargmann representation of
 various states and transformations.
 """
+
 from __future__ import annotations
 
 from typing import Sequence

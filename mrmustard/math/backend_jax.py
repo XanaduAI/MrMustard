@@ -491,7 +491,6 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=["dtype", "rtol", "atol"])
     def sqrtm(self, tensor: jnp.ndarray, dtype, rtol=1e-05, atol=1e-08) -> jnp.ndarray:
-
         ret = jax.lax.cond(
             jnp.allclose(tensor, 0, rtol=rtol, atol=atol),
             lambda _: self.zeros_like(tensor, dtype="complex128"),

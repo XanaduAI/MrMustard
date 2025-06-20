@@ -15,6 +15,7 @@
 """This module contains the implementation of optimization classes and functions
 used within Mr Mustard.
 """
+
 from __future__ import annotations
 
 from itertools import chain, groupby

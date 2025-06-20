@@ -244,7 +244,6 @@ class TestChannel:
 
     @pytest.mark.parametrize("nmodes", [1, 2, 3])
     def test_from_XY_batched(self, nmodes):
-
         ch1 = Channel.random(list(range(nmodes))) + Channel.random(list(range(nmodes)))
         X, Y = ch1.XY
 

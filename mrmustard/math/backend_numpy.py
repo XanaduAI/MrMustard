@@ -326,9 +326,7 @@ class BackendNumpy(BackendBase):
         else:
             return false_fn(*args)
 
-    def error_if(
-        self, array: np.ndarray, condition: np.ndarray, msg: str
-    ):  # pylint: disable=unused-argument
+    def error_if(self, array: np.ndarray, condition: np.ndarray, msg: str):  # pylint: disable=unused-argument
         if np.any(condition):
             raise ValueError(msg)
 

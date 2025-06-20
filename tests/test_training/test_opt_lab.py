@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Tests for the Optimizer class"""
+
 import pytest
 import numpy as np
 import tensorflow as tf
@@ -62,7 +63,7 @@ class TestOptimizer:
         )
 
         def cost_fn():
-            return -math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2
+            return -(math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2)
 
         def cb(optimizer, cost, trainables, **kwargs):  # pylint: disable=unused-argument
             return {
@@ -145,7 +146,7 @@ class TestOptimizer:
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
-            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
         opt = Optimizer(euclidean_lr=0.05)
 
@@ -162,7 +163,7 @@ class TestOptimizer:
 
         def cost_fn():
             amps = G.fock_array((2, 2))
-            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
         opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
@@ -188,7 +189,7 @@ class TestOptimizer:
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
-            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
         opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
 
@@ -222,7 +223,7 @@ class TestOptimizer:
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
-            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
         opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
 
@@ -285,7 +286,7 @@ class TestOptimizer:
 
         def cost_fn():
             amps = circ.contract().fock_array((3, 3, 3, 3))
-            return -math.abs((amps[1, 1, 2, 0] + amps[1, 1, 0, 2]) / np.sqrt(2)) ** 2
+            return -(math.abs((amps[1, 1, 2, 0] + amps[1, 1, 0, 2]) / np.sqrt(2)) ** 2)
 
         opt = Optimizer(unitary_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[circ], max_steps=200)
@@ -351,7 +352,7 @@ class TestOptimizer:
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2, 3, 3))
-            return -math.abs((amps[1, 1, 0, 2] + amps[1, 1, 2, 0]) / np.sqrt(2)) ** 2
+            return -(math.abs((amps[1, 1, 0, 2] + amps[1, 1, 2, 0]) / np.sqrt(2)) ** 2)
 
         opt = Optimizer()
 
@@ -480,7 +481,7 @@ class TestOptimizer:
 
         def cost_fn():
             state_out = Vacuum(0) >> dgate
-            return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
+            return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[dgate])
@@ -500,7 +501,7 @@ class TestOptimizer:
         def cost_fn():
             state_out = Vacuum(0) >> sgate
 
-            return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
+            return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[sgate])
@@ -518,7 +519,7 @@ class TestOptimizer:
         target_gate = BSgate((0, 1), 0.1, 0.2).fock_array(40)
 
         def cost_fn():
-            return -math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2
+            return -(math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2)
 
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[bsgate])
