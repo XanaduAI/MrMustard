@@ -2,25 +2,18 @@ name: Test Timings
 on:
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   numpy:
-    if: ${{ always() }}
     name: Run Numpy Tests
     uses: ./.github/workflows/tests_numpy.yml
     secrets: inherit
 
   jax:
-    if: ${{ always() }}
     name: Run JAX Tests
     uses: ./.github/workflows/tests_jax.yml
     secrets: inherit
 
   tf:
-    if: ${{ always() }}
     name: Run Tensorflow Tests
     uses: ./.github/workflows/tests_tensorflow.yml
     secrets: inherit

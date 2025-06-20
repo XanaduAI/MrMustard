@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_call:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
@@ -19,7 +23,7 @@ jobs:
       cancel-in-progress: true
     env:
       HYPOTHESIS_PROFILE: ci
-      UPLOAD_TIMINGS: ${{ github.event_name == 'push' && matrix.python-version == '3.12' && 'true' || 'false' }}
+      UPLOAD_TIMINGS: ${{ ( github.event_name == 'push' || github.event_name == 'workflow_call' ) && matrix.python-version == '3.12' && 'true' || 'false' }}
 
     steps:
       - name: Checkout repo
