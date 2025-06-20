@@ -360,7 +360,7 @@ class State(CircuitComponent):
 
 
         Note:
-            If jited, the shape will default to ``settings.DEFAULT_FOCK_SIZE``.
+            If jitted, the shape will default to ``settings.DEFAULT_FOCK_SIZE``.
         Example:
         .. code-block::
             >>> from mrmustard import math
