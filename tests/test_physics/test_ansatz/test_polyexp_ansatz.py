@@ -131,7 +131,7 @@ class TestPolyExpAnsatz:
         c = np.random.random(size=(1, 3, 3, 3)) + 0.0j
         ansatz = PolyExpAnsatz(A, b, c)
         z = np.random.uniform(-10, 10, size=(7, 2))
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError, match="must equal the number of CV variables"):
             ansatz(*z)
 
         A = math.astensor([np.array([[0.0, 1.0], [1.0, 0.0]]) + 0.0j])

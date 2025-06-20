@@ -582,8 +582,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
         psi = Ket.random([0, 1, 2])
         phi = Ket.random([0, 1, 2])
 
-        (psi + phi).ansatz.batch_shape
-
         sigma = psi + phi
         sigma.ansatz._lin_sup = False
         core, U = sigma.physical_stellar_decomposition([0])
@@ -612,8 +610,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         psi = Ket.random([0, 1, 2])
         phi = Ket.random([0, 1, 2])
-
-        (psi + phi).ansatz.batch_shape
 
         sigma = psi + phi
         core, U = sigma.formal_stellar_decomposition([0])

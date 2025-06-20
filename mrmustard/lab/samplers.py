@@ -99,12 +99,12 @@ class Sampler(ABC):
             initial_samples, return_index=True, return_counts=True
         )
         ret = []
-        for unique_sample, idx, counts in zip(unique_samples, idxs, counts):
+        for unique_sample, idx, count in zip(unique_samples, idxs, counts):
             meas_op = self._get_povm(unique_sample, initial_mode).dual
             prob = probs[idx]
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob
             reduced_state = (state >> meas_op) / norm
-            samples = self.sample(reduced_state, counts)
+            samples = self.sample(reduced_state, count)
             for sample in samples:
                 ret.append(np.append([unique_sample], sample))
         return np.array(ret)
@@ -234,14 +234,14 @@ class HomodyneSampler(Sampler):
             initial_samples, return_index=True, return_counts=True
         )
         ret = []
-        for unique_sample, idx, counts in zip(unique_samples, idxs, counts):
+        for unique_sample, idx, count in zip(unique_samples, idxs, counts):
             # Use partial_eval to evaluate the ansatz at the first mode only
             reduced_ansatz = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz(unique_sample)
             reduced_state = state.from_bargmann(state.modes[1:], reduced_ansatz.triple)
             prob = probs[idx] / self._step
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob
             normalized_reduced_state = reduced_state / norm
-            samples = self.sample(normalized_reduced_state, counts)
+            samples = self.sample(normalized_reduced_state, count)
             for sample in samples:
                 ret.append(np.append([unique_sample], sample))
         return np.array(ret)

@@ -24,7 +24,7 @@ def html_page_context(app, pagename, templatename, context, doctree):
         return
 
     if not app.config.edit_on_github_project:
-        warnings.warn("edit_on_github_project not specified")
+        warnings.warn("edit_on_github_project not specified", stacklevel=1)
         return
 
     if not doctree:

@@ -141,7 +141,7 @@ class Settings:
 
     @HBAR.setter
     def HBAR(self, value: float):
-        warnings.warn("Changing HBAR can conflict with prior computations.")
+        warnings.warn("Changing HBAR can conflict with prior computations.", stacklevel=1)
         self._hbar = value
 
     @property

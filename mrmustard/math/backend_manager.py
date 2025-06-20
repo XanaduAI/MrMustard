@@ -112,9 +112,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         try:
             attr = getattr(self.backend, fn)
         except AttributeError:
-            msg = f"Function ``{fn}`` not implemented for backend ``{self.backend_name}``."
-            # pylint: disable=raise-missing-from
-            raise NotImplementedError(msg)
+            raise NotImplementedError(
+                f"Function ``{fn}`` not implemented for backend ``{self.backend_name}``."
+            ) from None
         return attr(*args, **kwargs)
 
     def _bind(self) -> None:

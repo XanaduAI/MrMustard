@@ -84,8 +84,8 @@ class TestWires:
     def test_add_error(self):
         w1 = Wires({0}, {1}, {2}, {3})
         w2 = Wires({0}, {2}, {3}, {4})
-        with pytest.raises(Exception):
-            w1 + w2  # pylint: disable=pointless-statement
+        with pytest.raises(ValueError, match="Overlapping quantum wires"):
+            w1 + w2
 
     def test_bool(self):
         assert Wires({0})

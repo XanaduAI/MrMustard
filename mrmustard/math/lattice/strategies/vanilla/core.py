@@ -81,11 +81,13 @@ def vanilla_numba(
     for flat_index in range(1, strides[0]):
         index = next(nd_index)
 
+        i = 0
         # calculate (flat) pivot
-        for i, s in enumerate(strides):
+        for s in strides:
             pivot = flat_index - s
             if pivot >= 0:  # if pivot not outside array
                 break
+            i += 1
 
         # contribution from pivot
         value_at_index = b[i] * G[pivot]
