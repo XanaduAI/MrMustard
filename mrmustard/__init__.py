@@ -72,14 +72,14 @@ def about():
     print("Copyright 2021 Xanadu Quantum Technologies Inc.\n")
 
     print("Python version:            {}.{}.{}".format(*sys.version_info[0:3]))
-    print("Platform info:             {}".format(platform.platform()))
-    print("Installation path:         {}".format(os.path.dirname(__file__)))
-    print("Mr Mustard version:        {}".format(__version__))
-    print("Numpy version:             {}".format(numpy.__version__))
-    print("Numba version:             {}".format(numba.__version__))
-    print("Scipy version:             {}".format(scipy.__version__))
-    print("The Walrus version:        {}".format(thewalrus.__version__))
-    print("TensorFlow version:        {}".format(tensorflow.__version__))
+    print(f"Platform info:             {platform.platform()}")
+    print(f"Installation path:         {os.path.dirname(__file__)}")
+    print(f"Mr Mustard version:        {__version__}")
+    print(f"Numpy version:             {numpy.__version__}")
+    print(f"Numba version:             {numba.__version__}")
+    print(f"Scipy version:             {scipy.__version__}")
+    print(f"The Walrus version:        {thewalrus.__version__}")
+    print(f"TensorFlow version:        {tensorflow.__version__}")
 
 
 # filter tensorflow cast warnings

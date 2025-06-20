@@ -208,7 +208,7 @@ class BackendTensorflow(BackendBase):
         return tf.eye(array.shape[-1], dtype=array.dtype)
 
     def from_backend(self, value) -> bool:
-        return isinstance(value, (tf.Tensor, tf.Variable))
+        return isinstance(value, tf.Tensor | tf.Variable)
 
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
         indices = tf.cast(tf.convert_to_tensor(indices), dtype=tf.int32)

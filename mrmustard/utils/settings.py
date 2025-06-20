@@ -59,7 +59,7 @@ class Settings:
 
     def __new__(cls):  # singleton
         if not hasattr(cls, "_instance"):
-            cls._instance = super(Settings, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self):

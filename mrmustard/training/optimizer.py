@@ -304,7 +304,7 @@ class Optimizer:
                 trainables=trainables,
             )
 
-            if not isinstance(cb_result, (Mapping, type(None))):
+            if not isinstance(cb_result, Mapping | type(None)):
                 raise TypeError(
                     f"The expected return type of callback functions is dict, got {type(cb_result)}."
                 )

@@ -46,7 +46,7 @@ def make_parameter(
         update_fn: The update_fn of the returned parameter (ignored if ``is_trainable`` is ``False``).
         dtype: The dtype of the returned parameter.
     """
-    if isinstance(value, (Constant, Variable)):
+    if isinstance(value, Constant | Variable):
         return value
     if not is_trainable:
         return Constant(value=value, name=name, dtype=dtype)

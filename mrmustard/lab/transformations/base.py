@@ -564,6 +564,6 @@ class Channel(Map):
         Returns a ``Channel`` when ``other`` is a ``Channel`` or a ``Unitary``, and a ``CircuitComponent`` otherwise.
         """
         ret = super().__rshift__(other)
-        if isinstance(other, (Channel, Unitary)):
+        if isinstance(other, Channel | Unitary):
             return Channel(ret.representation)
         return ret

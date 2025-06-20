@@ -153,7 +153,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         try:
             return cls.instance
         except AttributeError:
-            cls.instance = super(BackendManager, cls).__new__(cls)
+            cls.instance = super().__new__(cls)
             return cls.instance
 
     def __repr__(self) -> str:
@@ -1759,7 +1759,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return mat
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def Xmat(num_modes: int):
         r"""The matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}.`
 
@@ -1774,7 +1774,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return np.block([[O, I], [I, O]])
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def Zmat(num_modes: int):
         r"""The matrix :math:`Z_n = \begin{bmatrix}I_n & 0\\ 0 & -I_n\end{bmatrix}.`
 
@@ -1789,14 +1789,14 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return np.block([[I, O], [O, -I]])
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def rotmat(num_modes: int):
         "Rotation matrix from quadratures to complex amplitudes."
         I = np.identity(num_modes)
         return np.sqrt(0.5) * np.block([[I, 1j * I], [I, -1j * I]])
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def J(num_modes: int):
         """Symplectic form."""
         I = np.identity(num_modes)

@@ -140,7 +140,7 @@ line-length = 100
 
 [tool.ruff.lint]
 # default ruff rules plus isort and flake8 bugbear
-select = ["E4", "E7", "E9", "F", "I", "B", "UP035"]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP"]
 ignore = ["E741", "F403", "B905"]
 
 [tool.setuptools.packages.find]

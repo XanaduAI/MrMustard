@@ -16,7 +16,7 @@
 This module contains the fast diagonal strategy for computing the conditional density matrices.
 """
 
-from functools import lru_cache
+from functools import cache
 from itertools import product
 
 import numpy as np
@@ -150,7 +150,7 @@ def generate_partitions(w: int, m: tuple[int]):
             yield (first,) + rest
 
 
-@lru_cache(maxsize=None)
+@cache
 def enumerate_diagonal_coords(weight: int, m: tuple[int]) -> list[tuple[int, ...]]:
     r"""
     Enumerate all coordinates of a given weight (sum(coordinate) == weight) and length 2*n_modes

@@ -546,7 +546,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
             >>> att = Attenuator(0, 0.5)
             >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
         """
-        if isinstance(other, (numbers.Number, np.ndarray)):
+        if isinstance(other, numbers.Number | np.ndarray):
             return self * other
 
         if type(self.ansatz) is type(other.ansatz):
@@ -780,7 +780,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)
 
-        if isinstance(other, (numbers.Number, np.ndarray)):
+        if isinstance(other, numbers.Number | np.ndarray):
             return self * other
 
         s_k = self.wires.ket

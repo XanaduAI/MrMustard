@@ -14,6 +14,17 @@
 
 """A module containing all base type annotations."""
 
+from __future__ import annotations
+
+from collections.abc import Iterator
+from typing import (
+    Protocol,
+    TypeVar,
+    runtime_checkable,
+)
+
+import numpy as np
+
 __all__ = [
     "RealVector",
     "ComplexVector",
@@ -34,22 +45,13 @@ __all__ = [
     "Tensor",
     "Trainable",
 ]
-from collections.abc import Iterator
-from typing import (
-    Protocol,
-    TypeVar,
-    Union,
-    runtime_checkable,
-)
-
-import numpy as np
 
 R = TypeVar("R", np.float16, np.float32, np.float64)
 C = TypeVar("C", np.complex64, np.complex128)
 Z = TypeVar("Z", np.int16, np.int32, np.int64)
 N = TypeVar("N", np.uint16, np.uint32, np.uint64)
 
-Scalar = Union[R, C, Z, N]
+Scalar = R | C | Z | N
 Vector = np.ndarray[tuple[int], Scalar]
 Matrix = np.ndarray[tuple[int, int], Scalar]
 Tensor = np.ndarray[tuple[int, ...], Scalar]
