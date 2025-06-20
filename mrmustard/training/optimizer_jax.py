@@ -41,6 +41,7 @@ class Objective(eqx.Module):
         static: The static parameters of the model. These are the keys associated with the trainable parameters.
         dynamic: The dynamic parameters of the model. These are the arrays of the trainable parameters.
     """
+
     static: list[str]
     dynamic: list[jax.Array]
 

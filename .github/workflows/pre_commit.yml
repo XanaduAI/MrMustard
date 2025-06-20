@@ -1,13 +1,13 @@
-name: Formatting check
+name: Pre-commit
+
 on:
   pull_request:
 
 jobs:
-  black:
+  pre-commit:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install uv
       uses: astral-sh/setup-uv@v5
@@ -15,6 +15,5 @@ jobs:
         version: "0.5.29"
         python-version: "3.12"
 
-    - name: Check formatting
-      run: |
-        uv run --only-dev black mrmustard/ tests/ --check
+    - name: Run pre-commit
+      run: uv run --frozen --only-dev pre-commit run --all-files
