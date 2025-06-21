@@ -186,9 +186,7 @@ def symplectic2Au(S):
     A_3 = math.einsum("...ij->...ji", A_2)
     A_4 = -math.conj(math.solve(S_1, S_2))
 
-    A = math.block([[A_1, A_2], [A_3, A_4]])
-
-    return A
+    return math.block([[A_1, A_2], [A_3, A_4]])
 
 
 def XY_of_channel(A: ComplexMatrix):

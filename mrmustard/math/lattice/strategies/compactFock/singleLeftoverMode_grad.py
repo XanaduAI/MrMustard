@@ -69,7 +69,6 @@ def write_block_grad(
     Apply the derivated recurrence relation to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
     This is the coarse-grained version of applying the derivated recurrence relation of mrmustard.math.compactFock.compactFock_diagonal_grad once.
     """
-    # m,n = 0,0
     m, n = 0, 0
     l_range = np.arange(2, A.shape[1])
     A_adapted = A[i, 2:]
@@ -94,7 +93,6 @@ def write_block_grad(
         G_in_dB_adapted,
         l_range,
     )
-    # m=0
     m = 0
     l_range = np.arange(1, A.shape[1])
     A_adapted = A[i, 1:]
@@ -134,7 +132,6 @@ def write_block_grad(
             G_in_dB_adapted,
             l_range,
         )
-    # n=0
     n = 0
     l_range = np.arange(1, A.shape[1])
     l_range[0] = 0

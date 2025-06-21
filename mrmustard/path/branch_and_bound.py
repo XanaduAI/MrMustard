@@ -140,14 +140,13 @@ class GraphComponent:
         shape_B = [n for i, n in enumerate(other.shape) if i not in idxB]
         shape = shape_A + shape_B
         new_shape = [shape[p] for p in perm]
-        new_component = GraphComponent(
+        return GraphComponent(
             "PolyExpAnsatz" if self.ansatz == other.ansatz == "PolyExpAnsatz" else "ArrayAnsatz",
             new_wires,
             new_shape,
             f"({self.name}@{other.name})",
             self.contraction_cost(other) + self.cost + other.cost,
         )
-        return new_component
 
     def __repr__(self):
         return f"{self.name}({self.shape}, {self.wires})"
@@ -528,7 +527,7 @@ def optimal_contraction(  # pylint: disable=too-many-branches
             if verbose:
                 print("warning: early stop")
             return candidate  # early stopping because first in queue is already worse
-        elif candidate.number_of_edges() == 0:  # better solution! 🥳
+        if candidate.number_of_edges() == 0:  # better solution! 🥳
             best = candidate
             queue.queue = [g for g in queue.queue if g.cost < best.cost]  # prune
         else:

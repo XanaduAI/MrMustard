@@ -819,7 +819,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 },
             )
             return self.reshape(result, batch_shape + tuple(shape))
-        elif A.ndim == 2 and b.ndim > 1:  # b-batched case
+        if A.ndim == 2 and b.ndim > 1:  # b-batched case
             batch_shape = b.shape[:-1]
             check_out_shape(batch_shape)
             D = int(np.prod(batch_shape))
@@ -836,13 +836,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 },
             )
             return self.reshape(result, batch_shape + tuple(shape))
-        else:  # Unbatched case
-            check_out_shape(())
-            return self._apply(
-                "hermite_renormalized_unbatched",
-                (A, b, c),
-                {"shape": tuple(shape), "stable": stable, "out": out},
-            )
+        # Unbatched case
+        check_out_shape(())
+        return self._apply(
+            "hermite_renormalized_unbatched",
+            (A, b, c),
+            {"shape": tuple(shape), "stable": stable, "out": out},
+        )
 
     def hermite_renormalized_diagonal(
         self, A: Tensor, b: Tensor, c: Tensor, cutoffs: tuple[int]
@@ -1690,7 +1690,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The adjoint of ``array``
         """
         N = len(array.shape) // 2
-        perm = list(range(N, 2 * N)) + list(range(0, N))
+        perm = list(range(N, 2 * N)) + list(range(N))
         return self.conj(self.transpose(array, perm=perm))
 
     def unitary_to_orthogonal(self, U):
@@ -1741,14 +1741,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if vec.shape[-1] != 2:
             raise ValueError("vec must be 2-dimensional (i.e. single-mode)")
         x, y = vec[..., -2], vec[..., -1]
-        vec = self.concat(
+        return self.concat(
             [
                 self.tile(self.astensor([x]), (num_modes,)),
                 self.tile(self.astensor([y]), (num_modes,)),
             ],
             axis=-1,
         )
-        return vec
 
     def single_mode_to_multimode_mat(self, mat: Tensor, num_modes: int):
         r"""Apply the same :math:`2\times 2` matrix (i.e. single-mode) to a larger number of modes."""
@@ -1757,8 +1756,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         mat = self.diag(
             self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)), k=0
         )  # shape [2,2,N,N]
-        mat = self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
-        return mat
+        return self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
 
     @staticmethod
     @lru_cache

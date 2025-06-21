@@ -165,10 +165,9 @@ class Variable:
         """
         if math.from_backend(value) and math.is_trainable(value):
             return value
-        elif hasattr(value, "dtype"):
+        if hasattr(value, "dtype"):
             return math.new_variable(value, bounds, name, value.dtype)
-        else:
-            return math.new_variable(value, bounds, name, dtype)
+        return math.new_variable(value, bounds, name, dtype)
 
     @property
     def bounds(self) -> tuple[float | None, float | None]:

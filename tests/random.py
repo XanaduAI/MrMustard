@@ -125,7 +125,7 @@ def complex_matrix(draw, rows, cols):
         allow_infinity=False,
         allow_nan=False,
     )
-    return draw(arrays(np.complex, (rows, cols), elements=elements))
+    return draw(arrays(complex, (rows, cols), elements=elements))
 
 
 @st.composite
@@ -136,7 +136,7 @@ def complex_vector(draw, length=None):
     )
     if length is None:
         length = draw(st.integers(min_value=1, max_value=10))
-    return draw(arrays(np.complex, (length,), elements=elements))
+    return draw(arrays(complex, (length,), elements=elements))
 
 
 def array_of_(strategy, minlen=0, maxlen=100):

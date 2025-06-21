@@ -421,8 +421,7 @@ class State(CircuitComponent):
         fock_array = self.fock_array(cutoff)
         if not self.wires.ket or not self.wires.bra:
             return math.reshape(math.abs(fock_array) ** 2, (-1,))
-        else:
-            return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
+        return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
 
     @abstractmethod
     def formal_stellar_decomposition(
@@ -453,8 +452,7 @@ class State(CircuitComponent):
             )
         if not self.wires.ket or not self.wires.bra:
             return self / math.sqrt(probability)
-        else:
-            return self / probability
+        return self / probability
 
     def phase_space(self, s: float) -> tuple:
         r"""
@@ -511,8 +509,7 @@ class State(CircuitComponent):
             quad = quad * self.n_modes
         if not self.wires.ket or not self.wires.bra:
             return math.abs(self.quadrature(*quad, phi=phi)) ** 2
-        else:
-            return math.abs(self.quadrature(*(quad * 2), phi=phi))
+        return math.abs(self.quadrature(*(quad * 2), phi=phi))
 
     def visualize_2d(
         self,
@@ -640,6 +637,7 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
+        return None
 
     def visualize_3d(
         self,
@@ -733,6 +731,7 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
+        return None
 
     def visualize_dm(
         self,
@@ -772,6 +771,7 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
+        return None
 
     @property
     def wigner(self):
@@ -790,7 +790,6 @@ class State(CircuitComponent):
         """
         if isinstance(self.ansatz, PolyExpAnsatz):
             return (self >> BtoPS(self.modes, s=0)).ansatz.PS
-        else:
-            raise ValueError(
-                "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first."
-            )
+        raise ValueError(
+            "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first."
+        )

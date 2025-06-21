@@ -98,7 +98,7 @@ class Optimizer:
             self._minimize(cost_fn, by_optimizing, max_steps, callbacks)
         except KeyboardInterrupt:  # graceful exit
             self.log.info("Optimizer execution halted due to keyboard interruption.")
-            raise self.OptimizerInterruptedError() from None
+            raise self.OptimizerInterruptedError from None
 
     def _minimize(self, cost_fn, by_optimizing, max_steps, callbacks):
         # finding out which parameters are trainable from the ops
@@ -220,14 +220,12 @@ class Optimizer:
         sorted_grads_and_vars = sorted(
             zip(grads, trainable_params), key=lambda grads_vars: grads_vars[1].type
         )
-        grouped = {
+        return {
             key: list(result)
             for key, result in groupby(
                 sorted_grads_and_vars, key=lambda grads_vars: grads_vars[1].type
             )
         }
-
-        return grouped
 
     @staticmethod
     def compute_loss_and_gradients(cost_fn: Callable, parameters: list[Variable]):

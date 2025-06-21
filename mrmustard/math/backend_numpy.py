@@ -87,7 +87,7 @@ class BackendNumpy(BackendBase):
 
     def assign(self, tensor: np.ndarray, value: np.ndarray) -> np.ndarray:
         tensor = value
-        return tensor
+        return tensor  # noqa: RET504
 
     def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
         array = np.array(array)
@@ -190,24 +190,23 @@ class BackendNumpy(BackendBase):
     def det(self, matrix: np.ndarray) -> np.ndarray:
         with np.errstate(divide="ignore", invalid="ignore"):
             det = np.linalg.det(matrix)
-        return det
+        return det  # noqa: RET504
 
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
         if array.ndim in (1, 2):
             return np.diag(array, k=k)
-        else:
-            # fallback into more complex algorithm
-            original_sh = array.shape
+        # fallback into more complex algorithm
+        original_sh = array.shape
 
-            ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
-            array = array.ravel().reshape(*ravelled_sh)
+        ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
+        array = array.ravel().reshape(*ravelled_sh)
 
-            ret = np.array([np.diag(line, k) for line in array])
-            inner_shape = (
-                original_sh[-1] + abs(k),
-                original_sh[-1] + abs(k),
-            )
-            return ret.reshape(original_sh[:-1] + inner_shape)
+        ret = np.array([np.diag(line, k) for line in array])
+        inner_shape = (
+            original_sh[-1] + abs(k),
+            original_sh[-1] + abs(k),
+        )
+        return ret.reshape(original_sh[:-1] + inner_shape)
 
     def diag_part(self, array: np.ndarray, k: int) -> np.ndarray:
         ret = np.diagonal(array, offset=k, axis1=-2, axis2=-1)
@@ -318,8 +317,7 @@ class BackendNumpy(BackendBase):
     ) -> np.ndarray:
         if cond.all():
             return true_fn(*args)
-        else:
-            return false_fn(*args)
+        return false_fn(*args)
 
     def error_if(self, array: np.ndarray, condition: np.ndarray, msg: str):  # pylint: disable=unused-argument
         if np.any(condition):
@@ -449,8 +447,7 @@ class BackendNumpy(BackendBase):
 
             def sample(self, dtype=None):  # pylint: disable=unused-argument
                 fn = np.random.default_rng().multivariate_normal
-                ret = fn(self._mean, self._cov)
-                return ret
+                return fn(self._mean, self._cov)
 
             def prob(self, x):
                 return multivariate_normal.pdf(x, mean=self._mean, cov=self._cov)

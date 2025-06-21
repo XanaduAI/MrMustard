@@ -111,8 +111,7 @@ def von_neumann_entropy(cov: Matrix) -> float:
         return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
 
     symp_vals = symplectic_eigenvals(cov)
-    entropy = math.sum(g(symp_vals))
-    return entropy
+    return math.sum(g(symp_vals))
 
 
 def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix) -> float:

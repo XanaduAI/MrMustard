@@ -219,8 +219,7 @@ class BackendTensorflow(BackendBase):
     ) -> tf.Tensor:
         if tf.reduce_all(cond):
             return true_fn(*args)
-        else:
-            return false_fn(*args)
+        return false_fn(*args)
 
     def error_if(self, array: tf.Tensor, condition: tf.Tensor, msg: str):  # pylint: disable=unused-argument
         if tf.reduce_any(condition):

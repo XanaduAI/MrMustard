@@ -161,7 +161,7 @@ class Transformation(CircuitComponent):
         )
         almost_identity = self.contract(almost_inverse, "zip")
         invert_this_c = almost_identity.ansatz.c
-        actual_inverse = self._from_attributes(
+        return self._from_attributes(
             Representation(
                 PolyExpAnsatz(
                     math.inv(A), math.einsum("...ij,...j->...i", -math.inv(A), b), 1 / invert_this_c
@@ -170,7 +170,6 @@ class Transformation(CircuitComponent):
             ),
             self.name + "_inv",
         )
-        return actual_inverse
 
 
 class Operation(Transformation):
@@ -316,7 +315,7 @@ class Unitary(Operation):
 
         if isinstance(other, Unitary):
             return Unitary(ret.representation)
-        elif isinstance(other, Channel):
+        if isinstance(other, Channel):
             return Channel(ret.representation)
         return ret
 

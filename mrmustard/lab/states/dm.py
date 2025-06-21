@@ -226,8 +226,7 @@ class DM(State):
             range(len(modes)),
         )
         rho = cls.from_bargmann(list(modes), (A, b, c))
-        rho = rho.normalize()
-        return rho
+        return rho.normalize()
 
     def dm(self) -> DM:
         r"""

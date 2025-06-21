@@ -225,25 +225,24 @@ class PolyExpAnsatz(Ansatz):
             c = self.c / (2 * settings.HBAR) ** (n // 2)
             return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
 
-        else:
-            if self.num_derived_vars != 2:
-                raise ValueError("This transformation supports 2 core and 0 or 2 derived variables")
-            A_tmp = self.A
+        if self.num_derived_vars != 2:
+            raise ValueError("This transformation supports 2 core and 0 or 2 derived variables")
+        A_tmp = self.A
 
-            A_tmp = A_tmp[..., [0, 2, 1, 3], :][..., [0, 2, 1, 3]]
-            b = self.b[..., [0, 2, 1, 3]]
-            c = c_in_PS(self.c)  # implements PS transformations on ``c``
+        A_tmp = A_tmp[..., [0, 2, 1, 3], :][..., [0, 2, 1, 3]]
+        b = self.b[..., [0, 2, 1, 3]]
+        c = c_in_PS(self.c)  # implements PS transformations on ``c``
 
-            W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
+        W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
 
-            A = math.einsum("ji,...jk,kl->...il", W, A_tmp, W)
-            b = math.einsum("ij,...j->...i", W, b)
-            c = c / (2 * settings.HBAR)
+        A = math.einsum("ji,...jk,kl->...il", W, A_tmp, W)
+        b = math.einsum("ij,...j->...i", W, b)
+        c = c / (2 * settings.HBAR)
 
-            A_final = A[..., [0, 2, 1, 3], :][..., :, [0, 2, 1, 3]]
-            b_final = b[..., [0, 2, 1, 3]]
+        A_final = A[..., [0, 2, 1, 3], :][..., :, [0, 2, 1, 3]]
+        b_final = b[..., [0, 2, 1, 3]]
 
-            return PolyExpAnsatz(A_final, b_final, c, lin_sup=self._lin_sup)
+        return PolyExpAnsatz(A_final, b_final, c, lin_sup=self._lin_sup)
 
     @property
     def scalar(self) -> Scalar:
@@ -494,9 +493,9 @@ class PolyExpAnsatz(Ansatz):
         broadcasted_z = math.broadcast_arrays(*reshaped_z)
         if len(evaluated_indices) == self.num_CV_vars:  # Full evaluation: all CV vars specified
             return self(*broadcasted_z)
-        else:  # Partial evaluation: some CV variables are not provided
-            combined_z = math.stack(broadcasted_z, axis=-1)
-            return self._partial_eval(combined_z, tuple(evaluated_indices))
+        # Partial evaluation: some CV variables are not provided
+        combined_z = math.stack(broadcasted_z, axis=-1)
+        return self._partial_eval(combined_z, tuple(evaluated_indices))
 
     def reorder(self, order: Sequence[int]):
         r"""
@@ -932,9 +931,8 @@ class PolyExpAnsatz(Ansatz):
         exp_sum = self._compute_exp_part(z, A, b)
         if self.num_derived_vars == 0:  # purely gaussian
             return math.einsum("...,...->...", exp_sum, c)
-        else:
-            poly = self._compute_polynomial_part(z, A, b)
-            return self._combine_exp_and_poly(exp_sum, poly, c)
+        poly = self._compute_polynomial_part(z, A, b)
+        return self._combine_exp_and_poly(exp_sum, poly, c)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, PolyExpAnsatz):

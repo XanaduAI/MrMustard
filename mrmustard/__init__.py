@@ -15,6 +15,7 @@
 """This is the top-most `__init__.py` file of MrMustard package."""
 
 # ruff: noqa: PLC0415
+# ruff: noqa: ICN001
 import os
 
 from rich import print

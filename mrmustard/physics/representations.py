@@ -189,16 +189,15 @@ class Representation:
         """
         if isinstance(self.ansatz, PolyExpAnsatz):
             return self
+        if self.ansatz._original_abc_data:
+            A, b, c = self.ansatz._original_abc_data
         else:
-            if self.ansatz._original_abc_data:
-                A, b, c = self.ansatz._original_abc_data
-            else:
-                A, b, _ = identity_Abc(len(self.wires.quantum))
-                c = self.ansatz.data
-            bargmann = PolyExpAnsatz(A, b, c)
-            for w in self.wires.quantum:
-                w.repr = ReprEnum.BARGMANN
-            return Representation(bargmann, self.wires)
+            A, b, _ = identity_Abc(len(self.wires.quantum))
+            c = self.ansatz.data
+        bargmann = PolyExpAnsatz(A, b, c)
+        for w in self.wires.quantum:
+            w.repr = ReprEnum.BARGMANN
+        return Representation(bargmann, self.wires)
 
     def to_fock(self, shape: int | Sequence[int]) -> Representation:
         r"""

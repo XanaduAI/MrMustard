@@ -76,7 +76,7 @@ def laguerre(x, N, alpha, dtype=np.complex128):  # pragma: no cover
     L = np.zeros(N, dtype=dtype)
     L[0] = 1.0
     if N > 1:
-        for m in range(0, N - 1):
+        for m in range(N - 1):
             L[m + 1] = ((2 * m + 1 + alpha - x) * L[m] - (m + alpha) * L[m - 1]) / (m + 1)
     return L
 

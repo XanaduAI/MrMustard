@@ -107,7 +107,7 @@ class BackendJax(BackendBase):
     @jax.jit
     def assign(self, tensor: jnp.ndarray, value: jnp.ndarray) -> jnp.ndarray:
         tensor = value
-        return tensor
+        return tensor  # noqa: RET504
 
     def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.asarray(array, dtype=dtype)
@@ -209,8 +209,7 @@ class BackendJax(BackendBase):
         name: str,
         dtype="float64",
     ):  # pylint: disable=unused-argument
-        value = jnp.array(value, dtype=dtype)
-        return value
+        return jnp.array(value, dtype=dtype)
 
     @jax.jit
     def outer(self, array1: jnp.ndarray, array2: jnp.ndarray) -> jnp.ndarray:
@@ -219,8 +218,7 @@ class BackendJax(BackendBase):
     @partial(jax.jit, static_argnames=["name", "dtype"])
     def new_constant(self, value, name: str, dtype=None):  # pylint: disable=unused-argument
         dtype = dtype or self.float64
-        value = self.astensor(value, dtype)
-        return value
+        return self.astensor(value, dtype)
 
     @partial(jax.jit, static_argnames=["data_format", "padding"])
     def convolution(
@@ -267,18 +265,17 @@ class BackendJax(BackendBase):
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
         if array.ndim in [1, 2]:
             return jnp.diag(array, k=k)
-        else:
-            # fallback into more complex algorithm
-            original_sh = jnp.array(array.shape)
+        # fallback into more complex algorithm
+        original_sh = jnp.array(array.shape)
 
-            ravelled_sh = (jnp.prod(original_sh[:-1]), original_sh[-1])
-            array = array.ravel().reshape(*ravelled_sh)
-            ret = jnp.array([jnp.diag(line, k) for line in array])
-            inner_shape = (
-                original_sh[-1] + abs(k),
-                original_sh[-1] + abs(k),
-            )
-            return ret.reshape(tuple(original_sh[:-1]) + tuple(inner_shape))
+        ravelled_sh = (jnp.prod(original_sh[:-1]), original_sh[-1])
+        array = array.ravel().reshape(*ravelled_sh)
+        ret = jnp.array([jnp.diag(line, k) for line in array])
+        inner_shape = (
+            original_sh[-1] + abs(k),
+            original_sh[-1] + abs(k),
+        )
+        return ret.reshape(tuple(original_sh[:-1]) + tuple(inner_shape))
 
     @partial(jax.jit, static_argnames=["k"])
     def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
@@ -335,8 +332,7 @@ class BackendJax(BackendBase):
 
     @jax.jit
     def matmul(self, *matrices: jnp.ndarray) -> jnp.ndarray:
-        mat = jnp.linalg.multi_dot(matrices)
-        return mat
+        return jnp.linalg.multi_dot(matrices)
 
     @partial(jax.jit, static_argnames=["old", "new"])
     def moveaxis(
@@ -438,8 +434,7 @@ class BackendJax(BackendBase):
 
             def sample(self, dtype=None):  # pylint: disable=unused-argument
                 fn = jax.random.multivariate_normal
-                ret = fn(self._rng, self._mean, self._cov)
-                return ret
+                return fn(self._rng, self._mean, self._cov)
 
             def prob(self, x):
                 return jsp.stats.multivariate_normal.pdf(x, mean=self._mean, cov=self._cov)
@@ -545,7 +540,7 @@ class BackendJax(BackendBase):
         output_shape = (batch_size,) + shape
         if out is not None:
             raise ValueError("'out' keyword is not supported in the JAX backend")
-        G = jax.pure_callback(
+        return jax.pure_callback(
             lambda A, b, c: strategies.vanilla_batch_numba(
                 shape, np.array(A), np.array(b), np.array(c), stable, None
             ),
@@ -554,7 +549,6 @@ class BackendJax(BackendBase):
             b,
             c,
         )
-        return G
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal(
@@ -587,14 +581,13 @@ class BackendJax(BackendBase):
             The renormalized Hermite polynomial.
         """
         function = partial(hermite_multidimensional_diagonal, cutoffs=tuple(cutoffs))
-        poly0 = jax.pure_callback(
+        return jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
             jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
             A,
             B,
             C,
         )
-        return poly0
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_batch(
@@ -620,15 +613,13 @@ class BackendJax(BackendBase):
             The renormalized Hermite polynomial from different B values.
         """
         function = partial(hermite_multidimensional_diagonal_batch, cutoffs=tuple(cutoffs))
-        poly0 = jax.pure_callback(
+        return jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
             jax.ShapeDtypeStruct(cutoffs + (B.shape[1],), jnp.complex128),
             A,
             B,
             C,
         )
-
-        return poly0
 
     @partial(jax.jit, static_argnames=["shape", "max_l2", "global_cutoff"])
     def hermite_renormalized_binomial(
@@ -658,7 +649,7 @@ class BackendJax(BackendBase):
             The renormalized Hermite polynomial of given shape.
         """
         function = partial(strategies.binomial, tuple(shape))
-        G = jax.pure_callback(
+        return jax.pure_callback(
             lambda A, B, C, max_l2, global_cutoff: function(
                 np.array(A), np.array(B), np.array(C), max_l2, global_cutoff
             )[0],
@@ -669,7 +660,6 @@ class BackendJax(BackendBase):
             max_l2,
             global_cutoff,
         )
-        return G
 
     @partial(jax.jit, static_argnames=["output_cutoff", "pnr_cutoffs"])
     def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
@@ -699,14 +689,13 @@ class BackendJax(BackendBase):
             The renormalized Hermite polynomial.
         """
         function = partial(hermite_multidimensional_1leftoverMode, cutoffs=cutoffs)
-        poly0 = jax.pure_callback(
+        return jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
             jax.ShapeDtypeStruct((cutoffs[0],) + cutoffs, jnp.complex128),
             A,
             B,
             C,
         )
-        return poly0
 
     def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):
         return displacement_jax(x, y, shape, tol)

@@ -223,7 +223,7 @@ class ParameterSet:
         """
         return bool(self._constants or self._variables)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         r"""
         Returns whether ``other`` is equivalent to this parameter set.
         """

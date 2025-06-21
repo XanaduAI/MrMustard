@@ -221,8 +221,7 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     hermite_polys = math.map_fn(f_hermite_polys, x)
 
     # (real) wavefunction
-    psi = math.exp(-(x**2 / 2)) * math.transpose(prefactor * hermite_polys)
-    return psi
+    return math.exp(-(x**2 / 2)) * math.transpose(prefactor * hermite_polys)
 
 
 @lru_cache
@@ -250,8 +249,7 @@ def estimate_dx(cutoff, period_resolution=20):
     """
     fock_cutoff_frequency = np.sqrt(2 * (cutoff + 1))
     fock_cutoff_period = 2 * np.pi / fock_cutoff_frequency
-    dx_estimate = fock_cutoff_period / period_resolution
-    return dx_estimate
+    return fock_cutoff_period / period_resolution
 
 
 @lru_cache
@@ -296,8 +294,7 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
     dx = estimate_dx(cutoff, period_resolution=period_resolution)
     xaxis = np.arange(-xmax, xmax, dx)
     xaxis = np.append(xaxis, xaxis[-1] + dx)
-    xaxis = xaxis - np.mean(xaxis)  # center around 0
-    return xaxis
+    return xaxis - np.mean(xaxis)  # center around 0
 
 
 def quadrature_basis(
@@ -343,11 +340,7 @@ def quadrature_basis(
     # Convert each dimension to quadrature
     fock_string = "".join([chr(i) for i in range(98, 98 + dims)])  #'bcd....'
     q_string = "".join([fock_string[i] + "a," for i in range(dims - 1)] + [fock_string[-1] + "a"])
-    quad_array = math.einsum(
-        fock_string + "," + q_string + "->" + "a", fock_array, *quad_basis_vecs
-    )
-
-    return quad_array
+    return math.einsum(fock_string + "," + q_string + "->" + "a", fock_array, *quad_basis_vecs)
 
 
 def quadrature_distribution(

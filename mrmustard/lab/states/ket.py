@@ -558,6 +558,6 @@ class Ket(State):
         if not result.wires.input:
             if not result.wires.bra:
                 return Ket(result.representation)
-            elif result.wires.bra.modes == result.wires.ket.modes:
+            if result.wires.bra.modes == result.wires.ket.modes:
                 return DM(result.representation)
         return result

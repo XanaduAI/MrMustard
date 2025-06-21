@@ -385,10 +385,9 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         if isinstance(self.ansatz, ArrayAnsatz):
             object_to_convert = self.to_bargmann()
 
-        QQQQ = BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
+        return BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
             BtoQ_ob
         )
-        return QQQQ
 
     def quadrature_triple(
         self, phi: float = 0.0
@@ -604,7 +603,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         for subset in subsets:
             if subset and len(subset) != len(modes):
                 raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
-        ret = self._light_copy(
+        return self._light_copy(
             Wires(
                 modes_out_bra=set(modes) if ob else set(),
                 modes_in_bra=set(modes) if ib else set(),
@@ -612,7 +611,6 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
                 modes_in_ket=set(modes) if ik else set(),
             )
         )
-        return ret
 
     def to_bargmann(self) -> CircuitComponent:
         r"""
@@ -725,12 +723,11 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         repr_name = ansatz.__class__.__name__
         if repr_name == "NoneType":
             return self.__class__.__name__ + f"(modes={self.modes}, name={self.name})"
-        else:
-            return (
-                self.__class__.__name__
-                + f"(modes={self.modes}, name={self.name}"
-                + f", repr={repr_name})"
-            )
+        return (
+            self.__class__.__name__
+            + f"(modes={self.modes}, name={self.name}"
+            + f", repr={repr_name})"
+        )
 
     def __rmatmul__(self, other: Scalar) -> CircuitComponent:
         r"""
