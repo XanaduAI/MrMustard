@@ -121,7 +121,7 @@ class Transformation(CircuitComponent):
         The triple parametrizes the quadrature representation of the transformation as
         :math:`c * exp(0.5*x^T A x + b^T x)`.
         """
-        from ..circuit_components_utils.b_to_q import BtoQ
+        from ..circuit_components_utils.b_to_q import BtoQ  # noqa: PLC0415
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
@@ -542,7 +542,7 @@ class Channel(Map):
             >>> channel = Channel.random((0, 1, 2), max_r=1.2)
             >>> assert channel.modes == (0, 1, 2)
         """
-        from mrmustard.lab.states import Vacuum
+        from mrmustard.lab.states import Vacuum  # noqa: PLC0415
 
         m = len(modes)
         U = Unitary.random(range(3 * m), max_r)

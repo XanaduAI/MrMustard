@@ -72,7 +72,7 @@ def reshape_params(n_modes: int, **kwargs) -> Generator:
 
     for i, var in enumerate(vars):
         if len(var) == 1:
-            var = math.tile(var, (n_modes,))
+            var = math.tile(var, (n_modes,))  # noqa: PLW2901
         elif len(var) != n_modes:
             msg = f"Parameter {names[i]} has an incompatible shape."
             raise ValueError(msg)

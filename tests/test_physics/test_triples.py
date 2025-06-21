@@ -33,7 +33,7 @@ class TestTriples:
             error = ValueError
             match = "Incompatible shapes for broadcasting"
         elif math.backend_name == "tensorflow":
-            from tensorflow.errors import InvalidArgumentError
+            from tensorflow.errors import InvalidArgumentError  # noqa: PLC0415
 
             error = InvalidArgumentError
             match = "Incompatible shape"
@@ -288,7 +288,7 @@ class TestTriples:
 
     def test_attenuator_Abc_error(self):
         if math.backend_name == "jax":
-            import equinox as eqx
+            import equinox as eqx  # noqa: PLC0415
 
             with pytest.raises(eqx.EquinoxRuntimeError, match="greater than `1`"):
                 triples.attenuator_Abc(2)
@@ -335,7 +335,7 @@ class TestTriples:
 
     def test_amplifier_Abc_error(self):
         if math.backend_name == "jax":
-            import equinox as eqx
+            import equinox as eqx  # noqa: PLC0415
 
             with pytest.raises(eqx.EquinoxRuntimeError, match="smaller than"):
                 triples.amplifier_Abc(0.1)

@@ -272,12 +272,12 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
             tf.summary.scalar(k, data=v, step=self.optimizer_step)
 
         for k, (x, dx) in trainables.items():
-            x = np.array(x.value)
+            x_val = np.array(x.value)
             if self.track_grads:
-                dx = np.array(dx)
+                dx = np.array(dx)  # noqa: PLW2901
 
-            tag = k if np.size(x) <= 1 else None
-            for ind, val in np.ndenumerate(x):
+            tag = k if np.size(x_val) <= 1 else None
+            for ind, val in np.ndenumerate(x_val):
                 tag = tag or k + str(list(ind)).replace(" ", "")
                 tf.summary.scalar(tag + ":value", data=val, step=self.optimizer_step)
                 if self.track_grads:

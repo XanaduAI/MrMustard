@@ -140,8 +140,8 @@ def mm_einsum(
             raise ValueError(f"Attempted contraction of {a} and {b} with mixed-type indices.")
         idx_out = prepare_idx_out(indices, a, b, output)
         result = ansatz_a.contract(ansatz_b, indices[a], indices[b], idx_out)
-        a, b = sorted((a, b))
-        ansatze.pop(b), ansatze.pop(a), indices.pop(b), indices.pop(a)
+        a_sorted, b_sorted = sorted((a, b))
+        ansatze.pop(b_sorted), ansatze.pop(a_sorted), indices.pop(b_sorted), indices.pop(a_sorted)
         ansatze.append(result)
         indices.append(idx_out)
 

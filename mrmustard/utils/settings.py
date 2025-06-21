@@ -189,7 +189,7 @@ class Settings:
         for key, val in self.__dict__.items():
             if key in not_displayed or key.startswith("_"):
                 continue
-            key = key.upper()
+            key = key.upper()  # noqa: PLW2901
             value = str(val)
             table.add_row(key, value)
 

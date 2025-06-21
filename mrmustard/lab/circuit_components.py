@@ -351,7 +351,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         Returns:
             A circuit component with the given quadrature representation.
         """
-        from .circuit_components_utils.b_to_q import BtoQ
+        from .circuit_components_utils.b_to_q import BtoQ  # noqa: PLC0415
 
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
@@ -374,7 +374,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         Returns:
             A circuit component with the given quadrature representation.
         """
-        from .circuit_components_utils.b_to_q import BtoQ
+        from .circuit_components_utils.b_to_q import BtoQ  # noqa: PLC0415
 
         BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
         BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
