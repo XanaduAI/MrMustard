@@ -26,24 +26,24 @@ from typing import (
 import numpy as np
 
 __all__ = [
-    "RealVector",
-    "ComplexVector",
-    "IntVector",
-    "UIntVector",
-    "RealMatrix",
-    "ComplexMatrix",
-    "IntMatrix",
-    "UIntMatrix",
-    "RealTensor",
-    "ComplexTensor",
-    "IntTensor",
-    "UIntTensor",
     "Batch",
-    "Scalar",
-    "Vector",
+    "ComplexMatrix",
+    "ComplexTensor",
+    "ComplexVector",
+    "IntMatrix",
+    "IntTensor",
+    "IntVector",
     "Matrix",
+    "RealMatrix",
+    "RealTensor",
+    "RealVector",
+    "Scalar",
     "Tensor",
     "Trainable",
+    "UIntMatrix",
+    "UIntTensor",
+    "UIntVector",
+    "Vector",
 ]
 
 R = TypeVar("R", np.float16, np.float32, np.float64)

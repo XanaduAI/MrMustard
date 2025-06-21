@@ -22,7 +22,7 @@ from mrmustard.utils.typing import ComplexTensor
 
 SQRT = np.sqrt(np.arange(100000))
 
-__all__ = ["squeezer", "squeezer_vjp", "squeezed", "squeezed_vjp"]
+__all__ = ["squeezed", "squeezed_vjp", "squeezer", "squeezer_vjp"]
 
 
 @njit

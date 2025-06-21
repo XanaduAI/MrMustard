@@ -139,8 +139,17 @@ directory = "coverage_html_report"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "I", "B", "UP", "BLE", "C4", "ISC", "SIM", "PERF", "PL"]
-ignore = ["E741", "F403", "B905", "PERF203", "PLR2004", "PLR0124", "PLR0913", "PLR0912", "PLR0915", "PLC0414", "PLW1641"]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP", "BLE", "C4", "ISC", "SIM", "PERF", "PL", "RUF"]
+
+# revisit RUF 005
+ignore = [
+    "E741", 
+    "F403", 
+    "B905", 
+    "PERF203", "PLR2004", "PLR0124", 
+    "PLR0913", "PLR0912", "PLR0915", "PLC0414", "PLW1641", 
+    "RUF012", "RUF001", "RUF002", "RUF005",
+    ]
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore::DeprecationWarning"

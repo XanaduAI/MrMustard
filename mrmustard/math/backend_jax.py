@@ -84,7 +84,9 @@ class BackendJax(BackendBase):
     def any(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.any(array)
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=None) -> jnp.ndarray:
+    def arange(
+        self, start: int, limit: int | None = None, delta: int = 1, dtype=None
+    ) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.arange(start, limit, delta, dtype=dtype)
 
@@ -309,7 +311,7 @@ class BackendJax(BackendBase):
         return isinstance(value, jnp.ndarray)
 
     @partial(jax.jit, static_argnames=["repeats", "axis"])
-    def repeat(self, array: jnp.ndarray, repeats: int, axis: int = None) -> jnp.ndarray:
+    def repeat(self, array: jnp.ndarray, repeats: int, axis: int | None = None) -> jnp.ndarray:
         return jnp.repeat(array, repeats, axis=axis)
 
     @partial(jax.jit, static_argnames=["axis"])
@@ -417,7 +419,7 @@ class BackendJax(BackendBase):
         return tensor[mask]
 
     @partial(jax.jit, static_argnames=["axes"])
-    def sum(self, array: jnp.ndarray, axes: Sequence[int] = None):
+    def sum(self, array: jnp.ndarray, axes: Sequence[int] | None = None):
         return jnp.sum(array, axis=axes)
 
     @jax.jit
@@ -452,7 +454,7 @@ class BackendJax(BackendBase):
     def trace(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         return self.cast(jnp.trace(array, axis1=-1, axis2=-2), dtype)
 
-    def transpose(self, a: jnp.ndarray, perm: Sequence[int] = None) -> jnp.ndarray:
+    def transpose(self, a: jnp.ndarray, perm: Sequence[int] | None = None) -> jnp.ndarray:
         return jnp.transpose(a, perm)
 
     def zeros(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:

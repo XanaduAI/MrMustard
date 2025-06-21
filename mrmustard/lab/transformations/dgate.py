@@ -101,7 +101,7 @@ class Dgate(Unitary):
             ),
         ).representation
 
-    def fock_array(self, shape: int | Sequence[int] = None) -> ComplexTensor:
+    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
 

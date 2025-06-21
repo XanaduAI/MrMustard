@@ -31,7 +31,7 @@ from ..utils import make_parameter, reshape_params
 from .dm import DM
 from .ket import Ket
 
-__all__ = ["GKet", "GDM"]
+__all__ = ["GDM", "GKet"]
 
 
 class GKet(Ket):

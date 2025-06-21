@@ -71,7 +71,7 @@ class Optimizer:
         cost_fn: Callable,
         by_optimizing: Sequence[Constant | Variable | Circuit],
         max_steps: int = 1000,
-        callbacks: Callable | Sequence[Callable] | Mapping[str, Callable] = None,
+        callbacks: Callable | Sequence[Callable] | Mapping[str, Callable] | None = None,
     ):
         r"""Minimizes the given cost function by optimizing circuits and/or detectors.
 

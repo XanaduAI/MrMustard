@@ -17,7 +17,7 @@
 import numpy as np
 from numba import jit
 
-__all__ = ["displacement", "laguerre", "grad_displacement", "jacobian_displacement"]
+__all__ = ["displacement", "grad_displacement", "jacobian_displacement", "laguerre"]
 
 
 @jit(nopython=True)

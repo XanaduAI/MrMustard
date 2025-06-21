@@ -19,9 +19,9 @@ from .core import stable_numba, vanilla_numba
 from .gradients import vanilla_batch_vjp_numba, vanilla_vjp_numba
 
 __all__ = [
-    "vanilla_numba",
     "stable_numba",
     "vanilla_batch_numba",
-    "vanilla_vjp_numba",
     "vanilla_batch_vjp_numba",
+    "vanilla_numba",
+    "vanilla_vjp_numba",
 ]

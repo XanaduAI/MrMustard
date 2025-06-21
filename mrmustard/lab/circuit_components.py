@@ -93,7 +93,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         if "modes" in params:
             serializable["modes"] = tuple(self.wires.modes)
         elif "mode" in params:
-            serializable["mode"] = tuple(self.wires.modes)[0]
+            serializable["mode"] = next(iter(self.wires.modes))
         elif "modes_out" in params and "modes_in" in params:
             serializable["modes_out"] = tuple(self.wires.output.modes)
             serializable["modes_in"] = tuple(self.wires.input.modes)

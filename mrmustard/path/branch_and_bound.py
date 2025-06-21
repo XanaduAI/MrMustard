@@ -18,6 +18,8 @@ Branch and bound algorithm for optimal contraction of a tensor network.
 
 from __future__ import annotations
 
+import functools
+import operator
 import random
 from collections.abc import Generator
 from copy import deepcopy
@@ -219,7 +221,7 @@ class Graph(nx.DiGraph):
             tuple(self.nodes)
             + tuple(self.edges)
             + tuple(self.solution)
-            + tuple(sum((c.shape for c in self.components()), start=[]))
+            + tuple(functools.reduce(operator.iadd, (c.shape for c in self.components()), []))
         )
 
 

@@ -121,7 +121,7 @@ class Circuit:
         for idx0, idx1 in self.path:
             ret[idx0] = ret[idx0] >> ret.pop(idx1)
 
-        return list(ret.values())[0]
+        return next(iter(ret.values()))
 
     def check_contraction(self, n: int) -> None:
         r"""
@@ -238,7 +238,7 @@ class Circuit:
 
         print(msg)
 
-    def serialize(self, filestem: str = None):
+    def serialize(self, filestem: str | None = None):
         r"""
         Serialize a Circuit.
 

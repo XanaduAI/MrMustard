@@ -31,7 +31,7 @@ from .circuit_components import CircuitComponent
 from .circuit_components_utils import BtoQ
 from .states import Ket, Number, State
 
-__all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
+__all__ = ["HomodyneSampler", "PNRSampler", "Sampler"]
 
 
 class Sampler(ABC):

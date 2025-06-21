@@ -308,7 +308,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("any", (array,))
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype: Any = None) -> Tensor:
+    def arange(
+        self, start: int, limit: int | None = None, delta: int = 1, dtype: Any = None
+    ) -> Tensor:
         r"""Returns an array of evenly spaced values within a given interval.
 
         Args:
@@ -1227,7 +1229,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("real", (array,))
 
-    def repeat(self, array: Tensor, repeats: int, axis: int = None) -> Tensor:
+    def repeat(self, array: Tensor, repeats: int, axis: int | None = None) -> Tensor:
         """
         Repeats elements of a tensor along a specified axis.
 
@@ -1415,7 +1417,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("trace", (array, dtype))
 
-    def transpose(self, a: Tensor, perm: Sequence[int] = None):
+    def transpose(self, a: Tensor, perm: Sequence[int] | None = None):
         r"""The transposed arrays.
 
         Args:

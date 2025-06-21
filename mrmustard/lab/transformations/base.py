@@ -38,7 +38,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, RealMatrix, Vec
 
 from ..circuit_components import CircuitComponent
 
-__all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
+__all__ = ["Channel", "Map", "Operation", "Transformation", "Unitary"]
 
 
 class Transformation(CircuitComponent):

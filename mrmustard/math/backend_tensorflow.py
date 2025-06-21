@@ -83,7 +83,7 @@ class BackendTensorflow(BackendBase):
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=None) -> tf.Tensor:
+    def arange(self, start: int, limit: int | None = None, delta: int = 1, dtype=None) -> tf.Tensor:
         dtype = dtype or self.float64
         return tf.range(start, limit, delta, dtype=dtype)
 
@@ -332,7 +332,7 @@ class BackendTensorflow(BackendBase):
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
 
-    def repeat(self, array: tf.Tensor, repeats: int, axis: int = None) -> tf.Tensor:
+    def repeat(self, array: tf.Tensor, repeats: int, axis: int | None = None) -> tf.Tensor:
         return tf.repeat(array, repeats, axis=axis)
 
     def round(self, array: tf.Tensor, decimals: int = 0) -> tf.Tensor:
