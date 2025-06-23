@@ -39,7 +39,7 @@
   [(#545)](https://github.com/XanaduAI/MrMustard/pull/545)
 
 * Updated CI to allow for manual running of test timings before merging to develop.
-  [(#611)](https://github.com/XanaduAI/MrMustard/pull/611)
+  [(#612)](https://github.com/XanaduAI/MrMustard/pull/612)
 
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent.
