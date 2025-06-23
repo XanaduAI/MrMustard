@@ -86,8 +86,7 @@ class BackendNumpy(BackendBase):
         return np.array(tensor)
 
     def assign(self, tensor: np.ndarray, value: np.ndarray) -> np.ndarray:
-        tensor = value
-        return tensor  # noqa: RET504
+        return value
 
     def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
         array = np.array(array)

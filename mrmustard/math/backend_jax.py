@@ -106,8 +106,7 @@ class BackendJax(BackendBase):
 
     @jax.jit
     def assign(self, tensor: jnp.ndarray, value: jnp.ndarray) -> jnp.ndarray:
-        tensor = value
-        return tensor  # noqa: RET504
+        return value
 
     def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.asarray(array, dtype=dtype)
