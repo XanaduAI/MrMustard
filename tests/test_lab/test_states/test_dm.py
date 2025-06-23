@@ -408,20 +408,29 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(exp_u1, exp_u1_coh)
         assert math.allclose(exp_u01, exp_u0_coh * exp_u1_coh)
 
-        # test for the case where the batch shape of the ket and the operator are different
-        alpha_2 = math.broadcast_to(0.3 + 0.2j, (7,))
-        coh_2 = Coherent(0, x=math.real(alpha_2), y=math.imag(alpha_2))
-        exp_coh_2 = dm.expectation(coh_2)
-        assert exp_coh_2.shape == batch_shape + (7,)
+    @pytest.mark.parametrize("batch_shape", [(2,), (2, 3)])
+    @pytest.mark.parametrize("batch_shape_2", [(7,), (4, 5, 7)])
+    def test_expectation_diff_batch_shapes(self, batch_shape, batch_shape_2):
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
+        dm = coh_0.dm()
 
-        dm2 = coh_2.dm()
-        exp_dm2 = dm.expectation(dm2)
-        assert exp_dm2.shape == batch_shape + (7,)
+        # ket operator
+        alpha_1 = math.broadcast_to(0.3 + 0.2j, batch_shape_2)
+        coh_1 = Coherent(0, x=math.real(alpha_1), y=math.imag(alpha_1))
+        exp_coh_1 = dm.expectation(coh_1)
+        assert exp_coh_1.shape == batch_shape + batch_shape_2
 
-        beta_2 = math.broadcast_to(0.3, (7,))
-        u2 = Dgate(0, x=beta_2)
-        exp_u2 = dm.expectation(u2)
-        assert exp_u2.shape == batch_shape + (7,)
+        # dm operator
+        dm1 = coh_1.dm()
+        exp_dm1 = dm.expectation(dm1)
+        assert exp_dm1.shape == batch_shape + batch_shape_2
+
+        # u operator
+        beta_0 = math.broadcast_to(0.3, batch_shape_2)
+        u0 = Dgate(0, x=beta_0)
+        exp_u0 = dm.expectation(u0)
+        assert exp_u0.shape == batch_shape + batch_shape_2
 
     def test_expectation_lin_sup(self):
         cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
