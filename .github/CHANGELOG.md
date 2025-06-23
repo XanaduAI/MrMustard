@@ -38,6 +38,9 @@
 * Cast tuples to tensors before initializing the `PolyExpAnsatz` class.
   [(#545)](https://github.com/XanaduAI/MrMustard/pull/545)
 
+* Updated CI to allow for manual running of test timings before merging to develop.
+  [(#611)](https://github.com/XanaduAI/MrMustard/pull/611)
+
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent.
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
