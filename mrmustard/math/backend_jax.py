@@ -88,7 +88,7 @@ class BackendJax(BackendBase):
         return jnp.arange(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: jnp.ndarray) -> np.ndarray:
-        return np.array(tensor)
+        return np.asarray(tensor)
 
     @partial(jax.jit, static_argnames=["shape"])
     def broadcast_to(self, array: jnp.ndarray, shape: tuple[int]) -> jnp.ndarray:
@@ -146,7 +146,7 @@ class BackendJax(BackendBase):
         try:
             return jnp.concatenate(values, axis)
         except ValueError:
-            return jnp.array(values)
+            return jnp.asarray(values)
 
     @partial(jax.jit, static_argnames=["axis"])
     def sort(self, array: jnp.ndarray, axis: int = -1) -> jnp.ndarray:
@@ -266,7 +266,7 @@ class BackendJax(BackendBase):
             return jnp.diag(array, k=k)
         else:
             # fallback into more complex algorithm
-            original_sh = jnp.array(array.shape)
+            original_sh = jnp.asarray(array.shape)
 
             ravelled_sh = (jnp.prod(original_sh[:-1]), original_sh[-1])
             array = array.ravel().reshape(*ravelled_sh)
@@ -275,7 +275,7 @@ class BackendJax(BackendBase):
             for line in array:
                 ret.append(jnp.diag(line, k))
 
-            ret = jnp.array(ret)
+            ret = jnp.asarray(ret)
             inner_shape = (
                 original_sh[-1] + abs(k),
                 original_sh[-1] + abs(k),
@@ -550,7 +550,7 @@ class BackendJax(BackendBase):
             raise ValueError("'out' keyword is not supported in the JAX backend")
         G = jax.pure_callback(
             lambda A, b, c: strategies.vanilla_batch_numba(
-                shape, np.array(A), np.array(b), np.array(c), stable, None
+                shape, np.asarray(A), np.asarray(b), np.asarray(c), stable, None
             ),
             jax.ShapeDtypeStruct(output_shape, jnp.complex128),
             A,
@@ -591,7 +591,7 @@ class BackendJax(BackendBase):
         """
         function = partial(hermite_multidimensional_diagonal, cutoffs=tuple(cutoffs))
         poly0 = jax.pure_callback(
-            lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
+            lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
             jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
             A,
             B,
@@ -624,7 +624,7 @@ class BackendJax(BackendBase):
         """
         function = partial(hermite_multidimensional_diagonal_batch, cutoffs=tuple(cutoffs))
         poly0 = jax.pure_callback(
-            lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
+            lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
             jax.ShapeDtypeStruct(cutoffs + (B.shape[1],), jnp.complex128),
             A,
             B,
@@ -663,7 +663,7 @@ class BackendJax(BackendBase):
         function = partial(strategies.binomial, tuple(shape))
         G = jax.pure_callback(
             lambda A, B, C, max_l2, global_cutoff: function(
-                np.array(A), np.array(B), np.array(C), max_l2, global_cutoff
+                np.asarray(A), np.asarray(B), np.asarray(C), max_l2, global_cutoff
             )[0],
             jax.ShapeDtypeStruct(shape, jnp.complex128),
             A,
@@ -703,7 +703,7 @@ class BackendJax(BackendBase):
         """
         function = partial(hermite_multidimensional_1leftoverMode, cutoffs=cutoffs)
         poly0 = jax.pure_callback(
-            lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
+            lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
             jax.ShapeDtypeStruct((cutoffs[0],) + cutoffs, jnp.complex128),
             A,
             B,
