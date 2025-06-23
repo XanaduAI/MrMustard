@@ -126,10 +126,11 @@ class TestBtoQ:
             )
             return c * np.exp(0.5 * A * quad**2 + b * quad)
 
-        x = np.random.random()
-        y = np.random.random()
-        axis_angle = np.random.random()
-        quad = np.random.random()
+        rng = settings.rng
+        x = rng.random()
+        y = rng.random()
+        axis_angle = rng.random()
+        quad = rng.random()
 
         state = Coherent(0, x, y)
         wavefunction = (state >> BtoQ((0,), axis_angle)).ansatz

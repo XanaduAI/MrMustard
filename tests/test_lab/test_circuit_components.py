@@ -205,7 +205,7 @@ class TestCircuitComponent:
 
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
-        c = np.random.random(5) + 0.0j
+        c = settings.rng.random(5) + 0.0j
         polyexp = PolyExpAnsatz(A, b, c)
         fock_cc = CircuitComponent(
             Representation(polyexp, Wires(set(), set(), {0, 1}, set()))

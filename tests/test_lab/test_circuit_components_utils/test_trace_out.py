@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.lab.circuit_components_utils import TraceOut
 from mrmustard.lab.states import Coherent, Ket
@@ -71,5 +71,5 @@ class TestTraceOut:
         assert np.isclose(no_state, 1.0)
 
     def test_trace_out_with_batch(self):
-        state = Ket.from_fock([0], np.random.random((2, 3, 4)), batch_dims=2)
+        state = Ket.from_fock([0], settings.rng.random((2, 3, 4)), batch_dims=2)
         assert (state >> TraceOut(0)).shape == (2, 3)

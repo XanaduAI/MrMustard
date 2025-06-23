@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.lab.states import Coherent, Vacuum
 from mrmustard.lab.transformations import (
@@ -236,8 +236,8 @@ class TestChannel:
 
     @pytest.mark.parametrize("nmodes", [1, 2, 3])
     def test_from_XY(self, nmodes):
-        X = np.random.random((2 * nmodes, 2 * nmodes))
-        Y = np.random.random((2 * nmodes, 2 * nmodes))
+        X = settings.rng.random((2 * nmodes, 2 * nmodes))
+        Y = settings.rng.random((2 * nmodes, 2 * nmodes))
         x, y = Channel.from_XY(tuple(range(nmodes)), tuple(range(nmodes)), X, Y).XY
         assert math.allclose(x, X)
         assert math.allclose(y, Y)

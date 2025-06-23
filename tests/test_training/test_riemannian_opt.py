@@ -22,7 +22,7 @@ from scipy.stats import unitary_group
 from thewalrus.random import random_symplectic
 from thewalrus.symplectic import is_symplectic
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 
 
@@ -44,10 +44,11 @@ def is_orthogonal(M, rtol=1e-05, atol=1e-08):
 @given(n=st.integers(2, 4))
 def test_update_symplectic(n):
     """Testing the update of symplectic matrix remains to be symplectic"""
+    rng = settings.rng
     S = math.new_variable(random_symplectic(n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
         dS_euclidean = math.new_variable(
-            np.random.random((2 * n, 2 * n)) + 1j * np.random.random((2 * n, 2 * n)),
+            rng.random((2 * n, 2 * n)) + 1j * rng.random((2 * n, 2 * n)),
             name=None,
             dtype="complex128",
             bounds=None,
@@ -62,9 +63,10 @@ def test_update_symplectic(n):
 @given(n=st.integers(2, 4))
 def test_update_unitary(n):
     """Testing the update of unitary matrix remains to be unitary"""
+    rng = settings.rng
     U = math.new_variable(unitary_group.rvs(dim=n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
-        dU_euclidean = np.random.random((n, n)) + 1j * np.random.random((n, n))
+        dU_euclidean = rng.random((n, n)) + 1j * rng.random((n, n))
         update_unitary([[dU_euclidean, U]], 0.01)
         assert is_unitary(math.asnumpy(U)), "training step does not result in a unitary matrix"
         sym = np.block(
@@ -81,9 +83,10 @@ def test_update_unitary(n):
 @given(n=st.integers(2, 4))
 def test_update_orthogonal(n):
     """Testing the update of orthogonal matrix remains to be orthogonal"""
+    rng = settings.rng
     O = math.new_variable(math.random_orthogonal(n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
-        dO_euclidean = np.random.random((n, n)) + 1j * np.random.random((n, n))
+        dO_euclidean = rng.random((n, n)) + 1j * rng.random((n, n))
         update_orthogonal([[dO_euclidean, O]], 0.01)
         assert is_unitary(math.asnumpy(O)), "training step does not result in a unitary matrix"
         ortho = np.block(

@@ -434,7 +434,7 @@ class BackendNumpy(BackendBase):
 
             def sample(self):
                 idx = [i for i, _ in enumerate(probs)]
-                return np.random.choice(idx, p=probs / sum(probs))
+                return np.random.choice(idx, p=probs / sum(probs))  # noqa: NPY002
 
         return Generator(probs)
 

@@ -16,9 +16,7 @@
 
 # pylint: disable=missing-function-docstring, expression-not-assigned
 
-import numpy as np
-
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab.states import DM
 from mrmustard.lab.transformations import GaussRandNoise
 
@@ -31,14 +29,14 @@ class TestGRN:
     def test_init(self):
         "Tests the GaussRandNoise initialization."
 
-        a = np.random.random((2, 2))
+        a = settings.rng.random((2, 2))
         grn = GaussRandNoise((0,), a @ a.T)
         assert grn.name == "GRN~"
         assert grn.modes == (0,)
 
     def test_grn(self):
         "Tests if the A matrix of GaussRandNoise is computed correctly."
-        a = np.random.random((4, 4))
+        a = settings.rng.random((4, 4))
         Y = a @ a.T
         phi = GaussRandNoise((0, 1), Y)
 

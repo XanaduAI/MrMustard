@@ -17,7 +17,7 @@
 import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.math.lattice import strategies
 
 
@@ -53,7 +53,7 @@ class TestVanilla:
         G = strategies.vanilla_numba(shape, A, b, c)
 
         # upstream gradient
-        dLdG = np.random.randn(*G.shape)
+        dLdG = settings.rng.standard_normal(G.shape)
 
         # Compute finite difference for c
         dGdc_fd = (strategies.vanilla_numba(shape, A, b, c + epsilon) - G) / epsilon
@@ -98,7 +98,9 @@ class TestVanilla:
         G = strategies.vanilla_batch_numba(shape, A, b, c)
 
         # Generate random upstream gradient with same shape as G
-        dLdG = np.random.randn(*G.shape) + 1j * np.random.randn(*G.shape)  # upstream gradient
+        dLdG = settings.rng.standard_normal(G.shape) + 1j * settings.rng.standard_normal(
+            G.shape
+        )  # upstream gradient
 
         # Compute finite difference for c
         dGdc_fd = np.zeros(G.shape + c.shape, dtype=np.complex128)

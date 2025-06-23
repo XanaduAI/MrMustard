@@ -399,7 +399,7 @@ class TestTriples:
 
     def test_XY_to_channel_Abc(self):
         # Creating an attenuator object and testing its Abc triple
-        eta = np.random.random()
+        eta = settings.rng.random()
         X = math.sqrt(eta) * math.eye(2)
         Y = settings.HBAR / 2 * (1 - eta) * math.eye(2)
 
@@ -421,7 +421,7 @@ class TestTriples:
         assert math.allclose(c, 1.0)
 
     def test_XY_to_channel_Abc_batched(self):
-        eta = np.random.random(2)[:, None, None]
+        eta = settings.rng.random(2)[:, None, None]
         X = math.sqrt(eta) * math.eye(2)[None, :, :]
         # Now X has shape (2, 2, 2)
         Y = settings.HBAR / 2 * (1 - eta) * math.eye(2)[None, :, :]

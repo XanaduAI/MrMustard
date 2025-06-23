@@ -64,7 +64,7 @@ class Settings:
 
     def __init__(self):
         self._hbar: float = 1.0
-        self._seed: int = np.random.randint(0, 2**31 - 1)
+        self._seed: int = np.random.randint(0, 2**31 - 1)  # noqa: NPY002
         self.rng = np.random.default_rng(self._seed)
         self._precision_bits_hermite_poly: int = 128
         self._complex_warning: bool = False
@@ -148,7 +148,7 @@ class Settings:
     def SEED(self) -> int:
         r"""Returns the seed value if set, otherwise returns a random seed."""
         if self._seed is None:
-            self._seed = np.random.randint(0, 2**31 - 1)
+            self._seed = np.random.randint(0, 2**31 - 1)  # noqa: NPY002
             self.rng = np.random.default_rng(self._seed)
         return self._seed
 

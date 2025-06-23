@@ -161,8 +161,8 @@ class TestMmEinsum:
 
     def test_single_mode_fock_with_double_batch(self):
         """Test that mm_einsum works for a single mode fock state with double batch dimensions."""
-        array1 = np.random.random((3, 4, 5, 6))
-        array2 = np.random.random((3, 5, 6))
+        array1 = settings.rng.random((3, 4, 5, 6))
+        array2 = settings.rng.random((3, 5, 6))
         f1 = ArrayAnsatz(array1, batch_dims=2)
         f2 = ArrayAnsatz(array2, batch_dims=1)
 

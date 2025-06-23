@@ -22,7 +22,7 @@ import tensorflow as tf
 from jax import numpy as jnp
 from jax.errors import TracerArrayConversionError
 
-from mrmustard import math
+from mrmustard import math, settings
 
 
 # pylint: disable=too-many-public-methods
@@ -560,8 +560,8 @@ class TestBackendManager:
         r"""
         Tests the ``moveaxis`` method.
         """
-        arr1 = np.random.random(size=(1, 2, 3))
-        arr2 = np.random.random(size=(2, 1, 3))
+        arr1 = settings.rng.random(size=(1, 2, 3))
+        arr2 = settings.rng.random(size=(2, 1, 3))
         arr2_moved = math.moveaxis(arr2, 0, 1)
         assert math.allclose(arr1.shape, arr2_moved.shape)
 
