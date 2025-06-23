@@ -29,6 +29,7 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.representations import Representation
+from mrmustard.physics.utils import outer_product_batch_str, zip_batch_strings
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
     ComplexTensor,
@@ -40,7 +41,6 @@ from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
 from ..transformations import Map, Channel, Dgate
-
 from ..utils import shape_check
 
 __all__ = ["DM"]
@@ -290,8 +290,24 @@ class DM(State):
 
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
-            result = self.contract(operator.dual.adjoint, mode=mode).contract(
-                operator.dual, mode="zip"
+            # if mode is not zip we need to generate a new eins_str for the second contraction
+            if mode != "zip":
+                eins_str = (
+                    outer_product_batch_str(
+                        self.ansatz.batch_dims - self.ansatz._lin_sup,
+                        operator.ansatz.batch_dims - operator.ansatz._lin_sup,
+                    )
+                    if mode == "kron"
+                    else mode
+                )
+                batch_in, batch_out = eins_str.split("->")
+                _, batch2 = batch_in.split(",")
+                eins_str2 = f"{batch_out},{batch2}->{batch_out}"
+            else:
+                eins_str = mode
+                eins_str2 = mode
+            result = self.contract(operator.dual.adjoint, mode=eins_str).contract(
+                operator.dual, mode=eins_str2
             ) >> TraceOut(leftover_modes)
         elif op_type is OperatorType.DM_LIKE:
             result = self.contract(operator.dual, mode=mode) >> TraceOut(leftover_modes)
