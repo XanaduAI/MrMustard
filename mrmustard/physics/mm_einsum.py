@@ -114,7 +114,7 @@ def mm_einsum(
     """
     # --- prepare ansatz and indices, convert names to characters ---
     ansatze = list(args[::2])
-    all_batch_names = set(name for index in args[1::2] for name in _strings(index))  # noqa: C401
+    all_batch_names = {name for index in args[1::2] for name in _strings(index)}
     names_to_chars = {name: chr(97 + i) for i, name in enumerate(all_batch_names)}
     indices = [[names_to_chars[s] for s in _strings(index)] + _ints(index) for index in args[1::2]]
     output = [names_to_chars[s] for s in _strings(output)] + _ints(output)
