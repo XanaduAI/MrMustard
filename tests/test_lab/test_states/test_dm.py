@@ -408,6 +408,21 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(exp_u1, exp_u1_coh)
         assert math.allclose(exp_u01, exp_u0_coh * exp_u1_coh)
 
+        # test for the case where the batch shape of the ket and the operator are different
+        alpha_2 = math.broadcast_to(0.3 + 0.2j, (7,))
+        coh_2 = Coherent(0, x=math.real(alpha_2), y=math.imag(alpha_2))
+        exp_coh_2 = dm.expectation(coh_2)
+        assert exp_coh_2.shape == batch_shape + (7,)
+
+        dm2 = coh_2.dm()
+        exp_dm2 = dm.expectation(dm2)
+        assert exp_dm2.shape == batch_shape + (7,)
+
+        beta_2 = math.broadcast_to(0.3, (7,))
+        u2 = Dgate(0, x=beta_2)
+        exp_u2 = dm.expectation(u2)
+        assert exp_u2.shape == batch_shape + (7,)
+
     def test_expectation_lin_sup(self):
         cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
         cat_dm = cat.dm()

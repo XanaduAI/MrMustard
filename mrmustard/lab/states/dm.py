@@ -29,7 +29,7 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.utils import outer_product_batch_str, zip_batch_strings
+from mrmustard.physics.utils import outer_product_batch_str
 from mrmustard.physics.wires import Wires, ReprEnum
 from mrmustard.utils.typing import (
     ComplexTensor,
