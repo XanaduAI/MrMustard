@@ -14,7 +14,9 @@
 
 """This module contains the classes to describe sets of parameters."""
 
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
+
 import numpy as np
 
 from mrmustard.math.backend_manager import BackendManager
@@ -194,7 +196,7 @@ class ParameterSet:
             >>> assert np.allclose(ps[1, 2].variables["v2"].value, [7, 8])
         """
         if isinstance(items, int):
-            items = list([items])
+            items = [items]
         items = math.astensor(items)
 
         ret = ParameterSet()
@@ -219,11 +221,9 @@ class ParameterSet:
         r"""
         ``False`` if this parameter set is empty, ``True`` otherwise.
         """
-        if self._constants or self._variables:
-            return True
-        return False
+        return bool(self._constants or self._variables)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         r"""
         Returns whether ``other`` is equivalent to this parameter set.
         """

@@ -30,12 +30,15 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
 
-__all__ = ["beamsplitter", "stable_beamsplitter", "beamsplitter_vjp", "beamsplitter_schwinger"]
+__all__ = ["beamsplitter", "beamsplitter_schwinger", "beamsplitter_vjp", "stable_beamsplitter"]
 
 
 @njit
 def beamsplitter(
-    shape: tuple[int, int, int, int], theta: float, phi: float, dtype=np.complex128
+    shape: tuple[int, int, int, int],
+    theta: float,
+    phi: float,
+    dtype=np.complex128,
 ) -> ComplexTensor:  # pragma: no cover
     r"""Calculates the Fock representation of the beamsplitter.
     It takes advantage of input-output particle conservation (m+n=p+q)
@@ -88,7 +91,7 @@ def beamsplitter(
 
 
 @njit
-def stable_beamsplitter(shape, theta, phi):  # pragma: no cover # pylint: disable=too-many-branches
+def stable_beamsplitter(shape, theta, phi):  # pragma: no cover  # noqa: C901
     r"""
     Stable implementation of the Fock representation of the beamsplitter.
     It is numerically stable up to arbitrary cutoffs.
@@ -230,7 +233,7 @@ def beamsplitter_vjp(
 
     # omitting bottom-left block because dLdA should be zero there
     dLdtheta = 2 * np.real(
-        -st * dLdA[0, 2] - ct * em * dLdA[0, 3] + ct * e * dLdA[1, 2] - st * dLdA[1, 3]
+        -st * dLdA[0, 2] - ct * em * dLdA[0, 3] + ct * e * dLdA[1, 2] - st * dLdA[1, 3],
     )
     dLdphi = 2 * np.real(1j * st * em * dLdA[0, 3] + 1j * st * e * dLdA[1, 2])
 
@@ -366,7 +369,7 @@ def apply_BS_schwinger(theta, phi, i, j, array) -> np.ndarray:
     order = [k for k in range(array.ndim) if k not in [i, j]] + [i, j]
     array = array.transpose(order)  # move the indices to the end
     shape_rest, shape = array.shape[:-2], array.shape[-2:]
-    array = array.reshape(shape_rest + (-1,))  # flatten the last two dimensions
+    array = array.reshape((*shape_rest, -1))  # flatten the last two dimensions
     # step 2: apply each unitary to the corresponding indices
     for N in range(sum(shape) - 1):
         flat_idx = sector_idx(N, shape)
@@ -375,5 +378,4 @@ def apply_BS_schwinger(theta, phi, i, j, array) -> np.ndarray:
         array[..., flat_idx] @= u[subset, ...][..., subset] if 0 < len(subset) < N else u
     # step 3: reshape back and reorder
     array = array.reshape(shape_rest + shape)
-    array = array.transpose(np.argsort(order))
-    return array
+    return array.transpose(np.argsort(order))

@@ -15,13 +15,16 @@
 """Implementation of the mm_einsum function."""
 
 from __future__ import annotations
+
 from typing import Literal
+
+from numpy.typing import ArrayLike
+from opt_einsum.paths import ssa_to_linear
+
 from mrmustard import math
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.ansatz.base import Ansatz
 from mrmustard.physics.triples import identity_Abc
-from numpy.typing import ArrayLike
-from opt_einsum.paths import ssa_to_linear
 
 
 def _ints(seq: list[int | str]) -> list[int]:
@@ -111,7 +114,7 @@ def mm_einsum(
     """
     # --- prepare ansatz and indices, convert names to characters ---
     ansatze = list(args[::2])
-    all_batch_names = set(name for index in args[1::2] for name in _strings(index))
+    all_batch_names = {name for index in args[1::2] for name in _strings(index)}
     names_to_chars = {name: chr(97 + i) for i, name in enumerate(all_batch_names)}
     indices = [[names_to_chars[s] for s in _strings(index)] + _ints(index) for index in args[1::2]]
     output = [names_to_chars[s] for s in _strings(output)] + _ints(output)
@@ -137,8 +140,8 @@ def mm_einsum(
             raise ValueError(f"Attempted contraction of {a} and {b} with mixed-type indices.")
         idx_out = prepare_idx_out(indices, a, b, output)
         result = ansatz_a.contract(ansatz_b, indices[a], indices[b], idx_out)
-        a, b = sorted((a, b))
-        ansatze.pop(b), ansatze.pop(a), indices.pop(b), indices.pop(a)
+        a_sorted, b_sorted = sorted((a, b))
+        ansatze.pop(b_sorted), ansatze.pop(a_sorted), indices.pop(b_sorted), indices.pop(a_sorted)
         ansatze.append(result)
         indices.append(idx_out)
 
@@ -184,7 +187,10 @@ def get_shapes(
     """
 
     def get_shape_for_idx(
-        idx: int, ansatz: Ansatz, core_idx: list[int], fock_dims: dict[int, int]
+        idx: int,
+        ansatz: Ansatz,
+        core_idx: list[int],
+        fock_dims: dict[int, int],
     ) -> int:
         if idx in fock_dims:
             return fock_dims[idx]
@@ -232,7 +238,10 @@ def get_shapes(
 
 
 def prepare_idx_out(
-    indices: dict[int, list[int | str]], a: int, b: int, output: list[int | str]
+    indices: dict[int, list[int | str]],
+    a: int,
+    b: int,
+    output: list[int | str],
 ) -> list[int | str]:
     r"""
     Prepares the index of the output of the contraction of two ansatze.
@@ -301,7 +310,7 @@ def to_bargmann(ansatz: Ansatz) -> PolyExpAnsatz:
     except (TypeError, AttributeError):
         # TODO: update identity_Abc when it supports batching
         A, b, _ = identity_Abc(ansatz.core_dims)
-        A = math.broadcast_to(A, ansatz.batch_shape + (2 * ansatz.core_dims, 2 * ansatz.core_dims))
-        b = math.broadcast_to(b, ansatz.batch_shape + (2 * ansatz.core_dims,))
+        A = math.broadcast_to(A, (*ansatz.batch_shape, 2 * ansatz.core_dims, 2 * ansatz.core_dims))
+        b = math.broadcast_to(b, (*ansatz.batch_shape, 2 * ansatz.core_dims))
         c = ansatz.array
     return PolyExpAnsatz(A, b, c)

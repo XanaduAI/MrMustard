@@ -18,17 +18,18 @@ The class representing a beam splitter gate.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 from dataclasses import replace
 
 from mrmustard import math
 from mrmustard.utils.typing import ComplexTensor
-from .base import Unitary
-from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
+
 from ...physics import triples
-from ..utils import make_parameter
-from ...physics.wires import Wires, ReprEnum
+from ...physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from ...physics.representations import Representation
+from ...physics.wires import ReprEnum, Wires
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["BSgate"]
 
@@ -111,7 +112,9 @@ class BSgate(Unitary):
         ).representation
 
     def fock_array(
-        self, shape: int | Sequence[int] | None = None, method: str = "stable"
+        self,
+        shape: int | Sequence[int] | None = None,
+        method: str = "stable",
     ) -> ComplexTensor:
         r"""
         Returns the unitary representation of the Beam Splitter gate in the Fock basis.
@@ -136,12 +139,13 @@ class BSgate(Unitary):
 
         if self.ansatz.batch_shape:
             theta, phi = math.broadcast_arrays(
-                self.parameters.theta.value, self.parameters.phi.value
+                self.parameters.theta.value,
+                self.parameters.phi.value,
             )
             theta = math.reshape(theta, (-1,))
             phi = math.reshape(phi, (-1,))
             ret = math.astensor(
-                [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta, phi)]
+                [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta, phi)],
             )
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
         else:

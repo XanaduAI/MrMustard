@@ -47,7 +47,7 @@ def optimal_path(
     if len(G.nodes) > 1:
         raise ValueError("Circuit has disconnected components.")
 
-    i = list(G.nodes)[0]
+    i = next(iter(G.nodes))
     if len(G.nodes[i]["component"].wires) > 0:
         raise NotImplementedError("Cannot optimize a circuit with dangling wires yet.")
 

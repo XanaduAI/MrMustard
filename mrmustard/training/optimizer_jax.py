@@ -15,20 +15,21 @@
 """
 A Jax based optimizer for any parametrized object.
 """
+
 from __future__ import annotations
 
-from typing import Callable, Sequence
+from collections.abc import Callable, Sequence
 from itertools import chain
 
-import jax
 import equinox as eqx
+import jax
 from optax import GradientTransformation, OptState
 
 from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
+from mrmustard.math.parameters import Variable
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
-from mrmustard.math.parameters import Variable
 
 __all__ = ["OptimizerJax"]
 
@@ -169,7 +170,10 @@ class OptimizerJax:
             progress_bar = ProgressBar(max_steps)
             with progress_bar:
                 self._optimization_loop(
-                    cost_fn, by_optimizing, max_steps=max_steps, progress_bar=progress_bar
+                    cost_fn,
+                    by_optimizing,
+                    max_steps=max_steps,
+                    progress_bar=progress_bar,
                 )
         else:
             self._optimization_loop(cost_fn, by_optimizing, max_steps=max_steps)
@@ -188,13 +192,14 @@ class OptimizerJax:
         """
         if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
-        if len(self.opt_history) > 20:  # if cost varies less than threshold over 20 steps
-            if (
-                sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
-                < self.stable_threshold
-            ):
-                self.log.info("Loss looks stable, stopping here.")
-                return True
+        # if cost varies less than threshold over 20 steps
+        if (
+            len(self.opt_history) > 20
+            and sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
+            < self.stable_threshold
+        ):
+            self.log.info("Loss looks stable, stopping here.")
+            return True
         return False
 
     def _optimization_loop(

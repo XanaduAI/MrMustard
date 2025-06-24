@@ -13,8 +13,9 @@
 # limitations under the License.
 
 """Tests for the Optimizer class"""
-import pytest
+
 import numpy as np
+import pytest
 import tensorflow as tf
 from hypothesis import given
 from hypothesis import strategies as st
@@ -58,13 +59,15 @@ class TestOptimizer:
         rng.reset_from_seed(settings.SEED)
 
         S = TwoModeSqueezedVacuum(
-            (0, 1), r=abs(settings.rng.normal(loc=1.0, scale=0.1)), r_trainable=True
+            (0, 1),
+            r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
+            r_trainable=True,
         )
 
         def cost_fn():
-            return -math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2
+            return -(math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2)
 
-        def cb(optimizer, cost, trainables, **kwargs):  # pylint: disable=unused-argument
+        def cb(optimizer, cost, trainables, **kwargs):
             return {
                 "cost": cost,
                 "lr": optimizer.learning_rate[update_euclidean],
@@ -145,7 +148,7 @@ class TestOptimizer:
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
-            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
         opt = Optimizer(euclidean_lr=0.05)
 
@@ -162,7 +165,7 @@ class TestOptimizer:
 
         def cost_fn():
             amps = G.fock_array((2, 2))
-            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
         opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
@@ -188,7 +191,7 @@ class TestOptimizer:
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
-            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
         opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
 
@@ -222,7 +225,7 @@ class TestOptimizer:
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2))
-            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
         opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
 
@@ -261,7 +264,7 @@ class TestOptimizer:
                     -0.25390362 - 0.2244298j,
                     0.18706333 - 0.64375049j,
                 ],
-            ]
+            ],
         )
         perturbed = (
             Interferometer((0, 1, 2, 3), unitary=solution_U)
@@ -285,7 +288,7 @@ class TestOptimizer:
 
         def cost_fn():
             amps = circ.contract().fock_array((3, 3, 3, 3))
-            return -math.abs((amps[1, 1, 2, 0] + amps[1, 1, 0, 2]) / np.sqrt(2)) ** 2
+            return -(math.abs((amps[1, 1, 2, 0] + amps[1, 1, 0, 2]) / np.sqrt(2)) ** 2)
 
         opt = Optimizer(unitary_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[circ], max_steps=200)
@@ -303,7 +306,7 @@ class TestOptimizer:
                 [-0.5, -0.5, -0.5, 0.5],
                 [0.5, 0.5, -0.5, 0.5],
                 [0.5, -0.5, -0.5, -0.5],
-            ]
+            ],
         )
         pertubed = (
             RealInterferometer((0, 1, 2, 3), orthogonal=solution_O)
@@ -344,14 +347,16 @@ class TestOptimizer:
             phi_trainable=True,
         )
         r_inter = RealInterferometer(
-            (0, 1, 2, 3), orthogonal=perturbed_O, orthogonal_trainable=True
+            (0, 1, 2, 3),
+            orthogonal=perturbed_O,
+            orthogonal_trainable=True,
         )
 
         circ = Circuit([state_in, s_gate0, s_gate1, s_gate2, s_gate3, r_inter])
 
         def cost_fn():
             amps = circ.contract().fock_array((2, 2, 3, 3))
-            return -math.abs((amps[1, 1, 0, 2] + amps[1, 1, 2, 0]) / np.sqrt(2)) ** 2
+            return -(math.abs((amps[1, 1, 0, 2] + amps[1, 1, 2, 0]) / np.sqrt(2)) ** 2)
 
         opt = Optimizer()
 
@@ -372,7 +377,11 @@ class TestOptimizer:
         S_01 = S2gate((0, 1), r=r, phi=0.0, phi_trainable=True)
         S_23 = S2gate((2, 3), r=r, phi=0.0, phi_trainable=True)
         S_12 = S2gate(
-            (1, 2), r=1.0, phi=settings.rng.normal(), r_trainable=True, phi_trainable=True
+            (1, 2),
+            r=1.0,
+            phi=settings.rng.normal(),
+            r_trainable=True,
+            phi_trainable=True,
         )
 
         circ = Circuit([state_in, S_01, S_23, S_12])
@@ -480,7 +489,7 @@ class TestOptimizer:
 
         def cost_fn():
             state_out = Vacuum(0) >> dgate
-            return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
+            return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[dgate])
@@ -500,7 +509,7 @@ class TestOptimizer:
         def cost_fn():
             state_out = Vacuum(0) >> sgate
 
-            return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
+            return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[sgate])
@@ -518,7 +527,7 @@ class TestOptimizer:
         target_gate = BSgate((0, 1), 0.1, 0.2).fock_array(40)
 
         def cost_fn():
-            return -math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2
+            return -(math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2)
 
         opt = Optimizer()
         opt.minimize(cost_fn, by_optimizing=[bsgate])

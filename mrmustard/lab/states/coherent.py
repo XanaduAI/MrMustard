@@ -17,11 +17,14 @@ The class representing a coherent state.
 """
 
 from __future__ import annotations
-from typing import Sequence
-from mrmustard.physics.ansatz import PolyExpAnsatz
+
+from collections.abc import Sequence
+
 from mrmustard.physics import triples
-from .ket import Ket
+from mrmustard.physics.ansatz import PolyExpAnsatz
+
 from ..utils import make_parameter
+from .ket import Ket
 
 __all__ = ["Coherent"]
 
@@ -88,6 +91,8 @@ class Coherent(Ket):
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.coherent_state_Abc, x=self.parameters.x, y=self.parameters.y
+                fn=triples.coherent_state_Abc,
+                x=self.parameters.x,
+                y=self.parameters.y,
             ),
         ).representation

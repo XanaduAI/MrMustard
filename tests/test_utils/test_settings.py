@@ -42,7 +42,7 @@ class TestSettings:
 
         cw = settings.COMPLEX_WARNING
         settings.COMPLEX_WARNING = not cw
-        assert settings.COMPLEX_WARNING == (not cw)
+        assert (not cw) == settings.COMPLEX_WARNING
         settings.COMPLEX_WARNING = cw
 
         s0 = settings.SEED

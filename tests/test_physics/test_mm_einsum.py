@@ -14,14 +14,13 @@
 
 """Tests for the mm_einsum function."""
 
-import pytest
 import numpy as np
-
+import pytest
 
 from mrmustard import math, settings
-from mrmustard.lab import Ket, Unitary, BSgate, SqueezedVacuum, Rgate
-from mrmustard.physics.mm_einsum import mm_einsum
+from mrmustard.lab import BSgate, Ket, Rgate, SqueezedVacuum, Unitary
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from mrmustard.physics.mm_einsum import mm_einsum
 
 
 class TestMmEinsum:
@@ -113,7 +112,8 @@ class TestMmEinsum:
         assert isinstance(res, PolyExpAnsatz)
         assert res.batch_shape == (2,)
         assert math.allclose(
-            res.scalar, self.g0123.contract(self.g0123.dual, mode="zip").ansatz.scalar
+            res.scalar,
+            self.g0123.contract(self.g0123.dual, mode="zip").ansatz.scalar,
         )
 
     def test_single_mode_fock(self):
@@ -162,8 +162,8 @@ class TestMmEinsum:
 
     def test_single_mode_fock_with_double_batch(self):
         """Test that mm_einsum works for a single mode fock state with double batch dimensions."""
-        array1 = np.random.random((3, 4, 5, 6))
-        array2 = np.random.random((3, 5, 6))
+        array1 = settings.rng.random((3, 4, 5, 6))
+        array2 = settings.rng.random((3, 5, 6))
         f1 = ArrayAnsatz(array1, batch_dims=2)
         f2 = ArrayAnsatz(array2, batch_dims=1)
 
@@ -442,4 +442,4 @@ class TestMmEinsum:
             fock_dims={0: 0},  # force bargmann
         )
         assert res.batch_shape == (4,)
-        assert res._lin_sup == True
+        assert res._lin_sup

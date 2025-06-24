@@ -3,10 +3,10 @@ This module contains helper functions that are used in
 diagonal_amps.py, diagonal_grad.py, singleLeftoverMode_amps.py and singleLeftoverMode_grad.py
 """
 
-import numpy as np
-from numba import njit, int64
-from numba.typed import Dict
 import numba
+import numpy as np
+from numba import int64, njit
+from numba.typed import Dict
 
 SQRT = np.sqrt(np.arange(1000))  # saving the time to recompute square roots
 
