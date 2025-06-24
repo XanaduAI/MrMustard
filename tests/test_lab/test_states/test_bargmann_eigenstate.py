@@ -14,8 +14,6 @@
 
 """Tests for the BargmannEigenstate class."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 import pytest
 
 from mrmustard import math

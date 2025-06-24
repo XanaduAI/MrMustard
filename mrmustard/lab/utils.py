@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=no-member
-
 """
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """

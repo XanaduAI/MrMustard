@@ -38,7 +38,6 @@ from mrmustard.utils.logger import create_logger
 __all__ = ["Optimizer"]
 
 
-# pylint: disable=disallowed-name
 class Optimizer:
     r"""An optimizer for any parametrized object: it can optimize euclidean, orthogonal and symplectic parameters.
 

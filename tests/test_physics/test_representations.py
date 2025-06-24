@@ -14,8 +14,6 @@
 
 """Tests for the Representation class."""
 
-# pylint: disable=missing-function-docstring
-
 import pytest
 
 from mrmustard import math

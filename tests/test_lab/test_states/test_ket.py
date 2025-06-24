@@ -14,8 +14,6 @@
 
 """Tests for the ket."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 import numpy as np
 import pytest
 from ipywidgets import HTML, Box, HBox, VBox
@@ -60,7 +58,7 @@ def coherent_state_quad(q, x, y, phi=0):
     )
 
 
-class TestKet:  # pylint: disable=too-many-public-methods
+class TestKet:
     r"""
     Tests for the ``Ket`` class.
     """

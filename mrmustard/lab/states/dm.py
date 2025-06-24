@@ -152,7 +152,7 @@ class DM(State):
         modes: Collection[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
-        atol_purity: float | None = None,  # pylint: disable=unused-argument
+        atol_purity: float | None = None,
     ) -> DM:
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
@@ -477,7 +477,7 @@ class DM(State):
         phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
         return core, phi
 
-    def physical_stellar_decomposition(self, core_modes):  # pylint: disable=too-many-statements
+    def physical_stellar_decomposition(self, core_modes):
         r"""
         Applies the physical stellar decomposition, pulling out a channel from a pure state.
 
@@ -608,7 +608,7 @@ class DM(State):
             phi,
         )
 
-    def physical_stellar_decomposition_mixed(  # pylint: disable=too-many-statements
+    def physical_stellar_decomposition_mixed(
         self, core_modes: Collection[int]
     ) -> tuple[DM, Channel]:
         r"""

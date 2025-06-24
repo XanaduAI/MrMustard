@@ -14,7 +14,6 @@
 
 """Tests for the density matrix."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 import numpy as np
 import pytest
 
@@ -50,7 +49,7 @@ def coherent_state_quad(q, x, y, phi=0):
     )
 
 
-class TestDM:  # pylint:disable=too-many-public-methods
+class TestDM:
     r"""
     Tests for the ``DM`` class.
     """

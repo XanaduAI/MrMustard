@@ -476,7 +476,7 @@ def heuristic(graph: Graph, code: str, verbose: bool) -> Graph:
     return graph
 
 
-def optimal_contraction(  # pylint: disable=too-many-branches
+def optimal_contraction(
     graph: Graph,
     n_init: int,
     heuristics: tuple[str, ...],

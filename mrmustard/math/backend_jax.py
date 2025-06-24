@@ -14,8 +14,6 @@
 
 """This module contains the JAX backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments, too-many-public-methods
-
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
@@ -46,7 +44,6 @@ jax.config.update("jax_persistent_cache_min_compile_time_secs", 0)
 jax.config.update("jax_persistent_cache_enable_xla_caches", "xla_gpu_per_fusion_autotune_cache_dir")
 
 
-# pylint: disable=too-many-public-methods
 class BackendJax(BackendBase):
     """A JAX backend implementation."""
 
@@ -181,7 +178,7 @@ class BackendJax(BackendBase):
     def pow(self, x: jnp.ndarray, y: float) -> jnp.ndarray:
         return jnp.power(x, y)
 
-    def Categorical(self, probs: jnp.ndarray, name: str):  # pylint: disable=unused-argument
+    def Categorical(self, probs: jnp.ndarray, name: str):
         class Generator:
             def __init__(self, probs):
                 self._probs = probs
@@ -207,7 +204,7 @@ class BackendJax(BackendBase):
         bounds: tuple[float | None, float | None] | None,
         name: str,
         dtype="float64",
-    ):  # pylint: disable=unused-argument
+    ):
         return jnp.array(value, dtype=dtype)
 
     @jax.jit
@@ -215,7 +212,7 @@ class BackendJax(BackendBase):
         return jnp.tensordot(array1, array2, [[], []])
 
     @partial(jax.jit, static_argnames=["name", "dtype"])
-    def new_constant(self, value, name: str, dtype=None):  # pylint: disable=unused-argument
+    def new_constant(self, value, name: str, dtype=None):
         dtype = dtype or self.float64
         return self.astensor(value, dtype)
 
@@ -225,7 +222,7 @@ class BackendJax(BackendBase):
         array: jnp.ndarray,
         filters: jnp.ndarray,
         padding: str | None = None,
-        data_format="NWC",  # pylint: disable=unused-argument
+        data_format="NWC",
     ) -> jnp.ndarray:
         padding = padding or "VALID"
         return jax.lax.conv(array, filters, (1, 1), padding)
@@ -322,7 +319,7 @@ class BackendJax(BackendBase):
     def inv(self, tensor: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.inv(tensor)
 
-    def is_trainable(self, tensor: jnp.ndarray) -> bool:  # pylint: disable=unused-argument
+    def is_trainable(self, tensor: jnp.ndarray) -> bool:
         return False
 
     @jax.jit
@@ -431,7 +428,7 @@ class BackendJax(BackendBase):
                 self._cov = cov
                 self._rng = jax.random.PRNGKey(key)
 
-            def sample(self, dtype=None):  # pylint: disable=unused-argument
+            def sample(self, dtype=None):
                 fn = jax.random.multivariate_normal
                 return fn(self._rng, self._mean, self._cov)
 

@@ -67,8 +67,6 @@ Examples:
 
 """
 
-# pylint: disable = wrong-import-position
-
 from __future__ import annotations
 
 import hashlib
@@ -120,7 +118,7 @@ class Callback:
         self.optimizer_step: int = 0
         self.callback_step: int = 0
 
-    def get_opt_step(self, optimizer, **kwargs):  # pylint: disable=unused-argument
+    def get_opt_step(self, optimizer, **kwargs):
         """Gets current step from optimizer."""
         self.optimizer_step = len(optimizer.opt_history)
         return self.optimizer_step
@@ -128,19 +126,19 @@ class Callback:
     def _should_call(self, **kwargs) -> bool:
         return (self.get_opt_step(**kwargs) % self.steps_per_call == 0) or self.trigger(**kwargs)
 
-    def trigger(self, **kwargs) -> bool:  # pylint: disable=unused-argument
+    def trigger(self, **kwargs) -> bool:
         """User implemented custom trigger conditions."""
 
-    def call(self, **kwargs) -> Mapping | None:  # pylint: disable=unused-argument
+    def call(self, **kwargs) -> Mapping | None:
         """User implemented main callback logic."""
 
-    def update_cost_fn(self, **kwargs) -> Callable | None:  # pylint: disable=unused-argument
+    def update_cost_fn(self, **kwargs) -> Callable | None:
         """User implemented cost_fn modifier."""
 
-    def update_grads(self, **kwargs) -> Sequence | None:  # pylint: disable=unused-argument
+    def update_grads(self, **kwargs) -> Sequence | None:
         """User implemented gradient modifier."""
 
-    def update_optimizer(self, optimizer, **kwargs):  # pylint: disable=unused-argument
+    def update_optimizer(self, optimizer, **kwargs):
         """User implemented optimizer update scheduler."""
 
     def __call__(
@@ -172,7 +170,7 @@ class Callback:
 
 
 @dataclass
-class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attributes
+class TensorboardCallback(Callback):
     """Callback for enabling Tensorboard tracking of optimization progresses.
 
     Things tracked:
@@ -245,7 +243,7 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
         cost,
         trainables,
         **kwargs,
-    ):  # pylint: disable=unused-argument,arguments-differ
+    ):
         """Logs costs and parameters to Tensorboard."""
         self.init_writer(trainables=trainables)
         obj_tag = "objectives"

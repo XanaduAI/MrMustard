@@ -291,7 +291,7 @@ def test_gaussian_integral_poly_batched():
     A = settings.rng.random((4, 4, 4))
     b = settings.rng.random((4, 4))
     c = settings.rng.random((4, 2, 2))
-    res = complex_gaussian_integral_1((A, b, c), [0], [1])  # pylint: disable=pointless-statement
+    res = complex_gaussian_integral_1((A, b, c), [0], [1])
     assert res[0].shape == (4, 2, 2)
     assert res[1].shape == (4, 2)
     assert res[2].shape == (4, 2, 2)

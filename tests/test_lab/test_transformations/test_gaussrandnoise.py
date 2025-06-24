@@ -14,8 +14,6 @@
 
 """Tests for the ``GaussRandNoise`` class."""
 
-# pylint: disable=missing-function-docstring, expression-not-assigned
-
 from mrmustard import math, settings
 from mrmustard.lab.states import DM
 from mrmustard.lab.transformations import GaussRandNoise

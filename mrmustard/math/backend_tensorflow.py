@@ -14,8 +14,6 @@
 
 """This module contains the tensorflow backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring, wrong-import-position
-
 from __future__ import annotations
 
 import os
@@ -48,7 +46,6 @@ from .backend_base import BackendBase
 from .lattice import strategies
 
 
-# pylint: disable=too-many-public-methods
 class BackendTensorflow(BackendBase):
     r"""
     A base class for backends.
@@ -160,7 +157,6 @@ class BackendTensorflow(BackendBase):
             constraint = None
         return constraint
 
-    # pylint: disable=arguments-differ
     @Autocast()
     def convolution(
         self,
@@ -221,7 +217,7 @@ class BackendTensorflow(BackendBase):
             return true_fn(*args)
         return false_fn(*args)
 
-    def error_if(self, array: tf.Tensor, condition: tf.Tensor, msg: str):  # pylint: disable=unused-argument
+    def error_if(self, array: tf.Tensor, condition: tf.Tensor, msg: str):
         if tf.reduce_any(condition):
             raise ValueError(msg)
 

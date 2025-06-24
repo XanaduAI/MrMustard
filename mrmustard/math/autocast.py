@@ -49,7 +49,6 @@ class Autocast:
         kwargs_dtypes = [v.dtype.name for v in kwargs.values() if self.can_cast(v)]
         return args_dtypes + kwargs_dtypes
 
-    # pylint: disable=unnecessary-lambda
     def max_dtype(self, dtypes: list):
         r"""Returns the dtype with the highest precision."""
         if dtypes == []:

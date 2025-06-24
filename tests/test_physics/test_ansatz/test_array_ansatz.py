@@ -14,8 +14,6 @@
 
 """This module contains tests for ``ArrayAnsatz`` objects."""
 
-# pylint: disable = missing-function-docstring, disable=too-many-public-methods
-
 from unittest.mock import patch
 
 import numpy as np
@@ -61,7 +59,7 @@ class TestArrayAnsatz:
         aa2 = ArrayAnsatz(array=array2, batch_dims=1)
 
         with pytest.raises(ValueError):
-            aa1 + aa2  # pylint: disable=pointless-statement
+            aa1 + aa2
 
     def test_and(self):
         array5123 = settings.rng.random((5, 1, 2, 3))

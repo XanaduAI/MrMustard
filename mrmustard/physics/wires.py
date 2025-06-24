@@ -180,7 +180,7 @@ class ClassicalWire:
         return 1000_000 + self.mode + 10_000 * (1 - 2 * self.is_out)
 
 
-class Wires:  # pylint: disable=too-many-public-methods
+class Wires:
     r"""
     A class with wire functionality for tensor network applications.
 

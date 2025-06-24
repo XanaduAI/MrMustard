@@ -14,8 +14,6 @@
 
 """Tests for circuit components."""
 
-# pylint: disable=fixme, missing-function-docstring, pointless-statement
-
 from unittest.mock import patch
 
 import numpy as np
@@ -52,7 +50,6 @@ from mrmustard.training import Optimizer
 from ..random import Abc_triple
 
 
-# pylint: disable=too-many-public-methods
 class TestCircuitComponent:
     r"""
     Tests ``CircuitComponent`` objects.
@@ -489,7 +486,7 @@ class TestCircuitComponent:
         coh = Coherent(0, x=1.0)
         CC = Ket.from_fock((0,), coh.fock_array(20))
         with pytest.raises(AttributeError):
-            CC.bargmann_triple()  # pylint: disable=pointless-statement
+            CC.bargmann_triple()
 
     def test_quadrature_ket(self):
         "tests that transforming to quadrature and back gives the same ket"

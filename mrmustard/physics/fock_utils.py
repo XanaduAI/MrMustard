@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=redefined-outer-name
-
 """
 This module contains functions for performing calculations on objects in the Fock representations.
 """

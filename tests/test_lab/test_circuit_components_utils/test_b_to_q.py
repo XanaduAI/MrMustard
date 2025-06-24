@@ -14,8 +14,6 @@
 
 """Tests for BtoQ."""
 
-# pylint: disable=fixme, missing-function-docstring, pointless-statement
-
 import numpy as np
 
 from mrmustard import math, settings

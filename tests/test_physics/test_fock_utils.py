@@ -14,8 +14,6 @@
 
 """Tests for the fock_utils.py file."""
 
-# pylint: disable=pointless-statement
-
 import numpy as np
 import pytest
 from hypothesis import given

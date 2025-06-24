@@ -14,8 +14,6 @@
 
 """Tests for Wires class."""
 
-# pylint: disable=missing-function-docstring
-
 from unittest.mock import patch
 
 import pytest
@@ -147,7 +145,7 @@ class TestWires:
         u = Wires(set(), set(), {0}, set())  # only output wire
         v = Wires(set(), set(), {0}, set())  # only output wire
         with pytest.raises(ValueError):
-            u @ v  # pylint: disable=pointless-statement
+            u @ v
 
     def test_contracted_labels1(self):
         w1 = Wires({0}, {0}, {2}, {2})

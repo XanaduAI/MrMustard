@@ -14,8 +14,6 @@
 
 """This module contains the numpy backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
-
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
@@ -41,7 +39,6 @@ from .lattice.strategies.compactFock.inputValidation import (
 np.set_printoptions(legacy="1.25")
 
 
-# pylint: disable=too-many-public-methods
 class BackendNumpy(BackendBase):
     r"""
     A numpy backend.
@@ -132,7 +129,7 @@ class BackendNumpy(BackendBase):
         array: np.ndarray,
         filters: np.ndarray,
         padding: str = "VALID",
-        data_format: str | None = None,  # pylint: disable=unused-argument
+        data_format: str | None = None,
     ) -> np.ndarray:
         """Performs a 2D convolution operation similar to tf.nn.convolution.
 
@@ -255,7 +252,7 @@ class BackendNumpy(BackendBase):
     def inv(self, tensor: np.ndarray) -> np.ndarray:
         return np.linalg.inv(tensor)
 
-    def is_trainable(self, tensor: np.ndarray) -> bool:  # pylint: disable=unused-argument
+    def is_trainable(self, tensor: np.ndarray) -> bool:
         return False
 
     def lgamma(self, x: np.ndarray) -> np.ndarray:
@@ -293,10 +290,10 @@ class BackendNumpy(BackendBase):
         bounds: tuple[float | None, float | None] | None,
         name: str,
         dtype=np.float64,
-    ):  # pylint: disable=unused-argument
+    ):
         return np.array(value, dtype=dtype)
 
-    def new_constant(self, value, name: str, dtype=np.float64):  # pylint: disable=unused-argument
+    def new_constant(self, value, name: str, dtype=np.float64):
         return np.array(value, dtype=dtype)
 
     def norm(self, array: np.ndarray) -> np.ndarray:
@@ -318,7 +315,7 @@ class BackendNumpy(BackendBase):
             return true_fn(*args)
         return false_fn(*args)
 
-    def error_if(self, array: np.ndarray, condition: np.ndarray, msg: str):  # pylint: disable=unused-argument
+    def error_if(self, array: np.ndarray, condition: np.ndarray, msg: str):
         if np.any(condition):
             raise ValueError(msg)
 
@@ -427,7 +424,7 @@ class BackendNumpy(BackendBase):
     def cholesky(self, input: np.ndarray):
         return np.linalg.cholesky(input)
 
-    def Categorical(self, probs: np.ndarray, name: str):  # pylint: disable=unused-argument
+    def Categorical(self, probs: np.ndarray, name: str):
         class Generator:
             def __init__(self, probs):
                 self._probs = probs
@@ -444,7 +441,7 @@ class BackendNumpy(BackendBase):
                 self._mean = mean
                 self._cov = cov
 
-            def sample(self, dtype=None):  # pylint: disable=unused-argument
+            def sample(self, dtype=None):
                 fn = np.random.default_rng().multivariate_normal
                 return fn(self._mean, self._cov)
 

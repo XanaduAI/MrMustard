@@ -300,7 +300,6 @@ class Circuit:
             other = Circuit([other])
         return Circuit(self.components + other.components)
 
-    # pylint: disable=too-many-branches,too-many-statements
     def __repr__(self) -> str:
         r"""
         A string-based representation of this component.

@@ -14,8 +14,6 @@
 
 """Tests for the sampler."""
 
-# pylint: disable=missing-function-docstring
-
 import numpy as np
 import pytest
 

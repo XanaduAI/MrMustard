@@ -16,7 +16,6 @@
 A base class for the components of quantum circuits.
 """
 
-# pylint: disable=super-init-not-called, import-outside-toplevel
 from __future__ import annotations
 
 import numbers
@@ -50,7 +49,7 @@ from mrmustard.utils.typing import (
 __all__ = ["CircuitComponent"]
 
 
-class CircuitComponent:  # pylint: disable=too-many-public-methods
+class CircuitComponent:
     r"""
     A base class for the circuit components (states, transformations, measurements,
     and any component made by combining CircuitComponents). CircuitComponents are
@@ -286,7 +285,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         modes_out_ket: Sequence[int] = (),
         modes_in_ket: Sequence[int] = (),
         name: str | None = None,
-    ) -> CircuitComponent:  # pylint:disable=too-many-positional-arguments
+    ) -> CircuitComponent:
         r"""
         Initializes a ``CircuitComponent`` object from its Bargmann (A,b,c) parametrization.
 
@@ -334,7 +333,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         triple: tuple,
         phi: float = 0.0,
         name: str | None = None,
-    ) -> CircuitComponent:  # pylint:disable=too-many-positional-arguments
+    ) -> CircuitComponent:
         r"""
         Returns a circuit component from the given triple (A,b,c) that parametrizes the
         quadrature wavefunction of this component in the form :math:`c * exp(1/2 x^T A x + b^T x)`.

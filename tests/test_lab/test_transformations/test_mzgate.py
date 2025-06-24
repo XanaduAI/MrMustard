@@ -14,8 +14,6 @@
 
 """Tests for the ``MZgate`` class."""
 
-# pylint: disable=missing-function-docstring, expression-not-assigned
-
 import numpy as np
 import pytest
 

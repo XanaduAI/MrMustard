@@ -14,8 +14,6 @@
 
 """Tests for the ``Amplifier`` class."""
 
-# pylint: disable=missing-function-docstring, expression-not-assigned
-
 import pytest
 
 from mrmustard import math

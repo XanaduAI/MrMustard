@@ -16,8 +16,6 @@
 Custom vjps for fock utilities.
 """
 
-# pylint: disable=unused-argument
-
 from __future__ import annotations
 
 from functools import partial

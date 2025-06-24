@@ -129,7 +129,6 @@ class Constant:
         return type(self)(value=self.value * value, name=self.name)
 
 
-# pylint: disable=too-many-instance-attributes
 class Variable:
     r"""
     A parameter whose value can change.

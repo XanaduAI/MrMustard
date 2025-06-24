@@ -14,8 +14,6 @@
 
 """Tests for trace out."""
 
-# pylint: disable=fixme, missing-function-docstring, pointless-statement
-
 import numpy as np
 import pytest
 

@@ -14,8 +14,6 @@
 
 """This module contains tests for ``PolyExpAnsatz`` objects."""
 
-# pylint: disable = too-many-public-methods, missing-function-docstring
-
 from unittest.mock import patch
 
 import numpy as np
@@ -98,7 +96,7 @@ class TestPolyExpAnsatz:
         ans2 = PolyExpAnsatz(*Abc_triple(4))
 
         with pytest.raises(ValueError):
-            ans1 + ans2  # pylint: disable=pointless-statement
+            ans1 + ans2
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_and(self, n):
@@ -257,8 +255,8 @@ class TestPolyExpAnsatz:
         ansatz = PolyExpAnsatz(A, b, c)
         ansatz2 = PolyExpAnsatz(2 * A, 2 * b, 2 * c)
 
-        assert ansatz == ansatz  # pylint: disable= comparison-with-itself
-        assert ansatz2 == ansatz2  # pylint: disable= comparison-with-itself
+        assert ansatz == ansatz
+        assert ansatz2 == ansatz2
         assert ansatz != ansatz2
         assert ansatz2 != ansatz
 
@@ -272,7 +270,7 @@ class TestPolyExpAnsatz:
         ansatz1 = PolyExpAnsatz(A1, b1, c1)
         ansatz2 = PolyExpAnsatz(A2, b2, c2)
         with pytest.raises(ValueError):
-            ansatz1 + ansatz2  # pylint: disable=pointless-statement
+            ansatz1 + ansatz2
 
     @patch("mrmustard.physics.ansatz.polyexp_ansatz.display")
     def test_ipython_repr(self, mock_display):

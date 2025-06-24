@@ -22,7 +22,6 @@ provide the ``(A, b, c)`` triples that define the transformation in the Fock Bar
 representation.
 """
 
-# pylint: disable=import-outside-toplevel
 from __future__ import annotations
 
 from abc import abstractmethod

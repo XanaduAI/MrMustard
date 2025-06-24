@@ -22,7 +22,6 @@ from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 
-# pylint: disable = missing-function-docstring, import-outside-toplevel, too-many-public-methods
 class TestTriples:
     r"""
     Tests the Bargmann triples.

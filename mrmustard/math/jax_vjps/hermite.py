@@ -70,7 +70,7 @@ def hermite_renormalized_unbatched_jax_fwd(A, b, c, shape, stable):
     return (G, (G, A, b, c))
 
 
-def hermite_renormalized_unbatched_jax_bwd(shape, stable, res, g):  # pylint: disable=unused-argument
+def hermite_renormalized_unbatched_jax_bwd(shape, stable, res, g):
     r"""
     The jax backward pass for hermite_renormalized_unbatched.
     """

@@ -31,7 +31,6 @@ from mrmustard.utils.filters import (
 __all__ = ["settings"]
 
 
-# pylint: disable=too-many-instance-attributes
 class Settings:
     r"""
     A class containing various settings that are used by Mr Mustard throughout a session.

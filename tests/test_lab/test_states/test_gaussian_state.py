@@ -14,8 +14,6 @@
 
 """Tests for the ``Gket`` and ``Gdm`` classes."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 from mrmustard import math
 from mrmustard.lab.states import DM, GDM, GKet, Vacuum
 from mrmustard.lab.transformations import Unitary
