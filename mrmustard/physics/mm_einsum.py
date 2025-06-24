@@ -304,7 +304,7 @@ def to_bargmann(ansatz: Ansatz) -> PolyExpAnsatz:
     except (TypeError, AttributeError):
         # TODO: update identity_Abc when it supports batching
         A, b, _ = identity_Abc(ansatz.core_dims)
-        A = math.broadcast_to(A, ansatz.batch_shape + (2 * ansatz.core_dims, 2 * ansatz.core_dims))
-        b = math.broadcast_to(b, ansatz.batch_shape + (2 * ansatz.core_dims,))
+        A = math.broadcast_to(A, (*ansatz.batch_shape, 2 * ansatz.core_dims, 2 * ansatz.core_dims))
+        b = math.broadcast_to(b, (*ansatz.batch_shape, 2 * ansatz.core_dims))
         c = ansatz.array
     return PolyExpAnsatz(A, b, c)

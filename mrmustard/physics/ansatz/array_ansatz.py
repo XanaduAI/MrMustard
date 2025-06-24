@@ -249,7 +249,7 @@ class ArrayAnsatz(Ansatz):
             )
             return ArrayAnsatz(padded, self.batch_dims)
 
-        return ArrayAnsatz(self.array[(...,) + tuple(slice(0, s) for s in shape)], self.batch_dims)
+        return ArrayAnsatz(self.array[(..., *tuple(slice(0, s) for s in shape))], self.batch_dims)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> ArrayAnsatz:
         order = list(range(self.batch_dims)) + [i + self.batch_dims for i in order]
@@ -279,7 +279,7 @@ class ArrayAnsatz(Ansatz):
         )
         new_array = math.transpose(self.array, order)
         n = np.prod(new_array.shape[-len(idx_z) :])
-        new_array = math.reshape(new_array, new_array.shape[: -2 * len(idx_z)] + (n, n))
+        new_array = math.reshape(new_array, (*new_array.shape[: -2 * len(idx_z)], n, n))
         trace = math.trace(new_array)
         return ArrayAnsatz(trace, self.batch_dims)
 
@@ -347,7 +347,7 @@ class ArrayAnsatz(Ansatz):
             return False
         slices = tuple(slice(0, min(si, oi)) for si, oi in zip(self.core_shape, other.core_shape))
         return math.allclose(
-            self.array[(...,) + slices], other.array[(...,) + slices], atol=settings.ATOL
+            self.array[(..., *slices)], other.array[(..., *slices)], atol=settings.ATOL
         )
 
     def __mul__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:

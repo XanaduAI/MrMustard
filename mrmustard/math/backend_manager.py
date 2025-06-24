@@ -806,8 +806,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             if c.shape[: len(batch_shape)] != batch_shape:
                 raise ValueError(f"c.shape={c.shape} must match batch_shape={batch_shape}")
             D = int(np.prod(batch_shape))
-            A = self.reshape(A, (D,) + A.shape[-2:])
-            b = self.reshape(b, (D,) + b.shape[-1:])
+            A = self.reshape(A, (D, *A.shape[-2:]))
+            b = self.reshape(b, (D, *b.shape[-1:]))
             c = self.reshape(c, (D,))
             result = self._apply(
                 "hermite_renormalized_batched",
@@ -815,7 +815,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 {
                     "shape": tuple(shape),
                     "stable": stable,
-                    "out": self.reshape(out, (D,) + shape) if out is not None else None,
+                    "out": self.reshape(out, (D, *shape)) if out is not None else None,
                 },
             )
             return self.reshape(result, batch_shape + tuple(shape))
@@ -823,8 +823,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             batch_shape = b.shape[:-1]
             check_out_shape(batch_shape)
             D = int(np.prod(batch_shape))
-            b = self.reshape(b, (D,) + b.shape[-1:])
-            A_broadcast = self.broadcast_to(A, (D,) + A.shape)
+            b = self.reshape(b, (D, *b.shape[-1:]))
+            A_broadcast = self.broadcast_to(A, (D, *A.shape))
             c_broadcast = self.broadcast_to(c, (D,))
             result = self._apply(
                 "hermite_renormalized_batched",
@@ -832,7 +832,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 {
                     "shape": tuple(shape),
                     "stable": stable,
-                    "out": self.reshape(out, (D,) + shape) if out is not None else None,
+                    "out": self.reshape(out, (D, *shape)) if out is not None else None,
                 },
             )
             return self.reshape(result, batch_shape + tuple(shape))

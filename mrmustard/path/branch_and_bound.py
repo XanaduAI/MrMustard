@@ -342,8 +342,8 @@ def contract(graph: Graph, edge: Edge, debug: int = 0) -> Graph:
     if debug > 0:
         print(f"A wires: {A.wires}, B wires: {B.wires}")
     new_graph.nodes[edge[0]]["component"] = A @ B
-    new_graph.costs = graph.costs + (graph.edges[edge]["cost"],)
-    new_graph.solution = graph.solution + (edge,)
+    new_graph.costs = (*graph.costs, graph.edges[edge]["cost"])
+    new_graph.solution = (*graph.solution, edge)
     assign_costs(new_graph)
     return new_graph
 

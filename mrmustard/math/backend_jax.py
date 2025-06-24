@@ -536,7 +536,7 @@ class BackendJax(BackendBase):
         out: jnp.ndarray | None = None,
     ) -> jnp.ndarray:
         batch_size = A.shape[0]
-        output_shape = (batch_size,) + shape
+        output_shape = (batch_size, *shape)
         if out is not None:
             raise ValueError("'out' keyword is not supported in the JAX backend")
         return jax.pure_callback(
@@ -614,7 +614,7 @@ class BackendJax(BackendBase):
         function = partial(hermite_multidimensional_diagonal_batch, cutoffs=tuple(cutoffs))
         return jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
-            jax.ShapeDtypeStruct(cutoffs + (B.shape[1],), jnp.complex128),
+            jax.ShapeDtypeStruct((*cutoffs, B.shape[1]), jnp.complex128),
             A,
             B,
             C,
@@ -663,7 +663,7 @@ class BackendJax(BackendBase):
     @partial(jax.jit, static_argnames=["output_cutoff", "pnr_cutoffs"])
     def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
         A, B = self.reorder_AB_bargmann(A, B)
-        cutoffs = (output_cutoff + 1,) + tuple(p + 1 for p in pnr_cutoffs)
+        cutoffs = (output_cutoff + 1, *tuple(p + 1 for p in pnr_cutoffs))
         return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     @partial(jax.jit, static_argnames=["cutoffs"])
@@ -690,7 +690,7 @@ class BackendJax(BackendBase):
         function = partial(hermite_multidimensional_1leftoverMode, cutoffs=cutoffs)
         return jax.pure_callback(
             lambda A, B, C: function(np.array(A), np.array(B), np.array(C))[0],
-            jax.ShapeDtypeStruct((cutoffs[0],) + cutoffs, jnp.complex128),
+            jax.ShapeDtypeStruct((cutoffs[0], *cutoffs), jnp.complex128),
             A,
             B,
             C,

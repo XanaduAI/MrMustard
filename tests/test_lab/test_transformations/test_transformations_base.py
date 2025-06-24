@@ -230,8 +230,8 @@ class TestChannel:
 
         transmissivity = math.broadcast_to(0.2, batch_shape)
         X, Y = Attenuator(0, transmissivity).XY
-        expected_X = math.broadcast_to(np.sqrt(0.2), batch_shape + (2, 2)) * np.eye(2)
-        expected_Y = math.broadcast_to(0.4, batch_shape + (2, 2)) * np.eye(2)
+        expected_X = math.broadcast_to(np.sqrt(0.2), (*batch_shape, 2, 2)) * np.eye(2)
+        expected_Y = math.broadcast_to(0.4, (*batch_shape, 2, 2)) * np.eye(2)
         assert math.allclose(X, expected_X) and math.allclose(Y, expected_Y)
 
     @pytest.mark.parametrize("nmodes", [1, 2, 3])

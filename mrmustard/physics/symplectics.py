@@ -164,9 +164,9 @@ def pgate_symplectic(n_modes: int, shearing: float | Sequence[float]) -> Matrix:
     batch_shape = shearing.shape
 
     I_matrix = math.broadcast_to(
-        math.eye(n_modes, dtype=math.complex128), batch_shape + (n_modes, n_modes)
+        math.eye(n_modes, dtype=math.complex128), (*batch_shape, n_modes, n_modes)
     )
-    O_matrix = math.zeros(batch_shape + (n_modes, n_modes), dtype=math.complex128)
+    O_matrix = math.zeros((*batch_shape, n_modes, n_modes), dtype=math.complex128)
 
     return math.block([[I_matrix, O_matrix], [I_matrix * shearing[..., None, None], I_matrix]])
 

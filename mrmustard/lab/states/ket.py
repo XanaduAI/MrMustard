@@ -374,10 +374,10 @@ class Ket(State):
 
         batch_shape = self.ansatz.batch_shape
 
-        Om = math.zeros(batch_shape + (M, M), dtype=math.complex128)
+        Om = math.zeros((*batch_shape, M, M), dtype=math.complex128)
         As = math.block([[Om, R_transpose], [R, An]])
 
-        bs = math.concat([math.zeros(batch_shape + (M,), dtype=math.complex128), bn], -1)
+        bs = math.concat([math.zeros((*batch_shape, M), dtype=math.complex128), bn], -1)
         cs = c
 
         inverse_order = np.argsort(new_order)
@@ -396,7 +396,7 @@ class Ket(State):
 
         At = math.block([[Am, Im], [Im, Om]])
 
-        bt = math.concat([bm, math.zeros(batch_shape + (M,), dtype=math.complex128)], -1)
+        bt = math.concat([bm, math.zeros((*batch_shape, M), dtype=math.complex128)], -1)
         ct = math.ones_like(c)
         t = Operation.from_bargmann(core_modes, core_modes, (At, bt, ct))
 
@@ -482,7 +482,7 @@ class Ket(State):
         R_T = math.einsum("...ij->...ji", R)
         A_core = math.block(
             [
-                [math.zeros(batch_shape + (M, M), dtype=math.complex128), gamma_inv @ R_T],
+                [math.zeros((*batch_shape, M, M), dtype=math.complex128), gamma_inv @ R_T],
                 [R @ gamma_inv_T, An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R_T],
             ]
         )

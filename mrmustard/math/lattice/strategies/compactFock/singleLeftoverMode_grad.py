@@ -36,9 +36,9 @@ def calc_dA_dB(
     """
     Apply the derivated recurrence relation.
     """
-    dA = arr_read_pivot_dA[(m, n) + read_GB] * B[i]
-    dB = arr_read_pivot_dB[(m, n) + read_GB] * B[i]
-    dB[i] += arr_read_pivot[(m, n) + read_GB]
+    dA = arr_read_pivot_dA[(m, n, *read_GB)] * B[i]
+    dB = arr_read_pivot_dB[(m, n, *read_GB)] * B[i]
+    dB[i] += arr_read_pivot[(m, n, *read_GB)]
     for l_prime, l in enumerate(l_range):
         dA += K_l_adapted[l_prime] * A_adapted[l_prime] * G_in_dA_adapted[l_prime]
         dB += K_l_adapted[l_prime] * A_adapted[l_prime] * G_in_dB_adapted[l_prime]
@@ -76,7 +76,7 @@ def write_block_grad(
     G_in_dA_adapted = G_in_dA[0, 0]
     G_in_dB_adapted = G_in_dB[0, 0]
     K_l_adapted = K_l
-    arr_write_dA[(0, 0) + write], arr_write_dB[(0, 0) + write] = calc_dA_dB(
+    arr_write_dA[(0, 0, *write)], arr_write_dB[(0, 0, *write)] = calc_dA_dB(
         m,
         n,
         i,
@@ -99,23 +99,23 @@ def write_block_grad(
     for n in range(1, cutoff_leftoverMode):
         K_l_adapted = np.hstack((np.array([np.sqrt(n)]), K_l))
         G_in_adapted = np.hstack(
-            (np.array([arr_read_pivot[(0, n - 1) + read_GB] * np.sqrt(n)]), G_in[0, n])
+            (np.array([arr_read_pivot[(0, n - 1, *read_GB)] * np.sqrt(n)]), G_in[0, n])
         )
         G_in_dA_adapted = np.concatenate(
             (
-                np.expand_dims(arr_read_pivot_dA[(0, n - 1) + read_GB], axis=0),
+                np.expand_dims(arr_read_pivot_dA[(0, n - 1, *read_GB)], axis=0),
                 G_in_dA[0, n],
             ),
             axis=0,
         )
         G_in_dB_adapted = np.concatenate(
             (
-                np.expand_dims(arr_read_pivot_dB[(0, n - 1) + read_GB], axis=0),
+                np.expand_dims(arr_read_pivot_dB[(0, n - 1, *read_GB)], axis=0),
                 G_in_dB[0, n],
             ),
             axis=0,
         )
-        arr_write_dA[(0, n) + write], arr_write_dB[(0, n) + write] = calc_dA_dB(
+        arr_write_dA[(0, n, *write)], arr_write_dB[(0, n, *write)] = calc_dA_dB(
             m,
             n,
             i,
@@ -139,23 +139,23 @@ def write_block_grad(
     for m in range(1, cutoff_leftoverMode):
         K_l_adapted = np.hstack((np.array([np.sqrt(m)]), K_l))
         G_in_adapted = np.hstack(
-            (np.array([arr_read_pivot[(m - 1, 0) + read_GB] * np.sqrt(m)]), G_in[m, 0])
+            (np.array([arr_read_pivot[(m - 1, 0, *read_GB)] * np.sqrt(m)]), G_in[m, 0])
         )
         G_in_dA_adapted = np.concatenate(
             (
-                np.expand_dims(arr_read_pivot_dA[(m - 1, 0) + read_GB], axis=0),
+                np.expand_dims(arr_read_pivot_dA[(m - 1, 0, *read_GB)], axis=0),
                 G_in_dA[m, 0],
             ),
             axis=0,
         )
         G_in_dB_adapted = np.concatenate(
             (
-                np.expand_dims(arr_read_pivot_dB[(m - 1, 0) + read_GB], axis=0),
+                np.expand_dims(arr_read_pivot_dB[(m - 1, 0, *read_GB)], axis=0),
                 G_in_dB[m, 0],
             ),
             axis=0,
         )
-        arr_write_dA[(m, 0) + write], arr_write_dB[(m, 0) + write] = calc_dA_dB(
+        arr_write_dA[(m, 0, *write)], arr_write_dB[(m, 0, *write)] = calc_dA_dB(
             m,
             n,
             i,
@@ -182,8 +182,8 @@ def write_block_grad(
                 (
                     np.array(
                         [
-                            arr_read_pivot[(m - 1, n) + read_GB] * np.sqrt(m),
-                            arr_read_pivot[(m, n - 1) + read_GB] * np.sqrt(n),
+                            arr_read_pivot[(m - 1, n, *read_GB)] * np.sqrt(m),
+                            arr_read_pivot[(m, n - 1, *read_GB)] * np.sqrt(n),
                         ]
                     ),
                     G_in[m, n],
@@ -191,21 +191,21 @@ def write_block_grad(
             )
             G_in_dA_adapted = np.concatenate(
                 (
-                    np.expand_dims(arr_read_pivot_dA[(m - 1, n) + read_GB], axis=0),
-                    np.expand_dims(arr_read_pivot_dA[(m, n - 1) + read_GB], axis=0),
+                    np.expand_dims(arr_read_pivot_dA[(m - 1, n, *read_GB)], axis=0),
+                    np.expand_dims(arr_read_pivot_dA[(m, n - 1, *read_GB)], axis=0),
                     G_in_dA[m, n],
                 ),
                 axis=0,
             )
             G_in_dB_adapted = np.concatenate(
                 (
-                    np.expand_dims(arr_read_pivot_dB[(m - 1, n) + read_GB], axis=0),
-                    np.expand_dims(arr_read_pivot_dB[(m, n - 1) + read_GB], axis=0),
+                    np.expand_dims(arr_read_pivot_dB[(m - 1, n, *read_GB)], axis=0),
+                    np.expand_dims(arr_read_pivot_dB[(m, n - 1, *read_GB)], axis=0),
                     G_in_dB[m, n],
                 ),
                 axis=0,
             )
-            arr_write_dA[(m, n) + write], arr_write_dB[(m, n) + write] = calc_dA_dB(
+            arr_write_dA[(m, n, *write)], arr_write_dB[(m, n, *write)] = calc_dA_dB(
                 m,
                 n,
                 i,
@@ -243,27 +243,9 @@ def read_block(
     """
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
-            arr_write[m, n, idx_write] = arr_read[
-                (
-                    m,
-                    n,
-                )
-                + idx_read_tail
-            ]
-            arr_write_dA[m, n, idx_write] = arr_read_dA[
-                (
-                    m,
-                    n,
-                )
-                + idx_read_tail
-            ]
-            arr_write_dB[m, n, idx_write] = arr_read_dB[
-                (
-                    m,
-                    n,
-                )
-                + idx_read_tail
-            ]
+            arr_write[m, n, idx_write] = arr_read[(m, n, *idx_read_tail)]
+            arr_write_dA[m, n, idx_write] = arr_read_dA[(m, n, *idx_read_tail)]
+            arr_write_dB[m, n, idx_write] = arr_read_dB[(m, n, *idx_read_tail)]
 
     return arr_write, arr_write_dA, arr_write_dB
 
@@ -317,11 +299,11 @@ def use_offDiag_pivot_grad(
     G_in_dB = np.zeros(G_in.shape + B.shape, dtype=np.complex128)
 
     ########## READ ##########
-    read_GB = (2 * d,) + params
+    read_GB = (2 * d, *params)
     GB = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128)
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
-            GB[m, n] = arr1[(m, n) + read_GB] * B
+            GB[m, n] = arr1[(m, n, *read_GB)] * B
 
     # Array0
     G_in, G_in_dA, G_in_dB = read_block(
@@ -347,7 +329,7 @@ def use_offDiag_pivot_grad(
             arr2,
             arr2_dA,
             arr2_dB,
-            (d,) + params_adapted,
+            (d, *params_adapted),
             cutoff_leftoverMode,
         )
 
@@ -363,7 +345,7 @@ def use_offDiag_pivot_grad(
                 arr1001,
                 arr1001_dA,
                 arr1001_dB,
-                (d, i - d - 1) + params_adapted,
+                (d, i - d - 1, *params_adapted),
                 cutoff_leftoverMode,
             )
             G_in, G_in_dA, G_in_dB = read_block(
@@ -374,7 +356,7 @@ def use_offDiag_pivot_grad(
                 arr1010,
                 arr1010_dA,
                 arr1010_dB,
-                (d, i - d - 1) + params_adapted,
+                (d, i - d - 1, *params_adapted),
                 cutoff_leftoverMode,
             )
 
@@ -406,7 +388,7 @@ def use_offDiag_pivot_grad(
 
     # Array2
     if params[d] + 2 < cutoffs_tail[d]:
-        write = (d,) + params
+        write = (d, *params)
         arr2_dA, arr2_dB = write_block_grad(
             2 * d + 2,
             write,
@@ -429,7 +411,7 @@ def use_offDiag_pivot_grad(
     # Array11
     for i in range(d + 1, M):
         if params[i] + 1 < cutoffs_tail[i]:
-            write = (d, i - d - 1) + params
+            write = (d, i - d - 1, *params)
             arr1010_dA, arr1010_dB = write_block_grad(
                 2 * i + 2,
                 write,
@@ -518,7 +500,7 @@ def use_diag_pivot_grad(
     GB = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128)
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
-            GB[m, n] = arr0[(m, n) + read_GB] * B
+            GB[m, n] = arr0[(m, n, *read_GB)] * B
 
     # Array1
     for i in range(2 * M):
@@ -526,7 +508,8 @@ def use_diag_pivot_grad(
             params_adapted = tuple_setitem(params, i // 2, params[i // 2] - 1)
             read = (
                 i + 1 - 2 * (i % 2),
-            ) + params_adapted  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
+                *params_adapted,
+            )  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
             G_in, G_in_dA, G_in_dB = read_block(
                 G_in,
                 G_in_dA,
@@ -550,7 +533,7 @@ def use_diag_pivot_grad(
             i != 1 or params[0] + 2 < cutoffs_tail[0]
         ):
             # this prevents a few elements from being written that will never be read
-            write = (i,) + params
+            write = (i, *params)
             arr1_dA, arr1_dB = write_block_grad(
                 i + 2,
                 write,
@@ -618,38 +601,38 @@ def fock_representation_1leftoverMode_grad_NUMBA(
 
     # fill first mode for all PNR detections equal to zero
     for m in range(cutoff_leftoverMode - 1):
-        arr0_dA[(m + 1, 0) + zero_tuple] = (
-            arr0_dA[(m, 0) + zero_tuple] * B[0]
-            + np.sqrt(m) * A[0, 0] * arr0_dA[(m - 1, 0) + zero_tuple]
+        arr0_dA[(m + 1, 0, *zero_tuple)] = (
+            arr0_dA[(m, 0, *zero_tuple)] * B[0]
+            + np.sqrt(m) * A[0, 0] * arr0_dA[(m - 1, 0, *zero_tuple)]
         ) / np.sqrt(m + 1)
-        arr0_dA[(m + 1, 0) + zero_tuple][0, 0] += (
-            np.sqrt(m) * arr0[(m - 1, 0) + zero_tuple]
+        arr0_dA[(m + 1, 0, *zero_tuple)][0, 0] += (
+            np.sqrt(m) * arr0[(m - 1, 0, *zero_tuple)]
         ) / np.sqrt(m + 1)
-        arr0_dB[(m + 1, 0) + zero_tuple] = (
-            arr0_dB[(m, 0) + zero_tuple] * B[0]
-            + np.sqrt(m) * A[0, 0] * arr0_dB[(m - 1, 0) + zero_tuple]
+        arr0_dB[(m + 1, 0, *zero_tuple)] = (
+            arr0_dB[(m, 0, *zero_tuple)] * B[0]
+            + np.sqrt(m) * A[0, 0] * arr0_dB[(m - 1, 0, *zero_tuple)]
         ) / np.sqrt(m + 1)
-        arr0_dB[(m + 1, 0) + zero_tuple][0] += arr0[(m, 0) + zero_tuple] / np.sqrt(m + 1)
+        arr0_dB[(m + 1, 0, *zero_tuple)][0] += arr0[(m, 0, *zero_tuple)] / np.sqrt(m + 1)
 
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode - 1):
-            arr0_dA[(m, n + 1) + zero_tuple] = (
-                arr0_dA[(m, n) + zero_tuple] * B[1]
-                + np.sqrt(m) * A[1, 0] * arr0_dA[(m - 1, n) + zero_tuple]
-                + np.sqrt(n) * A[1, 1] * arr0_dA[(m, n - 1) + zero_tuple]
+            arr0_dA[(m, n + 1, *zero_tuple)] = (
+                arr0_dA[(m, n, *zero_tuple)] * B[1]
+                + np.sqrt(m) * A[1, 0] * arr0_dA[(m - 1, n, *zero_tuple)]
+                + np.sqrt(n) * A[1, 1] * arr0_dA[(m, n - 1, *zero_tuple)]
             ) / np.sqrt(n + 1)
-            arr0_dA[(m, n + 1) + zero_tuple][1, 0] += (
-                np.sqrt(m) * arr0[(m - 1, n) + zero_tuple]
+            arr0_dA[(m, n + 1, *zero_tuple)][1, 0] += (
+                np.sqrt(m) * arr0[(m - 1, n, *zero_tuple)]
             ) / np.sqrt(n + 1)
-            arr0_dA[(m, n + 1) + zero_tuple][1, 1] += (
-                np.sqrt(n) * arr0[(m, n - 1) + zero_tuple]
+            arr0_dA[(m, n + 1, *zero_tuple)][1, 1] += (
+                np.sqrt(n) * arr0[(m, n - 1, *zero_tuple)]
             ) / np.sqrt(n + 1)
-            arr0_dB[(m, n + 1) + zero_tuple] = (
-                arr0_dB[(m, n) + zero_tuple] * B[1]
-                + np.sqrt(m) * A[1, 0] * arr0_dB[(m - 1, n) + zero_tuple]
-                + np.sqrt(n) * A[1, 1] * arr0_dB[(m, n - 1) + zero_tuple]
+            arr0_dB[(m, n + 1, *zero_tuple)] = (
+                arr0_dB[(m, n, *zero_tuple)] * B[1]
+                + np.sqrt(m) * A[1, 0] * arr0_dB[(m - 1, n, *zero_tuple)]
+                + np.sqrt(n) * A[1, 1] * arr0_dB[(m, n - 1, *zero_tuple)]
             ) / np.sqrt(n + 1)
-            arr0_dB[(m, n + 1) + zero_tuple][1] += arr0[(m, n) + zero_tuple] / np.sqrt(n + 1)
+            arr0_dB[(m, n + 1, *zero_tuple)][1] += arr0[(m, n, *zero_tuple)] / np.sqrt(n + 1)
 
     dict_params = construct_dict_params(cutoffs_tail, tuple_type, list_type)
     for sum_params in range(sum(cutoffs_tail)):

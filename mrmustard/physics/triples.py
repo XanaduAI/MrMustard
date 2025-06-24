@@ -92,8 +92,8 @@ def bargmann_eigenstate_Abc(
     alpha = math.astensor(alpha, dtype=math.complex128)
     batch_shape = alpha.shape
 
-    A = math.broadcast_to(_vacuum_A_matrix(1), batch_shape + (1, 1))
-    b = math.reshape(alpha, batch_shape + (1,))
+    A = math.broadcast_to(_vacuum_A_matrix(1), (*batch_shape, 1, 1))
+    b = math.reshape(alpha, (*batch_shape, 1))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
@@ -117,8 +117,8 @@ def coherent_state_Abc(
     )
     batch_shape = x.shape
 
-    A = math.broadcast_to(_vacuum_A_matrix(1), batch_shape + (1, 1))
-    b = math.reshape(x + 1j * y, batch_shape + (1,))
+    A = math.broadcast_to(_vacuum_A_matrix(1), (*batch_shape, 1, 1))
+    b = math.reshape(x + 1j * y, (*batch_shape, 1))
     c = math.cast(math.exp(-0.5 * (x**2 + y**2)), math.complex128)
 
     return A, b, c
@@ -142,8 +142,8 @@ def squeezed_vacuum_state_Abc(
     )
     batch_shape = r.shape
 
-    A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
-    b = math.broadcast_to(_vacuum_B_vector(1), batch_shape + (1,))
+    A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), (*batch_shape, 1, 1))
+    b = math.broadcast_to(_vacuum_B_vector(1), (*batch_shape, 1))
     c = 1 / math.sqrt(math.cosh(r))
 
     return A, b, c
@@ -175,10 +175,10 @@ def displaced_squeezed_vacuum_state_Abc(
     )
     batch_shape = x.shape
 
-    A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
+    A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), (*batch_shape, 1, 1))
     b = math.reshape(
         (x + 1j * y) + (x - 1j * y) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi),
-        batch_shape + (1,),
+        (*batch_shape, 1),
     )
     c = math.exp(
         -0.5 * (x**2 + y**2)
@@ -212,7 +212,7 @@ def two_mode_squeezed_vacuum_state_Abc(
         [math.stack([O_matrix, tanhr], batch_dim), math.stack([tanhr, O_matrix], batch_dim)],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), (*batch_shape, 2))
     c = math.cast(1 / math.cosh(r), math.complex128)
 
     return A, b, c
@@ -234,7 +234,7 @@ def gket_state_Abc(symplectic: RealMatrix):
     Au = symplectic2Au(symplectic)
 
     A = Au[..., :m, :m]
-    b = math.zeros(batch_shape + (m,), dtype=A.dtype)
+    b = math.zeros((*batch_shape, m), dtype=A.dtype)
     c = (
         (-1) ** m
         * math.det(Au[..., m:, m:] @ math.conj(Au[..., m:, m:]) - math.eye_like(Au[..., m:, m:]))
@@ -256,7 +256,7 @@ def gdm_state_Abc(betas: ComplexVector, symplectic: RealMatrix):
     """
     batch_shape = symplectic.shape[:-2]
     m = len(betas)
-    betas = math.broadcast_to(betas, batch_shape + (m,), dtype=math.complex128)
+    betas = math.broadcast_to(betas, (*batch_shape, m), dtype=math.complex128)
     Au = symplectic2Au(symplectic)
     A_udagger_u = math.block(
         [
@@ -273,12 +273,12 @@ def gdm_state_Abc(betas: ComplexVector, symplectic: RealMatrix):
         ]
     )
     c_fd = math.prod(1 - math.exp(-betas))
-    t_fd = (A_fd, math.zeros(batch_shape + (2 * m,), dtype=A_fd.dtype), c_fd)
+    t_fd = (A_fd, math.zeros((*batch_shape, 2 * m), dtype=A_fd.dtype), c_fd)
     c_u = (
         (-1) ** m
         * math.det(Au[..., m:, m:] @ math.conj(Au[..., m:, m:]) - math.eye_like(Au[..., m:, m:]))
     ) ** (0.5)
-    t_u = (A_udagger_u, math.zeros(batch_shape + (4 * m,)), c_u)
+    t_u = (A_udagger_u, math.zeros((*batch_shape, 4 * m)), c_u)
     return complex_gaussian_integral_2(
         t_fd, t_u, list(range(2 * m)), list(range(m, 2 * m)) + list(range(3 * m, 4 * m))
     )
@@ -331,8 +331,8 @@ def quadrature_eigenstates_Abc(
     batch_shape = x.shape
 
     hbar = settings.HBAR
-    A = math.reshape(-math.exp(1j * 2 * phi), batch_shape + (1, 1))
-    b = math.reshape(x * math.exp(1j * phi) * math.sqrt(2 / hbar), batch_shape + (1,))
+    A = math.reshape(-math.exp(1j * 2 * phi), (*batch_shape, 1, 1))
+    b = math.reshape(x * math.exp(1j * phi) * math.sqrt(2 / hbar), (*batch_shape, 1))
     c = math.cast(1 / (np.pi) ** (1 / 4) * math.exp(-(x**2) / (2 * hbar)), math.complex128)
 
     return A, b, c
@@ -368,7 +368,7 @@ def thermal_state_Abc(
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), (*batch_shape, 2))
     c = math.cast(1 / (nbar + 1), math.complex128)
 
     return A, b, c
@@ -404,7 +404,7 @@ def rotation_gate_Abc(
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), (*batch_shape, 2))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
@@ -429,7 +429,7 @@ def displacement_gate_Abc(
     batch_shape = x.shape
     batch_dim = len(batch_shape)
 
-    A = math.broadcast_to(_X_matrix_for_unitary(1), batch_shape + (2, 2))
+    A = math.broadcast_to(_X_matrix_for_unitary(1), (*batch_shape, 2, 2))
     b = math.stack([x + 1j * y, -x + 1j * y], batch_dim)
     c = math.cast(math.exp(-(x**2 + y**2) / 2), math.complex128)
 
@@ -465,7 +465,7 @@ def squeezing_gate_Abc(
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), (*batch_shape, 2))
     c = math.cast(1 / math.sqrt(math.cosh(r)), math.complex128)
 
     return A, b, c
@@ -490,7 +490,7 @@ def beamsplitter_gate_Abc(
     batch_shape = theta.shape
     batch_dim = len(batch_shape)
 
-    O_matrix = math.zeros(batch_shape + (2, 2), math.complex128)
+    O_matrix = math.zeros((*batch_shape, 2, 2), math.complex128)
     costheta = math.cos(theta)
     sintheta = math.sin(theta)
 
@@ -502,7 +502,7 @@ def beamsplitter_gate_Abc(
         batch_dim,
     )
     A = math.block([[O_matrix, V], [math.einsum("...ij->...ji", V), O_matrix]])
-    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), (*batch_shape, 4))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
@@ -547,7 +547,7 @@ def twomode_squeezing_gate_Abc(
         batch_dim,
     )
     A = math.block([[A_block1, A_block3], [A_block3, A_block2]])
-    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), (*batch_shape, 4))
     c = 1 / math.cosh(r)
 
     return A, b, c
@@ -613,7 +613,7 @@ def attenuator_Abc(
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), (*batch_shape, 4))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
@@ -652,7 +652,7 @@ def amplifier_Abc(g: float | Sequence[float]) -> tuple[ComplexMatrix, ComplexVec
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), (*batch_shape, 4))
     c = 1 / g
 
     return A, b, c
@@ -680,7 +680,7 @@ def fock_damping_Abc(
     A = math.stack(
         [math.stack([O_matrix, B_n], batch_dim), math.stack([B_n, O_matrix], batch_dim)], batch_dim
     )
-    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), (*batch_shape, 2))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
@@ -734,7 +734,7 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[ComplexMatrix, ComplexVect
     )
 
     A = math.Xmat(2 * m) @ R @ xi_inv_in_blocks @ math.conj(R).T
-    b = math.zeros(batch_shape + (4 * m,))
+    b = math.zeros((*batch_shape, 4 * m))
     c = 1 / math.sqrt(math.det(xi))
 
     return A, b, c
@@ -779,7 +779,7 @@ def bargmann_to_quadrature_Abc(
         ),
         Id,
     )
-    b = math.broadcast_to(_vacuum_B_vector(2 * n_modes), batch_shape + (2 * n_modes,))
+    b = math.broadcast_to(_vacuum_B_vector(2 * n_modes), (*batch_shape, 2 * n_modes))
     c = math.ones(batch_shape, math.complex128) / (np.pi * hbar) ** (0.25 * n_modes)
 
     return A, b, c
@@ -811,12 +811,12 @@ def displacement_map_s_parametrized_Abc(
 
     Zmat = math.broadcast_to(
         -math.Zmat(num_modes=n_modes),
-        batch_shape + (2 * n_modes, 2 * n_modes),
+        (*batch_shape, 2 * n_modes, 2 * n_modes),
         dtype=math.complex128,
     )
     Xmat = math.broadcast_to(
         math.Xmat(num_modes=n_modes),
-        batch_shape + (2 * n_modes, 2 * n_modes),
+        (*batch_shape, 2 * n_modes, 2 * n_modes),
         dtype=math.complex128,
     )
     A = math.block(
@@ -837,7 +837,7 @@ def displacement_map_s_parametrized_Abc(
     )
 
     A = A[..., order_list, :][..., :, order_list]
-    b = math.broadcast_to(_vacuum_B_vector(4 * n_modes), batch_shape + (4 * n_modes,))
+    b = math.broadcast_to(_vacuum_B_vector(4 * n_modes), (*batch_shape, 4 * n_modes))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
@@ -905,7 +905,7 @@ def attenuator_kraus_Abc(
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(3), batch_shape + (3,))
+    b = math.broadcast_to(_vacuum_B_vector(3), (*batch_shape, 3))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
@@ -931,9 +931,9 @@ def XY_to_channel_Abc(
             f"X.shape = {X.shape}, Y.shape = {Y.shape}"
         )
     batch_shape = X.shape[:-2]
-    Im = math.broadcast_to(math.eye(2 * m, dtype=math.complex128), batch_shape + (2 * m, 2 * m))
-    im = math.broadcast_to(math.eye(m, dtype=math.complex128), batch_shape + (m, m))
-    Xm = math.broadcast_to(math.Xmat(2 * m), batch_shape + (4 * m, 4 * m))
+    Im = math.broadcast_to(math.eye(2 * m, dtype=math.complex128), (*batch_shape, 2 * m, 2 * m))
+    im = math.broadcast_to(math.eye(m, dtype=math.complex128), (*batch_shape, m, m))
+    Xm = math.broadcast_to(math.Xmat(2 * m), (*batch_shape, 4 * m, 4 * m))
     X_transpose = math.einsum("...ij->...ji", X)
     xi = 1 / 2 * Im + 1 / 2 * X @ X_transpose + Y / settings.HBAR
     xi_inv = math.inv(xi)
@@ -948,20 +948,20 @@ def XY_to_channel_Abc(
                 [
                     im,
                     1j * im,
-                    math.zeros(batch_shape + (m, 2 * m), dtype=math.complex128),
+                    math.zeros((*batch_shape, m, 2 * m), dtype=math.complex128),
                 ],
                 [
-                    math.zeros(batch_shape + (m, 2 * m), dtype=math.complex128),
+                    math.zeros((*batch_shape, m, 2 * m), dtype=math.complex128),
                     im,
                     -1j * im,
                 ],
                 [
                     im,
                     -1j * im,
-                    math.zeros(batch_shape + (m, 2 * m), dtype=math.complex128),
+                    math.zeros((*batch_shape, m, 2 * m), dtype=math.complex128),
                 ],
                 [
-                    math.zeros(batch_shape + (m, 2 * m), dtype=math.complex128),
+                    math.zeros((*batch_shape, m, 2 * m), dtype=math.complex128),
                     im,
                     1j * im,
                 ],

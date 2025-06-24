@@ -203,14 +203,14 @@ class TestPolyExpAnsatz:
     @pytest.mark.parametrize("batch_shape", [(), (1,), (2, 3)])
     def test_decompose_ansatz(self, batch_shape):
         A, b, _ = Abc_triple(4, batch_shape)
-        c = settings.rng.uniform(-1, 1, size=batch_shape + (3, 3, 3)) + 0.0j
+        c = settings.rng.uniform(-1, 1, size=(*batch_shape, 3, 3, 3)) + 0.0j
         ansatz = PolyExpAnsatz(A, b, c)
         decomp_ansatz = ansatz.decompose_ansatz()
         z = settings.rng.uniform(-1, 1, size=batch_shape) + 0.0j
         assert math.allclose(ansatz(z), decomp_ansatz(z))
-        assert math.allclose(decomp_ansatz.A.shape, batch_shape + (2, 2))
+        assert math.allclose(decomp_ansatz.A.shape, (*batch_shape, 2, 2))
 
-        c2 = settings.rng.uniform(-1, 1, size=batch_shape + (4,)) + 0.0j
+        c2 = settings.rng.uniform(-1, 1, size=(*batch_shape, 4)) + 0.0j
         ansatz2 = PolyExpAnsatz(A, b, c2)
         decomp_ansatz2 = ansatz2.decompose_ansatz()
         assert math.allclose(decomp_ansatz2.A, ansatz2.A)

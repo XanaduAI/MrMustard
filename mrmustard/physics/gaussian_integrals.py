@@ -254,8 +254,8 @@ def join_Abc(
     n2 = nA2 - m2
 
     # Step 0: Flatten the non-batch dimensions of c1 and c2
-    c1_flat_shape = batch1 + (int(np.prod(poly_shape1)),)
-    c2_flat_shape = batch2 + (int(np.prod(poly_shape2)),)
+    c1_flat_shape = (*batch1, int(np.prod(poly_shape1)))
+    c2_flat_shape = (*batch2, int(np.prod(poly_shape2)))
     c1_flat = math.reshape(c1, c1_flat_shape)
     c2_flat = math.reshape(c2, c2_flat_shape)
 
@@ -290,12 +290,12 @@ def join_Abc(
             broadcast_shape2.append(1)
 
     # Broadcast A, b, c to the output batch shape
-    A1_new_shape = tuple(broadcast_shape1) + (nA1, mA1)
-    A2_new_shape = tuple(broadcast_shape2) + (nA2, mA2)
-    b1_new_shape = tuple(broadcast_shape1) + (nb1,)
-    b2_new_shape = tuple(broadcast_shape2) + (nb2,)
-    c1_new_shape = tuple(broadcast_shape1) + (c1_flat.shape[-1],)
-    c2_new_shape = tuple(broadcast_shape2) + (c2_flat.shape[-1],)
+    A1_new_shape = (*tuple(broadcast_shape1), nA1, mA1)
+    A2_new_shape = (*tuple(broadcast_shape2), nA2, mA2)
+    b1_new_shape = (*tuple(broadcast_shape1), nb1)
+    b2_new_shape = (*tuple(broadcast_shape2), nb2)
+    c1_new_shape = (*tuple(broadcast_shape1), c1_flat.shape[-1])
+    c2_new_shape = (*tuple(broadcast_shape2), c2_flat.shape[-1])
 
     # Reshape to add broadcasting dimensions
     A1_reshaped = math.reshape(A1, A1_new_shape)
@@ -307,12 +307,12 @@ def join_Abc(
 
     # Create full output shape for broadcasting
     output_batch_shape = tuple(output_shape)
-    A1_broadcast_shape = output_batch_shape + (nA1, mA1)
-    A2_broadcast_shape = output_batch_shape + (nA2, mA2)
-    b1_broadcast_shape = output_batch_shape + (nb1,)
-    b2_broadcast_shape = output_batch_shape + (nb2,)
-    c1_broadcast_shape = output_batch_shape + (c1_flat.shape[-1],)
-    c2_broadcast_shape = output_batch_shape + (c2_flat.shape[-1],)
+    A1_broadcast_shape = (*output_batch_shape, nA1, mA1)
+    A2_broadcast_shape = (*output_batch_shape, nA2, mA2)
+    b1_broadcast_shape = (*output_batch_shape, nb1)
+    b2_broadcast_shape = (*output_batch_shape, nb2)
+    c1_broadcast_shape = (*output_batch_shape, c1_flat.shape[-1])
+    c2_broadcast_shape = (*output_batch_shape, c2_flat.shape[-1])
 
     # Step 2: Broadcast tensors to the output shape
     A1_broadcasted = math.broadcast_to(A1_reshaped, A1_broadcast_shape, dtype=math.complex128)
@@ -324,11 +324,11 @@ def join_Abc(
 
     # Step 3: Join A1 and A2
     A1Z = math.concat(
-        [A1_broadcasted, math.zeros(output_batch_shape + (nA1, nA2), dtype=math.complex128)],
+        [A1_broadcasted, math.zeros((*output_batch_shape, nA1, nA2), dtype=math.complex128)],
         axis=-1,
     )
     ZA2 = math.concat(
-        [math.zeros(output_batch_shape + (nA2, nA1), dtype=math.complex128), A2_broadcasted],
+        [math.zeros((*output_batch_shape, nA2, nA1), dtype=math.complex128), A2_broadcasted],
         axis=-1,
     )
 

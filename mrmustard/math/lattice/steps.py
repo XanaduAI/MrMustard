@@ -93,10 +93,10 @@ def vanilla_step_batch(
     i, pivot = first_available_pivot(index)
 
     # contribution from G[pivot]
-    value_at_index = b[..., i] * G[(slice(None),) + pivot]
+    value_at_index = b[..., i] * G[(slice(None), *pivot)]
     # contributions from G[neighbor]
     for j, neighbor in lower_neighbors(pivot):
-        value_at_index += A[..., i, j] * SQRT[pivot[j]] * G[(slice(None),) + neighbor]
+        value_at_index += A[..., i, j] * SQRT[pivot[j]] * G[(slice(None), *neighbor)]
 
     return value_at_index / SQRT[index[i]]
 
@@ -129,14 +129,14 @@ def vanilla_step_jacobian(
 
     # pivot contribution
     dGdB[index] += b[i] * dGdB[pivot] / SQRT[index[i]]
-    dGdB[index + (i,)] += G[pivot] / SQRT[index[i]]
+    dGdB[(*index, i)] += G[pivot] / SQRT[index[i]]
     dGdA[index] += b[i] * dGdA[pivot] / SQRT[index[i]]
 
     # neighbors contribution
     for j, neighbor in lower_neighbors(pivot):
         dGdB[index] += A[i, j] * dGdB[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
         dGdA[index] += A[i, j] * dGdA[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
-        dGdA[index + (i, j)] += G[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
+        dGdA[(*index, i, j)] += G[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
 
     return dGdA, dGdB
 

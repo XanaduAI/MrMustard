@@ -159,15 +159,13 @@ select = [
     "UP", # pyupgrade
     "RUF", # ruff-specific rules
 ]
-
-# revisit RUF005
 ignore = [
     "E741", 
     "F403", 
     "B905", 
     "PERF203", "PLR2004", "PLR0124", 
     "PLR0913", "PLR0912", "PLR0915", "PLC0414", "PLW1641", 
-    "RUF012", "RUF001", "RUF002", "RUF005",
+    "RUF012", "RUF001", "RUF002",
 ]
 
 [tool.pytest.ini_options]

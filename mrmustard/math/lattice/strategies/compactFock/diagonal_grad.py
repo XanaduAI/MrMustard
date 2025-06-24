@@ -80,8 +80,8 @@ def use_offDiag_pivot_grad(
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
     G_in = np.zeros(2 * M, dtype=np.complex128)
-    G_in_dA = np.zeros((2 * M,) + A.shape, dtype=np.complex128)
-    G_in_dB = np.zeros((2 * M,) + B.shape, dtype=np.complex128)
+    G_in_dA = np.zeros((2 * M, *A.shape), dtype=np.complex128)
+    G_in_dB = np.zeros((2 * M, *B.shape), dtype=np.complex128)
 
     ########## READ ##########
     pivot_val = arr1[2 * d][params]
@@ -215,8 +215,8 @@ def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, 
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
     G_in = np.zeros(2 * M, dtype=np.complex128)
-    G_in_dA = np.zeros((2 * M,) + A.shape, dtype=np.complex128)
-    G_in_dB = np.zeros((2 * M,) + B.shape, dtype=np.complex128)
+    G_in_dA = np.zeros((2 * M, *A.shape), dtype=np.complex128)
+    G_in_dB = np.zeros((2 * M, *B.shape), dtype=np.complex128)
 
     ########## READ ##########
     pivot_val = arr0[params]

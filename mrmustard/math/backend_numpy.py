@@ -618,7 +618,7 @@ class BackendNumpy(BackendBase):
         stable: bool = False,
     ) -> np.ndarray:
         return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
-            (-2, -1) + tuple(range(len(pnr_cutoffs)))
+            (-2, -1, *tuple(range(len(pnr_cutoffs))))
         )
 
     def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):

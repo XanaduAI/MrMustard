@@ -172,7 +172,7 @@ class Representation:
                 shape=shape + self.ansatz.shape_derived_vars,
             )
             G = math.reshape(G, self.ansatz.batch_shape + shape + (-1,))
-            cs = math.reshape(c, self.ansatz.batch_shape + (-1,))
+            cs = math.reshape(c, (*self.ansatz.batch_shape, -1))
             core_str = "".join(
                 [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))]
             )

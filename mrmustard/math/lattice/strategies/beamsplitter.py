@@ -366,7 +366,7 @@ def apply_BS_schwinger(theta, phi, i, j, array) -> np.ndarray:
     order = [k for k in range(array.ndim) if k not in [i, j]] + [i, j]
     array = array.transpose(order)  # move the indices to the end
     shape_rest, shape = array.shape[:-2], array.shape[-2:]
-    array = array.reshape(shape_rest + (-1,))  # flatten the last two dimensions
+    array = array.reshape((*shape_rest, -1))  # flatten the last two dimensions
     # step 2: apply each unitary to the corresponding indices
     for N in range(sum(shape) - 1):
         flat_idx = sector_idx(N, shape)

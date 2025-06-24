@@ -93,10 +93,10 @@ def get_pivot(k: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
     m = np.argmax(deltas)
     if deltas[m] == 0:
         i = np.argmax(k)
-        return i, k[:i] + (k[i] - 1,) + k[i + 1 :]
+        return i, (*k[:i], k[i] - 1, *k[i + 1 :])
     if k[2 * m] > k[2 * m + 1]:
-        return 2 * m, k[: 2 * m] + (k[2 * m] - 1,) + k[2 * m + 1 :]
-    return 2 * m + 1, k[: 2 * m + 1] + (k[2 * m + 1] - 1,) + k[2 * m + 2 :]
+        return 2 * m, (*k[: 2 * m], k[2 * m] - 1, *k[2 * m + 1 :])
+    return 2 * m + 1, (*k[: 2 * m + 1], k[2 * m + 1] - 1, *k[2 * m + 2 :])
 
 
 def single_step(A, b, buffer_1, buffer_2, i, pivot):
@@ -135,7 +135,7 @@ def lower(pivot, j):
     Returns:
         New tuple with j-th coordinate decreased by 1
     """
-    return pivot[:j] + (pivot[j] - 1,) + pivot[j + 1 :]
+    return (*pivot[:j], pivot[j] - 1, *pivot[j + 1 :])
 
 
 def generate_partitions(w: int, m: tuple[int]):
@@ -147,7 +147,7 @@ def generate_partitions(w: int, m: tuple[int]):
     max_first = min(w, m[0])
     for first in range(max_first, -1, -1):
         for rest in generate_partitions(w - first, m[1:]):
-            yield (first,) + rest
+            yield (first, *rest)
 
 
 @cache
@@ -184,9 +184,11 @@ def enumerate_diagonal_coords(weight: int, m: tuple[int]) -> list[tuple[int, ...
                 non_delta2_options.append([(d, u), (u, d)] if u <= max_val else [])
         # first include combinations which have exactly one pair with delta==2
         for i in range(n_modes):
-            product_options = (
-                non_delta2_options[:i] + [delta2_options[i]] + non_delta2_options[i + 1 :]
-            )
+            product_options = [
+                *non_delta2_options[:i],
+                delta2_options[i],
+                *non_delta2_options[i + 1 :],
+            ]
             for combo in product(*product_options):
                 coord = tuple(num for pair in combo for num in pair)
                 valid.append(coord)

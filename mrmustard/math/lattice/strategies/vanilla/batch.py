@@ -21,6 +21,8 @@ from mrmustard.utils.typing import ComplexTensor
 
 from .core import stable_numba, vanilla_numba
 
+# ruff: noqa: RUF005
+
 
 @njit(parallel=True)
 def vanilla_batch_numba(

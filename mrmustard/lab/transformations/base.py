@@ -255,7 +255,7 @@ class Unitary(Operation):
         m = len(modes)
         batch_shape = S.shape[:-2]
         A = symplectic2Au(S)
-        b = math.zeros(batch_shape + (2 * m,), dtype="complex128")
+        b = math.zeros((*batch_shape, 2 * m), dtype="complex128")
         A_inin = A[..., m:, m:]
         c = ((-1) ** m * math.det(A_inin @ math.conj(A_inin) - math.eye_like(A_inin))) ** 0.25
         return Unitary.from_bargmann(modes, modes, (A, b, c))

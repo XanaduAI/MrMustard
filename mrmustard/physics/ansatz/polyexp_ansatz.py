@@ -387,9 +387,9 @@ class PolyExpAnsatz(Ansatz):
         if self._lin_sup and other._lin_sup:
             batch_shape = self.batch_shape[:-1]
             flattened = self.batch_shape[-1] * other.batch_shape[-1]
-            A = math.reshape(A, batch_shape + (flattened,) + tuple(A.shape[-2:]))
-            b = math.reshape(b, batch_shape + (flattened,) + tuple(b.shape[-1:]))
-            c = math.reshape(c, batch_shape + (flattened,) + self.shape_derived_vars)
+            A = math.reshape(A, (*batch_shape, flattened, *tuple(A.shape[-2:])))
+            b = math.reshape(b, (*batch_shape, flattened, *tuple(b.shape[-1:])))
+            c = math.reshape(c, (*batch_shape, flattened, *self.shape_derived_vars))
 
         result = PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup or other._lin_sup)
         leftover_core = [i for i in idx1 + idx2 if isinstance(i, int) and i not in contracted_core]
@@ -423,11 +423,11 @@ class PolyExpAnsatz(Ansatz):
         batch_shape = A.shape[:-2]
         A_core = math.block(
             [
-                [math.zeros(batch_shape + (n, n), dtype=A.dtype), A[..., :n, n:]],
+                [math.zeros((*batch_shape, n, n), dtype=A.dtype), A[..., :n, n:]],
                 [A[..., n:, :n], A[..., n:, n:]],
             ]
         )
-        b_core = math.concat((math.zeros(batch_shape + (n,), dtype=b.dtype), b[..., n:]), axis=-1)
+        b_core = math.concat((math.zeros((*batch_shape, n), dtype=b.dtype), b[..., n:]), axis=-1)
 
         poly_core = math.hermite_renormalized(
             A_core, b_core, math.ones(self.batch_shape, dtype=math.complex128), shape=poly_shape
@@ -441,12 +441,12 @@ class PolyExpAnsatz(Ansatz):
         c_prime = math.einsum(
             f"{batch_str}...k,{batch_str}...k->{batch_str}...",
             poly_core,
-            c.reshape(batch_shape + (derived_vars_size,)),
+            c.reshape((*batch_shape, derived_vars_size)),
         )
         block = A[..., :n, :n]
         I_matrix = math.broadcast_to(math.eye_like(block), block.shape)
         A_decomp = math.block([[block, I_matrix], [I_matrix, math.zeros_like(block)]])
-        b_decomp = math.concat((b[..., :n], math.zeros(batch_shape + (n,), dtype=b.dtype)), axis=-1)
+        b_decomp = math.concat((b[..., :n], math.zeros((*batch_shape, n), dtype=b.dtype)), axis=-1)
         return PolyExpAnsatz(A_decomp, b_decomp, c_prime, lin_sup=self._lin_sup)
 
     def eval(
@@ -549,9 +549,9 @@ class PolyExpAnsatz(Ansatz):
         b = math.gather(b, to_keep, axis=0)
         c = math.gather(c, to_keep, axis=0)  # already added
 
-        A = math.reshape(A, (len(to_keep),) + (self.num_vars, self.num_vars))
-        b = math.reshape(b, (len(to_keep),) + (self.num_vars,))
-        c = math.reshape(c, (len(to_keep),) + self.shape_derived_vars)
+        A = math.reshape(A, (len(to_keep), self.num_vars, self.num_vars))
+        b = math.reshape(b, (len(to_keep), self.num_vars))
+        c = math.reshape(c, (len(to_keep), *self.shape_derived_vars))
 
         new_ansatz = PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
         new_ansatz._simplified = True
@@ -876,9 +876,9 @@ class PolyExpAnsatz(Ansatz):
             ),
         )
         if self._lin_sup and other._lin_sup:  # we have two linear superposition dimensions
-            As = math.reshape(As, As.shape[:-4] + (As.shape[-4] * As.shape[-3],) + As.shape[-2:])
-            bs = math.reshape(bs, bs.shape[:-3] + (bs.shape[-3] * bs.shape[-2],) + bs.shape[-1:])
-            cs = math.reshape(cs, cs.shape[:-2] + (cs.shape[-2] * cs.shape[-1],))
+            As = math.reshape(As, (*As.shape[:-4], As.shape[-4] * As.shape[-3], *As.shape[-2:]))
+            bs = math.reshape(bs, (*bs.shape[:-3], bs.shape[-3] * bs.shape[-2], *bs.shape[-1:]))
+            cs = math.reshape(cs, (*cs.shape[:-2], cs.shape[-2] * cs.shape[-1]))
         return PolyExpAnsatz(As, bs, cs, lin_sup=self._lin_sup or other._lin_sup)
 
     def __call__(self: PolyExpAnsatz, *z_inputs: ArrayLike | None) -> Batch[ComplexTensor]:

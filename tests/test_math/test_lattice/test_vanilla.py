@@ -27,11 +27,11 @@ def random_triple(n, batch=(), seed=None):
     """
     rng = np.random.RandomState(seed) if seed is not None else np.random
 
-    A = rng.random(batch + (n, n)) + 1j * rng.random(batch + (n, n))
+    A = rng.random((*batch, n, n)) + 1j * rng.random((*batch, n, n))
     A = A + np.swapaxes(A, -1, -2)
     A /= np.abs(np.linalg.eigvals(A)).max() + 0.2
-    b = rng.random(batch + (n,)) + 1j * rng.random(batch + (n,))
-    c = rng.random(batch + ()) + 1j * rng.random(batch + ())
+    b = rng.random((*batch, n)) + 1j * rng.random((*batch, n))
+    c = rng.random(batch) + 1j * rng.random(batch)
     return A, b, c
 
 
@@ -193,7 +193,7 @@ class TestVanilla:
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
         G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape, stable=stable)
-        assert G.shape == (2, 1) + shape
+        assert G.shape == (2, 1, *shape)
         assert math.allclose(G[0, 0], math.hermite_renormalized(A[0, 0], b[0, 0], c[0, 0], shape))
         assert math.allclose(G[1, 0], math.hermite_renormalized(A[0, 0], b[1, 0], c[0, 0], shape))
 
@@ -205,9 +205,9 @@ class TestVanilla:
         """
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
-        out_arr = math.zeros((2, 1) + shape, dtype=math.complex128)
+        out_arr = math.zeros((2, 1, *shape), dtype=math.complex128)
         G = math.hermite_renormalized(A[0, 0], b, c[0, 0], shape, stable=stable, out=out_arr)
-        assert G.shape == (2, 1) + shape
+        assert G.shape == (2, 1, *shape)
         assert math.allclose(G[0, 0], math.hermite_renormalized(A[0, 0], b[0, 0], c[0, 0], shape))
         assert math.allclose(G[1, 0], math.hermite_renormalized(A[0, 0], b[1, 0], c[0, 0], shape))
 
@@ -219,7 +219,7 @@ class TestVanilla:
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
         G = math.hermite_renormalized(A, b, c, shape, stable=stable)
-        assert G.shape == (2, 1) + shape
+        assert G.shape == (2, 1, *shape)
         assert math.allclose(G[0, 0], math.hermite_renormalized(A[0, 0], b[0, 0], c[0, 0], shape))
         assert math.allclose(G[1, 0], math.hermite_renormalized(A[1, 0], b[1, 0], c[1, 0], shape))
 
@@ -231,8 +231,8 @@ class TestVanilla:
         """
         A, b, c = random_triple(2, (2, 1), seed=673)
         shape = (4, 5)
-        out_arr = math.zeros((2, 1) + shape, dtype=math.complex128)
+        out_arr = math.zeros((2, 1, *shape), dtype=math.complex128)
         G = math.hermite_renormalized(A, b, c, shape, stable=stable, out=out_arr)
-        assert G.shape == (2, 1) + shape
+        assert G.shape == (2, 1, *shape)
         assert math.allclose(G[0, 0], math.hermite_renormalized(A[0, 0], b[0, 0], c[0, 0], shape))
         assert math.allclose(G[1, 0], math.hermite_renormalized(A[1, 0], b[1, 0], c[1, 0], shape))
