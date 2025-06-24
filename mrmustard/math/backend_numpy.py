@@ -21,8 +21,10 @@ from __future__ import annotations
 from math import lgamma as mlgamma
 from typing import Sequence, Callable
 
+from opt_einsum import contract
 import numpy as np
 import scipy as sp
+
 from scipy.signal import convolve2d as scipy_convolve2d
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
@@ -30,10 +32,8 @@ from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
 
 from ..utils.settings import settings
-from .autocast import Autocast
 from .backend_base import BackendBase
 from .lattice import strategies
-
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
@@ -232,10 +232,8 @@ class BackendNumpy(BackendBase):
 
         return array
 
-    def einsum(self, string: str, *tensors) -> np.ndarray | None:
-        if type(string) is str:
-            return np.einsum(string, *tensors)
-        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
+    def einsum(self, string: str, *tensors, optimize: bool | str) -> np.ndarray:
+        return contract(string, *tensors, optimize=optimize, backend="numpy")
 
     def exp(self, array: np.ndarray) -> np.ndarray:
         return np.exp(array)
@@ -276,22 +274,18 @@ class BackendNumpy(BackendBase):
     def make_complex(self, real: np.ndarray, imag: np.ndarray) -> np.ndarray:
         return real + 1j * imag
 
-    @Autocast()
     def matmul(self, *matrices: np.ndarray) -> np.ndarray:
         mat = matrices[0]
         for matrix in matrices[1:]:
             mat = np.matmul(mat, matrix)
         return mat
 
-    @Autocast()
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return self.matmul(a, b[..., None])[..., 0]
 
-    @Autocast()
     def maximum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.maximum(a, b)
 
-    @Autocast()
     def minimum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.minimum(a, b)
 
@@ -338,7 +332,6 @@ class BackendNumpy(BackendBase):
         if np.any(condition):
             raise ValueError(msg)
 
-    @Autocast()
     def outer(self, array1: np.ndarray, array2: np.ndarray) -> np.ndarray:
         return np.tensordot(array1, array2, [[], []])
 
@@ -357,7 +350,6 @@ class BackendNumpy(BackendBase):
     def pinv(matrix: np.ndarray) -> np.ndarray:
         return np.linalg.pinv(matrix)
 
-    @Autocast()
     def pow(self, x: np.ndarray, y: float) -> np.ndarray:
         return np.power(x, y)
 
@@ -403,7 +395,6 @@ class BackendNumpy(BackendBase):
     def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
         return np.sum(array, axis=axis)
 
-    @Autocast()
     def tensordot(self, a: np.ndarray, b: np.ndarray, axes: list[int]) -> np.ndarray:
         return np.tensordot(a, b, axes)
 
@@ -416,16 +407,12 @@ class BackendNumpy(BackendBase):
     def transpose(self, a: np.ndarray, perm: Sequence[int] | None = None) -> np.ndarray | None:
         return np.transpose(a, axes=perm)
 
-    @Autocast()
     def update_tensor(
         self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
     ) -> np.ndarray:
-        indices = self.atleast_nd(indices, 2)
-        for i, v in zip(indices, values):
-            tensor[tuple(i)] = v
+        tensor[indices] = values
         return tensor
 
-    @Autocast()
     def update_add_tensor(
         self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
     ) -> np.ndarray:
@@ -500,25 +487,33 @@ class BackendNumpy(BackendBase):
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    # ~~~~~~~~~~~~~~~~~
-    # Special functions
-    # ~~~~~~~~~~~~~~~~~
-
     @staticmethod
     def DefaultEuclideanOptimizer() -> None:
         return None
 
     def hermite_renormalized_unbatched(
-        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        c: np.ndarray,
+        shape: tuple[int],
+        stable: bool = False,
+        out: np.ndarray | None = None,
     ) -> np.ndarray:
         if stable:
-            return strategies.stable_numba(tuple(shape), A, b, c)
-        return strategies.vanilla_numba(tuple(shape), A, b, c)
+            return strategies.stable_numba(tuple(shape), A, b, c, out)
+        return strategies.vanilla_numba(tuple(shape), A, b, c, out)
 
     def hermite_renormalized_batched(
-        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        c: np.ndarray,
+        shape: tuple[int],
+        stable: bool = False,
+        out: np.ndarray | None = None,
     ) -> np.ndarray:
-        return strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable)
+        return strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable, out)
 
     def hermite_renormalized_binomial(
         self,
@@ -637,15 +632,28 @@ class BackendNumpy(BackendBase):
             (-2, -1) + tuple(range(len(pnr_cutoffs)))
         )
 
-    @staticmethod
-    def getitem(tensor, *, key):
-        value = np.array(tensor)[key]
-        return value
+    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):
+        alpha = self.asnumpy(x) + 1j * self.asnumpy(y)
+        if np.sqrt(x * x + y * y) > tol:
+            gate = strategies.displacement(tuple(shape), alpha)
+        else:
+            gate = self.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
+        return self.astensor(gate, dtype=gate.dtype.name)
 
-    @staticmethod
-    def setitem(tensor, value, *, key):
-        _tensor = np.array(tensor)
-        value = np.array(value)
-        _tensor[key] = value
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
+        t, s = self.asnumpy(theta), self.asnumpy(phi)
+        if method == "vanilla":
+            bs_unitary = strategies.beamsplitter(shape, t, s)
+        elif method == "schwinger":
+            bs_unitary = strategies.beamsplitter_schwinger(shape, t, s)
+        elif method == "stable":
+            bs_unitary = strategies.stable_beamsplitter(shape, t, s)
+        return self.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
 
-        return _tensor
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
+        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
+        sq_ket = strategies.squeezer(shape, self.asnumpy(r), self.asnumpy(phi))
+        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)

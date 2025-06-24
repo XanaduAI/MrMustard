@@ -29,7 +29,6 @@ from ...physics import triples
 from ..utils import make_parameter
 from ...physics.wires import Wires, ReprEnum
 from ...physics.representations import Representation
-from ...physics import fock_utils
 
 __all__ = ["BSgate"]
 
@@ -142,14 +141,11 @@ class BSgate(Unitary):
             theta = math.reshape(theta, (-1,))
             phi = math.reshape(phi, (-1,))
             ret = math.astensor(
-                [
-                    fock_utils.beamsplitter(t, p, shape=shape, method=method)
-                    for t, p in zip(theta, phi)
-                ]
+                [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta, phi)]
             )
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
         else:
-            ret = fock_utils.beamsplitter(
+            ret = math.beamsplitter(
                 self.parameters.theta.value,
                 self.parameters.phi.value,
                 shape=shape,

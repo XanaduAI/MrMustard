@@ -96,4 +96,4 @@ class Batch(Protocol[T_co]):
     r"""Anything that can iterate over objects of type T_co."""
 
     def __iter__(self) -> Iterator[T_co]:
-        ...
+        pass

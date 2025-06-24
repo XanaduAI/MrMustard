@@ -26,7 +26,7 @@ from ...physics.wires import Wires, ReprEnum
 from .base import Unitary
 from ...physics.representations import Representation
 from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
-from ...physics import triples, fock_utils
+from ...physics import triples
 from ..utils import make_parameter
 
 
@@ -124,14 +124,10 @@ class Dgate(Unitary):
             x, y = math.broadcast_arrays(self.parameters.x.value, self.parameters.y.value)
             x = math.reshape(x, (-1,))
             y = math.reshape(y, (-1,))
-            ret = math.astensor(
-                [fock_utils.displacement(xi, yi, shape=shape) for xi, yi in zip(x, y)]
-            )
+            ret = math.astensor([math.displacement(xi, yi, shape=shape) for xi, yi in zip(x, y)])
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
         else:
-            ret = fock_utils.displacement(
-                self.parameters.x.value, self.parameters.y.value, shape=shape
-            )
+            ret = math.displacement(self.parameters.x.value, self.parameters.y.value, shape=shape)
         return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:

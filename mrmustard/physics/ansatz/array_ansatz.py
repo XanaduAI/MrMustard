@@ -25,6 +25,7 @@ from numpy.typing import ArrayLike
 
 from IPython.display import display
 
+
 from mrmustard import math, widgets, settings
 from mrmustard.math.parameters import Variable
 from mrmustard.utils.typing import Batch, Scalar, Tensor
@@ -54,7 +55,7 @@ class ArrayAnsatz(Ansatz):
 
     def __init__(self, array: Batch[Tensor] | None, batch_dims: int = 0):
         super().__init__()
-        self._array = math.astensor(array) if array is not None else None
+        self._array = array
         self._batch_dims = batch_dims
         self._batch_shape = tuple(self._array.shape[:batch_dims]) if array is not None else ()
         self._original_abc_data = None
@@ -167,9 +168,9 @@ class ArrayAnsatz(Ansatz):
             ValueError: If index sequences have incorrect length or invalid labels.
         """
         if len(idx1) != len(self.array.shape):
-            raise ValueError(f"len(idx1) {len(idx1)} != rank(self) {len(self.array.shape)}")
+            raise ValueError(f"expected len(idx1)={self.array.ndim} got {len(idx1)}")
         if len(idx2) != len(other.array.shape):
-            raise ValueError(f"len(idx2) {len(idx2)} != rank(other) {len(other.array.shape)}")
+            raise ValueError(f"expected len(idx2)={other.array.ndim} got {len(idx2)}")
 
         all_labels_in = set(idx1) | set(idx2)
         if not set(idx_out).issubset(all_labels_in):
@@ -202,11 +203,9 @@ class ArrayAnsatz(Ansatz):
 
         reduced_array1 = array1[tuple(slices1)]
         reduced_array2 = array2[tuple(slices2)]
-
         result = math.einsum(einsum_str, reduced_array1, reduced_array2)
 
         batch_dims_out = sum(1 for label in idx_out if isinstance(label, str))
-
         return ArrayAnsatz(result, batch_dims=batch_dims_out)
 
     def reduce(self, shape: Sequence[int]) -> ArrayAnsatz:
@@ -225,11 +224,11 @@ class ArrayAnsatz(Ansatz):
             >>> assert fock1 == fock2
 
             >>> fock3 = fock1.reduce((2, 2, 2))
-            >>> array3 = [[[0, 1], [3, 4]], [[9, 10], [12, 13]]]
+            >>> array3 = math.astensor([[[0, 1], [3, 4]], [[9, 10], [12, 13]]])
             >>> assert fock3 == ArrayAnsatz(array3)
 
             >>> fock4 = fock1.reduce((1, 3, 1))
-            >>> array4 = [[[0], [3], [6]]]
+            >>> array4 = math.astensor([[[0], [3], [6]]])
             >>> assert fock4 == ArrayAnsatz(array4)
 
         Args:
@@ -241,7 +240,7 @@ class ArrayAnsatz(Ansatz):
             raise ValueError(f"Expected shape of length {self.core_dims}, got {len(shape)}.")
 
         if any(s > t for s, t in zip(shape, self.core_shape)):
-            warn("Warning: the fock array is being padded with zeros. Is this really necessary?")
+            warn("The fock array is being padded with zeros. Is this really necessary?")
             padded = math.pad(
                 self.array,
                 [(0, 0)] * self.batch_dims + [(0, s - t) for s, t in zip(shape, self.core_shape)],
@@ -334,7 +333,7 @@ class ArrayAnsatz(Ansatz):
         batch_size = int(np.prod(self.batch_shape))
         self_reshaped = math.reshape(self.array, (batch_size, -1))
         other_reshaped = math.reshape(other.array, (batch_size, -1))
-        new = math.einsum("ab,ac -> abc", self_reshaped, other_reshaped)
+        new = math.einsum("ab,ac->abc", self_reshaped, other_reshaped)
         new = math.reshape(new, self.batch_shape + self.core_shape + other.core_shape)
         return ArrayAnsatz(array=new, batch_dims=self.batch_dims)
 
