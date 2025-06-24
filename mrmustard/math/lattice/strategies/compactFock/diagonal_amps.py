@@ -16,7 +16,7 @@ from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
 
 
 @njit
-def use_offDiag_pivot(
+def use_offDiag_pivot(  # noqa: C901
     A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1
 ):  # pragma: no cover
     """

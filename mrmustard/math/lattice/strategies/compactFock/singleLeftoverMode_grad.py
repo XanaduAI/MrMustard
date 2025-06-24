@@ -251,7 +251,7 @@ def read_block(
 
 
 @njit
-def use_offDiag_pivot_grad(
+def use_offDiag_pivot_grad(  # noqa: C901
     A,
     B,
     M,

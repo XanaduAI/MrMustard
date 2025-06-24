@@ -87,7 +87,7 @@ class TestVanilla:
         assert np.allclose(dLdA, (dLdA_fd + dLdA_fd.T) / 2)
 
     @pytest.mark.requires_backend("numpy")
-    def test_full_batch_vjp(self):
+    def test_full_batch_vjp(self):  # noqa: C901
         r"""
         Unit test for vanilla_batch_vjp_numba function by comparing its results with finite difference approximations.
         """

@@ -154,6 +154,7 @@ select = [
     "RSE", # flake8-raise
     "RET", # flake8-return
     "SIM", # flake8-simplify
+    "C90", # mccabe
     "NPY", # numpy-specific rules
     "PERF", # perflint
     "PL", # pylint

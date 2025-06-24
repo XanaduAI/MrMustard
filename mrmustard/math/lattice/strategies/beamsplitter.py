@@ -88,7 +88,7 @@ def beamsplitter(
 
 
 @njit
-def stable_beamsplitter(shape, theta, phi):  # pragma: no cover
+def stable_beamsplitter(shape, theta, phi):  # pragma: no cover  # noqa: C901
     r"""
     Stable implementation of the Fock representation of the beamsplitter.
     It is numerically stable up to arbitrary cutoffs.

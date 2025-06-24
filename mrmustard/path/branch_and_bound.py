@@ -229,7 +229,7 @@ class Graph(nx.DiGraph):
 # =======================
 
 
-def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
+def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:  # noqa: C901
     r"""
     Iteratively optimizes the Fock shapes of the components in the graph.
 
@@ -476,7 +476,7 @@ def heuristic(graph: Graph, code: str, verbose: bool) -> Graph:
     return graph
 
 
-def optimal_contraction(
+def optimal_contraction(  # noqa: C901
     graph: Graph,
     n_init: int,
     heuristics: tuple[str, ...],

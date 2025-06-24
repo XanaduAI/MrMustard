@@ -300,7 +300,7 @@ class Circuit:
             other = Circuit([other])
         return Circuit(self.components + other.components)
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # noqa: C901
         r"""
         A string-based representation of this component.
         """
