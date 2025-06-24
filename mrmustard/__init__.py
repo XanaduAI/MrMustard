@@ -18,7 +18,7 @@
 # ruff: noqa: ICN001
 import os
 
-from rich import print  # noqa: A004
+from rich import print as rprint
 
 from ._version import __version__
 from .utils.filters import add_complex_warning_filter
@@ -69,18 +69,18 @@ def about():
     import thewalrus
 
     # a QuTiP-style infobox
-    print("\nMr Mustard: a differentiable bridge between phase space and Fock space.")
-    print("Copyright 2021 Xanadu Quantum Technologies Inc.\n")
+    rprint("\nMr Mustard: a differentiable bridge between phase space and Fock space.")
+    rprint("Copyright 2021 Xanadu Quantum Technologies Inc.\n")
 
-    print("Python version:            {}.{}.{}".format(*sys.version_info[0:3]))
-    print(f"Platform info:             {platform.platform()}")
-    print(f"Installation path:         {os.path.dirname(__file__)}")
-    print(f"Mr Mustard version:        {__version__}")
-    print(f"Numpy version:             {numpy.__version__}")
-    print(f"Numba version:             {numba.__version__}")
-    print(f"Scipy version:             {scipy.__version__}")
-    print(f"The Walrus version:        {thewalrus.__version__}")
-    print(f"TensorFlow version:        {tensorflow.__version__}")
+    rprint("Python version:            {}.{}.{}".format(*sys.version_info[0:3]))
+    rprint(f"Platform info:             {platform.platform()}")
+    rprint(f"Installation path:         {os.path.dirname(__file__)}")
+    rprint(f"Mr Mustard version:        {__version__}")
+    rprint(f"Numpy version:             {numpy.__version__}")
+    rprint(f"Numba version:             {numba.__version__}")
+    rprint(f"Scipy version:             {scipy.__version__}")
+    rprint(f"The Walrus version:        {thewalrus.__version__}")
+    rprint(f"TensorFlow version:        {tensorflow.__version__}")
 
 
 # filter tensorflow cast warnings
