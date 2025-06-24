@@ -82,7 +82,11 @@ class BackendJax(BackendBase):
         return jnp.any(array)
 
     def arange(
-        self, start: int, limit: int | None = None, delta: int = 1, dtype=None
+        self,
+        start: int,
+        limit: int | None = None,
+        delta: int = 1,
+        dtype=None,
     ) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.arange(start, limit, delta, dtype=dtype)
@@ -231,13 +235,19 @@ class BackendJax(BackendBase):
         return jnp.tile(array, repeats)
 
     def update_tensor(
-        self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
+        self,
+        tensor: jnp.ndarray,
+        indices: jnp.ndarray,
+        values: jnp.ndarray,
     ) -> jnp.ndarray:
         return tensor.at[indices].set(values)
 
     @jax.jit
     def update_add_tensor(
-        self, tensor: jnp.ndarray, indices: jnp.ndarray, values: jnp.ndarray
+        self,
+        tensor: jnp.ndarray,
+        indices: jnp.ndarray,
+        values: jnp.ndarray,
     ) -> jnp.ndarray:
         indices = self.atleast_nd(indices, 2)
         return tensor.at[tuple(indices.T)].add(values)
@@ -332,7 +342,10 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=["old", "new"])
     def moveaxis(
-        self, array: jnp.ndarray, old: int | Sequence[int], new: int | Sequence[int]
+        self,
+        array: jnp.ndarray,
+        old: int | Sequence[int],
+        new: int | Sequence[int],
     ) -> jnp.ndarray:
         return jnp.moveaxis(array, old, new)
 
@@ -349,7 +362,11 @@ class BackendJax(BackendBase):
         return jnp.full_like(array, jnp.inf, dtype="complex128")
 
     def conditional(
-        self, cond: jnp.ndarray, true_fn: Callable, false_fn: Callable, *args
+        self,
+        cond: jnp.ndarray,
+        true_fn: Callable,
+        false_fn: Callable,
+        *args,
     ) -> jnp.ndarray:
         return jax.lax.cond(jnp.all(cond), true_fn, false_fn, *args)
 
@@ -498,7 +515,9 @@ class BackendJax(BackendBase):
 
     @jax.jit
     def reorder_AB_bargmann(
-        self, A: jnp.ndarray, B: jnp.ndarray
+        self,
+        A: jnp.ndarray,
+        B: jnp.ndarray,
     ) -> tuple[jnp.ndarray, jnp.ndarray]:
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann_utils the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
@@ -538,7 +557,12 @@ class BackendJax(BackendBase):
             raise ValueError("'out' keyword is not supported in the JAX backend")
         return jax.pure_callback(
             lambda A, b, c: strategies.vanilla_batch_numba(
-                shape, np.array(A), np.array(b), np.array(c), stable, None
+                shape,
+                np.array(A),
+                np.array(b),
+                np.array(c),
+                stable,
+                None,
             ),
             jax.ShapeDtypeStruct(output_shape, jnp.complex128),
             A,
@@ -548,7 +572,11 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal(
-        self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
+        self,
+        A: jnp.ndarray,
+        B: jnp.ndarray,
+        C: jnp.ndarray,
+        cutoffs: tuple[int],
     ) -> jnp.ndarray:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
@@ -558,7 +586,11 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB(
-        self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
+        self,
+        A: jnp.ndarray,
+        B: jnp.ndarray,
+        C: jnp.ndarray,
+        cutoffs: tuple[int],
     ) -> jnp.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -587,7 +619,11 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_batch(
-        self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
+        self,
+        A: jnp.ndarray,
+        B: jnp.ndarray,
+        C: jnp.ndarray,
+        cutoffs: tuple[int],
     ) -> jnp.ndarray:
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
@@ -595,7 +631,11 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB_batch(
-        self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
+        self,
+        A: jnp.ndarray,
+        B: jnp.ndarray,
+        C: jnp.ndarray,
+        cutoffs: tuple[int],
     ) -> jnp.ndarray:
         r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
 
@@ -647,7 +687,11 @@ class BackendJax(BackendBase):
         function = partial(strategies.binomial, tuple(shape))
         return jax.pure_callback(
             lambda A, B, C, max_l2, global_cutoff: function(
-                np.array(A), np.array(B), np.array(C), max_l2, global_cutoff
+                np.array(A),
+                np.array(B),
+                np.array(C),
+                max_l2,
+                global_cutoff,
             )[0],
             jax.ShapeDtypeStruct(shape, jnp.complex128),
             A,
@@ -665,7 +709,11 @@ class BackendJax(BackendBase):
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_1leftoverMode_reorderedAB(
-        self, A: jnp.ndarray, B: jnp.ndarray, C: jnp.ndarray, cutoffs: tuple[int]
+        self,
+        A: jnp.ndarray,
+        B: jnp.ndarray,
+        C: jnp.ndarray,
+        cutoffs: tuple[int],
     ) -> jnp.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the

@@ -62,8 +62,12 @@ class Ggate(Unitary):
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         self.parameters.add_parameter(
             make_parameter(
-                symplectic_trainable, symplectic, "symplectic", (None, None), update_symplectic
-            )
+                symplectic_trainable,
+                symplectic,
+                "symplectic",
+                (None, None),
+                update_symplectic,
+            ),
         )
         self._representation = self.from_ansatz(
             modes_in=modes,

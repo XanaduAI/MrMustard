@@ -46,7 +46,9 @@ class TestOptimizerJax:
     def test_S2gate_coincidence_prob(self, n):
         """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
         S = TwoModeSqueezedVacuum(
-            (0, 1), r=abs(settings.rng.normal(loc=1.0, scale=0.1)), r_trainable=True
+            (0, 1),
+            r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
+            r_trainable=True,
         )
 
         def cost_fn(S):
@@ -127,7 +129,11 @@ class TestOptimizerJax:
         S_01 = S2gate((0, 1), r=r, phi=0.0, phi_trainable=True)
         S_23 = S2gate((2, 3), r=r, phi=0.0, phi_trainable=True)
         S_12 = S2gate(
-            (1, 2), r=1.0, phi=settings.rng.normal(), r_trainable=True, phi_trainable=True
+            (1, 2),
+            r=1.0,
+            phi=settings.rng.normal(),
+            r_trainable=True,
+            phi_trainable=True,
         )
 
         circ = Circuit([state_in, S_01, S_23, S_12])
@@ -237,7 +243,8 @@ class TestOptimizerJax:
 
         def cost_fn(sq):
             return -math.real(
-                (sq >> Number(1, 1) >> BSgate((0, 1), 0.5) >> (Vacuum(0) >> Number(1, 1)).dual) ** 2
+                (sq >> Number(1, 1) >> BSgate((0, 1), 0.5) >> (Vacuum(0) >> Number(1, 1)).dual)
+                ** 2,
             )
 
         opt = OptimizerJax(learning_rate=0.05)

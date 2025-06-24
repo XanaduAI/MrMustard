@@ -269,7 +269,7 @@ class TestBackendManager:
                 [O, O, I, -1j * I],
                 [I, -1j * I, O, O],
                 [O, O, I, 1j * I],
-            ]
+            ],
         )
         assert R.shape == (16, 16)
 
@@ -432,7 +432,7 @@ class TestBackendManager:
         arr[2, 2] = 3
         res = math.asnumpy(math.exp(arr))
         exp = np.array(
-            [[np.exp(0) if i != j else np.exp(i + 1) for i in range(3)] for j in range(3)]
+            [[np.exp(0) if i != j else np.exp(i + 1) for i in range(3)] for j in range(3)],
         )
         assert math.allclose(res, exp)
 
@@ -784,7 +784,7 @@ class TestBackendManager:
                     0.27646677 + 4.60777945e-01j,
                     -0.03277289 + 1.88440656e-17j,
                 ],
-            ]
+            ],
         )
         D = math.displacement(math.real(alpha), math.imag(alpha), (cutoff, cutoff))
         assert math.allclose(math.asnumpy(D), expected, atol=1e-5, rtol=0)

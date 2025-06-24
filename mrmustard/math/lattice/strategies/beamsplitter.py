@@ -35,7 +35,10 @@ __all__ = ["beamsplitter", "beamsplitter_schwinger", "beamsplitter_vjp", "stable
 
 @njit
 def beamsplitter(
-    shape: tuple[int, int, int, int], theta: float, phi: float, dtype=np.complex128
+    shape: tuple[int, int, int, int],
+    theta: float,
+    phi: float,
+    dtype=np.complex128,
 ) -> ComplexTensor:  # pragma: no cover
     r"""Calculates the Fock representation of the beamsplitter.
     It takes advantage of input-output particle conservation (m+n=p+q)
@@ -230,7 +233,7 @@ def beamsplitter_vjp(
 
     # omitting bottom-left block because dLdA should be zero there
     dLdtheta = 2 * np.real(
-        -st * dLdA[0, 2] - ct * em * dLdA[0, 3] + ct * e * dLdA[1, 2] - st * dLdA[1, 3]
+        -st * dLdA[0, 2] - ct * em * dLdA[0, 3] + ct * e * dLdA[1, 2] - st * dLdA[1, 3],
     )
     dLdphi = 2 * np.real(1j * st * em * dLdA[0, 3] + 1j * st * e * dLdA[1, 2])
 

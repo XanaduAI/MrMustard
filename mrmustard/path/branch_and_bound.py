@@ -118,7 +118,7 @@ class GraphComponent:
             prod_A = np.prod([s for i, s in enumerate(self.shape) if i not in idxA])
             prod_B = np.prod([s for i, s in enumerate(other.shape) if i not in idxB])
             prod_contracted = np.prod(
-                [min(self.shape[i], other.shape[j]) for i, j in zip(idxA, idxB)]
+                [min(self.shape[i], other.shape[j]) for i, j in zip(idxA, idxB)],
             )
             cost = (
                 prod_A * prod_B * prod_contracted  # matmul
@@ -220,7 +220,7 @@ class Graph(nx.DiGraph):
             tuple(self.nodes)
             + tuple(self.edges)
             + tuple(self.solution)
-            + tuple(functools.reduce(operator.iadd, (c.shape for c in self.components()), []))
+            + tuple(functools.reduce(operator.iadd, (c.shape for c in self.components()), [])),
         )
 
 
@@ -411,7 +411,7 @@ def assign_costs(graph: Graph, debug: int = 0) -> None:
         graph.edges[edge]["cost"] = A.contraction_cost(B)
         if debug > 0:
             print(
-                f"cost of edge {edge}: {A.ansatz}|{A.shape} x {B.ansatz}|{B.shape} = {graph.edges[edge]['cost']}"
+                f"cost of edge {edge}: {A.ansatz}|{A.shape} x {B.ansatz}|{B.shape} = {graph.edges[edge]['cost']}",
             )
 
 
@@ -510,7 +510,7 @@ def optimal_contraction(  # noqa: C901
         best = rand if rand.cost < best.cost else best
     if verbose:
         print(
-            f"Best cost from {n_init} random contractions: {best.cost}. Solution: {best.solution}\n"
+            f"Best cost from {n_init} random contractions: {best.cost}. Solution: {best.solution}\n",
         )
 
     queue = PriorityQueue()

@@ -62,6 +62,7 @@ class Rgate(Unitary):
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.rotation_gate_Abc, theta=self.parameters.theta
+                fn=triples.rotation_gate_Abc,
+                theta=self.parameters.theta,
             ),
         ).representation

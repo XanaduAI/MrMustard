@@ -48,7 +48,7 @@ def test_tensorboard_callback(tmp_path):
 
     def cost_fn():
         return tf.abs(
-            circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k]
+            circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k],
         ) ** 2 + tf.reduce_sum(free_var**2)
 
     tbcb = TensorboardCallback(

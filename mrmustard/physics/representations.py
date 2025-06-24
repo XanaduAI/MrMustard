@@ -138,7 +138,10 @@ class Representation:
         batch12, batch_out = eins_str.split("->")
         batch1, batch2 = batch12.split(",")
         ansatz = self.ansatz.contract(
-            other.ansatz, list(batch1) + core1, list(batch2) + core2, list(batch_out) + core_out
+            other.ansatz,
+            list(batch1) + core1,
+            list(batch2) + core2,
+            list(batch_out) + core_out,
         )
         return Representation(ansatz, wires_result)
 
@@ -174,7 +177,7 @@ class Representation:
             G = math.reshape(G, self.ansatz.batch_shape + shape + (-1,))
             cs = math.reshape(c, (*self.ansatz.batch_shape, -1))
             core_str = "".join(
-                [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))]
+                [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))],
             )
             ret = math.einsum(f"...{core_str},...{core_str[-1]}->...{core_str[:-1]}", G, cs)
             if self.ansatz._lin_sup:

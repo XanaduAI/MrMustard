@@ -116,7 +116,8 @@ class CircuitComponent:
             ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
             ansatz = locate(ansatz_cls).from_dict(data)
             return cls._from_attributes(
-                Representation(ansatz, Wires(*tuple(set(m) for m in wires))), name=name
+                Representation(ansatz, Wires(*tuple(set(m) for m in wires))),
+                name=name,
             )
 
         return cls(**data)
@@ -385,11 +386,12 @@ class CircuitComponent:
             object_to_convert = self.to_bargmann()
 
         return BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
-            BtoQ_ob
+            BtoQ_ob,
         )
 
     def quadrature_triple(
-        self, phi: float = 0.0
+        self,
+        phi: float = 0.0,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
         The quadrature representation triple A,b,c of this circuit component.
@@ -422,7 +424,7 @@ class CircuitComponent:
 
             if len(quad) != dims:
                 raise ValueError(
-                    f"The fock array has dimension {dims} whereas ``quad`` has {len(quad)}."
+                    f"The fock array has dimension {dims} whereas ``quad`` has {len(quad)}.",
                 )
             # construct quadrature basis vectors
             shapes = self.ansatz.core_shape
@@ -440,7 +442,10 @@ class CircuitComponent:
             # Convert each dimension to quadrature
             fock_string = "".join([chr(97 + self.n_modes + dim) for dim in range(dims)])
             q_string = "".join(
-                [f"{fock_string[idx]}{chr(97 + wire.mode)}," for idx, wire in enumerate(self.wires)]
+                [
+                    f"{fock_string[idx]}{chr(97 + wire.mode)},"
+                    for idx, wire in enumerate(self.wires)
+                ],
             )[:-1]
             out_string = "".join([chr(97 + mode) for mode in self.modes])
             ret = np.einsum(
@@ -458,8 +463,8 @@ class CircuitComponent:
             ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
         size = int(
             math.prod(
-                ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape else ret.shape
-            )
+                ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape else ret.shape,
+            ),
         )
         return math.reshape(ret, (size, *self.ansatz.batch_shape))
 
@@ -526,7 +531,9 @@ class CircuitComponent:
         return self._representation.bargmann_triple()
 
     def contract(
-        self, other: CircuitComponent | Scalar, mode: Literal["zip", "kron"] = "kron"
+        self,
+        other: CircuitComponent | Scalar,
+        mode: Literal["zip", "kron"] = "kron",
     ) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` without adding adjoints.
@@ -597,7 +604,7 @@ class CircuitComponent:
         subsets = [s for s in (ob, ib, ok, ik) if s]
         if any(s != subsets[0] for s in subsets):
             raise ValueError(
-                f"Cannot rewire a component with wires on different modes ({ob, ib, ok, ik})."
+                f"Cannot rewire a component with wires on different modes ({ob, ib, ok, ik}).",
             )
         for subset in subsets:
             if subset and len(subset) != len(modes):
@@ -608,7 +615,7 @@ class CircuitComponent:
                 modes_in_bra=set(modes) if ib else set(),
                 modes_out_ket=set(modes) if ok else set(),
                 modes_in_ket=set(modes) if ik else set(),
-            )
+            ),
         )
 
     def to_bargmann(self) -> CircuitComponent:
@@ -678,12 +685,14 @@ class CircuitComponent:
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
         instance.__dict__["_representation"] = Representation(
-            self.ansatz, wires or Wires(*self.wires.args)
+            self.ansatz,
+            wires or Wires(*self.wires.args),
         )
         return instance
 
     def _rshift_return(
-        self, result: CircuitComponent | np.ndarray | complex
+        self,
+        result: CircuitComponent | np.ndarray | complex,
     ) -> CircuitComponent | np.ndarray | complex:
         "internal convenience method for right-shift, to return the right type of object"
         if len(result.wires) > 0:

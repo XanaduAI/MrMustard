@@ -130,7 +130,7 @@ class BackendManager:
             attr = getattr(backend, fn)
         except AttributeError:
             raise NotImplementedError(
-                f"Function ``{fn}`` not implemented for backend ``{backend.name}``."
+                f"Function ``{fn}`` not implemented for backend ``{backend.name}``.",
             ) from None
         return attr(*args, **kwargs)
 
@@ -309,7 +309,11 @@ class BackendManager:
         return self._apply("any", (array,))
 
     def arange(
-        self, start: int, limit: int | None = None, delta: int = 1, dtype: Any = None
+        self,
+        start: int,
+        limit: int | None = None,
+        delta: int = 1,
+        dtype: Any = None,
     ) -> Tensor:
         r"""Returns an array of evenly spaced values within a given interval.
 
@@ -646,7 +650,11 @@ class BackendManager:
         return self._apply("eigh", (tensor,))
 
     def einsum(
-        self, string: str, *tensors, optimize: bool | str = "greedy", backend: str | None = None
+        self,
+        string: str,
+        *tensors,
+        optimize: bool | str = "greedy",
+        backend: str | None = None,
     ) -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
@@ -664,7 +672,10 @@ class BackendManager:
         """
         optimize = optimize or settings.EINSUM_OPTIMIZE
         return self._apply(
-            "einsum", (string, *tensors), {"optimize": optimize}, backend_name=backend
+            "einsum",
+            (string, *tensors),
+            {"optimize": optimize},
+            backend_name=backend,
         )
 
     def exp(self, array: Tensor) -> Tensor:
@@ -794,7 +805,7 @@ class BackendManager:
                 d_out < d for d_out, d in zip(out.shape, batch_shape + shape)
             ):
                 raise ValueError(
-                    f"batch+shape {batch_shape + shape} is too large for out.shape={out.shape}"
+                    f"batch+shape {batch_shape + shape} is too large for out.shape={out.shape}",
                 )
 
         stable = stable or settings.STABLE_FOCK_CONVERSION
@@ -845,7 +856,11 @@ class BackendManager:
         )
 
     def hermite_renormalized_diagonal(
-        self, A: Tensor, b: Tensor, c: Tensor, cutoffs: tuple[int]
+        self,
+        A: Tensor,
+        b: Tensor,
+        c: Tensor,
+        cutoffs: tuple[int],
     ) -> Tensor:
         r"""Renormalized multidimensional Hermite polynomial for calculating the diagonal of the Fock representation.
 
@@ -861,7 +876,11 @@ class BackendManager:
         return self._apply("hermite_renormalized_diagonal", (A, b, c, cutoffs))
 
     def hermite_renormalized_diagonal_batch(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
+        self,
+        A: Tensor,
+        B: Tensor,
+        C: Tensor,
+        cutoffs: tuple[int],
     ) -> Tensor:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculates the required renormalized multidimensional Hermite polynomial.
@@ -869,7 +888,12 @@ class BackendManager:
         return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
 
     def hermite_renormalized_1leftoverMode(
-        self, A: Tensor, b: Tensor, c: Tensor, output_cutoff: int, pnr_cutoffs: tuple[int, ...]
+        self,
+        A: Tensor,
+        b: Tensor,
+        c: Tensor,
+        output_cutoff: int,
+        pnr_cutoffs: tuple[int, ...],
     ) -> Tensor:
         r"""Compute the conditional density matrix of mode 0, with all the other modes
         detected with PNR detectors up to the given photon numbers.
@@ -886,7 +910,8 @@ class BackendManager:
             (output_cutoff + 1, output_cutoff + 1, *pnr_cutoffs + 1)
         """
         return self._apply(
-            "hermite_renormalized_1leftoverMode", (A, b, c, output_cutoff, pnr_cutoffs)
+            "hermite_renormalized_1leftoverMode",
+            (A, b, c, output_cutoff, pnr_cutoffs),
         )
 
     def hermite_renormalized_binomial(
@@ -1459,7 +1484,9 @@ class BackendManager:
         return self._apply("update_add_tensor", (tensor, indices, values))
 
     def value_and_gradients(
-        self, cost_fn: Callable, parameters: dict[str, list[Trainable]]
+        self,
+        cost_fn: Callable,
+        parameters: dict[str, list[Trainable]],
     ) -> tuple[Tensor, dict[str, list[Tensor]]]:
         r"""The loss and gradients of the given cost function.
 
@@ -1754,7 +1781,8 @@ class BackendManager:
         if mat.shape[-2:] != (2, 2):
             raise ValueError("mat must be a single-mode (2x2) matrix")
         mat = self.diag(
-            self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)), k=0
+            self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)),
+            k=0,
         )  # shape [2,2,N,N]
         return self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
 

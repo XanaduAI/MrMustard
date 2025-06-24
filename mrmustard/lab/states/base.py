@@ -339,7 +339,11 @@ class State(CircuitComponent):
         return cls.from_ansatz(modes, (Q >> QtoB).ansatz, name)
 
     def auto_shape(
-        self, max_prob=None, max_shape=None, min_shape=None, respect_manual_shape=True
+        self,
+        max_prob=None,
+        max_shape=None,
+        min_shape=None,
+        respect_manual_shape=True,
     ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this state, defined as the shape of the Fock
@@ -424,7 +428,8 @@ class State(CircuitComponent):
 
     @abstractmethod
     def formal_stellar_decomposition(
-        self, core_modes: Sequence[int]
+        self,
+        core_modes: Sequence[int],
     ) -> tuple[State, Transformation]:
         r"""
         Applies the formal stellar decomposition.
@@ -447,7 +452,8 @@ class State(CircuitComponent):
             probability = math.reshape(probability, probability.shape + (1,) * delta)
         elif probability.shape != () and isinstance(self.ansatz, ArrayAnsatz):
             probability = math.reshape(
-                probability, probability.shape + (1,) * self.ansatz.core_dims
+                probability,
+                probability.shape + (1,) * self.ansatz.core_dims,
             )
         if not self.wires.ket or not self.wires.bra:
             return self / math.sqrt(probability)
@@ -476,7 +482,8 @@ class State(CircuitComponent):
 
     @abstractmethod
     def physical_stellar_decomposition(
-        self, core_modes: Sequence[int]
+        self,
+        core_modes: Sequence[int],
     ) -> tuple[State, Transformation]:
         r"""
         Applies the physical stellar decomposition.
@@ -502,7 +509,7 @@ class State(CircuitComponent):
         """
         if len(quad) != 1 and len(quad) != self.n_modes:
             raise ValueError(
-                f"Expected {self.n_modes} or ``1`` quadrature vectors, got {len(quad)}."
+                f"Expected {self.n_modes} or ``1`` quadrature vectors, got {len(quad)}.",
             )
         if len(quad) == 1:
             quad = quad * self.n_modes
@@ -684,7 +691,7 @@ class State(CircuitComponent):
                 z=z,
                 coloraxis="coloraxis",
                 hovertemplate="x: %{x:.3f}<br>p: %{y:.3f}<br>W(x, p): %{z:.3f}<extra></extra>",
-            )
+            ),
         )
 
         fig.update_layout(
@@ -701,7 +708,7 @@ class State(CircuitComponent):
                 "usecolormap": True,
                 "highlightcolor": "limegreen",
                 "project_z": False,
-            }
+            },
         )
         fig.update_traces(
             contours_y={
@@ -709,7 +716,7 @@ class State(CircuitComponent):
                 "usecolormap": True,
                 "highlightcolor": "red",
                 "project_y": False,
-            }
+            },
         )
         fig.update_traces(
             contours_x={
@@ -717,7 +724,7 @@ class State(CircuitComponent):
                 "usecolormap": True,
                 "highlightcolor": "yellow",
                 "project_x": False,
-            }
+            },
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -757,7 +764,7 @@ class State(CircuitComponent):
             raise NotImplementedError("DM visualization not implemented for batched states.")
         dm = self.to_fock(cutoff).dm().ansatz.array
         fig = go.Figure(
-            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
+            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False),
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
@@ -790,5 +797,5 @@ class State(CircuitComponent):
         if isinstance(self.ansatz, PolyExpAnsatz):
             return (self >> BtoPS(self.modes, s=0)).ansatz.PS
         raise ValueError(
-            "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first."
+            "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first.",
         )

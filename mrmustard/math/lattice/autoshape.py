@@ -109,10 +109,10 @@ def autoshape_numba(A, b, c, max_prob, max_shape, min_shape) -> int:  # pragma: 
         idx_n = np.delete(np.arange(M), m)
         A_mm = np.ascontiguousarray(A[idx_m, :][:, idx_m].transpose((2, 0, 3, 1))).reshape((2, 2))
         A_nn = np.ascontiguousarray(A[idx_n, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
-            (2 * M - 2, 2 * M - 2)
+            (2 * M - 2, 2 * M - 2),
         )
         A_mn = np.ascontiguousarray(A[idx_m, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
-            (2, 2 * M - 2)
+            (2, 2 * M - 2),
         )
         A_nm = np.transpose(A_mn)
         b_m = np.ascontiguousarray(b[idx_m].transpose()).reshape((2,))

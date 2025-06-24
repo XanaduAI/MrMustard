@@ -59,7 +59,9 @@ class TestOptimizer:
         rng.reset_from_seed(settings.SEED)
 
         S = TwoModeSqueezedVacuum(
-            (0, 1), r=abs(settings.rng.normal(loc=1.0, scale=0.1)), r_trainable=True
+            (0, 1),
+            r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
+            r_trainable=True,
         )
 
         def cost_fn():
@@ -262,7 +264,7 @@ class TestOptimizer:
                     -0.25390362 - 0.2244298j,
                     0.18706333 - 0.64375049j,
                 ],
-            ]
+            ],
         )
         perturbed = (
             Interferometer((0, 1, 2, 3), unitary=solution_U)
@@ -304,7 +306,7 @@ class TestOptimizer:
                 [-0.5, -0.5, -0.5, 0.5],
                 [0.5, 0.5, -0.5, 0.5],
                 [0.5, -0.5, -0.5, -0.5],
-            ]
+            ],
         )
         pertubed = (
             RealInterferometer((0, 1, 2, 3), orthogonal=solution_O)
@@ -345,7 +347,9 @@ class TestOptimizer:
             phi_trainable=True,
         )
         r_inter = RealInterferometer(
-            (0, 1, 2, 3), orthogonal=perturbed_O, orthogonal_trainable=True
+            (0, 1, 2, 3),
+            orthogonal=perturbed_O,
+            orthogonal_trainable=True,
         )
 
         circ = Circuit([state_in, s_gate0, s_gate1, s_gate2, s_gate3, r_inter])
@@ -373,7 +377,11 @@ class TestOptimizer:
         S_01 = S2gate((0, 1), r=r, phi=0.0, phi_trainable=True)
         S_23 = S2gate((2, 3), r=r, phi=0.0, phi_trainable=True)
         S_12 = S2gate(
-            (1, 2), r=1.0, phi=settings.rng.normal(), r_trainable=True, phi_trainable=True
+            (1, 2),
+            r=1.0,
+            phi=settings.rng.normal(),
+            r_trainable=True,
+            phi_trainable=True,
         )
 
         circ = Circuit([state_in, S_01, S_23, S_12])

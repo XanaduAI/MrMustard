@@ -45,5 +45,6 @@ class TestBargmannEigenstate:
         alpha = math.broadcast_to(alpha, batch_shape, dtype=math.complex128)
         be = BargmannEigenstate(0, alpha)
         assert math.allclose(
-            be.contract(be.dual, "zip").ansatz.scalar, math.exp(alpha**2)
+            be.contract(be.dual, "zip").ansatz.scalar,
+            math.exp(alpha**2),
         )  # TODO: revisit rshift

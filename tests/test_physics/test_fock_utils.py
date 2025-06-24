@@ -105,7 +105,7 @@ def test_coherent_state(alpha):
     cutoff = 10
     amps = Coherent(0, alpha.real, alpha.imag).fock_array([cutoff])
     expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array(
-        [alpha**n / np.sqrt(factorial(n)) for n in range(cutoff)]
+        [alpha**n / np.sqrt(factorial(n)) for n in range(cutoff)],
     )
     assert np.allclose(amps, expected, atol=1e-6)
 
@@ -129,7 +129,7 @@ def test_squeezed_state(r, phi):
                 * np.sqrt(factorial(2 * n))
                 / (2**n * factorial(n))
                 for n in range(len_non_zero)
-            ]
+            ],
         )
     )
     assert np.allclose(non_zero_amps, amp_pairs)
@@ -141,7 +141,7 @@ def test_lossy_squeezing(n_mean, phi, eta):
     r = np.arcsinh(np.sqrt(n_mean))
     cutoff = 40
     ps = np.diag(
-        (SqueezedVacuum(0, r=r, phi=phi) >> Attenuator(0, transmissivity=eta)).fock_array(cutoff)
+        (SqueezedVacuum(0, r=r, phi=phi) >> Attenuator(0, transmissivity=eta)).fock_array(cutoff),
     )
     expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
     assert np.allclose(ps, expected, atol=1e-5)
@@ -175,10 +175,12 @@ def test_number_means(x, y):
 def test_number_variances_coh(x, y):
     """Tests the variance of the number operator."""
     assert np.allclose(
-        fock_utils.number_variances(Coherent(0, x, y).fock_array(80), False)[0], x * x + y * y
+        fock_utils.number_variances(Coherent(0, x, y).fock_array(80), False)[0],
+        x * x + y * y,
     )
     assert np.allclose(
-        fock_utils.number_variances(Coherent(0, x, y).dm().fock_array(80), True)[0], x * x + y * y
+        fock_utils.number_variances(Coherent(0, x, y).dm().fock_array(80), True)[0],
+        x * x + y * y,
     )
 
 

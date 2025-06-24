@@ -112,7 +112,7 @@ html_sidebars = {
     "**": [
         "searchbox.html",
         "globaltoc.html",
-    ]
+    ],
 }
 
 # Output file base name for HTML help builder.
@@ -139,10 +139,10 @@ html_theme_options = {
             "name": "GitHub",
             "href": "https://github.com/XanaduAI/MrMustard",
             "icon": "fab fa-github",
-        }
+        },
     ],
     "extra_copyrights": [
-        "TensorFlow, the TensorFlow logo, and any related marks are trademarks of Google Inc."
+        "TensorFlow, the TensorFlow logo, and any related marks are trademarks of Google Inc.",
     ],
     "google_analytics_tracking_id": "UA-116279123-2",
     "prev_next_button_colour": "#b79226",

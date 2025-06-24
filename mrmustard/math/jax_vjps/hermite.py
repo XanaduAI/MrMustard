@@ -90,5 +90,6 @@ def hermite_renormalized_unbatched_jax_bwd(shape, stable, res, g):
 
 
 hermite_renormalized_unbatched_jax.defvjp(
-    hermite_renormalized_unbatched_jax_fwd, hermite_renormalized_unbatched_jax_bwd
+    hermite_renormalized_unbatched_jax_fwd,
+    hermite_renormalized_unbatched_jax_bwd,
 )

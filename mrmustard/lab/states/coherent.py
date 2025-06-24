@@ -91,6 +91,8 @@ class Coherent(Ket):
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.coherent_state_Abc, x=self.parameters.x, y=self.parameters.y
+                fn=triples.coherent_state_Abc,
+                x=self.parameters.x,
+                y=self.parameters.y,
             ),
         ).representation

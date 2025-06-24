@@ -109,7 +109,7 @@ def join_Abc_real(
     c2 = math.astensor(c2)
     if len(idx1) != len(idx2):
         raise ValueError(
-            f"idx1 and idx2j must have the same length, got {len(idx1)} and {len(idx2)}"
+            f"idx1 and idx2j must have the same length, got {len(idx1)} and {len(idx2)}",
         )
 
     if (len(idx1) > A1.shape[-1]) or (len(idx2) > A2.shape[-1]):
@@ -149,7 +149,7 @@ def join_Abc_real(
                 [A1_idx_idx + A2_idx_idx, A1_idx_notidx, A2_idx_notidx],
                 [A1_notidx_idx, A1_notidx_notidx, O_n],
                 [A2_notidx_idx, O_n.T, A2_notidx_notidx],
-            ]
+            ],
         )
         b12 = math.concat([b1_idx + b2_idx, b1_notidx, b2_notidx], axis=-1)
     c12 = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
@@ -403,7 +403,7 @@ def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
     M_bM = math.solve(M, bM)
 
     c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * math.exp(
-        -0.5 * math.sum(bM * M_bM, axis=-1)
+        -0.5 * math.sum(bM * M_bM, axis=-1),
     )
     c_reshaped = math.reshape(c_factor, batch_shape + (1,) * (len(c.shape[batch_dim:])))
     c_post = c * c_reshaped
@@ -476,7 +476,7 @@ def complex_gaussian_integral_1(
     """
     if len(idx_z) != len(idx_zconj):
         raise ValueError(
-            f"idx1 and idx2 must have the same length, got {len(idx_z)} and {len(idx_zconj)}"
+            f"idx1 and idx2 must have the same length, got {len(idx_z)} and {len(idx_zconj)}",
         )
 
     A, b, c = Abc
@@ -492,7 +492,7 @@ def complex_gaussian_integral_1(
     idx = tuple(idx_z) + tuple(idx_zconj)
     if any(i >= n for i in idx):
         raise ValueError(
-            f"Indices must be less than {n}, got {tuple(i for i in idx_z if i >= n)} and {tuple(i for i in idx_zconj if i >= n)}"
+            f"Indices must be less than {n}, got {tuple(i for i in idx_z if i >= n)} and {tuple(i for i in idx_zconj if i >= n)}",
         )
 
     if len(idx) == 0:

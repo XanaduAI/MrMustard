@@ -223,7 +223,7 @@ class TensorboardCallback(Callback):
         """Initializes tb logdir folders and writer."""
         if (self.writter_logdir is None) or (self.optimizer_step <= self.steps_per_call):
             trainable_key_hash = hashlib.sha256(
-                ",".join(trainables.keys()).encode("utf-8")
+                ",".join(trainables.keys()).encode("utf-8"),
             ).hexdigest()
             self.experiment_tag = self.experiment_tag or f"experiment-{trainable_key_hash[:7]}"
             self.logdir = self.root_logdir / self.experiment_tag
@@ -255,7 +255,7 @@ class TensorboardCallback(Callback):
         }
         if self.cost_converter is not None:
             obj_scalars[f"{obj_tag}/{self.cost_converter.__name__}(cost)"] = self.cost_converter(
-                cost
+                cost,
             )
 
         if "orig_cost" in optimizer.callback_history:

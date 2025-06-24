@@ -90,12 +90,13 @@ class Attenuator(Channel):
                 "transmissivity",
                 transmissivity_bounds,
                 None,
-            )
+            ),
         )
         self._representation = self.from_ansatz(
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.attenuator_Abc, eta=self.parameters.transmissivity
+                fn=triples.attenuator_Abc,
+                eta=self.parameters.transmissivity,
             ),
         ).representation

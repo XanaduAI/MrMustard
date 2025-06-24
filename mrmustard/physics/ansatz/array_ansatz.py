@@ -241,7 +241,8 @@ class ArrayAnsatz(Ansatz):
 
         if any(s > t for s, t in zip(shape, self.core_shape)):
             warn(
-                "The fock array is being padded with zeros. Is this really necessary?", stacklevel=1
+                "The fock array is being padded with zeros. Is this really necessary?",
+                stacklevel=1,
             )
             padded = math.pad(
                 self.array,
@@ -258,7 +259,7 @@ class ArrayAnsatz(Ansatz):
     def reorder_batch(self, order: Sequence[int]):
         if len(order) != self.batch_dims:
             raise ValueError(
-                f"order must have length {self.batch_dims} (number of batch dimensions), got {len(order)}"
+                f"order must have length {self.batch_dims} (number of batch dimensions), got {len(order)}",
             )
 
         core_dims_indices = range(self.batch_dims, self.batch_dims + self.core_dims)
@@ -347,7 +348,9 @@ class ArrayAnsatz(Ansatz):
             return False
         slices = tuple(slice(0, min(si, oi)) for si, oi in zip(self.core_shape, other.core_shape))
         return math.allclose(
-            self.array[(..., *slices)], other.array[(..., *slices)], atol=settings.ATOL
+            self.array[(..., *slices)],
+            other.array[(..., *slices)],
+            atol=settings.ATOL,
         )
 
     def __mul__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:

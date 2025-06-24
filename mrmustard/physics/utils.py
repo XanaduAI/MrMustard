@@ -71,7 +71,8 @@ def outer_product_batch_str(*batch_dims: int, lin_sup: tuple[int, ...] | None = 
 
 
 def reshape_args_to_batch_string(
-    args: list[ArrayLike], batch_string: str
+    args: list[ArrayLike],
+    batch_string: str,
 ) -> tuple[list[ArrayLike], tuple[int, ...]]:
     r"""
     Reshapes arguments to match the batch string by inserting singleton dimensions where needed
@@ -84,7 +85,7 @@ def reshape_args_to_batch_string(
     input_specs = input_specs.split(",")
     if len(input_specs) != len(args):
         raise ValueError(
-            f"Number of input specifications ({len(input_specs)}) does not match number of arguments ({len(args)})"
+            f"Number of input specifications ({len(input_specs)}) does not match number of arguments ({len(args)})",
         )
 
     args = [math.astensor(arg) for arg in args]
@@ -95,7 +96,7 @@ def reshape_args_to_batch_string(
         for dim, label in zip(arg.shape, spec):
             if label in dim_sizes and dim_sizes[label] != dim:
                 raise ValueError(
-                    f"Dimension {label} has inconsistent sizes: got {dim_sizes[label]} and {dim}"
+                    f"Dimension {label} has inconsistent sizes: got {dim_sizes[label]} and {dim}",
                 )
             dim_sizes[label] = dim
 
@@ -107,7 +108,9 @@ def reshape_args_to_batch_string(
 
 
 def verify_batch_triple(
-    A: ComplexMatrix | None, b: ComplexVector | None, c: ComplexTensor | None
+    A: ComplexMatrix | None,
+    b: ComplexVector | None,
+    c: ComplexTensor | None,
 ) -> None:
     r"""
     Verify that the batch dimensions of the (A, b, c) triple are consistent.
@@ -127,7 +130,7 @@ def verify_batch_triple(
 
     if batch != b.shape[:batch_dim] or (len(c.shape) != 0 and batch != c.shape[:batch_dim]):
         raise ValueError(
-            f"Batch dimensions of the first triple ({batch}, {b.shape[:batch_dim]}, {c.shape[:batch_dim]}) are inconsistent."
+            f"Batch dimensions of the first triple ({batch}, {b.shape[:batch_dim]}, {c.shape[:batch_dim]}) are inconsistent.",
         )
 
 

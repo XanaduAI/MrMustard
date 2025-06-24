@@ -146,6 +146,7 @@ select = [
     "BLE", # flake8-blind-except
     "B", # flake8-bugbear
     "A", # flake8-builtins
+    "COM", # flake8-commas
     "C4", # flake8-comprehensions
     "ISC", # flake8-implicit-str-concat
     "ICN", # flake8-import-conventions

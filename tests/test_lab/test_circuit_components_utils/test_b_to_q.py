@@ -73,7 +73,10 @@ class TestBtoQ:
         step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple()
 
         new_A, new_b, new_c = join_Abc_real(
-            (Ainter, binter, cinter), (step2A, step2b, step2c), [0, 1], [2, 3]
+            (Ainter, binter, cinter),
+            (step2A, step2b, step2c),
+            [0, 1],
+            [2, 3],
         )
 
         Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0, 1])
@@ -101,7 +104,10 @@ class TestBtoQ:
         step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple()
 
         new_A, new_b, new_c = join_Abc_real(
-            (Ainter, binter, cinter), (step2A, step2b, step2c), [0], [1]
+            (Ainter, binter, cinter),
+            (step2A, step2b, step2c),
+            [0],
+            [1],
         )
 
         Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0])

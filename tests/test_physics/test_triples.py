@@ -387,7 +387,7 @@ class TestTriples:
                 [0.5, 0.0, 0.0, 0.5],
                 [0.5, 0.0, 0.0, 0.5],
                 [0.0, 0.5, 0.5, 0.0],
-            ]
+            ],
         )
         b_by_hand = math.zeros(4)
         c_by_hand = 0.5
@@ -413,7 +413,9 @@ class TestTriples:
             ],
         )
         assert math.allclose(
-            A, A_by_hand, atol=1e-7
+            A,
+            A_by_hand,
+            atol=1e-7,
         )  # TODO: remove atol when tensorflow is removed
         assert math.allclose(b, math.zeros((4,)))
         assert b.shape == (4,)
@@ -430,16 +432,20 @@ class TestTriples:
         A_by_hand = (
             math.sqrt(eta)
             * math.astensor(
-                [[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=math.complex128
+                [[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]],
+                dtype=math.complex128,
             )[None, :, :]
             + (1 - eta)
             * math.astensor(
-                [[0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 0, 0], [0, 1, 0, 0]], dtype=math.complex128
+                [[0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 0, 0], [0, 1, 0, 0]],
+                dtype=math.complex128,
             )[None, :, :]
         )
 
         assert math.allclose(
-            A, A_by_hand, atol=1e-7
+            A,
+            A_by_hand,
+            atol=1e-7,
         )  # TODO: remove atol when tensorflow is removed
         assert math.allclose(b, math.zeros((2, 4)))
         assert math.allclose(c, math.astensor([1.0, 1.0], dtype=math.complex128))

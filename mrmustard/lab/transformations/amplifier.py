@@ -90,7 +90,7 @@ class Amplifier(Channel):
                 "gain",
                 gain_bounds,
                 None,
-            )
+            ),
         )
         self._representation = self.from_ansatz(
             modes_in=(mode,),

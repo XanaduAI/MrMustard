@@ -187,7 +187,10 @@ def get_shapes(
     """
 
     def get_shape_for_idx(
-        idx: int, ansatz: Ansatz, core_idx: list[int], fock_dims: dict[int, int]
+        idx: int,
+        ansatz: Ansatz,
+        core_idx: list[int],
+        fock_dims: dict[int, int],
     ) -> int:
         if idx in fock_dims:
             return fock_dims[idx]
@@ -235,7 +238,10 @@ def get_shapes(
 
 
 def prepare_idx_out(
-    indices: dict[int, list[int | str]], a: int, b: int, output: list[int | str]
+    indices: dict[int, list[int | str]],
+    a: int,
+    b: int,
+    output: list[int | str],
 ) -> list[int | str]:
     r"""
     Prepares the index of the output of the contraction of two ansatze.

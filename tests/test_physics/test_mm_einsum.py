@@ -112,7 +112,8 @@ class TestMmEinsum:
         assert isinstance(res, PolyExpAnsatz)
         assert res.batch_shape == (2,)
         assert math.allclose(
-            res.scalar, self.g0123.contract(self.g0123.dual, mode="zip").ansatz.scalar
+            res.scalar,
+            self.g0123.contract(self.g0123.dual, mode="zip").ansatz.scalar,
         )
 
     def test_single_mode_fock(self):

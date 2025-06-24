@@ -30,14 +30,26 @@ def evaluate_circuit(params):
     """
     params = jnp.asarray(params)
     BS_01 = BSgate(
-        modes=(0, 1), theta=params[0], phi=params[1], theta_trainable=False, phi_trainable=False
+        modes=(0, 1),
+        theta=params[0],
+        phi=params[1],
+        theta_trainable=False,
+        phi_trainable=False,
     )
     BS_12 = BSgate(
-        modes=(1, 2), theta=params[2], phi=params[3], theta_trainable=False, phi_trainable=False
+        modes=(1, 2),
+        theta=params[2],
+        phi=params[3],
+        theta_trainable=False,
+        phi_trainable=False,
     )
     att = Attenuator(mode=0, transmissivity=params[4], transmissivity_trainable=False)
     initial_state = SqueezedVacuum(
-        mode=0, r=params[5], phi=params[6], r_trainable=False, phi_trainable=False
+        mode=0,
+        r=params[5],
+        phi=params[6],
+        r_trainable=False,
+        phi_trainable=False,
     )
     state_out = (
         initial_state

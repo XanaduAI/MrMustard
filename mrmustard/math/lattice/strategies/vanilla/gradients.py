@@ -24,7 +24,9 @@ from .core import SQRT
 
 @njit
 def vanilla_vjp_numba(
-    G, c, dLdG
+    G,
+    c,
+    dLdG,
 ) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
     r"""Vanilla vjp function. Returns dL/dA, dL/db, dL/dc.
 
@@ -82,7 +84,9 @@ def vanilla_vjp_numba(
 
 @njit(parallel=True)
 def vanilla_batch_vjp_numba(
-    G: ComplexTensor, c: ComplexVector, dLdG: ComplexTensor
+    G: ComplexTensor,
+    c: ComplexVector,
+    dLdG: ComplexTensor,
 ) -> tuple[ComplexTensor, ComplexMatrix, ComplexVector]:  # pragma: no cover
     r"""Vector-Jacobian product (VJP) for the ``vanilla_full_batch`` function.
     Returns dL/dA, dL/db, dL/dc by parallelizing the single-instance ``vanilla_vjp`` over the batch dimension.

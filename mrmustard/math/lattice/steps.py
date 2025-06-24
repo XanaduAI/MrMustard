@@ -173,7 +173,10 @@ def vanilla_step_grad(
 
 @njit
 def vanilla_step_dict(
-    data: types.DictType, A: ComplexMatrix, b: ComplexVector, index: tuple[int, ...]
+    data: types.DictType,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    index: tuple[int, ...],
 ) -> complex:
     r"""Fock-Bargmann recurrence relation step, vanilla version with numba dict.
     This function calculates the index `index` of the Gaussian tensor `G`.

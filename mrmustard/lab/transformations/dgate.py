@@ -97,7 +97,9 @@ class Dgate(Unitary):
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_gate_Abc, x=self.parameters.x, y=self.parameters.y
+                fn=triples.displacement_gate_Abc,
+                x=self.parameters.x,
+                y=self.parameters.y,
             ),
         ).representation
 
@@ -119,7 +121,7 @@ class Dgate(Unitary):
         shape = tuple(shape)
         if len(shape) != len(auto_shape):
             raise ValueError(
-                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
+                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}",
             )
         if self.ansatz.batch_shape:
             x, y = math.broadcast_arrays(self.parameters.x.value, self.parameters.y.value)

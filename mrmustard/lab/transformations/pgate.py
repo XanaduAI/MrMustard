@@ -57,14 +57,15 @@ class Pgate(Unitary):
     ):
         super().__init__(name="Pgate")
         self.parameters.add_parameter(
-            make_parameter(shearing_trainable, shearing, "shearing", shearing_bounds)
+            make_parameter(shearing_trainable, shearing, "shearing", shearing_bounds),
         )
         self._representation = self.from_ansatz(
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
                 fn=lambda shearing: Unitary.from_symplectic(
-                    (mode,), symplectics.pgate_symplectic(1, shearing)
+                    (mode,),
+                    symplectics.pgate_symplectic(1, shearing),
                 ).bargmann_triple(),
                 shearing=self.parameters.shearing,
             ),

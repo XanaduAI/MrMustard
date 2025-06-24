@@ -110,7 +110,12 @@ class Optimizer:
             self._optimization_loop(cost_fn, trainable_params, max_steps, callbacks)
 
     def _optimization_loop(
-        self, cost_fn, trainable_params, max_steps, callbacks, progress_bar=None
+        self,
+        cost_fn,
+        trainable_params,
+        max_steps,
+        callbacks,
+        progress_bar=None,
     ):
         """Internal method that performs the main optimization loop.
 
@@ -217,12 +222,14 @@ class Optimizer:
         `{"euclidean": [...], "orthogonal": [...], "symplectic": [...]}, "unitary": [...]`.
         """
         sorted_grads_and_vars = sorted(
-            zip(grads, trainable_params), key=lambda grads_vars: grads_vars[1].type
+            zip(grads, trainable_params),
+            key=lambda grads_vars: grads_vars[1].type,
         )
         return {
             key: list(result)
             for key, result in groupby(
-                sorted_grads_and_vars, key=lambda grads_vars: grads_vars[1].type
+                sorted_grads_and_vars,
+                key=lambda grads_vars: grads_vars[1].type,
             )
         }
 
@@ -271,7 +278,7 @@ class Optimizer:
             callbacks = {
                 (
                     callbacks.tag if isinstance(callbacks, Callback) else callbacks.__name__
-                ): callbacks
+                ): callbacks,
             }
         elif isinstance(callbacks, Sequence):
             callbacks = {
@@ -279,7 +286,7 @@ class Optimizer:
             }
         elif not isinstance(callbacks, Mapping):
             raise TypeError(
-                f"Argument `callbacks` expected to be a callable or a list/dict of callables, got {type(callbacks)}."
+                f"Argument `callbacks` expected to be a callable or a list/dict of callables, got {type(callbacks)}.",
             )
 
         if any(not callable(cb) for cb in callbacks.values()):
@@ -304,7 +311,7 @@ class Optimizer:
 
             if not isinstance(cb_result, Mapping | type(None)):
                 raise TypeError(
-                    f"The expected return type of callback functions is dict, got {type(cb_result)}."
+                    f"The expected return type of callback functions is dict, got {type(cb_result)}.",
                 )
 
             new_cost_fn = cb_result.pop("cost_fn", None)

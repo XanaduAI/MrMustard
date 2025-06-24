@@ -71,6 +71,7 @@ class BargmannEigenstate(Ket):
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.bargmann_eigenstate_Abc, alpha=self.parameters.alpha
+                fn=triples.bargmann_eigenstate_Abc,
+                alpha=self.parameters.alpha,
             ),
         ).representation

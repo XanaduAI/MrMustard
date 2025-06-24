@@ -73,7 +73,11 @@ class BackendNumpy(BackendBase):
         return np.any(array)
 
     def arange(
-        self, start: int, limit: int | None = None, delta: int = 1, dtype=np.float64
+        self,
+        start: int,
+        limit: int | None = None,
+        delta: int = 1,
+        dtype=np.float64,
     ) -> np.ndarray:
         return np.arange(start, limit, delta, dtype=dtype)
 
@@ -154,7 +158,9 @@ class BackendNumpy(BackendBase):
             pad_h = (kernel_h - 1) // 2
             pad_w = (kernel_w - 1) // 2
             array = np.pad(
-                array[:, :, :, 0], ((0, 0), (pad_h, pad_h), (pad_w, pad_w)), mode="constant"
+                array[:, :, :, 0],
+                ((0, 0), (pad_h, pad_h), (pad_w, pad_w)),
+                mode="constant",
             )
         else:
             array = array[:, :, :, 0]
@@ -280,7 +286,10 @@ class BackendNumpy(BackendBase):
         return np.minimum(a, b)
 
     def moveaxis(
-        self, array: np.ndarray, old: int | Sequence[int], new: int | Sequence[int]
+        self,
+        array: np.ndarray,
+        old: int | Sequence[int],
+        new: int | Sequence[int],
     ) -> np.ndarray:
         return np.moveaxis(array, old, new)
 
@@ -309,7 +318,11 @@ class BackendNumpy(BackendBase):
         return np.full_like(array, np.inf)
 
     def conditional(
-        self, cond: np.ndarray, true_fn: Callable, false_fn: Callable, *args
+        self,
+        cond: np.ndarray,
+        true_fn: Callable,
+        false_fn: Callable,
+        *args,
     ) -> np.ndarray:
         if cond.all():
             return true_fn(*args)
@@ -395,13 +408,19 @@ class BackendNumpy(BackendBase):
         return np.transpose(a, axes=perm)
 
     def update_tensor(
-        self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
+        self,
+        tensor: np.ndarray,
+        indices: np.ndarray,
+        values: np.ndarray,
     ) -> np.ndarray:
         tensor[indices] = values
         return tensor
 
     def update_add_tensor(
-        self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
+        self,
+        tensor: np.ndarray,
+        indices: np.ndarray,
+        values: np.ndarray,
     ) -> np.ndarray:
         indices = self.atleast_nd(indices, 2)
         for i, v in zip(indices, values):
@@ -549,7 +568,11 @@ class BackendNumpy(BackendBase):
         return A, B
 
     def hermite_renormalized_diagonal(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
@@ -558,7 +581,11 @@ class BackendNumpy(BackendBase):
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -581,14 +608,22 @@ class BackendNumpy(BackendBase):
         return poly0
 
     def hermite_renormalized_diagonal_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
 
@@ -615,7 +650,7 @@ class BackendNumpy(BackendBase):
         stable: bool = False,
     ) -> np.ndarray:
         return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
-            (-2, -1, *tuple(range(len(pnr_cutoffs))))
+            (-2, -1, *tuple(range(len(pnr_cutoffs)))),
         )
 
     def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):

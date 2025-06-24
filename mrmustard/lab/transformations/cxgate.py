@@ -71,7 +71,8 @@ class CXgate(Unitary):
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=lambda s: Unitary.from_symplectic(
-                    modes, symplectics.cxgate_symplectic(s)
+                    modes,
+                    symplectics.cxgate_symplectic(s),
                 ).bargmann_triple(),
                 s=self.parameters.s,
             ),

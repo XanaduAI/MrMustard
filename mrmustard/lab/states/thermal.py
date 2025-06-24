@@ -65,6 +65,7 @@ class Thermal(DM):
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.thermal_state_Abc, nbar=self.parameters.nbar
+                fn=triples.thermal_state_Abc,
+                nbar=self.parameters.nbar,
             ),
         ).representation

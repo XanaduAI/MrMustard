@@ -93,7 +93,10 @@ class TestBtoChar:
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
         A2, b2, c2 = complex_gaussian_integral_2(
-            state_bargmann_triple, Ds_bargmann_triple, idx1=[0, 1], idx2=[1, 3]
+            state_bargmann_triple,
+            Ds_bargmann_triple,
+            idx1=[0, 1],
+            idx2=[1, 3],
         )
 
         assert math.allclose(A1, A2)
@@ -107,7 +110,7 @@ class TestBtoChar:
                 [0.10437996, 0.22846619, 0.1211067, 0.45983868],
                 [0.72706741, 0.1211067, 1.02215481, 0.16216756],
                 [0.29121535, 0.45983868, 0.16216756, 2.10006],
-            ]
+            ],
         )
         state_means = np.array([0.28284271, 0.0, 0.42426407, 0.0])
         A, b, c = wigner_to_bargmann_rho(state_cov, state_means)

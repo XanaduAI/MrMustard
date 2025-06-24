@@ -57,7 +57,7 @@ def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
                 + n_minus_m * np.log(r)
                 - (r**2.0) / 2.0
                 + conj * 1j * phi * n_minus_m
-                + logL[m]
+                + logL[m],
             )
             if n < M:
                 D[m, n] = (-1.0) ** n_minus_m * np.conj(D[n, m])

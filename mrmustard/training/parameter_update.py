@@ -33,7 +33,8 @@ def update_symplectic(grads_and_vars: Sequence[tuple[Tensor, Trainable]], symple
         Y = math.euclidean_to_symplectic(S, dS_euclidean)
         YT = math.transpose(Y)
         new_value = math.matmul(
-            S, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
+            S,
+            math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT)),
         )
         math.assign(S, new_value)
 

@@ -84,7 +84,10 @@ class Circuit:
         ]  # default path (likely not optimal)
 
     def optimize(
-        self, n_init: int = 100, with_BF_heuristic: bool = True, verbose: bool = True
+        self,
+        n_init: int = 100,
+        with_BF_heuristic: bool = True,
+        verbose: bool = True,
     ) -> None:
         r"""
         Optimizes the Fock shapes and the contraction path of this circuit.
@@ -97,7 +100,10 @@ class Circuit:
             verbose: If True (default), the progress of the optimization is shown.
         """
         self.path = optimal_path(
-            self.components, n_init=n_init, with_BF_heuristic=with_BF_heuristic, verbose=verbose
+            self.components,
+            n_init=n_init,
+            with_BF_heuristic=with_BF_heuristic,
+            verbose=verbose,
         )
 
     def contract(self) -> CircuitComponent:
@@ -341,7 +347,7 @@ class Circuit:
                 values = []
                 for name in comp.parameters.names:
                     param = comp.parameters.constants.get(name) or comp.parameters.variables.get(
-                        name
+                        name,
                     )
                     new_values = math.atleast_1d(param.value)
                     if len(new_values) == 1 and cc_name not in control_gates:

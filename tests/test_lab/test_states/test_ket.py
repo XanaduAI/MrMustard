@@ -189,7 +189,10 @@ class TestKet:
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = Ket.from_fock(
-            (modes,), array_in, "my_ket", batch_dims=state_in_fock.ansatz.batch_dims
+            (modes,),
+            array_in,
+            "my_ket",
+            batch_dims=state_in_fock.ansatz.batch_dims,
         )
         assert state_in_fock == state_out
 
@@ -345,7 +348,8 @@ class TestKet:
         assert math.allclose(state.quadrature_distribution(q, phi=phi), abs(psi_phi) ** 2)
         assert math.allclose(state.to_fock(40).quadrature(q, phi=phi), psi_phi)
         assert math.allclose(
-            state.to_fock(40).quadrature_distribution(q, phi=phi), abs(psi_phi) ** 2
+            state.to_fock(40).quadrature_distribution(q, phi=phi),
+            abs(psi_phi) ** 2,
         )
 
     def test_quadrature_multimode_ket(self):
@@ -365,7 +369,8 @@ class TestKet:
         q2 = np.linspace(-10, 10, 100)
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
         assert math.allclose(
-            state.quadrature_distribution(q1, q2).reshape(100, 100), abs(psi_q) ** 2
+            state.quadrature_distribution(q1, q2).reshape(100, 100),
+            abs(psi_q) ** 2,
         )
 
     def test_quadrature_batch(self):
@@ -519,7 +524,8 @@ class TestKet:
         A = psi.ansatz.A
         assert math.allclose(psi.probability, 1)  # checks if the state is normalized
         assert math.allclose(
-            A - math.transpose(A), math.zeros((2, 2))
+            A - math.transpose(A),
+            math.zeros((2, 2)),
         )  # checks if the A matrix is symmetric
 
     def test_ipython_repr(self):

@@ -92,12 +92,14 @@ def interferometer_symplectic(unitary: Matrix) -> Matrix:
         The symplectic matrix of an N-mode interferometer.
     """
     return math.block(
-        [[math.real(unitary), -math.imag(unitary)], [math.imag(unitary), math.real(unitary)]]
+        [[math.real(unitary), -math.imag(unitary)], [math.imag(unitary), math.real(unitary)]],
     )
 
 
 def mzgate_symplectic(
-    phi_a: float | Sequence[float], phi_b: float | Sequence[float], internal: bool
+    phi_a: float | Sequence[float],
+    phi_b: float | Sequence[float],
+    internal: bool,
 ) -> Matrix:
     r"""
     The symplectic matrix of a Mach-Zehnder gate.
@@ -115,7 +117,8 @@ def mzgate_symplectic(
         The symplectic matrix of a Mach-Zehnder gate.
     """
     phi_a, phi_b = math.broadcast_arrays(
-        math.astensor(phi_a, dtype=math.complex128), math.astensor(phi_b, dtype=math.complex128)
+        math.astensor(phi_a, dtype=math.complex128),
+        math.astensor(phi_b, dtype=math.complex128),
     )
     batch_shape = phi_a.shape
     batch_dim = len(batch_shape)
@@ -164,7 +167,8 @@ def pgate_symplectic(n_modes: int, shearing: float | Sequence[float]) -> Matrix:
     batch_shape = shearing.shape
 
     I_matrix = math.broadcast_to(
-        math.eye(n_modes, dtype=math.complex128), (*batch_shape, n_modes, n_modes)
+        math.eye(n_modes, dtype=math.complex128),
+        (*batch_shape, n_modes, n_modes),
     )
     O_matrix = math.zeros((*batch_shape, n_modes, n_modes), dtype=math.complex128)
 
@@ -182,5 +186,5 @@ def realinterferometer_symplectic(orthogonal: Matrix) -> Matrix:
         The symplectic matrix of an N-mode interferometer.
     """
     return math.block(
-        [[orthogonal, -math.zeros_like(orthogonal)], [math.zeros_like(orthogonal), orthogonal]]
+        [[orthogonal, -math.zeros_like(orthogonal)], [math.zeros_like(orthogonal), orthogonal]],
     )

@@ -142,7 +142,7 @@ def number_means(tensor, is_dm: bool):
         [
             math.sum(marginal * math.arange(len(marginal), dtype=math.float64))
             for marginal in marginals
-        ]
+        ],
     )
 
 
@@ -158,7 +158,7 @@ def number_variances(tensor, is_dm: bool):
                 - math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype)) ** 2
             )
             for marginal in marginals
-        ]
+        ],
     )
 
 
@@ -171,7 +171,7 @@ def validate_contraction_indices(in_idx, out_idx, M, name):
     if not set(range(M)).intersection(out_idx).issubset(set(in_idx)):
         wrong_indices = set(range(M)).intersection(out_idx) - set(in_idx)
         raise ValueError(
-            f"Indices {wrong_indices} in {name}_out_idx are trying to replace uncontracted indices."
+            f"Indices {wrong_indices} in {name}_out_idx are trying to replace uncontracted indices.",
         )
 
 
@@ -317,7 +317,7 @@ def quadrature_basis(
 
     if quad.shape[-1] != dims:
         raise ValueError(
-            f"Input fock array has dimension {dims} whereas ``quad`` has {quad.shape[-1]}."
+            f"Input fock array has dimension {dims} whereas ``quad`` has {quad.shape[-1]}.",
         )
 
     conjugates = conjugates if isinstance(conjugates, Iterable) else [conjugates] * dims
@@ -388,7 +388,7 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float
     dims = len(state.shape)
     if dims > 2:
         raise ValueError(
-            "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
+            "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm.",
         )
 
     x, pdf = quadrature_distribution(state, quadrature_angle)
@@ -425,7 +425,7 @@ def gamma_matrix(c):
         for n in range(c.shape[1]):
             for alpha in range(m + n + 1):
                 factor = math.sqrt(
-                    factorial(m) * factorial(n) / (factorial(alpha) * factorial(m + n - alpha))
+                    factorial(m) * factorial(n) / (factorial(alpha) * factorial(m + n - alpha)),
                 )
                 value = c_ps_matrix(m, n, alpha) * math.sqrt(settings.HBAR / 2) ** (m + n)
                 row = alpha * M + (m + n - alpha)

@@ -79,12 +79,13 @@ class FockDamping(Operation):
                 "damping",
                 damping_bounds,
                 None,
-            )
+            ),
         )
         self._representation = self.from_ansatz(
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.fock_damping_Abc, beta=self.parameters.damping
+                fn=triples.fock_damping_Abc,
+                beta=self.parameters.damping,
             ),
         ).representation

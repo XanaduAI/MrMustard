@@ -73,7 +73,7 @@ def test_update_unitary(n):
             [
                 [np.real(math.asnumpy(U)), -np.imag(math.asnumpy(U))],
                 [np.imag(math.asnumpy(U)), np.real(math.asnumpy(U))],
-            ]
+            ],
         )
         assert is_symplectic(sym), "training step does not result in a symplectic matrix"
         assert is_orthogonal(sym), "training step does not result in an orthogonal matrix"
@@ -93,7 +93,7 @@ def test_update_orthogonal(n):
             [
                 [np.real(math.asnumpy(O)), -math.zeros_like(math.asnumpy(O))],
                 [math.zeros_like(math.asnumpy(O)), np.real(math.asnumpy(O))],
-            ]
+            ],
         )
         assert is_symplectic(ortho), "training step does not result in a symplectic matrix"
         assert is_orthogonal(ortho), "training step does not result in an orthogonal matrix"

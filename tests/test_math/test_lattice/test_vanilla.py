@@ -99,7 +99,7 @@ class TestVanilla:
 
         # Generate random upstream gradient with same shape as G
         dLdG = settings.rng.standard_normal(G.shape) + 1j * settings.rng.standard_normal(
-            G.shape
+            G.shape,
         )  # upstream gradient
 
         # Compute finite difference for c

@@ -34,7 +34,8 @@ def _batch_widget(obj, batch_size, widget_fn, *widget_args):
         return widget_fn(obj, *widget_args, batch_idx=0)
     slider = widgets.IntSlider(0, min=0, max=batch_size - 1, description="Batch index:")
     stack = widgets.Stack(
-        [widget_fn(obj, *widget_args, batch_idx=i) for i in range(batch_size)], selected_index=0
+        [widget_fn(obj, *widget_args, batch_idx=i) for i in range(batch_size)],
+        selected_index=0,
     )
     widgets.jslink((slider, "value"), (stack, "selected_index"))
     return widgets.VBox([slider, stack])
@@ -75,7 +76,7 @@ def fock(rep):
 
     header_widget = widgets.HTML("<h1 class=h1-fock>Fock Representation</h1>")
     table_widget = widgets.HTML(
-        TABLE + f"<table class=table-fock><tr><th>Shape</th><td>{shape}</td></tr></table>"
+        TABLE + f"<table class=table-fock><tr><th>Shape</th><td>{shape}</td></tr></table>",
     )
     left_widget = widgets.VBox(children=[header_widget, table_widget])
     plot_widget.layout.padding = "10px"
@@ -159,7 +160,7 @@ def bargmann(rep, batch_idx: int | None = None):
             hoverinfo="text",
             text=text,
             mode="markers",
-        )
+        ),
     )
 
     def on_value_change(change):
@@ -235,7 +236,7 @@ def wires(obj):
             <div class="square">Wires</div>
             {"".join(wire_labels)}
         </div></br>{index_table}
-        """
+        """,
     )
 
 
@@ -264,7 +265,7 @@ def state(obj, is_ket, is_fock):
             <td>{fock_yn}</td>
         </tr>
     </table>
-    """
+    """,
     )
 
     if obj.n_modes != 1:

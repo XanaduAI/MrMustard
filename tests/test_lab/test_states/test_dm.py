@@ -155,7 +155,10 @@ class TestDM:
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = DM.from_fock(
-            (modes,), array_in, "my_dm", batch_dims=state_in_fock.ansatz.batch_dims
+            (modes,),
+            array_in,
+            "my_dm",
+            batch_dims=state_in_fock.ansatz.batch_dims,
         )
         assert state_in_fock == state_out
 
@@ -180,7 +183,10 @@ class TestDM:
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = DM.from_fock(
-            (0,), array_in, "my_dm", batch_dims=lin_sup_state_batch.ansatz.batch_dims - 1
+            (0,),
+            array_in,
+            "my_dm",
+            batch_dims=lin_sup_state_batch.ansatz.batch_dims - 1,
         )
         assert state_in_fock == state_out
 
@@ -290,18 +296,21 @@ class TestDM:
         q = np.linspace(-10, 10, 100)
         ket = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
         bra = math.kron(
-            np.conj(coherent_state_quad(q, x, y)), np.conj(coherent_state_quad(q, x, y))
+            np.conj(coherent_state_quad(q, x, y)),
+            np.conj(coherent_state_quad(q, x, y)),
         )
         assert math.allclose(state.quadrature(q, q, q, q), bra * ket)
         assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
 
         ket_slice = math.kron(coherent_state_quad(q + 1, x, y), coherent_state_quad(q + 1, x, y))
         bra_slice = math.kron(
-            np.conj(coherent_state_quad(q, x, y)), np.conj(coherent_state_quad(q, x, y))
+            np.conj(coherent_state_quad(q, x, y)),
+            np.conj(coherent_state_quad(q, x, y)),
         )
 
         assert math.allclose(
-            state.to_fock(40).quadrature(q, q, q + 1, q + 1), bra_slice * ket_slice
+            state.to_fock(40).quadrature(q, q, q + 1, q + 1),
+            bra_slice * ket_slice,
         )
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra_slice) ** 2)
 
@@ -312,7 +321,8 @@ class TestDM:
         q2 = np.linspace(-10, 10, 100)
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
         assert math.allclose(
-            state.quadrature_distribution(q1, q2).reshape(100, 100), abs(psi_q) ** 2
+            state.quadrature_distribution(q1, q2).reshape(100, 100),
+            abs(psi_q) ** 2,
         )
 
     def test_quadrature_batch(self):
@@ -325,7 +335,7 @@ class TestDM:
 
         ket = math.astensor([coherent_state_quad(q, x1, y1), coherent_state_quad(q, x2, y2)]).T
         bra = math.astensor(
-            [np.conj(coherent_state_quad(q, x1, y1)), np.conj(coherent_state_quad(q, x2, y2))]
+            [np.conj(coherent_state_quad(q, x1, y1)), np.conj(coherent_state_quad(q, x2, y2))],
         ).T
 
         assert math.allclose(state.quadrature(q, q), bra * ket)
@@ -467,7 +477,7 @@ class TestDM:
         Lambda = A[..., m:, m:]
         Temp = Gamma + math.conj(Lambda.T) @ math.inv(1 - Gamma.T) @ Lambda
         assert np.all(
-            np.linalg.eigvals(Gamma) >= 0
+            np.linalg.eigvals(Gamma) >= 0,
         )  # checks if the off-diagonal block of dm is PSD
         assert np.all(np.linalg.eigvals(Gamma) < 1)
         assert np.all(np.linalg.eigvals(Temp) < 1)
@@ -502,7 +512,8 @@ class TestDM:
         rho_fock = rho.fock_array(standard_order=True)
 
         assert math.allclose(
-            rho_fock, math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]])
+            rho_fock,
+            math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]]),
         )
         assert math.allclose(
             Coherent(0, x=1).dm().fock_array(8, standard_order=True),

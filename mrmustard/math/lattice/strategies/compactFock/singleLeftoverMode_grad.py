@@ -99,7 +99,7 @@ def write_block_grad(
     for n in range(1, cutoff_leftoverMode):
         K_l_adapted = np.hstack((np.array([np.sqrt(n)]), K_l))
         G_in_adapted = np.hstack(
-            (np.array([arr_read_pivot[(0, n - 1, *read_GB)] * np.sqrt(n)]), G_in[0, n])
+            (np.array([arr_read_pivot[(0, n - 1, *read_GB)] * np.sqrt(n)]), G_in[0, n]),
         )
         G_in_dA_adapted = np.concatenate(
             (
@@ -139,7 +139,7 @@ def write_block_grad(
     for m in range(1, cutoff_leftoverMode):
         K_l_adapted = np.hstack((np.array([np.sqrt(m)]), K_l))
         G_in_adapted = np.hstack(
-            (np.array([arr_read_pivot[(m - 1, 0, *read_GB)] * np.sqrt(m)]), G_in[m, 0])
+            (np.array([arr_read_pivot[(m - 1, 0, *read_GB)] * np.sqrt(m)]), G_in[m, 0]),
         )
         G_in_dA_adapted = np.concatenate(
             (
@@ -184,10 +184,10 @@ def write_block_grad(
                         [
                             arr_read_pivot[(m - 1, n, *read_GB)] * np.sqrt(m),
                             arr_read_pivot[(m, n - 1, *read_GB)] * np.sqrt(n),
-                        ]
+                        ],
                     ),
                     G_in[m, n],
-                )
+                ),
             )
             G_in_dA_adapted = np.concatenate(
                 (

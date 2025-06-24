@@ -142,7 +142,7 @@ class Transformation(CircuitComponent):
         """
         if not len(self.wires.input) == len(self.wires.output):
             raise NotImplementedError(
-                "Only Transformations with the same number of input and output wires are supported."
+                "Only Transformations with the same number of input and output wires are supported.",
             )
         if not isinstance(self.ansatz, PolyExpAnsatz):  # pragma: no cover
             raise NotImplementedError("Only Bargmann representation is supported.")
@@ -156,14 +156,16 @@ class Transformation(CircuitComponent):
                     math.ones(self.ansatz.batch_shape, dtype=math.complex128),
                 ),
                 self.wires.copy(new_ids=True),
-            )
+            ),
         )
         almost_identity = self.contract(almost_inverse, "zip")
         invert_this_c = almost_identity.ansatz.c
         return self._from_attributes(
             Representation(
                 PolyExpAnsatz(
-                    math.inv(A), math.einsum("...ij,...j->...i", -math.inv(A), b), 1 / invert_this_c
+                    math.inv(A),
+                    math.einsum("...ij,...j->...i", -math.inv(A), b),
+                    1 / invert_this_c,
                 ),
                 self.wires.copy(new_ids=True),
             ),
@@ -193,7 +195,8 @@ class Operation(Transformation):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Operation(
             representation=Representation(
-                ansatz=ansatz, wires=Wires(set(), set(), set(modes_out), set(modes_in))
+                ansatz=ansatz,
+                wires=Wires(set(), set(), set(modes_out), set(modes_in)),
             ),
             name=name,
         )
@@ -227,7 +230,8 @@ class Unitary(Operation):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Unitary(
             representation=Representation(
-                ansatz=ansatz, wires=Wires(set(), set(), set(modes_out), set(modes_in))
+                ansatz=ansatz,
+                wires=Wires(set(), set(), set(modes_out), set(modes_in)),
             ),
             name=name,
         )
@@ -368,15 +372,15 @@ class Channel(Map):
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for a mixture of states."
+                "Physicality conditions are not implemented for a mixture of states.",
             )
         if self.ansatz.num_derived_vars > 0:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for derived variables."
+                "Physicality conditions are not implemented for derived variables.",
             )
         if isinstance(self.ansatz, ArrayAnsatz):
             raise NotImplementedError(
-                "Physicality conditions are not implemented for states with ArrayAnsatz."
+                "Physicality conditions are not implemented for states with ArrayAnsatz.",
             )
         A = self.ansatz.A
         m = A.shape[-1] // 2
@@ -404,15 +408,15 @@ class Channel(Map):
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for a mixture of states."
+                "Physicality conditions are not implemented for a mixture of states.",
             )
         if self.ansatz.num_derived_vars > 0:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for derived variables."
+                "Physicality conditions are not implemented for derived variables.",
             )
         if isinstance(self.ansatz, ArrayAnsatz):
             raise NotImplementedError(
-                "Physicality conditions are not implemented for states with ArrayAnsatz."
+                "Physicality conditions are not implemented for states with ArrayAnsatz.",
             )
         A = self.ansatz.A
         m = A.shape[-1] // 2
@@ -520,7 +524,7 @@ class Channel(Map):
             2 * len(modes_out),
         ):
             raise ValueError(
-                f"The dimension of XY matrices ({X.shape}, {Y.shape}) and number of modes ({len(modes_in), len(modes_out)}) don't match."
+                f"The dimension of XY matrices ({X.shape}, {Y.shape}) and number of modes ({len(modes_in), len(modes_out)}) don't match.",
             )
 
         return Channel.from_bargmann(modes_out, modes_in, XY_to_channel_Abc(X, Y, d))

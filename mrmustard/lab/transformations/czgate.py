@@ -72,7 +72,8 @@ class CZgate(Unitary):
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=lambda s: Unitary.from_symplectic(
-                    modes, symplectics.czgate_symplectic(s)
+                    modes,
+                    symplectics.czgate_symplectic(s),
                 ).bargmann_triple(),
                 s=self.parameters.s,
             ),

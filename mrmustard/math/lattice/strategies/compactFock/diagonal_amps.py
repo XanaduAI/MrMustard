@@ -17,7 +17,17 @@ from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
 
 @njit
 def use_offDiag_pivot(  # noqa: C901
-    A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1
+    A,
+    B,
+    M,
+    cutoffs,
+    params,
+    d,
+    arr0,
+    arr2,
+    arr1010,
+    arr1001,
+    arr1,
 ):  # pragma: no cover
     """
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
@@ -133,7 +143,17 @@ def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):  # pragma: no cover
 
 @njit
 def fock_representation_diagonal_amps_NUMBA(
-    A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type
+    A,
+    B,
+    M,
+    cutoffs,
+    arr0,
+    arr2,
+    arr1010,
+    arr1001,
+    arr1,
+    tuple_type,
+    list_type,
 ):  # pragma: no cover
     """
     Returns the PNR probabilities of a mixed state according to algorithm 1 of:
@@ -162,7 +182,17 @@ def fock_representation_diagonal_amps_NUMBA(
             for d in range(M):
                 if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs[d] - 1):
                     arr0, arr2, arr1010, arr1001 = use_offDiag_pivot(
-                        A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1
+                        A,
+                        B,
+                        M,
+                        cutoffs,
+                        params,
+                        d,
+                        arr0,
+                        arr2,
+                        arr1010,
+                        arr1001,
+                        arr1,
                     )
     return arr0, arr2, arr1010, arr1001, arr1
 
@@ -204,5 +234,15 @@ def fock_representation_diagonal_amps(A, B, G0, M, cutoffs):
 
     arr0[(0,) * M] = G0
     return fock_representation_diagonal_amps_NUMBA(
-        A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type
+        A,
+        B,
+        M,
+        cutoffs,
+        arr0,
+        arr2,
+        arr1010,
+        arr1001,
+        arr1,
+        tuple_type,
+        list_type,
     )

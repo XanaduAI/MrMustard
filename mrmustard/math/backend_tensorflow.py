@@ -211,7 +211,11 @@ class BackendTensorflow(BackendBase):
         return tf.gather(array, indices, axis=axis)
 
     def conditional(
-        self, cond: tf.Tensor, true_fn: Callable, false_fn: Callable, *args
+        self,
+        cond: tf.Tensor,
+        true_fn: Callable,
+        false_fn: Callable,
+        *args,
     ) -> tf.Tensor:
         if tf.reduce_all(cond):
             return true_fn(*args)
@@ -259,7 +263,10 @@ class BackendTensorflow(BackendBase):
         return tf.minimum(a, b)
 
     def moveaxis(
-        self, array: tf.Tensor, old: int | Sequence[int], new: int | Sequence[int]
+        self,
+        array: tf.Tensor,
+        old: int | Sequence[int],
+        new: int | Sequence[int],
     ) -> tf.Tensor:
         return tf.experimental.numpy.moveaxis(array, old, new)
 
@@ -379,7 +386,10 @@ class BackendTensorflow(BackendBase):
         return tf.tensor_scatter_nd_update(tensor, indices, updates)
 
     def update_add_tensor(
-        self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor
+        self,
+        tensor: tf.Tensor,
+        indices: tf.Tensor,
+        values: tf.Tensor,
     ) -> tf.Tensor:
         return tf.tensor_scatter_nd_add(tensor, indices, values)
 
@@ -434,7 +444,9 @@ class BackendTensorflow(BackendBase):
         return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
 
     def value_and_gradients(
-        self, cost_fn: Callable, parameters: list[Trainable]
+        self,
+        cost_fn: Callable,
+        parameters: list[Trainable],
     ) -> tuple[tf.Tensor, list[tf.Tensor]]:
         r"""Computes the loss and gradients of the given cost function.
 
@@ -551,14 +563,22 @@ class BackendTensorflow(BackendBase):
         return A, B
 
     def hermite_renormalized_diagonal(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self,
+        A: tf.Tensor,
+        B: tf.Tensor,
+        C: tf.Tensor,
+        cutoffs: tuple[int],
     ) -> tf.Tensor:
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     @tf.custom_gradient
     def hermite_renormalized_diagonal_reorderedAB(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self,
+        A: tf.Tensor,
+        B: tf.Tensor,
+        C: tf.Tensor,
+        cutoffs: tuple[int],
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -579,7 +599,9 @@ class BackendTensorflow(BackendBase):
         A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
-            hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
+            hermite_multidimensional_diagonal,
+            [A, B, C, cutoffs],
+            [A.dtype] * 5,
         )
 
         def grad(dLdpoly):
@@ -598,14 +620,22 @@ class BackendTensorflow(BackendBase):
         return poly0, grad
 
     def hermite_renormalized_diagonal_batch(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self,
+        A: tf.Tensor,
+        B: tf.Tensor,
+        C: tf.Tensor,
+        cutoffs: tuple[int],
     ) -> tf.Tensor:
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB_batch(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self,
+        A: tf.Tensor,
+        B: tf.Tensor,
+        C: tf.Tensor,
+        cutoffs: tuple[int],
     ) -> tf.Tensor:
         r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
 
@@ -621,7 +651,9 @@ class BackendTensorflow(BackendBase):
         A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         poly0, _, _, _, _ = tf.numpy_function(
-            hermite_multidimensional_diagonal_batch, [A, B, C, cutoffs], [A.dtype] * 5
+            hermite_multidimensional_diagonal_batch,
+            [A, B, C, cutoffs],
+            [A.dtype] * 5,
         )
 
         return poly0
@@ -640,7 +672,11 @@ class BackendTensorflow(BackendBase):
 
     @tf.custom_gradient
     def hermite_renormalized_1leftoverMode_reorderedAB(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int, ...]
+        self,
+        A: tf.Tensor,
+        B: tf.Tensor,
+        C: tf.Tensor,
+        cutoffs: tuple[int, ...],
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the

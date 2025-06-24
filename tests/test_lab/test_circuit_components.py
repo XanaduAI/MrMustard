@@ -61,7 +61,8 @@ class TestCircuitComponent:
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(x, y))
         cc = CircuitComponent(
-            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name
+            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})),
+            name=name,
         )
 
         assert cc.name == name
@@ -73,8 +74,9 @@ class TestCircuitComponent:
     def test_missing_name(self):
         cc = CircuitComponent(
             Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2)), Wires(set(), set(), {1, 8}, {1, 8})
-            )
+                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2)),
+                Wires(set(), set(), {1, 8}, {1, 8}),
+            ),
         )
         cc._name = None
         assert cc.name == "CC18"
@@ -143,8 +145,9 @@ class TestCircuitComponent:
     def test_light_copy(self):
         d1 = CircuitComponent(
             Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1)), Wires(set(), set(), {1}, {1})
-            )
+                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1)),
+                Wires(set(), set(), {1}, {1}),
+            ),
         )
         d1_cp = d1._light_copy()
 
@@ -190,7 +193,7 @@ class TestCircuitComponent:
         d = Dgate(1, x=0.1, y=0.1)
         d_fock = d.to_fock(shape=(4, 6))
         assert d_fock.ansatz == ArrayAnsatz(
-            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
+            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6)),
         )
 
     def test_to_fock_bargmann_Dgate(self):
@@ -205,7 +208,7 @@ class TestCircuitComponent:
         c = settings.rng.random(5) + 0.0j
         polyexp = PolyExpAnsatz(A, b, c)
         fock_cc = CircuitComponent(
-            Representation(polyexp, Wires(set(), set(), {0, 1}, set()))
+            Representation(polyexp, Wires(set(), set(), {0, 1}, set())),
         ).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
         assert fock_cc.ansatz._original_abc_data is None
@@ -273,7 +276,7 @@ class TestCircuitComponent:
                     0.08944272 + 0.08944272j,
                     0.08944272 + 0.08944272j,
                     0.083666 + 0.083666j,
-                ]
+                ],
             ],
         )
         assert math.allclose(result.ansatz.c, [0.95504196])
@@ -290,7 +293,7 @@ class TestCircuitComponent:
 
         result1 = d2.contract(d1)
         correct_c = np.exp(-0.5 * (abs(alpha + beta) ** 2)) * np.exp(
-            (alpha * np.conj(beta) - np.conj(alpha) * beta) / 2
+            (alpha * np.conj(beta) - np.conj(alpha) * beta) / 2,
         )
 
         assert math.allclose(result1.ansatz.c, correct_c)
@@ -342,7 +345,7 @@ class TestCircuitComponent:
                     0.08944272 + 0.08944272j,
                     0.08944272 + 0.08944272j,
                     0.083666 + 0.083666j,
-                ]
+                ],
             ],
         )
         assert math.allclose(result.ansatz.c, [0.95504196])
@@ -469,7 +472,8 @@ class TestCircuitComponent:
     def test_repr(self):
         c1 = CircuitComponent(Representation(wires=Wires(modes_out_ket={0, 1, 2})))
         c2 = CircuitComponent(
-            Representation(wires=Wires(modes_out_ket={0, 1, 2})), name="my_component"
+            Representation(wires=Wires(modes_out_ket={0, 1, 2})),
+            name="my_component",
         )
 
         assert repr(c1) == "CircuitComponent(modes=(0, 1, 2), name=CC012)"
@@ -558,7 +562,8 @@ class TestCircuitComponent:
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4))
         cc = CircuitComponent(
-            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name
+            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})),
+            name=name,
         )
         kwargs, arrays = cc._serialize()
         assert kwargs == {
@@ -587,7 +592,8 @@ class TestCircuitComponent:
 
         cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
         with pytest.raises(
-            TypeError, match="MyComponent does not seem to have any wires construction method"
+            TypeError,
+            match="MyComponent does not seem to have any wires construction method",
         ):
             cc._serialize()
 
@@ -609,6 +615,7 @@ class TestCircuitComponent:
             assert opt.minimize(cost, by_optimizing=[circuit], max_steps=5) is None
         else:
             with pytest.raises(
-                NotImplementedError, match="not implemented for backend ``(numpy|jax)``"
+                NotImplementedError,
+                match="not implemented for backend ``(numpy|jax)``",
             ):
                 opt.minimize(cost, by_optimizing=[circuit], max_steps=5)

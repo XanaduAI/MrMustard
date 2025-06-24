@@ -97,7 +97,9 @@ class Sampler(ABC):
         initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
 
         unique_samples, idxs, counts = np.unique(
-            initial_samples, return_index=True, return_counts=True
+            initial_samples,
+            return_index=True,
+            return_counts=True,
         )
         ret = []
         for unique_sample, idx, count in zip(unique_samples, idxs, counts):
@@ -110,7 +112,10 @@ class Sampler(ABC):
         return np.array(ret)
 
     def sample_prob_dist(
-        self, state: State, n_samples: int = 1000, seed: int | None = None
+        self,
+        state: State,
+        n_samples: int = 1000,
+        seed: int | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         r"""
         Samples a state by computing the probability distribution.
@@ -230,7 +235,9 @@ class HomodyneSampler(Sampler):
         initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
 
         unique_samples, idxs, counts = np.unique(
-            initial_samples, return_index=True, return_counts=True
+            initial_samples,
+            return_index=True,
+            return_counts=True,
         )
         ret = []
         for unique_sample, idx, count in zip(unique_samples, idxs, counts):

@@ -70,13 +70,13 @@ class DM(State):
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for a mixture of states."
+                "Physicality conditions are not implemented for a mixture of states.",
             )
         if self.ansatz.num_derived_vars > 0:
             raise ValueError("Physicality conditions are not implemented for derived variables.")
         if isinstance(self.ansatz, ArrayAnsatz):
             raise NotImplementedError(
-                "Physicality conditions are not implemented for states with ArrayAnsatz."
+                "Physicality conditions are not implemented for states with ArrayAnsatz.",
             )
         A = self.ansatz.A
         m = A.shape[-1] // 2
@@ -138,7 +138,7 @@ class DM(State):
         modes = set(modes)
         if ansatz and ansatz.num_vars != 2 * len(modes):
             raise ValueError(
-                f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.num_vars}."
+                f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.num_vars}.",
             )
         wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
         if isinstance(ansatz, ArrayAnsatz):
@@ -342,7 +342,9 @@ class DM(State):
         return other.expectation(self)  # assuming other is a ket
 
     def fock_array(
-        self, shape: int | Sequence[int] | None = None, standard_order: bool = False
+        self,
+        shape: int | Sequence[int] | None = None,
+        standard_order: bool = False,
     ) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
@@ -449,7 +451,7 @@ class DM(State):
             [
                 [math.zeros((*batch_shape, 2 * M, 2 * M), dtype=math.complex128), R],
                 [R_transpose, An],
-            ]
+            ],
         )
         b_core = math.concat([math.zeros((*batch_shape, 2 * M), dtype=math.complex128), bn], -1)
         c_core = c
@@ -526,7 +528,7 @@ class DM(State):
 
         if (m_modes % 2) or (m_modes // 2 != len(core_modes)):
             raise ValueError(
-                f"The number of modes ({m_modes}) must be twice the number of core modes ({len(core_modes)}) for the physical decomposition to work."
+                f"The number of modes ({m_modes}) must be twice the number of core modes ({len(core_modes)}) for the physical decomposition to work.",
             )
 
         M = len(core_modes)
@@ -564,7 +566,9 @@ class DM(State):
 
         bphi = math.zeros((*batch_shape, 4 * M), dtype=math.complex128)
         phi = Channel.from_bargmann(
-            core_modes, core_modes, (Aphi, bphi, math.ones(batch_shape, dtype=math.complex128))
+            core_modes,
+            core_modes,
+            (Aphi, bphi, math.ones(batch_shape, dtype=math.complex128)),
         )
         renorm = phi.contract(TraceOut(self.modes))
         phi = phi / renorm.ansatz.c
@@ -574,7 +578,7 @@ class DM(State):
             [
                 [math.zeros((*batch_shape, M, M), dtype=math.complex128), r_core_transpose],
                 [r_core, a],
-            ]
+            ],
         )
         bcore_m = math.einsum("...ij,...j->...i", math.inv(Gamma_phi_transpose), bm)
         bcore_m_ket = bcore_m[..., M:]
@@ -590,12 +594,16 @@ class DM(State):
         for i in range(M):
             core = core.contract(
                 Dgate(
-                    core_modes[i], -math.real(bcore_m_ket[..., i]), -math.imag(bcore_m_ket[..., i])
+                    core_modes[i],
+                    -math.real(bcore_m_ket[..., i]),
+                    -math.imag(bcore_m_ket[..., i]),
                 ),
                 mode="zip",
             )
             dgate_u = Dgate(
-                core_modes[i], math.real(bcore_m_ket[..., i]), math.imag(bcore_m_ket[..., i])
+                core_modes[i],
+                math.real(bcore_m_ket[..., i]),
+                math.imag(bcore_m_ket[..., i]),
             )
             dgate_ch = dgate_u.contract(dgate_u.adjoint, mode="zip")
             phi = dgate_ch.contract(phi, mode="zip")
@@ -609,7 +617,8 @@ class DM(State):
         )
 
     def physical_stellar_decomposition_mixed(
-        self, core_modes: Collection[int]
+        self,
+        core_modes: Collection[int],
     ) -> tuple[DM, Channel]:
         r"""
         Applies the physical stellar decomposition based on the rank condition.
@@ -669,23 +678,24 @@ class DM(State):
         R_transpose = math.einsum("...ij->...ji", R)
 
         rank = np.linalg.matrix_rank(
-            r @ math.conj(r_transpose) + sigma @ math.conj(sigma_transpose)
+            r @ math.conj(r_transpose) + sigma @ math.conj(sigma_transpose),
         )
         if math.any(rank > M):
             raise ValueError(
                 "The physical mixed stellar decomposition is not possible for this DM, "
                 f"as the rank {rank} of the off-diagonal block of the Bargmann matrix is larger than the number "
-                f"of core modes {M}."
+                f"of core modes {M}.",
             )
 
         I2M = math.broadcast_to(
-            math.eye(2 * M, dtype=math.complex128), (*batch_shape, 2 * M, 2 * M)
+            math.eye(2 * M, dtype=math.complex128),
+            (*batch_shape, 2 * M, 2 * M),
         )
         reduced_A = R @ math.inv(I2M - math.Xmat(M) @ Am) @ math.conj(R_transpose)
 
         # computing a low-rank r_c:
         r_c_squared = reduced_A[..., N:, N:] + sigma @ math.inv(alpha_m) @ math.conj(
-            sigma_transpose
+            sigma_transpose,
         )
         r_c_evals, r_c_evecs = math.eigh(r_c_squared)
         r_c = math.einsum(
@@ -716,14 +726,14 @@ class DM(State):
         alpha_core_n = alpha_n - sigma @ math.inv(alpha_m) @ math.conj(sigma_transpose)
         a_core_n = a_n + reduced_A[..., N:, :N]
         A_core_n = math.block(
-            [[math.conj(a_core_n), math.conj(alpha_core_n)], [alpha_core_n, a_core_n]]
+            [[math.conj(a_core_n), math.conj(alpha_core_n)], [alpha_core_n, a_core_n]],
         )
 
         A_core = math.block(
             [
                 [math.zeros((*batch_shape, 2 * M, 2 * M), dtype=math.complex128), R_c_transpose],
                 [R_c, A_core_n],
-            ]
+            ],
         )
         b_core_m = math.einsum("...ij,...j->...i", math.inv(gamma_transpose), bm)
         b_core_n = bn - math.einsum("...ij,...jk,...k->...i", R_c, Aphi_in, b_core_m)

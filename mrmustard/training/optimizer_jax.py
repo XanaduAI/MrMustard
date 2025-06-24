@@ -170,7 +170,10 @@ class OptimizerJax:
             progress_bar = ProgressBar(max_steps)
             with progress_bar:
                 self._optimization_loop(
-                    cost_fn, by_optimizing, max_steps=max_steps, progress_bar=progress_bar
+                    cost_fn,
+                    by_optimizing,
+                    max_steps=max_steps,
+                    progress_bar=progress_bar,
                 )
         else:
             self._optimization_loop(cost_fn, by_optimizing, max_steps=max_steps)

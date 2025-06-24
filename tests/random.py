@@ -49,7 +49,10 @@ real_not_zero = st.one_of(negative, positive)
 small_float = st.floats(min_value=-0.1, max_value=0.1, allow_infinity=False, allow_nan=False)
 medium_float = st.floats(min_value=-1.0, max_value=1.0, allow_infinity=False, allow_nan=False)
 complex_nonzero = st.complex_numbers(
-    allow_infinity=False, allow_nan=False, min_magnitude=1e-9, max_magnitude=1e2
+    allow_infinity=False,
+    allow_nan=False,
+    min_magnitude=1e-9,
+    max_magnitude=1e2,
 )
 
 # physical parameters
@@ -61,7 +64,10 @@ gain = st.floats(min_value=1, max_value=2, allow_infinity=False, allow_nan=False
 
 # Complex number strategy
 complex_number = st.complex_numbers(
-    min_magnitude=1e-9, max_magnitude=1, allow_infinity=False, allow_nan=False
+    min_magnitude=1e-9,
+    max_magnitude=1,
+    allow_infinity=False,
+    allow_nan=False,
 )
 
 # Size strategy
@@ -77,18 +83,24 @@ def Abc_triple(n: int, batch: tuple[int, ...] = ()):
     rng = settings.rng
     # complex symmetric matrix A
     A = rng.uniform(min_magnitude, max_magnitude, (*batch, n, n)) + 1.0j * rng.uniform(
-        min_magnitude, max_magnitude, (*batch, n, n)
+        min_magnitude,
+        max_magnitude,
+        (*batch, n, n),
     )
     A = 0.5 * (A + np.swapaxes(A, -2, -1))  # make it symmetric
 
     # complex vector b
     b = rng.uniform(min_magnitude, max_magnitude, (*batch, n)) + 1.0j * rng.uniform(
-        min_magnitude, max_magnitude, (*batch, n)
+        min_magnitude,
+        max_magnitude,
+        (*batch, n),
     )
 
     # complex scalar c
     c = rng.uniform(min_magnitude, max_magnitude, (*batch,)) + 1.0j * rng.uniform(
-        min_magnitude, max_magnitude, (*batch,)
+        min_magnitude,
+        max_magnitude,
+        (*batch,),
     )
 
     return A, b, c
@@ -104,7 +116,7 @@ def vector(draw, length):
 def list_of_ints(draw, N):
     r"""Return a list of N unique integers between 0 and N-1."""
     return draw(
-        st.lists(st.integers(min_value=0, max_value=N), min_size=N, max_size=N, unique=True)
+        st.lists(st.integers(min_value=0, max_value=N), min_size=N, max_size=N, unique=True),
     )
 
 
@@ -132,7 +144,10 @@ def complex_matrix(draw, rows, cols):
 def complex_vector(draw, length=None):
     """Return a strategy for generating vectors of length `length` with complex numbers."""
     elements = st.complex_numbers(
-        min_magnitude=0, max_magnitude=1, allow_infinity=False, allow_nan=False
+        min_magnitude=0,
+        max_magnitude=1,
+        allow_infinity=False,
+        allow_nan=False,
     )
     if length is None:
         length = draw(st.integers(min_value=1, max_value=10))
@@ -338,7 +353,7 @@ def single_mode_unitary_gate(draw):
             random_Dgate(),
             random_Pgate(),
             random_Interferometer(num_modes=1),  # like Rgate
-        )
+        ),
     )
 
 
@@ -350,7 +365,7 @@ def single_mode_cv_channel(draw):
             random_Attenuator(),
             random_Amplifier(),
             random_GaussRandNoise(),
-        )
+        ),
     )
 
 
@@ -366,7 +381,7 @@ def two_mode_unitary_gate(draw):
             random_CZgate(),
             random_Ggate(num_modes=2),
             random_Interferometer(num_modes=2),
-        )
+        ),
     )
 
 
@@ -437,7 +452,7 @@ def n_mode_separable_pure_state(draw, num_modes):
             squeezed_vacuum(num_modes),
             displacedsqueezed(num_modes),
             coherent(num_modes),
-        )
+        ),
     )
 
 
@@ -452,7 +467,7 @@ def n_mode_separable_mixed_state(draw, num_modes):
                 displacedsqueezed(num_modes),
                 coherent(num_modes),
                 thermal(num_modes),
-            )
+            ),
         )
         >> attenuator
     )

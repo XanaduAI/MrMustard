@@ -86,12 +86,13 @@ class GKet(Ket):
                 "symplectic",
                 (None, None),
                 update_symplectic,
-            )
+            ),
         )
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.gket_state_Abc, symplectic=self.parameters.symplectic
+                fn=triples.gket_state_Abc,
+                symplectic=self.parameters.symplectic,
             ),
         ).representation
 
@@ -171,7 +172,7 @@ class GDM(DM):
                 "symplectic",
                 (None, None),
                 update_symplectic,
-            )
+            ),
         )
         self.parameters.add_parameter(
             make_parameter(
@@ -179,7 +180,7 @@ class GDM(DM):
                 betas,
                 "beta",
                 (0, None),
-            )
+            ),
         )
         self._representation = self.from_ansatz(
             modes=modes,
