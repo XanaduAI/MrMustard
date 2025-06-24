@@ -138,10 +138,10 @@ class TestMap:
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_init_from_bargmann(self, batch_shape):
         A, b, c = Abc_triple(4, batch_shape)
-        map = Map.from_bargmann((0,), (0,), (A, b, c), "my_map")
-        assert math.allclose(map.ansatz.A, A)
-        assert math.allclose(map.ansatz.b, b)
-        assert math.allclose(map.ansatz.c, c)
+        my_map = Map.from_bargmann((0,), (0,), (A, b, c), "my_map")
+        assert math.allclose(my_map.ansatz.A, A)
+        assert math.allclose(my_map.ansatz.b, b)
+        assert math.allclose(my_map.ansatz.c, c)
 
 
 class TestChannel:

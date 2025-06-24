@@ -21,7 +21,7 @@ from pathlib import Path
 
 import numpy as np
 import rich.table
-from rich import print
+from rich import print as rprint
 
 from mrmustard.utils.filters import (
     add_complex_warning_filter,
@@ -192,7 +192,7 @@ class Settings:
             value = str(val)
             table.add_row(key, value)
 
-        print(table)
+        rprint(table)
         return ""
 
     def __setattr__(self, name, value):

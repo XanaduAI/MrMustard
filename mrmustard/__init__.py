@@ -18,7 +18,7 @@
 # ruff: noqa: ICN001
 import os
 
-from rich import print
+from rich import print  # noqa: A004
 
 from ._version import __version__
 from .utils.filters import add_complex_warning_filter

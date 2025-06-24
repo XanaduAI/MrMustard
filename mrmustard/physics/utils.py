@@ -135,8 +135,8 @@ def zip_batch_strings(*batch_dims: int) -> str:
     r"""
     Creates a batch string for zipping over the batch dimensions.
     """
-    input = ",".join([generate_batch_str(batch_dim) for batch_dim in batch_dims])
-    return input + "->" + generate_batch_str(max(batch_dims))
+    input_str = ",".join([generate_batch_str(batch_dim) for batch_dim in batch_dims])
+    return input_str + "->" + generate_batch_str(max(batch_dims))
 
 
 def lin_sup_batch_str(batch_str: str) -> str:
@@ -153,6 +153,6 @@ def lin_sup_batch_str(batch_str: str) -> str:
     inputs = input_str.split(",")
     max_char = max(ord(i) for i in batch_str)
     lin_sups = [chr(max_char + offset) for offset in range(1, len(inputs) + 1)]
-    new_input = ",".join([input + lin_sup for input, lin_sup in zip(inputs, lin_sups)])
+    new_input = ",".join([ipt + lin_sup for ipt, lin_sup in zip(inputs, lin_sups)])
     new_output = output_str + "".join(lin_sups)
     return f"{new_input}->{new_output}"

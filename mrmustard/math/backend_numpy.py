@@ -421,8 +421,8 @@ class BackendNumpy(BackendBase):
     def squeeze(self, tensor, axis=None):
         return np.squeeze(tensor, axis=axis)
 
-    def cholesky(self, input: np.ndarray):
-        return np.linalg.cholesky(input)
+    def cholesky(self, tensor: np.ndarray):
+        return np.linalg.cholesky(tensor)
 
     def Categorical(self, probs: np.ndarray, name: str):
         class Generator:

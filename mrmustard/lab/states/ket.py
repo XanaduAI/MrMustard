@@ -238,8 +238,8 @@ class Ket(State):
             >>> from mrmustard.lab import Vacuum, DM
             >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
-        repr = self.representation.contract(self.adjoint.representation, mode="zip")
-        ret = DM(repr, self.name)
+        dm_repr = self.representation.contract(self.adjoint.representation, mode="zip")
+        ret = DM(dm_repr, self.name)
         ret.manual_shape = self.manual_shape + self.manual_shape
         return ret
 

@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(".")), "doc"))
 # -- Project information -----------------------------------------------------
 
 project = "Mr Mustard"
-copyright = "2022, Xanadu Quantum Technologies"
+copyright = "2022, Xanadu Quantum Technologies"  # noqa: A001
 author = "Filippo Miatto"
 
 # The version info for the project you're documenting, acts as replacement for

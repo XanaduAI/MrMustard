@@ -396,8 +396,8 @@ class BackendTensorflow(BackendBase):
     def squeeze(self, tensor, axis=None):
         return tf.squeeze(tensor, axis=axis or [])
 
-    def cholesky(self, input: Tensor):
-        return tf.linalg.cholesky(input)
+    def cholesky(self, tensor: Tensor):
+        return tf.linalg.cholesky(tensor)
 
     def Categorical(self, probs: Tensor, name: str):
         return tfp.distributions.Categorical(probs=probs, name=name)

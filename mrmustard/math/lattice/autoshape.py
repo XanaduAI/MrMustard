@@ -102,7 +102,7 @@ def autoshape_numba(A, b, c, max_prob, max_shape, min_shape) -> int:  # pragma: 
     A = A.reshape((2, M, 2, M)).transpose((1, 3, 0, 2))  # (M,M,2,2)
     b = b.reshape((2, M)).transpose()  # (M,2)
     zero = np.zeros((M - 1, M - 1), dtype=np.complex128)
-    id = np.eye(M - 1, dtype=np.complex128)
+    id = np.eye(M - 1, dtype=np.complex128)  # noqa: A001
     X = np.vstack((np.hstack((zero, id)), np.hstack((id, zero))))
     for m in range(M):
         idx_m = np.array([m])

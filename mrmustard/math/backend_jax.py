@@ -461,8 +461,8 @@ class BackendJax(BackendBase):
         return jnp.squeeze(tensor, axis=axis)
 
     @jax.jit
-    def cholesky(self, input: jnp.ndarray):
-        return jnp.linalg.cholesky(input)
+    def cholesky(self, tensor: jnp.ndarray):
+        return jnp.linalg.cholesky(tensor)
 
     @staticmethod
     @jax.jit

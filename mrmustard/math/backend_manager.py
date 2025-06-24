@@ -221,14 +221,14 @@ class BackendManager:
 
         if self.backend_name != name:
             module = all_modules[name]["module"]
-            object = all_modules[name]["object"]
+            obj = all_modules[name]["object"]
             try:
-                backend = getattr(module, object)()
+                backend = getattr(module, obj)()
             except AttributeError:
                 # lazy import
                 loader = all_modules[name]["loader"]
                 loader.exec_module(module)
-                backend = getattr(module, object)()
+                backend = getattr(module, obj)()
         else:
             backend = self.backend
 
@@ -1569,16 +1569,16 @@ class BackendManager:
         """
         return self._apply("squeeze", (tensor, axis))
 
-    def cholesky(self, input: Tensor) -> Tensor:
+    def cholesky(self, tensor: Tensor) -> Tensor:
         """Computes the Cholesky decomposition of square matrices.
 
         Args:
-            input (Tensor)
+            tensor (Tensor)
 
         Returns:
             Tensor: tensor with the same type as input
         """
-        return self._apply("cholesky", (input,))
+        return self._apply("cholesky", (tensor,))
 
     def Categorical(self, probs: Tensor, name: str):
         """Categorical distribution over integers.
