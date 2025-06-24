@@ -41,6 +41,9 @@
 * Updated CI to allow for manual running of test timings before merging to develop.
   [(#612)](https://github.com/XanaduAI/MrMustard/pull/612)
 
+* Changed np.array -> np.asarray to reduce memory overhead.
+  [(#600)](https://github.com/XanaduAI/MrMustard/pull/600)
+
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent.
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
@@ -76,6 +79,7 @@
 [Matthew Silverman](https://github.com/timmysilv)
 [Ali Asadi](https://github.com/maliasadi)
 [Hitarth Choubisa](https://github.com/hitarth64)
+[Garett Brown](https://github.com/zyrxvo)
 
 ---
 
