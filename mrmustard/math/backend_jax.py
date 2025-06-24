@@ -88,7 +88,7 @@ class BackendJax(BackendBase):
         return jnp.arange(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: jnp.ndarray) -> np.ndarray:
-        return np.asarray(tensor)
+        return np.array(tensor)
 
     @partial(jax.jit, static_argnames=["shape"])
     def broadcast_to(self, array: jnp.ndarray, shape: tuple[int]) -> jnp.ndarray:
