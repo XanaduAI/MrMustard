@@ -82,7 +82,7 @@ def test_au2Symplectic():
             [
                 [np.eye(2), np.eye(2)],
                 [-1j * np.eye(2), 1j * np.eye(2)],
-            ]
+            ],
         )
     )
     S_by_hand = transformation @ S_by_hand @ np.conjugate(np.transpose(transformation))
@@ -113,7 +113,7 @@ def test_symplectic2Au():
             [0, np.cosh(r), 0, np.sinh(r)],
             [-np.sinh(r), 0, np.cosh(r), 0],
             [0, np.sinh(r), 0, np.cosh(r)],
-        ]
+        ],
     )
 
     S = S_bs @ S_sq
@@ -123,7 +123,7 @@ def test_symplectic2Au():
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
     transformation = np.block(
-        [[np.eye(m), np.eye(m)], [-1j * np.eye(m), 1j * np.eye(m)]]
+        [[np.eye(m), np.eye(m)], [-1j * np.eye(m), 1j * np.eye(m)]],
     ) / np.sqrt(2)
     S = transformation @ S @ np.conjugate(np.transpose(transformation))
     A = symplectic2Au(S)
@@ -133,7 +133,7 @@ def test_symplectic2Au():
     C = np.diag([np.cosh(r), np.cosh(r)])
     Sec = np.linalg.pinv(C)
     A_by_hand = np.block(
-        [[-W @ T @ np.transpose(W), W @ Sec], [Sec @ np.transpose(W), np.conjugate(T)]]
+        [[-W @ T @ np.transpose(W), W @ Sec], [Sec @ np.transpose(W), np.conjugate(T)]],
     )
 
     assert np.allclose(A, A_by_hand)

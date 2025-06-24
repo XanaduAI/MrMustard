@@ -14,12 +14,10 @@
 
 """Tests for the base transformation subpackage."""
 
-# pylint: disable=missing-function-docstring, expression-not-assigned
-
 import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.lab.states import Coherent, Vacuum
 from mrmustard.lab.transformations import (
@@ -118,7 +116,7 @@ class TestUnitary:
         r = math.broadcast_to(0.1, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
         gate = Unitary(
-            Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip").representation
+            Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip").representation,
         )  # TODO: revisit rshift
         gate_inv = gate.inverse()
         gate_inv_inv = gate_inv.inverse()
@@ -140,10 +138,10 @@ class TestMap:
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_init_from_bargmann(self, batch_shape):
         A, b, c = Abc_triple(4, batch_shape)
-        map = Map.from_bargmann((0,), (0,), (A, b, c), "my_map")
-        assert math.allclose(map.ansatz.A, A)
-        assert math.allclose(map.ansatz.b, b)
-        assert math.allclose(map.ansatz.c, c)
+        my_map = Map.from_bargmann((0,), (0,), (A, b, c), "my_map")
+        assert math.allclose(my_map.ansatz.A, A)
+        assert math.allclose(my_map.ansatz.b, b)
+        assert math.allclose(my_map.ansatz.c, c)
 
 
 class TestChannel:
@@ -200,7 +198,7 @@ class TestChannel:
             Sgate(0, r, phi)
             .contract(Dgate(0, r, phi), "zip")
             .contract(Attenuator(0, 0.5), "zip")
-            .representation
+            .representation,
         )  # TODO: revisit rshift
         should_be_identity = gate >> gate.inverse()
         assert should_be_identity.ansatz == Attenuator(0, 1.0).ansatz
@@ -230,21 +228,20 @@ class TestChannel:
 
         transmissivity = math.broadcast_to(0.2, batch_shape)
         X, Y = Attenuator(0, transmissivity).XY
-        expected_X = math.broadcast_to(np.sqrt(0.2), batch_shape + (2, 2)) * np.eye(2)
-        expected_Y = math.broadcast_to(0.4, batch_shape + (2, 2)) * np.eye(2)
+        expected_X = math.broadcast_to(np.sqrt(0.2), (*batch_shape, 2, 2)) * np.eye(2)
+        expected_Y = math.broadcast_to(0.4, (*batch_shape, 2, 2)) * np.eye(2)
         assert math.allclose(X, expected_X) and math.allclose(Y, expected_Y)
 
     @pytest.mark.parametrize("nmodes", [1, 2, 3])
     def test_from_XY(self, nmodes):
-        X = np.random.random((2 * nmodes, 2 * nmodes))
-        Y = np.random.random((2 * nmodes, 2 * nmodes))
+        X = settings.rng.random((2 * nmodes, 2 * nmodes))
+        Y = settings.rng.random((2 * nmodes, 2 * nmodes))
         x, y = Channel.from_XY(tuple(range(nmodes)), tuple(range(nmodes)), X, Y).XY
         assert math.allclose(x, X)
         assert math.allclose(y, Y)
 
     @pytest.mark.parametrize("nmodes", [1, 2, 3])
     def test_from_XY_batched(self, nmodes):
-
         ch1 = Channel.random(list(range(nmodes))) + Channel.random(list(range(nmodes)))
         X, Y = ch1.XY
 
@@ -265,5 +262,5 @@ class TestChannel:
         psi = Coherent(0, 2) >> phi
 
         assert psi.to_fock((cutoff, cutoff)) == (Coherent(0, 2) >> PhaseNoise(0, sigma)).to_fock(
-            (cutoff, cutoff)
+            (cutoff, cutoff),
         )

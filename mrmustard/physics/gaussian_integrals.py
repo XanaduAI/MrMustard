@@ -16,11 +16,13 @@
 This module contains gaussian integral functions and related helper functions.
 """
 
-from typing import Sequence
+from collections.abc import Sequence
+
 import numpy as np
+
 from mrmustard import math
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
 from mrmustard.physics.utils import outer_product_batch_str, verify_batch_triple
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 
 def real_gaussian_integral(
@@ -107,7 +109,7 @@ def join_Abc_real(
     c2 = math.astensor(c2)
     if len(idx1) != len(idx2):
         raise ValueError(
-            f"idx1 and idx2j must have the same length, got {len(idx1)} and {len(idx2)}"
+            f"idx1 and idx2j must have the same length, got {len(idx1)} and {len(idx2)}",
         )
 
     if (len(idx1) > A1.shape[-1]) or (len(idx2) > A2.shape[-1]):
@@ -147,7 +149,7 @@ def join_Abc_real(
                 [A1_idx_idx + A2_idx_idx, A1_idx_notidx, A2_idx_notidx],
                 [A1_notidx_idx, A1_notidx_notidx, O_n],
                 [A2_notidx_idx, O_n.T, A2_notidx_notidx],
-            ]
+            ],
         )
         b12 = math.concat([b1_idx + b2_idx, b1_notidx, b2_notidx], axis=-1)
     c12 = math.reshape(math.outer(c1, c2), c1.shape + c2.shape)
@@ -178,7 +180,7 @@ def reorder_abc(Abc: tuple, order: Sequence[int]):
         raise ValueError(f"order must have length {n}, got {len(order)}")
 
     if any(i >= n or n < 0 for i in order):
-        raise ValueError(f"elements in `order` must be between 0 and {n-1}, got {order}")
+        raise ValueError(f"elements in `order` must be between 0 and {n - 1}, got {order}")
     order += list(range(len(order), len(order) + dim_poly))
     order = math.astensor(order)
     A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
@@ -252,15 +254,13 @@ def join_Abc(
     n2 = nA2 - m2
 
     # Step 0: Flatten the non-batch dimensions of c1 and c2
-    c1_flat_shape = batch1 + (int(np.prod(poly_shape1)),)
-    c2_flat_shape = batch2 + (int(np.prod(poly_shape2)),)
+    c1_flat_shape = (*batch1, int(np.prod(poly_shape1)))
+    c2_flat_shape = (*batch2, int(np.prod(poly_shape2)))
     c1_flat = math.reshape(c1, c1_flat_shape)
     c2_flat = math.reshape(c2, c2_flat_shape)
 
     # Step 1 & 2: Determine broadcast shape based on batch_string and broadcast tensors
-    broadcast_dims = {}
-    for dim, batch in zip(in1, batch1):
-        broadcast_dims[dim] = batch
+    broadcast_dims = dict(zip(in1, batch1))
     for dim, batch in zip(in2, batch2):
         if dim in broadcast_dims and broadcast_dims[dim] != batch:
             raise ValueError(f"Dimension mismatch for {dim}: {broadcast_dims[dim]} != {batch}")
@@ -290,12 +290,12 @@ def join_Abc(
             broadcast_shape2.append(1)
 
     # Broadcast A, b, c to the output batch shape
-    A1_new_shape = tuple(broadcast_shape1) + (nA1, mA1)
-    A2_new_shape = tuple(broadcast_shape2) + (nA2, mA2)
-    b1_new_shape = tuple(broadcast_shape1) + (nb1,)
-    b2_new_shape = tuple(broadcast_shape2) + (nb2,)
-    c1_new_shape = tuple(broadcast_shape1) + (c1_flat.shape[-1],)
-    c2_new_shape = tuple(broadcast_shape2) + (c2_flat.shape[-1],)
+    A1_new_shape = (*tuple(broadcast_shape1), nA1, mA1)
+    A2_new_shape = (*tuple(broadcast_shape2), nA2, mA2)
+    b1_new_shape = (*tuple(broadcast_shape1), nb1)
+    b2_new_shape = (*tuple(broadcast_shape2), nb2)
+    c1_new_shape = (*tuple(broadcast_shape1), c1_flat.shape[-1])
+    c2_new_shape = (*tuple(broadcast_shape2), c2_flat.shape[-1])
 
     # Reshape to add broadcasting dimensions
     A1_reshaped = math.reshape(A1, A1_new_shape)
@@ -307,12 +307,12 @@ def join_Abc(
 
     # Create full output shape for broadcasting
     output_batch_shape = tuple(output_shape)
-    A1_broadcast_shape = output_batch_shape + (nA1, mA1)
-    A2_broadcast_shape = output_batch_shape + (nA2, mA2)
-    b1_broadcast_shape = output_batch_shape + (nb1,)
-    b2_broadcast_shape = output_batch_shape + (nb2,)
-    c1_broadcast_shape = output_batch_shape + (c1_flat.shape[-1],)
-    c2_broadcast_shape = output_batch_shape + (c2_flat.shape[-1],)
+    A1_broadcast_shape = (*output_batch_shape, nA1, mA1)
+    A2_broadcast_shape = (*output_batch_shape, nA2, mA2)
+    b1_broadcast_shape = (*output_batch_shape, nb1)
+    b2_broadcast_shape = (*output_batch_shape, nb2)
+    c1_broadcast_shape = (*output_batch_shape, c1_flat.shape[-1])
+    c2_broadcast_shape = (*output_batch_shape, c2_flat.shape[-1])
 
     # Step 2: Broadcast tensors to the output shape
     A1_broadcasted = math.broadcast_to(A1_reshaped, A1_broadcast_shape, dtype=math.complex128)
@@ -324,11 +324,11 @@ def join_Abc(
 
     # Step 3: Join A1 and A2
     A1Z = math.concat(
-        [A1_broadcasted, math.zeros(output_batch_shape + (nA1, nA2), dtype=math.complex128)],
+        [A1_broadcasted, math.zeros((*output_batch_shape, nA1, nA2), dtype=math.complex128)],
         axis=-1,
     )
     ZA2 = math.concat(
-        [math.zeros(output_batch_shape + (nA2, nA1), dtype=math.complex128), A2_broadcasted],
+        [math.zeros((*output_batch_shape, nA2, nA1), dtype=math.complex128), A2_broadcasted],
         axis=-1,
     )
 
@@ -403,7 +403,7 @@ def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
     M_bM = math.solve(M, bM)
 
     c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * math.exp(
-        -0.5 * math.sum(bM * M_bM, axis=-1)
+        -0.5 * math.sum(bM * M_bM, axis=-1),
     )
     c_reshaped = math.reshape(c_factor, batch_shape + (1,) * (len(c.shape[batch_dim:])))
     c_post = c * c_reshaped
@@ -476,7 +476,7 @@ def complex_gaussian_integral_1(
     """
     if len(idx_z) != len(idx_zconj):
         raise ValueError(
-            f"idx1 and idx2 must have the same length, got {len(idx_z)} and {len(idx_zconj)}"
+            f"idx1 and idx2 must have the same length, got {len(idx_z)} and {len(idx_zconj)}",
         )
 
     A, b, c = Abc
@@ -492,7 +492,7 @@ def complex_gaussian_integral_1(
     idx = tuple(idx_z) + tuple(idx_zconj)
     if any(i >= n for i in idx):
         raise ValueError(
-            f"Indices must be less than {n}, got {tuple(i for i in idx_z if i >= n)} and {tuple(i for i in idx_zconj if i >= n)}"
+            f"Indices must be less than {n}, got {tuple(i for i in idx_z if i >= n)} and {tuple(i for i in idx_zconj if i >= n)}",
         )
 
     if len(idx) == 0:

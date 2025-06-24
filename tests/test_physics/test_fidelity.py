@@ -5,7 +5,6 @@ from thewalrus.random import random_covariance
 
 from mrmustard import settings
 from mrmustard.lab import DM, Attenuator, Coherent, Number
-from mrmustard.physics import fock_utils as fp
 from mrmustard.physics import gaussian as gp
 
 
@@ -18,9 +17,9 @@ class TestCovMeansFidelity:
         """Test that the fidelity is symmetric"""
         with settings(HBAR=hbar):
             cov1 = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
-            means1 = np.sqrt(2 * hbar) * np.random.rand(2 * num_modes)
+            means1 = np.sqrt(2 * hbar) * settings.rng.random(2 * num_modes)
             cov2 = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
-            means2 = np.sqrt(2 * hbar) * np.random.rand(2 * num_modes)
+            means2 = np.sqrt(2 * hbar) * settings.rng.random(2 * num_modes)
             f12 = gp.fidelity(means1, cov1, means2, cov2)
             f21 = gp.fidelity(means2, cov2, means1, cov1)
             assert np.allclose(f12, f21)
@@ -33,9 +32,9 @@ class TestCovMeansFidelity:
         """Test that the fidelity is between 0 and 1"""
         with settings(HBAR=hbar):
             cov1 = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
-            means1 = np.sqrt(2 * hbar) * np.random.rand(2 * num_modes)
+            means1 = np.sqrt(2 * hbar) * settings.rng.random(2 * num_modes)
             cov2 = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
-            means2 = np.sqrt(2 * hbar) * np.random.rand(2 * num_modes)
+            means2 = np.sqrt(2 * hbar) * settings.rng.random(2 * num_modes)
             f12 = gp.fidelity(means1, cov1, means2, cov2)
             assert 0 <= np.real_if_close(f12) < 1.0
 
@@ -47,7 +46,7 @@ class TestCovMeansFidelity:
         """Test that the fidelity of two identical quantum states is 1"""
         with settings(HBAR=hbar):
             cov = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
-            means = np.random.rand(2 * num_modes)
+            means = settings.rng.random(2 * num_modes)
             assert np.allclose(gp.fidelity(means, cov, means, cov), 1, atol=1e-3)
 
     def test_gaussian_ket_fidelity(self):
@@ -67,8 +66,8 @@ class TestCovMeansFidelity:
     def test_fidelity_coherent_state(self, num_modes, hbar):
         """Test the fidelity of two multimode coherent states"""
         with settings(HBAR=hbar):
-            beta1 = np.random.rand(num_modes) + 1j * np.random.rand(num_modes)
-            beta2 = np.random.rand(num_modes) + 1j * np.random.rand(num_modes)
+            beta1 = settings.rng.random(num_modes) + 1j * settings.rng.random(num_modes)
+            beta2 = settings.rng.random(num_modes) + 1j * settings.rng.random(num_modes)
             means1 = real_to_complex_displacements(np.concatenate([beta1, beta1.conj()]), hbar=hbar)
             means2 = real_to_complex_displacements(np.concatenate([beta2, beta2.conj()]), hbar=hbar)
             cov1 = hbar * np.identity(2 * num_modes) / 2
@@ -103,7 +102,7 @@ class TestCovMeansFidelity:
 
     @pytest.mark.parametrize("hbar", [0.5, 1.0, 2.0, 1.6])
     @pytest.mark.parametrize("r", [-2.0, 0.0, 2.0])
-    @pytest.mark.parametrize("alpha", np.random.rand(10) + 1j * np.random.rand(10))
+    @pytest.mark.parametrize("alpha", settings.rng.random(10) + 1j * settings.rng.random(10))
     def test_fidelity_vac_to_displaced_squeezed(self, r, alpha, hbar):
         """Calculates the fidelity between a coherent squeezed state and vacuum"""
         with settings(HBAR=hbar):

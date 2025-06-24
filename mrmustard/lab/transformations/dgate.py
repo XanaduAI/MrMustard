@@ -17,18 +17,19 @@ The class representing a displacement gate.
 """
 
 from __future__ import annotations
-from typing import Sequence
+
+from collections.abc import Sequence
 from dataclasses import replace
 
-from mrmustard.utils.typing import ComplexTensor
 from mrmustard import math
-from ...physics.wires import Wires, ReprEnum
-from .base import Unitary
-from ...physics.representations import Representation
-from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
-from ...physics import triples
-from ..utils import make_parameter
+from mrmustard.utils.typing import ComplexTensor
 
+from ...physics import triples
+from ...physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from ...physics.representations import Representation
+from ...physics.wires import ReprEnum, Wires
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["Dgate"]
 
@@ -96,11 +97,13 @@ class Dgate(Unitary):
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_gate_Abc, x=self.parameters.x, y=self.parameters.y
+                fn=triples.displacement_gate_Abc,
+                x=self.parameters.x,
+                y=self.parameters.y,
             ),
         ).representation
 
-    def fock_array(self, shape: int | Sequence[int] = None) -> ComplexTensor:
+    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
 
@@ -118,7 +121,7 @@ class Dgate(Unitary):
         shape = tuple(shape)
         if len(shape) != len(auto_shape):
             raise ValueError(
-                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
+                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}",
             )
         if self.ansatz.batch_shape:
             x, y = math.broadcast_arrays(self.parameters.x.value, self.parameters.y.value)

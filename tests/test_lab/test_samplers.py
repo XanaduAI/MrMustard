@@ -14,8 +14,6 @@
 
 """Tests for the sampler."""
 
-# pylint: disable=missing-function-docstring
-
 import numpy as np
 import pytest
 
@@ -125,7 +123,9 @@ class TestHomodyneSampler:
         tol = settings.ATOL
 
         state = Coherent(0, x=math.real(alpha), y=math.imag(alpha)) >> Coherent(
-            1, x=math.real(alpha), y=math.imag(alpha)
+            1,
+            x=math.real(alpha),
+            y=math.imag(alpha),
         )
         sampler = HomodyneSampler()
 
