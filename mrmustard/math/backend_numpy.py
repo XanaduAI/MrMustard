@@ -82,16 +82,13 @@ class BackendNumpy(BackendBase):
         return np.arange(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: np.ndarray) -> np.ndarray:
-        if isinstance(tensor, np.ndarray):
-            return tensor
-        return np.array(tensor)
+        return np.asarray(tensor)
 
     def assign(self, tensor: np.ndarray, value: np.ndarray) -> np.ndarray:
         return value
 
     def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        array = np.array(array)
-        return self.cast(array, dtype=dtype or array.dtype)
+        return np.asarray(array, dtype=dtype)
 
     def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
         return np.array(array, ndmin=n, dtype=dtype)
@@ -106,14 +103,14 @@ class BackendNumpy(BackendBase):
         return sp.linalg.block_diag(*blocks)
 
     def boolean_mask(self, tensor: np.ndarray, mask: np.ndarray) -> np.ndarray:
-        return np.array([t for i, t in enumerate(tensor) if mask[i]])
+        return np.asarray([t for i, t in enumerate(tensor) if mask[i]])
 
     def cast(self, array: np.ndarray, dtype=None) -> np.ndarray:
         if dtype is None:
             return array
         if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
             array = self.real(array)
-        return np.array(array, dtype=dtype)
+        return np.asarray(array, dtype=dtype)
 
     def clip(self, array, a_min, a_max) -> np.ndarray:
         return np.clip(array, a_min, a_max)
@@ -123,7 +120,7 @@ class BackendNumpy(BackendBase):
         try:
             return np.concatenate(values, axis)
         except ValueError:
-            return np.array(values)
+            return np.asarray(values)
 
     def conj(self, array: np.ndarray) -> np.ndarray:
         return np.conj(array)
@@ -203,7 +200,7 @@ class BackendNumpy(BackendBase):
         ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
         array = array.ravel().reshape(*ravelled_sh)
 
-        ret = np.array([np.diag(line, k) for line in array])
+        ret = np.asarray([np.diag(line, k) for line in array])
         inner_shape = (
             original_sh[-1] + abs(k),
             original_sh[-1] + abs(k),
@@ -262,7 +259,7 @@ class BackendNumpy(BackendBase):
         return False
 
     def lgamma(self, x: np.ndarray) -> np.ndarray:
-        return np.array([mlgamma(v) for v in x])
+        return np.asarray([mlgamma(v) for v in x])
 
     def log(self, x: np.ndarray) -> np.ndarray:
         return np.log(x)
@@ -303,7 +300,7 @@ class BackendNumpy(BackendBase):
         return np.array(value, dtype=dtype)
 
     def new_constant(self, value, name: str, dtype=np.float64):
-        return np.array(value, dtype=dtype)
+        return np.asarray(value, dtype=dtype)
 
     def norm(self, array: np.ndarray) -> np.ndarray:
         return np.linalg.norm(array)
@@ -431,11 +428,11 @@ class BackendNumpy(BackendBase):
         return np.zeros(shape, dtype=dtype)
 
     def zeros_like(self, array: np.ndarray) -> np.ndarray:
-        return np.zeros(np.array(array).shape, dtype=array.dtype)
+        return np.zeros_like(array, dtype=array.dtype)
 
     def map_fn(self, func, elements):
         # Is this done like this?
-        return np.array([func(e) for e in elements])
+        return np.asarray([func(e) for e in elements])
 
     def squeeze(self, tensor, axis=None):
         return np.squeeze(tensor, axis=axis)
