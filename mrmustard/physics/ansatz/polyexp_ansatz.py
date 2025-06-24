@@ -16,8 +16,6 @@
 This module contains the PolyExp ansatz.
 """
 
-# pylint: disable=too-many-instance-attributes,too-many-positional-arguments, too-many-public-methods, inconsistent-return-statements
-
 from __future__ import annotations
 
 import itertools
