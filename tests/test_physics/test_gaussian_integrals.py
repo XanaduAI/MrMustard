@@ -16,7 +16,7 @@
 
 import numpy as np
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.physics import triples
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
@@ -46,14 +46,15 @@ def test_real_gaussian_integral():
                 0.18954838 - 0.42959383j,
                 -0.16931712 - 0.09205837j,
             ],
-        ]
+        ],
     )
     b = math.cast(math.arange(3), dtype=math.complex128)  # tensorflow does not support complex
     c = 1.0 + 0j
     res = real_gaussian_integral((A, b, c), idx=[0, 1])
     assert math.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
     assert math.allclose(
-        res[1], b[2] - math.sum(A[2:, :2] * math.matvec(math.inv(A[:2, :2]), b[:2]))
+        res[1],
+        b[2] - math.sum(A[2:, :2] * math.matvec(math.inv(A[:2, :2]), b[:2])),
     )
     assert math.allclose(
         res[2],
@@ -71,7 +72,7 @@ def test_real_gaussian_integral():
         [
             [0.35307718 - 0.09738001j, -0.01297994 + 0.26050244j],
             [-0.01297994 + 0.26050244j, 0.05696707 - 0.2351408j],
-        ]
+        ],
     )
     b2 = math.cast(math.arange(2), dtype=math.complex128)  # tensorflow does not support complex
     c2 = 1.0 + 0j
@@ -118,7 +119,8 @@ def test_join_Abc_nonbatched():
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=None)
 
     assert math.allclose(
-        A, math.astensor([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]])
+        A,
+        math.astensor([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]]),
     )
     assert math.allclose(b, math.astensor([5, 6, 12, 13]))
     assert math.allclose(c, 70)
@@ -142,7 +144,7 @@ def test_join_Abc_batched_zip():
             [
                 [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]],
                 [[5, 6, 0, 0], [7, 8, 0, 0], [0, 0, 12, 13], [0, 0, 14, 15]],
-            ]
+            ],
         ),
     )
     assert math.allclose(b, math.astensor([[5, 6, 12, 13], [7, 8, 14, 15]]))
@@ -167,7 +169,7 @@ def test_join_Abc_batched_kron():
             [
                 [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]],
                 [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 12, 13], [0, 0, 14, 15]],
-            ]
+            ],
         ),
     )
     assert math.allclose(b, math.astensor([[5, 6, 12, 13], [5, 6, 14, 15]]))
@@ -245,10 +247,12 @@ def test_complex_gaussian_integral_1_multidim_batched():
     """tests that the ``complex_gaussian_integral_2`` method works for multi-dimensional batched inputs."""
     A1, b1, c1 = triples.vacuum_state_Abc(1)
     A2, b2, c2 = triples.squeezing_gate_Abc(
-        r=[[0.1, 0.2, 0.3], [0.1, 0.2, 0.3]], phi=[[0.3, 0.4, 0.5], [0.3, 0.4, 0.5]]
+        r=[[0.1, 0.2, 0.3], [0.1, 0.2, 0.3]],
+        phi=[[0.3, 0.4, 0.5], [0.3, 0.4, 0.5]],
     )
     A3, b3, c3 = triples.squeezed_vacuum_state_Abc(
-        r=[[0.1, 0.2, 0.3], [0.1, 0.2, 0.3]], phi=[[0.3, 0.4, 0.5], [0.3, 0.4, 0.5]]
+        r=[[0.1, 0.2, 0.3], [0.1, 0.2, 0.3]],
+        phi=[[0.3, 0.4, 0.5], [0.3, 0.4, 0.5]],
     )
 
     A1 = math.astensor([[A1, A1, A1], [A1, A1, A1]])
@@ -265,10 +269,10 @@ def test_complex_gaussian_integral_1_multidim_batched():
 def test_gaussian_integral_poly_batched():
     """Tests that the Gaussian integral works for batched inputs with polynomial c."""
     # batch 4 and 2 polynomial wires
-    A = np.random.random((4, 4, 4))
-    b = np.random.random((4, 4))
-    c = np.random.random((4, 2, 2))
-    res = complex_gaussian_integral_1((A, b, c), [0], [1])  # pylint: disable=pointless-statement
+    A = settings.rng.random((4, 4, 4))
+    b = settings.rng.random((4, 4))
+    c = settings.rng.random((4, 2, 2))
+    res = complex_gaussian_integral_1((A, b, c), [0], [1])
     assert res[0].shape == (4, 2, 2)
     assert res[1].shape == (4, 2)
     assert res[2].shape == (4, 2, 2)

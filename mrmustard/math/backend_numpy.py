@@ -14,15 +14,12 @@
 
 """This module contains the numpy backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
-
 from __future__ import annotations
 
-from typing import Sequence, Callable
+from collections.abc import Callable, Sequence
 
-from opt_einsum import contract
 import numpy as np
-
+from opt_einsum import contract
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import loggamma as scipy_loggamma
@@ -39,7 +36,6 @@ from .lattice.strategies.compactFock.inputValidation import (
 np.set_printoptions(legacy="1.25")
 
 
-# pylint: disable=too-many-public-methods
 class BackendNumpy(BackendBase):
     r"""
     A numpy backend.
@@ -74,7 +70,11 @@ class BackendNumpy(BackendBase):
         return np.any(array)
 
     def arange(
-        self, start: int, limit: int | None = None, delta: int = 1, dtype=np.float64
+        self,
+        start: int,
+        limit: int | None = None,
+        delta: int = 1,
+        dtype=np.float64,
     ) -> np.ndarray:
         return np.arange(start, limit, delta, dtype=dtype)
 
@@ -82,8 +82,7 @@ class BackendNumpy(BackendBase):
         return np.asarray(tensor)
 
     def assign(self, tensor: np.ndarray, value: np.ndarray) -> np.ndarray:
-        tensor = value
-        return tensor
+        return value
 
     def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
         return np.asarray(array, dtype=dtype)
@@ -126,28 +125,23 @@ class BackendNumpy(BackendBase):
     def det(self, matrix: np.ndarray) -> np.ndarray:
         with np.errstate(divide="ignore", invalid="ignore"):
             det = np.linalg.det(matrix)
-        return det
+        return det  # noqa: RET504
 
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
         if array.ndim in (1, 2):
             return np.diag(array, k=k)
-        else:
-            # fallback into more complex algorithm
-            original_sh = array.shape
+        # fallback into more complex algorithm
+        original_sh = array.shape
 
-            ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
-            array = array.ravel().reshape(*ravelled_sh)
+        ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
+        array = array.ravel().reshape(*ravelled_sh)
 
-            ret = []
-            for line in array:
-                ret.append(np.diag(line, k))
-
-            ret = np.asarray(ret)
-            inner_shape = (
-                original_sh[-1] + abs(k),
-                original_sh[-1] + abs(k),
-            )
-            return ret.reshape(original_sh[:-1] + inner_shape)
+        ret = np.asarray([np.diag(line, k) for line in array])
+        inner_shape = (
+            original_sh[-1] + abs(k),
+            original_sh[-1] + abs(k),
+        )
+        return ret.reshape(original_sh[:-1] + inner_shape)
 
     def diag_part(self, array: np.ndarray, k: int) -> np.ndarray:
         ret = np.diagonal(array, offset=k, axis1=-2, axis2=-1)
@@ -184,7 +178,7 @@ class BackendNumpy(BackendBase):
     def inv(self, tensor: np.ndarray) -> np.ndarray:
         return np.linalg.inv(tensor)
 
-    def is_trainable(self, tensor: np.ndarray) -> bool:  # pylint: disable=unused-argument
+    def is_trainable(self, tensor: np.ndarray) -> bool:
         return False
 
     def lgamma(self, x: np.ndarray) -> np.ndarray:
@@ -212,7 +206,10 @@ class BackendNumpy(BackendBase):
         return np.minimum(a, b)
 
     def moveaxis(
-        self, array: np.ndarray, old: int | Sequence[int], new: int | Sequence[int]
+        self,
+        array: np.ndarray,
+        old: int | Sequence[int],
+        new: int | Sequence[int],
     ) -> np.ndarray:
         return np.moveaxis(array, old, new)
 
@@ -222,10 +219,10 @@ class BackendNumpy(BackendBase):
         bounds: tuple[float | None, float | None] | None,
         name: str,
         dtype=np.float64,
-    ):  # pylint: disable=unused-argument
+    ):
         return np.array(value, dtype=dtype)
 
-    def new_constant(self, value, name: str, dtype=np.float64):  # pylint: disable=unused-argument
+    def new_constant(self, value, name: str, dtype=np.float64):
         return np.asarray(value, dtype=dtype)
 
     def norm(self, array: np.ndarray) -> np.ndarray:
@@ -241,16 +238,17 @@ class BackendNumpy(BackendBase):
         return np.full_like(array, np.inf)
 
     def conditional(
-        self, cond: np.ndarray, true_fn: Callable, false_fn: Callable, *args
+        self,
+        cond: np.ndarray,
+        true_fn: Callable,
+        false_fn: Callable,
+        *args,
     ) -> np.ndarray:
         if cond.all():
             return true_fn(*args)
-        else:
-            return false_fn(*args)
+        return false_fn(*args)
 
-    def error_if(
-        self, array: np.ndarray, condition: np.ndarray, msg: str
-    ):  # pylint: disable=unused-argument
+    def error_if(self, array: np.ndarray, condition: np.ndarray, msg: str):
         if np.any(condition):
             raise ValueError(msg)
 
@@ -324,13 +322,19 @@ class BackendNumpy(BackendBase):
         return np.transpose(a, axes=perm)
 
     def update_tensor(
-        self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
+        self,
+        tensor: np.ndarray,
+        indices: np.ndarray,
+        values: np.ndarray,
     ) -> np.ndarray:
         tensor[indices] = values
         return tensor
 
     def update_add_tensor(
-        self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
+        self,
+        tensor: np.ndarray,
+        indices: np.ndarray,
+        values: np.ndarray,
     ) -> np.ndarray:
         indices = self.atleast_nd(indices, 2)
         for i, v in zip(indices, values):
@@ -445,7 +449,11 @@ class BackendNumpy(BackendBase):
         return A, B
 
     def hermite_renormalized_diagonal(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
@@ -454,7 +462,11 @@ class BackendNumpy(BackendBase):
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -477,14 +489,22 @@ class BackendNumpy(BackendBase):
         return poly0
 
     def hermite_renormalized_diagonal_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
 
@@ -511,7 +531,7 @@ class BackendNumpy(BackendBase):
         stable: bool = False,
     ) -> np.ndarray:
         return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
-            (-2, -1) + tuple(range(len(pnr_cutoffs)))
+            (-2, -1, *tuple(range(len(pnr_cutoffs)))),
         )
 
     def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):

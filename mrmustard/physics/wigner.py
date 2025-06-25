@@ -19,7 +19,6 @@ from numba import njit
 
 from mrmustard import math, settings
 
-
 __all__ = ["wigner_discretized"]
 
 
@@ -146,7 +145,7 @@ def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):  # pragma: no cover
 def _wigner_discretized_iterative(rho, q_vec, p_vec, hbar):  # pragma: no cover
     cutoff = len(rho)
     Q, P, grid = make_grid(q_vec, p_vec, hbar)
-    Wmat = np.zeros((2, cutoff) + grid.shape, dtype=np.complex128)
+    Wmat = np.zeros((2, cutoff, *grid.shape), dtype=np.complex128)
 
     # W = rho(0,0)W(|0><0|)
     Wmat[0, 0] = np.exp(-2.0 * np.abs(grid) ** 2) / np.pi

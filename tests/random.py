@@ -14,6 +14,8 @@
 
 import numpy as np
 
+from mrmustard import settings
+
 
 def Abc_triple(n: int, batch: tuple[int, ...] = ()):
     r"""
@@ -21,21 +23,27 @@ def Abc_triple(n: int, batch: tuple[int, ...] = ()):
     """
     min_magnitude = 1e-9
     max_magnitude = 1
-
+    rng = settings.rng
     # complex symmetric matrix A
-    A = np.random.uniform(min_magnitude, max_magnitude, batch + (n, n)) + 1.0j * np.random.uniform(
-        min_magnitude, max_magnitude, batch + (n, n)
+    A = rng.uniform(min_magnitude, max_magnitude, (*batch, n, n)) + 1.0j * rng.uniform(
+        min_magnitude,
+        max_magnitude,
+        (*batch, n, n),
     )
     A = 0.5 * (A + np.swapaxes(A, -2, -1))  # make it symmetric
 
     # complex vector b
-    b = np.random.uniform(min_magnitude, max_magnitude, batch + (n,)) + 1.0j * np.random.uniform(
-        min_magnitude, max_magnitude, batch + (n,)
+    b = rng.uniform(min_magnitude, max_magnitude, (*batch, n)) + 1.0j * rng.uniform(
+        min_magnitude,
+        max_magnitude,
+        (*batch, n),
     )
 
     # complex scalar c
-    c = np.random.uniform(min_magnitude, max_magnitude, batch + ()) + 1.0j * np.random.uniform(
-        min_magnitude, max_magnitude, batch + ()
+    c = rng.uniform(min_magnitude, max_magnitude, (*batch,)) + 1.0j * rng.uniform(
+        min_magnitude,
+        max_magnitude,
+        (*batch,),
     )
 
     return A, b, c

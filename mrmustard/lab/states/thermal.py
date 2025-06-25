@@ -17,12 +17,14 @@ The class representing a thermal state.
 """
 
 from __future__ import annotations
-from typing import Sequence
 
-from mrmustard.physics.ansatz import PolyExpAnsatz
+from collections.abc import Sequence
+
 from mrmustard.physics import triples
-from .dm import DM
+from mrmustard.physics.ansatz import PolyExpAnsatz
+
 from ..utils import make_parameter
+from .dm import DM
 
 __all__ = ["Thermal"]
 
@@ -63,6 +65,7 @@ class Thermal(DM):
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.thermal_state_Abc, nbar=self.parameters.nbar
+                fn=triples.thermal_state_Abc,
+                nbar=self.parameters.nbar,
             ),
         ).representation

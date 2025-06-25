@@ -42,7 +42,7 @@ def test_binomial_vs_binomialDict():
     G, _ = binomial(local_cutoffs, A, b, c, max_prob, global_cutoff)
     D = binomial_dict(local_cutoffs, A, b, complex(c), max_prob, global_cutoff)
 
-    for idx in D.keys():
+    for idx in D:
         assert np.isclose(D[idx], G[idx])
 
 
@@ -127,7 +127,12 @@ def test_vanillaNumba_vs_binomial():
 
         ket_vanilla = vanilla_numba(shape=(10, 10), A=A, b=b, c=c)[:5, :5]
         ket_binomial = binomial(
-            local_cutoffs=(5, 5), A=A, b=b, c=c, max_l2=0.9999, global_cutoff=12
+            local_cutoffs=(5, 5),
+            A=A,
+            b=b,
+            c=c,
+            max_l2=0.9999,
+            global_cutoff=12,
         )[0][:5, :5]
 
         assert np.allclose(ket_vanilla, ket_binomial)

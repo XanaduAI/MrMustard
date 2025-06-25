@@ -14,13 +14,11 @@
 
 """This module contains the tensorflow backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring, wrong-import-position
-
 from __future__ import annotations
-from typing import Callable, Sequence
 
-from importlib import metadata
 import os
+from collections.abc import Callable, Sequence
+from importlib import metadata
 
 import numpy as np
 from opt_einsum import contract
@@ -47,7 +45,6 @@ from .backend_base import BackendBase
 from .lattice import strategies
 
 
-# pylint: disable=too-many-public-methods
 class BackendTensorflow(BackendBase):
     r"""
     A base class for backends.
@@ -82,7 +79,7 @@ class BackendTensorflow(BackendBase):
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=None) -> tf.Tensor:
+    def arange(self, start: int, limit: int | None = None, delta: int = 1, dtype=None) -> tf.Tensor:
         dtype = dtype or self.float64
         return tf.range(start, limit, delta, dtype=dtype)
 
@@ -185,23 +182,24 @@ class BackendTensorflow(BackendBase):
         return tf.eye(array.shape[-1], dtype=array.dtype)
 
     def from_backend(self, value) -> bool:
-        return isinstance(value, (tf.Tensor, tf.Variable))
+        return isinstance(value, tf.Tensor | tf.Variable)
 
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
         indices = tf.cast(tf.convert_to_tensor(indices), dtype=tf.int32)
         return tf.gather(array, indices, axis=axis)
 
     def conditional(
-        self, cond: tf.Tensor, true_fn: Callable, false_fn: Callable, *args
+        self,
+        cond: tf.Tensor,
+        true_fn: Callable,
+        false_fn: Callable,
+        *args,
     ) -> tf.Tensor:
         if tf.reduce_all(cond):
             return true_fn(*args)
-        else:
-            return false_fn(*args)
+        return false_fn(*args)
 
-    def error_if(
-        self, array: tf.Tensor, condition: tf.Tensor, msg: str
-    ):  # pylint: disable=unused-argument
+    def error_if(self, array: tf.Tensor, condition: tf.Tensor, msg: str):
         if tf.reduce_any(condition):
             raise ValueError(msg)
 
@@ -243,7 +241,10 @@ class BackendTensorflow(BackendBase):
         return tf.minimum(a, b)
 
     def moveaxis(
-        self, array: tf.Tensor, old: int | Sequence[int], new: int | Sequence[int]
+        self,
+        array: tf.Tensor,
+        old: int | Sequence[int],
+        new: int | Sequence[int],
     ) -> tf.Tensor:
         return tf.experimental.numpy.moveaxis(array, old, new)
 
@@ -361,7 +362,10 @@ class BackendTensorflow(BackendBase):
         return tf.tensor_scatter_nd_update(tensor, indices, updates)
 
     def update_add_tensor(
-        self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor
+        self,
+        tensor: tf.Tensor,
+        indices: tf.Tensor,
+        values: tf.Tensor,
     ) -> tf.Tensor:
         return tf.tensor_scatter_nd_add(tensor, indices, values)
 
@@ -404,7 +408,9 @@ class BackendTensorflow(BackendBase):
         return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
 
     def value_and_gradients(
-        self, cost_fn: Callable, parameters: list[Trainable]
+        self,
+        cost_fn: Callable,
+        parameters: list[Trainable],
     ) -> tuple[tf.Tensor, list[tf.Tensor]]:
         r"""Computes the loss and gradients of the given cost function.
 
@@ -521,14 +527,22 @@ class BackendTensorflow(BackendBase):
         return A, B
 
     def hermite_renormalized_diagonal(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self,
+        A: tf.Tensor,
+        B: tf.Tensor,
+        C: tf.Tensor,
+        cutoffs: tuple[int],
     ) -> tf.Tensor:
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     @tf.custom_gradient
     def hermite_renormalized_diagonal_reorderedAB(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self,
+        A: tf.Tensor,
+        B: tf.Tensor,
+        C: tf.Tensor,
+        cutoffs: tuple[int],
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -549,7 +563,9 @@ class BackendTensorflow(BackendBase):
         A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
-            hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
+            hermite_multidimensional_diagonal,
+            [A, B, C, cutoffs],
+            [A.dtype] * 5,
         )
 
         def grad(dLdpoly):
@@ -568,14 +584,22 @@ class BackendTensorflow(BackendBase):
         return poly0, grad
 
     def hermite_renormalized_diagonal_batch(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self,
+        A: tf.Tensor,
+        B: tf.Tensor,
+        C: tf.Tensor,
+        cutoffs: tuple[int],
     ) -> tf.Tensor:
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB_batch(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int]
+        self,
+        A: tf.Tensor,
+        B: tf.Tensor,
+        C: tf.Tensor,
+        cutoffs: tuple[int],
     ) -> tf.Tensor:
         r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
 
@@ -591,7 +615,9 @@ class BackendTensorflow(BackendBase):
         A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         poly0, _, _, _, _ = tf.numpy_function(
-            hermite_multidimensional_diagonal_batch, [A, B, C, cutoffs], [A.dtype] * 5
+            hermite_multidimensional_diagonal_batch,
+            [A, B, C, cutoffs],
+            [A.dtype] * 5,
         )
 
         return poly0
@@ -605,12 +631,16 @@ class BackendTensorflow(BackendBase):
         pnr_cutoffs: tuple[int, ...],
     ) -> tf.Tensor:
         A, b = self.reorder_AB_bargmann(A, b)
-        cutoffs = (output_cutoff + 1,) + tuple(p + 1 for p in pnr_cutoffs)
+        cutoffs = (output_cutoff + 1, *tuple(p + 1 for p in pnr_cutoffs))
         return self.hermite_renormalized_1leftoverMode_reorderedAB(A, b, c, cutoffs=cutoffs)
 
     @tf.custom_gradient
     def hermite_renormalized_1leftoverMode_reorderedAB(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: tuple[int, ...]
+        self,
+        A: tf.Tensor,
+        B: tf.Tensor,
+        C: tf.Tensor,
+        cutoffs: tuple[int, ...],
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the

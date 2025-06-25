@@ -18,17 +18,19 @@ Branch and bound algorithm for optimal contraction of a tensor network.
 
 from __future__ import annotations
 
+import functools
+import operator
 import random
+from collections.abc import Generator
 from copy import deepcopy
-from queue import PriorityQueue
 from math import factorial
-from typing import Generator
+from queue import PriorityQueue
 
-import numpy as np
 import networkx as nx
+import numpy as np
 
-from mrmustard.physics.wires import Wires
 from mrmustard.lab.circuit_components import CircuitComponent
+from mrmustard.physics.wires import Wires
 
 Edge = tuple[int, int]
 
@@ -116,7 +118,7 @@ class GraphComponent:
             prod_A = np.prod([s for i, s in enumerate(self.shape) if i not in idxA])
             prod_B = np.prod([s for i, s in enumerate(other.shape) if i not in idxB])
             prod_contracted = np.prod(
-                [min(self.shape[i], other.shape[j]) for i, j in zip(idxA, idxB)]
+                [min(self.shape[i], other.shape[j]) for i, j in zip(idxA, idxB)],
             )
             cost = (
                 prod_A * prod_B * prod_contracted  # matmul
@@ -138,14 +140,13 @@ class GraphComponent:
         shape_B = [n for i, n in enumerate(other.shape) if i not in idxB]
         shape = shape_A + shape_B
         new_shape = [shape[p] for p in perm]
-        new_component = GraphComponent(
+        return GraphComponent(
             "PolyExpAnsatz" if self.ansatz == other.ansatz == "PolyExpAnsatz" else "ArrayAnsatz",
             new_wires,
             new_shape,
             f"({self.name}@{other.name})",
             self.contraction_cost(other) + self.cost + other.cost,
         )
-        return new_component
 
     def __repr__(self):
         return f"{self.name}({self.shape}, {self.wires})"
@@ -219,7 +220,7 @@ class Graph(nx.DiGraph):
             tuple(self.nodes)
             + tuple(self.edges)
             + tuple(self.solution)
-            + tuple(sum((c.shape for c in self.components()), start=[]))
+            + tuple(functools.reduce(operator.iadd, (c.shape for c in self.components()), [])),
         )
 
 
@@ -228,7 +229,7 @@ class Graph(nx.DiGraph):
 # =======================
 
 
-def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:
+def optimize_fock_shapes(graph: Graph, iteration: int, verbose: bool) -> Graph:  # noqa: C901
     r"""
     Iteratively optimizes the Fock shapes of the components in the graph.
 
@@ -341,8 +342,8 @@ def contract(graph: Graph, edge: Edge, debug: int = 0) -> Graph:
     if debug > 0:
         print(f"A wires: {A.wires}, B wires: {B.wires}")
     new_graph.nodes[edge[0]]["component"] = A @ B
-    new_graph.costs = graph.costs + (graph.edges[edge]["cost"],)
-    new_graph.solution = graph.solution + (edge,)
+    new_graph.costs = (*graph.costs, graph.edges[edge]["cost"])
+    new_graph.solution = (*graph.solution, edge)
     assign_costs(new_graph)
     return new_graph
 
@@ -410,7 +411,7 @@ def assign_costs(graph: Graph, debug: int = 0) -> None:
         graph.edges[edge]["cost"] = A.contraction_cost(B)
         if debug > 0:
             print(
-                f"cost of edge {edge}: {A.ansatz}|{A.shape} x {B.ansatz}|{B.shape} = {graph.edges[edge]['cost']}"
+                f"cost of edge {edge}: {A.ansatz}|{A.shape} x {B.ansatz}|{B.shape} = {graph.edges[edge]['cost']}",
             )
 
 
@@ -475,7 +476,7 @@ def heuristic(graph: Graph, code: str, verbose: bool) -> Graph:
     return graph
 
 
-def optimal_contraction(  # pylint: disable=too-many-branches
+def optimal_contraction(  # noqa: C901
     graph: Graph,
     n_init: int,
     heuristics: tuple[str, ...],
@@ -509,7 +510,7 @@ def optimal_contraction(  # pylint: disable=too-many-branches
         best = rand if rand.cost < best.cost else best
     if verbose:
         print(
-            f"Best cost from {n_init} random contractions: {best.cost}. Solution: {best.solution}\n"
+            f"Best cost from {n_init} random contractions: {best.cost}. Solution: {best.solution}\n",
         )
 
     queue = PriorityQueue()
@@ -526,7 +527,7 @@ def optimal_contraction(  # pylint: disable=too-many-branches
             if verbose:
                 print("warning: early stop")
             return candidate  # early stopping because first in queue is already worse
-        elif candidate.number_of_edges() == 0:  # better solution! 🥳
+        if candidate.number_of_edges() == 0:  # better solution! 🥳
             best = candidate
             queue.queue = [g for g in queue.queue if g.cost < best.cost]  # prune
         else:

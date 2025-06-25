@@ -23,10 +23,9 @@ from jax import numpy as jnp
 from jax.errors import TracerArrayConversionError
 from scipy.special import loggamma as scipy_loggamma
 
-from mrmustard import math
+from mrmustard import math, settings
 
 
-# pylint: disable=too-many-public-methods
 class TestBackendManager:
     r"""
     Tests the BackendManager.
@@ -198,10 +197,7 @@ class TestBackendManager:
 
         res = math.asnumpy(math.atleast_nd(arr, n, dtype=dtype))
 
-        if arr.ndim < n:
-            exp_shape = (1,) * (n - arr.ndim) + arr.shape
-        else:
-            exp_shape = arr.shape
+        exp_shape = (1,) * (n - arr.ndim) + arr.shape if arr.ndim < n else arr.shape
         assert res.shape == exp_shape
 
     def test_block(self):
@@ -216,7 +212,7 @@ class TestBackendManager:
                 [O, O, I, -1j * I],
                 [I, -1j * I, O, O],
                 [O, O, I, 1j * I],
-            ]
+            ],
         )
         assert R.shape == (16, 16)
 
@@ -369,7 +365,7 @@ class TestBackendManager:
         arr[2, 2] = 3
         res = math.asnumpy(math.exp(arr))
         exp = np.array(
-            [[np.exp(0) if i != j else np.exp(i + 1) for i in range(3)] for j in range(3)]
+            [[np.exp(0) if i != j else np.exp(i + 1) for i in range(3)] for j in range(3)],
         )
         assert math.allclose(res, exp)
 
@@ -478,8 +474,8 @@ class TestBackendManager:
         r"""
         Tests the ``moveaxis`` method.
         """
-        arr1 = np.random.random(size=(1, 2, 3))
-        arr2 = np.random.random(size=(2, 1, 3))
+        arr1 = settings.rng.random(size=(1, 2, 3))
+        arr2 = settings.rng.random(size=(2, 1, 3))
         arr2_moved = math.moveaxis(arr2, 0, 1)
         assert math.allclose(arr1.shape, arr2_moved.shape)
 
@@ -705,7 +701,7 @@ class TestBackendManager:
                     0.27646677 + 4.60777945e-01j,
                     -0.03277289 + 1.88440656e-17j,
                 ],
-            ]
+            ],
         )
         D = math.displacement(math.real(alpha), math.imag(alpha), (cutoff, cutoff))
         assert math.allclose(math.asnumpy(D), expected, atol=1e-5, rtol=0)

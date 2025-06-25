@@ -90,8 +90,7 @@ def von_neumann_entropy(cov: Matrix) -> float:
         return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
 
     symp_vals = symplectic_eigenvals(cov)
-    entropy = math.sum(g(symp_vals))
-    return entropy
+    return math.sum(g(symp_vals))
 
 
 def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix) -> float:
@@ -116,7 +115,8 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix) -> float:
     mu1 = math.cast(mu1, "complex128")
     mu2 = math.cast(mu2, "complex128")
     deltar = (mu2 - mu1) / math.sqrt(
-        settings.HBAR, dtype=mu1.dtype
+        settings.HBAR,
+        dtype=mu1.dtype,
     )  # convert to units where hbar = 1
     J = math.J(cov1.shape[0] // 2)
     I = math.eye(cov1.shape[0])
@@ -130,7 +130,7 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix) -> float:
     W = -2 * (V @ (1j * J))
     W_inv = math.inv(W)
     matsqrtm = math.sqrtm(
-        I - W_inv @ W_inv
+        I - W_inv @ W_inv,
     )  # this also handles the case where the input matrix is close to zero
     f0_top = math.det((matsqrtm + I) @ (W @ (1j * J)))
     f0_bot = math.det(cov1 + cov2)
@@ -138,7 +138,7 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix) -> float:
     f0 = math.sqrt(f0_top / f0_bot)  # square of equation 98
 
     dot = math.sum(
-        math.transpose(deltar) * math.matvec(cov12_inv, deltar)
+        math.transpose(deltar) * math.matvec(cov12_inv, deltar),
     )  # computing (mu2-mu1)/sqrt(hbar).T @ cov12_inv @ (mu2-mu1)/sqrt(hbar)
 
     _fidelity = f0 * math.exp((-1 / 2) * dot)  # square of equation 95

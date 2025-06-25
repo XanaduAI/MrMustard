@@ -20,9 +20,9 @@ from __future__ import annotations
 
 from mrmustard.physics import triples
 
-from ..transformations.base import Map
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
+from ..transformations.base import Map
 from ..utils import make_parameter
 
 __all__ = ["BtoPS"]

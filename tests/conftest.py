@@ -57,9 +57,7 @@ def backend(request):
 
 def pytest_ignore_collect(path, config):
     """Skip test_training when using the numpy backend."""
-    if config.getoption("--backend") == "numpy" and "test_training" in Path(path).parts:
-        return True
-    return False
+    return config.getoption("--backend") == "numpy" and "test_training" in Path(path).parts
 
 
 @pytest.fixture(autouse=True)
@@ -76,9 +74,11 @@ def requires_backend(request, backend):
     Skips test if backend is not a required backend.
     If no backend is specified skips test entirely.
     """
-    if request.node.get_closest_marker("requires_backend"):
-        if backend not in request.node.get_closest_marker("requires_backend").args:
-            pytest.skip(f"Skipped with this backend: {backend}")
+    if (
+        request.node.get_closest_marker("requires_backend")
+        and backend not in request.node.get_closest_marker("requires_backend").args
+    ):
+        pytest.skip(f"Skipped with this backend: {backend}")
 
 
 def pytest_configure(config):
