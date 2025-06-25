@@ -63,17 +63,14 @@ def reshape_params(n_modes: int, **kwargs) -> Generator:
         ValueError: If a parameter has a length which is neither equal to ``1``
         nor ``n_modes``.
     """
-    names = list(kwargs.keys())
-    variables = list(kwargs.values())
-
-    variables = [math.atleast_nd(var, 1) for var in variables]
-
-    for i, var in enumerate(variables):
-        if len(var) == 1:
-            var = math.tile(var, (n_modes,))  # noqa: PLW2901
-        elif len(var) != n_modes:
-            raise ValueError(f"Parameter {names[i]} has an incompatible shape.")
-        yield var
+    for name, val in kwargs.items():
+        val = math.atleast_nd(val, 1)  # noqa: PLW2901
+        if len(val) == 1:
+            val = math.tile(val, (n_modes,))  # noqa: PLW2901
+        elif len(val) != n_modes:
+            msg = f"Parameter {name} has an incompatible shape."
+            raise ValueError(msg)
+        yield val
 
 
 def shape_check(mat, vec, dim: int, name: str):
