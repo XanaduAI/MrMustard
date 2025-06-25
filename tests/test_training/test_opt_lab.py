@@ -59,9 +59,7 @@ class TestOptimizer:
             rng.reset_from_seed(settings.SEED)
 
             S = TwoModeSqueezedVacuum(
-                (0, 1),
-                r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
-                r_trainable=True,
+                (0, 1), r=abs(settings.rng.normal(loc=1.0, scale=0.1)), r_trainable=True
             )
 
             def cost_fn():
