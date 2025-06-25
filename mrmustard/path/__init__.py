@@ -14,4 +14,4 @@
 
 """Utility code for optimizing circuit evalution paths."""
 
-from .optimize import optimal_path
+from .optimize import optimal_path as optimal_path

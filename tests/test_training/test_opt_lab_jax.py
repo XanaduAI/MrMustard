@@ -13,8 +13,9 @@
 # limitations under the License.
 
 """Tests for the Optimizer class"""
-import pytest
+
 import numpy as np
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -45,11 +46,13 @@ class TestOptimizerJax:
     def test_S2gate_coincidence_prob(self, n):
         """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
         S = TwoModeSqueezedVacuum(
-            (0, 1), r=abs(settings.rng.normal(loc=1.0, scale=0.1)), r_trainable=True
+            (0, 1),
+            r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
+            r_trainable=True,
         )
 
         def cost_fn(S):
-            return -math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2
+            return -(math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2)
 
         opt = OptimizerJax(learning_rate=0.01)
         opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
@@ -109,7 +112,7 @@ class TestOptimizerJax:
 
         def cost_fn(circ):
             amps = circ.contract().fock_array((2, 2))
-            return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
         opt = OptimizerJax(learning_rate=0.05)
 
@@ -126,7 +129,11 @@ class TestOptimizerJax:
         S_01 = S2gate((0, 1), r=r, phi=0.0, phi_trainable=True)
         S_23 = S2gate((2, 3), r=r, phi=0.0, phi_trainable=True)
         S_12 = S2gate(
-            (1, 2), r=1.0, phi=settings.rng.normal(), r_trainable=True, phi_trainable=True
+            (1, 2),
+            r=1.0,
+            phi=settings.rng.normal(),
+            r_trainable=True,
+            phi_trainable=True,
         )
 
         circ = Circuit([state_in, S_01, S_23, S_12])
@@ -165,7 +172,7 @@ class TestOptimizerJax:
 
         def cost_fn(dgate):
             state_out = Vacuum(0) >> dgate
-            return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
+            return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
         opt = OptimizerJax()
         opt.minimize(cost_fn, by_optimizing=[dgate])
@@ -180,7 +187,7 @@ class TestOptimizerJax:
 
         def cost_fn(sgate):
             state_out = Vacuum(0) >> sgate
-            return -math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
+            return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
         opt = OptimizerJax()
         opt.minimize(cost_fn, by_optimizing=[sgate])
@@ -194,7 +201,7 @@ class TestOptimizerJax:
         target_gate = BSgate((0, 1), 0.1, 0.2).fock_array(40)
 
         def cost_fn(bsgate):
-            return -math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2
+            return -(math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2)
 
         opt = OptimizerJax()
         opt.minimize(cost_fn, by_optimizing=[bsgate])
@@ -236,7 +243,8 @@ class TestOptimizerJax:
 
         def cost_fn(sq):
             return -math.real(
-                (sq >> Number(1, 1) >> BSgate((0, 1), 0.5) >> (Vacuum(0) >> Number(1, 1)).dual) ** 2
+                (sq >> Number(1, 1) >> BSgate((0, 1), 0.5) >> (Vacuum(0) >> Number(1, 1)).dual)
+                ** 2,
             )
 
         opt = OptimizerJax(learning_rate=0.05)

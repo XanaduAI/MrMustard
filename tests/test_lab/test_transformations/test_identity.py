@@ -14,8 +14,6 @@
 
 """Tests for the ``Identity`` class."""
 
-# pylint: disable=missing-function-docstring, expression-not-assigned
-
 import numpy as np
 import pytest
 
@@ -48,7 +46,7 @@ class TestIdentity:
                 [
                     [0.0 + 0.0j, 1 + 0j],
                     [1 + 0j, 0.0 + 0.0j],
-                ]
+                ],
             ],
         )
         assert math.allclose(rep1.b, np.zeros((1, 2)))
@@ -63,7 +61,7 @@ class TestIdentity:
                     [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 1.0 + 0.0j],
                     [1.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
                     [0.0 + 0.0j, 1.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
-                ]
+                ],
             ],
         )
         assert math.allclose(rep2.b, np.zeros((1, 4)))

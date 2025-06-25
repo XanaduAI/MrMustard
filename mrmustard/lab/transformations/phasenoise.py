@@ -17,13 +17,16 @@ The class representing a Phase noise channel.
 """
 
 from __future__ import annotations
+
 import numpy as np
+
+from mrmustard import math
 from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.representations import Representation
-from mrmustard import math
-from .base import Channel
+
 from ..utils import make_parameter
+from .base import Channel
 
 __all__ = ["PhaseNoise"]
 
@@ -62,10 +65,12 @@ class PhaseNoise(Channel):
     ):
         super().__init__(name="PhaseNoise")
         self.parameters.add_parameter(
-            make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds)
+            make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds),
         )
         self._representation = self.from_ansatz(
-            modes_in=(mode,), modes_out=(mode,), ansatz=None
+            modes_in=(mode,),
+            modes_out=(mode,),
+            ansatz=None,
         ).representation
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -87,7 +92,7 @@ class PhaseNoise(Channel):
             phase_factors = math.exp(
                 -0.5
                 * (mode_indices[mode] - mode_indices[other.n_modes + mode]) ** 2
-                * self.parameters.phase_stdev.value**2
+                * self.parameters.phase_stdev.value**2,
             )
             array *= phase_factors
         return CircuitComponent(

@@ -17,31 +17,31 @@ This module contains the defintion of the density matrix class ``DM``.
 """
 
 from __future__ import annotations
-from typing import Collection, Sequence
+
+from collections.abc import Collection, Sequence
 
 import numpy as np
 from IPython.display import display
 
 from mrmustard import math, settings, widgets
-from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
-from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
+from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
+from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires, ReprEnum
+from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import (
-    ComplexTensor,
     ComplexMatrix,
+    ComplexTensor,
     ComplexVector,
 )
 
-from .base import State, _validate_operator, OperatorType
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
-from ..transformations import Map, Channel, Dgate
-
+from ..transformations import Channel, Dgate, Map
 from ..utils import shape_check
+from .base import OperatorType, State, _validate_operator
 
 __all__ = ["DM"]
 
@@ -70,13 +70,13 @@ class DM(State):
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for a mixture of states."
+                "Physicality conditions are not implemented for a mixture of states.",
             )
         if self.ansatz.num_derived_vars > 0:
             raise ValueError("Physicality conditions are not implemented for derived variables.")
         if isinstance(self.ansatz, ArrayAnsatz):
             raise NotImplementedError(
-                "Physicality conditions are not implemented for states with ArrayAnsatz."
+                "Physicality conditions are not implemented for states with ArrayAnsatz.",
             )
         A = self.ansatz.A
         m = A.shape[-1] // 2
@@ -139,7 +139,7 @@ class DM(State):
         modes = set(modes)
         if ansatz and ansatz.num_vars != 2 * len(modes):
             raise ValueError(
-                f"Expected an ansatz with {2*len(modes)} variables, found {ansatz.num_vars}."
+                f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.num_vars}.",
             )
         wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
         if isinstance(ansatz, ArrayAnsatz):
@@ -153,7 +153,7 @@ class DM(State):
         modes: Collection[int],
         triple: tuple[ComplexMatrix, ComplexVector, complex],
         name: str | None = None,
-        atol_purity: float | None = None,  # pylint: disable=unused-argument
+        atol_purity: float | None = None,
     ) -> DM:
         r"""
         Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
@@ -227,8 +227,7 @@ class DM(State):
             range(len(modes)),
         )
         rho = cls.from_bargmann(list(modes), (A, b, c))
-        rho = rho.normalize()
-        return rho
+        return rho.normalize()
 
     def dm(self) -> DM:
         r"""
@@ -294,11 +293,7 @@ class DM(State):
             raise ValueError(msg)
 
         leftover_modes = self.wires.modes - operator.wires.modes
-        if op_type is OperatorType.KET_LIKE:
-            result = self >> operator.dual
-            if leftover_modes:
-                result >>= TraceOut(leftover_modes)
-        elif op_type is OperatorType.DM_LIKE:
+        if op_type is OperatorType.KET_LIKE or op_type is OperatorType.DM_LIKE:
             result = self >> operator.dual
             if leftover_modes:
                 result >>= TraceOut(leftover_modes)
@@ -348,7 +343,9 @@ class DM(State):
         return other.expectation(self)  # assuming other is a ket
 
     def fock_array(
-        self, shape: int | Sequence[int] | None = None, standard_order: bool = False
+        self,
+        shape: int | Sequence[int] | None = None,
+        standard_order: bool = False,
     ) -> ComplexTensor:
         r"""
         Returns an array representation of this component in the Fock basis with the given shape.
@@ -454,11 +451,11 @@ class DM(State):
 
         A_core = math.block(
             [
-                [math.zeros(batch_shape + (2 * M, 2 * M), dtype=math.complex128), R],
+                [math.zeros((*batch_shape, 2 * M, 2 * M), dtype=math.complex128), R],
                 [R_transpose, An],
-            ]
+            ],
         )
-        b_core = math.concat([math.zeros(batch_shape + (2 * M,), dtype=math.complex128), bn], -1)
+        b_core = math.concat([math.zeros((*batch_shape, 2 * M), dtype=math.complex128), bn], -1)
         c_core = c
 
         inverse_order = np.argsort(new_order)
@@ -469,22 +466,22 @@ class DM(State):
         b_core = b_core[..., temp]
         core = DM.from_bargmann(self.modes, (A_core, b_core, c_core))
 
-        I = math.broadcast_to(math.eye(2 * M, dtype=math.complex128), batch_shape + (2 * M, 2 * M))
+        I = math.broadcast_to(math.eye(2 * M, dtype=math.complex128), (*batch_shape, 2 * M, 2 * M))
         O = math.zeros_like(Am)
         A_out_in = math.block([[Am, I], [I, O]])
-        A_tmp = math.reshape(A_out_in, batch_shape + (2, 2, M, 2, 2, M))
+        A_tmp = math.reshape(A_out_in, (*batch_shape, 2, 2, M, 2, 2, M))
         A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
-        A_T = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
+        A_T = math.reshape(A_tmp, (*batch_shape, 4 * M, 4 * M))
 
-        b_out_in = math.concat([bm, math.zeros(batch_shape + (2 * M,), dtype=math.complex128)], -1)
-        b_temp = math.reshape(b_out_in, batch_shape + (2, 2, M))
+        b_out_in = math.concat([bm, math.zeros((*batch_shape, 2 * M), dtype=math.complex128)], -1)
+        b_temp = math.reshape(b_out_in, (*batch_shape, 2, 2, M))
         b_temp = math.einsum("...ijk->...jik", b_temp)
-        b_T = math.reshape(b_temp, batch_shape + (4 * M,))
+        b_T = math.reshape(b_temp, (*batch_shape, 4 * M))
         c_T = math.ones_like(c)
         phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
         return core, phi
 
-    def physical_stellar_decomposition(self, core_modes):  # pylint: disable=too-many-statements
+    def physical_stellar_decomposition(self, core_modes):
         r"""
         Applies the physical stellar decomposition, pulling out a channel from a pure state.
 
@@ -514,7 +511,7 @@ class DM(State):
             >>> assert rho == core >> phi
             >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0)
         """
-        from .ket import Ket  # pylint: disable=import-outside-toplevel
+        from .ket import Ket  # noqa: PLC0415
 
         other_modes = [m for m in self.modes if m not in core_modes]
         core_bra_indices = self.wires.bra[core_modes].indices
@@ -534,7 +531,7 @@ class DM(State):
 
         if (m_modes % 2) or (m_modes // 2 != len(core_modes)):
             raise ValueError(
-                f"The number of modes ({m_modes}) must be twice the number of core modes ({len(core_modes)}) for the physical decomposition to work."
+                f"The number of modes ({m_modes}) must be twice the number of core modes ({len(core_modes)}) for the physical decomposition to work.",
             )
 
         M = len(core_modes)
@@ -566,13 +563,15 @@ class DM(State):
         Aphi_in = Gamma_phi @ math.inv(Aphi_out - math.Xmat(M)) @ Gamma_phi_transpose + math.Xmat(M)
 
         Aphi_oi = math.block([[Aphi_out, Gamma_phi_transpose], [Gamma_phi, Aphi_in]])
-        A_tmp = math.reshape(Aphi_oi, batch_shape + (2, 2, M, 2, 2, M))
+        A_tmp = math.reshape(Aphi_oi, (*batch_shape, 2, 2, M, 2, 2, M))
         A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
-        Aphi = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
+        Aphi = math.reshape(A_tmp, (*batch_shape, 4 * M, 4 * M))
 
-        bphi = math.zeros(batch_shape + (4 * M,), dtype=math.complex128)
+        bphi = math.zeros((*batch_shape, 4 * M), dtype=math.complex128)
         phi = Channel.from_bargmann(
-            core_modes, core_modes, (Aphi, bphi, math.ones(batch_shape, dtype=math.complex128))
+            core_modes,
+            core_modes,
+            (Aphi, bphi, math.ones(batch_shape, dtype=math.complex128)),
         )
         renorm = phi.contract(TraceOut(self.modes))
         phi = phi / renorm.ansatz.c
@@ -580,9 +579,9 @@ class DM(State):
         a = reduced_A[..., M:, M:]
         Acore = math.block(
             [
-                [math.zeros(batch_shape + (M, M), dtype=math.complex128), r_core_transpose],
+                [math.zeros((*batch_shape, M, M), dtype=math.complex128), r_core_transpose],
                 [r_core, a],
-            ]
+            ],
         )
         bcore_m = math.einsum("...ij,...j->...i", math.inv(Gamma_phi_transpose), bm)
         bcore_m_ket = bcore_m[..., M:]
@@ -598,12 +597,16 @@ class DM(State):
         for i in range(M):
             core = core.contract(
                 Dgate(
-                    core_modes[i], -math.real(bcore_m_ket[..., i]), -math.imag(bcore_m_ket[..., i])
+                    core_modes[i],
+                    -math.real(bcore_m_ket[..., i]),
+                    -math.imag(bcore_m_ket[..., i]),
                 ),
                 mode="zip",
             )
             dgate_u = Dgate(
-                core_modes[i], math.real(bcore_m_ket[..., i]), math.imag(bcore_m_ket[..., i])
+                core_modes[i],
+                math.real(bcore_m_ket[..., i]),
+                math.imag(bcore_m_ket[..., i]),
             )
             dgate_ch = dgate_u.contract(dgate_u.adjoint, mode="zip")
             phi = dgate_ch.contract(phi, mode="zip")
@@ -616,8 +619,9 @@ class DM(State):
             phi,
         )
 
-    def physical_stellar_decomposition_mixed(  # pylint: disable=too-many-statements
-        self, core_modes: Collection[int]
+    def physical_stellar_decomposition_mixed(
+        self,
+        core_modes: Collection[int],
     ) -> tuple[DM, Channel]:
         r"""
         Applies the physical stellar decomposition based on the rank condition.
@@ -677,23 +681,24 @@ class DM(State):
         R_transpose = math.einsum("...ij->...ji", R)
 
         rank = np.linalg.matrix_rank(
-            r @ math.conj(r_transpose) + sigma @ math.conj(sigma_transpose)
+            r @ math.conj(r_transpose) + sigma @ math.conj(sigma_transpose),
         )
         if math.any(rank > M):
             raise ValueError(
                 "The physical mixed stellar decomposition is not possible for this DM, "
                 f"as the rank {rank} of the off-diagonal block of the Bargmann matrix is larger than the number "
-                f"of core modes {M}."
+                f"of core modes {M}.",
             )
 
         I2M = math.broadcast_to(
-            math.eye(2 * M, dtype=math.complex128), batch_shape + (2 * M, 2 * M)
+            math.eye(2 * M, dtype=math.complex128),
+            (*batch_shape, 2 * M, 2 * M),
         )
         reduced_A = R @ math.inv(I2M - math.Xmat(M) @ Am) @ math.conj(R_transpose)
 
         # computing a low-rank r_c:
         r_c_squared = reduced_A[..., N:, N:] + sigma @ math.inv(alpha_m) @ math.conj(
-            sigma_transpose
+            sigma_transpose,
         )
         r_c_evals, r_c_evecs = math.eigh(r_c_squared)
         r_c = math.einsum(
@@ -701,8 +706,8 @@ class DM(State):
             r_c_evecs[..., -M:],
             math.sqrt(r_c_evals[..., -M:], dtype=math.complex128),
         )
-        Os_NM = math.zeros(batch_shape + (N, M), dtype=math.complex128)
-        Os_MN = math.zeros(batch_shape + (M, N), dtype=math.complex128)
+        Os_NM = math.zeros((*batch_shape, N, M), dtype=math.complex128)
+        Os_MN = math.zeros((*batch_shape, M, N), dtype=math.complex128)
         R_c = math.block([[math.conj(r_c), Os_NM], [Os_MN, r_c]])
         R_c_transpose = math.einsum("...ij->...ji", R_c)
 
@@ -712,10 +717,10 @@ class DM(State):
         Aphi_in = gamma @ math.inv(Aphi_out - math.Xmat(M)) @ gamma_transpose + math.Xmat(M)
 
         Aphi_oi = math.block([[Aphi_out, gamma_transpose], [gamma, Aphi_in]])
-        A_tmp = math.reshape(Aphi_oi, batch_shape + (2, 2, M, 2, 2, M))
+        A_tmp = math.reshape(Aphi_oi, (*batch_shape, 2, 2, M, 2, 2, M))
         A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
-        Aphi = math.reshape(A_tmp, batch_shape + (4 * M, 4 * M))
-        bphi = math.zeros(batch_shape + (4 * M,), dtype=math.complex128)
+        Aphi = math.reshape(A_tmp, (*batch_shape, 4 * M, 4 * M))
+        bphi = math.zeros((*batch_shape, 4 * M), dtype=math.complex128)
         c_phi = math.ones_like(c)
         phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, c_phi))
         renorm = phi.contract(TraceOut(self.modes))
@@ -724,14 +729,14 @@ class DM(State):
         alpha_core_n = alpha_n - sigma @ math.inv(alpha_m) @ math.conj(sigma_transpose)
         a_core_n = a_n + reduced_A[..., N:, :N]
         A_core_n = math.block(
-            [[math.conj(a_core_n), math.conj(alpha_core_n)], [alpha_core_n, a_core_n]]
+            [[math.conj(a_core_n), math.conj(alpha_core_n)], [alpha_core_n, a_core_n]],
         )
 
         A_core = math.block(
             [
-                [math.zeros(batch_shape + (2 * M, 2 * M), dtype=math.complex128), R_c_transpose],
+                [math.zeros((*batch_shape, 2 * M, 2 * M), dtype=math.complex128), R_c_transpose],
                 [R_c, A_core_n],
-            ]
+            ],
         )
         b_core_m = math.einsum("...ij,...j->...i", math.inv(gamma_transpose), bm)
         b_core_n = bn - math.einsum("...ij,...jk,...k->...i", R_c, Aphi_in, b_core_m)

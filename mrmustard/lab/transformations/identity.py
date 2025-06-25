@@ -18,9 +18,9 @@ The classes representing an identity gate.
 
 from __future__ import annotations
 
-from .base import Unitary
-from ...physics.ansatz import PolyExpAnsatz
 from ...physics import triples
+from ...physics.ansatz import PolyExpAnsatz
+from .base import Unitary
 
 __all__ = ["Identity"]
 

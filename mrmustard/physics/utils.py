@@ -15,12 +15,13 @@
 """
 This module contains the utility functions used by the classes in ``mrmustard.physics``.
 """
+
 from __future__ import annotations
 
 from numpy.typing import ArrayLike
 
 from mrmustard import math
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 #  ~~~~~~~~~
 #  Utilities
@@ -70,7 +71,8 @@ def outer_product_batch_str(*batch_dims: int, lin_sup: tuple[int, ...] | None = 
 
 
 def reshape_args_to_batch_string(
-    args: list[ArrayLike], batch_string: str
+    args: list[ArrayLike],
+    batch_string: str,
 ) -> tuple[list[ArrayLike], tuple[int, ...]]:
     r"""
     Reshapes arguments to match the batch string by inserting singleton dimensions where needed
@@ -83,7 +85,7 @@ def reshape_args_to_batch_string(
     input_specs = input_specs.split(",")
     if len(input_specs) != len(args):
         raise ValueError(
-            f"Number of input specifications ({len(input_specs)}) does not match number of arguments ({len(args)})"
+            f"Number of input specifications ({len(input_specs)}) does not match number of arguments ({len(args)})",
         )
 
     args = [math.astensor(arg) for arg in args]
@@ -94,7 +96,7 @@ def reshape_args_to_batch_string(
         for dim, label in zip(arg.shape, spec):
             if label in dim_sizes and dim_sizes[label] != dim:
                 raise ValueError(
-                    f"Dimension {label} has inconsistent sizes: got {dim_sizes[label]} and {dim}"
+                    f"Dimension {label} has inconsistent sizes: got {dim_sizes[label]} and {dim}",
                 )
             dim_sizes[label] = dim
 
@@ -106,7 +108,9 @@ def reshape_args_to_batch_string(
 
 
 def verify_batch_triple(
-    A: ComplexMatrix | None, b: ComplexVector | None, c: ComplexTensor | None
+    A: ComplexMatrix | None,
+    b: ComplexVector | None,
+    c: ComplexTensor | None,
 ) -> None:
     r"""
     Verify that the batch dimensions of the (A, b, c) triple are consistent.
@@ -126,7 +130,7 @@ def verify_batch_triple(
 
     if batch != b.shape[:batch_dim] or (len(c.shape) != 0 and batch != c.shape[:batch_dim]):
         raise ValueError(
-            f"Batch dimensions of the first triple ({batch}, {b.shape[:batch_dim]}, {c.shape[:batch_dim]}) are inconsistent."
+            f"Batch dimensions of the first triple ({batch}, {b.shape[:batch_dim]}, {c.shape[:batch_dim]}) are inconsistent.",
         )
 
 
@@ -134,8 +138,8 @@ def zip_batch_strings(*batch_dims: int) -> str:
     r"""
     Creates a batch string for zipping over the batch dimensions.
     """
-    input = ",".join([generate_batch_str(batch_dim) for batch_dim in batch_dims])
-    return input + "->" + generate_batch_str(max(batch_dims))
+    input_str = ",".join([generate_batch_str(batch_dim) for batch_dim in batch_dims])
+    return input_str + "->" + generate_batch_str(max(batch_dims))
 
 
 def lin_sup_batch_str(batch_str: str) -> str:
@@ -152,6 +156,6 @@ def lin_sup_batch_str(batch_str: str) -> str:
     inputs = input_str.split(",")
     max_char = max(ord(i) for i in batch_str)
     lin_sups = [chr(max_char + offset) for offset in range(1, len(inputs) + 1)]
-    new_input = ",".join([input + lin_sup for input, lin_sup in zip(inputs, lin_sups)])
+    new_input = ",".join([ipt + lin_sup for ipt, lin_sup in zip(inputs, lin_sups)])
     new_output = output_str + "".join(lin_sups)
     return f"{new_input}->{new_output}"

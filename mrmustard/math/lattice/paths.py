@@ -64,7 +64,7 @@ def binomial_subspace_basis(cutoffs: tuple[int, ...], weight: int):
         list[tuple[int, ...]]: the list of basis elements of the subspace
     """
     basis = typed.List(
-        [cutoffs]
+        [cutoffs],
     )  # this is just so that numba can infer the type, then we remove it
     _binomial_subspace_basis(cutoffs, weight, 0, cutoffs, basis)
     return basis[1:]  # remove the dummy element

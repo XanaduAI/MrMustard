@@ -23,7 +23,7 @@ from zipfile import ZipFile
 
 import numpy as np
 
-from mrmustard import math, settings, __version__
+from mrmustard import __version__, math, settings
 
 
 def save(cls: type, filename=None, do_zip=True, arrays=None, **data) -> Path:
@@ -118,7 +118,7 @@ def load(file: Path, remove_after=False):
                 npz_file.unlink()
                 file.unlink()
             raise TypeError(
-                f"Data serialized with {backend} backend, cannot deserialize to the currently active {math.backend_name} backend"
+                f"Data serialized with {backend} backend, cannot deserialize to the currently active {math.backend_name} backend",
             )
         data.update(**{k: math.astensor(v) for k, v in np.load(npz_file).items()})
         if remove_after or was_zipped:

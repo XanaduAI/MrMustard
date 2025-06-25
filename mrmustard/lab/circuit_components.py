@@ -16,39 +16,40 @@
 A base class for the components of quantum circuits.
 """
 
-# pylint: disable=super-init-not-called, import-outside-toplevel
 from __future__ import annotations
 
+import numbers
+from collections.abc import Sequence
+from functools import cached_property
 from inspect import signature
 from pydoc import locate
-from typing import Any, Sequence, Literal
-import numbers
-from functools import cached_property
+from typing import Any, Literal
 
-import numpy as np
-from numpy.typing import ArrayLike
 import ipywidgets as widgets
+import numpy as np
 from IPython.display import display
+from numpy.typing import ArrayLike
 
-from mrmustard import settings, math, widgets as mmwidgets
-from mrmustard.utils.typing import (
-    Scalar,
-    ComplexTensor,
-    ComplexMatrix,
-    ComplexVector,
-    RealVector,
-    Batch,
-)
+from mrmustard import math, settings
+from mrmustard import widgets as mmwidgets
 from mrmustard.math.parameter_set import ParameterSet
-from mrmustard.physics.ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
+from mrmustard.physics.ansatz import Ansatz, ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.fock_utils import oscillator_eigenstate
 from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import Wires
+from mrmustard.utils.typing import (
+    Batch,
+    ComplexMatrix,
+    ComplexTensor,
+    ComplexVector,
+    RealVector,
+    Scalar,
+)
 
 __all__ = ["CircuitComponent"]
 
 
-class CircuitComponent:  # pylint: disable=too-many-public-methods
+class CircuitComponent:
     r"""
     A base class for the circuit components (states, transformations, measurements,
     and any component made by combining CircuitComponents). CircuitComponents are
@@ -91,7 +92,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         if "modes" in params:
             serializable["modes"] = tuple(self.wires.modes)
         elif "mode" in params:
-            serializable["mode"] = tuple(self.wires.modes)[0]
+            serializable["mode"] = next(iter(self.wires.modes))
         elif "modes_out" in params and "modes_in" in params:
             serializable["modes_out"] = tuple(self.wires.output.modes)
             serializable["modes_in"] = tuple(self.wires.input.modes)
@@ -115,7 +116,8 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
             ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
             ansatz = locate(ansatz_cls).from_dict(data)
             return cls._from_attributes(
-                Representation(ansatz, Wires(*tuple(set(m) for m in wires))), name=name
+                Representation(ansatz, Wires(*tuple(set(m) for m in wires))),
+                name=name,
             )
 
         return cls(**data)
@@ -284,7 +286,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         modes_out_ket: Sequence[int] = (),
         modes_in_ket: Sequence[int] = (),
         name: str | None = None,
-    ) -> CircuitComponent:  # pylint:disable=too-many-positional-arguments
+    ) -> CircuitComponent:
         r"""
         Initializes a ``CircuitComponent`` object from its Bargmann (A,b,c) parametrization.
 
@@ -332,7 +334,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         triple: tuple,
         phi: float = 0.0,
         name: str | None = None,
-    ) -> CircuitComponent:  # pylint:disable=too-many-positional-arguments
+    ) -> CircuitComponent:
         r"""
         Returns a circuit component from the given triple (A,b,c) that parametrizes the
         quadrature wavefunction of this component in the form :math:`c * exp(1/2 x^T A x + b^T x)`.
@@ -349,7 +351,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         Returns:
             A circuit component with the given quadrature representation.
         """
-        from .circuit_components_utils.b_to_q import BtoQ
+        from .circuit_components_utils.b_to_q import BtoQ  # noqa: PLC0415
 
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
         QtoB_ob = BtoQ(modes_out_bra, phi).inverse().adjoint  # output bra
@@ -372,7 +374,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         Returns:
             A circuit component with the given quadrature representation.
         """
-        from .circuit_components_utils.b_to_q import BtoQ
+        from .circuit_components_utils.b_to_q import BtoQ  # noqa: PLC0415
 
         BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
         BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
@@ -383,13 +385,13 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         if isinstance(self.ansatz, ArrayAnsatz):
             object_to_convert = self.to_bargmann()
 
-        QQQQ = BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
-            BtoQ_ob
+        return BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
+            BtoQ_ob,
         )
-        return QQQQ
 
     def quadrature_triple(
-        self, phi: float = 0.0
+        self,
+        phi: float = 0.0,
     ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
         r"""
         The quadrature representation triple A,b,c of this circuit component.
@@ -422,7 +424,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
 
             if len(quad) != dims:
                 raise ValueError(
-                    f"The fock array has dimension {dims} whereas ``quad`` has {len(quad)}."
+                    f"The fock array has dimension {dims} whereas ``quad`` has {len(quad)}.",
                 )
             # construct quadrature basis vectors
             shapes = self.ansatz.core_shape
@@ -440,7 +442,10 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
             # Convert each dimension to quadrature
             fock_string = "".join([chr(97 + self.n_modes + dim) for dim in range(dims)])
             q_string = "".join(
-                [f"{fock_string[idx]}{chr(97 + wire.mode)}," for idx, wire in enumerate(self.wires)]
+                [
+                    f"{fock_string[idx]}{chr(97 + wire.mode)},"
+                    for idx, wire in enumerate(self.wires)
+                ],
             )[:-1]
             out_string = "".join([chr(97 + mode) for mode in self.modes])
             ret = np.einsum(
@@ -458,10 +463,10 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
             ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
         size = int(
             math.prod(
-                ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape else ret.shape
-            )
+                ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape else ret.shape,
+            ),
         )
-        return math.reshape(ret, (size,) + self.ansatz.batch_shape)
+        return math.reshape(ret, (size, *self.ansatz.batch_shape))
 
     @classmethod
     def _from_attributes(
@@ -527,7 +532,9 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         return self._representation.bargmann_triple()
 
     def contract(
-        self, other: CircuitComponent | Scalar, mode: Literal["zip", "kron"] = "kron"
+        self,
+        other: CircuitComponent | Scalar,
+        mode: Literal["zip", "kron"] = "kron",
     ) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` without adding adjoints.
@@ -546,7 +553,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
             >>> att = Attenuator(0, 0.5)
             >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
         """
-        if isinstance(other, (numbers.Number, np.ndarray)):
+        if isinstance(other, numbers.Number | np.ndarray):
             return self * other
 
         if type(self.ansatz) is type(other.ansatz):
@@ -599,20 +606,19 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         subsets = [s for s in (ob, ib, ok, ik) if s]
         if any(s != subsets[0] for s in subsets):
             raise ValueError(
-                f"Cannot rewire a component with wires on different modes ({ob, ib, ok, ik})."
+                f"Cannot rewire a component with wires on different modes ({ob, ib, ok, ik}).",
             )
         for subset in subsets:
             if subset and len(subset) != len(modes):
                 raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
-        ret = self._light_copy(
+        return self._light_copy(
             Wires(
                 modes_out_bra=set(modes) if ob else set(),
                 modes_in_bra=set(modes) if ib else set(),
                 modes_out_ket=set(modes) if ok else set(),
                 modes_in_ket=set(modes) if ik else set(),
-            )
+            ),
         )
-        return ret
 
     def to_bargmann(self) -> CircuitComponent:
         r"""
@@ -681,12 +687,14 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
         instance.__dict__["_representation"] = Representation(
-            self.ansatz, wires or Wires(*self.wires.args)
+            self.ansatz,
+            wires or Wires(*self.wires.args),
         )
         return instance
 
     def _rshift_return(
-        self, result: CircuitComponent | np.ndarray | complex
+        self,
+        result: CircuitComponent | np.ndarray | complex,
     ) -> CircuitComponent | np.ndarray | complex:
         "internal convenience method for right-shift, to return the right type of object"
         if len(result.wires) > 0:
@@ -725,12 +733,11 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         repr_name = ansatz.__class__.__name__
         if repr_name == "NoneType":
             return self.__class__.__name__ + f"(modes={self.modes}, name={self.name})"
-        else:
-            return (
-                self.__class__.__name__
-                + f"(modes={self.modes}, name={self.name}"
-                + f", repr={repr_name})"
-            )
+        return (
+            self.__class__.__name__
+            + f"(modes={self.modes}, name={self.name}"
+            + f", repr={repr_name})"
+        )
 
     def __rmatmul__(self, other: Scalar) -> CircuitComponent:
         r"""
@@ -780,7 +787,7 @@ class CircuitComponent:  # pylint: disable=too-many-public-methods
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)
 
-        if isinstance(other, (numbers.Number, np.ndarray)):
+        if isinstance(other, numbers.Number | np.ndarray):
             return self * other
 
         s_k = self.wires.ket

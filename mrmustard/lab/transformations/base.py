@@ -22,23 +22,22 @@ provide the ``(A, b, c)`` triples that define the transformation in the Fock Bar
 representation.
 """
 
-# pylint: disable=import-outside-toplevel
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Sequence
 
-from typing import Sequence
 from mrmustard import math, settings
-from mrmustard.physics.ansatz import PolyExpAnsatz, ArrayAnsatz
+from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from mrmustard.physics.bargmann_utils import XY_of_channel, au2Symplectic, symplectic2Au
 from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires
-from mrmustard.utils.typing import ComplexTensor, ComplexMatrix, RealMatrix, Vector
 from mrmustard.physics.triples import XY_to_channel_Abc
-from mrmustard.physics.bargmann_utils import au2Symplectic, symplectic2Au, XY_of_channel
+from mrmustard.physics.wires import Wires
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, RealMatrix, Vector
+
 from ..circuit_components import CircuitComponent
 
-
-__all__ = ["Transformation", "Operation", "Unitary", "Map", "Channel"]
+__all__ = ["Channel", "Map", "Operation", "Transformation", "Unitary"]
 
 
 class Transformation(CircuitComponent):
@@ -121,7 +120,7 @@ class Transformation(CircuitComponent):
         The triple parametrizes the quadrature representation of the transformation as
         :math:`c * exp(0.5*x^T A x + b^T x)`.
         """
-        from ..circuit_components_utils.b_to_q import BtoQ
+        from ..circuit_components_utils.b_to_q import BtoQ  # noqa: PLC0415
 
         QtoB_out = BtoQ(modes_out, phi).inverse()
         QtoB_in = BtoQ(modes_in, phi).inverse().dual
@@ -143,7 +142,7 @@ class Transformation(CircuitComponent):
         """
         if not len(self.wires.input) == len(self.wires.output):
             raise NotImplementedError(
-                "Only Transformations with the same number of input and output wires are supported."
+                "Only Transformations with the same number of input and output wires are supported.",
             )
         if not isinstance(self.ansatz, PolyExpAnsatz):  # pragma: no cover
             raise NotImplementedError("Only Bargmann representation is supported.")
@@ -157,20 +156,21 @@ class Transformation(CircuitComponent):
                     math.ones(self.ansatz.batch_shape, dtype=math.complex128),
                 ),
                 self.wires.copy(new_ids=True),
-            )
+            ),
         )
         almost_identity = self.contract(almost_inverse, "zip")
         invert_this_c = almost_identity.ansatz.c
-        actual_inverse = self._from_attributes(
+        return self._from_attributes(
             Representation(
                 PolyExpAnsatz(
-                    math.inv(A), math.einsum("...ij,...j->...i", -math.inv(A), b), 1 / invert_this_c
+                    math.inv(A),
+                    math.einsum("...ij,...j->...i", -math.inv(A), b),
+                    1 / invert_this_c,
                 ),
                 self.wires.copy(new_ids=True),
             ),
             self.name + "_inv",
         )
-        return actual_inverse
 
 
 class Operation(Transformation):
@@ -195,7 +195,8 @@ class Operation(Transformation):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Operation(
             representation=Representation(
-                ansatz=ansatz, wires=Wires(set(), set(), set(modes_out), set(modes_in))
+                ansatz=ansatz,
+                wires=Wires(set(), set(), set(modes_out), set(modes_in)),
             ),
             name=name,
         )
@@ -229,7 +230,8 @@ class Unitary(Operation):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Unitary(
             representation=Representation(
-                ansatz=ansatz, wires=Wires(set(), set(), set(modes_out), set(modes_in))
+                ansatz=ansatz,
+                wires=Wires(set(), set(), set(modes_out), set(modes_in)),
             ),
             name=name,
         )
@@ -256,7 +258,7 @@ class Unitary(Operation):
         m = len(modes)
         batch_shape = S.shape[:-2]
         A = symplectic2Au(S)
-        b = math.zeros(batch_shape + (2 * m,), dtype="complex128")
+        b = math.zeros((*batch_shape, 2 * m), dtype="complex128")
         A_inin = A[..., m:, m:]
         c = ((-1) ** m * math.det(A_inin @ math.conj(A_inin) - math.eye_like(A_inin))) ** 0.25
         return Unitary.from_bargmann(modes, modes, (A, b, c))
@@ -317,7 +319,7 @@ class Unitary(Operation):
 
         if isinstance(other, Unitary):
             return Unitary(ret.representation)
-        elif isinstance(other, Channel):
+        if isinstance(other, Channel):
             return Channel(ret.representation)
         return ret
 
@@ -371,15 +373,15 @@ class Channel(Map):
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for a mixture of states."
+                "Physicality conditions are not implemented for a mixture of states.",
             )
         if self.ansatz.num_derived_vars > 0:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for derived variables."
+                "Physicality conditions are not implemented for derived variables.",
             )
         if isinstance(self.ansatz, ArrayAnsatz):
             raise NotImplementedError(
-                "Physicality conditions are not implemented for states with ArrayAnsatz."
+                "Physicality conditions are not implemented for states with ArrayAnsatz.",
             )
         A = self.ansatz.A
         m = A.shape[-1] // 2
@@ -407,15 +409,15 @@ class Channel(Map):
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for a mixture of states."
+                "Physicality conditions are not implemented for a mixture of states.",
             )
         if self.ansatz.num_derived_vars > 0:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for derived variables."
+                "Physicality conditions are not implemented for derived variables.",
             )
         if isinstance(self.ansatz, ArrayAnsatz):
             raise NotImplementedError(
-                "Physicality conditions are not implemented for states with ArrayAnsatz."
+                "Physicality conditions are not implemented for states with ArrayAnsatz.",
             )
         A = self.ansatz.A
         m = A.shape[-1] // 2
@@ -524,7 +526,7 @@ class Channel(Map):
             2 * len(modes_out),
         ):
             raise ValueError(
-                f"The dimension of XY matrices ({X.shape}, {Y.shape}) and number of modes ({len(modes_in), len(modes_out)}) don't match."
+                f"The dimension of XY matrices ({X.shape}, {Y.shape}) and number of modes ({len(modes_in), len(modes_out)}) don't match.",
             )
 
         return Channel.from_bargmann(modes_out, modes_in, XY_to_channel_Abc(X, Y, d))
@@ -545,7 +547,7 @@ class Channel(Map):
             >>> channel = Channel.random((0, 1, 2), max_r=1.2)
             >>> assert channel.modes == (0, 1, 2)
         """
-        from mrmustard.lab.states import Vacuum
+        from mrmustard.lab.states import Vacuum  # noqa: PLC0415
 
         m = len(modes)
         U = Unitary.random(range(3 * m), max_r)
@@ -567,6 +569,6 @@ class Channel(Map):
         Returns a ``Channel`` when ``other`` is a ``Channel`` or a ``Unitary``, and a ``CircuitComponent`` otherwise.
         """
         ret = super().__rshift__(other)
-        if isinstance(other, (Channel, Unitary)):
+        if isinstance(other, Channel | Unitary):
             return Channel(ret.representation)
         return ret

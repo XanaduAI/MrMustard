@@ -18,21 +18,20 @@ Classes representing Gaussian states.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from mrmustard import math
-
 from mrmustard.math.parameters import update_symplectic
-from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.utils.typing import RealMatrix
 
-from .ket import Ket
-from .dm import DM
 from ..circuit_components_utils import TraceOut
 from ..utils import make_parameter, reshape_params
+from .dm import DM
+from .ket import Ket
 
-__all__ = ["GKet", "GDM"]
+__all__ = ["GDM", "GKet"]
 
 
 class GKet(Ket):
@@ -85,12 +84,13 @@ class GKet(Ket):
                 "symplectic",
                 (None, None),
                 update_symplectic,
-            )
+            ),
         )
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.gket_state_Abc, symplectic=self.parameters.symplectic
+                fn=triples.gket_state_Abc,
+                symplectic=self.parameters.symplectic,
             ),
         ).representation
 
@@ -170,7 +170,7 @@ class GDM(DM):
                 "symplectic",
                 (None, None),
                 update_symplectic,
-            )
+            ),
         )
         self.parameters.add_parameter(
             make_parameter(
@@ -178,7 +178,7 @@ class GDM(DM):
                 betas,
                 "beta",
                 (0, None),
-            )
+            ),
         )
         self._representation = self.from_ansatz(
             modes=modes,

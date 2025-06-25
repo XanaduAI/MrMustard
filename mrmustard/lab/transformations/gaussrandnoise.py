@@ -15,15 +15,16 @@
 """
 The class representing a Gaussian random noise channel.
 """
+
 from __future__ import annotations
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import RealMatrix
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.utils.typing import RealMatrix
 
-from .base import Channel
 from ...physics import triples
 from ..utils import make_parameter
+from .base import Channel
 
 __all__ = ["GaussRandNoise"]
 
@@ -73,7 +74,7 @@ class GaussRandNoise(Channel):
         if Y.shape[-1] // 2 != len(modes):
             raise ValueError(
                 f"The number of modes {len(modes)} does not match the dimension of the "
-                f"Y matrix {Y.shape[-1] // 2}."
+                f"Y matrix {Y.shape[-1] // 2}.",
             )
 
         Y_eigenvectors_real = math.real(math.eigvals(Y))
@@ -85,12 +86,13 @@ class GaussRandNoise(Channel):
 
         super().__init__(name="GRN~")
         self.parameters.add_parameter(
-            make_parameter(Y_trainable, value=Y, name="Y", bounds=(None, None))
+            make_parameter(Y_trainable, value=Y, name="Y", bounds=(None, None)),
         )
         self._representation = self.from_ansatz(
             modes_in=modes,
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.gaussian_random_noise_Abc, Y=self.parameters.Y
+                fn=triples.gaussian_random_noise_Abc,
+                Y=self.parameters.Y,
             ),
         ).representation
