@@ -42,7 +42,6 @@ from mrmustard.lab import (
 )
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-
 from mrmustard.physics.triples import displacement_gate_Abc
 from mrmustard.physics.wires import Wires
 from mrmustard.training import Optimizer
@@ -200,7 +199,8 @@ class TestCircuitComponent:
         c = settings.rng.random(5) + 0.0j
         polyexp = PolyExpAnsatz(A, b, c)
         fock_cc = CircuitComponent(
-            ansatz=polyexp, wires=Wires(set(), set(), {0, 1}, set())
+            ansatz=polyexp,
+            wires=Wires(set(), set(), {0, 1}, set()),
         ).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
         assert fock_cc.ansatz._original_abc_data is None
@@ -464,7 +464,9 @@ class TestCircuitComponent:
     def test_repr(self):
         c1 = CircuitComponent(ansatz=None, wires=Wires(modes_out_ket={0, 1, 2}))
         c2 = CircuitComponent(
-            ansatz=None, wires=Wires(modes_out_ket={0, 1, 2}), name="my_component"
+            ansatz=None,
+            wires=Wires(modes_out_ket={0, 1, 2}),
+            name="my_component",
         )
 
         assert repr(c1) == "CircuitComponent(modes=(0, 1, 2), name=CC012)"
@@ -574,7 +576,9 @@ class TestCircuitComponent:
 
             def __init__(self, ansatz, custom_modes):
                 super().__init__(
-                    ansatz, Wires(*tuple(set(m) for m in [custom_modes] * 4)), name="my_component"
+                    ansatz,
+                    Wires(*tuple(set(m) for m in [custom_modes] * 4)),
+                    name="my_component",
                 )
 
         cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4)), [0, 1])

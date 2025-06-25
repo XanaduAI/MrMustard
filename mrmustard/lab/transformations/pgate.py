@@ -63,11 +63,12 @@ class Pgate(Unitary):
                 value=shearing,
                 name="shearing",
                 bounds=shearing_bounds,
-            )
+            ),
         )
         self.ansatz = PolyExpAnsatz.from_function(
             fn=lambda shearing: Unitary.from_symplectic(
-                (mode,), symplectics.pgate_symplectic(1, shearing)
+                (mode,),
+                symplectics.pgate_symplectic(1, shearing),
             ).bargmann_triple(),
             shearing=self.parameters.shearing,
         )

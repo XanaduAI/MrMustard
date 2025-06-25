@@ -549,7 +549,7 @@ class Ket(State):
             >>> assert isinstance(psi >> channel, DM)
         """
         result = super().__rshift__(
-            other
+            other,
         )  # this would be the output if we didn't override __rshift__
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here
@@ -558,6 +558,6 @@ class Ket(State):
         if not result.wires.input:
             if not result.wires.bra:
                 return Ket._from_attributes(result.ansatz, result.wires)
-            elif result.wires.bra.modes == result.wires.ket.modes:
+            if result.wires.bra.modes == result.wires.ket.modes:
                 return DM._from_attributes(result.ansatz, result.wires)
         return result

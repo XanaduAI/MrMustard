@@ -29,7 +29,6 @@ from mrmustard.lab import (
     TraceOut,
     Vacuum,
 )
-
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wires import Wires
 

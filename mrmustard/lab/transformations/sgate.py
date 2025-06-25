@@ -91,10 +91,10 @@ class Sgate(Unitary):
     ):
         super().__init__(name="Sgate")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds)
+            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds)
+            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
         )
         self.ansatz = PolyExpAnsatz.from_function(
             fn=triples.squeezing_gate_Abc,

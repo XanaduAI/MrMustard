@@ -66,10 +66,10 @@ class SqueezedVacuum(Ket):
     ):
         super().__init__(name="SqueezedVacuum")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds)
+            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds)
+            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
         )
 
         self.ansatz = PolyExpAnsatz.from_function(

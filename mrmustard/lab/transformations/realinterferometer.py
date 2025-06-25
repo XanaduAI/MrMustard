@@ -74,11 +74,12 @@ class RealInterferometer(Unitary):
                 name="orthogonal",
                 bounds=(None, None),
                 update_fn=update_orthogonal,
-            )
+            ),
         )
         self.ansatz = PolyExpAnsatz.from_function(
             fn=lambda ortho: Unitary.from_symplectic(
-                modes, symplectics.realinterferometer_symplectic(ortho)
+                modes,
+                symplectics.realinterferometer_symplectic(ortho),
             ).bargmann_triple(),
             ortho=self.parameters.orthogonal,
         )

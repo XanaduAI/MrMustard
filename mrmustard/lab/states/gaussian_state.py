@@ -87,10 +87,11 @@ class GKet(Ket):
                 name="symplectic",
                 bounds=(None, None),
                 update_fn=update_symplectic,
-            )
+            ),
         )
         self.ansatz = PolyExpAnsatz.from_function(
-            fn=triples.gket_state_Abc, symplectic=self.parameters.symplectic
+            fn=triples.gket_state_Abc,
+            symplectic=self.parameters.symplectic,
         )
         self.wires = Wires(modes_out_ket=set(modes))
 
@@ -170,7 +171,7 @@ class GDM(DM):
                 name="symplectic",
                 bounds=(None, None),
                 update_fn=update_symplectic,
-            )
+            ),
         )
         self.parameters.add_parameter(
             make_parameter(
@@ -178,7 +179,7 @@ class GDM(DM):
                 value=betas,
                 name="beta",
                 bounds=(0, None),
-            )
+            ),
         )
         self.ansatz = PolyExpAnsatz.from_function(
             fn=triples.gdm_state_Abc,

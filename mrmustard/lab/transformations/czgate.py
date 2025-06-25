@@ -68,11 +68,12 @@ class CZgate(Unitary):
     ):
         super().__init__(name="CZgate")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=s_trainable, value=s, name="s", bounds=s_bounds)
+            make_parameter(is_trainable=s_trainable, value=s, name="s", bounds=s_bounds),
         )
         self.ansatz = PolyExpAnsatz.from_function(
             fn=lambda s: Unitary.from_symplectic(
-                modes, symplectics.czgate_symplectic(s)
+                modes,
+                symplectics.czgate_symplectic(s),
             ).bargmann_triple(),
             s=self.parameters.s,
         )

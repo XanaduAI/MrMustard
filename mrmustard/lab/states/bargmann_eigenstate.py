@@ -70,10 +70,14 @@ class BargmannEigenstate(Ket):
 
         self.parameters.add_parameter(
             make_parameter(
-                is_trainable=alpha_trainable, value=alpha, name="alpha", bounds=alpha_bounds
-            )
+                is_trainable=alpha_trainable,
+                value=alpha,
+                name="alpha",
+                bounds=alpha_bounds,
+            ),
         )
         self.ansatz = PolyExpAnsatz.from_function(
-            fn=triples.bargmann_eigenstate_Abc, alpha=self.parameters.alpha
+            fn=triples.bargmann_eigenstate_Abc,
+            alpha=self.parameters.alpha,
         )
         self.wires = Wires(modes_out_ket=set([mode]))

@@ -63,9 +63,15 @@ class Thermal(DM):
     ) -> None:
         super().__init__(name="Thermal")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=nbar_trainable, value=nbar, name="nbar", bounds=nbar_bounds)
+            make_parameter(
+                is_trainable=nbar_trainable,
+                value=nbar,
+                name="nbar",
+                bounds=nbar_bounds,
+            ),
         )
         self.ansatz = PolyExpAnsatz.from_function(
-            fn=triples.thermal_state_Abc, nbar=self.parameters.nbar
+            fn=triples.thermal_state_Abc,
+            nbar=self.parameters.nbar,
         )
         self.wires = Wires(modes_out_bra=set([mode]), modes_out_ket=set([mode]))

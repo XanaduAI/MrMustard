@@ -97,5 +97,7 @@ class PhaseNoise(Channel):
             )
             array *= phase_factors
         return CircuitComponent._from_attributes(
-            ArrayAnsatz(array, batch_dims=other.ansatz.batch_dims), other.wires, self.name
+            ArrayAnsatz(array, batch_dims=other.ansatz.batch_dims),
+            other.wires,
+            self.name,
         )

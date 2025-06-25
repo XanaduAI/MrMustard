@@ -89,13 +89,15 @@ class Coherent(Ket):
 
         self._parameters = ParameterSet()
         self.parameters.add_parameter(
-            make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds)
+            make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=y_trainable, value=y, name="y", bounds=y_bounds)
+            make_parameter(is_trainable=y_trainable, value=y, name="y", bounds=y_bounds),
         )
 
         self.ansatz = PolyExpAnsatz.from_function(
-            fn=triples.coherent_state_Abc, x=self.parameters.x, y=self.parameters.y
+            fn=triples.coherent_state_Abc,
+            x=self.parameters.x,
+            y=self.parameters.y,
         )
         self.wires = Wires(modes_out_ket={mode})

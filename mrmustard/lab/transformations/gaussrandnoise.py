@@ -87,10 +87,11 @@ class GaussRandNoise(Channel):
 
         super().__init__(name="GRN~")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=Y_trainable, value=Y, name="Y", bounds=(None, None))
+            make_parameter(is_trainable=Y_trainable, value=Y, name="Y", bounds=(None, None)),
         )
         self.ansatz = PolyExpAnsatz.from_function(
-            fn=triples.gaussian_random_noise_Abc, Y=self.parameters.Y
+            fn=triples.gaussian_random_noise_Abc,
+            Y=self.parameters.Y,
         )
         self.wires = Wires(
             modes_in_bra=set(modes),

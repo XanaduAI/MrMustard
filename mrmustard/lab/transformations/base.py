@@ -30,7 +30,6 @@ from collections.abc import Sequence
 from mrmustard import math, settings
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import XY_of_channel, au2Symplectic, symplectic2Au
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import XY_to_channel_Abc
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, RealMatrix, Vector
@@ -160,11 +159,14 @@ class Transformation(CircuitComponent):
         invert_this_c = almost_identity.ansatz.c
         actual_inverse = self._from_attributes(
             PolyExpAnsatz(
-                math.inv(A), math.einsum("...ij,...j->...i", -math.inv(A), b), 1 / invert_this_c
+                math.inv(A),
+                math.einsum("...ij,...j->...i", -math.inv(A), b),
+                1 / invert_this_c,
             ),
             self.wires.copy(new_ids=True),
             self.name + "_inv",
         )
+        return actual_inverse
 
 
 class Operation(Transformation):
@@ -309,7 +311,7 @@ class Unitary(Operation):
 
         if isinstance(other, Unitary):
             return Unitary(ret.ansatz, ret.wires)
-        elif isinstance(other, Channel):
+        if isinstance(other, Channel):
             return Channel(ret.ansatz, ret.wires)
         return ret
 

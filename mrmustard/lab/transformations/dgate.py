@@ -93,7 +93,9 @@ class Dgate(Unitary):
         self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
         self.ansatz = PolyExpAnsatz.from_function(
-            fn=triples.displacement_gate_Abc, x=self.parameters.x, y=self.parameters.y
+            fn=triples.displacement_gate_Abc,
+            x=self.parameters.x,
+            y=self.parameters.y,
         )
         self.wires = Wires(set(), set(), {mode}, {mode})
 

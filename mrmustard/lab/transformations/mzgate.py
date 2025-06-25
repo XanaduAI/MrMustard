@@ -76,7 +76,8 @@ class MZgate(Unitary):
 
         self.ansatz = PolyExpAnsatz.from_function(
             fn=lambda phi_a, phi_b, internal: Unitary.from_symplectic(
-                modes, symplectics.mzgate_symplectic(phi_a, phi_b, internal)
+                modes,
+                symplectics.mzgate_symplectic(phi_a, phi_b, internal),
             ).bargmann_triple(),
             phi_a=self.parameters.phi_a,
             phi_b=self.parameters.phi_b,

@@ -76,7 +76,8 @@ class Interferometer(Unitary):
         )
         self.ansatz = PolyExpAnsatz.from_function(
             fn=lambda uni: Unitary.from_symplectic(
-                modes, symplectics.interferometer_symplectic(uni)
+                modes,
+                symplectics.interferometer_symplectic(uni),
             ).bargmann_triple(),
             uni=self.parameters.unitary,
         )

@@ -82,16 +82,16 @@ class DisplacedSqueezed(Ket):
     ):
         super().__init__(name="DisplacedSqueezed")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds)
+            make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=y_trainable, value=y, name="y", bounds=y_bounds)
+            make_parameter(is_trainable=y_trainable, value=y, name="y", bounds=y_bounds),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds)
+            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds)
+            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
         )
 
         self.ansatz = PolyExpAnsatz.from_function(

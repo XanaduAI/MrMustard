@@ -68,7 +68,7 @@ class Ggate(Unitary):
                 name="symplectic",
                 bounds=(None, None),
                 update_fn=update_symplectic,
-            )
+            ),
         )
         self.ansatz = PolyExpAnsatz.from_function(
             fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
