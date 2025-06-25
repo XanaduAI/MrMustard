@@ -495,11 +495,8 @@ class TestOptimizer:
 
             def cost_fn():
                 state_out = Vacuum(0) >> dgate
-                return (
-                    -(
-                        math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state))
-                        ** 2
-                    )
+                return -(
+                    math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
                 )
 
             opt = Optimizer()
@@ -520,11 +517,8 @@ class TestOptimizer:
             def cost_fn():
                 state_out = Vacuum(0) >> sgate
 
-                return (
-                    -(
-                        math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state))
-                        ** 2
-                    )
+                return -(
+                    math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2
                 )
 
             opt = Optimizer()

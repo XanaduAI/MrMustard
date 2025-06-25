@@ -349,7 +349,7 @@ class Circuit:
                     param = comp.parameters.constants.get(name) or comp.parameters.variables.get(
                         name,
                     )
-                    new_values = math.atleast_nd(param.value, 1)
+                    new_values = math.atleast_1d(param.value)
                     if len(new_values) == 1 and cc_name not in control_gates:
                         new_values = math.tile(new_values, (len(comp.modes),))
                     values.append(math.asnumpy(new_values))
