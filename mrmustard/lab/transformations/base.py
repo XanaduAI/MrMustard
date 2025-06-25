@@ -288,6 +288,7 @@ class Unitary(Operation):
         Returns the inverse of the unitary.
 
         .. code-block::
+
             >>> from mrmustard.lab import Unitary, Identity
 
             >>> u = Unitary.random((0, 1, 2))
@@ -450,6 +451,7 @@ class Channel(Map):
         Returns the X and Y matrix corresponding to the channel.
 
         .. code-block::
+
             >>> from mrmustard.lab import Channel
 
             >>> channel = Channel.random((0, 1))
@@ -539,6 +541,7 @@ class Channel(Map):
             max_r: The maximum squeezing parameter.
 
         .. code-block::
+
             >>> from mrmustard.lab import Channel
 
             >>> channel = Channel.random((0, 1, 2), max_r=1.2)

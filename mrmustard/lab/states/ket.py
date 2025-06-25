@@ -68,6 +68,7 @@ class Ket(State):
 
         Example:
         .. code-block::
+
             >>> from mrmustard.lab import Ket
 
             >>> psi = Ket.random([0])
@@ -102,6 +103,7 @@ class Ket(State):
 
         Example:
         .. code-block::
+
             >>> from mrmustard import math
             >>> from mrmustard.lab import Ket
 
@@ -121,6 +123,7 @@ class Ket(State):
 
         Example:
         .. code-block::
+
             >>> from mrmustard.lab import Ket
             >>> assert Ket.random([0]).purity == 1.0
         """
@@ -198,6 +201,7 @@ class Ket(State):
 
         Example:
         .. code-block::
+
             >>> from mrmustard.lab import Ket
             >>> assert isinstance(Ket.random([0,1]), Ket)
         """
@@ -319,8 +323,9 @@ class Ket(State):
 
         .. details::
 
-        .. math::
-            F(|\psi\rangle, \phi\rangle) = |\langle \psi, \phi \rangle|^2
+            .. math::
+                F(|\psi\rangle, \phi\rangle) = |\langle \psi, \phi \rangle|^2
+
         """
         if self.modes != other.modes:
             raise ValueError("Cannot compute fidelity between states with different modes.")
@@ -349,6 +354,7 @@ class Ket(State):
             e.g., being sparse.
 
         .. code-block::
+
             >>> from mrmustard.lab import Ket
 
             >>> psi = Ket.random([0,1])
@@ -427,6 +433,7 @@ class Ket(State):
             e.g., being sparse.
 
         .. code-block::
+
             >>> from mrmustard import math
             >>> from mrmustard.lab import Ket
 

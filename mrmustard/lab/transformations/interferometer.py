@@ -44,7 +44,7 @@ class Interferometer(Unitary):
     Raises:
         ValueError: If the size of the unitary does not match the number of modes.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import Interferometer
