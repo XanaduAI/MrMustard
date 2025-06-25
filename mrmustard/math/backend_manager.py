@@ -901,7 +901,7 @@ class BackendManager:
 
         Returns:
             The conditional density matrix of mode 0. The final shape is
-            (output_cutoff + 1, output_cutoff + 1, *pnr_cutoffs + 1)
+            ``(output_cutoff + 1, output_cutoff + 1, *pnr_cutoffs + 1)``.
         """
         return self._apply(
             "hermite_renormalized_1leftoverMode",

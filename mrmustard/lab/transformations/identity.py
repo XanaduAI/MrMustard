@@ -34,7 +34,7 @@ class Identity(Unitary):
     Args:
         modes: The modes this gate is applied to.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import Identity
 

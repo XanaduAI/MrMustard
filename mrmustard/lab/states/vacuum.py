@@ -37,7 +37,7 @@ class Vacuum(Ket):
         modes: A tuple of modes.
 
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import Vacuum
 
