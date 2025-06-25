@@ -65,7 +65,7 @@ class TestOptimizer:
             def cost_fn():
                 return -(math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2)
 
-            def cb(optimizer, cost, trainables, **kwargs):  # pylint: disable=unused-argument
+            def cb(optimizer, cost, trainables, **kwargs):
                 return {
                     "cost": cost,
                     "lr": optimizer.learning_rate[update_euclidean],
