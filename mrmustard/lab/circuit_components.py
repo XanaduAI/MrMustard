@@ -586,7 +586,6 @@ class CircuitComponent:
         Returns:
             array: The Fock representation of this component.
         """
-        # print(shape)
         shape = shape or self.auto_shape()
         num_vars = (
             self.ansatz.num_CV_vars
