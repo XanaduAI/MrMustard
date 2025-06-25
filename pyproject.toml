@@ -146,6 +146,7 @@ select = [
     "BLE", # flake8-blind-except
     "B", # flake8-bugbear
     "A", # flake8-builtins
+    "COM", # flake8-commas
     "C4", # flake8-comprehensions
     "ISC", # flake8-implicit-str-concat
     "ICN", # flake8-import-conventions
@@ -165,6 +166,7 @@ ignore = [
     "E741", 
     "F403", 
     "B905", 
+    "COM812",
     "PERF203", "PLR2004", "PLR0124", 
     "PLR0913", "PLR0912", "PLR0915", "PLC0414", "PLW1641", 
     "RUF012", "RUF001", "RUF002",
