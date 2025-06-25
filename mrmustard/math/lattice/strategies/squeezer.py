@@ -22,12 +22,15 @@ from mrmustard.utils.typing import ComplexTensor
 
 SQRT = np.sqrt(np.arange(100000))
 
-__all__ = ["squeezer", "squeezer_vjp", "squeezed", "squeezed_vjp"]
+__all__ = ["squeezed", "squeezed_vjp", "squeezer", "squeezer_vjp"]
 
 
 @njit
 def squeezer(
-    shape: tuple[int, int], r: float, theta: float, dtype=np.complex128
+    shape: tuple[int, int],
+    r: float,
+    theta: float,
+    dtype=np.complex128,
 ):  # pragma: no cover
     r"""Calculates the matrix elements of the squeezing gate using a recurrence relation.
     (See eq. 50-52 in https://arxiv.org/abs/2004.11002)
@@ -113,7 +116,7 @@ def squeezer_vjp(
         -dLdA[0, 0] * exp * d_tanh
         + dLdA[0, 1] * d_sech
         + dLdA[1, 1] * exp_conj * d_tanh
-        - np.conj(dLdC) * 0.5 * tanh  # / np.sqrt(np.cosh(r))
+        - np.conj(dLdC) * 0.5 * tanh,  # / np.sqrt(np.cosh(r))
     )
     dLdphi = 2 * np.real(-dLdA[0, 0] * 1j * exp * tanh - dLdA[1, 1] * 1j * exp_conj * tanh)
 

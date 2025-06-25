@@ -18,8 +18,9 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+from collections.abc import Callable, Sequence
 from functools import lru_cache
-from typing import Any, Callable, Sequence
+from typing import Any
 
 import numpy as np
 from jax.errors import TracerArrayConversionError
@@ -83,7 +84,7 @@ all_modules = {
 }
 
 
-class BackendManager:  # pylint: disable=too-many-public-methods, fixme
+class BackendManager:
     r"""
     A class to manage the different backends supported by Mr Mustard.
     """
@@ -98,17 +99,33 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         # binding types and decorators of numpy backend
         self._bind()
 
-    def _apply(self, fn: str, args: Sequence[Any] | None = (), kwargs: dict | None = None) -> Any:
+    def _apply(
+        self,
+        fn: str,
+        args: Sequence[Any] | None = (),
+        kwargs: dict | None = None,
+        backend_name: str | None = None,
+    ) -> Any:
         r"""
         Applies a function ``fn`` from the backend in use to the given ``args`` and ``kwargs``.
+
+        Args:
+            fn: The function to apply.
+            args: The arguments to pass to the function.
+            kwargs: The keyword arguments to pass to the function.
+            backend_name: The name of the backend to use. If ``None``, the set backend is used.
+
+        Returns:
+            The result of the function application.
         """
         kwargs = kwargs or {}
+        backend = self.get_backend(backend_name) if backend_name else self.backend
         try:
-            attr = getattr(self.backend, fn)
+            attr = getattr(backend, fn)
         except AttributeError:
-            msg = f"Function ``{fn}`` not implemented for backend ``{self.backend_name}``."
-            # pylint: disable=raise-missing-from
-            raise NotImplementedError(msg)
+            raise NotImplementedError(
+                f"Function ``{fn}`` not implemented for backend ``{backend.name}``.",
+            ) from None
         return attr(*args, **kwargs)
 
     def _bind(self) -> None:
@@ -130,7 +147,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         try:
             return cls.instance
         except AttributeError:
-            cls.instance = super(BackendManager, cls).__new__(cls)
+            cls.instance = super().__new__(cls)
             return cls.instance
 
     def __repr__(self) -> str:
@@ -174,29 +191,42 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Args:
             name: The name of the new backend.
         """
+        if self.backend_name != name:
+            # switch backend
+            self._backend = self.get_backend(name)
+            # bind
+            self._bind()
+
+    def get_backend(self, name: str | None = None) -> BackendBase:
+        r"""
+        Returns the backend with the given name.
+
+        Args:
+            name: The name of the backend.
+
+        Returns:
+            The backend with the given name.
+
+        Raises:
+            ValueError: If the backend name is not a supported one.
+        """
         if name not in ["numpy", "tensorflow", "jax"]:
-            msg = (
-                "Backend must be either ``numpy`` or ``tensorflow`` or ``jax``"  # pragma: no cover
-            )
-            raise ValueError(msg)
+            raise ValueError("Backend must be either ``numpy`` or ``tensorflow`` or ``jax``.")
 
         if self.backend_name != name:
-
             module = all_modules[name]["module"]
-            object = all_modules[name]["object"]
+            obj = all_modules[name]["object"]
             try:
-                backend = getattr(module, object)()
+                backend = getattr(module, obj)()
             except AttributeError:
                 # lazy import
                 loader = all_modules[name]["loader"]
                 loader.exec_module(module)
-                backend = getattr(module, object)()
+                backend = getattr(module, obj)()
+        else:
+            backend = self.backend
 
-            # switch backend
-            self._backend = backend
-
-            # bind
-            self._bind()
+        return backend
 
     # ~~~~~~~
     # Methods
@@ -272,7 +302,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("any", (array,))
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype: Any = None) -> Tensor:
+    def arange(
+        self,
+        start: int,
+        limit: int | None = None,
+        delta: int = 1,
+        dtype: Any = None,
+    ) -> Tensor:
         r"""Returns an array of evenly spaced values within a given interval.
 
         Args:
@@ -607,7 +643,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("eigh", (tensor,))
 
-    def einsum(self, string: str, *tensors, optimize: bool | str = "greedy") -> Tensor:
+    def einsum(
+        self,
+        string: str,
+        *tensors,
+        optimize: bool | str = "greedy",
+        backend: str | None = None,
+    ) -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
         Args:
@@ -617,12 +659,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 Allowed values are True, False, "greedy", "optimal" or "auto".
                 Note the TF backend does not support False and converts it to "greedy".
                 If None, ``settings.EINSUM_OPTIMIZE`` is used.
+            backend: The name of the backend to use. If ``None``, the set backend is used.
 
         Returns:
             The result of the Einstein summation convention.
         """
         optimize = optimize or settings.EINSUM_OPTIMIZE
-        return self._apply("einsum", (string, *tensors), {"optimize": optimize})
+        return self._apply(
+            "einsum",
+            (string, *tensors),
+            {"optimize": optimize},
+            backend_name=backend,
+        )
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.
@@ -751,7 +799,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 d_out < d for d_out, d in zip(out.shape, batch_shape + shape)
             ):
                 raise ValueError(
-                    f"batch+shape {batch_shape + shape} is too large for out.shape={out.shape}"
+                    f"batch+shape {batch_shape + shape} is too large for out.shape={out.shape}",
                 )
 
         stable = stable or settings.STABLE_FOCK_CONVERSION
@@ -763,8 +811,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             if c.shape[: len(batch_shape)] != batch_shape:
                 raise ValueError(f"c.shape={c.shape} must match batch_shape={batch_shape}")
             D = int(np.prod(batch_shape))
-            A = self.reshape(A, (D,) + A.shape[-2:])
-            b = self.reshape(b, (D,) + b.shape[-1:])
+            A = self.reshape(A, (D, *A.shape[-2:]))
+            b = self.reshape(b, (D, *b.shape[-1:]))
             c = self.reshape(c, (D,))
             result = self._apply(
                 "hermite_renormalized_batched",
@@ -772,16 +820,16 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 {
                     "shape": tuple(shape),
                     "stable": stable,
-                    "out": self.reshape(out, (D,) + shape) if out is not None else None,
+                    "out": self.reshape(out, (D, *shape)) if out is not None else None,
                 },
             )
             return self.reshape(result, batch_shape + tuple(shape))
-        elif A.ndim == 2 and b.ndim > 1:  # b-batched case
+        if A.ndim == 2 and b.ndim > 1:  # b-batched case
             batch_shape = b.shape[:-1]
             check_out_shape(batch_shape)
             D = int(np.prod(batch_shape))
-            b = self.reshape(b, (D,) + b.shape[-1:])
-            A_broadcast = self.broadcast_to(A, (D,) + A.shape)
+            b = self.reshape(b, (D, *b.shape[-1:]))
+            A_broadcast = self.broadcast_to(A, (D, *A.shape))
             c_broadcast = self.broadcast_to(c, (D,))
             result = self._apply(
                 "hermite_renormalized_batched",
@@ -789,20 +837,24 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 {
                     "shape": tuple(shape),
                     "stable": stable,
-                    "out": self.reshape(out, (D,) + shape) if out is not None else None,
+                    "out": self.reshape(out, (D, *shape)) if out is not None else None,
                 },
             )
             return self.reshape(result, batch_shape + tuple(shape))
-        else:  # Unbatched case
-            check_out_shape(())
-            return self._apply(
-                "hermite_renormalized_unbatched",
-                (A, b, c),
-                {"shape": tuple(shape), "stable": stable, "out": out},
-            )
+        # Unbatched case
+        check_out_shape(())
+        return self._apply(
+            "hermite_renormalized_unbatched",
+            (A, b, c),
+            {"shape": tuple(shape), "stable": stable, "out": out},
+        )
 
     def hermite_renormalized_diagonal(
-        self, A: Tensor, b: Tensor, c: Tensor, cutoffs: tuple[int]
+        self,
+        A: Tensor,
+        b: Tensor,
+        c: Tensor,
+        cutoffs: tuple[int],
     ) -> Tensor:
         r"""Renormalized multidimensional Hermite polynomial for calculating the diagonal of the Fock representation.
 
@@ -818,7 +870,11 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("hermite_renormalized_diagonal", (A, b, c, cutoffs))
 
     def hermite_renormalized_diagonal_batch(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: tuple[int]
+        self,
+        A: Tensor,
+        B: Tensor,
+        C: Tensor,
+        cutoffs: tuple[int],
     ) -> Tensor:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculates the required renormalized multidimensional Hermite polynomial.
@@ -826,7 +882,12 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
 
     def hermite_renormalized_1leftoverMode(
-        self, A: Tensor, b: Tensor, c: Tensor, output_cutoff: int, pnr_cutoffs: tuple[int, ...]
+        self,
+        A: Tensor,
+        b: Tensor,
+        c: Tensor,
+        output_cutoff: int,
+        pnr_cutoffs: tuple[int, ...],
     ) -> Tensor:
         r"""Compute the conditional density matrix of mode 0, with all the other modes
         detected with PNR detectors up to the given photon numbers.
@@ -843,7 +904,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             (output_cutoff + 1, output_cutoff + 1, *pnr_cutoffs + 1)
         """
         return self._apply(
-            "hermite_renormalized_1leftoverMode", (A, b, c, output_cutoff, pnr_cutoffs)
+            "hermite_renormalized_1leftoverMode",
+            (A, b, c, output_cutoff, pnr_cutoffs),
         )
 
     def hermite_renormalized_binomial(
@@ -1186,7 +1248,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("real", (array,))
 
-    def repeat(self, array: Tensor, repeats: int, axis: int = None) -> Tensor:
+    def repeat(self, array: Tensor, repeats: int, axis: int | None = None) -> Tensor:
         """
         Repeats elements of a tensor along a specified axis.
 
@@ -1374,7 +1436,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("trace", (array, dtype))
 
-    def transpose(self, a: Tensor, perm: Sequence[int] = None):
+    def transpose(self, a: Tensor, perm: Sequence[int] | None = None):
         r"""The transposed arrays.
 
         Args:
@@ -1416,7 +1478,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("update_add_tensor", (tensor, indices, values))
 
     def value_and_gradients(
-        self, cost_fn: Callable, parameters: dict[str, list[Trainable]]
+        self,
+        cost_fn: Callable,
+        parameters: dict[str, list[Trainable]],
     ) -> tuple[Tensor, dict[str, list[Tensor]]]:
         r"""The loss and gradients of the given cost function.
 
@@ -1526,16 +1590,16 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("squeeze", (tensor, axis))
 
-    def cholesky(self, input: Tensor) -> Tensor:
+    def cholesky(self, tensor: Tensor) -> Tensor:
         """Computes the Cholesky decomposition of square matrices.
 
         Args:
-            input (Tensor)
+            tensor (Tensor)
 
         Returns:
             Tensor: tensor with the same type as input
         """
-        return self._apply("cholesky", (input,))
+        return self._apply("cholesky", (tensor,))
 
     def Categorical(self, probs: Tensor, name: str):
         """Categorical distribution over integers.
@@ -1647,7 +1711,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The adjoint of ``array``
         """
         N = len(array.shape) // 2
-        perm = list(range(N, 2 * N)) + list(range(0, N))
+        perm = list(range(N, 2 * N)) + list(range(N))
         return self.conj(self.transpose(array, perm=perm))
 
     def unitary_to_orthogonal(self, U):
@@ -1698,27 +1762,26 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         if vec.shape[-1] != 2:
             raise ValueError("vec must be 2-dimensional (i.e. single-mode)")
         x, y = vec[..., -2], vec[..., -1]
-        vec = self.concat(
+        return self.concat(
             [
                 self.tile(self.astensor([x]), (num_modes,)),
                 self.tile(self.astensor([y]), (num_modes,)),
             ],
             axis=-1,
         )
-        return vec
 
     def single_mode_to_multimode_mat(self, mat: Tensor, num_modes: int):
         r"""Apply the same :math:`2\times 2` matrix (i.e. single-mode) to a larger number of modes."""
         if mat.shape[-2:] != (2, 2):
             raise ValueError("mat must be a single-mode (2x2) matrix")
         mat = self.diag(
-            self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)), k=0
+            self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)),
+            k=0,
         )  # shape [2,2,N,N]
-        mat = self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
-        return mat
+        return self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def Xmat(num_modes: int):
         r"""The matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}.`
 
@@ -1733,7 +1796,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return np.block([[O, I], [I, O]])
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def Zmat(num_modes: int):
         r"""The matrix :math:`Z_n = \begin{bmatrix}I_n & 0\\ 0 & -I_n\end{bmatrix}.`
 
@@ -1748,14 +1811,14 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return np.block([[I, O], [O, -I]])
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def rotmat(num_modes: int):
         "Rotation matrix from quadratures to complex amplitudes."
         I = np.identity(num_modes)
         return np.sqrt(0.5) * np.block([[I, 1j * I], [I, -1j * I]])
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def J(num_modes: int):
         """Symplectic form."""
         I = np.identity(num_modes)
@@ -1792,7 +1855,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
         if prob.ndim > 3 or len(other_probs) > 3:
             raise ValueError("cannot convolve arrays with more than 3 axes")
-        if not all((q.ndim == 1 for q in other_probs)):
+        if not all(q.ndim == 1 for q in other_probs):
             raise ValueError("other_probs must contain 1d arrays")
         if not all((len(q) == s for q, s in zip(other_probs, prob.shape))):
             raise ValueError("The length of the 1d prob vectors must match shape of prob")

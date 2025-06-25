@@ -20,8 +20,8 @@ A class to simulate quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Sequence
 from pydoc import locate
-from typing import Sequence
 
 from mrmustard import math, settings
 from mrmustard.lab.circuit_components import CircuitComponent
@@ -84,7 +84,10 @@ class Circuit:
         ]  # default path (likely not optimal)
 
     def optimize(
-        self, n_init: int = 100, with_BF_heuristic: bool = True, verbose: bool = True
+        self,
+        n_init: int = 100,
+        with_BF_heuristic: bool = True,
+        verbose: bool = True,
     ) -> None:
         r"""
         Optimizes the Fock shapes and the contraction path of this circuit.
@@ -97,7 +100,10 @@ class Circuit:
             verbose: If True (default), the progress of the optimization is shown.
         """
         self.path = optimal_path(
-            self.components, n_init=n_init, with_BF_heuristic=with_BF_heuristic, verbose=verbose
+            self.components,
+            n_init=n_init,
+            with_BF_heuristic=with_BF_heuristic,
+            verbose=verbose,
         )
 
     def contract(self) -> CircuitComponent:
@@ -121,7 +127,7 @@ class Circuit:
         for idx0, idx1 in self.path:
             ret[idx0] = ret[idx0] >> ret.pop(idx1)
 
-        return list(ret.values())[0]
+        return next(iter(ret.values()))
 
     def check_contraction(self, n: int) -> None:
         r"""
@@ -238,7 +244,7 @@ class Circuit:
 
         print(msg)
 
-    def serialize(self, filestem: str = None):
+    def serialize(self, filestem: str | None = None):
         r"""
         Serialize a Circuit.
 
@@ -300,8 +306,7 @@ class Circuit:
             other = Circuit([other])
         return Circuit(self.components + other.components)
 
-    # pylint: disable=too-many-branches,too-many-statements
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # noqa: C901
         r"""
         A string-based representation of this component.
         """
@@ -342,7 +347,7 @@ class Circuit:
                 values = []
                 for name in comp.parameters.names:
                     param = comp.parameters.constants.get(name) or comp.parameters.variables.get(
-                        name
+                        name,
                     )
                     new_values = math.atleast_1d(param.value)
                     if len(new_values) == 1 and cc_name not in control_gates:
@@ -356,7 +361,7 @@ class Circuit:
         if len(self) == 0:
             return ""
 
-        modes = set(sorted([m for c in self.components for m in c.modes]))
+        modes = set(m for c in self.components for m in c.modes)  # noqa: C401
         n_modes = len(modes)
 
         # update this when new controlled gates are added
@@ -371,7 +376,7 @@ class Circuit:
 
         # create a dictionary ``wires`` that maps height ``h`` to "──" if the line contains
         # a mode, or to "  " if the line does not contain a mode
-        wires = {h: "  " for h in range(n_modes)}
+        wires = dict.fromkeys(range(n_modes), "  ")
 
         # generate a dictionary to map x-axis coordinates to the components drawn at
         # those coordinates
@@ -389,7 +394,7 @@ class Circuit:
             layers[x].append(c1)
 
         # store the returned drawing in a dictionary mapping heigths to strings
-        drawing_dict = {height: "" for height in range(n_modes)}
+        drawing_dict = dict.fromkeys(range(n_modes), "")
 
         # loop through the layers and add the components to ``drawing_dict``
         for layer in layers.values():

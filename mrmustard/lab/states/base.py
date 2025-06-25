@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=abstract-method, chained-comparison, use-dict-literal, inconsistent-return-statements
 "The base for the ``State`` class"
 
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Sequence
 from enum import Enum
-from typing import Sequence
 
 import numpy as np
 import plotly.graph_objects as go
@@ -77,14 +76,14 @@ def _validate_operator(operator: CircuitComponent) -> tuple[OperatorType, str]:
 
     # check if operator is density matrix-like
     if w.ket.output and w.bra.output and not w.ket.input and not w.bra.input:
-        if not w.ket.output.modes == w.bra.output.modes:
+        if w.ket.output.modes != w.bra.output.modes:
             msg = "Found DM-like operator with different modes for ket and bra wires."
             return OperatorType.INVALID_TYPE, msg
         return OperatorType.DM_LIKE, ""
 
     # check if operator is unitary-like
     if w.ket.input and w.ket.output and not w.bra.input and not w.bra.input:
-        if not w.ket.input.modes == w.ket.output.modes:
+        if w.ket.input.modes != w.ket.output.modes:
             msg = "Found unitary-like operator with different modes for input and output wires."
             return OperatorType.INVALID_TYPE, msg
         return OperatorType.UNITARY_LIKE, ""
@@ -333,7 +332,11 @@ class State(CircuitComponent):
         return cls.from_ansatz(modes, (Q >> QtoB).ansatz, name)
 
     def auto_shape(
-        self, max_prob=None, max_shape=None, min_shape=None, respect_manual_shape=True
+        self,
+        max_prob=None,
+        max_shape=None,
+        min_shape=None,
+        respect_manual_shape=True,
     ) -> tuple[int, ...]:
         r"""
         A good enough estimate of the Fock shape of this state, defined as the shape of the Fock
@@ -414,12 +417,12 @@ class State(CircuitComponent):
         fock_array = self.fock_array(cutoff)
         if not self.wires.ket or not self.wires.bra:
             return math.reshape(math.abs(fock_array) ** 2, (-1,))
-        else:
-            return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
+        return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
 
     @abstractmethod
     def formal_stellar_decomposition(
-        self, core_modes: Sequence[int]
+        self,
+        core_modes: Sequence[int],
     ) -> tuple[State, Transformation]:
         r"""
         Applies the formal stellar decomposition.
@@ -442,12 +445,12 @@ class State(CircuitComponent):
             probability = math.reshape(probability, probability.shape + (1,) * delta)
         elif probability.shape != () and isinstance(self.ansatz, ArrayAnsatz):
             probability = math.reshape(
-                probability, probability.shape + (1,) * self.ansatz.core_dims
+                probability,
+                probability.shape + (1,) * self.ansatz.core_dims,
             )
         if not self.wires.ket or not self.wires.bra:
             return self / math.sqrt(probability)
-        else:
-            return self / probability
+        return self / probability
 
     def phase_space(self, s: float) -> tuple:
         r"""
@@ -472,7 +475,8 @@ class State(CircuitComponent):
 
     @abstractmethod
     def physical_stellar_decomposition(
-        self, core_modes: Sequence[int]
+        self,
+        core_modes: Sequence[int],
     ) -> tuple[State, Transformation]:
         r"""
         Applies the physical stellar decomposition.
@@ -498,14 +502,13 @@ class State(CircuitComponent):
         """
         if len(quad) != 1 and len(quad) != self.n_modes:
             raise ValueError(
-                f"Expected {self.n_modes} or ``1`` quadrature vectors, got {len(quad)}."
+                f"Expected {self.n_modes} or ``1`` quadrature vectors, got {len(quad)}.",
             )
         if len(quad) == 1:
             quad = quad * self.n_modes
         if not self.wires.ket or not self.wires.bra:
             return math.abs(self.quadrature(*quad, phi=phi)) ** 2
-        else:
-            return math.abs(self.quadrature(*(quad * 2), phi=phi))
+        return math.abs(self.quadrature(*(quad * 2), phi=phi))
 
     def visualize_2d(
         self,
@@ -596,13 +599,13 @@ class State(CircuitComponent):
         fig.update_yaxes(range=pbounds, title_text="p", row=2, col=1)
 
         # X quadrature probability distribution
-        fig_11 = go.Scatter(x=x, y=prob_x, line=dict(color="steelblue", width=2), name="Prob(x)")
+        fig_11 = go.Scatter(x=x, y=prob_x, line={"color": "steelblue", "width": 2}, name="Prob(x)")
         fig.add_trace(fig_11, row=1, col=1)
         fig.update_xaxes(range=xbounds, row=1, col=1, showticklabels=False)
         fig.update_yaxes(title_text="Prob(x)", range=(0, max(prob_x)), row=1, col=1)
 
         # P quadrature probability distribution
-        fig_22 = go.Scatter(x=prob_p, y=p, line=dict(color="steelblue", width=2), name="Prob(p)")
+        fig_22 = go.Scatter(x=prob_p, y=p, line={"color": "steelblue", "width": 2}, name="Prob(p)")
         fig.add_trace(fig_22, row=2, col=2)
         fig.update_xaxes(title_text="Prob(p)", range=(0, max(prob_p)), row=2, col=2)
         fig.update_yaxes(range=pbounds, row=2, col=2, showticklabels=False)
@@ -611,7 +614,7 @@ class State(CircuitComponent):
             height=500,
             width=580,
             plot_bgcolor="aliceblue",
-            margin=dict(l=20, r=20, t=30, b=20),
+            margin={"l": 20, "r": 20, "t": 30, "b": 20},
             showlegend=False,
             coloraxis={"colorscale": colorscale, "cmid": 0},
         )
@@ -633,6 +636,7 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
+        return None
 
     def visualize_3d(
         self,
@@ -679,30 +683,41 @@ class State(CircuitComponent):
                 y=ps,
                 z=z,
                 coloraxis="coloraxis",
-                hovertemplate="x: %{x:.3f}"
-                + "<br>p: %{y:.3f}"
-                + "<br>W(x, p): %{z:.3f}<extra></extra>",
-            )
+                hovertemplate="x: %{x:.3f}<br>p: %{y:.3f}<br>W(x, p): %{z:.3f}<extra></extra>",
+            ),
         )
 
         fig.update_layout(
             autosize=False,
             width=500,
             height=500,
-            margin=dict(l=0, r=0, b=0, t=0),
-            scene_camera_eye=dict(x=-2.1, y=0.88, z=0.64),
+            margin={"l": 0, "r": 0, "b": 0, "t": 0},
+            scene_camera_eye={"x": -2.1, "y": 0.88, "z": 0.64},
             coloraxis={"colorscale": colorscale, "cmid": 0},
         )
         fig.update_traces(
-            contours_z=dict(
-                show=True, usecolormap=True, highlightcolor="limegreen", project_z=False
-            )
+            contours_z={
+                "show": True,
+                "usecolormap": True,
+                "highlightcolor": "limegreen",
+                "project_z": False,
+            },
         )
         fig.update_traces(
-            contours_y=dict(show=True, usecolormap=True, highlightcolor="red", project_y=False)
+            contours_y={
+                "show": True,
+                "usecolormap": True,
+                "highlightcolor": "red",
+                "project_y": False,
+            },
         )
         fig.update_traces(
-            contours_x=dict(show=True, usecolormap=True, highlightcolor="yellow", project_x=False)
+            contours_x={
+                "show": True,
+                "usecolormap": True,
+                "highlightcolor": "yellow",
+                "project_x": False,
+            },
         )
         fig.update_scenes(
             xaxis_title_text="x",
@@ -715,6 +730,7 @@ class State(CircuitComponent):
         if return_fig:
             return fig
         display(fig)
+        return None
 
     def visualize_dm(
         self,
@@ -741,19 +757,20 @@ class State(CircuitComponent):
             raise NotImplementedError("DM visualization not implemented for batched states.")
         dm = self.to_fock(cutoff).dm().ansatz.array
         fig = go.Figure(
-            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False)
+            data=go.Heatmap(z=abs(dm), colorscale="viridis", name="abs(ρ)", showscale=False),
         )
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
             height=257,
             width=257,
-            margin=dict(l=30, r=30, t=30, b=20),
+            margin={"l": 30, "r": 30, "t": 30, "b": 20},
         )
         fig.update_xaxes(title_text=f"abs(ρ), cutoff={dm.shape[0]}")
 
         if return_fig:
             return fig
         display(fig)
+        return None
 
     @property
     def wigner(self):
@@ -772,7 +789,6 @@ class State(CircuitComponent):
         """
         if isinstance(self.ansatz, PolyExpAnsatz):
             return (self >> BtoPS(self.modes, s=0)).ansatz.PS
-        else:
-            raise ValueError(
-                "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first."
-            )
+        raise ValueError(
+            "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first.",
+        )

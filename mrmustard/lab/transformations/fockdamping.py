@@ -18,7 +18,7 @@ The class representing a rotation gate.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from mrmustard.physics.wires import Wires
 
@@ -81,7 +81,7 @@ class FockDamping(Operation):
                 "damping",
                 damping_bounds,
                 None,
-            )
+            ),
         )
         self.ansatz = PolyExpAnsatz.from_function(
             fn=triples.fock_damping_Abc, beta=self.parameters.damping

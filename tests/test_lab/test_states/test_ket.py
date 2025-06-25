@@ -14,8 +14,6 @@
 
 """Tests for the ket."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 import numpy as np
 import pytest
 from ipywidgets import HTML, Box, HBox, VBox
@@ -61,7 +59,7 @@ def coherent_state_quad(q, x, y, phi=0):
     )
 
 
-class TestKet:  # pylint: disable=too-many-public-methods
+class TestKet:
     r"""
     Tests for the ``Ket`` class.
     """
@@ -71,7 +69,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_init(self, name, modes):
         state = Ket.from_ansatz(modes, None, name)
 
-        assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
+        assert name if name else state.name in ("Ket0", "Ket01", "Ket2319")
         assert state.modes == modes
         assert state.wires == Wires(modes_out_ket=set(modes))
 
@@ -192,7 +190,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = Ket.from_fock(
-            (modes,), array_in, "my_ket", batch_dims=state_in_fock.ansatz.batch_dims
+            (modes,),
+            array_in,
+            "my_ket",
+            batch_dims=state_in_fock.ansatz.batch_dims,
         )
         assert state_in_fock == state_out
 
@@ -211,7 +212,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     def test_from_phase_space(self, modes):
-
         rnd = Ket.random(modes)
         cov, means, coeff = rnd.phase_space(s=0)
         rnd2 = Ket.from_phase_space(modes, (cov, means, coeff))
@@ -349,7 +349,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(state.quadrature_distribution(q, phi=phi), abs(psi_phi) ** 2)
         assert math.allclose(state.to_fock(40).quadrature(q, phi=phi), psi_phi)
         assert math.allclose(
-            state.to_fock(40).quadrature_distribution(q, phi=phi), abs(psi_phi) ** 2
+            state.to_fock(40).quadrature_distribution(q, phi=phi),
+            abs(psi_phi) ** 2,
         )
 
     def test_quadrature_multimode_ket(self):
@@ -369,7 +370,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         q2 = np.linspace(-10, 10, 100)
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
         assert math.allclose(
-            state.quadrature_distribution(q1, q2).reshape(100, 100), abs(psi_q) ** 2
+            state.quadrature_distribution(q1, q2).reshape(100, 100),
+            abs(psi_q) ** 2,
         )
 
     def test_quadrature_batch(self):
@@ -524,7 +526,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         A = psi.ansatz.A
         assert math.allclose(psi.probability, 1)  # checks if the state is normalized
         assert math.allclose(
-            A - math.transpose(A), math.zeros((2, 2))
+            A - math.transpose(A),
+            math.zeros((2, 2)),
         )  # checks if the A matrix is symmetric
 
     def test_ipython_repr(self):
@@ -585,8 +588,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
         psi = Ket.random([0, 1, 2])
         phi = Ket.random([0, 1, 2])
 
-        (psi + phi).ansatz.batch_shape
-
         sigma = psi + phi
         sigma.ansatz._lin_sup = False
         core, U = sigma.physical_stellar_decomposition([0])
@@ -611,12 +612,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         assert psi == core1 >> phi1
         assert psi == core12 >> phi12
-        assert (core12 >> Vacuum((0)).dual).normalize() == Vacuum((1, 2))
+        assert (core12 >> Vacuum(0).dual).normalize() == Vacuum((1, 2))
 
         psi = Ket.random([0, 1, 2])
         phi = Ket.random([0, 1, 2])
-
-        (psi + phi).ansatz.batch_shape
 
         sigma = psi + phi
         core, U = sigma.formal_stellar_decomposition([0])
@@ -624,7 +623,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert sigma == core.contract(U, mode="zip")
 
     def test_wigner(self):
-
         ans = Vacuum(0).wigner
         x = np.linspace(0, 1, 100)
         solution = np.exp(-(x**2)) / np.pi
@@ -633,7 +631,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_wigner_poly_exp(self, n):
-
         psi = (Number(0, n).dm().to_bargmann()) >> Ggate(0)
         xs = np.linspace(-5, 5, 100)
         poly_exp_wig = math.real(psi.wigner(xs, 0))

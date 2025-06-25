@@ -19,8 +19,9 @@ Samplers for measurement devices.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from itertools import product
-from typing import Any, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -30,7 +31,7 @@ from .circuit_components import CircuitComponent
 from .circuit_components_utils import BtoQ
 from .states import Ket, Number, State
 
-__all__ = ["Sampler", "PNRSampler", "HomodyneSampler"]
+__all__ = ["HomodyneSampler", "PNRSampler", "Sampler"]
 
 
 class Sampler(ABC):
@@ -96,21 +97,25 @@ class Sampler(ABC):
         initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
 
         unique_samples, idxs, counts = np.unique(
-            initial_samples, return_index=True, return_counts=True
+            initial_samples,
+            return_index=True,
+            return_counts=True,
         )
         ret = []
-        for unique_sample, idx, counts in zip(unique_samples, idxs, counts):
+        for unique_sample, idx, count in zip(unique_samples, idxs, counts):
             meas_op = self._get_povm(unique_sample, initial_mode).dual
             prob = probs[idx]
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob
             reduced_state = (state >> meas_op) / norm
-            samples = self.sample(reduced_state, counts)
-            for sample in samples:
-                ret.append(np.append([unique_sample], sample))
+            samples = self.sample(reduced_state, count)
+            ret.extend(np.append([unique_sample], sample) for sample in samples)
         return np.array(ret)
 
     def sample_prob_dist(
-        self, state: State, n_samples: int = 1000, seed: int | None = None
+        self,
+        state: State,
+        n_samples: int = 1000,
+        seed: int | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         r"""
         Samples a state by computing the probability distribution.
@@ -154,8 +159,7 @@ class Sampler(ABC):
             kwargs = self.povms.parameters.to_dict()
             kwargs[self._outcome_arg] = meas_outcome
             return self.povms.__class__(mode, **kwargs)
-        else:
-            return self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
+        return self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
 
     def _validate_probs(self, probs: Sequence[float], atol: float) -> Sequence[float]:
         r"""
@@ -218,7 +222,8 @@ class HomodyneSampler(Sampler):
 
     def probabilities(self, state, atol=1e-4):
         probs = state.quadrature_distribution(
-            math.astensor(self.meas_outcomes), phi=self._phi  # TODO: revisit meas_outcomes
+            math.astensor(self.meas_outcomes),
+            phi=self._phi,  # TODO: revisit meas_outcomes
         ) * self._step ** len(state.modes)
         return self._validate_probs(probs, atol)
 
@@ -230,17 +235,18 @@ class HomodyneSampler(Sampler):
         initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
 
         unique_samples, idxs, counts = np.unique(
-            initial_samples, return_index=True, return_counts=True
+            initial_samples,
+            return_index=True,
+            return_counts=True,
         )
         ret = []
-        for unique_sample, idx, counts in zip(unique_samples, idxs, counts):
+        for unique_sample, idx, count in zip(unique_samples, idxs, counts):
             # Use partial_eval to evaluate the ansatz at the first mode only
             reduced_ansatz = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz(unique_sample)
             reduced_state = state.from_bargmann(state.modes[1:], reduced_ansatz.triple)
             prob = probs[idx] / self._step
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob
             normalized_reduced_state = reduced_state / norm
-            samples = self.sample(normalized_reduced_state, counts)
-            for sample in samples:
-                ret.append(np.append([unique_sample], sample))
+            samples = self.sample(normalized_reduced_state, count)
+            ret.extend(np.append([unique_sample], sample) for sample in samples)
         return np.array(ret)

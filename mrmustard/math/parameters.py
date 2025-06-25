@@ -16,7 +16,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from mrmustard.math.backend_manager import BackendManager
 
@@ -44,7 +45,8 @@ def update_symplectic(grads_and_vars, symplectic_lr: float):
         Y = math.euclidean_to_symplectic(S, dS_euclidean)
         YT = math.transpose(Y)
         new_value = math.matmul(
-            S, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
+            S,
+            math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT)),
         )
         math.assign(S, new_value)
 
@@ -128,7 +130,6 @@ class Constant:
         return type(self)(value=self.value * value, name=self.name)
 
 
-# pylint: disable=too-many-instance-attributes
 class Variable:
     r"""
     A parameter whose value can change.
@@ -164,10 +165,9 @@ class Variable:
         """
         if math.from_backend(value) and math.is_trainable(value):
             return value
-        elif hasattr(value, "dtype"):
+        if hasattr(value, "dtype"):
             return math.new_variable(value, bounds, name, value.dtype)
-        else:
-            return math.new_variable(value, bounds, name, dtype)
+        return math.new_variable(value, bounds, name, dtype)
 
     @property
     def bounds(self) -> tuple[float | None, float | None]:

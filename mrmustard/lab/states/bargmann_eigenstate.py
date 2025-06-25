@@ -18,7 +18,7 @@ The class representing a Bargmann eigenstate.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz

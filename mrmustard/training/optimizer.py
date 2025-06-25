@@ -15,10 +15,15 @@
 """This module contains the implementation of optimization classes and functions
 used within Mr Mustard.
 """
+
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping, Sequence
 from itertools import chain, groupby
+<<<<<<< HEAD
 from typing import Callable, Dict, List, Mapping, Sequence
+=======
+>>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 
 from mrmustard import math, settings
 from mrmustard.lab import Circuit
@@ -37,7 +42,6 @@ from mrmustard.utils.logger import create_logger
 __all__ = ["Optimizer"]
 
 
-# pylint: disable=disallowed-name
 class Optimizer:
     r"""An optimizer for any parametrized object: it can optimize euclidean, orthogonal and symplectic parameters.
 
@@ -61,8 +65,8 @@ class Optimizer:
             update_unitary: unitary_lr,
             update_orthogonal: orthogonal_lr,
         }
-        self.opt_history: List[float] = [0]
-        self.callback_history: Dict[str, List] = {}
+        self.opt_history: list[float] = [0]
+        self.callback_history: dict[str, list] = {}
         self.log = create_logger(__name__)
 
     def minimize(
@@ -70,7 +74,7 @@ class Optimizer:
         cost_fn: Callable,
         by_optimizing: Sequence[Constant | Variable | Circuit],
         max_steps: int = 1000,
-        callbacks: Callable | Sequence[Callable] | Mapping[str, Callable] = None,
+        callbacks: Callable | Sequence[Callable] | Mapping[str, Callable] | None = None,
     ):
         r"""Minimizes the given cost function by optimizing circuits and/or detectors.
 
@@ -97,7 +101,7 @@ class Optimizer:
             self._minimize(cost_fn, by_optimizing, max_steps, callbacks)
         except KeyboardInterrupt:  # graceful exit
             self.log.info("Optimizer execution halted due to keyboard interruption.")
-            raise self.OptimizerInterruptedError() from None
+            raise self.OptimizerInterruptedError from None
 
     def _minimize(self, cost_fn, by_optimizing, max_steps, callbacks):
         # finding out which parameters are trainable from the ops
@@ -110,7 +114,12 @@ class Optimizer:
             self._optimization_loop(cost_fn, trainable_params, max_steps, callbacks)
 
     def _optimization_loop(
-        self, cost_fn, trainable_params, max_steps, callbacks, progress_bar=None
+        self,
+        cost_fn,
+        trainable_params,
+        max_steps,
+        callbacks,
+        progress_bar=None,
     ):
         """Internal method that performs the main optimization loop.
 
@@ -217,19 +226,19 @@ class Optimizer:
         `{"euclidean": [...], "orthogonal": [...], "symplectic": [...]}, "unitary": [...]`.
         """
         sorted_grads_and_vars = sorted(
-            zip(grads, trainable_params), key=lambda grads_vars: grads_vars[1].type
+            zip(grads, trainable_params),
+            key=lambda grads_vars: grads_vars[1].type,
         )
-        grouped = {
+        return {
             key: list(result)
             for key, result in groupby(
-                sorted_grads_and_vars, key=lambda grads_vars: grads_vars[1].type
+                sorted_grads_and_vars,
+                key=lambda grads_vars: grads_vars[1].type,
             )
         }
 
-        return grouped
-
     @staticmethod
-    def compute_loss_and_gradients(cost_fn: Callable, parameters: List[Variable]):
+    def compute_loss_and_gradients(cost_fn: Callable, parameters: list[Variable]):
         r"""Uses the backend to compute the loss and gradients of the parameters
         given a cost function.
 
@@ -254,13 +263,14 @@ class Optimizer:
         the loss is stable or because the maximum number of steps is reached)."""
         if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
-        if len(self.opt_history) > 20:  # if cost varies less than 10e-6 over 20 steps
-            if (
-                sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
-                < 1e-6
-            ):
-                self.log.info("Loss looks stable, stopping here.")
-                return True
+        # if cost varies less than 10e-6 over 20 steps
+        if (
+            len(self.opt_history) > 20
+            and sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
+            < 1e-6
+        ):
+            self.log.info("Loss looks stable, stopping here.")
+            return True
         return False
 
     @staticmethod
@@ -272,7 +282,7 @@ class Optimizer:
             callbacks = {
                 (
                     callbacks.tag if isinstance(callbacks, Callback) else callbacks.__name__
-                ): callbacks
+                ): callbacks,
             }
         elif isinstance(callbacks, Sequence):
             callbacks = {
@@ -280,7 +290,7 @@ class Optimizer:
             }
         elif not isinstance(callbacks, Mapping):
             raise TypeError(
-                f"Argument `callbacks` expected to be a callable or a list/dict of callables, got {type(callbacks)}."
+                f"Argument `callbacks` expected to be a callable or a list/dict of callables, got {type(callbacks)}.",
             )
 
         if any(not callable(cb) for cb in callbacks.values()):
@@ -303,9 +313,9 @@ class Optimizer:
                 trainables=trainables,
             )
 
-            if not isinstance(cb_result, (Mapping, type(None))):
+            if not isinstance(cb_result, Mapping | type(None)):
                 raise TypeError(
-                    f"The expected return type of callback functions is dict, got {type(cb_result)}."
+                    f"The expected return type of callback functions is dict, got {type(cb_result)}.",
                 )
 
             new_cost_fn = cb_result.pop("cost_fn", None)

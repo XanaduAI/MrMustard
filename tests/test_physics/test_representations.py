@@ -14,8 +14,6 @@
 
 """Tests for the CircuitComponent class (formerly Representation)."""
 
-# pylint: disable=missing-function-docstring
-
 import pytest
 
 from mrmustard import math
@@ -60,7 +58,9 @@ class TestRepresentation:
     @pytest.fixture
     def btoq_rep_batch(self):
         ansatz = PolyExpAnsatz.from_function(
-            fn=bargmann_to_quadrature_Abc, n_modes=1, phi=[0.2, 0.2, 0.2]
+            fn=bargmann_to_quadrature_Abc,
+            n_modes=1,
+            phi=[0.2, 0.2, 0.2],
         )
         wires = Wires(set(), set(), {0}, {0})
         for w in wires.output:
@@ -103,7 +103,7 @@ class TestRepresentation:
     def test_to_fock(self, d_gate_rep):
         d_fock = d_gate_rep.to_fock(shape=(4, 6))
         assert d_fock.ansatz == ArrayAnsatz(
-            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
+            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6)),
         )
         for w in d_fock.wires.wires:
             assert w.repr == ReprEnum.FOCK

@@ -18,8 +18,8 @@ The class representing a beam splitter gate.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import replace
-from typing import Sequence
 
 from mrmustard import math
 from mrmustard.utils.typing import ComplexTensor
@@ -108,7 +108,9 @@ class BSgate(Unitary):
         self.wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
 
     def fock_array(
-        self, shape: int | Sequence[int] | None = None, method: str = "stable"
+        self,
+        shape: int | Sequence[int] | None = None,
+        method: str = "stable",
     ) -> ComplexTensor:
         r"""
         Returns the unitary representation of the Beam Splitter gate in the Fock basis.
@@ -133,12 +135,13 @@ class BSgate(Unitary):
 
         if self.ansatz.batch_shape:
             theta, phi = math.broadcast_arrays(
-                self.parameters.theta.value, self.parameters.phi.value
+                self.parameters.theta.value,
+                self.parameters.phi.value,
             )
             theta = math.reshape(theta, (-1,))
             phi = math.reshape(phi, (-1,))
             ret = math.astensor(
-                [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta, phi)]
+                [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta, phi)],
             )
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
         else:

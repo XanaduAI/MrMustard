@@ -18,7 +18,7 @@ The class representing a coherent state.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from mrmustard.lab.states.ket import Ket
 from mrmustard.lab.utils import make_parameter

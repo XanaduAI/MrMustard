@@ -14,9 +14,11 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
+# ruff: noqa: PLC0415
+# ruff: noqa: ICN001
 import os
 
-from rich import print
+from rich import print as rprint
 
 from ._version import __version__
 from .utils.filters import add_complex_warning_filter
@@ -57,7 +59,6 @@ def about():
         TensorFlow version:        2.7.0
         Torch version:             1.10.0+cu102
     """
-    # pylint: disable=import-outside-toplevel,consider-using-f-string
     import platform
     import sys
 
@@ -68,18 +69,18 @@ def about():
     import thewalrus
 
     # a QuTiP-style infobox
-    print("\nMr Mustard: a differentiable bridge between phase space and Fock space.")
-    print("Copyright 2021 Xanadu Quantum Technologies Inc.\n")
+    rprint("\nMr Mustard: a differentiable bridge between phase space and Fock space.")
+    rprint("Copyright 2021 Xanadu Quantum Technologies Inc.\n")
 
-    print("Python version:            {}.{}.{}".format(*sys.version_info[0:3]))
-    print("Platform info:             {}".format(platform.platform()))
-    print("Installation path:         {}".format(os.path.dirname(__file__)))
-    print("Mr Mustard version:        {}".format(__version__))
-    print("Numpy version:             {}".format(numpy.__version__))
-    print("Numba version:             {}".format(numba.__version__))
-    print("Scipy version:             {}".format(scipy.__version__))
-    print("The Walrus version:        {}".format(thewalrus.__version__))
-    print("TensorFlow version:        {}".format(tensorflow.__version__))
+    rprint("Python version:            {}.{}.{}".format(*sys.version_info[0:3]))
+    rprint(f"Platform info:             {platform.platform()}")
+    rprint(f"Installation path:         {os.path.dirname(__file__)}")
+    rprint(f"Mr Mustard version:        {__version__}")
+    rprint(f"Numpy version:             {numpy.__version__}")
+    rprint(f"Numba version:             {numba.__version__}")
+    rprint(f"Scipy version:             {scipy.__version__}")
+    rprint(f"The Walrus version:        {thewalrus.__version__}")
+    rprint(f"TensorFlow version:        {tensorflow.__version__}")
 
 
 # filter tensorflow cast warnings

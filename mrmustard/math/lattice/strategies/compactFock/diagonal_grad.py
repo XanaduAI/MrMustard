@@ -80,8 +80,8 @@ def use_offDiag_pivot_grad(
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
     G_in = np.zeros(2 * M, dtype=np.complex128)
-    G_in_dA = np.zeros((2 * M,) + A.shape, dtype=np.complex128)
-    G_in_dB = np.zeros((2 * M,) + B.shape, dtype=np.complex128)
+    G_in_dA = np.zeros((2 * M, *A.shape), dtype=np.complex128)
+    G_in_dB = np.zeros((2 * M, *B.shape), dtype=np.complex128)
 
     ########## READ ##########
     pivot_val = arr1[2 * d][params]
@@ -215,8 +215,8 @@ def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, 
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
     G_in = np.zeros(2 * M, dtype=np.complex128)
-    G_in_dA = np.zeros((2 * M,) + A.shape, dtype=np.complex128)
-    G_in_dB = np.zeros((2 * M,) + B.shape, dtype=np.complex128)
+    G_in_dA = np.zeros((2 * M, *A.shape), dtype=np.complex128)
+    G_in_dB = np.zeros((2 * M, *B.shape), dtype=np.complex128)
 
     ########## READ ##########
     pivot_val = arr0[params]
@@ -237,30 +237,39 @@ def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, 
 
     # Array1
     for i in range(2 * M):
-        if params[i // 2] + 1 < cutoffs[i // 2]:
+        if params[i // 2] + 1 < cutoffs[i // 2] and (i != 1 or params[0] + 2 < cutoffs[0]):
             # this if statement prevents a few elements from being written that will never be read
-            if i != 1 or params[0] + 2 < cutoffs[0]:
-                arr1_dA[i][params], arr1_dB[i][params] = calc_dA_dB(
-                    i,
-                    G_in_dA,
-                    G_in_dB,
-                    G_in,
-                    A,
-                    B,
-                    K_l,
-                    K_i,
-                    M,
-                    pivot_val,
-                    pivot_val_dA,
-                    pivot_val_dB,
-                )
+            arr1_dA[i][params], arr1_dB[i][params] = calc_dA_dB(
+                i,
+                G_in_dA,
+                G_in_dB,
+                G_in,
+                A,
+                B,
+                K_l,
+                K_i,
+                M,
+                pivot_val,
+                pivot_val_dA,
+                pivot_val_dB,
+            )
 
     return arr1_dA, arr1_dB
 
 
 @njit
 def fock_representation_diagonal_grad_NUMBA(
-    A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type
+    A,
+    B,
+    M,
+    cutoffs,
+    arr0,
+    arr2,
+    arr1010,
+    arr1001,
+    arr1,
+    tuple_type,
+    list_type,
 ):
     """
     Returns the gradients of the PNR probabilities of a mixed state according to algorithm 1 of
@@ -355,5 +364,15 @@ def fock_representation_diagonal_grad(A, B, M, arr0, arr2, arr1010, arr1001, arr
     tuple_type = numba.types.UniTuple(int64, M)
     list_type = numba.types.ListType(tuple_type)
     return fock_representation_diagonal_grad_NUMBA(
-        A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type
+        A,
+        B,
+        M,
+        cutoffs,
+        arr0,
+        arr2,
+        arr1010,
+        arr1001,
+        arr1,
+        tuple_type,
+        list_type,
     )

@@ -18,7 +18,7 @@ The class representing a squeezing gate.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from mrmustard.physics.wires import Wires
 

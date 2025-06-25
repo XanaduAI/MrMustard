@@ -18,7 +18,7 @@ Classes representing Gaussian states.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from mrmustard import math
 from mrmustard.math.parameters import update_symplectic
@@ -32,7 +32,7 @@ from ..utils import make_parameter, reshape_params
 from .dm import DM
 from .ket import Ket
 
-__all__ = ["GKet", "GDM"]
+__all__ = ["GDM", "GKet"]
 
 
 class GKet(Ket):

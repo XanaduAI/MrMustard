@@ -15,6 +15,7 @@
 """
 The class representing a Gaussian random noise channel.
 """
+
 from __future__ import annotations
 
 from mrmustard import math, settings
@@ -74,7 +75,7 @@ class GaussRandNoise(Channel):
         if Y.shape[-1] // 2 != len(modes):
             raise ValueError(
                 f"The number of modes {len(modes)} does not match the dimension of the "
-                f"Y matrix {Y.shape[-1] // 2}."
+                f"Y matrix {Y.shape[-1] // 2}.",
             )
 
         Y_eigenvectors_real = math.real(math.eigvals(Y))

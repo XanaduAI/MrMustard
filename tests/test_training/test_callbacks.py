@@ -13,6 +13,10 @@
 # limitations under the License.
 
 """callbacks tests"""
+<<<<<<< HEAD
+=======
+
+>>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -47,7 +51,7 @@ def test_tensorboard_callback(tmp_path):
 
     def cost_fn():
         return tf.abs(
-            circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k]
+            circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k],
         ) ** 2 + tf.reduce_sum(free_var**2)
 
     tbcb = TensorboardCallback(

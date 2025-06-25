@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -25,7 +24,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(".")), "doc"))
 # -- Project information -----------------------------------------------------
 
 project = "Mr Mustard"
-copyright = "2022, Xanadu Quantum Technologies"
+copyright = "2022, Xanadu Quantum Technologies"  # noqa: A001
 author = "Filippo Miatto"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -33,7 +32,7 @@ author = "Filippo Miatto"
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-import mrmustard as mm
+import mrmustard as mm  # noqa: E402
 
 release = mm.__version__
 
@@ -113,7 +112,7 @@ html_sidebars = {
     "**": [
         "searchbox.html",
         "globaltoc.html",
-    ]
+    ],
 }
 
 # Output file base name for HTML help builder.
@@ -126,7 +125,7 @@ edit_on_github_branch = "master/doc"
 autodoc_member_order = "bysource"
 
 # inheritance_diagram graphviz attributes
-inheritance_node_attrs = dict(color="lightskyblue1", style="filled")
+inheritance_node_attrs = {"color": "lightskyblue1", "style": "filled"}
 
 
 # -- Xanadu theme ---------------------------------------------------------
@@ -140,10 +139,10 @@ html_theme_options = {
             "name": "GitHub",
             "href": "https://github.com/XanaduAI/MrMustard",
             "icon": "fab fa-github",
-        }
+        },
     ],
     "extra_copyrights": [
-        "TensorFlow, the TensorFlow logo, and any related marks are trademarks " "of Google Inc."
+        "TensorFlow, the TensorFlow logo, and any related marks are trademarks of Google Inc.",
     ],
     "google_analytics_tracking_id": "UA-116279123-2",
     "prev_next_button_colour": "#b79226",

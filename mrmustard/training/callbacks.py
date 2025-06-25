@@ -67,16 +67,17 @@ Examples:
 
 """
 
-# pylint: disable = wrong-import-position
-
 from __future__ import annotations
 
 import hashlib
 import os
+<<<<<<< HEAD
+=======
+from collections.abc import Callable, Mapping, Sequence
+>>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Mapping, Sequence
 
 import numpy as np
 
@@ -120,7 +121,7 @@ class Callback:
         self.optimizer_step: int = 0
         self.callback_step: int = 0
 
-    def get_opt_step(self, optimizer, **kwargs):  # pylint: disable=unused-argument
+    def get_opt_step(self, optimizer, **kwargs):
         """Gets current step from optimizer."""
         self.optimizer_step = len(optimizer.opt_history)
         return self.optimizer_step
@@ -128,19 +129,19 @@ class Callback:
     def _should_call(self, **kwargs) -> bool:
         return (self.get_opt_step(**kwargs) % self.steps_per_call == 0) or self.trigger(**kwargs)
 
-    def trigger(self, **kwargs) -> bool:  # pylint: disable=unused-argument
+    def trigger(self, **kwargs) -> bool:
         """User implemented custom trigger conditions."""
 
-    def call(self, **kwargs) -> Mapping | None:  # pylint: disable=unused-argument
+    def call(self, **kwargs) -> Mapping | None:
         """User implemented main callback logic."""
 
-    def update_cost_fn(self, **kwargs) -> Callable | None:  # pylint: disable=unused-argument
+    def update_cost_fn(self, **kwargs) -> Callable | None:
         """User implemented cost_fn modifier."""
 
-    def update_grads(self, **kwargs) -> Sequence | None:  # pylint: disable=unused-argument
+    def update_grads(self, **kwargs) -> Sequence | None:
         """User implemented gradient modifier."""
 
-    def update_optimizer(self, optimizer, **kwargs):  # pylint: disable=unused-argument
+    def update_optimizer(self, optimizer, **kwargs):
         """User implemented optimizer update scheduler."""
 
     def __call__(
@@ -172,7 +173,7 @@ class Callback:
 
 
 @dataclass
-class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attributes
+class TensorboardCallback(Callback):
     """Callback for enabling Tensorboard tracking of optimization progresses.
 
     Things tracked:
@@ -225,7 +226,7 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
         """Initializes tb logdir folders and writer."""
         if (self.writter_logdir is None) or (self.optimizer_step <= self.steps_per_call):
             trainable_key_hash = hashlib.sha256(
-                ",".join(trainables.keys()).encode("utf-8")
+                ",".join(trainables.keys()).encode("utf-8"),
             ).hexdigest()
             self.experiment_tag = self.experiment_tag or f"experiment-{trainable_key_hash[:7]}"
             self.logdir = self.root_logdir / self.experiment_tag
@@ -245,7 +246,7 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
         cost,
         trainables,
         **kwargs,
-    ):  # pylint: disable=unused-argument,arguments-differ
+    ):
         """Logs costs and parameters to Tensorboard."""
         self.init_writer(trainables=trainables)
         obj_tag = "objectives"
@@ -257,7 +258,7 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
         }
         if self.cost_converter is not None:
             obj_scalars[f"{obj_tag}/{self.cost_converter.__name__}(cost)"] = self.cost_converter(
-                cost
+                cost,
             )
 
         if "orig_cost" in optimizer.callback_history:
@@ -272,12 +273,12 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
             tf.summary.scalar(k, data=v, step=self.optimizer_step)
 
         for k, (x, dx) in trainables.items():
-            x = np.array(x.value)
+            x_val = np.array(x.value)
             if self.track_grads:
-                dx = np.array(dx)
+                dx = np.array(dx)  # noqa: PLW2901
 
-            tag = k if np.size(x) <= 1 else None
-            for ind, val in np.ndenumerate(x):
+            tag = k if np.size(x_val) <= 1 else None
+            for ind, val in np.ndenumerate(x_val):
                 tag = tag or k + str(list(ind)).replace(" ", "")
                 tf.summary.scalar(tag + ":value", data=val, step=self.optimizer_step)
                 if self.track_grads:

@@ -15,6 +15,7 @@
 """
 The class representing an operation that changes Bargmann into quadrature.
 """
+
 from __future__ import annotations
 
 from typing import Sequence

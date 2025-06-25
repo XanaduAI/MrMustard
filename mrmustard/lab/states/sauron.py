@@ -15,6 +15,7 @@
 r"""
 The Sauron state is an approximation of the `n`-th Fock states using a ring of `n+1` coherent states.
 """
+
 from __future__ import annotations
 
 from mrmustard.lab.states.ket import Ket

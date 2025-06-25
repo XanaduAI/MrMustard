@@ -68,11 +68,11 @@ class Interferometer(Unitary):
         unitary = unitary if unitary is not None else math.random_unitary(num_modes)
         if unitary.shape[-1] != num_modes:
             raise ValueError(
-                f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}"
+                f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}",
             )
         super().__init__(name="Interferometer")
         self.parameters.add_parameter(
-            make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary)
+            make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary),
         )
         self.ansatz = PolyExpAnsatz.from_function(
             fn=lambda uni: Unitary.from_symplectic(

@@ -18,7 +18,7 @@ This module contains the defintion of the ket class ``Ket``.
 
 from __future__ import annotations
 
-from typing import Collection, Sequence
+from collections.abc import Collection, Sequence
 
 import numpy as np
 from IPython.display import display
@@ -70,18 +70,20 @@ class Ket(State):
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for a linear superposition of states."
+                "Physicality conditions are not implemented for a linear superposition of states.",
             )
         if self.ansatz.num_derived_vars > 0:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for derived variables."
+                "Physicality conditions are not implemented for derived variables.",
             )
         if isinstance(self.ansatz, ArrayAnsatz):
             raise NotImplementedError(
-                "Physicality conditions are not implemented for states with ArrayAnsatz."
+                "Physicality conditions are not implemented for states with ArrayAnsatz.",
             )
         return math.all(math.abs(math.eigvals(self.ansatz.A)) < 1) and math.allclose(
-            self.probability, 1, settings.ATOL
+            self.probability,
+            1,
+            settings.ATOL,
         )
 
     @property
@@ -136,7 +138,7 @@ class Ket(State):
         modes = set(modes)
         if ansatz and ansatz.num_vars != len(modes):
             raise ValueError(
-                f"Expected an ansatz with {len(modes)} variables, found {ansatz.num_vars}."
+                f"Expected an ansatz with {len(modes)} variables, found {ansatz.num_vars}.",
             )
         wires = Wires(modes_out_ket=modes)
         if isinstance(ansatz, ArrayAnsatz):
@@ -209,7 +211,7 @@ class Ket(State):
                         -1j * math.eye(m, dtype=math.complex128),
                         1j * math.eye(m, dtype=math.complex128),
                     ],
-                ]
+                ],
             )
         )
         S = math.conj(math.transpose(transformation)) @ S @ transformation
@@ -295,7 +297,7 @@ class Ket(State):
 
         elif op_type is OperatorType.DM_LIKE:
             result = (self.adjoint.contract(self.contract(operator.dual))) >> TraceOut(
-                leftover_modes
+                leftover_modes,
             )
 
         else:
@@ -366,10 +368,10 @@ class Ket(State):
 
         batch_shape = self.ansatz.batch_shape
 
-        Om = math.zeros(batch_shape + (M, M), dtype=math.complex128)
+        Om = math.zeros((*batch_shape, M, M), dtype=math.complex128)
         As = math.block([[Om, R_transpose], [R, An]])
 
-        bs = math.concat([math.zeros(batch_shape + (M,), dtype=math.complex128), bn], -1)
+        bs = math.concat([math.zeros((*batch_shape, M), dtype=math.complex128), bn], -1)
         cs = c
 
         inverse_order = np.argsort(new_order)
@@ -381,14 +383,14 @@ class Ket(State):
 
         if batch_shape != ():
             Im = math.stack(
-                [math.eye(M, dtype=math.complex128)] * int(math.prod(batch_shape))
+                [math.eye(M, dtype=math.complex128)] * int(math.prod(batch_shape)),
             ).reshape(batch_shape + (M,) * 2)
         else:
             Im = math.eye(M, dtype=math.complex128)
 
         At = math.block([[Am, Im], [Im, Om]])
 
-        bt = math.concat([bm, math.zeros(batch_shape + (M,), dtype=math.complex128)], -1)
+        bt = math.concat([bm, math.zeros((*batch_shape, M), dtype=math.complex128)], -1)
         ct = math.ones_like(c)
         t = Operation.from_bargmann(core_modes, core_modes, (At, bt, ct))
 
@@ -461,7 +463,10 @@ class Ket(State):
         Au = math.block([[Am, gamma], [gamma_transpose, -math.conj(Am)]])
 
         bu_in = -math.einsum(
-            "...ij,...jk,...k->...i", math.conj(Am), gamma_inv_T, bm
+            "...ij,...jk,...k->...i",
+            math.conj(Am),
+            gamma_inv_T,
+            bm,
         ) - math.einsum("...ij,...j->...i", gamma_inv, math.conj(bm))
         bu = math.concat([bm, bu_in], -1)
         cu = math.ones(batch_shape, dtype=math.complex128)
@@ -474,9 +479,9 @@ class Ket(State):
         R_T = math.einsum("...ij->...ji", R)
         A_core = math.block(
             [
-                [math.zeros(batch_shape + (M, M), dtype=math.complex128), gamma_inv @ R_T],
+                [math.zeros((*batch_shape, M, M), dtype=math.complex128), gamma_inv @ R_T],
                 [R @ gamma_inv_T, An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R_T],
-            ]
+            ],
         )
 
         Rc = R @ gamma_inv_T

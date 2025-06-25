@@ -18,10 +18,11 @@ The classes representing an identity gate.
 
 from __future__ import annotations
 
+from mrmustard.physics.wires import Wires
+
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
 from .base import Unitary
-from mrmustard.physics.wires import Wires
 
 __all__ = ["Identity"]
 

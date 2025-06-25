@@ -24,7 +24,9 @@ from mrmustard.utils.typing import ComplexMatrix, Matrix, Scalar, Vector
 
 
 def bargmann_Abc_to_phasespace_cov_means(
-    A: Matrix, b: Vector, c: Scalar
+    A: Matrix,
+    b: Vector,
+    c: Scalar,
 ) -> tuple[Matrix, Vector, Scalar]:
     r"""
     Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
@@ -156,7 +158,7 @@ def au2Symplectic(A):
                     -1j * math.eye(m, dtype=math.complex128),
                     1j * math.eye(m, dtype=math.complex128),
                 ],
-            ]
+            ],
         )
     )
 
@@ -186,9 +188,7 @@ def symplectic2Au(S):
     A_3 = math.einsum("...ij->...ji", A_2)
     A_4 = -math.conj(math.solve(S_1, S_2))
 
-    A = math.block([[A_1, A_2], [A_3, A_4]])
-
-    return A
+    return math.block([[A_1, A_2], [A_3, A_4]])
 
 
 def XY_of_channel(A: ComplexMatrix):
@@ -207,13 +207,13 @@ def XY_of_channel(A: ComplexMatrix):
         [
             [A[..., :m, :m], A[..., :m, 2 * m : 3 * m]],
             [A[..., 2 * m : 3 * m, :m], A[..., 2 * m : 3 * m, 2 * m : 3 * m]],
-        ]
+        ],
     )
     R = math.block(
         [
             [A[..., :m, m : 2 * m], A[..., :m, 3 * m :]],
             [A[..., 2 * m : 3 * m, m : 2 * m], A[..., 2 * m : 3 * m, 3 * m :]],
-        ]
+        ],
     )
     X_tilde = (
         -math.inv(math.eye(n, dtype=math.complex128) - math.Xmat(m) @ A_out)
@@ -228,7 +228,7 @@ def XY_of_channel(A: ComplexMatrix):
                 -1j * math.eye(m, dtype=math.complex128),
                 1j * math.eye(m, dtype=math.complex128),
             ],
-        ]
+        ],
     )
     X = -transformation @ X_tilde @ math.conj(transformation).T / 2
 

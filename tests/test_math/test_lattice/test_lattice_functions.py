@@ -42,7 +42,7 @@ def test_binomial_vs_binomialDict():
     G, _ = binomial(local_cutoffs, A, b, c, max_prob, global_cutoff)
     D = binomial_dict(local_cutoffs, A, b, complex(c), max_prob, global_cutoff)
 
-    for idx in D.keys():
+    for idx in D:
         assert np.isclose(D[idx], G[idx])
 
 

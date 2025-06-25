@@ -14,8 +14,6 @@
 
 """Tests for the ``Number`` class."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 import pytest
 
 from mrmustard import math, settings

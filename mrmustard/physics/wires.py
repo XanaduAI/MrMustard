@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from functools import cached_property
 from random import randint
-from typing import Any, Callable, Iterable, Iterator
+from typing import Any
 
 from IPython.display import display
 
@@ -179,7 +180,7 @@ class ClassicalWire:
         return 1000_000 + self.mode + 10_000 * (1 - 2 * self.is_out)
 
 
-class Wires:  # pylint: disable=too-many-public-methods
+class Wires:
     r"""
     A class with wire functionality for tensor network applications.
 
@@ -327,7 +328,6 @@ class Wires:  # pylint: disable=too-many-public-methods
         classical_out: set[int] | None = None,
         classical_in: set[int] | None = None,
     ):
-
         modes_out_bra = modes_out_bra or set()
         modes_in_bra = modes_in_bra or set()
         modes_out_ket = modes_out_ket or set()

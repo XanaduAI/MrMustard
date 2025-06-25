@@ -14,7 +14,11 @@
 
 """TODO: document this module"""
 
+<<<<<<< HEAD
 from typing import Sequence
+=======
+from collections.abc import Sequence
+>>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 
 from mrmustard import math
 from mrmustard.utils.typing import Tensor
@@ -33,7 +37,8 @@ def update_symplectic(grads_and_vars: Sequence[tuple[Tensor, Trainable]], symple
         Y = math.euclidean_to_symplectic(S, dS_euclidean)
         YT = math.transpose(Y)
         new_value = math.matmul(
-            S, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
+            S,
+            math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT)),
         )
         math.assign(S, new_value)
 

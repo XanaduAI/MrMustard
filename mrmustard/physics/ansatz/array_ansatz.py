@@ -18,7 +18,8 @@ This module contains the array ansatz.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any
 from warnings import warn
 
 import numpy as np
@@ -175,7 +176,7 @@ class ArrayAnsatz(Ansatz):
         if not set(idx_out).issubset(all_labels_in):
             raise ValueError("Output labels must be present in input labels.")
 
-        unique_labels = sorted(list(all_labels_in), key=lambda x: (isinstance(x, int), x))
+        unique_labels = sorted(all_labels_in, key=lambda x: (isinstance(x, int), x))
         label_to_char = {label: chr(97 + i) for i, label in enumerate(unique_labels)}
 
         einsum_str1 = "".join([label_to_char[i] for i in idx1])
@@ -239,14 +240,17 @@ class ArrayAnsatz(Ansatz):
             raise ValueError(f"Expected shape of length {self.core_dims}, got {len(shape)}.")
 
         if any(s > t for s, t in zip(shape, self.core_shape)):
-            warn("The fock array is being padded with zeros. Is this really necessary?")
+            warn(
+                "The fock array is being padded with zeros. Is this really necessary?",
+                stacklevel=1,
+            )
             padded = math.pad(
                 self.array,
                 [(0, 0)] * self.batch_dims + [(0, s - t) for s, t in zip(shape, self.core_shape)],
             )
             return ArrayAnsatz(padded, self.batch_dims)
 
-        return ArrayAnsatz(self.array[(...,) + tuple(slice(0, s) for s in shape)], self.batch_dims)
+        return ArrayAnsatz(self.array[(..., *tuple(slice(0, s) for s in shape))], self.batch_dims)
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> ArrayAnsatz:
         order = list(range(self.batch_dims)) + [i + self.batch_dims for i in order]
@@ -255,7 +259,7 @@ class ArrayAnsatz(Ansatz):
     def reorder_batch(self, order: Sequence[int]):
         if len(order) != self.batch_dims:
             raise ValueError(
-                f"order must have length {self.batch_dims} (number of batch dimensions), got {len(order)}"
+                f"order must have length {self.batch_dims} (number of batch dimensions), got {len(order)}",
             )
 
         core_dims_indices = range(self.batch_dims, self.batch_dims + self.core_dims)
@@ -276,7 +280,7 @@ class ArrayAnsatz(Ansatz):
         )
         new_array = math.transpose(self.array, order)
         n = np.prod(new_array.shape[-len(idx_z) :])
-        new_array = math.reshape(new_array, new_array.shape[: -2 * len(idx_z)] + (n, n))
+        new_array = math.reshape(new_array, (*new_array.shape[: -2 * len(idx_z)], n, n))
         trace = math.trace(new_array)
         return ArrayAnsatz(trace, self.batch_dims)
 
@@ -344,7 +348,9 @@ class ArrayAnsatz(Ansatz):
             return False
         slices = tuple(slice(0, min(si, oi)) for si, oi in zip(self.core_shape, other.core_shape))
         return math.allclose(
-            self.array[(...,) + slices], other.array[(...,) + slices], atol=settings.ATOL
+            self.array[(..., *slices)],
+            other.array[(..., *slices)],
+            atol=settings.ATOL,
         )
 
     def __mul__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:

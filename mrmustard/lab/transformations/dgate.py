@@ -18,8 +18,8 @@ The class representing a displacement gate.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import replace
-from typing import Sequence
 
 from mrmustard import math
 from mrmustard.utils.typing import ComplexTensor
@@ -97,7 +97,7 @@ class Dgate(Unitary):
         )
         self.wires = Wires(set(), set(), {mode}, {mode})
 
-    def fock_array(self, shape: int | Sequence[int] = None) -> ComplexTensor:
+    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
 
@@ -115,7 +115,7 @@ class Dgate(Unitary):
         shape = tuple(shape)
         if len(shape) != len(auto_shape):
             raise ValueError(
-                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
+                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}",
             )
         if self.ansatz.batch_shape:
             x, y = math.broadcast_arrays(self.parameters.x.value, self.parameters.y.value)
