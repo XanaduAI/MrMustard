@@ -20,10 +20,6 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from itertools import chain, groupby
-<<<<<<< HEAD
-from typing import Callable, Dict, List, Mapping, Sequence
-=======
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 
 from mrmustard import math, settings
 from mrmustard.lab import Circuit

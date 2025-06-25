@@ -71,10 +71,7 @@ from __future__ import annotations
 
 import hashlib
 import os
-<<<<<<< HEAD
-=======
 from collections.abc import Callable, Mapping, Sequence
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path

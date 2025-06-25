@@ -25,10 +25,6 @@ from collections.abc import Generator
 from copy import deepcopy
 from math import factorial
 from queue import PriorityQueue
-<<<<<<< HEAD
-from typing import Generator
-=======
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 
 import networkx as nx
 import numpy as np

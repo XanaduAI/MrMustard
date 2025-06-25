@@ -60,15 +60,8 @@ class TestCircuitComponent:
     def test_init(self, x, y):
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(x, y))
-<<<<<<< HEAD
         wires = Wires(set(), set(), {1, 8}, {1, 8})
         cc = CircuitComponent(ansatz=ansatz, wires=wires, name=name)
-=======
-        cc = CircuitComponent(
-            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})),
-            name=name,
-        )
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 
         assert cc.name == name
         assert cc.modes == (1, 8)
@@ -77,18 +70,9 @@ class TestCircuitComponent:
         assert cc.manual_shape == [None] * 4
 
     def test_missing_name(self):
-<<<<<<< HEAD
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2))
         wires = Wires(set(), set(), {1, 8}, {1, 8})
         cc = CircuitComponent(ansatz=ansatz, wires=wires)
-=======
-        cc = CircuitComponent(
-            Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2)),
-                Wires(set(), set(), {1, 8}, {1, 8}),
-            ),
-        )
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
         cc._name = None
         assert cc.name == "CC18"
 
@@ -113,13 +97,8 @@ class TestCircuitComponent:
 
     def test_from_to_quadrature(self):
         c = Dgate(0, x=0.1, y=0.2) >> Sgate(0, r=1.0, phi=0.1)
-<<<<<<< HEAD
         cc = CircuitComponent(ansatz=c.ansatz, wires=c.wires, name=c.name)
         ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature_triple())
-=======
-        cc = CircuitComponent(c.representation, c.name)
-        ccc = CircuitComponent.from_quadrature((), (), (0,), (0,), cc.quadrature_triple())
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
         assert cc == ccc
 
     def test_adjoint(self):
@@ -159,18 +138,9 @@ class TestCircuitComponent:
         assert d1_dual_dual.ansatz == d1.ansatz
 
     def test_light_copy(self):
-<<<<<<< HEAD
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1))
         wires = Wires(set(), set(), {1}, {1})
         d1 = CircuitComponent(ansatz=ansatz, wires=wires)
-=======
-        d1 = CircuitComponent(
-            Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1)),
-                Wires(set(), set(), {1}, {1}),
-            ),
-        )
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
         d1_cp = d1._light_copy()
 
         assert d1_cp.parameters is d1.parameters
@@ -230,11 +200,7 @@ class TestCircuitComponent:
         c = settings.rng.random(5) + 0.0j
         polyexp = PolyExpAnsatz(A, b, c)
         fock_cc = CircuitComponent(
-<<<<<<< HEAD
             ansatz=polyexp, wires=Wires(set(), set(), {0, 1}, set())
-=======
-            Representation(polyexp, Wires(set(), set(), {0, 1}, set())),
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
         ).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
         assert fock_cc.ansatz._original_abc_data is None
@@ -498,12 +464,7 @@ class TestCircuitComponent:
     def test_repr(self):
         c1 = CircuitComponent(ansatz=None, wires=Wires(modes_out_ket={0, 1, 2}))
         c2 = CircuitComponent(
-<<<<<<< HEAD
             ansatz=None, wires=Wires(modes_out_ket={0, 1, 2}), name="my_component"
-=======
-            Representation(wires=Wires(modes_out_ket={0, 1, 2})),
-            name="my_component",
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
         )
 
         assert repr(c1) == "CircuitComponent(modes=(0, 1, 2), name=CC012)"
@@ -591,14 +552,7 @@ class TestCircuitComponent:
         """Test the default serializer."""
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4))
-<<<<<<< HEAD
         cc = CircuitComponent(ansatz, Wires(set(), set(), {1, 8}, {1, 8}), name=name)
-=======
-        cc = CircuitComponent(
-            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})),
-            name=name,
-        )
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
         kwargs, arrays = cc._serialize()
         assert kwargs == {
             "class": f"{CircuitComponent.__module__}.CircuitComponent",

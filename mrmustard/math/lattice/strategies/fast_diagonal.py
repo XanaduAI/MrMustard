@@ -16,11 +16,7 @@
 This module contains the fast diagonal strategy for computing the conditional density matrices.
 """
 
-<<<<<<< HEAD
-from functools import lru_cache
-=======
 from functools import cache
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 from itertools import product
 
 import numpy as np

@@ -18,12 +18,8 @@ A Jax based optimizer for any parametrized object.
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-=======
 from collections.abc import Callable, Sequence
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 from itertools import chain
-from typing import Callable, Sequence
 
 import equinox as eqx
 import jax

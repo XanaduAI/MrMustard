@@ -14,11 +14,7 @@
 
 """TODO: document this module"""
 
-<<<<<<< HEAD
-from typing import Sequence
-=======
 from collections.abc import Sequence
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 
 from mrmustard import math
 from mrmustard.utils.typing import Tensor

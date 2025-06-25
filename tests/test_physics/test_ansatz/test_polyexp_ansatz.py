@@ -21,11 +21,7 @@ import pytest
 from ipywidgets import HTML, Box, IntSlider, IntText, Stack, VBox
 from plotly.graph_objs import FigureWidget
 
-<<<<<<< HEAD
-from mrmustard import math
-=======
 from mrmustard import math, settings
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 from mrmustard.lab.transformations import Identity
 from mrmustard.physics.ansatz.polyexp_ansatz import PolyExpAnsatz
 from mrmustard.physics.gaussian_integrals import (

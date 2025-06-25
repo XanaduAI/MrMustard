@@ -115,14 +115,8 @@ class TestUnitary:
     def test_inverse_unitary(self, batch_shape):
         r = math.broadcast_to(0.1, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
-<<<<<<< HEAD
         u = Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip")
         gate = Unitary(u.ansatz, u.wires, u.name)
-=======
-        gate = Unitary(
-            Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip").representation,
-        )  # TODO: revisit rshift
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
         gate_inv = gate.inverse()
         gate_inv_inv = gate_inv.inverse()
         assert gate_inv_inv == gate
@@ -199,17 +193,8 @@ class TestChannel:
     def test_inverse_channel(self, batch_shape):
         r = math.broadcast_to(0.1, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
-<<<<<<< HEAD
         g = Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip").contract(Attenuator(0, 0.5), "zip")
         gate = Channel(g.ansatz, g.wires, g.name)
-=======
-        gate = Channel(
-            Sgate(0, r, phi)
-            .contract(Dgate(0, r, phi), "zip")
-            .contract(Attenuator(0, 0.5), "zip")
-            .representation,
-        )  # TODO: revisit rshift
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
         should_be_identity = gate >> gate.inverse()
         assert should_be_identity.ansatz == Attenuator(0, 1.0).ansatz
 

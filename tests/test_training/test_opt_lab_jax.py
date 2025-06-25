@@ -13,10 +13,7 @@
 # limitations under the License.
 
 """Tests for the Optimizer class"""
-<<<<<<< HEAD
-=======
 
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 import numpy as np
 import pytest
 from hypothesis import given

@@ -1,10 +1,7 @@
 """
 Unit tests for mrmustard.math.compactFock.compactFock~
 """
-<<<<<<< HEAD
-=======
 
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 import numpy as np
 import pytest
 

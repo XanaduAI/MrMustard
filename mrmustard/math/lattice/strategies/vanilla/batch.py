@@ -20,11 +20,8 @@ from numba import njit, prange
 from mrmustard.utils.typing import ComplexTensor
 
 from .core import stable_numba, vanilla_numba
-<<<<<<< HEAD
-=======
 
 # ruff: noqa: RUF005
->>>>>>> 965e620a15fcac922c6af4ecaa88953701fd1e31
 
 
 @njit(parallel=True)
