@@ -48,7 +48,7 @@ class Dgate(Unitary):
         x_bounds: The bounds for ``x``.
         y_bounds: The bounds for ``y``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import Dgate
 
