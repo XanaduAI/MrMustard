@@ -122,6 +122,7 @@ class State(CircuitComponent):
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
 
         .. code-block::
+
             >>> from mrmustard import math
             >>> from mrmustard.lab import Ket
 
@@ -369,6 +370,7 @@ class State(CircuitComponent):
 
         Example:
         .. code-block::
+
             >>> from mrmustard import math
             >>> from mrmustard.lab import Vacuum
 
