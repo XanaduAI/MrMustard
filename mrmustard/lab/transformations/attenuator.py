@@ -99,8 +99,8 @@ class Attenuator(Channel):
             eta=self.parameters.transmissivity,
         )
         self.wires = Wires(
-            modes_in_bra=set([mode]),
-            modes_out_bra=set([mode]),
-            modes_in_ket=set([mode]),
-            modes_out_ket=set([mode]),
+            modes_in_bra={mode},
+            modes_out_bra={mode},
+            modes_in_ket={mode},
+            modes_out_ket={mode},
         )

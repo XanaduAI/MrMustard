@@ -80,4 +80,4 @@ class BargmannEigenstate(Ket):
             fn=triples.bargmann_eigenstate_Abc,
             alpha=self.parameters.alpha,
         )
-        self.wires = Wires(modes_out_ket=set([mode]))
+        self.wires = Wires(modes_out_ket={mode})

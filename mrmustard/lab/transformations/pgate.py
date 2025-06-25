@@ -72,4 +72,4 @@ class Pgate(Unitary):
             ).bargmann_triple(),
             shearing=self.parameters.shearing,
         )
-        self.wires = Wires(modes_in_ket=set([mode]), modes_out_ket=set([mode]))
+        self.wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})

@@ -84,7 +84,7 @@ class QuadratureEigenstate(Ket):
             x=self.parameters.x,
             phi=self.parameters.phi,
         )
-        self.wires = Wires(modes_out_ket=set([mode]))
+        self.wires = Wires(modes_out_ket={mode})
 
         for w in self.wires.output.wires:
             w.repr = ReprEnum.QUADRATURE

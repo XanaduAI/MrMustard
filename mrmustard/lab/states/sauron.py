@@ -66,5 +66,5 @@ class Sauron(Ket):
             n=self.parameters.n,
             epsilon=self.parameters.epsilon,
         )
-        self.wires = Wires(modes_out_ket=set([mode]))
+        self.wires = Wires(modes_out_ket={mode})
         self.ansatz._lin_sup = True

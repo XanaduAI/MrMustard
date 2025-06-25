@@ -157,7 +157,7 @@ class Transformation(CircuitComponent):
         )
         almost_identity = self.contract(almost_inverse, "zip")
         invert_this_c = almost_identity.ansatz.c
-        actual_inverse = self._from_attributes(
+        return self._from_attributes(
             PolyExpAnsatz(
                 math.inv(A),
                 math.einsum("...ij,...j->...i", -math.inv(A), b),
@@ -166,7 +166,6 @@ class Transformation(CircuitComponent):
             self.wires.copy(new_ids=True),
             self.name + "_inv",
         )
-        return actual_inverse
 
 
 class Operation(Transformation):
@@ -555,6 +554,6 @@ class Channel(Map):
         Returns a ``Channel`` when ``other`` is a ``Channel`` or a ``Unitary``, and a ``CircuitComponent`` otherwise.
         """
         ret = super().__rshift__(other)
-        if isinstance(other, (Channel, Unitary)):
+        if isinstance(other, Channel | Unitary):
             return Channel(ret.ansatz, ret.wires)
         return ret

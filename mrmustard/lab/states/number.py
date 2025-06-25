@@ -74,7 +74,7 @@ class Number(Ket):
         )
 
         self.ansatz = ArrayAnsatz.from_function(fock_state, n=n, cutoffs=cutoff)
-        self.wires = Wires(modes_out_ket=set([mode]))
+        self.wires = Wires(modes_out_ket={mode})
         self.short_name = str(int(n))
         self.manual_shape[0] = cutoff + 1
 

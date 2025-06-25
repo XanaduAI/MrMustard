@@ -68,10 +68,10 @@ class PhaseNoise(Channel):
         )
         self.ansatz = None
         self.wires = Wires(
-            modes_in_bra=set([mode]),
-            modes_out_bra=set([mode]),
-            modes_in_ket=set([mode]),
-            modes_out_ket=set([mode]),
+            modes_in_bra={mode},
+            modes_out_bra={mode},
+            modes_in_ket={mode},
+            modes_out_ket={mode},
         )
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:

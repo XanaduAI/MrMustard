@@ -101,4 +101,4 @@ class DisplacedSqueezed(Ket):
             r=self.parameters.r,
             phi=self.parameters.phi,
         )
-        self.wires = Wires(modes_out_ket=set([mode]))
+        self.wires = Wires(modes_out_ket={mode})

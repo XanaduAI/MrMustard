@@ -64,4 +64,4 @@ class Rgate(Unitary):
             fn=triples.rotation_gate_Abc,
             theta=self.parameters.theta,
         )
-        self.wires = Wires(modes_in_ket=set([mode]), modes_out_ket=set([mode]))
+        self.wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})

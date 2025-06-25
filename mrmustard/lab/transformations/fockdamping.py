@@ -87,4 +87,4 @@ class FockDamping(Operation):
             fn=triples.fock_damping_Abc,
             beta=self.parameters.damping,
         )
-        self.wires = Wires(modes_in_ket=set([mode]), modes_out_ket=set([mode]))
+        self.wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})

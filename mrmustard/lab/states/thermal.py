@@ -74,4 +74,4 @@ class Thermal(DM):
             fn=triples.thermal_state_Abc,
             nbar=self.parameters.nbar,
         )
-        self.wires = Wires(modes_out_bra=set([mode]), modes_out_ket=set([mode]))
+        self.wires = Wires(modes_out_bra={mode}, modes_out_ket={mode})

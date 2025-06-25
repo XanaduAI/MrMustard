@@ -552,14 +552,14 @@ class CircuitComponent:
         wires_result, _ = self_wires @ other_wires
         core1, core2, core_out = self_wires.contracted_labels(other_wires)
         if mode == "zip":
-            from mrmustard.physics.utils import zip_batch_strings
+            from mrmustard.physics.utils import zip_batch_strings  # noqa: PLC0415
 
             eins_str = zip_batch_strings(
                 self_ansatz.batch_dims - self_ansatz._lin_sup,
                 other_ansatz.batch_dims - other_ansatz._lin_sup,
             )
         elif mode == "kron":
-            from mrmustard.physics.utils import outer_product_batch_str
+            from mrmustard.physics.utils import outer_product_batch_str  # noqa: PLC0415
 
             eins_str = outer_product_batch_str(
                 self_ansatz.batch_dims - self_ansatz._lin_sup,
@@ -607,7 +607,7 @@ class CircuitComponent:
                 shape=shape + self.ansatz.shape_derived_vars,
             )
             G = math.reshape(G, self.ansatz.batch_shape + shape + (-1,))
-            cs = math.reshape(c, self.ansatz.batch_shape + (-1,))
+            cs = math.reshape(c, (*self.ansatz.batch_shape, -1))
             core_str = "".join(
                 [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))],
             )
