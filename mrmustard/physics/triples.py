@@ -73,7 +73,7 @@ def vacuum_state_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, Comple
 
     A = _vacuum_A_matrix(n_modes)
     b = _vacuum_B_vector(n_modes)
-    c = np.array(1.0 + 0.0j, dtype=np.complex128)
+    c = math.astensor(1.0 + 0.0j)
 
     return A, b, c
 
