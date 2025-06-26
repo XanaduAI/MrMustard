@@ -160,14 +160,18 @@ class Transformation(CircuitComponent):
         b_orig_out = b_orig[..., out_idx]
         b_of_inverse_in = b_of_inverse[..., in_idx]
         m = A.shape[-1] // 2
-        Im = math.broadcast_to(math.eye(m), (*A.shape[:-2], m, m))
+        Im = math.broadcast_to(math.eye(m, dtype=math.complex128), (*A.shape[:-2], m, m))
         M = math.block([[A_orig_out, -Im], [-Im, A_inv_in]])
         combined_b = math.concat([b_orig_out, b_of_inverse_in], axis=-1)
-        c_of_inverse = 1 / c_orig
-        c_of_inverse *= math.sqrt(math.det(1j * M))
-        c_of_inverse *= math.exp(
-            0.5 * math.einsum("...i,...ij,...j->...", combined_b, math.inv(M), combined_b),
+        c_of_inverse = (
+            1
+            / c_orig
+            * math.sqrt(math.cast(math.det(1j * M), dtype=math.complex128))
+            * math.exp(
+                0.5 * math.einsum("...i,...ij,...j->...", combined_b, math.inv(M), combined_b),
+            )
         )
+
         return self._from_attributes(
             Representation(
                 PolyExpAnsatz(
