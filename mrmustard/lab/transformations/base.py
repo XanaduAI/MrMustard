@@ -147,25 +147,33 @@ class Transformation(CircuitComponent):
         if not isinstance(self.ansatz, PolyExpAnsatz):  # pragma: no cover
             raise NotImplementedError("Only Bargmann representation is supported.")
 
+        A_orig, b_orig, c_orig = self.ansatz.triple
         A, b, _ = self.dual.ansatz.conj.triple
-        almost_inverse = self._from_attributes(
-            Representation(
-                PolyExpAnsatz(
-                    math.inv(A),
-                    math.einsum("...ij,...j->...i", -math.inv(A), b),
-                    math.ones(self.ansatz.batch_shape, dtype=math.complex128),
-                ),
-                self.wires.copy(new_ids=True),
-            ),
+        A_inv = math.inv(A)
+        b_of_inverse = math.einsum("...ij,...j->...i", -math.inv(A), b)
+
+        in_idx = self.wires.input.indices
+        out_idx = self.wires.output.indices
+
+        A_orig_out = A_orig[..., out_idx, :][..., :, out_idx]
+        A_inv_in = A_inv[..., in_idx, :][..., :, in_idx]
+        b_orig_out = b_orig[..., out_idx]
+        b_of_inverse_in = b_of_inverse[..., in_idx]
+        m = A.shape[-1] // 2
+        Im = math.broadcast_to(math.eye(m), (*A.shape[:-2], m, m))
+        M = math.block([[A_orig_out, -Im], [-Im, A_inv_in]])
+        combined_b = math.concat([b_orig_out, b_of_inverse_in], axis=-1)
+        c_of_inverse = 1 / c_orig
+        c_of_inverse *= math.sqrt(math.det(1j * M))
+        c_of_inverse *= math.exp(
+            0.5 * math.einsum("...i,...ij,...j->...", combined_b, math.inv(M), combined_b),
         )
-        almost_identity = self.contract(almost_inverse, "zip")
-        invert_this_c = almost_identity.ansatz.c
         return self._from_attributes(
             Representation(
                 PolyExpAnsatz(
                     math.inv(A),
                     math.einsum("...ij,...j->...i", -math.inv(A), b),
-                    1 / invert_this_c,
+                    c_of_inverse,
                 ),
                 self.wires.copy(new_ids=True),
             ),
