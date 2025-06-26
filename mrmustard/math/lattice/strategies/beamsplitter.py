@@ -91,9 +91,7 @@ def beamsplitter(
 
 
 @njit
-def stable_beamsplitter_batched(
-    shape, theta, phi, out=None
-):  # pragma: no cover # pylint: disable=too-many-branches
+def stable_beamsplitter_batched(shape, theta, phi, out=None):  # pragma: no cover  # noqa: C901
     r"""
     Stable implementation of the Fock representation of the beamsplitter, with batch dimension.
     It is numerically stable up to arbitrary cutoffs.
@@ -113,9 +111,9 @@ def stable_beamsplitter_batched(
 
     *B, M, N, P, Q = shape
     assert len(B) == 1, "only one batch dimension is supported"
-    assert (
-        theta.shape == phi.shape == B
-    ), "theta and phi must have the same shape as the batch dimension"
+    assert theta.shape == phi.shape == B, (
+        "theta and phi must have the same shape as the batch dimension"
+    )
 
     G = np.zeros(shape, dtype=np.complex128) if out is None else out
     G[:, 0, 0, 0, 0] = 1.0 + 0.0j
