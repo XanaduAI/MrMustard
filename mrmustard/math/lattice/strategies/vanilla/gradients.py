@@ -24,7 +24,9 @@ from .core import SQRT
 
 @njit
 def vanilla_vjp_numba(
-    G, c, dLdG
+    G,
+    c,
+    dLdG,
 ) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
     r"""Vanilla vjp function. Returns dL/dA, dL/db, dL/dc.
 
@@ -46,7 +48,7 @@ def vanilla_vjp_numba(
         strides[i - 1] = strides[i] * shape_arr[i]
 
     # linearize G
-    G_lin = G.flatten()
+    G_lin = G.ravel()
 
     # init gradients
     dA = np.zeros((D, D), dtype=np.complex128)  # component of dL/dA
@@ -55,17 +57,14 @@ def vanilla_vjp_numba(
     dLdb = np.zeros_like(db)
 
     # initialize the n-dim index
-    flat_index = 0
     nd_index = np.ndindex(G.shape)
     next(nd_index)
 
     # iterate over the indices (no need to split the loop in two parts)
-    for index_u in nd_index:
-        flat_index += 1
-
+    for flat_index, index_u in enumerate(nd_index):
         # contributions from pivot and lower neighbours
         for i in range(D):
-            pivot = flat_index - strides[i]
+            pivot = (flat_index + 1) - strides[i]
             db[i] = SQRT[index_u[i]] * G_lin[pivot]
             dA[i, i] = (
                 0.5 * SQRT[index_u[i]] * SQRT[index_u[i] - 1] * G_lin[pivot - strides[i]]
@@ -85,7 +84,9 @@ def vanilla_vjp_numba(
 
 @njit(parallel=True)
 def vanilla_batch_vjp_numba(
-    G: ComplexTensor, c: ComplexVector, dLdG: ComplexTensor
+    G: ComplexTensor,
+    c: ComplexVector,
+    dLdG: ComplexTensor,
 ) -> tuple[ComplexTensor, ComplexMatrix, ComplexVector]:  # pragma: no cover
     r"""Vector-Jacobian product (VJP) for the ``vanilla_full_batch`` function.
     Returns dL/dA, dL/db, dL/dc by parallelizing the single-instance ``vanilla_vjp`` over the batch dimension.

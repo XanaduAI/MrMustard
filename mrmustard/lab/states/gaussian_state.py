@@ -18,27 +18,25 @@ Classes representing Gaussian states.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from mrmustard import math
-
 from mrmustard.math.parameters import update_symplectic
-from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
+from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.utils.typing import RealMatrix
 
-from .ket import Ket
-from .dm import DM
 from ..circuit_components_utils import TraceOut
 from ..utils import make_parameter, reshape_params
+from .dm import DM
+from .ket import Ket
 
-__all__ = ["GKet", "GDM"]
+__all__ = ["GDM", "GKet"]
 
 
 class GKet(Ket):
     r"""
     The `N`-mode pure state described by a Gaussian gate that acts on Vacuum.
-
 
     Args:
         modes: the modes over which the state is defined.
@@ -49,7 +47,6 @@ class GKet(Ket):
 
     Returns:
         A ``Ket``.
-
 
     .. code-block::
 
@@ -87,18 +84,19 @@ class GKet(Ket):
                 "symplectic",
                 (None, None),
                 update_symplectic,
-            )
+            ),
         )
         self._representation = self.from_ansatz(
             modes=modes,
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.gket_state_Abc, symplectic=self.parameters.symplectic
+                fn=triples.gket_state_Abc,
+                symplectic=self.parameters.symplectic,
             ),
         ).representation
 
     def __getitem__(self, idx: int | Sequence[int]) -> GKet:
         r"""
-        Override the default __getitem__ method to handle symplectic slicing.
+        Override the default ``__getitem__`` method to handle symplectic slicing.
 
         Args:
             idx: The modes to keep.
@@ -117,7 +115,6 @@ class GDM(DM):
     r"""
     The `N`-mode mixed state described by a Gaussian gate that acts on a given
     thermal state.
-
 
     Args:
         modes: The modes over which the state is defined.
@@ -148,6 +145,7 @@ class GDM(DM):
         .. math::
 
             \rho = U (\bigotimes_i \rho_t(\beta_i))
+
         where rho_t are thermal states with temperatures determined by beta.
     """
 
@@ -172,7 +170,7 @@ class GDM(DM):
                 "symplectic",
                 (None, None),
                 update_symplectic,
-            )
+            ),
         )
         self.parameters.add_parameter(
             make_parameter(
@@ -180,7 +178,7 @@ class GDM(DM):
                 betas,
                 "beta",
                 (0, None),
-            )
+            ),
         )
         self._representation = self.from_ansatz(
             modes=modes,
@@ -193,7 +191,7 @@ class GDM(DM):
 
     def __getitem__(self, idx: int | Sequence[int]) -> GDM:
         r"""
-        Override the default __getitem__ method to handle symplectic slicing.
+        Override the default ``__getitem__`` method to handle symplectic slicing.
 
         Args:
             idx: The modes to keep.

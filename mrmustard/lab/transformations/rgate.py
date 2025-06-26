@@ -17,11 +17,13 @@ The class representing a rotation gate.
 """
 
 from __future__ import annotations
-from typing import Sequence
-from .base import Unitary
-from ...physics.ansatz import PolyExpAnsatz
+
+from collections.abc import Sequence
+
 from ...physics import triples
+from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["Rgate"]
 
@@ -37,7 +39,7 @@ class Rgate(Unitary):
         theta_trainable: Whether ``theta`` is trainable.
         theta_bounds: The bounds for ``theta``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import Rgate
 
@@ -60,6 +62,7 @@ class Rgate(Unitary):
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.rotation_gate_Abc, theta=self.parameters.theta
+                fn=triples.rotation_gate_Abc,
+                theta=self.parameters.theta,
             ),
         ).representation

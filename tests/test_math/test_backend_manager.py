@@ -20,11 +20,11 @@ import numpy as np
 import pytest
 import tensorflow as tf
 from jax import numpy as jnp
+from jax.errors import TracerArrayConversionError
 
-from mrmustard import math
+from mrmustard import math, settings
 
 
-# pylint: disable=too-many-public-methods
 class TestBackendManager:
     r"""
     Tests the BackendManager.
@@ -41,6 +41,30 @@ class TestBackendManager:
     lists = [l1, l2, l3, l4, l5]
 
     types = ["None", "int32", "float32", "float64", "complex128"]
+
+    def test_backend_error(self):
+        r"""
+        Tests the ``BackendError`` property.
+        """
+        assert math.BackendError is TracerArrayConversionError
+
+    def test_get_backend(self):
+        r"""
+        Tests the ``get_backend`` method.
+        """
+        assert math.get_backend("numpy").name == "numpy"
+        assert math.get_backend("tensorflow").name == "tensorflow"
+        assert math.get_backend("jax").name == "jax"
+
+    def test_einsum(self):
+        r"""
+        Tests the ``einsum`` method.
+        """
+        ar = math.astensor([[1, 2], [3, 4]])
+        res = math.astensor([[7, 10], [15, 22]])
+
+        assert math.allclose(math.einsum("ij,jk->ik", ar, ar), res)
+        assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="tensorflow"), res)
 
     def test_error(self):
         r"""
@@ -201,9 +225,9 @@ class TestBackendManager:
         res = math.asnumpy(math.atleast_3d(arr, dtype=dtype))
 
         if arr.ndim == 1:
-            exp_shape = (1, 1) + arr.shape
+            exp_shape = (1, 1, *arr.shape)
         elif arr.ndim == 2:
-            exp_shape = (1,) + arr.shape
+            exp_shape = (1, *arr.shape)
         else:
             exp_shape = arr.shape
         assert res.shape == exp_shape
@@ -220,10 +244,7 @@ class TestBackendManager:
 
         res = math.asnumpy(math.atleast_nd(arr, n, dtype=dtype))
 
-        if arr.ndim < n:
-            exp_shape = (1,) * (n - arr.ndim) + arr.shape
-        else:
-            exp_shape = arr.shape
+        exp_shape = (1,) * (n - arr.ndim) + arr.shape if arr.ndim < n else arr.shape
         assert res.shape == exp_shape
 
     def test_boolean_mask(self):
@@ -248,7 +269,7 @@ class TestBackendManager:
                 [O, O, I, -1j * I],
                 [I, -1j * I, O, O],
                 [O, O, I, 1j * I],
-            ]
+            ],
         )
         assert R.shape == (16, 16)
 
@@ -411,7 +432,7 @@ class TestBackendManager:
         arr[2, 2] = 3
         res = math.asnumpy(math.exp(arr))
         exp = np.array(
-            [[np.exp(0) if i != j else np.exp(i + 1) for i in range(3)] for j in range(3)]
+            [[np.exp(0) if i != j else np.exp(i + 1) for i in range(3)] for j in range(3)],
         )
         assert math.allclose(res, exp)
 
@@ -538,8 +559,8 @@ class TestBackendManager:
         r"""
         Tests the ``moveaxis`` method.
         """
-        arr1 = np.random.random(size=(1, 2, 3))
-        arr2 = np.random.random(size=(2, 1, 3))
+        arr1 = settings.rng.random(size=(1, 2, 3))
+        arr2 = settings.rng.random(size=(2, 1, 3))
         arr2_moved = math.moveaxis(arr2, 0, 1)
         assert math.allclose(arr1.shape, arr2_moved.shape)
 
@@ -717,3 +738,68 @@ class TestBackendManager:
         probs = np.array([1e-6 for _ in range(300)])
         results = [math.Categorical(probs, "") for _ in range(100)]
         assert len(set(results)) > 1
+
+    def test_displacement(self):
+        r"""
+        Tests the ``displacement`` method.
+        """
+        cutoff = 5
+        alpha = 0.3 + 0.5 * 1j
+        # This data is obtained by using qutip
+        # np.array(displace(40,alpha).data.todense())[0:5,0:5]
+        expected = np.array(
+            [
+                [
+                    0.84366482 + 0.00000000e00j,
+                    -0.25309944 + 4.21832408e-01j,
+                    -0.09544978 - 1.78968334e-01j,
+                    0.06819609 + 3.44424719e-03j,
+                    -0.01109048 + 1.65323865e-02j,
+                ],
+                [
+                    0.25309944 + 4.21832408e-01j,
+                    0.55681878 + 0.00000000e00j,
+                    -0.29708743 + 4.95145724e-01j,
+                    -0.14658716 - 2.74850926e-01j,
+                    0.12479885 + 6.30297236e-03j,
+                ],
+                [
+                    -0.09544978 + 1.78968334e-01j,
+                    0.29708743 + 4.95145724e-01j,
+                    0.31873657 + 0.00000000e00j,
+                    -0.29777767 + 4.96296112e-01j,
+                    -0.18306015 - 3.43237787e-01j,
+                ],
+                [
+                    -0.06819609 + 3.44424719e-03j,
+                    -0.14658716 + 2.74850926e-01j,
+                    0.29777767 + 4.96296112e-01j,
+                    0.12389162 + 1.10385981e-17j,
+                    -0.27646677 + 4.60777945e-01j,
+                ],
+                [
+                    -0.01109048 - 1.65323865e-02j,
+                    -0.12479885 + 6.30297236e-03j,
+                    -0.18306015 + 3.43237787e-01j,
+                    0.27646677 + 4.60777945e-01j,
+                    -0.03277289 + 1.88440656e-17j,
+                ],
+            ],
+        )
+        D = math.displacement(math.real(alpha), math.imag(alpha), (cutoff, cutoff))
+        assert math.allclose(math.asnumpy(D), expected, atol=1e-5, rtol=0)
+        D_identity = math.displacement(0, 0, (cutoff, cutoff))
+        assert math.allclose(math.asnumpy(D_identity), np.eye(cutoff), atol=1e-5, rtol=0)
+
+    def test_beamsplitter(self):
+        r"""
+        Tests the ``beamsplitter`` method.
+        """
+        cutoffs = (5,) * 4
+        theta = np.pi / 2
+        phi = 0.8
+        bs_vanilla = math.beamsplitter(theta, phi, cutoffs, "vanilla")
+        bs_schwinger = math.beamsplitter(theta, phi, cutoffs, "schwinger")
+        bs_stable = math.beamsplitter(theta, phi, cutoffs, "stable")
+        assert math.allclose(bs_vanilla, bs_schwinger, atol=1e-5, rtol=0)
+        assert math.allclose(bs_vanilla, bs_stable, atol=1e-5, rtol=0)

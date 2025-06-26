@@ -17,11 +17,13 @@ The class representing a two-mode squeezing gate.
 """
 
 from __future__ import annotations
-from typing import Sequence
-from .base import Unitary
-from ...physics.ansatz import PolyExpAnsatz
+
+from collections.abc import Sequence
+
 from ...physics import triples
+from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["S2gate"]
 
@@ -40,7 +42,7 @@ class S2gate(Unitary):
         r_bounds: The bounds for ``r``.
         phi_bounds: The bounds for ``phi``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import S2gate
 

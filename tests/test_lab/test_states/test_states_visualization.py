@@ -14,8 +14,6 @@
 
 """Tests for the state visualization."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 import json
 from pathlib import Path
 

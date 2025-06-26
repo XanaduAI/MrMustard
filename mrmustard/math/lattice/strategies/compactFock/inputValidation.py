@@ -4,8 +4,10 @@ diagonal_amps.py, diagonal_grad.py, singleLeftoverMode_amps.py and singleLeftove
 to validate the input provided by the user.
 """
 
-from typing import Iterable
+from collections.abc import Iterable
+
 import numpy as np
+
 from mrmustard.math.lattice.strategies.compactFock.diagonal_amps import (
     fock_representation_diagonal_amps,
 )
@@ -81,7 +83,14 @@ def grad_hermite_multidimensional_diagonal(A, B, G0, arr0, arr2, arr1010, arr100
         raise ValueError("The matrix A and vector B have incompatible dimensions")
     M = A.shape[0] // 2
     arr0_dA, arr0_dB = fock_representation_diagonal_grad(
-        A, B, M, arr0, arr2, arr1010, arr1001, arr1
+        A,
+        B,
+        M,
+        arr0,
+        arr2,
+        arr1010,
+        arr1001,
+        arr1,
     )
     arr0_dG0 = np.array(arr0 / G0).astype(np.complex128)
     return arr0_dG0, arr0_dA, arr0_dB
@@ -116,7 +125,14 @@ def grad_hermite_multidimensional_1leftoverMode(A, B, G0, arr0, arr2, arr1010, a
     if M <= 1:
         raise ValueError("The number of modes should be greater than 1.")
     arr0_dA, arr0_dB = fock_representation_1leftoverMode_grad(
-        A, B, M, arr0, arr2, arr1010, arr1001, arr1
+        A,
+        B,
+        M,
+        arr0,
+        arr2,
+        arr1010,
+        arr1001,
+        arr1,
     )
     arr0_dG0 = np.array(arr0 / G0).astype(np.complex128)
     return arr0_dG0, arr0_dA, arr0_dB

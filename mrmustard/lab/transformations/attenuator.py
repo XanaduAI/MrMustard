@@ -17,11 +17,13 @@ The class representing a noisy attenuator channel.
 """
 
 from __future__ import annotations
-from typing import Sequence
-from .base import Channel
-from ...physics.ansatz import PolyExpAnsatz
+
+from collections.abc import Sequence
+
 from ...physics import triples
+from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
+from .base import Channel
 
 __all__ = ["Attenuator"]
 
@@ -37,7 +39,7 @@ class Attenuator(Channel):
         transmissivity_trainable: Whether ``transmissivity`` is trainable.
         transmissivity_bounds: The bounds for ``transmissivity``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import Attenuator
@@ -88,12 +90,13 @@ class Attenuator(Channel):
                 "transmissivity",
                 transmissivity_bounds,
                 None,
-            )
+            ),
         )
         self._representation = self.from_ansatz(
             modes_in=(mode,),
             modes_out=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.attenuator_Abc, eta=self.parameters.transmissivity
+                fn=triples.attenuator_Abc,
+                eta=self.parameters.transmissivity,
             ),
         ).representation

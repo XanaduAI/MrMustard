@@ -15,10 +15,10 @@
 """Tests for the jitting functionality within JAX backend."""
 
 import time
-import pytest
 
 import jax
 import jax.numpy as jnp
+import pytest
 
 from mrmustard import math
 from mrmustard.lab import Attenuator, BSgate, SqueezedVacuum
@@ -30,14 +30,26 @@ def evaluate_circuit(params):
     """
     params = jnp.asarray(params)
     BS_01 = BSgate(
-        modes=(0, 1), theta=params[0], phi=params[1], theta_trainable=False, phi_trainable=False
+        modes=(0, 1),
+        theta=params[0],
+        phi=params[1],
+        theta_trainable=False,
+        phi_trainable=False,
     )
     BS_12 = BSgate(
-        modes=(1, 2), theta=params[2], phi=params[3], theta_trainable=False, phi_trainable=False
+        modes=(1, 2),
+        theta=params[2],
+        phi=params[3],
+        theta_trainable=False,
+        phi_trainable=False,
     )
     att = Attenuator(mode=0, transmissivity=params[4], transmissivity_trainable=False)
     initial_state = SqueezedVacuum(
-        mode=0, r=params[5], phi=params[6], r_trainable=False, phi_trainable=False
+        mode=0,
+        r=params[5],
+        phi=params[6],
+        r_trainable=False,
+        phi_trainable=False,
     )
     state_out = (
         initial_state
@@ -76,9 +88,9 @@ def test_jit_complete_circuit():
     end_time = time.time()
     jitted_routine_time = end_time - start_time
 
-    assert (
-        jitted_routine_time < unjitted_routine_time
-    ), "Jitting should be make circuit evaluation faster."
+    assert jitted_routine_time < unjitted_routine_time, (
+        "Jitting should be make circuit evaluation faster."
+    )
 
 
 @pytest.mark.requires_backend("jax")
@@ -130,6 +142,6 @@ def test_jit_circuit_with_parameters():
     end_time = time.time()
     jitted_routine_time = end_time - start_time
 
-    assert (
-        jitted_routine_time < unjitted_routine_time
-    ), "Jitting should be make circuit evaluation faster."
+    assert jitted_routine_time < unjitted_routine_time, (
+        "Jitting should be make circuit evaluation faster."
+    )

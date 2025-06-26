@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=missing-function-docstring, missing-module-docstring
-
 from typing import get_args, get_origin
 
 import numpy as np
@@ -85,7 +83,7 @@ def test_uintmatrix():
 
 def test_complextensor():
     ten: ComplexTensor = np.array(
-        [[[1.0 + 1.0j, 2.0 + 2.0j, 3.0 + 3.0j], [4.0 + 4.0j, 5.0 + 5.0j, 6.0 + 6.0j]]]
+        [[[1.0 + 1.0j, 2.0 + 2.0j, 3.0 + 3.0j], [4.0 + 4.0j, 5.0 + 5.0j, 6.0 + 6.0j]]],
     )
     assert isinstance(ten, get_origin(ComplexTensor))
     assert isinstance(ten[0, 0, 0], get_args(ComplexTensor)[1].__constraints__)

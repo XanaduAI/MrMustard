@@ -20,23 +20,29 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
-from mrmustard.utils.typing import ComplexMatrix, Matrix, Vector, Scalar
+from mrmustard.utils.typing import ComplexMatrix, Matrix, Scalar, Vector
 
 
 def bargmann_Abc_to_phasespace_cov_means(
-    A: Matrix, b: Vector, c: Scalar
+    A: Matrix,
+    b: Vector,
+    c: Scalar,
 ) -> tuple[Matrix, Vector, Scalar]:
     r"""
     Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
 
     The covariance matrix and mean vector can be used to write the characteristic function of a Gaussian state
+
     :math:
         \Chi_G(r) = \exp\left( -\frac{1}{2}r^T \Omega^T cov \Omega r + i r^T\Omega^T mean \right),
+
     and the Wigner function of a Gaussian state:
+
     :math:
         W_G(r) = \frac{1}{\sqrt{\Det(cov)}} \exp\left( -\frac{1}{2}(r - mean)^T cov^{-1} (r-mean) \right).
 
     The internal expression of our Gaussian state :math:`\rho` is in Bargmann representation, one can write the characteristic function of a Gaussian state in Bargmann representation as
+
     :math:
         \Chi_G(\alpha) = \Tr(\rho D) = c \exp\left( -\frac{1}{2}\alpha^T A \alpha + \alpha^T b \right).
 
@@ -44,6 +50,7 @@ def bargmann_Abc_to_phasespace_cov_means(
 
     Args:
         A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
+
     Returns:
         The covariance matrix, mean vector and coefficient of the state in phase space.
     """
@@ -156,7 +163,7 @@ def au2Symplectic(A):
                     -1j * math.eye(m, dtype=math.complex128),
                     1j * math.eye(m, dtype=math.complex128),
                 ],
-            ]
+            ],
         )
     )
 
@@ -186,9 +193,7 @@ def symplectic2Au(S):
     A_3 = math.einsum("...ij->...ji", A_2)
     A_4 = -math.conj(math.solve(S_1, S_2))
 
-    A = math.block([[A_1, A_2], [A_3, A_4]])
-
-    return A
+    return math.block([[A_1, A_2], [A_3, A_4]])
 
 
 def XY_of_channel(A: ComplexMatrix):
@@ -207,13 +212,13 @@ def XY_of_channel(A: ComplexMatrix):
         [
             [A[..., :m, :m], A[..., :m, 2 * m : 3 * m]],
             [A[..., 2 * m : 3 * m, :m], A[..., 2 * m : 3 * m, 2 * m : 3 * m]],
-        ]
+        ],
     )
     R = math.block(
         [
             [A[..., :m, m : 2 * m], A[..., :m, 3 * m :]],
             [A[..., 2 * m : 3 * m, m : 2 * m], A[..., 2 * m : 3 * m, 3 * m :]],
-        ]
+        ],
     )
     X_tilde = (
         -math.inv(math.eye(n, dtype=math.complex128) - math.Xmat(m) @ A_out)
@@ -228,7 +233,7 @@ def XY_of_channel(A: ComplexMatrix):
                 -1j * math.eye(m, dtype=math.complex128),
                 1j * math.eye(m, dtype=math.complex128),
             ],
-        ]
+        ],
     )
     X = -transformation @ X_tilde @ math.conj(transformation).T / 2
 

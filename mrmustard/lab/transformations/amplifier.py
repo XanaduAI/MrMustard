@@ -17,11 +17,13 @@ The class representing a noisy amplifier channel.
 """
 
 from __future__ import annotations
-from typing import Sequence
-from .base import Channel
-from ...physics.ansatz import PolyExpAnsatz
+
+from collections.abc import Sequence
+
 from ...physics import triples
+from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
+from .base import Channel
 
 __all__ = ["Amplifier"]
 
@@ -37,7 +39,7 @@ class Amplifier(Channel):
         gain_trainable: Whether ``gain`` is trainable.
         gain_bounds: The bounds for ``gain``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> import numpy as np
         >>> from mrmustard.lab import Amplifier, Coherent
@@ -88,7 +90,7 @@ class Amplifier(Channel):
                 "gain",
                 gain_bounds,
                 None,
-            )
+            ),
         )
         self._representation = self.from_ansatz(
             modes_in=(mode,),

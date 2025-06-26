@@ -17,12 +17,14 @@ The class representing a Mach-Zehnder gate.
 """
 
 from __future__ import annotations
-from typing import Sequence
+
+from collections.abc import Sequence
+
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
-from .base import Unitary
-from ..utils import make_parameter
 from ...physics import symplectics
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["MZgate"]
 
@@ -45,7 +47,8 @@ class MZgate(Unitary):
         phi_b_bounds: The bounds for ``phi_b``.
         internal: Whether phases are both in the internal arms.
 
-    .. code-block ::
+    .. code-block::
+
         >>> from mrmustard.lab import MZgate
 
         >>> mz = MZgate((0, 1), phi_a=0.1, phi_b=0.2)
@@ -76,7 +79,8 @@ class MZgate(Unitary):
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=lambda phi_a, phi_b, internal: Unitary.from_symplectic(
-                    modes, symplectics.mzgate_symplectic(phi_a, phi_b, internal)
+                    modes,
+                    symplectics.mzgate_symplectic(phi_a, phi_b, internal),
                 ).bargmann_triple(),
                 phi_a=self.parameters.phi_a,
                 phi_b=self.parameters.phi_b,

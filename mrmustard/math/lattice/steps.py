@@ -93,10 +93,10 @@ def vanilla_step_batch(
     i, pivot = first_available_pivot(index)
 
     # contribution from G[pivot]
-    value_at_index = b[..., i] * G[(slice(None),) + pivot]
+    value_at_index = b[..., i] * G[(slice(None), *pivot)]
     # contributions from G[neighbor]
     for j, neighbor in lower_neighbors(pivot):
-        value_at_index += A[..., i, j] * SQRT[pivot[j]] * G[(slice(None),) + neighbor]
+        value_at_index += A[..., i, j] * SQRT[pivot[j]] * G[(slice(None), *neighbor)]
 
     return value_at_index / SQRT[index[i]]
 
@@ -129,14 +129,14 @@ def vanilla_step_jacobian(
 
     # pivot contribution
     dGdB[index] += b[i] * dGdB[pivot] / SQRT[index[i]]
-    dGdB[index + (i,)] += G[pivot] / SQRT[index[i]]
+    dGdB[(*index, i)] += G[pivot] / SQRT[index[i]]
     dGdA[index] += b[i] * dGdA[pivot] / SQRT[index[i]]
 
     # neighbors contribution
     for j, neighbor in lower_neighbors(pivot):
         dGdB[index] += A[i, j] * dGdB[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
         dGdA[index] += A[i, j] * dGdA[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
-        dGdA[index + (i, j)] += G[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
+        dGdA[(*index, i, j)] += G[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
 
     return dGdA, dGdB
 
@@ -161,7 +161,7 @@ def vanilla_step_grad(
     Returns:
         tuple[array, array]: the updated dGdB and dGdA tensors
     """
-    for i in range(len(db)):  # pylint: disable=consider-using-enumerate
+    for i in range(len(db)):
         pivot_i = tuple_setitem(index, i, index[i] - 1)
         db[i] = SQRT[index[i]] * G[pivot_i]
         dA[i, i] = 0.5 * SQRT[index[i] * pivot_i[i]] * G[tuple_setitem(pivot_i, i, pivot_i[i] - 1)]
@@ -173,7 +173,10 @@ def vanilla_step_grad(
 
 @njit
 def vanilla_step_dict(
-    data: types.DictType, A: ComplexMatrix, b: ComplexVector, index: tuple[int, ...]
+    data: types.DictType,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    index: tuple[int, ...],
 ) -> complex:
     r"""Fock-Bargmann recurrence relation step, vanilla version with numba dict.
     This function calculates the index `index` of the Gaussian tensor `G`.

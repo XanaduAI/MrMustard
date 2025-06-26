@@ -22,9 +22,9 @@ from mrmustard import math
 from mrmustard.math.parameters import update_symplectic
 from mrmustard.utils.typing import RealMatrix
 
-from .base import Unitary
 from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["Ggate"]
 
@@ -38,7 +38,7 @@ class Ggate(Unitary):
         symplectic: The symplectic matrix of the gate in the XXPP ordering.
         symplectic_trainable: Whether ``symplectic`` is trainable.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import Ggate, Vacuum, Identity, Ket
@@ -62,8 +62,12 @@ class Ggate(Unitary):
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         self.parameters.add_parameter(
             make_parameter(
-                symplectic_trainable, symplectic, "symplectic", (None, None), update_symplectic
-            )
+                symplectic_trainable,
+                symplectic,
+                "symplectic",
+                (None, None),
+                update_symplectic,
+            ),
         )
         self._representation = self.from_ansatz(
             modes_in=modes,

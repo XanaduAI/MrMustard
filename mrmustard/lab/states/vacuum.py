@@ -18,10 +18,11 @@ The class repesenting a vacuum state.
 
 from __future__ import annotations
 
-from typing import Collection
+from collections.abc import Collection
 
-from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
+from mrmustard.physics.ansatz import PolyExpAnsatz
+
 from .ket import Ket
 
 __all__ = ["Vacuum"]
@@ -35,7 +36,7 @@ class Vacuum(Ket):
         modes: A tuple of modes.
 
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import Vacuum
 

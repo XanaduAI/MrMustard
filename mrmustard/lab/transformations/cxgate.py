@@ -17,12 +17,14 @@ The class representing a controlled-X gate.
 """
 
 from __future__ import annotations
-from typing import Sequence
+
+from collections.abc import Sequence
+
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
-from .base import Unitary
-from ..utils import make_parameter
 from ...physics import symplectics
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["CXgate"]
 
@@ -37,7 +39,8 @@ class CXgate(Unitary):
         s_trainable: Whether ``s`` is trainable.
         s_bounds: The bounds for ``s``.
 
-    .. code-block ::
+    .. code-block::
+
         >>> from mrmustard.lab import CXgate
         >>> gate = CXgate((0, 1), s=0.5)
         >>> assert gate.modes == (0, 1)
@@ -48,7 +51,8 @@ class CXgate(Unitary):
         We have that the controlled-X gate is defined as
             .. math::
 
-                C_X = \exp(is q_1 \otimes p_2).
+                C_X = \exp(is q_1 \otimes p_2)
+
         Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
     """
 
@@ -69,7 +73,8 @@ class CXgate(Unitary):
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=lambda s: Unitary.from_symplectic(
-                    modes, symplectics.cxgate_symplectic(s)
+                    modes,
+                    symplectics.cxgate_symplectic(s),
                 ).bargmann_triple(),
                 s=self.parameters.s,
             ),

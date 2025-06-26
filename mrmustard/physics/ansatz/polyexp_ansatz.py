@@ -16,18 +16,25 @@
 This module contains the PolyExp ansatz.
 """
 
-# pylint: disable=too-many-instance-attributes,too-many-positional-arguments, too-many-public-methods, inconsistent-return-statements
-
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence
 import itertools
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import numpy as np
+from IPython.display import display
 from numpy.typing import ArrayLike
 
-from IPython.display import display
-
+from mrmustard import math, settings, widgets
+from mrmustard.math.parameters import Variable
+from mrmustard.physics.fock_utils import c_in_PS
+from mrmustard.physics.gaussian_integrals import (
+    complex_gaussian_integral_1,
+    complex_gaussian_integral_2,
+    join_Abc,
+)
+from mrmustard.physics.utils import generate_batch_str, verify_batch_triple
 from mrmustard.utils.argsort import argsort_gen
 from mrmustard.utils.typing import (
     Batch,
@@ -38,20 +45,8 @@ from mrmustard.utils.typing import (
     Vector,
 )
 
-from mrmustard.physics.gaussian_integrals import (
-    complex_gaussian_integral_1,
-    complex_gaussian_integral_2,
-    join_Abc,
-)
-from mrmustard.physics.utils import generate_batch_str, verify_batch_triple
-from mrmustard.physics.fock_utils import c_in_PS
-
-from mrmustard import math, widgets, settings
-from mrmustard.math.parameters import Variable
-
-
-from .base import Ansatz
 from ..utils import outer_product_batch_str, reshape_args_to_batch_string
+from .base import Ansatz
 
 __all__ = ["PolyExpAnsatz"]
 
@@ -173,7 +168,10 @@ class PolyExpAnsatz(Ansatz):
     @property
     def conj(self):
         return PolyExpAnsatz(
-            math.conj(self.A), math.conj(self.b), math.conj(self.c), lin_sup=self._lin_sup
+            math.conj(self.A),
+            math.conj(self.b),
+            math.conj(self.c),
+            lin_sup=self._lin_sup,
         )
 
     @property
@@ -217,7 +215,7 @@ class PolyExpAnsatz(Ansatz):
         n = self.A.shape[-1]
         if n % 2:
             raise ValueError(
-                f"A phase space ansatz must have even number of indices. (n={n} is odd)"
+                f"A phase space ansatz must have even number of indices. (n={n} is odd)",
             )
 
         if self.num_derived_vars == 0:
@@ -228,25 +226,24 @@ class PolyExpAnsatz(Ansatz):
             c = self.c / (2 * settings.HBAR) ** (n // 2)
             return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
 
-        else:
-            if self.num_derived_vars != 2:
-                raise ValueError("This transformation supports 2 core and 0 or 2 derived variables")
-            A_tmp = self.A
+        if self.num_derived_vars != 2:
+            raise ValueError("This transformation supports 2 core and 0 or 2 derived variables")
+        A_tmp = self.A
 
-            A_tmp = A_tmp[..., [0, 2, 1, 3], :][..., [0, 2, 1, 3]]
-            b = self.b[..., [0, 2, 1, 3]]
-            c = c_in_PS(self.c)  # implements PS transformations on ``c``
+        A_tmp = A_tmp[..., [0, 2, 1, 3], :][..., [0, 2, 1, 3]]
+        b = self.b[..., [0, 2, 1, 3]]
+        c = c_in_PS(self.c)  # implements PS transformations on ``c``
 
-            W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
+        W = math.conj(math.rotmat(n // 2)) / math.sqrt(settings.HBAR, dtype=math.complex128)
 
-            A = math.einsum("ji,...jk,kl->...il", W, A_tmp, W)
-            b = math.einsum("ij,...j->...i", W, b)
-            c = c / (2 * settings.HBAR)
+        A = math.einsum("ji,...jk,kl->...il", W, A_tmp, W)
+        b = math.einsum("ij,...j->...i", W, b)
+        c = c / (2 * settings.HBAR)
 
-            A_final = A[..., [0, 2, 1, 3], :][..., :, [0, 2, 1, 3]]
-            b_final = b[..., [0, 2, 1, 3]]
+        A_final = A[..., [0, 2, 1, 3], :][..., :, [0, 2, 1, 3]]
+        b_final = b[..., [0, 2, 1, 3]]
 
-            return PolyExpAnsatz(A_final, b_final, c, lin_sup=self._lin_sup)
+        return PolyExpAnsatz(A_final, b_final, c, lin_sup=self._lin_sup)
 
     @property
     def scalar(self) -> Scalar:
@@ -366,7 +363,7 @@ class PolyExpAnsatz(Ansatz):
         if not set(core_out).isdisjoint(contracted_cores := set(core1) & set(core2)):
             raise ValueError(
                 "idx_out cannot contain core labels that are contracted: "
-                f"{set(core_out) & contracted_cores}"
+                f"{set(core_out) & contracted_cores}",
             )
 
         # --- Prepare for complex_gaussian_integral_2 ---  # TODO: finish fixing this
@@ -384,16 +381,20 @@ class PolyExpAnsatz(Ansatz):
 
         # --- Call complex_gaussian_integral_2 ---
         A, b, c = complex_gaussian_integral_2(
-            self.triple, other.triple, idx1_cv, idx2_cv, batch_str
+            self.triple,
+            other.triple,
+            idx1_cv,
+            idx2_cv,
+            batch_str,
         )
 
         # --- Reorder core dimensions ---
         if self._lin_sup and other._lin_sup:
             batch_shape = self.batch_shape[:-1]
             flattened = self.batch_shape[-1] * other.batch_shape[-1]
-            A = math.reshape(A, batch_shape + (flattened,) + tuple(A.shape[-2:]))
-            b = math.reshape(b, batch_shape + (flattened,) + tuple(b.shape[-1:]))
-            c = math.reshape(c, batch_shape + (flattened,) + self.shape_derived_vars)
+            A = math.reshape(A, (*batch_shape, flattened, *tuple(A.shape[-2:])))
+            b = math.reshape(b, (*batch_shape, flattened, *tuple(b.shape[-1:])))
+            c = math.reshape(c, (*batch_shape, flattened, *self.shape_derived_vars))
 
         result = PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup or other._lin_sup)
         leftover_core = [i for i in idx1 + idx2 if isinstance(i, int) and i not in contracted_core]
@@ -427,34 +428,40 @@ class PolyExpAnsatz(Ansatz):
         batch_shape = A.shape[:-2]
         A_core = math.block(
             [
-                [math.zeros(batch_shape + (n, n), dtype=A.dtype), A[..., :n, n:]],
+                [math.zeros((*batch_shape, n, n), dtype=A.dtype), A[..., :n, n:]],
                 [A[..., n:, :n], A[..., n:, n:]],
-            ]
+            ],
         )
-        b_core = math.concat((math.zeros(batch_shape + (n,), dtype=b.dtype), b[..., n:]), axis=-1)
+        b_core = math.concat((math.zeros((*batch_shape, n), dtype=b.dtype), b[..., n:]), axis=-1)
 
         poly_core = math.hermite_renormalized(
-            A_core, b_core, math.ones(self.batch_shape, dtype=math.complex128), shape=poly_shape
+            A_core,
+            b_core,
+            math.ones(self.batch_shape, dtype=math.complex128),
+            shape=poly_shape,
         )
 
         derived_vars_size = int(math.prod(self.shape_derived_vars))
         poly_core = math.reshape(
-            poly_core, batch_shape + pulled_out_input_shape + (derived_vars_size,)
+            poly_core,
+            batch_shape + pulled_out_input_shape + (derived_vars_size,),
         )
         batch_str = generate_batch_str(len(batch_shape))
         c_prime = math.einsum(
             f"{batch_str}...k,{batch_str}...k->{batch_str}...",
             poly_core,
-            c.reshape(batch_shape + (derived_vars_size,)),
+            c.reshape((*batch_shape, derived_vars_size)),
         )
         block = A[..., :n, :n]
         I_matrix = math.broadcast_to(math.eye_like(block), block.shape)
         A_decomp = math.block([[block, I_matrix], [I_matrix, math.zeros_like(block)]])
-        b_decomp = math.concat((b[..., :n], math.zeros(batch_shape + (n,), dtype=b.dtype)), axis=-1)
+        b_decomp = math.concat((b[..., :n], math.zeros((*batch_shape, n), dtype=b.dtype)), axis=-1)
         return PolyExpAnsatz(A_decomp, b_decomp, c_prime, lin_sup=self._lin_sup)
 
     def eval(
-        self, *z: Vector | None, batch_string: str | None = None
+        self,
+        *z: Vector | None,
+        batch_string: str | None = None,
     ) -> Scalar | ArrayLike | PolyExpAnsatz:
         r"""
         Evaluates the ansatz at given points or returns a partially evaluated ansatz.
@@ -484,7 +491,7 @@ class PolyExpAnsatz(Ansatz):
         if len(z) > self.num_CV_vars:
             raise ValueError(
                 f"The ansatz was called with {len(z)} variables, "
-                f"but it only has {self.num_CV_vars} CV variables."
+                f"but it only has {self.num_CV_vars} CV variables.",
             )
 
         evaluated_indices = [i for i, zi in enumerate(z) if zi is not None]
@@ -497,9 +504,9 @@ class PolyExpAnsatz(Ansatz):
         broadcasted_z = math.broadcast_arrays(*reshaped_z)
         if len(evaluated_indices) == self.num_CV_vars:  # Full evaluation: all CV vars specified
             return self(*broadcasted_z)
-        else:  # Partial evaluation: some CV variables are not provided
-            combined_z = math.stack(broadcasted_z, axis=-1)
-            return self._partial_eval(combined_z, tuple(evaluated_indices))
+        # Partial evaluation: some CV variables are not provided
+        combined_z = math.stack(broadcasted_z, axis=-1)
+        return self._partial_eval(combined_z, tuple(evaluated_indices))
 
     def reorder(self, order: Sequence[int]):
         r"""
@@ -511,7 +518,7 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(f"order must have length {self.num_CV_vars}, got {len(order)}")
         # Add derived variable indices after CV indices
         order = list(order) + list(
-            range(self.num_CV_vars, self.num_CV_vars + self.num_derived_vars)
+            range(self.num_CV_vars, self.num_CV_vars + self.num_derived_vars),
         )
         A = math.gather(math.gather(self.A, order, axis=-1), order, axis=-2)
         b = math.gather(self.b, order, axis=-1)
@@ -520,7 +527,7 @@ class PolyExpAnsatz(Ansatz):
     def reorder_batch(self, order: Sequence[int]):  # TODO: omit last batch index if lin_sup
         if len(order) != self.batch_dims:
             raise ValueError(
-                f"order must have length {self.batch_dims} (number of batch dimensions), got {len(order)}"
+                f"order must have length {self.batch_dims} (number of batch dimensions), got {len(order)}",
             )
 
         core_dims_indices_A = range(self.batch_dims, self.batch_dims + 2)
@@ -553,9 +560,9 @@ class PolyExpAnsatz(Ansatz):
         b = math.gather(b, to_keep, axis=0)
         c = math.gather(c, to_keep, axis=0)  # already added
 
-        A = math.reshape(A, (len(to_keep),) + (self.num_vars, self.num_vars))
-        b = math.reshape(b, (len(to_keep),) + (self.num_vars,))
-        c = math.reshape(c, (len(to_keep),) + self.shape_derived_vars)
+        A = math.reshape(A, (len(to_keep), self.num_vars, self.num_vars))
+        b = math.reshape(b, (len(to_keep), self.num_vars))
+        c = math.reshape(c, (len(to_keep), *self.shape_derived_vars))
 
         new_ansatz = PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
         new_ansatz._simplified = True
@@ -582,19 +589,22 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError("idx_z and idx_zconj must have the same length.")
         if len(set(idx_z + idx_zconj)) != len(idx_z) + len(idx_zconj):
             raise ValueError(
-                f"Indices must be unique: {set(idx_z).intersection(idx_zconj)} are repeated."
+                f"Indices must be unique: {set(idx_z).intersection(idx_zconj)} are repeated.",
             )
         if any(i >= self.num_CV_vars for i in idx_z) or any(
             i >= self.num_CV_vars for i in idx_zconj
         ):
             raise ValueError(
-                f"All indices must be between 0 and {self.num_CV_vars-1}. Got {idx_z} and {idx_zconj}."
+                f"All indices must be between 0 and {self.num_CV_vars - 1}. Got {idx_z} and {idx_zconj}.",
             )
         A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=measure)
         return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
 
     def _combine_exp_and_poly(
-        self, exp_sum: Batch[ComplexTensor], poly: Batch[ComplexTensor], c: Batch[ComplexTensor]
+        self,
+        exp_sum: Batch[ComplexTensor],
+        poly: Batch[ComplexTensor],
+        c: Batch[ComplexTensor],
     ) -> Batch[ComplexTensor]:
         r"""
         Combines exponential and polynomial parts using einsum. Needed in ``__call__``.
@@ -603,7 +613,10 @@ class PolyExpAnsatz(Ansatz):
         return math.einsum(f"...,...{poly_string},...{poly_string}->...", exp_sum, c, poly)
 
     def _compute_exp_part(
-        self, z: Batch[Vector], A: Batch[ComplexMatrix], b: Batch[ComplexVector]
+        self,
+        z: Batch[Vector],
+        A: Batch[ComplexMatrix],
+        b: Batch[ComplexVector],
     ) -> Batch[Scalar]:
         r"""
         Computes the exponential part of the ansatz evaluation. Needed in ``__call__``.
@@ -619,7 +632,10 @@ class PolyExpAnsatz(Ansatz):
         return math.exp(1 / 2 * A_part + b_part)
 
     def _compute_polynomial_part(
-        self, z: Batch[Vector], A: Batch[ComplexMatrix], b: Batch[ComplexVector]
+        self,
+        z: Batch[Vector],
+        A: Batch[ComplexMatrix],
+        b: Batch[ComplexVector],
     ) -> Batch[Scalar]:
         r"""
         Computes the polynomial part of the ansatz evaluation. Needed in ``__call__``.
@@ -747,7 +763,7 @@ class PolyExpAnsatz(Ansatz):
         if len(indices) >= self.num_CV_vars:
             raise ValueError(
                 "The number of variables and indices must not exceed the number of CV "
-                f"variables {self.num_CV_vars}. Use the eval() or __call__() method instead."
+                f"variables {self.num_CV_vars}. Use the eval() or __call__() method instead.",
             )
         z_batch_shape = z.shape[:-1]
 
@@ -812,11 +828,11 @@ class PolyExpAnsatz(Ansatz):
         """
         if self.num_CV_vars != other.num_CV_vars:
             raise ValueError(
-                f"The number of CV variables must match. Got {self.num_CV_vars} and {other.num_CV_vars}."
+                f"The number of CV variables must match. Got {self.num_CV_vars} and {other.num_CV_vars}.",
             )
         if (self.batch_shape and not self._lin_sup) or (other.batch_shape and not other._lin_sup):
             raise ValueError(
-                f"Cannot add PolyExpAnsatz with batch dimensions {self.batch_shape} and {other.batch_shape}."
+                f"Cannot add PolyExpAnsatz with batch dimensions {self.batch_shape} and {other.batch_shape}.",
             )
         A_self = self.A if self.batch_dims == 1 else math.expand_dims(self.A, axis=0)
         b_self = self.b if self.batch_dims == 1 else math.expand_dims(self.b, axis=0)
@@ -880,9 +896,9 @@ class PolyExpAnsatz(Ansatz):
             ),
         )
         if self._lin_sup and other._lin_sup:  # we have two linear superposition dimensions
-            As = math.reshape(As, As.shape[:-4] + (As.shape[-4] * As.shape[-3],) + As.shape[-2:])
-            bs = math.reshape(bs, bs.shape[:-3] + (bs.shape[-3] * bs.shape[-2],) + bs.shape[-1:])
-            cs = math.reshape(cs, cs.shape[:-2] + (cs.shape[-2] * cs.shape[-1],))
+            As = math.reshape(As, (*As.shape[:-4], As.shape[-4] * As.shape[-3], *As.shape[-2:]))
+            bs = math.reshape(bs, (*bs.shape[:-3], bs.shape[-3] * bs.shape[-2], *bs.shape[-1:]))
+            cs = math.reshape(cs, (*cs.shape[:-2], cs.shape[-2] * cs.shape[-1]))
         return PolyExpAnsatz(As, bs, cs, lin_sup=self._lin_sup or other._lin_sup)
 
     def __call__(self: PolyExpAnsatz, *z_inputs: ArrayLike | None) -> Batch[ComplexTensor]:
@@ -916,7 +932,7 @@ class PolyExpAnsatz(Ansatz):
         z_batch_shape, z_dim = z.shape[:-1], z.shape[-1]
         if z_dim != self.num_CV_vars:
             raise ValueError(
-                f"The last dimension of `z` must equal the number of CV variables {self.num_CV_vars}, got {z_dim}."
+                f"The last dimension of `z` must equal the number of CV variables {self.num_CV_vars}, got {z_dim}.",
             )
 
         ansatz_batch_idxs = tuple(range(self.batch_dims))
@@ -935,9 +951,8 @@ class PolyExpAnsatz(Ansatz):
         exp_sum = self._compute_exp_part(z, A, b)
         if self.num_derived_vars == 0:  # purely gaussian
             return math.einsum("...,...->...", exp_sum, c)
-        else:
-            poly = self._compute_polynomial_part(z, A, b)
-            return self._combine_exp_and_poly(exp_sum, poly, c)
+        poly = self._compute_polynomial_part(z, A, b)
+        return self._combine_exp_and_poly(exp_sum, poly, c)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, PolyExpAnsatz):
@@ -959,7 +974,7 @@ class PolyExpAnsatz(Ansatz):
 
         else:
             raise NotImplementedError(
-                "Multiplication of PolyExpAnsatz with other PolyExpAnsatz is not implemented."
+                "Multiplication of PolyExpAnsatz with other PolyExpAnsatz is not implemented.",
             )
 
     def __neg__(self) -> PolyExpAnsatz:
@@ -1006,5 +1021,5 @@ class PolyExpAnsatz(Ansatz):
                 raise TypeError(f"Cannot divide PolyExpAnsatz and {other.__class__}.") from e
         else:
             raise NotImplementedError(
-                "Division of PolyExpAnsatz with other PolyExpAnsatz is not implemented."
+                "Division of PolyExpAnsatz with other PolyExpAnsatz is not implemented.",
             )

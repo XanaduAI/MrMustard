@@ -18,13 +18,13 @@ The class representing a controlled-phase gate.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
-from .base import Unitary
-from ..utils import make_parameter
 from ...physics import symplectics
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["CZgate"]
 
@@ -39,7 +39,8 @@ class CZgate(Unitary):
         s_trainable: Whether ``s`` is trainable.
         s_bounds: The bounds for ``s``.
 
-    .. code-block ::
+    .. code-block::
+
         >>> from mrmustard.lab import CZgate
         >>> gate = CZgate((0, 1), s=0.5)
         >>> assert gate.modes == (0, 1)
@@ -72,7 +73,8 @@ class CZgate(Unitary):
             modes_out=modes,
             ansatz=PolyExpAnsatz.from_function(
                 fn=lambda s: Unitary.from_symplectic(
-                    modes, symplectics.czgate_symplectic(s)
+                    modes,
+                    symplectics.czgate_symplectic(s),
                 ).bargmann_triple(),
                 s=self.parameters.s,
             ),

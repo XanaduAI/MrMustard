@@ -17,19 +17,21 @@ This module contains the class for representations.
 """
 
 from __future__ import annotations
-from typing import Sequence
+
+from collections.abc import Sequence
+
 from mrmustard import math
 from mrmustard.utils.typing import (
-    ComplexTensor,
-    ComplexMatrix,
-    ComplexVector,
     Batch,
+    ComplexMatrix,
+    ComplexTensor,
+    ComplexVector,
 )
 
-from .ansatz import Ansatz, PolyExpAnsatz, ArrayAnsatz
+from .ansatz import Ansatz, ArrayAnsatz, PolyExpAnsatz
 from .triples import identity_Abc
 from .utils import outer_product_batch_str, zip_batch_strings
-from .wires import Wires, ReprEnum
+from .wires import ReprEnum, Wires
 
 __all__ = ["Representation"]
 
@@ -97,7 +99,7 @@ class Representation:
         r"""
         The Bargmann parametrization of this representation, if available.
         It returns a triple (A, b, c) such that the Bargmann function of this is
-        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right).
+        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`.
         """
         try:
             return self.ansatz.triple
@@ -136,7 +138,10 @@ class Representation:
         batch12, batch_out = eins_str.split("->")
         batch1, batch2 = batch12.split(",")
         ansatz = self.ansatz.contract(
-            other.ansatz, list(batch1) + core1, list(batch2) + core2, list(batch_out) + core_out
+            other.ansatz,
+            list(batch1) + core1,
+            list(batch2) + core2,
+            list(batch_out) + core_out,
         )
         return Representation(ansatz, wires_result)
 
@@ -147,6 +152,7 @@ class Representation:
         Args:
             shape: The shape of the returned array, not including batch dimensions. If ``shape`` is
             given as an ``int``, it is broadcast to all the dimensions.
+
         Returns:
             array: The Fock array of this representation.
         """
@@ -169,9 +175,9 @@ class Representation:
                 shape=shape + self.ansatz.shape_derived_vars,
             )
             G = math.reshape(G, self.ansatz.batch_shape + shape + (-1,))
-            cs = math.reshape(c, self.ansatz.batch_shape + (-1,))
+            cs = math.reshape(c, (*self.ansatz.batch_shape, -1))
             core_str = "".join(
-                [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))]
+                [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))],
             )
             ret = math.einsum(f"...{core_str},...{core_str[-1]}->...{core_str[:-1]}", G, cs)
             if self.ansatz._lin_sup:
@@ -186,16 +192,15 @@ class Representation:
         """
         if isinstance(self.ansatz, PolyExpAnsatz):
             return self
+        if self.ansatz._original_abc_data:
+            A, b, c = self.ansatz._original_abc_data
         else:
-            if self.ansatz._original_abc_data:
-                A, b, c = self.ansatz._original_abc_data
-            else:
-                A, b, _ = identity_Abc(len(self.wires.quantum))
-                c = self.ansatz.data
-            bargmann = PolyExpAnsatz(A, b, c)
-            for w in self.wires.quantum:
-                w.repr = ReprEnum.BARGMANN
-            return Representation(bargmann, self.wires)
+            A, b, _ = identity_Abc(len(self.wires.quantum))
+            c = self.ansatz.data
+        bargmann = PolyExpAnsatz(A, b, c)
+        for w in self.wires.quantum:
+            w.repr = ReprEnum.BARGMANN
+        return Representation(bargmann, self.wires)
 
     def to_fock(self, shape: int | Sequence[int]) -> Representation:
         r"""

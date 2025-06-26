@@ -14,8 +14,6 @@
 
 """Tests for circuit components."""
 
-# pylint: disable=fixme, missing-function-docstring, pointless-statement
-
 from unittest.mock import patch
 
 import numpy as np
@@ -51,7 +49,7 @@ from mrmustard.training import Optimizer
 
 from ..random import Abc_triple
 
-# pylint: disable=too-many-public-methods
+
 class TestCircuitComponent:
     r"""
     Tests ``CircuitComponent`` objects.
@@ -63,7 +61,8 @@ class TestCircuitComponent:
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(x, y))
         cc = CircuitComponent(
-            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name
+            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})),
+            name=name,
         )
 
         assert cc.name == name
@@ -75,8 +74,9 @@ class TestCircuitComponent:
     def test_missing_name(self):
         cc = CircuitComponent(
             Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2)), Wires(set(), set(), {1, 8}, {1, 8})
-            )
+                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2)),
+                Wires(set(), set(), {1, 8}, {1, 8}),
+            ),
         )
         cc._name = None
         assert cc.name == "CC18"
@@ -103,7 +103,7 @@ class TestCircuitComponent:
     def test_from_to_quadrature(self):
         c = Dgate(0, x=0.1, y=0.2) >> Sgate(0, r=1.0, phi=0.1)
         cc = CircuitComponent(c.representation, c.name)
-        ccc = CircuitComponent.from_quadrature(tuple(), tuple(), (0,), (0,), cc.quadrature_triple())
+        ccc = CircuitComponent.from_quadrature((), (), (0,), (0,), cc.quadrature_triple())
         assert cc == ccc
 
     def test_adjoint(self):
@@ -145,8 +145,9 @@ class TestCircuitComponent:
     def test_light_copy(self):
         d1 = CircuitComponent(
             Representation(
-                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1)), Wires(set(), set(), {1}, {1})
-            )
+                PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1)),
+                Wires(set(), set(), {1}, {1}),
+            ),
         )
         d1_cp = d1._light_copy()
 
@@ -192,7 +193,7 @@ class TestCircuitComponent:
         d = Dgate(1, x=0.1, y=0.1)
         d_fock = d.to_fock(shape=(4, 6))
         assert d_fock.ansatz == ArrayAnsatz(
-            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6))
+            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6)),
         )
 
     def test_to_fock_bargmann_Dgate(self):
@@ -204,10 +205,10 @@ class TestCircuitComponent:
 
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
-        c = np.random.random(5) + 0.0j
+        c = settings.rng.random(5) + 0.0j
         polyexp = PolyExpAnsatz(A, b, c)
         fock_cc = CircuitComponent(
-            Representation(polyexp, Wires(set(), set(), {0, 1}, set()))
+            Representation(polyexp, Wires(set(), set(), {0, 1}, set())),
         ).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
         assert fock_cc.ansatz._original_abc_data is None
@@ -275,7 +276,7 @@ class TestCircuitComponent:
                     0.08944272 + 0.08944272j,
                     0.08944272 + 0.08944272j,
                     0.083666 + 0.083666j,
-                ]
+                ],
             ],
         )
         assert math.allclose(result.ansatz.c, [0.95504196])
@@ -292,7 +293,7 @@ class TestCircuitComponent:
 
         result1 = d2.contract(d1)
         correct_c = np.exp(-0.5 * (abs(alpha + beta) ** 2)) * np.exp(
-            (alpha * np.conj(beta) - np.conj(alpha) * beta) / 2
+            (alpha * np.conj(beta) - np.conj(alpha) * beta) / 2,
         )
 
         assert math.allclose(result1.ansatz.c, correct_c)
@@ -344,7 +345,7 @@ class TestCircuitComponent:
                     0.08944272 + 0.08944272j,
                     0.08944272 + 0.08944272j,
                     0.083666 + 0.083666j,
-                ]
+                ],
             ],
         )
         assert math.allclose(result.ansatz.c, [0.95504196])
@@ -471,7 +472,8 @@ class TestCircuitComponent:
     def test_repr(self):
         c1 = CircuitComponent(Representation(wires=Wires(modes_out_ket={0, 1, 2})))
         c2 = CircuitComponent(
-            Representation(wires=Wires(modes_out_ket={0, 1, 2})), name="my_component"
+            Representation(wires=Wires(modes_out_ket={0, 1, 2})),
+            name="my_component",
         )
 
         assert repr(c1) == "CircuitComponent(modes=(0, 1, 2), name=CC012)"
@@ -488,7 +490,7 @@ class TestCircuitComponent:
         coh = Coherent(0, x=1.0)
         CC = Ket.from_fock((0,), coh.fock_array(20))
         with pytest.raises(AttributeError):
-            CC.bargmann_triple()  # pylint: disable=pointless-statement
+            CC.bargmann_triple()
 
     def test_quadrature_ket(self):
         "tests that transforming to quadrature and back gives the same ket"
@@ -499,7 +501,7 @@ class TestCircuitComponent:
     def test_quadrature_channel(self):
         C = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2) >> Attenuator(0, 0.9)
         back = Channel.from_quadrature((0,), (0,), C.quadrature_triple())
-        assert C == back
+        assert back == C
 
     def test_quadrature_dm(self):
         "tests that transforming to quadrature and back gives the same density matrix"
@@ -510,17 +512,17 @@ class TestCircuitComponent:
     def test_quadrature_map(self):
         C = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2) >> Attenuator(0, 0.9)
         back = Map.from_quadrature((0,), (0,), C.quadrature_triple())
-        assert C == back
+        assert back == C
 
     def test_quadrature_operation(self):
         U = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2)
         back = Operation.from_quadrature((0,), (0,), U.quadrature_triple())
-        assert U == back
+        assert back == U
 
     def test_quadrature_unitary(self):
         U = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2)
         back = Unitary.from_quadrature((0,), (0,), U.quadrature_triple())
-        assert U == back
+        assert back == U
 
     @pytest.mark.parametrize("is_fock,widget_cls", [(False, Box), (True, HBox)])
     @patch("mrmustard.lab.circuit_components.display")
@@ -560,7 +562,8 @@ class TestCircuitComponent:
         name = "my_component"
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4))
         cc = CircuitComponent(
-            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})), name=name
+            Representation(ansatz, Wires(set(), set(), {1, 8}, {1, 8})),
+            name=name,
         )
         kwargs, arrays = cc._serialize()
         assert kwargs == {
@@ -589,7 +592,8 @@ class TestCircuitComponent:
 
         cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
         with pytest.raises(
-            TypeError, match="MyComponent does not seem to have any wires construction method"
+            TypeError,
+            match="MyComponent does not seem to have any wires construction method",
         ):
             cc._serialize()
 
@@ -611,6 +615,7 @@ class TestCircuitComponent:
             assert opt.minimize(cost, by_optimizing=[circuit], max_steps=5) is None
         else:
             with pytest.raises(
-                NotImplementedError, match="not implemented for backend ``(numpy|jax)``"
+                NotImplementedError,
+                match="not implemented for backend ``(numpy|jax)``",
             ):
                 opt.minimize(cost, by_optimizing=[circuit], max_steps=5)

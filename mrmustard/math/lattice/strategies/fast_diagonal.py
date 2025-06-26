@@ -16,9 +16,11 @@
 This module contains the fast diagonal strategy for computing the conditional density matrices.
 """
 
+from functools import cache
 from itertools import product
-from functools import lru_cache
+
 import numpy as np
+
 from mrmustard.math.lattice.strategies.vanilla import stable_numba, vanilla_numba
 from mrmustard.utils.typing import ComplexMatrix, ComplexVector
 
@@ -91,10 +93,10 @@ def get_pivot(k: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
     m = np.argmax(deltas)
     if deltas[m] == 0:
         i = np.argmax(k)
-        return i, k[:i] + (k[i] - 1,) + k[i + 1 :]
+        return i, (*k[:i], k[i] - 1, *k[i + 1 :])
     if k[2 * m] > k[2 * m + 1]:
-        return 2 * m, k[: 2 * m] + (k[2 * m] - 1,) + k[2 * m + 1 :]
-    return 2 * m + 1, k[: 2 * m + 1] + (k[2 * m + 1] - 1,) + k[2 * m + 2 :]
+        return 2 * m, (*k[: 2 * m], k[2 * m] - 1, *k[2 * m + 1 :])
+    return 2 * m + 1, (*k[: 2 * m + 1], k[2 * m + 1] - 1, *k[2 * m + 2 :])
 
 
 def single_step(A, b, buffer_1, buffer_2, i, pivot):
@@ -133,7 +135,7 @@ def lower(pivot, j):
     Returns:
         New tuple with j-th coordinate decreased by 1
     """
-    return pivot[:j] + (pivot[j] - 1,) + pivot[j + 1 :]
+    return (*pivot[:j], pivot[j] - 1, *pivot[j + 1 :])
 
 
 def generate_partitions(w: int, m: tuple[int]):
@@ -145,10 +147,10 @@ def generate_partitions(w: int, m: tuple[int]):
     max_first = min(w, m[0])
     for first in range(max_first, -1, -1):
         for rest in generate_partitions(w - first, m[1:]):
-            yield (first,) + rest
+            yield (first, *rest)
 
 
-@lru_cache(maxsize=None)
+@cache
 def enumerate_diagonal_coords(weight: int, m: tuple[int]) -> list[tuple[int, ...]]:
     r"""
     Enumerate all coordinates of a given weight (sum(coordinate) == weight) and length 2*n_modes
@@ -175,16 +177,18 @@ def enumerate_diagonal_coords(weight: int, m: tuple[int]) -> list[tuple[int, ...
             u = s // 2 + 1
             d = s // 2
             if s % 2 == 0:
-                delta2_options.append([(l, u), (u, l)] if 0 <= l and u <= max_val else [])
+                delta2_options.append([(l, u), (u, l)] if l >= 0 and u <= max_val else [])
                 non_delta2_options.append([(d, d)] if d <= max_val else [])
             else:
                 delta2_options.append([])
                 non_delta2_options.append([(d, u), (u, d)] if u <= max_val else [])
         # first include combinations which have exactly one pair with delta==2
         for i in range(n_modes):
-            product_options = (
-                non_delta2_options[:i] + [delta2_options[i]] + non_delta2_options[i + 1 :]
-            )
+            product_options = [
+                *non_delta2_options[:i],
+                delta2_options[i],
+                *non_delta2_options[i + 1 :],
+            ]
             for combo in product(*product_options):
                 coord = tuple(num for pair in combo for num in pair)
                 valid.append(coord)
