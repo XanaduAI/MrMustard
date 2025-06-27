@@ -29,13 +29,8 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import ReprEnum, Wires
-from mrmustard.utils.typing import (
-    ComplexMatrix,
-    ComplexTensor,
-    ComplexVector,
-)
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
@@ -145,7 +140,7 @@ class DM(State):
         if isinstance(ansatz, ArrayAnsatz):
             for w in wires:
                 w.repr = ReprEnum.FOCK
-        return DM(Representation(ansatz, wires), name)
+        return DM(ansatz, wires, name=name)
 
     @classmethod
     def from_phase_space(
@@ -791,7 +786,7 @@ class DM(State):
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
         idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
         ansatz = self.ansatz.trace(idxz, idxz_conj)
-        return DM(Representation(ansatz, wires), self.name)
+        return DM(ansatz, wires, name=self.name)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -823,5 +818,5 @@ class DM(State):
             return result  # scalar case handled here
 
         if not result.wires.input and result.wires.bra.modes == result.wires.ket.modes:
-            return DM(result.representation)
+            return DM._from_attributes(result.ansatz, result.wires)
         return result

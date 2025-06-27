@@ -21,6 +21,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 
 from ...physics import symplectics
 from ..utils import make_parameter
@@ -60,16 +61,18 @@ class Pgate(Unitary):
     ):
         super().__init__(name="Pgate")
         self.parameters.add_parameter(
-            make_parameter(shearing_trainable, shearing, "shearing", shearing_bounds),
-        )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=lambda shearing: Unitary.from_symplectic(
-                    (mode,),
-                    symplectics.pgate_symplectic(1, shearing),
-                ).bargmann_triple(),
-                shearing=self.parameters.shearing,
+            make_parameter(
+                is_trainable=shearing_trainable,
+                value=shearing,
+                name="shearing",
+                bounds=shearing_bounds,
             ),
-        ).representation
+        )
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=lambda shearing: Unitary.from_symplectic(
+                (mode,),
+                symplectics.pgate_symplectic(1, shearing),
+            ).bargmann_triple(),
+            shearing=self.parameters.shearing,
+        )
+        self._wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})

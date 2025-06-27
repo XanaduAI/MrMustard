@@ -30,7 +30,6 @@ from collections.abc import Sequence
 from mrmustard import math, settings
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import XY_of_channel, au2Symplectic, symplectic2Au
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import XY_to_channel_Abc
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, RealMatrix, Vector
@@ -173,14 +172,12 @@ class Transformation(CircuitComponent):
         )
 
         return self._from_attributes(
-            Representation(
-                PolyExpAnsatz(
-                    math.inv(A),
-                    math.einsum("...ij,...j->...i", -math.inv(A), b),
-                    c_of_inverse,
-                ),
-                self.wires.copy(new_ids=True),
+            PolyExpAnsatz(
+                math.inv(A),
+                math.einsum("...ij,...j->...i", -math.inv(A), b),
+                c_of_inverse,
             ),
+            self.wires.copy(new_ids=True),
             self.name + "_inv",
         )
 
@@ -206,10 +203,8 @@ class Operation(Transformation):
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Operation(
-            representation=Representation(
-                ansatz=ansatz,
-                wires=Wires(set(), set(), set(modes_out), set(modes_in)),
-            ),
+            ansatz=ansatz,
+            wires=Wires(set(), set(), set(modes_out), set(modes_in)),
             name=name,
         )
 
@@ -241,10 +236,8 @@ class Unitary(Operation):
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Unitary(
-            representation=Representation(
-                ansatz=ansatz,
-                wires=Wires(set(), set(), set(modes_out), set(modes_in)),
-            ),
+            ansatz=ansatz,
+            wires=Wires(set(), set(), set(modes_out), set(modes_in)),
             name=name,
         )
 
@@ -308,7 +301,8 @@ class Unitary(Operation):
         """
         unitary_dual = self.dual
         return Unitary(
-            representation=unitary_dual.representation,
+            ansatz=unitary_dual.ansatz,
+            wires=unitary_dual.wires,
             name=unitary_dual.name,
         )
 
@@ -330,9 +324,9 @@ class Unitary(Operation):
         ret = super().__rshift__(other)
 
         if isinstance(other, Unitary):
-            return Unitary(ret.representation)
+            return Unitary(ret.ansatz, ret.wires)
         if isinstance(other, Channel):
-            return Channel(ret.representation)
+            return Channel(ret.ansatz, ret.wires)
         return ret
 
 
@@ -356,10 +350,8 @@ class Map(Transformation):
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Map(
-            representation=Representation(
-                ansatz=ansatz,
-                wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
-            ),
+            ansatz=ansatz,
+            wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
             name=name,
         )
 
@@ -486,10 +478,8 @@ class Channel(Map):
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Channel(
-            representation=Representation(
-                ansatz=ansatz,
-                wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
-            ),
+            ansatz=ansatz,
+            wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
             name=name,
         )
 
@@ -582,5 +572,5 @@ class Channel(Map):
         """
         ret = super().__rshift__(other)
         if isinstance(other, Channel | Unitary):
-            return Channel(ret.representation)
+            return Channel(ret.ansatz, ret.wires)
         return ret
