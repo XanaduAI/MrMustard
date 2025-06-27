@@ -22,7 +22,6 @@ from collections.abc import Sequence
 
 from mrmustard.lab.states.ket import Ket
 from mrmustard.lab.utils import make_parameter
-from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
@@ -85,8 +84,6 @@ class Coherent(Ket):
         y_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="Coherent")
-
-        self._parameters = ParameterSet()
         self.parameters.add_parameter(
             make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds),
         )
