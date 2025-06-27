@@ -503,7 +503,8 @@ class CircuitComponent:
 
         Args:
             other: The other component to contract with.
-            mode: The mode of contraction. Can be ``zip`` or ``kron``.
+            mode: The mode of contraction. Can either "zip" the batch dimensions, "kron" the batch dimensions,
+                or pass a custom einsum-style batch string like "ab,cb->ac".
 
         Returns:
             The contracted component.
@@ -543,6 +544,8 @@ class CircuitComponent:
                 self_ansatz.batch_dims - self_ansatz._lin_sup,
                 other_ansatz.batch_dims - other_ansatz._lin_sup,
             )
+        else:
+            eins_str = mode
         batch12, batch_out = eins_str.split("->")
         batch1, batch2 = batch12.split(",")
         ansatz = self_ansatz.contract(
