@@ -559,10 +559,12 @@ class CircuitComponent:
         if type(self.ansatz) is type(other.ansatz):
             self_rep = self.representation
             other_rep = other.representation
+        elif settings.DEFAULT_REPRESENTATION == "Bargmann":
+            self_rep = self.to_bargmann().representation
+            other_rep = other.to_bargmann().representation
         else:
             self_rep = self.to_fock().representation
             other_rep = other.to_fock().representation
-
         result = self_rep.contract(other_rep, mode=mode)
         return CircuitComponent(result, None)
 

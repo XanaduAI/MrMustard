@@ -84,6 +84,9 @@ class Settings:
         self.DEFAULT_FOCK_SIZE: int = 50
         r"""The default size for the Fock representation. Default is ``50``."""
 
+        self.DEFAULT_REPRESENTATION: str = "Fock"
+        r"""The representation to use when contracting two circuit components in different representations. Can be ``Fock`` or ``Bargmann``. Default is ``Fock``."""
+
         self.DISCRETIZATION_METHOD: str = "clenshaw"
         r"""The method used to discretize the Wigner function. Can be ``clenshaw`` (better, default) or ``iterative`` (worse, faster). Default is ``clenshaw``."""
 
