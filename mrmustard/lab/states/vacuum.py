@@ -22,6 +22,7 @@ from collections.abc import Collection
 
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 
 from .ket import Ket
 
@@ -62,12 +63,11 @@ class Vacuum(Ket):
         self,
         modes: int | tuple[int, ...],
     ) -> None:
-        super().__init__(name="Vac")
         modes = (modes,) if isinstance(modes, int) else modes
-        self._representation = self.from_ansatz(
-            modes=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes)),
-        ).representation
+        A, b, c = triples.vacuum_state_Abc(len(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket=set(modes))
+        super().__init__(ansatz, wires, name="Vac")
 
         for i in range(len(modes)):
             self.manual_shape[i] = 1
