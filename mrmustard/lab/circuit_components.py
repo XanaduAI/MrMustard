@@ -669,7 +669,7 @@ class CircuitComponent:
         for w in wires.quantum:
             w.repr = ReprEnum.BARGMANN
         try:
-            ret = self.__class__(0, **self.parameters.to_dict())
+            ret = self.__class__(mode=(0,), **self.parameters.to_dict())
             ret._ansatz = ansatz
             ret._wires = wires
         except TypeError:
@@ -714,7 +714,7 @@ class CircuitComponent:
             w.repr = ReprEnum.FOCK
 
         try:
-            ret = self.__class__(0, **self.parameters.to_dict())
+            ret = self.__class__(mode=(0,), **self.parameters.to_dict())
             ret._ansatz = fock
             ret._wires = wires
             ret._name = self.name

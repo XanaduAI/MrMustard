@@ -200,7 +200,7 @@ class TestCircuitComponent:
         for w in d_fock_barg.wires.wires:
             assert w.repr == ReprEnum.BARGMANN
 
-    def test_to_fock_poly_exp(self):
+    def test_to_fock_bargmann_poly_exp(self):
         A, b, _ = Abc_triple(3)
         c = settings.rng.random(5) + 0.0j
         polyexp = PolyExpAnsatz(A, b, c)
@@ -211,6 +211,12 @@ class TestCircuitComponent:
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
         assert fock_cc.ansatz._original_abc_data is None
         assert math.allclose(fock_cc.ansatz.data, math.einsum("ijk,k", poly, c))
+
+        barg_cc = fock_cc.to_bargmann()
+        A_expected, b_expected, _ = identity_Abc(2)
+        assert math.allclose(barg_cc.ansatz.A, A_expected)
+        assert math.allclose(barg_cc.ansatz.b, b_expected)
+        assert math.allclose(barg_cc.ansatz.c, fock_cc.ansatz.data)
 
     def test_add(self):
         d1 = Dgate(1, x=0.1, y=0.1)
