@@ -22,6 +22,7 @@ from collections.abc import Sequence
 
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 
 from ..utils import make_parameter
 from .ket import Ket
@@ -80,18 +81,24 @@ class DisplacedSqueezed(Ket):
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="DisplacedSqueezed")
-        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
-        self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
-        self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds),
+        )
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=y_trainable, value=y, name="y", bounds=y_bounds),
+        )
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
+        )
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
+        )
 
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displaced_squeezed_vacuum_state_Abc,
-                x=self.parameters.x,
-                y=self.parameters.y,
-                r=self.parameters.r,
-                phi=self.parameters.phi,
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.displaced_squeezed_vacuum_state_Abc,
+            x=self.parameters.x,
+            y=self.parameters.y,
+            r=self.parameters.r,
+            phi=self.parameters.phi,
+        )
+        self._wires = Wires(modes_out_ket={mode})

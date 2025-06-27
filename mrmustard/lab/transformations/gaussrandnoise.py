@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from mrmustard import math, settings
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ...physics import triples
@@ -86,13 +87,15 @@ class GaussRandNoise(Channel):
 
         super().__init__(name="GRN~")
         self.parameters.add_parameter(
-            make_parameter(Y_trainable, value=Y, name="Y", bounds=(None, None)),
+            make_parameter(is_trainable=Y_trainable, value=Y, name="Y", bounds=(None, None)),
         )
-        self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.gaussian_random_noise_Abc,
-                Y=self.parameters.Y,
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.gaussian_random_noise_Abc,
+            Y=self.parameters.Y,
+        )
+        self._wires = Wires(
+            modes_in_bra=set(modes),
+            modes_out_bra=set(modes),
+            modes_in_ket=set(modes),
+            modes_out_ket=set(modes),
+        )

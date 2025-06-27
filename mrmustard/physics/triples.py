@@ -45,14 +45,14 @@ def _vacuum_A_matrix(n_modes: int) -> ComplexMatrix:
     r"""
     The A matrix of the vacuum state.
     """
-    return math.zeros((n_modes, n_modes), math.complex128)
+    return math.zeros((n_modes, n_modes), dtype=math.complex128)
 
 
 def _vacuum_B_vector(n_modes: int) -> ComplexVector:
     r"""
     The B vector of the vacuum state.
     """
-    return math.zeros((n_modes,), math.complex128)
+    return math.zeros((n_modes,), dtype=math.complex128)
 
 
 #  ~~~~~~~~~~~
@@ -70,6 +70,7 @@ def vacuum_state_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, Comple
     Returns:
         The ``(A, b, c)`` triple of the vacuum states.
     """
+
     A = _vacuum_A_matrix(n_modes)
     b = _vacuum_B_vector(n_modes)
     c = math.astensor(1.0 + 0.0j)
