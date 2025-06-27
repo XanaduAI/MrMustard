@@ -138,12 +138,6 @@ class Transformation(CircuitComponent):
         Raises:
             NotImplementedError: If the input and output wires have different lengths.
             NotImplementedError: If the transformation is not in the Bargmann representation.
-
-        .. code-block::
-            >>> from mrmustard.lab import Unitary, Identity
-
-            >>> u = Unitary.random([0])
-            >>> assert u >> u.inverse() == Identity(u.wires.input)
         """
         if not len(self.wires.input) == len(self.wires.output):
             raise NotImplementedError(
