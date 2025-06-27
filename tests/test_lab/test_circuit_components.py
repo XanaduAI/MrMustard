@@ -254,7 +254,7 @@ class TestCircuitComponent:
         assert d1 == d1._light_copy()
         assert d1 != d2
 
-    def test_matmul(self):
+    def test_contract(self):
         vac012 = Vacuum((0, 1, 2))
         d012 = Dgate(0, x=0.1, y=0.1) >> Dgate(1, x=0.1, y=0.1) >> Dgate(2, x=0.1, y=0.1)
         a0 = Attenuator(0, 0.8)
@@ -281,9 +281,9 @@ class TestCircuitComponent:
         )
         assert math.allclose(result.ansatz.c, [0.95504196])
 
-    def test_matmul_one_mode_Dgate_contraction(self):
+    def test_contract_one_mode_Dgate(self):
         r"""
-        Tests that ``__matmul__`` produces the correct outputs for two Dgate with the formula well-known.
+        Tests that ``contract`` produces the correct outputs for two Dgate with the formula well-known.
         """
         alpha = 1.5 + 0.7888 * 1j
         beta = -0.1555 + 1j * 2.1
@@ -298,7 +298,7 @@ class TestCircuitComponent:
 
         assert math.allclose(result1.ansatz.c, correct_c)
 
-    def test_matmul_is_associative(self):
+    def test_contract_is_associative(self):
         d0 = Dgate(0, x=0.1, y=0.1)
         d1 = Dgate(1, x=0.1, y=0.1)
         d2 = Dgate(2, x=0.1, y=0.1)
@@ -315,12 +315,24 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
-    def test_matmul_scalar(self):
+    def test_contract_scalar(self):
         d0 = Dgate(0, x=0.1, y=0.1)
         result = d0.contract(0.8)
         assert math.allclose(result.ansatz.A, d0.ansatz.A)
         assert math.allclose(result.ansatz.b, d0.ansatz.b)
         assert math.allclose(result.ansatz.c, 0.8 * d0.ansatz.c)
+
+    def test_contract_diff_representations(self):
+        coh0 = Coherent(0, x=0.1, y=0.1)
+        coh1 = Coherent(1, x=0.2, y=0.2).to_fock()
+
+        with settings(DEFAULT_REPRESENTATION="Bargmann"):
+            result1 = coh0.contract(coh1)
+            assert isinstance(result1.ansatz, PolyExpAnsatz)
+
+        with settings(DEFAULT_REPRESENTATION="Fock"):
+            result2 = coh0.contract(coh1)
+            assert isinstance(result2.ansatz, ArrayAnsatz)
 
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum((0, 1, 2))
