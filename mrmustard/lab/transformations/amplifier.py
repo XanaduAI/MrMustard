@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard.physics.wires import Wires
+
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
@@ -85,15 +87,16 @@ class Amplifier(Channel):
         super().__init__(name="Amp~")
         self.parameters.add_parameter(
             make_parameter(
-                gain_trainable,
-                gain,
-                "gain",
-                gain_bounds,
-                None,
+                is_trainable=gain_trainable,
+                value=gain,
+                name="gain",
+                bounds=gain_bounds,
             ),
         )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain)
+        self._wires = Wires(
+            modes_in_bra={mode},
+            modes_out_bra={mode},
+            modes_in_ket={mode},
+            modes_out_ket={mode},
+        )

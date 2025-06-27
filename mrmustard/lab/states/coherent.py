@@ -20,11 +20,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard.lab.states.ket import Ket
+from mrmustard.lab.utils import make_parameter
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
-
-from ..utils import make_parameter
-from .ket import Ket
+from mrmustard.physics.wires import Wires
 
 __all__ = ["Coherent"]
 
@@ -84,14 +84,16 @@ class Coherent(Ket):
         y_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="Coherent")
-        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
-        self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds),
+        )
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=y_trainable, value=y, name="y", bounds=y_bounds),
+        )
 
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.coherent_state_Abc,
-                x=self.parameters.x,
-                y=self.parameters.y,
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.coherent_state_Abc,
+            x=self.parameters.x,
+            y=self.parameters.y,
+        )
+        self._wires = Wires(modes_out_ket={mode})

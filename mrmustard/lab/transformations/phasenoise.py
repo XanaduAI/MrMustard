@@ -23,7 +23,7 @@ import numpy as np
 from mrmustard import math
 from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
-from mrmustard.physics.representations import Representation
+from mrmustard.physics.wires import Wires
 
 from ..utils import make_parameter
 from .base import Channel
@@ -67,11 +67,13 @@ class PhaseNoise(Channel):
         self.parameters.add_parameter(
             make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds),
         )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=None,
-        ).representation
+        self._ansatz = None
+        self._wires = Wires(
+            modes_in_bra={mode},
+            modes_out_bra={mode},
+            modes_in_ket={mode},
+            modes_out_ket={mode},
+        )
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -95,7 +97,8 @@ class PhaseNoise(Channel):
                 * self.parameters.phase_stdev.value**2,
             )
             array *= phase_factors
-        return CircuitComponent(
-            Representation(ArrayAnsatz(array, batch_dims=other.ansatz.batch_dims), other.wires),
+        return CircuitComponent._from_attributes(
+            ArrayAnsatz(array, batch_dims=other.ansatz.batch_dims),
+            other.wires,
             self.name,
         )

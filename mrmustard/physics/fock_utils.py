@@ -52,14 +52,16 @@ def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = Non
         ValueError: If the number of cutoffs does not match the number of photon numbers.
         ValueError: If the photon numbers are larger than the corresponding cutoffs.
     """
-    n = math.atleast_1d(n)
+    # TODO: using math.atleast gives a traced array when using the jax backend and jit compiling
+    # this is a workaround to avoid the traced array
+    n = np.array(n, ndmin=1)
 
     if cutoffs is None:
         cutoffs = list(n)
     elif isinstance(cutoffs, int):
         cutoffs = [cutoffs] * len(n)
     else:
-        cutoffs = math.atleast_1d(cutoffs)
+        cutoffs = np.array(cutoffs, ndmin=1)
 
     if len(cutoffs) != len(n):
         msg = f"Expected ``len(cutoffs)={len(n)}`` but found ``{len(cutoffs)}``."

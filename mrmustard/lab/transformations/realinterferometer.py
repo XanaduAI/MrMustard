@@ -21,6 +21,7 @@ from __future__ import annotations
 from mrmustard import math
 from mrmustard.math.parameters import update_orthogonal
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ...physics import symplectics
@@ -68,21 +69,18 @@ class RealInterferometer(Unitary):
         super().__init__(name="RealInterferometer")
         self.parameters.add_parameter(
             make_parameter(
-                orthogonal_trainable,
-                orthogonal,
-                "orthogonal",
-                (None, None),
-                update_orthogonal,
+                is_trainable=orthogonal_trainable,
+                value=orthogonal,
+                name="orthogonal",
+                bounds=(None, None),
+                update_fn=update_orthogonal,
             ),
         )
-        self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=lambda ortho: Unitary.from_symplectic(
-                    modes,
-                    symplectics.realinterferometer_symplectic(ortho),
-                ).bargmann_triple(),
-                ortho=self.parameters.orthogonal,
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=lambda ortho: Unitary.from_symplectic(
+                modes,
+                symplectics.realinterferometer_symplectic(ortho),
+            ).bargmann_triple(),
+            ortho=self.parameters.orthogonal,
+        )
+        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))

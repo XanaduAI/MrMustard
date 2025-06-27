@@ -21,7 +21,6 @@ from __future__ import annotations
 from mrmustard.physics import triples
 
 from ...physics.ansatz import PolyExpAnsatz
-from ...physics.representations import Representation
 from ...physics.wires import Wires
 from ..circuit_components import CircuitComponent
 
@@ -69,10 +68,8 @@ class TraceOut(CircuitComponent):
     ):
         modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(
-            Representation(
-                PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
-                Wires(set(), set(modes), set(), set(modes)),
-            ),
+            ansatz=PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
+            wires=Wires(set(), set(modes), set(), set(modes)),
             name="Tr",
         )
 
@@ -110,5 +107,5 @@ class TraceOut(CircuitComponent):
             ansatz = other.ansatz.trace(idx_z, idx_zconj)
             wires, _ = other.wires @ self.wires
 
-        cpt = other._from_attributes(Representation(ansatz, wires))
+        cpt = other._from_attributes(ansatz, wires)
         return cpt.ansatz.scalar if len(cpt.wires) == 0 else cpt
