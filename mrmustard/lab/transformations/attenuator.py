@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard.physics.wires import Wires
+
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
@@ -85,18 +87,20 @@ class Attenuator(Channel):
         super().__init__(name="Att~")
         self.parameters.add_parameter(
             make_parameter(
-                transmissivity_trainable,
-                transmissivity,
-                "transmissivity",
-                transmissivity_bounds,
-                None,
+                is_trainable=transmissivity_trainable,
+                value=transmissivity,
+                name="transmissivity",
+                bounds=transmissivity_bounds,
             ),
         )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.attenuator_Abc,
-                eta=self.parameters.transmissivity,
-            ),
-        ).representation
+
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.attenuator_Abc,
+            eta=self.parameters.transmissivity,
+        )
+        self._wires = Wires(
+            modes_in_bra={mode},
+            modes_out_bra={mode},
+            modes_in_ket={mode},
+            modes_out_ket={mode},
+        )

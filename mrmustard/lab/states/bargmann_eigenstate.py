@@ -22,6 +22,7 @@ from collections.abc import Sequence
 
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 
 from ..utils import make_parameter
 from .ket import Ket
@@ -67,11 +68,16 @@ class BargmannEigenstate(Ket):
     ):
         super().__init__(name="BargmannEigenstate")
 
-        self.parameters.add_parameter(make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds))
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.bargmann_eigenstate_Abc,
-                alpha=self.parameters.alpha,
+        self.parameters.add_parameter(
+            make_parameter(
+                is_trainable=alpha_trainable,
+                value=alpha,
+                name="alpha",
+                bounds=alpha_bounds,
             ),
-        ).representation
+        )
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.bargmann_eigenstate_Abc,
+            alpha=self.parameters.alpha,
+        )
+        self._wires = Wires(modes_out_ket={mode})

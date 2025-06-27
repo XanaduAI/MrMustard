@@ -28,13 +28,7 @@ from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
 
 from ..utils.settings import settings
-from ..utils.typing import (
-    Batch,
-    Matrix,
-    Tensor,
-    Trainable,
-    Vector,
-)
+from ..utils.typing import Batch, Matrix, Tensor, Trainable, Vector
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
 

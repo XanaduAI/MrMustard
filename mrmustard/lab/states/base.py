@@ -28,17 +28,10 @@ from plotly.subplots import make_subplots
 from mrmustard import math, settings
 from mrmustard.math.lattice.autoshape import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.bargmann_utils import (
-    bargmann_Abc_to_phasespace_cov_means,
-)
+from mrmustard.physics.bargmann_utils import bargmann_Abc_to_phasespace_cov_means
 from mrmustard.physics.fock_utils import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
-from mrmustard.utils.typing import (
-    ComplexMatrix,
-    ComplexTensor,
-    ComplexVector,
-    RealVector,
-)
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector, RealVector
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import BtoChar, BtoPS, BtoQ
