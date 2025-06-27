@@ -154,7 +154,7 @@ class BSgate(Unitary):
         return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> BSgate:
-        batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
+        batch_dims = self.ansatz.batch_dims - self.ansatz._lin_sup
         fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
         fock._original_abc_data = self.ansatz.triple
         ret = self.__class__(self.modes, **self.parameters.to_dict())

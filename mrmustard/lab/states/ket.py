@@ -241,18 +241,19 @@ class Ket(State):
         ret = self.contract(self.adjoint, mode="zip")
         return DM._from_attributes(ret.ansatz, ret.wires, name=self.name)
 
-    def expectation(self, operator: CircuitComponent):
+    def expectation(self, operator: CircuitComponent, mode: str = "kron") -> Batch[Scalar]:
         r"""
         The expectation value of an operator calculated with respect to this Ket.
 
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
+            mode: The mode of contraction. Can either "zip" the batch dimensions, "kron" the batch dimensions,
+                or pass a custom einsum-style batch string like "ab,cb->ac".
 
         Returns:
             Expectation value as a complex number.
 
         Raises:
-            NotImplementedError: If the state or ``operator`` are batched.
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
                 component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
@@ -279,11 +280,6 @@ class Ket(State):
 
             >>> assert math.allclose(psi.expectation(Rgate(0, theta)), answer)
         """
-        if (self.ansatz and self.ansatz.batch_shape) or (
-            operator.ansatz and operator.ansatz.batch_shape
-        ):  # pragma: no cover
-            raise NotImplementedError("Batched expectation values are not implemented.")
-
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
             raise ValueError(msg)
@@ -295,18 +291,16 @@ class Ket(State):
 
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
-            result = self.contract(operator.dual)
-            result = result.contract(result.adjoint)
-            result >>= TraceOut(leftover_modes)
-
+            result = self.contract(operator.dual, mode=mode)
+            result = result.contract(result.adjoint, mode="zip") >> TraceOut(leftover_modes)
         elif op_type is OperatorType.DM_LIKE:
-            result = (self.adjoint.contract(self.contract(operator.dual))) >> TraceOut(
-                leftover_modes,
-            )
-
+            result = self.adjoint.contract(
+                self.contract(operator.dual, mode=mode),
+                mode="zip",
+            ) >> TraceOut(leftover_modes)
         else:
-            result = (self.contract(operator)) >> self.dual
-
+            result = (self.contract(operator, mode=mode)).contract(self.dual, mode="zip")
+            result = result >> TraceOut(result.modes)
         return result
 
     def fidelity(self, other: State) -> float:

@@ -23,7 +23,7 @@ from collections.abc import Sequence
 from functools import cached_property
 from inspect import signature
 from pydoc import locate
-from typing import Any, Literal
+from typing import Any
 
 import ipywidgets as widgets
 import numpy as np
@@ -403,7 +403,7 @@ class CircuitComponent:
                 ],
             )[:-1]
             out_string = "".join([chr(97 + mode) for mode in self.modes])
-            ret = np.einsum(
+            ret = math.einsum(
                 "..." + fock_string + "," + q_string + "->" + out_string + "...",
                 self.ansatz.array,
                 *quad_basis_vecs,
@@ -416,12 +416,12 @@ class CircuitComponent:
                 + "".join([chr(97 + mode) for mode in self.modes])
             )
             ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
-        size = int(
-            math.prod(
-                ret.shape[: -self.ansatz.batch_dims] if self.ansatz.batch_shape else ret.shape,
-            ),
+        batch_shape = (
+            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
         )
-        return math.reshape(ret, (size, *self.ansatz.batch_shape))
+        batch_dims = len(batch_shape)
+        size = int(math.prod(ret.shape[:-batch_dims] if batch_shape else ret.shape))
+        return math.reshape(ret, (size, *batch_shape))
 
     @classmethod
     def _from_attributes(
@@ -494,7 +494,7 @@ class CircuitComponent:
     def contract(
         self,
         other: CircuitComponent | Scalar,
-        mode: Literal["zip", "kron"] = "kron",
+        mode: str = "kron",
     ) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` without adding adjoints.
@@ -508,7 +508,8 @@ class CircuitComponent:
 
         Args:
             other: The other component to contract with.
-            mode: The mode of contraction. Can be ``zip`` or ``kron``.
+            mode: The mode of contraction. Can either "zip" the batch dimensions, "kron" the batch dimensions,
+                or pass a custom einsum-style batch string like "ab,cb->ac".
 
         Returns:
             The contracted component.
@@ -548,6 +549,8 @@ class CircuitComponent:
                 self_ansatz.batch_dims - self_ansatz._lin_sup,
                 other_ansatz.batch_dims - other_ansatz._lin_sup,
             )
+        else:
+            eins_str = mode
         batch12, batch_out = eins_str.split("->")
         batch1, batch2 = batch12.split(",")
         ansatz = self_ansatz.contract(
