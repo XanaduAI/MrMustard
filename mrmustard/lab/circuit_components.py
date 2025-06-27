@@ -72,56 +72,8 @@ class CircuitComponent:
     ) -> None:
         self._name = name
         self._parameters = ParameterSet()
-        self.ansatz = ansatz
-        self.wires = wires or Wires(set(), set(), set(), set())
-
-    def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
-        """
-        Inner serialization to be used by Circuit.serialize().
-
-        The first dict must be JSON-serializable, and the second dict must contain
-        the (non-JSON-serializable) array-like data to be collected separately.
-        """
-        cls = type(self)
-        serializable = {"class": f"{cls.__module__}.{cls.__qualname__}"}
-        params = signature(cls).parameters
-        if "name" in params:  # assume abstract type, serialize the representation
-            ansatz_cls = type(self.ansatz)
-            serializable["name"] = self.name
-            serializable["wires"] = tuple(tuple(a) for a in self.wires.args)
-            serializable["ansatz_cls"] = f"{ansatz_cls.__module__}.{ansatz_cls.__qualname__}"
-            return serializable, self.ansatz.to_dict()
-
-        # handle modes parameter
-        if "modes" in params:
-            serializable["modes"] = tuple(self.wires.modes)
-        elif "mode" in params:
-            serializable["mode"] = next(iter(self.wires.modes))
-        elif "modes_out" in params and "modes_in" in params:
-            serializable["modes_out"] = tuple(self.wires.output.modes)
-            serializable["modes_in"] = tuple(self.wires.input.modes)
-        else:
-            raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
-
-        if self.parameters:
-            for k, v in self.parameters.variables.items():
-                serializable[f"{k}_bounds"] = v.bounds
-                serializable[f"{k}_trainable"] = True
-            return serializable, {k: v.value for k, v in self.parameters.all_parameters.items()}
-
-        return serializable, {}
-
-    @classmethod
-    def _deserialize(cls, data: dict) -> CircuitComponent:
-        r"""
-        Deserialization when within a circuit.
-        """
-        if "ansatz_cls" in data:
-            ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
-            ansatz = locate(ansatz_cls).from_dict(data)
-            return cls._from_attributes(ansatz, Wires(*tuple(set(m) for m in wires)), name=name)
-
-        return cls(**data)
+        self._ansatz = ansatz
+        self._wires = wires or Wires(set(), set(), set(), set())
 
     @property
     def adjoint(self) -> CircuitComponent:
@@ -144,6 +96,13 @@ class CircuitComponent:
         for param in self.parameters.all_parameters.values():
             ret.parameters.add_parameter(param)
         return ret
+
+    @property
+    def ansatz(self) -> Ansatz:
+        r"""
+        The ansatz of this circuit component.
+        """
+        return self._ansatz
 
     @property
     def dual(self) -> CircuitComponent:
@@ -248,6 +207,13 @@ class CircuitComponent:
         """
         return self._parameters
 
+    @property
+    def wires(self) -> Wires:
+        r"""
+        The wires of this circuit component.
+        """
+        return self._wires
+
     @classmethod
     def from_bargmann(
         cls,
@@ -333,6 +299,24 @@ class CircuitComponent:
         QQQQ = CircuitComponent(PolyExpAnsatz(*triple), wires)
         BBBB = QtoB_ib.contract(QtoB_ik.contract(QQQQ).contract(QtoB_ok)).contract(QtoB_ob)
         return cls._from_attributes(BBBB.ansatz, wires, name)
+
+    @classmethod
+    def _deserialize(cls, data: dict) -> CircuitComponent:
+        r"""
+        Deserialization when within a circuit.
+
+        Args:
+            data: The data to deserialize.
+
+        Returns:
+            A circuit component with the given serialized data.
+        """
+        if "ansatz_cls" in data:
+            ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
+            ansatz = locate(ansatz_cls).from_dict(data)
+            return cls._from_attributes(ansatz, Wires(*tuple(set(m) for m in wires)), name=name)
+
+        return cls(**data)
 
     def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
         r"""
@@ -659,20 +643,18 @@ class CircuitComponent:
 
     def to_bargmann(self) -> CircuitComponent:
         r"""
-        Returns a new circuit component with the same attributes as this and a ``Bargmann`` representation.
+        Returns a new ``CircuitComponent`` in the ``Bargmann`` representation.
 
         .. code-block::
 
-            >>> from mrmustard.lab import Dgate
-            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+            >>> from mrmustard.lab import Number
+            >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 
-            >>> d = Dgate(1, x=0.1, y=0.1)
-            >>> d_fock = d.to_fock(shape=3)
-            >>> d_bargmann = d_fock.to_bargmann()
+            >>> num = Number(0, n=2)
+            >>> assert isinstance(num.ansatz, ArrayAnsatz) # in Fock representation
 
-            >>> assert d_bargmann.name == d.name
-            >>> assert d_bargmann.wires == d.wires
-            >>> assert isinstance(d_bargmann.ansatz, PolyExpAnsatz)
+            >>> num_bargmann = num.to_bargmann()
+            >>> assert isinstance(num_bargmann.ansatz, PolyExpAnsatz) # in Bargmann representation
         """
         if isinstance(self.ansatz, PolyExpAnsatz):
             return self
@@ -698,23 +680,26 @@ class CircuitComponent:
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
         r"""
-        Returns a new circuit component with the same attributes as this and a ``Fock`` representation.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import Dgate
-            >>> from mrmustard.physics.ansatz import ArrayAnsatz
-
-            >>> d = Dgate(1, x=0.1, y=0.1)
-            >>> d_fock = d.to_fock(shape=3)
-
-            >>> assert d_fock.name == d.name
-            >>> assert isinstance(d_fock.ansatz, ArrayAnsatz)
+        Returns a new ``CircuitComponent`` in the ``Fock`` representation.
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as
                 an ``int``, it is broadcasted to all dimensions. If ``None``, it
                 is generated via ``auto_shape``.
+
+        Returns:
+            A new ``CircuitComponent`` in the ``Fock`` representation.
+
+        .. code-block::
+
+            >>> from mrmustard.lab import Dgate
+            >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+
+            >>> d = Dgate(1, x=0.1, y=0.1)
+            >>> assert isinstance(d.ansatz, PolyExpAnsatz) # in Bargmann representation
+
+            >>> d_fock = d.to_fock(shape=3)
+            >>> assert isinstance(d_fock.ansatz, ArrayAnsatz) # in Fock representation
         """
         shape = shape or self.auto_shape()
         batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
@@ -759,6 +744,45 @@ class CircuitComponent:
         if len(result.wires) > 0:
             return result
         return result.ansatz.scalar
+
+    def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
+        """
+        Inner serialization to be used by Circuit.serialize().
+
+        The first dict must be JSON-serializable, and the second dict must contain
+        the (non-JSON-serializable) array-like data to be collected separately.
+
+        Returns:
+            A tuple containing the serialized data and the array-like data.
+        """
+        cls = type(self)
+        serializable = {"class": f"{cls.__module__}.{cls.__qualname__}"}
+        params = signature(cls).parameters
+        if "name" in params:  # assume abstract type, serialize the representation
+            ansatz_cls = type(self.ansatz)
+            serializable["name"] = self.name
+            serializable["wires"] = tuple(tuple(a) for a in self.wires.args)
+            serializable["ansatz_cls"] = f"{ansatz_cls.__module__}.{ansatz_cls.__qualname__}"
+            return serializable, self.ansatz.to_dict()
+
+        # handle modes parameter
+        if "modes" in params:
+            serializable["modes"] = tuple(self.wires.modes)
+        elif "mode" in params:
+            serializable["mode"] = next(iter(self.wires.modes))
+        elif "modes_out" in params and "modes_in" in params:
+            serializable["modes_out"] = tuple(self.wires.output.modes)
+            serializable["modes_in"] = tuple(self.wires.input.modes)
+        else:
+            raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
+
+        if self.parameters:
+            for k, v in self.parameters.variables.items():
+                serializable[f"{k}_bounds"] = v.bounds
+                serializable[f"{k}_trainable"] = True
+            return serializable, {k: v.value for k, v in self.parameters.all_parameters.items()}
+
+        return serializable, {}
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
