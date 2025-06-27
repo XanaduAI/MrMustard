@@ -33,7 +33,6 @@ from mrmustard.lab import (
     Number,
     QuadratureEigenstate,
     SqueezedVacuum,
-    TraceOut,
     Vacuum,
 )
 
@@ -387,86 +386,116 @@ class TestKet:
         assert math.allclose(state.to_fock(40).quadrature(q), psi_q)
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
 
-    def test_expectation_bargmann(self):
-        ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+    @pytest.mark.parametrize("fock", [False, True])
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
+    def test_expectation(self, batch_shape, fock):
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
 
-        assert math.allclose(ket.expectation(ket), 1.0)
+        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
+        coh_1 = Coherent(1, x=math.real(alpha_1), y=math.imag(alpha_1))
+        # TODO: clean this up once we have a better way to create batched multimode states
+        ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
+        ket = ket.to_fock(40) if fock else ket
 
-        k0 = Coherent(0, x=1, y=2)
-        k1 = Coherent(1, x=1, y=3)
-        k01 = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+        # ket operator
+        exp_coh_0 = ket.expectation(coh_0)
+        exp_coh_1 = ket.expectation(coh_1)
+        exp_ket = ket.expectation(ket)
 
-        res_k0 = (ket.contract(k0.dual)) >> TraceOut(1)
-        res_k1 = (ket.contract(k1.dual)) >> TraceOut(0)
-        res_k01 = ket.contract(k01.dual)
+        assert exp_coh_0.shape == batch_shape * 2
+        assert exp_coh_1.shape == batch_shape * 2
+        assert exp_ket.shape == batch_shape * 2
 
-        assert math.allclose(ket.expectation(k0), res_k0)
-        assert math.allclose(ket.expectation(k1), res_k1)
-        assert math.allclose(ket.expectation(k01), math.sum(res_k01.ansatz.c))
+        assert math.allclose(exp_coh_0, 1)
+        assert math.allclose(exp_coh_1, 1)
+        assert math.allclose(exp_ket, 1)
 
-        dm0 = Coherent(0, x=1, y=2).dm()
-        dm1 = Coherent(1, x=1, y=3).dm()
-        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
+        # dm operator
+        dm0 = coh_0.dm()
+        dm1 = coh_1.dm()
+        dm01 = ket.dm()
 
-        res_dm0 = (ket.contract(ket.adjoint).contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (ket.contract(ket.adjoint).contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = ket.contract(ket.adjoint).contract(dm01.dual)
+        exp_dm0 = ket.expectation(dm0)
+        exp_dm1 = ket.expectation(dm1)
+        exp_dm01 = ket.expectation(dm01)
 
-        assert math.allclose(ket.expectation(dm0), res_dm0)
-        assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), math.sum(res_dm01.ansatz.c))
+        assert exp_dm0.shape == batch_shape * 2
+        assert exp_dm1.shape == batch_shape * 2
+        assert exp_dm01.shape == batch_shape * 2
 
-        u0 = Dgate(0, x=0.1)
-        u1 = Dgate(1, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
+        assert math.allclose(exp_dm0, 1)
+        assert math.allclose(exp_dm1, 1)
+        assert math.allclose(exp_dm01, 1)
 
-        res_u0 = (ket.contract(u0)) >> ket.dual
-        res_u1 = (ket.contract(u1)) >> ket.dual
-        res_u01 = (ket.contract(u01)) >> ket.dual
+        # u operator
+        beta_0 = 0.1
+        beta_1 = 0.2
 
-        assert math.allclose(ket.expectation(u0), res_u0)
-        assert math.allclose(ket.expectation(u1), res_u1)
-        assert math.allclose(ket.expectation(u01), res_u01)
+        u0 = Dgate(0, x=beta_0)
+        u1 = Dgate(1, x=beta_1)
+        u01 = u0 >> u1
 
-    def test_expectation_fock(self):
-        ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
+        exp_u0 = ket.expectation(u0)
+        exp_u1 = ket.expectation(u1)
+        exp_u01 = ket.expectation(u01)
 
-        assert math.allclose(ket.expectation(ket), math.abs(ket >> ket.dual) ** 2)
-        k0 = Coherent(0, x=1, y=2).to_fock(10)
-        k1 = Coherent(1, x=1, y=3).to_fock(10)
-        k01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
+        assert exp_u0.shape == batch_shape
+        assert exp_u1.shape == batch_shape
+        assert exp_u01.shape == batch_shape
 
-        res_k0 = (ket.contract(k0.dual)) >> TraceOut(1)
-        res_k1 = (ket.contract(k1.dual)) >> TraceOut(0)
-        res_k01 = (ket >> k01.dual) ** 2
+        expected_u0 = math.exp(-(math.abs(beta_0) ** 2) / 2) * math.exp(
+            beta_0 * math.conj(alpha_0) - math.conj(beta_0) * alpha_0,
+        )
+        expected_u1 = math.exp(-(math.abs(beta_1) ** 2) / 2) * math.exp(
+            beta_1 * math.conj(alpha_1) - math.conj(beta_1) * alpha_1,
+        )
 
-        assert math.allclose(ket.expectation(k0), res_k0)
-        assert math.allclose(ket.expectation(k1), res_k1)
-        assert math.allclose(ket.expectation(k01), res_k01)
+        assert math.allclose(exp_u0, expected_u0)
+        assert math.allclose(exp_u1, expected_u1)
 
-        dm0 = Coherent(0, x=1, y=0.2).dm().to_fock(10)
-        dm1 = Coherent(1, x=1, y=0.3).dm().to_fock(10)
-        dm01 = (Coherent(0, x=1, y=0.2) >> Coherent(1, x=1, y=0.3)).dm().to_fock(10)
+        exp_u0_coh = coh_0.expectation(u0)
+        exp_u1_coh = coh_1.expectation(u1)
 
-        res_dm0 = (ket.contract(ket.adjoint).contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (ket.contract(ket.adjoint).contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = (ket.contract(ket.adjoint).contract(dm01.dual)).to_fock(10).ansatz.array
+        assert math.allclose(exp_u0, exp_u0_coh)
+        assert math.allclose(exp_u1, exp_u1_coh)
+        assert math.allclose(exp_u01, exp_u0_coh * exp_u1_coh)
 
-        assert math.allclose(ket.expectation(dm0), res_dm0)
-        assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), res_dm01)
+    @pytest.mark.parametrize("batch_shape", [(2,), (2, 3)])
+    @pytest.mark.parametrize("batch_shape_2", [(7,), (4, 5, 7)])
+    def test_expectation_diff_batch_shapes(self, batch_shape, batch_shape_2):
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
 
-        u0 = Dgate(1, x=0.1)
-        u1 = Dgate(0, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
+        # ket operator
+        alpha_1 = math.broadcast_to(0.3 + 0.2j, batch_shape_2)
+        coh_1 = Coherent(0, x=math.real(alpha_1), y=math.imag(alpha_1))
+        exp_coh_1 = coh_0.expectation(coh_1)
+        assert exp_coh_1.shape == batch_shape + batch_shape_2
 
-        res_u0 = (ket.contract(u0).contract(ket.dual)).to_fock(10).ansatz.array
-        res_u1 = (ket.contract(u1).contract(ket.dual)).to_fock(10).ansatz.array
-        res_u01 = (ket.contract(u01).contract(ket.dual)).to_fock(10).ansatz.array
+        # dm operator
+        dm1 = coh_1.dm()
+        exp_dm1 = coh_0.expectation(dm1)
+        assert exp_dm1.shape == batch_shape + batch_shape_2
 
-        assert math.allclose(ket.expectation(u0), res_u0)
-        assert math.allclose(ket.expectation(u1), res_u1)
-        assert math.allclose(ket.expectation(u01), res_u01)
+        # u operator
+        beta_0 = math.broadcast_to(0.3, batch_shape_2)
+        u0 = Dgate(0, x=beta_0)
+        exp_u0 = coh_0.expectation(u0)
+        assert exp_u0.shape == batch_shape + batch_shape_2
+
+    def test_expectation_lin_sup(self):
+        cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
+        assert math.allclose(cat.expectation(cat, mode="zip"), 1.0)
+        assert math.allclose(cat.expectation(cat.dm(), mode="zip"), 1.0)
+        assert math.allclose(
+            cat.expectation(Dgate(0, x=[0.1, 0.2, 0.3])),
+            [
+                cat.expectation(Dgate(0, x=0.1)),
+                cat.expectation(Dgate(0, x=0.2)),
+                cat.expectation(Dgate(0, x=0.3)),
+            ],
+        )
 
     def test_expectation_error(self):
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
