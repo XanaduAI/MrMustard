@@ -138,6 +138,13 @@ class Transformation(CircuitComponent):
         Raises:
             NotImplementedError: If the input and output wires have different lengths.
             NotImplementedError: If the transformation is not in the Bargmann representation.
+
+        .. code-block::
+            >>> from mrmustard.lab import GDM, Identity
+
+            >>> rho = GDM(0, beta = 0.1)
+            >>> rho_as_operator = Operation.from_bargmann([0], [0], rho.ansatz.triple)
+            >>> assert rho_as_operator >> rho_as_operator.inverse() == Identity([0])
         """
         if not len(self.wires.input) == len(self.wires.output):
             raise NotImplementedError(
