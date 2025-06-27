@@ -26,7 +26,6 @@ from mrmustard.lab import (
     Dgate,
     Ket,
     Number,
-    TraceOut,
     Vacuum,
 )
 from mrmustard.physics.triples import coherent_state_Abc
@@ -342,88 +341,118 @@ class TestDM:
         assert math.allclose(state.to_fock(40).quadrature(q, q), bra * ket)
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
-    def test_expectation_bargmann_ket(self):
-        ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+    @pytest.mark.parametrize("fock", [False, True])
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
+    def test_expectation(self, batch_shape, fock):
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
+
+        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
+        coh_1 = Coherent(1, x=math.real(alpha_1), y=math.imag(alpha_1))
+        # TODO: clean this up once we have a better way to create batched multimode states
+        ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
+        ket = ket.to_fock(40) if fock else ket
         dm = ket.dm()
 
-        k0 = Coherent(0, x=1, y=2)
-        k1 = Coherent(1, x=1, y=3)
-        k01 = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+        # ket operator
+        exp_coh_0 = dm.expectation(coh_0)
+        exp_coh_1 = dm.expectation(coh_1)
+        exp_ket = dm.expectation(ket)
 
-        res_k0 = (dm.contract(k0.dual).contract(k0.dual.adjoint)) >> TraceOut(1)
-        res_k1 = (dm.contract(k1.dual).contract(k1.dual.adjoint)) >> TraceOut(0)
-        res_k01 = dm.contract(k01.dual).contract(k01.dual.adjoint)
+        assert exp_coh_0.shape == batch_shape * 2
+        assert exp_coh_1.shape == batch_shape * 2
+        assert exp_ket.shape == batch_shape * 2
 
-        assert math.allclose(dm.expectation(k0), res_k0)
-        assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.ansatz.c)
+        assert math.allclose(exp_coh_0, 1)
+        assert math.allclose(exp_coh_1, 1)
+        assert math.allclose(exp_ket, 1)
 
-    def test_expectation_bargmann_dm(self):
-        dm0 = Coherent(0, x=1, y=2).dm()
-        dm1 = Coherent(1, x=1, y=3).dm()
-        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
+        # dm operator
+        dm0 = coh_0.dm()
+        dm1 = coh_1.dm()
 
-        res_dm0 = (dm01.contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (dm01.contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = dm01 >> dm01.dual
+        exp_dm0 = dm.expectation(dm0)
+        exp_dm1 = dm.expectation(dm1)
+        exp_dm01 = dm.expectation(dm)
 
-        assert math.allclose(dm01.expectation(dm0), res_dm0)
-        assert math.allclose(dm01.expectation(dm1), res_dm1)
-        assert math.allclose(dm01.expectation(dm01), res_dm01)
+        assert exp_dm0.shape == batch_shape * 2
+        assert exp_dm1.shape == batch_shape * 2
+        assert exp_dm01.shape == batch_shape * 2
 
-    def test_expectation_bargmann_u(self):
-        dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
-        u0 = Dgate(0, x=0.1)
-        u1 = Dgate(1, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
+        assert math.allclose(exp_dm0, 1)
+        assert math.allclose(exp_dm1, 1)
+        assert math.allclose(exp_dm01, 1)
 
-        res_u0 = (dm.contract(u0)) >> TraceOut(0) >> TraceOut(1)
-        res_u1 = (dm.contract(u1)) >> TraceOut(0) >> TraceOut(1)
-        res_u01 = (dm.contract(u01)) >> TraceOut(0) >> TraceOut(1)
+        # u operator
+        beta_0 = 0.1
+        beta_1 = 0.2
 
-        assert math.allclose(dm.expectation(u0), res_u0)
-        assert math.allclose(dm.expectation(u1), res_u1)
-        assert math.allclose(dm.expectation(u01), res_u01)
+        u0 = Dgate(0, x=beta_0)
+        u1 = Dgate(1, x=beta_1)
+        u01 = u0 >> u1
 
-    def test_expectation_fock(self):
-        ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
-        dm = ket.dm()
+        exp_u0 = dm.expectation(u0)
+        exp_u1 = dm.expectation(u1)
+        exp_u01 = dm.expectation(u01)
 
-        k0 = Coherent(0, x=1, y=2).to_fock(10)
-        k1 = Coherent(1, x=1, y=3).to_fock(10)
-        k01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
+        assert exp_u0.shape == batch_shape
+        assert exp_u1.shape == batch_shape
+        assert exp_u01.shape == batch_shape
 
-        res_k0 = (dm.contract(k0.dual).contract(k0.dual.adjoint)) >> TraceOut(1)
-        res_k1 = (dm.contract(k1.dual).contract(k1.dual.adjoint)) >> TraceOut(0)
-        res_k01 = dm.contract(k01.dual) >> k01.dual.adjoint
+        expected_u0 = math.exp(-(math.abs(beta_0) ** 2) / 2) * math.exp(
+            beta_0 * math.conj(alpha_0) - math.conj(beta_0) * alpha_0,
+        )
+        expected_u1 = math.exp(-(math.abs(beta_1) ** 2) / 2) * math.exp(
+            beta_1 * math.conj(alpha_1) - math.conj(beta_1) * alpha_1,
+        )
 
-        assert math.allclose(dm.expectation(k0), res_k0)
-        assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01)
+        assert math.allclose(exp_u0, expected_u0)
+        assert math.allclose(exp_u1, expected_u1)
 
-        dm0 = Coherent(0, x=1, y=2).to_fock(10).dm()
-        dm1 = Coherent(1, x=1, y=3).to_fock(10).dm()
-        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10).dm()
+        exp_u0_coh = coh_0.expectation(u0)
+        exp_u1_coh = coh_1.expectation(u1)
 
-        res_dm0 = (dm.contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (dm.contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = dm >> dm01.dual
+        assert math.allclose(exp_u0, exp_u0_coh)
+        assert math.allclose(exp_u1, exp_u1_coh)
+        assert math.allclose(exp_u01, exp_u0_coh * exp_u1_coh)
 
-        assert math.allclose(dm.expectation(dm0), res_dm0)
-        assert math.allclose(dm.expectation(dm1), res_dm1)
-        assert math.allclose(dm.expectation(dm01), res_dm01)
+    @pytest.mark.parametrize("batch_shape", [(2,), (2, 3)])
+    @pytest.mark.parametrize("batch_shape_2", [(7,), (4, 5, 7)])
+    def test_expectation_diff_batch_shapes(self, batch_shape, batch_shape_2):
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
+        dm = coh_0.dm()
 
-        u0 = Dgate(0, x=0.1).to_fock(10)
-        u1 = Dgate(1, x=0.2).to_fock(10)
-        u01 = (Dgate(0, x=0.3) >> Dgate(1, x=0.4)).to_fock(10)
+        # ket operator
+        alpha_1 = math.broadcast_to(0.3 + 0.2j, batch_shape_2)
+        coh_1 = Coherent(0, x=math.real(alpha_1), y=math.imag(alpha_1))
+        exp_coh_1 = dm.expectation(coh_1)
+        assert exp_coh_1.shape == batch_shape + batch_shape_2
 
-        res_u0 = (dm.contract(u0)) >> TraceOut(0) >> TraceOut(1)
-        res_u1 = (dm.contract(u1)) >> TraceOut(0) >> TraceOut(1)
-        res_u01 = (dm.contract(u01)) >> TraceOut(0) >> TraceOut(1)
+        # dm operator
+        dm1 = coh_1.dm()
+        exp_dm1 = dm.expectation(dm1)
+        assert exp_dm1.shape == batch_shape + batch_shape_2
 
-        assert math.allclose(dm.expectation(u0), res_u0)
-        assert math.allclose(dm.expectation(u1), res_u1)
-        assert math.allclose(dm.expectation(u01), res_u01)
+        # u operator
+        beta_0 = math.broadcast_to(0.3, batch_shape_2)
+        u0 = Dgate(0, x=beta_0)
+        exp_u0 = dm.expectation(u0)
+        assert exp_u0.shape == batch_shape + batch_shape_2
+
+    def test_expectation_lin_sup(self):
+        cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
+        cat_dm = cat.dm()
+        assert math.allclose(cat_dm.expectation(cat, mode="zip"), 1.0)
+        assert math.allclose(cat_dm.expectation(cat_dm, mode="zip"), 1.0)
+        assert math.allclose(
+            cat_dm.expectation(Dgate(0, x=[0.1, 0.2, 0.3])),
+            [
+                cat_dm.expectation(Dgate(0, x=0.1)),
+                cat_dm.expectation(Dgate(0, x=0.2)),
+                cat_dm.expectation(Dgate(0, x=0.3)),
+            ],
+        )
 
     def test_expectation_error(self):
         dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
