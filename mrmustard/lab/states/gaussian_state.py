@@ -24,6 +24,7 @@ from mrmustard import math
 from mrmustard.math.parameters import update_symplectic
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ..circuit_components_utils import TraceOut
@@ -79,20 +80,18 @@ class GKet(Ket):
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         self.parameters.add_parameter(
             make_parameter(
-                symplectic_trainable,
-                symplectic,
-                "symplectic",
-                (None, None),
-                update_symplectic,
+                is_trainable=symplectic_trainable,
+                value=symplectic,
+                name="symplectic",
+                bounds=(None, None),
+                update_fn=update_symplectic,
             ),
         )
-        self._representation = self.from_ansatz(
-            modes=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.gket_state_Abc,
-                symplectic=self.parameters.symplectic,
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.gket_state_Abc,
+            symplectic=self.parameters.symplectic,
+        )
+        self._wires = Wires(modes_out_ket=set(modes))
 
     def __getitem__(self, idx: int | Sequence[int]) -> GKet:
         r"""
@@ -165,29 +164,27 @@ class GDM(DM):
         (betas,) = list(reshape_params(len(modes), betas=beta))
         self.parameters.add_parameter(
             make_parameter(
-                symplectic_trainable,
-                symplectic,
-                "symplectic",
-                (None, None),
-                update_symplectic,
+                is_trainable=symplectic_trainable,
+                value=symplectic,
+                name="symplectic",
+                bounds=(None, None),
+                update_fn=update_symplectic,
             ),
         )
         self.parameters.add_parameter(
             make_parameter(
-                beta_trainable,
-                betas,
-                "beta",
-                (0, None),
+                is_trainable=beta_trainable,
+                value=betas,
+                name="beta",
+                bounds=(0, None),
             ),
         )
-        self._representation = self.from_ansatz(
-            modes=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.gdm_state_Abc,
-                betas=self.parameters.beta,
-                symplectic=self.parameters.symplectic,
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.gdm_state_Abc,
+            betas=self.parameters.beta,
+            symplectic=self.parameters.symplectic,
+        )
+        self._wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
 
     def __getitem__(self, idx: int | Sequence[int]) -> GDM:
         r"""

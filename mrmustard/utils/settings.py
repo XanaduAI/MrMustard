@@ -23,10 +23,7 @@ import numpy as np
 import rich.table
 from rich import print as rprint
 
-from mrmustard.utils.filters import (
-    add_complex_warning_filter,
-    remove_complex_warning_filter,
-)
+from mrmustard.utils.filters import add_complex_warning_filter, remove_complex_warning_filter
 
 __all__ = ["settings"]
 
