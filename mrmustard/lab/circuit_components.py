@@ -552,13 +552,6 @@ class CircuitComponent:
             self_wires = self_fock.wires
             other_wires = other_fock.wires
 
-        # Contract the ansatzes
-        if type(self_ansatz) is not type(other_ansatz):
-            raise ValueError(
-                f"Cannot contract ansatz of type {type(self_ansatz)} with ansatz ",
-                f"of type {type(other_ansatz)}. Please call either `to_fock` or `to_bargmann` ",
-                "on one of the representations.",
-            )
         wires_result, _ = self_wires @ other_wires
         core1, core2, core_out = self_wires.contracted_labels(other_wires)
         if mode == "zip":
