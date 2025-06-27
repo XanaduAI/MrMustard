@@ -266,6 +266,102 @@ class ArrayAnsatz(Ansatz):
         new_array = math.transpose(self.array, list(order) + list(core_dims_indices))
         return ArrayAnsatz(new_array, self.batch_dims)
 
+    def promote_core_to_batch(self, core_indices: Sequence[int]) -> ArrayAnsatz:
+        r"""
+        Promotes specified core dimensions to batch dimensions.
+
+        The promoted core dimensions will be moved to the end of the batch dimensions,
+        maintaining the order of the remaining core dimensions.
+
+        Args:
+            core_indices: Indices of core dimensions to promote (relative to core dimensions, 0-indexed).
+
+        Returns:
+            A new ArrayAnsatz with the specified core dimensions promoted to batch dimensions.
+
+        Example:
+            >>> # array.shape = (2, 3, 10, 5, 7)  # 2 batch dims, 3 core dims
+            >>> ansatz = ArrayAnsatz(array, batch_dims=2)
+            >>> # Core dimensions are indexed as [0, 1, 2] with shapes [10, 5, 7]
+            >>> new_ansatz = ansatz.promote_core_to_batch([0, 2])  # promote core dims with shapes 10 and 7
+            >>> # new_array.shape = (2, 3, 10, 7, 5)  # 4 batch dims, 1 core dim
+        """
+        if not core_indices:
+            return self
+
+        core_indices = list(core_indices)
+        if any(i >= self.core_dims or i < 0 for i in core_indices):
+            raise ValueError(
+                f"All core indices must be in range [0, {self.core_dims}). Got {core_indices}",
+            )
+        if len(set(core_indices)) != len(core_indices):
+            raise ValueError(f"Core indices must be unique. Got {core_indices}")
+
+        # Current layout: [batch_dims][core_dims]
+        # Target layout: [existing_batch_dims][promoted_core_dims][remaining_core_dims]
+
+        promoted_positions = [self.batch_dims + i for i in core_indices]
+        remaining_core_positions = [
+            self.batch_dims + i for i in range(self.core_dims) if i not in core_indices
+        ]
+
+        # New axis order: existing batch + promoted core + remaining core
+        new_order = (
+            list(range(self.batch_dims))  # existing batch dimensions
+            + promoted_positions  # promoted core dimensions (now batch)
+            + remaining_core_positions  # remaining core dimensions
+        )
+
+        new_array = math.transpose(self.array, new_order)
+        new_batch_dims = self.batch_dims + len(core_indices)
+
+        return ArrayAnsatz(new_array, new_batch_dims)
+
+    def demote_batch_to_core(self, batch_indices: Sequence[int]) -> ArrayAnsatz:
+        r"""
+        Demotes specified batch dimensions to core dimensions.
+
+        The demoted batch dimensions will be moved to the beginning of the core dimensions,
+        maintaining the order of the remaining batch dimensions.
+
+        Args:
+            batch_indices: Indices of batch dimensions to demote (relative to batch dimensions, 0-indexed).
+
+        Returns:
+            A new ArrayAnsatz with the specified batch dimensions demoted to core dimensions.
+
+        Example:
+            >>> # array.shape = (2, 3, 5, 10, 7)  # 3 batch dims, 2 core dims
+            >>> ansatz = ArrayAnsatz(array, batch_dims=3)
+            >>> new_ansatz = ansatz.demote_batch_to_core([0, 2])  # demote batch dims 0 and 2
+            >>> # new_array.shape = (2, 3, 5, 10, 7) -> (3, 2, 5, 10, 7)  # 1 batch dim, 4 core dims
+        """
+        if not batch_indices:
+            return self
+
+        batch_indices = list(batch_indices)
+        if any(i >= self.batch_dims or i < 0 for i in batch_indices):
+            raise ValueError(
+                f"All batch indices must be in range [0, {self.batch_dims}). Got {batch_indices}",
+            )
+        if len(set(batch_indices)) != len(batch_indices):
+            raise ValueError(f"Batch indices must be unique. Got {batch_indices}")
+
+        # Current layout: [batch_dims][core_dims]
+        # Target layout: [remaining_batch_dims][demoted_batch_dims][existing_core_dims]
+
+        remaining_batch_positions = [i for i in range(self.batch_dims) if i not in batch_indices]
+        demoted_positions = batch_indices
+        core_positions = list(range(self.batch_dims, self.batch_dims + self.core_dims))
+
+        # New axis order: remaining batch + demoted batch (now core) + existing core
+        new_order = remaining_batch_positions + demoted_positions + core_positions
+
+        new_array = math.transpose(self.array, new_order)
+        new_batch_dims = self.batch_dims - len(batch_indices)
+
+        return ArrayAnsatz(new_array, new_batch_dims)
+
     def to_dict(self) -> dict[str, ArrayLike]:
         return {"array": self.data, "batch_dims": self.batch_dims}
 
