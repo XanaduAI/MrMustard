@@ -153,7 +153,8 @@ class Transformation(CircuitComponent):
 
         in_idx = self.wires.input.indices
         out_idx = self.wires.output.indices
-
+        if len(in_idx) == 0:
+            return None
         A_orig_out = A_orig[..., out_idx, :][..., :, out_idx]
         A_inv_in = A_inv[..., in_idx, :][..., :, in_idx]
         b_orig_out = b_orig[..., out_idx]
