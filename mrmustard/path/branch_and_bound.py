@@ -292,7 +292,7 @@ def parse_components(components: list[CircuitComponent]) -> Graph:
     for i, A in enumerate(components):
         comp = GraphComponent.from_circuitcomponent(A)
         wires = A.wires.copy()
-        comp._wires = wires
+        comp.wires = wires
         for j, B in enumerate(components[i + 1 :]):
             ovlp_bra, ovlp_ket = wires.overlap(B.wires)
             if ovlp_ket or ovlp_bra:
