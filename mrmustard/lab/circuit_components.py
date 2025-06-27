@@ -397,10 +397,7 @@ class CircuitComponent:
             # Convert each dimension to quadrature
             fock_string = "".join([chr(97 + self.n_modes + dim) for dim in range(dims)])
             q_string = "".join(
-                [
-                    f"{fock_string[idx]}{chr(97 + wire.mode)},"
-                    for idx, wire in enumerate(self.wires)
-                ],
+                [f"{fock_string[idx]}{chr(97 + wire.mode)}," for idx, wire in enumerate(self.wires)],
             )[:-1]
             out_string = "".join([chr(97 + mode) for mode in self.modes])
             ret = math.einsum(
@@ -416,9 +413,7 @@ class CircuitComponent:
                 + "".join([chr(97 + mode) for mode in self.modes])
             )
             ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
-        batch_shape = (
-            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
-        )
+        batch_shape = self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
         batch_dims = len(batch_shape)
         size = int(math.prod(ret.shape[:-batch_dims] if batch_shape else ret.shape))
         return math.reshape(ret, (size, *batch_shape))
@@ -508,8 +503,7 @@ class CircuitComponent:
 
         Args:
             other: The other component to contract with.
-            mode: The mode of contraction. Can either "zip" the batch dimensions, "kron" the batch dimensions,
-                or pass a custom einsum-style batch string like "ab,cb->ac".
+            mode: The mode of contraction. Can be ``zip`` or ``kron``.
 
         Returns:
             The contracted component.
@@ -549,8 +543,6 @@ class CircuitComponent:
                 self_ansatz.batch_dims - self_ansatz._lin_sup,
                 other_ansatz.batch_dims - other_ansatz._lin_sup,
             )
-        else:
-            eins_str = mode
         batch12, batch_out = eins_str.split("->")
         batch1, batch2 = batch12.split(",")
         ansatz = self_ansatz.contract(
@@ -573,11 +565,7 @@ class CircuitComponent:
             array: The Fock representation of this component.
         """
         shape = shape or self.auto_shape()
-        num_vars = (
-            self.ansatz.num_CV_vars
-            if isinstance(self.ansatz, PolyExpAnsatz)
-            else self.ansatz.num_vars
-        )
+        num_vars = self.ansatz.num_CV_vars if isinstance(self.ansatz, PolyExpAnsatz) else self.ansatz.num_vars
         if isinstance(shape, int):
             shape = (shape,) * num_vars
         shape = tuple(shape)
@@ -830,11 +818,7 @@ class CircuitComponent:
         repr_name = ansatz.__class__.__name__
         if repr_name == "NoneType":
             return self.__class__.__name__ + f"(modes={self.modes}, name={self.name})"
-        return (
-            self.__class__.__name__
-            + f"(modes={self.modes}, name={self.name}"
-            + f", repr={repr_name})"
-        )
+        return self.__class__.__name__ + f"(modes={self.modes}, name={self.name}" + f", repr={repr_name})"
 
     def __rmatmul__(self, other: Scalar) -> CircuitComponent:
         r"""

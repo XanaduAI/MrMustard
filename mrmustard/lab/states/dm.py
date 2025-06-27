@@ -29,9 +29,8 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
-from mrmustard.physics.utils import outer_product_batch_str
 from mrmustard.physics.wires import ReprEnum, Wires
-from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
@@ -79,8 +78,7 @@ class DM(State):
         gamma_A = A[..., :m, m:]
 
         if (
-            math.real(math.norm(gamma_A - math.conj(math.einsum("...ij->...ji", gamma_A))))
-            > settings.ATOL
+            math.real(math.norm(gamma_A - math.conj(math.einsum("...ij->...ji", gamma_A)))) > settings.ATOL
         ):  # checks if gamma_A is Hermitian
             return False
 
