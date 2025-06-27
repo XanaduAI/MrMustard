@@ -48,10 +48,99 @@ def ua_to_linear(ua: list[tuple[int, int]]) -> list[tuple[int, int]]:
     return path
 
 
+def process_ansatz_with_promotion(ansatz, batch_idx, core_idx, fock_dims):
+    """
+    Handle core-to-batch promotion when strings appear in core_indices.
+
+    Args:
+        ansatz: The ansatz to potentially modify.
+        batch_idx: List of batch index names.
+        core_idx: List of core indices (ints or strings).
+        fock_dims: Dictionary mapping all indices to their dimensions.
+
+    Returns:
+        tuple: (modified_ansatz, updated_batch_idx, updated_core_idx)
+    """
+    promoted_strings = _strings(core_idx)
+
+    if promoted_strings:
+        shape = [fock_dims[idx] for idx in core_idx]
+        ansatz = to_fock(ansatz, tuple(shape))
+        promoted_core_indices = [i for i, idx in enumerate(core_idx) if isinstance(idx, str)]
+        ansatz = ansatz.promote_core_to_batch(promoted_core_indices)
+        batch_idx = batch_idx + promoted_strings
+        core_idx = _ints(core_idx)
+
+    return ansatz, batch_idx, core_idx
+
+
+def update_fock_dims_from_indices(
+    indices: list[int | str],
+    shapes: tuple[int, ...],
+    fock_dims: dict[int | str, int],
+    ansatz_num: int,
+) -> None:
+    # Handle cases where shapes is longer than indices (e.g., linear superposition with internal batch dims)
+    if len(indices) < len(shapes):
+        # Take only the shapes corresponding to the provided indices (from the end)
+        shapes = shapes[-len(indices) :] if indices else ()
+
+    assert len(indices) == len(shapes)
+    for j, idx in enumerate(indices):
+        if idx in fock_dims:
+            # Handle dimension inference like the old implementation:
+            # - If fock_dims[idx] is 0, keep it as 0 (force bargmann)
+            # - If shapes[j] is 0, keep existing fock_dims[idx]
+            # - If both are > 0, take the minimum (for compatibility)
+            if fock_dims[idx] == 0:
+                continue  # Keep bargmann setting
+            if shapes[j] == 0:
+                continue  # Keep existing dimension, shape is bargmann
+            # Both are positive - take minimum for compatibility
+            fock_dims[idx] = min(fock_dims[idx], shapes[j])
+        else:
+            fock_dims[idx] = shapes[j]
+
+
+def validate_polyexp_core_dims(
+    core_idx: list[int | str], fock_dims: dict[int | str, int], ansatz_num: int
+) -> None:
+    for idx in core_idx:
+        if idx not in fock_dims:
+            raise ValueError(
+                f"PolyExpAnsatz core dimension '{idx}' in ansatz {ansatz_num} must be pre-specified in fock_dims",
+            )
+
+
+def get_shapes_direct(
+    ansatz_a: Ansatz,
+    ansatz_b: Ansatz,
+    core_idx_a: list[int],
+    core_idx_b: list[int],
+    fock_dims: dict[int | str, int],
+) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    shape_a = tuple(fock_dims[i] for i in core_idx_a)
+    shape_b = tuple(fock_dims[i] for i in core_idx_b)
+    return shape_a, shape_b
+
+
+def prepare_idx_out_separate(
+    batch_idx_a: list[str],
+    core_idx_a: list[int],
+    batch_idx_b: list[str],
+    core_idx_b: list[int],
+    output_batch_chars: list[str],
+    output_core: list[int],
+) -> list[str | int]:
+    # Return output indices in the order: batch first, then core
+    return output_batch_chars + output_core
+
+
 def mm_einsum(
     *args: Ansatz | list[int | str],
-    output: list[int | str],
-    fock_dims: dict[int, int],
+    output_batch: list[str],
+    output_core: list[int | str],
+    fock_dims: dict[int | str, int],
     contraction_path: list[tuple[int, int]],
     path_type: Literal["SSA", "LA", "UA"] = "LA",
 ) -> PolyExpAnsatz | ArrayAnsatz | ArrayLike:
@@ -62,102 +151,127 @@ def mm_einsum(
     This function generalizes the concept of Einstein summation (einsum) to quantum states and
     operators, allowing for flexible contraction of complex tensor networks in quantum optics.
 
-    The path_type argument controls the style in which the contraction path is expressed.
-    - SSA uses a dictionary to keep track of the contracted ansatze, so that there can be static single
-      assignment to each ansatz. Every new result is added to the dictionary with a new key.
-      If [a0,a1,a2] is the list of ansatze we compute a2 @ (a0 @ a1) with the contraction order [(0,1), (0,2)].
-    - LA pops the contrated ansatze from the list and adds the result to the end.
-      If [a0,a1,a2] is the list of ansatze, we compute a2 @ (a0 @ a1) with the contraction order [(0,1), (0,1)].
-    - UA (union assignment) is a variant of SSA where we can refer to an intermediate result by any of the indices of the
-      ansatze that participated in its computation.
-      If [a0,a1,a2] is the list of ansatze we compute a2 @ (a0 @ a1) with the contraction order [(0,1), (2,0)] or [(0,1), (2,1)].
-
     Args:
-        *args: Alternating sequence of Ansatz objects and their associated index lists.
-            Each Ansatz is followed by a list of indices (strings for batch axes, integers for Hilbert space indices).
-        output (list[int | str]): The indices (batch names and Hilbert space indices) to keep in the output.
-        contraction_path (list[tuple[int, int]]): The order in which to contract the Ansatze,
-            specified as pairs of their positions in the input.
-        fock_dims (dict[int, int | None]): Mapping from Hilbert space indices (int) to Fock space dimensions.
-            If a dimension is 0, the *entire* corresponding Ansatz is converted to Bargmann (PolyExpAnsatz) form.
-            If a key is not present, the dimension is taken from the Ansatz.
-        path_type (str): Single Static Assigment ("SSA"), Linear Assignment ("LA"), or Union Assignment ("UA").
-            Default is "LA".
+        *args: Sequence of (Ansatz, batch_indices, core_indices) triplets.
+            Each Ansatz is followed by a list of batch indices (strings) and core indices (ints or strings for promotion).
+        output_batch (list[str]): The batch indices to keep in the output.
+        output_core (list[int | str]): The core indices to keep in the output.
+        fock_dims (dict[int | str, int]): Mapping from indices to Fock space dimensions.
+            Missing dimensions will be inferred from ansatz shapes.
+            If a dimension is 0, the ansatz is kept in Bargmann (PolyExpAnsatz) form.
+            If a dimension is > 0, the ansatz is converted to Fock (ArrayAnsatz) form.
+        contraction_path (list[tuple[int, int]]): The order in which to contract the Ansatze.
+        path_type (str): "SSA", "LA", or "UA". Default is "LA".
 
     Returns:
-        PolyExpAnsatz | ArrayAnsatz | ArrayLike: The contracted Ansatz or array, depending on the output indices and Fock dimensions.
+        PolyExpAnsatz | ArrayAnsatz | ArrayLike: The contracted result.
 
     Example:
-        >>> from mrmustard.lab_dev import Ket, BSgate
-        >>> from mrmustard.physics.mm_einsum import mm_einsum
-        >>> # Prepare two single-mode states and a beamsplitter
-        >>> ket0 = Ket.random([0])
-        >>> ket1 = Ket.random([1])
-        >>> bs = BSgate((0, 1), theta=0.5, phi=0.3)
-        >>> # Contract the network: (ket0 & ket1) >> BS
+        >>> # New API with separate batch and core indices
         >>> result = mm_einsum(
-        ...     ket0.ansatz, [0],
-        ...     ket1.ansatz, [1],
-        ...     bs.ansatz, [2, 3, 0, 1],
-        ...     output=[2, 3],
-        ...     contraction_path=[(0, 2), (0, 1)],
-        ...     fock_dims={0: 20, 1: 20, 2: 10, 3: 10},
+        ...     gbs.ansatz, [], [0, 'pnr'],        # batch=[], core=[0, 'pnr']
+        ...     operation.ansatz, ['pnr'], [1, 0], # batch=['pnr'], core=[1, 0]
+        ...     output_batch=['pnr'],
+        ...     output_core=[1],
+        ...     contraction_path=[(0, 1)],
+        ...     fock_dims={0: 20, 1: 10, 'pnr': 5},
         ... )
-        >>> assert isinstance(result, ArrayAnsatz)
-        >>> assert result.array.shape == (10, 10)
-
-    Notes:
-        - Batch indices (strings) allow for batched contraction over multiple states/operators.
-        - If the Fock dimensions of the shared indices are set to 0, the result is in Bargmann (PolyExpAnsatz) form.
-        - The function raises ValueError if the Fock dimensions of the shared indices are mixed.
-
     """
-    # --- prepare ansatz and indices, convert names to characters ---
-    ansatze = list(args[::2])
-    all_batch_names = {name for index in args[1::2] for name in _strings(index)}
-    names_to_chars = {name: chr(97 + i) for i, name in enumerate(all_batch_names)}
-    indices = [[names_to_chars[s] for s in _strings(index)] + _ints(index) for index in args[1::2]]
-    output = [names_to_chars[s] for s in _strings(output)] + _ints(output)
+    # Step 1: Parse arguments as triplets
+    ansatze = list(args[::3])
+    batch_indices = list(args[1::3])
+    core_indices = list(args[2::3])
 
-    # --- perform contractions ---
+    # Step 2: Populate fock_dims from ansatz shapes
+    for i, (ansatz, batch_idx, core_idx) in enumerate(zip(ansatze, batch_indices, core_indices)):
+        if isinstance(ansatz, ArrayAnsatz):
+            update_fock_dims_from_indices(batch_idx, ansatz.batch_shape, fock_dims, i)
+            update_fock_dims_from_indices(core_idx, ansatz.core_shape, fock_dims, i)
+        elif isinstance(ansatz, PolyExpAnsatz):
+            update_fock_dims_from_indices(batch_idx, ansatz.batch_shape, fock_dims, i)
+            validate_polyexp_core_dims(core_idx, fock_dims, i)
+
+    # Step 3: Do promotions
+    for i in range(len(ansatze)):
+        ansatze[i], batch_indices[i], core_indices[i] = process_ansatz_with_promotion(
+            ansatze[i],
+            batch_indices[i],
+            core_indices[i],
+            fock_dims,
+        )
+
+    # Step 4: Work directly with separate lists
+    all_batch_names = set()
+    for batch_idx in batch_indices:
+        all_batch_names.update(batch_idx)
+    names_to_chars = {name: chr(97 + i) for i, name in enumerate(all_batch_names)}
+
+    batch_indices_chars = [[names_to_chars[s] for s in batch_idx] for batch_idx in batch_indices]
+    output_batch_chars = [names_to_chars[s] for s in output_batch]
+
+    # Contraction logic using separate lists
     if path_type == "SSA":
         contraction_path = ssa_to_linear(contraction_path)
     elif path_type == "UA":
         contraction_path = ua_to_linear(contraction_path)
+
     for a, b in contraction_path:
-        core_idx_a, core_idx_b = _ints(indices[a]), _ints(indices[b])
+        core_idx_a, core_idx_b = core_indices[a], core_indices[b]
+        batch_idx_a, batch_idx_b = batch_indices_chars[a], batch_indices_chars[b]
+
         common_core_idx = set(core_idx_a) & set(core_idx_b)
-        force_bargmann = all(fock_dims.get(i, 1) == 0 for i in common_core_idx)
-        force_fock = all(fock_dims.get(i, 1) != 0 for i in common_core_idx)
+        force_bargmann = all(fock_dims[i] == 0 for i in common_core_idx)
+        force_fock = all(fock_dims[i] != 0 for i in common_core_idx)
+
         if force_bargmann:
             ansatz_a = to_bargmann(ansatze[a])
             ansatz_b = to_bargmann(ansatze[b])
         elif force_fock:
-            shape_a, shape_b = get_shapes(ansatze[a], ansatze[b], core_idx_a, core_idx_b, fock_dims)
+            shape_a, shape_b = get_shapes_direct(
+                ansatze[a], ansatze[b], core_idx_a, core_idx_b, fock_dims
+            )
             ansatz_a = to_fock(ansatze[a], shape_a)
             ansatz_b = to_fock(ansatze[b], shape_b)
         else:
             raise ValueError(f"Attempted contraction of {a} and {b} with mixed-type indices.")
-        idx_out = prepare_idx_out(indices, a, b, output)
-        result = ansatz_a.contract(ansatz_b, indices[a], indices[b], idx_out)
-        a_sorted, b_sorted = sorted((a, b))
-        ansatze.pop(b_sorted), ansatze.pop(a_sorted), indices.pop(b_sorted), indices.pop(a_sorted)
-        ansatze.append(result)
-        indices.append(idx_out)
 
-    # --- reorder and convert the output ---
+        # Build unified indices for contract() call
+        idx_a = batch_idx_a + core_idx_a
+        idx_b = batch_idx_b + core_idx_b
+        idx_out = prepare_idx_out_separate(
+            batch_idx_a,
+            core_idx_a,
+            batch_idx_b,
+            core_idx_b,
+            output_batch_chars,
+            output_core,
+        )
+
+        result = ansatz_a.contract(ansatz_b, idx_a, idx_b, idx_out)
+
+        # Update lists
+        a_sorted, b_sorted = sorted((a, b))
+        ansatze.pop(b_sorted), ansatze.pop(a_sorted)
+        batch_indices_chars.pop(b_sorted), batch_indices_chars.pop(a_sorted)
+        core_indices.pop(b_sorted), core_indices.pop(a_sorted)
+
+        ansatze.append(result)
+        batch_indices_chars.append([c for c in idx_out if isinstance(c, str)])
+        core_indices.append([i for i in idx_out if isinstance(i, int)])
+
+    # Step 5: Final processing
     if len(ansatze) > 1:
         raise ValueError("More than one ansatz left after contraction.")
 
     result = ansatze[0]
-    final_idx_str, final_idx_int = _strings(indices[0]), _ints(indices[0])
-    output_idx_str, output_idx_int = _strings(output), _ints(output)
+    final_batch_chars = batch_indices_chars[0]
+    final_core_indices = core_indices[0]
 
-    if len(output_idx_str) > 1:
-        result = result.reorder_batch([final_idx_str.index(i) for i in output_idx_str])
-    if len(output_idx_int) > 1:
-        result = result.reorder([final_idx_int.index(i) for i in output_idx_int])
-    if final_idx_int and all(fock_dims.get(i, 1) == 0 for i in final_idx_int):
+    if len(output_batch_chars) > 1:
+        result = result.reorder_batch([final_batch_chars.index(i) for i in output_batch_chars])
+    if len(output_core) > 1:
+        result = result.reorder([final_core_indices.index(i) for i in output_core])
+    if final_core_indices and all(fock_dims[i] == 0 for i in final_core_indices):
         result = to_bargmann(result)
     return result
 

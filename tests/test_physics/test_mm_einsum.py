@@ -39,10 +39,13 @@ class TestMmEinsum:
         """Test that mm_einsum works for two gaussians."""
         res = mm_einsum(
             self.g0.ansatz,
+            [],
             [0],
             self.g1.ansatz.conj,
+            [],
             [0],
-            output=[],
+            output_batch=[],
+            output_core=[],
             contraction_path=[(0, 1)],
             fock_dims={0: 0},
         )
@@ -53,10 +56,13 @@ class TestMmEinsum:
         """Test that mm_einsum works for two multimode gaussians."""
         res = mm_einsum(
             self.g0123.ansatz,
+            [],
             [0, 1, 2, 3],
             self.g0123.ansatz.conj,
+            [],
             [0, 1, 2, 3],
-            output=[],
+            output_batch=[],
+            output_core=[],
             contraction_path=[(0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
@@ -67,12 +73,16 @@ class TestMmEinsum:
         """Test that mm_einsum works for two multimode gaussians."""
         res = mm_einsum(
             self.g0.ansatz,
+            [],
             [0],
             self.g0.ansatz,
+            [],
             [1],
             self.u01.ansatz,
+            [],
             [2, 3, 0, 1],
-            output=[2, 3],
+            output_batch=[],
+            output_core=[2, 3],
             contraction_path=[(0, 2), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
@@ -85,10 +95,13 @@ class TestMmEinsum:
         g._lin_sup = False  # disable linear superposition
         res = mm_einsum(
             g,
-            ["hello", 0],
-            self.g1.ansatz.conj,
+            ["hello"],
             [0],
-            output=["hello"],
+            self.g1.ansatz.conj,
+            [],
+            [0],
+            output_batch=["hello"],
+            output_core=[],
             contraction_path=[(0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
@@ -102,10 +115,13 @@ class TestMmEinsum:
         g._lin_sup = False  # disable linear superposition
         res = mm_einsum(
             g,
-            ["hello", 0, 1, 2, 3],
-            self.g0123.ansatz.conj,
+            ["hello"],
             [0, 1, 2, 3],
-            output=["hello"],
+            self.g0123.ansatz.conj,
+            [],
+            [0, 1, 2, 3],
+            output_batch=["hello"],
+            output_core=[],
             contraction_path=[(0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
         )
@@ -120,10 +136,13 @@ class TestMmEinsum:
         """Test that mm_einsum works for a single mode fock state."""
         res = mm_einsum(
             self.f0.ansatz,
+            [],
             [0],
             self.f0.ansatz.conj,
+            [],
             [0],
-            output=[],
+            output_batch=[],
+            output_core=[],
             contraction_path=[(0, 1)],
             fock_dims={},
         )
@@ -134,10 +153,13 @@ class TestMmEinsum:
         """Test that mm_einsum works for a single mode fock state."""
         res = mm_einsum(
             self.f0.ansatz,
+            [],
             [0],
             self.f01.ansatz.conj,
+            [],
             [0, 1],
-            output=[1],
+            output_batch=[],
+            output_core=[1],
             contraction_path=[(0, 1)],
             fock_dims={},
         )
@@ -149,10 +171,13 @@ class TestMmEinsum:
         batched = ArrayAnsatz(np.array([self.f0.fock_array(), self.f0.fock_array()]), batch_dims=1)
         res = mm_einsum(
             batched,
-            ["hello", 0],
-            self.f1.ansatz.conj,
+            ["hello"],
             [0],
-            output=["hello"],
+            self.f1.ansatz.conj,
+            [],
+            [0],
+            output_batch=["hello"],
+            output_core=[],
             contraction_path=[(0, 1)],
             fock_dims={0: 20},
         )
@@ -169,10 +194,13 @@ class TestMmEinsum:
 
         res = mm_einsum(
             f1,
-            ["hello", "world", 0, 1],
+            ["hello", "world"],
+            [0, 1],
             f2,
-            ["hello", 0, 1],
-            output=["world"],
+            ["hello"],
+            [0, 1],
+            output_batch=["world"],
+            output_core=[],
             contraction_path=[(0, 1)],
             fock_dims={0: 20, 1: 20},
         )
@@ -182,10 +210,13 @@ class TestMmEinsum:
         """Test that mm_einsum works for a single mode fock state with double batch dimensions."""
         res = mm_einsum(
             self.g0.ansatz,
+            [],
             [0],
             self.f0.ansatz.conj,
+            [],
             [0],
-            output=[],
+            output_batch=[],
+            output_core=[],
             contraction_path=[(0, 1)],
             fock_dims={0: 0},
         )
@@ -199,14 +230,19 @@ class TestMmEinsum:
         f1 = Ket.random([1]).to_fock()
         res = mm_einsum(
             s0.ansatz,
+            [],
             [0],
             s1.ansatz,
+            [],
             [1],
             bs01.ansatz,
+            [],
             [2, 3, 0, 1],
             f1.dual.ansatz,
+            [],
             [3],
-            output=[2],
+            output_batch=[],
+            output_core=[2],
             contraction_path=[(0, 2), (0, 2), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 20, 3: f1.auto_shape()[0]},
         )
@@ -216,14 +252,19 @@ class TestMmEinsum:
         with pytest.raises(ValueError):
             res = mm_einsum(
                 s0.ansatz,
+                [],
                 [0],
                 s1.ansatz,
+                [],
                 [1],
                 bs01.ansatz,
+                [],
                 [2, 3, 0, 1],
                 f1.dual.ansatz,
+                [],
                 [3],
-                output=[2],
+                output_batch=[],
+                output_core=[2],
                 contraction_path=[(0, 2), (0, 2), (0, 1)],
                 fock_dims={0: 0, 1: 0, 3: f1.auto_shape()[0]},
             )
@@ -236,14 +277,19 @@ class TestMmEinsum:
         f1 = Ket.random([1]).to_fock()
         res = mm_einsum(
             s0.ansatz,
+            [],
             [0],
             s1.ansatz,
+            [],
             [1],
             bs01.ansatz,
+            [],
             [2, 3, 0, 1],
             f1.dual.ansatz,
+            [],
             [3],
-            output=[2],
+            output_batch=[],
+            output_core=[2],
             contraction_path=[(0, 2), (1, 2), (2, 3)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0},
             path_type="UA",
@@ -264,20 +310,28 @@ class TestMmEinsum:
         d2 = f2.auto_shape()[0]
         res = mm_einsum(
             s0.ansatz,
+            [],
             [0],
             s1.ansatz,
+            [],
             [1],
             s2.ansatz,
+            [],
             [2],
             bs01.ansatz,
+            [],
             [3, 4, 0, 1],
             bs12.ansatz,
+            [],
             [5, 6, 4, 2],
             f1.dual.ansatz,
+            [],
             [5],
             f2.dual.ansatz,
+            [],
             [6],
-            output=[3],
+            output_batch=[],
+            output_core=[3],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 20, 4: d1 + d2, 5: d1, 6: d2},
             contraction_path=[(0, 3), (1, 7), (2, 4), (5, 9), (6, 10), (8, 11)],
             path_type="SSA",
@@ -303,20 +357,28 @@ class TestMmEinsum:
         f2 = Ket.random([2]).to_fock()
         res = mm_einsum(
             s0.ansatz,
+            [],
             [0],
             s1.ansatz,
+            [],
             [1],
             s2.ansatz,
+            [],
             [2],
             bs01.ansatz,
+            [],
             [3, 4, 0, 1],
             bs12.ansatz,
+            [],
             [5, 6, 4, 2],
             f1.dual.ansatz,
+            [],
             [5],
             f2.dual.ansatz,
+            [],
             [6],
-            output=[3],
+            output_batch=[],
+            output_core=[3],
             contraction_path=[(0, 3), (0, 1), (1, 2), (1, 2), (1, 2), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0},
         )
@@ -351,95 +413,95 @@ class TestMmEinsum:
         bs.ansatz._lin_sup = False  # disable linear superposition
         res = mm_einsum(
             s0.ansatz,
+            [],
             [0],
             s1.ansatz,
+            [],
             [1],
             s2.ansatz,
-            ["hello", 2],
+            ["hello"],
+            [2],
             bs.ansatz,
-            ["world", 3, 4, 0, 1],
+            ["world"],
+            [3, 4, 0, 1],
             bs12.ansatz,
+            [],
             [5, 6, 4, 2],
             f1.dual.ansatz,
+            [],
             [5],
             f2.dual.ansatz,
+            [],
             [6],
             g0.dual.ansatz,
+            [],
             [3],
-            output=["world", "hello"],
+            output_batch=["world", "hello"],
+            output_core=[],
             contraction_path=[(0, 3), (0, 6), (4, 5), (0, 1), (2, 3), (1, 2), (0, 1)],
             fock_dims={0: 0, 1: 0, 2: 0, 3: 20, 4: d1 + d2, 5: d1, 6: d2},
-            path_type="LA",
         )
-
-        assert math.allclose(
-            res.array[0, 0],
-            (s1 >> (s0 >> bs01_0) >> (s2_0 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
-        )
-        assert math.allclose(
-            res.array[0, 1],
-            (s1 >> (s0 >> bs01_0) >> (s2_1 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
-        )
-        assert math.allclose(
-            res.array[0, 2],
-            (s1 >> (s0 >> bs01_0) >> (s2_2 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
-        )
-        assert math.allclose(
-            res.array[1, 0],
-            (s1 >> (s0 >> bs01_1) >> (s2_0 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
-        )
-        assert math.allclose(
-            res.array[1, 1],
-            (s1 >> (s0 >> bs01_1) >> (s2_1 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
-        )
-        assert math.allclose(
-            res.array[1, 2],
-            (s1 >> (s0 >> bs01_1) >> (s2_2 >> bs12)) >> g0.dual >> f1.dual >> f2.dual,
-        )
+        circuit = (s1 >> (s0 >> bs)) >> ((s2 >> bs12).to_fock((d1 + d2, d1 + d2, d1 + d2)))
+        expected = (circuit >> f1.dual >> f2.dual >> g0.dual).ansatz
+        assert isinstance(res, ArrayAnsatz)
+        assert res.batch_shape == (2, 3)
+        assert math.allclose(res.array, expected.array)
 
     def test_diagonal_fock_operator(self):
         """Test that mm_einsum works for a diagonal fock operator."""
+        d = 20
         R = Rgate(0, 0.5)
-        f0 = Ket.random([0]).to_fock()
-        d = f0.auto_shape()[0]
+        f0 = Ket.random([0]).to_fock(d)
         r = ArrayAnsatz(np.diag(R.fock_array(d)), batch_dims=0)  # diagonal of the Rgate
         res = mm_einsum(
             f0.ansatz,
+            [],
             [0],
             r,
+            [],
             [0],
-            output=[0],
+            output_batch=[],
+            output_core=[0],
             contraction_path=[(0, 1)],
             fock_dims={0: d},
         )
         assert isinstance(res, ArrayAnsatz)
-        assert res == (f0 >> R).ansatz
+        assert res.array.shape == (d,)
+        expected = np.diag(np.outer(R.fock_array(d), f0.fock_array()))
+        assert math.allclose(res.array, expected)
 
     def test_with_linear_superposition_in_fock(self):
         """Test that mm_einsum works for a linear superposition."""
-        g = (self.g0 + self.g1).ansatz
+        g = self.g0 + self.g1
         res = mm_einsum(
-            g,
+            g.ansatz,
+            [],
             [0],
-            g.conj,
+            g.ansatz.conj,
+            [],
             [0],
-            output=[],
+            output_batch=[],
+            output_core=[],
             contraction_path=[(0, 1)],
             fock_dims={0: 10},  # force fock
         )
-        assert res.batch_shape == ()
+        assert isinstance(res, ArrayAnsatz)
+        assert math.allclose(res.scalar, (g >> g.dual))
 
     def test_with_linear_superposition_in_bargmann(self):
-        """Test that mm_einsum works for a linear superposition in bargmann."""
-        g = (self.g0 + self.g1).ansatz
+        """Test that mm_einsum works for a linear superposition."""
+        g = self.g0 + self.g1
         res = mm_einsum(
-            g,
+            g.ansatz,
+            [],
             [0],
-            g.conj,
+            g.ansatz.conj,
+            [],
             [0],
-            output=[],
+            output_batch=[],
+            output_core=[],
             contraction_path=[(0, 1)],
             fock_dims={0: 0},  # force bargmann
         )
-        assert res.batch_shape == (4,)
-        assert res._lin_sup
+        assert isinstance(res, PolyExpAnsatz)
+        assert math.allclose(res.scalar, (g >> g.dual))
