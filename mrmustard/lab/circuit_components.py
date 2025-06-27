@@ -784,9 +784,6 @@ class CircuitComponent:
             serializable["modes"] = tuple(self.wires.modes)
         elif "mode" in params:
             serializable["mode"] = next(iter(self.wires.modes))
-        elif "modes_out" in params and "modes_in" in params:
-            serializable["modes_out"] = tuple(self.wires.output.modes)
-            serializable["modes_in"] = tuple(self.wires.input.modes)
         else:
             raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
 
