@@ -72,9 +72,9 @@ class SqueezedVacuum(Ket):
             make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
         )
 
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.squeezed_vacuum_state_Abc,
             r=self.parameters.r,
             phi=self.parameters.phi,
         )
-        self.wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket={mode})

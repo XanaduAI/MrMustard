@@ -65,12 +65,12 @@ class BtoQ(Operation):
         super().__init__(name="BtoQ")
         self.parameters.add_parameter(make_parameter(False, phi, "phi", (None, None)))
 
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.bargmann_to_quadrature_Abc,
             n_modes=len(modes),
             phi=self.parameters.phi,
         )
-        self.wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
         for w in self.wires.input.wires:
             w.repr = ReprEnum.BARGMANN
         for w in self.wires.output.wires:
@@ -79,6 +79,6 @@ class BtoQ(Operation):
 
     def inverse(self):
         ret = BtoQ(self.modes, self.parameters.phi)
-        ret.ansatz = super().inverse().ansatz
-        ret.wires = ret.wires.dual
+        ret._ansatz = super().inverse().ansatz
+        ret._wires = ret.wires.dual
         return ret

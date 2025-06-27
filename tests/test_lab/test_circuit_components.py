@@ -402,7 +402,7 @@ class TestCircuitComponent:
     def test_rshift_error(self):
         vac012 = Vacuum((0, 1, 2))
         d0 = Dgate(0, x=0.1, y=0.1)
-        d0.wires = Wires()
+        d0._wires = Wires()
 
         with pytest.raises(ValueError, match="not clear"):
             vac012 >> d0

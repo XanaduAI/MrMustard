@@ -76,8 +76,8 @@ class BargmannEigenstate(Ket):
                 bounds=alpha_bounds,
             ),
         )
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.bargmann_eigenstate_Abc,
             alpha=self.parameters.alpha,
         )
-        self.wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket={mode})

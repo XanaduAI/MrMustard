@@ -94,11 +94,11 @@ class Attenuator(Channel):
             ),
         )
 
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.attenuator_Abc,
             eta=self.parameters.transmissivity,
         )
-        self.wires = Wires(
+        self._wires = Wires(
             modes_in_bra={mode},
             modes_out_bra={mode},
             modes_in_ket={mode},

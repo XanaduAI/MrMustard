@@ -75,7 +75,7 @@ class MZgate(Unitary):
         self.parameters.add_parameter(make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds))
         self.parameters.add_parameter(make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds))
 
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=lambda phi_a, phi_b, internal: Unitary.from_symplectic(
                 modes,
                 symplectics.mzgate_symplectic(phi_a, phi_b, internal),
@@ -84,4 +84,4 @@ class MZgate(Unitary):
             phi_b=self.parameters.phi_b,
             internal=internal,
         )
-        self.wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))

@@ -83,8 +83,8 @@ class FockDamping(Operation):
                 None,
             ),
         )
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.fock_damping_Abc,
             beta=self.parameters.damping,
         )
-        self.wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
+        self._wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})

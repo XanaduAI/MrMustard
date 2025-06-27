@@ -67,8 +67,8 @@ class PhaseNoise(Channel):
         self.parameters.add_parameter(
             make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds),
         )
-        self.ansatz = None
-        self.wires = Wires(
+        self._ansatz = None
+        self._wires = Wires(
             modes_in_bra={mode},
             modes_out_bra={mode},
             modes_in_ket={mode},

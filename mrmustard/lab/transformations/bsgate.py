@@ -100,12 +100,12 @@ class BSgate(Unitary):
         super().__init__(name="BSgate")
         self.parameters.add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
         self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.beamsplitter_gate_Abc,
             theta=self.parameters.theta,
             phi=self.parameters.phi,
         )
-        self.wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
 
     def fock_array(
         self,
@@ -162,6 +162,6 @@ class BSgate(Unitary):
             quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
             classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
         )
-        ret.ansatz = fock
-        ret.wires = wires
+        ret._ansatz = fock
+        ret._wires = wires
         return ret

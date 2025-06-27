@@ -73,8 +73,8 @@ class Number(Ket):
             make_parameter(False, cutoff, "cutoff", (None, None), dtype="int64"),
         )
 
-        self.ansatz = ArrayAnsatz.from_function(fock_state, n=n, cutoffs=cutoff)
-        self.wires = Wires(modes_out_ket={mode})
+        self._ansatz = ArrayAnsatz.from_function(fock_state, n=n, cutoffs=cutoff)
+        self._wires = Wires(modes_out_ket={mode})
         self.short_name = str(int(n))
         self.manual_shape[0] = cutoff + 1
 

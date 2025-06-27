@@ -70,11 +70,11 @@ class Ggate(Unitary):
                 update_fn=update_symplectic,
             ),
         )
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
             s=self.parameters.symplectic,
         )
-        self.wires = Wires(
+        self._wires = Wires(
             modes_in_bra=set(),
             modes_out_bra=set(),
             modes_in_ket=set(modes),

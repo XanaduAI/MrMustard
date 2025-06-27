@@ -76,11 +76,11 @@ class RealInterferometer(Unitary):
                 update_fn=update_orthogonal,
             ),
         )
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=lambda ortho: Unitary.from_symplectic(
                 modes,
                 symplectics.realinterferometer_symplectic(ortho),
             ).bargmann_triple(),
             ortho=self.parameters.orthogonal,
         )
-        self.wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))

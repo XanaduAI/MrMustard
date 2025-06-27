@@ -61,10 +61,10 @@ class Sauron(Ket):
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
         self.parameters.add_parameter(make_parameter(False, epsilon, "epsilon", (None, None)))
 
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             triples.sauron_state_Abc,
             n=self.parameters.n,
             epsilon=self.parameters.epsilon,
         )
-        self.wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket={mode})
         self.ansatz._lin_sup = True

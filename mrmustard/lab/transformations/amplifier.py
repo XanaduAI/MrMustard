@@ -93,8 +93,8 @@ class Amplifier(Channel):
                 bounds=gain_bounds,
             ),
         )
-        self.ansatz = PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain)
-        self.wires = Wires(
+        self._ansatz = PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain)
+        self._wires = Wires(
             modes_in_bra={mode},
             modes_out_bra={mode},
             modes_in_ket={mode},

@@ -96,12 +96,12 @@ class Sgate(Unitary):
         self.parameters.add_parameter(
             make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
         )
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.squeezing_gate_Abc,
             r=self.parameters.r,
             phi=self.parameters.phi,
         )
-        self.wires = Wires(
+        self._wires = Wires(
             modes_in_bra=set(),
             modes_out_bra=set(),
             modes_in_ket={mode},

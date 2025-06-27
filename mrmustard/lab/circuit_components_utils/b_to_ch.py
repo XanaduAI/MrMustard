@@ -80,12 +80,12 @@ class BtoChar(Map):
         modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="BtoChar")
         self.parameters.add_parameter(make_parameter(False, s, "s", (None, None)))
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.displacement_map_s_parametrized_Abc,
             s=self.parameters.s,
             n_modes=len(modes),
         )
-        self.wires = Wires(
+        self._wires = Wires(
             modes_in_bra=set(modes),
             modes_out_bra=set(modes),
             modes_in_ket=set(modes),
@@ -97,6 +97,6 @@ class BtoChar(Map):
 
     def inverse(self):
         ret = BtoChar(self.modes, self.parameters.s)
-        ret.ansatz = super().inverse().ansatz
-        ret.wires = ret.wires.dual
+        ret._ansatz = super().inverse().ansatz
+        ret._wires = ret.wires.dual
         return ret

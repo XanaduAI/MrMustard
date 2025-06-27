@@ -70,8 +70,8 @@ class Thermal(DM):
                 bounds=nbar_bounds,
             ),
         )
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.thermal_state_Abc,
             nbar=self.parameters.nbar,
         )
-        self.wires = Wires(modes_out_bra={mode}, modes_out_ket={mode})
+        self._wires = Wires(modes_out_bra={mode}, modes_out_ket={mode})

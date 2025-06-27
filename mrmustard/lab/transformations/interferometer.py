@@ -74,11 +74,11 @@ class Interferometer(Unitary):
         self.parameters.add_parameter(
             make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary),
         )
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=lambda uni: Unitary.from_symplectic(
                 modes,
                 symplectics.interferometer_symplectic(uni),
             ).bargmann_triple(),
             uni=self.parameters.unitary,
         )
-        self.wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))

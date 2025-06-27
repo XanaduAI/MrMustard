@@ -85,9 +85,9 @@ class S2gate(Unitary):
         self.parameters.add_parameter(
             make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
         )
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.twomode_squeezing_gate_Abc,
             r=self.parameters.r,
             phi=self.parameters.phi,
         )
-        self.wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))

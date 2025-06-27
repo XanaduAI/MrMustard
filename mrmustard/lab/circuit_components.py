@@ -59,7 +59,7 @@ class CircuitComponent:
     Args:
         ansatz: The ansatz of this circuit component.
         wires: The wires of this circuit component.
-        name: The name of this component.
+        name: The name of this circuit component.
     """
 
     short_name = "CC"
@@ -70,9 +70,9 @@ class CircuitComponent:
         wires: Wires | None = None,
         name: str | None = None,
     ) -> None:
+        self._ansatz = ansatz
         self._name = name
         self._parameters = ParameterSet()
-        self._ansatz = ansatz
         self._wires = wires or Wires(set(), set(), set(), set())
 
     @property
@@ -670,8 +670,8 @@ class CircuitComponent:
             w.repr = ReprEnum.BARGMANN
         try:
             ret = self.__class__(0, **self.parameters.to_dict())
-            ret.ansatz = ansatz
-            ret.wires = wires
+            ret._ansatz = ansatz
+            ret._wires = wires
         except TypeError:
             ret = self._from_attributes(ansatz, wires, self.name)
         if "manual_shape" in ret.__dict__:
@@ -715,8 +715,8 @@ class CircuitComponent:
 
         try:
             ret = self.__class__(0, **self.parameters.to_dict())
-            ret.ansatz = fock
-            ret.wires = wires
+            ret._ansatz = fock
+            ret._wires = wires
             ret._name = self.name
         except TypeError:
             ret = self._from_attributes(fock, wires, self.name)
@@ -732,8 +732,8 @@ class CircuitComponent:
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
-        instance.ansatz = self.ansatz
-        instance.wires = wires or Wires(*self.wires.args)
+        instance._ansatz = self.ansatz
+        instance._wires = wires or Wires(*self.wires.args)
         return instance
 
     def _rshift_return(

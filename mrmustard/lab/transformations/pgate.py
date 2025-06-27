@@ -68,11 +68,11 @@ class Pgate(Unitary):
                 bounds=shearing_bounds,
             ),
         )
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=lambda shearing: Unitary.from_symplectic(
                 (mode,),
                 symplectics.pgate_symplectic(1, shearing),
             ).bargmann_triple(),
             shearing=self.parameters.shearing,
         )
-        self.wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
+        self._wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})

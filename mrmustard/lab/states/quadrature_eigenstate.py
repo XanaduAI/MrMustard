@@ -79,12 +79,12 @@ class QuadratureEigenstate(Ket):
         )
         self.manual_shape = (50,)
 
-        self.ansatz = PolyExpAnsatz.from_function(
+        self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.quadrature_eigenstates_Abc,
             x=self.parameters.x,
             phi=self.parameters.phi,
         )
-        self.wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket={mode})
 
         for w in self.wires.output.wires:
             w.repr = ReprEnum.QUADRATURE
