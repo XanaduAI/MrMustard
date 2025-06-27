@@ -36,6 +36,7 @@ from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.physics.ansatz import Ansatz, ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.fock_utils import oscillator_eigenstate
 from mrmustard.physics.triples import identity_Abc
+from mrmustard.physics.utils import outer_product_batch_str, zip_batch_strings
 from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import (
     Batch,
@@ -521,6 +522,13 @@ class CircuitComponent:
         state on the bra side of the input of the attenuator, but the ``@`` operator
         instead does not.
 
+        Args:
+            other: The other component to contract with.
+            mode: The mode of contraction. Can be ``zip`` or ``kron``.
+
+        Returns:
+            The contracted component.
+
         .. code-block::
 
             >>> from mrmustard.lab import Coherent, Attenuator
@@ -554,15 +562,11 @@ class CircuitComponent:
         wires_result, _ = self_wires @ other_wires
         core1, core2, core_out = self_wires.contracted_labels(other_wires)
         if mode == "zip":
-            from mrmustard.physics.utils import zip_batch_strings  # noqa: PLC0415
-
             eins_str = zip_batch_strings(
                 self_ansatz.batch_dims - self_ansatz._lin_sup,
                 other_ansatz.batch_dims - other_ansatz._lin_sup,
             )
         elif mode == "kron":
-            from mrmustard.physics.utils import outer_product_batch_str  # noqa: PLC0415
-
             eins_str = outer_product_batch_str(
                 self_ansatz.batch_dims - self_ansatz._lin_sup,
                 other_ansatz.batch_dims - other_ansatz._lin_sup,
