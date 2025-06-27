@@ -242,3 +242,172 @@ class TestArrayAnsatz:
         fock = ArrayAnsatz(self.array1578, batch_dims=2)
         fock_reordered = fock.reorder_batch([1, 0])
         assert fock_reordered.array.shape == (5, 1, 7, 8)
+
+    def test_promote_core_to_batch_single_index(self):
+        """Test promoting a single core dimension to batch."""
+        # array shape: (2, 5, 7, 8) with batch_dims=1 -> 1 batch dim, 3 core dims
+        fock = ArrayAnsatz(self.array2578, batch_dims=1)
+        promoted = fock.promote_core_to_batch([1])  # promote core dim 1 (shape 7)
+
+        # Expected: (2, 7, 5, 8) with batch_dims=2 -> 2 batch dims, 2 core dims
+        assert promoted.batch_dims == 2
+        assert promoted.array.shape == (2, 7, 5, 8)
+        assert promoted.batch_shape == (2, 7)
+        assert promoted.core_shape == (5, 8)
+
+    def test_promote_core_to_batch_multiple_indices(self):
+        """Test promoting multiple core dimensions to batch."""
+        # array shape: (2, 5, 7, 8) with batch_dims=1 -> 1 batch dim, 3 core dims
+        fock = ArrayAnsatz(self.array2578, batch_dims=1)
+        promoted = fock.promote_core_to_batch([0, 2])  # promote core dims 0 and 2 (shapes 5, 8)
+
+        # Expected: (2, 5, 8, 7) with batch_dims=3 -> 3 batch dims, 1 core dim
+        assert promoted.batch_dims == 3
+        assert promoted.array.shape == (2, 5, 8, 7)
+        assert promoted.batch_shape == (2, 5, 8)
+        assert promoted.core_shape == (7,)
+
+    def test_promote_core_to_batch_empty_indices(self):
+        """Test promoting empty list returns same ansatz."""
+        fock = ArrayAnsatz(self.array2578, batch_dims=1)
+        promoted = fock.promote_core_to_batch([])
+        assert promoted is fock
+
+    def test_promote_core_to_batch_no_batch_dims(self):
+        """Test promoting core to batch when no initial batch dims."""
+        # array shape: (5, 7, 8) with batch_dims=0 -> 0 batch dims, 3 core dims
+        fock = ArrayAnsatz(self.array578, batch_dims=0)
+        promoted = fock.promote_core_to_batch([1])  # promote core dim 1 (shape 7)
+
+        # Expected: (7, 5, 8) with batch_dims=1 -> 1 batch dim, 2 core dims
+        assert promoted.batch_dims == 1
+        assert promoted.array.shape == (7, 5, 8)
+        assert promoted.batch_shape == (7,)
+        assert promoted.core_shape == (5, 8)
+
+    def test_promote_core_to_batch_errors(self):
+        """Test error cases for promote_core_to_batch."""
+        fock = ArrayAnsatz(self.array2578, batch_dims=1)  # 3 core dims
+
+        # Invalid indices
+        with pytest.raises(ValueError, match="All core indices must be in range"):
+            fock.promote_core_to_batch([3])  # index 3 >= 3 core dims
+
+        with pytest.raises(ValueError, match="All core indices must be in range"):
+            fock.promote_core_to_batch([-1])  # negative index
+
+        # Duplicate indices
+        with pytest.raises(ValueError, match="Core indices must be unique"):
+            fock.promote_core_to_batch([0, 1, 0])
+
+    def test_demote_batch_to_core_single_index(self):
+        """Test demoting a single batch dimension to core."""
+        # array shape: (2, 5, 7, 8) with batch_dims=2 -> 2 batch dims, 2 core dims
+        fock = ArrayAnsatz(self.array2578, batch_dims=2)
+        demoted = fock.demote_batch_to_core([1])  # demote batch dim 1 (shape 5)
+
+        # Expected: (2, 5, 7, 8) with batch_dims=1 -> 1 batch dim, 3 core dims
+        assert demoted.batch_dims == 1
+        assert demoted.array.shape == (2, 5, 7, 8)
+        assert demoted.batch_shape == (2,)
+        assert demoted.core_shape == (5, 7, 8)
+
+    def test_demote_batch_to_core_multiple_indices(self):
+        """Test demoting multiple batch dimensions to core."""
+        # Create a 3-batch-dim ansatz: (2, 3, 4, 5, 6) with batch_dims=3
+        array = settings.rng.random((2, 3, 4, 5, 6))
+        fock = ArrayAnsatz(array, batch_dims=3)
+        demoted = fock.demote_batch_to_core([0, 2])  # demote batch dims 0 and 2 (shapes 2, 4)
+
+        # Expected: (3, 2, 4, 5, 6) with batch_dims=1 -> 1 batch dim, 4 core dims
+        assert demoted.batch_dims == 1
+        assert demoted.array.shape == (3, 2, 4, 5, 6)
+        assert demoted.batch_shape == (3,)
+        assert demoted.core_shape == (2, 4, 5, 6)
+
+    def test_demote_batch_to_core_empty_indices(self):
+        """Test demoting empty list returns same ansatz."""
+        fock = ArrayAnsatz(self.array2578, batch_dims=1)
+        demoted = fock.demote_batch_to_core([])
+        assert demoted is fock
+
+    def test_demote_batch_to_core_all_batch_dims(self):
+        """Test demoting all batch dimensions to core."""
+        fock = ArrayAnsatz(self.array2578, batch_dims=2)  # 2 batch, 2 core
+        demoted = fock.demote_batch_to_core([0, 1])  # demote both batch dims
+
+        # Expected: batch_dims=0, all dims become core
+        assert demoted.batch_dims == 0
+        assert demoted.array.shape == (2, 5, 7, 8)
+        assert demoted.batch_shape == ()
+        assert demoted.core_shape == (2, 5, 7, 8)
+
+    def test_demote_batch_to_core_errors(self):
+        """Test error cases for demote_batch_to_core."""
+        fock = ArrayAnsatz(self.array2578, batch_dims=1)  # 1 batch dim
+
+        # Invalid indices
+        with pytest.raises(ValueError, match="All batch indices must be in range"):
+            fock.demote_batch_to_core([1])  # index 1 >= 1 batch dim
+
+        with pytest.raises(ValueError, match="All batch indices must be in range"):
+            fock.demote_batch_to_core([-1])  # negative index
+
+        # Duplicate indices
+        with pytest.raises(ValueError, match="Batch indices must be unique"):
+            fock.demote_batch_to_core([0, 0])
+
+    def test_promote_demote_roundtrip(self):
+        """Test that promote then demote maintains data integrity."""
+        # Start with (2, 5, 7, 8) batch_dims=1
+        fock = ArrayAnsatz(self.array2578, batch_dims=1)
+
+        # Promote core dims [0, 2] -> (2, 5, 8, 7) batch_dims=3
+        promoted = fock.promote_core_to_batch([0, 2])
+        assert promoted.batch_dims == 3
+        assert promoted.array.shape == (2, 5, 8, 7)
+
+        # Demote batch dims [1, 2] (the promoted ones) -> (2, 5, 8, 7) batch_dims=1
+        demoted = promoted.demote_batch_to_core([1, 2])
+        assert demoted.batch_dims == 1
+        assert demoted.array.shape == (2, 5, 8, 7)
+
+        # The data should be preserved (though reordered)
+        # Check that we can access the same elements
+        assert demoted.batch_shape == (2,)
+        assert demoted.core_shape == (5, 8, 7)
+
+    def test_promote_core_preserves_data(self):
+        """Test that promoting core dimensions preserves the underlying data correctly."""
+        # Use a simple array we can track
+        array = np.arange(24).reshape((2, 3, 4))  # batch_dims=1
+        fock = ArrayAnsatz(array, batch_dims=1)
+
+        # Promote core dim 0 (shape 3) -> (2, 3, 4) batch_dims=2
+        promoted = fock.promote_core_to_batch([0])
+
+        # Check that data is preserved correctly
+        assert promoted.array.shape == (2, 3, 4)
+        assert promoted.batch_dims == 2
+
+        # The original array[0, :, :] should match promoted.array[0, :, :]
+        # after accounting for the new batch structure
+        for i in range(2):
+            for j in range(3):
+                assert np.allclose(promoted.array[i, j, :], array[i, j, :])
+
+    def test_demote_batch_preserves_data(self):
+        """Test that demoting batch dimensions preserves the underlying data correctly."""
+        # Use a simple array we can track
+        array = np.arange(24).reshape((2, 3, 4))  # batch_dims=2
+        fock = ArrayAnsatz(array, batch_dims=2)
+
+        # Demote batch dim 1 (shape 3) -> (2, 3, 4) batch_dims=1
+        demoted = fock.demote_batch_to_core([1])
+
+        # Check that data is preserved correctly
+        assert demoted.array.shape == (2, 3, 4)
+        assert demoted.batch_dims == 1
+
+        # The data should be the same
+        assert np.allclose(demoted.array, array)
