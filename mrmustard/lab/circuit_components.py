@@ -677,21 +677,18 @@ class CircuitComponent:
             >>> assert d_bargmann.wires == d.wires
             >>> assert isinstance(d_bargmann.ansatz, PolyExpAnsatz)
         """
-
         if isinstance(self.ansatz, PolyExpAnsatz):
-            ansatz = self.ansatz
-            wires = self.wires
-        else:
-            if self.ansatz._original_abc_data:
-                A, b, c = self.ansatz._original_abc_data
-            else:
-                A, b, _ = identity_Abc(len(self.wires.quantum))
-                c = self.ansatz.data
-            ansatz = PolyExpAnsatz(A, b, c)
-            wires = self.wires.copy()
-            for w in wires.quantum:
-                w.repr = ReprEnum.BARGMANN
+            return self
 
+        if self.ansatz._original_abc_data:
+            A, b, c = self.ansatz._original_abc_data
+        else:
+            A, b, _ = identity_Abc(len(self.wires.quantum))
+            c = self.ansatz.data
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = self.wires.copy()
+        for w in wires.quantum:
+            w.repr = ReprEnum.BARGMANN
         try:
             ret = self.__class__(0, **self.parameters.to_dict())
             ret.ansatz = ansatz

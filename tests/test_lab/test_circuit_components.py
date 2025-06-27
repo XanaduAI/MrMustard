@@ -40,9 +40,10 @@ from mrmustard.lab import (
     Unitary,
     Vacuum,
 )
+from mrmustard.lab.circuit_components import ReprEnum
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.triples import displacement_gate_Abc
+from mrmustard.physics.triples import displacement_gate_Abc, identity_Abc
 from mrmustard.physics.wires import Wires
 from mrmustard.training import Optimizer
 
@@ -165,34 +166,39 @@ class TestCircuitComponent:
         with pytest.raises(ValueError):
             Vacuum((1, 2)).on(3)
 
-    def test_to_bargmann_unitary(self):
-        d = Dgate(1, x=0.1, y=0.1)
-        fock = d.to_fock(shape=(4, 6))
-        assert fock.to_bargmann() == d
-
     def test_to_fock_ket(self):
         vac = Vacuum((1, 2))
         vac_fock = vac.to_fock(shape=(1, 2))
         assert vac_fock.ansatz == ArrayAnsatz(np.array([[1], [0]]))
 
-    def test_to_fock_Number(self):
+    def test_to_fock_bargmann_Number(self):
         num = Number(3, n=4)
         num_f = num.to_fock(shape=(6,))
         assert num_f.ansatz == ArrayAnsatz(np.array([0, 0, 0, 0, 1, 0]))
 
-    def test_to_fock_Dgate(self):
+        num_barg = num_f.to_bargmann()
+        A_exp, b_exp, _ = identity_Abc(1)
+        assert math.allclose(num_barg.ansatz.A, A_exp)
+        assert math.allclose(num_barg.ansatz.b, b_exp)
+        assert math.allclose(num_barg.ansatz.c, num_f.ansatz.array)
+
+    def test_to_fock_bargmann_Dgate(self):
         d = Dgate(1, x=0.1, y=0.1)
+        d_barg = d.to_bargmann()
+        assert d is d_barg
+
         d_fock = d.to_fock(shape=(4, 6))
         assert d_fock.ansatz == ArrayAnsatz(
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6)),
         )
+        for w in d_fock.wires.wires:
+            assert w.repr == ReprEnum.FOCK
 
-    def test_to_fock_bargmann_Dgate(self):
-        d = Dgate(1, x=0.1, y=0.1)
-        d_fock = d.to_fock(shape=(4, 6))
-        d_barg = d_fock.to_bargmann()
+        d_fock_barg = d_fock.to_bargmann()
         assert d_fock.ansatz._original_abc_data == d.ansatz.triple
-        assert d_barg == d
+        assert d_fock_barg == d
+        for w in d_fock_barg.wires.wires:
+            assert w.repr == ReprEnum.BARGMANN
 
     def test_to_fock_poly_exp(self):
         A, b, _ = Abc_triple(3)
@@ -246,7 +252,7 @@ class TestCircuitComponent:
         assert d1 == d1._light_copy()
         assert d1 != d2
 
-    def test_matmul(self):
+    def test_contract(self):
         vac012 = Vacuum((0, 1, 2))
         d012 = Dgate(0, x=0.1, y=0.1) >> Dgate(1, x=0.1, y=0.1) >> Dgate(2, x=0.1, y=0.1)
         a0 = Attenuator(0, 0.8)
@@ -273,9 +279,9 @@ class TestCircuitComponent:
         )
         assert math.allclose(result.ansatz.c, [0.95504196])
 
-    def test_matmul_one_mode_Dgate_contraction(self):
+    def test_contract_one_mode_Dgate(self):
         r"""
-        Tests that ``__matmul__`` produces the correct outputs for two Dgate with the formula well-known.
+        Tests that ``contract`` produces the correct outputs for two Dgate with the formula well-known.
         """
         alpha = 1.5 + 0.7888 * 1j
         beta = -0.1555 + 1j * 2.1
@@ -290,7 +296,7 @@ class TestCircuitComponent:
 
         assert math.allclose(result1.ansatz.c, correct_c)
 
-    def test_matmul_is_associative(self):
+    def test_contract_is_associative(self):
         d0 = Dgate(0, x=0.1, y=0.1)
         d1 = Dgate(1, x=0.1, y=0.1)
         d2 = Dgate(2, x=0.1, y=0.1)
@@ -307,7 +313,7 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
-    def test_matmul_scalar(self):
+    def test_contract_scalar(self):
         d0 = Dgate(0, x=0.1, y=0.1)
         result = d0.contract(0.8)
         assert math.allclose(result.ansatz.A, d0.ansatz.A)
