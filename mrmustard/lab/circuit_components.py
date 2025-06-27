@@ -668,12 +668,20 @@ class CircuitComponent:
         wires = self.wires.copy()
         for w in wires.quantum:
             w.repr = ReprEnum.BARGMANN
-        try:
-            ret = self.__class__(mode=(0,), **self.parameters.to_dict())
+
+        cls = type(self)
+        params = signature(cls).parameters
+        if "mode" in params or "modes" in params:
+            ret = (
+                self.__class__(self.modes[0], **self.parameters.to_dict())
+                if "mode" in params
+                else self.__class__(self.modes, **self.parameters.to_dict())
+            )
             ret._ansatz = ansatz
             ret._wires = wires
-        except TypeError:
+        else:
             ret = self._from_attributes(ansatz, wires, self.name)
+
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
         return ret
@@ -713,13 +721,19 @@ class CircuitComponent:
         for w in wires.quantum_wires:
             w.repr = ReprEnum.FOCK
 
-        try:
-            ret = self.__class__(mode=(0,), **self.parameters.to_dict())
+        cls = type(self)
+        params = signature(cls).parameters
+        if "mode" in params or "modes" in params:
+            ret = (
+                self.__class__(self.modes[0], **self.parameters.to_dict())
+                if "mode" in params
+                else self.__class__(self.modes, **self.parameters.to_dict())
+            )
             ret._ansatz = fock
             ret._wires = wires
-            ret._name = self.name
-        except TypeError:
+        else:
             ret = self._from_attributes(fock, wires, self.name)
+
         if "manual_shape" in ret.__dict__:
             del ret.manual_shape
         return ret
