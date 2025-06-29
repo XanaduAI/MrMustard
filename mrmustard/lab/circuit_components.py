@@ -75,6 +75,18 @@ class CircuitComponent:
         self._parameters = ParameterSet()
         self._wires = wires or Wires(set(), set(), set(), set())
 
+    def _tree_flatten(self):
+        children = (self.parameters,)
+        aux_data = (self.ansatz, self.wires, self.name)
+        return (children, aux_data)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        ret = cls.__new__(cls)
+        ret._parameters = children[0]
+        ret._ansatz, ret._wires, ret._name = aux_data
+        return ret
+
     @property
     def adjoint(self) -> CircuitComponent:
         r"""

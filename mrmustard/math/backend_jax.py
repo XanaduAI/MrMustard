@@ -28,6 +28,8 @@ import optax
 from opt_einsum import contract
 from platformdirs import user_cache_dir
 
+from mrmustard.lab import CircuitComponent
+
 from .backend_base import BackendBase
 from .jax_vjps import beamsplitter_jax, displacement_jax, hermite_renormalized_unbatched_jax
 from .lattice import strategies
@@ -760,9 +762,13 @@ class BackendJax(BackendBase):
         return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
 
 
-# defining the pytree node for the JaxBackend.
-# This allows to skip specifying `self` in static_argnames.
+# defining custom pytree nodes
 jax.tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
+jax.tree_util.register_pytree_node(
+    CircuitComponent,
+    CircuitComponent._tree_flatten,
+    CircuitComponent._tree_unflatten,
+)
 jax.tree_util.register_pytree_node(Constant, Constant._tree_flatten, Constant._tree_unflatten)
 jax.tree_util.register_pytree_node(
     ParameterSet,

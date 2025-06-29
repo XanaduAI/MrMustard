@@ -245,4 +245,9 @@ class ParameterSet:
         ret = cls.__new__(cls)
         ret._variables = children[0]
         ret._names, ret._constants = aux_data
+        for name in ret.names:
+            if name in ret.constants:
+                ret.__dict__[name] = ret.constants[name]
+            elif name in ret.variables:
+                ret.__dict__[name] = ret.variables[name]
         return ret
