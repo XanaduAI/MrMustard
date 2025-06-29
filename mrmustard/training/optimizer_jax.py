@@ -34,6 +34,43 @@ from mrmustard.utils.logger import create_logger
 __all__ = ["OptimizerJax"]
 
 
+def get_trainable_params(
+    trainable_items: Sequence[Variable | CircuitComponent | Circuit],
+    root_tag: str = "optimized",
+) -> dict[str, Variable]:
+    r"""
+    Traverses all instances of ``CircuitComponent``\s or trainable items that belong to the backend
+    and return a dict of trainables of the form `{tags: trainable_parameters}` where the `tags`
+    are traversal paths of collecting all parent tags for reaching each parameter.
+
+    Args:
+        trainable_items: A list of trainable items.
+        root_tag: The root tag for the trainable items.
+
+    Returns:
+        A dict of trainables of the form `{tags: trainable_parameters}`.
+    """
+    trainables = []
+    for i, item in enumerate(trainable_items):
+        owner_tag = f"{root_tag}[{i}]"
+        if isinstance(item, Circuit):
+            for j, op in enumerate(item.components):
+                tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
+                tagged_vars = op.parameters.tagged_variables(tag)
+                trainables.append(tagged_vars.items())
+        elif hasattr(item, "parameters"):
+            tag = f"{owner_tag}:{item.__class__.__qualname__}"
+            tagged_vars = item.parameters.tagged_variables(tag)
+            trainables.append(tagged_vars.items())
+        elif math.from_backend(item) and math.is_trainable(item):
+            # the created parameter is wrapped into a list because the case above
+            # returns a list, hence ensuring we have a list of lists
+            tag = f"{owner_tag}:{math.__class__.__name__}/{getattr(item, 'name', item.__class__.__name__)}"
+            trainables.append([(tag, Variable(item, name="from _backend"))])
+
+    return dict(chain(*trainables))
+
+
 class Objective(eqx.Module):
     r"""
     A dataclass used by equinox to store the Jax arrays of the trainable parameters.
@@ -63,7 +100,7 @@ class Objective(eqx.Module):
         Returns:
             The loss value.
         """
-        trainable_params = OptimizerJax._get_trainable_params(by_optimizing)
+        trainable_params = get_trainable_params(by_optimizing)
         for key, val in zip(self.static, self.dynamic):
             trainable_params[key].value = val
         return cost_fn(*by_optimizing)
@@ -89,40 +126,6 @@ class OptimizerJax:
         self.opt_history = [0]
         self.log = create_logger(__name__)
         self.stable_threshold = stable_threshold
-
-    @staticmethod
-    def _get_trainable_params(trainable_items, root_tag: str = "optimized") -> dict[str, Variable]:
-        r"""
-        Traverses all instances of ``CircuitComponent``\s or trainable items that belong to the backend
-        and return a dict of trainables of the form `{tags: trainable_parameters}` where the `tags`
-        are traversal paths of collecting all parent tags for reaching each parameter.
-
-        Args:
-            trainable_items: A list of trainable items.
-            root_tag: The root tag for the trainable items.
-
-        Returns:
-            A dict of trainables of the form `{tags: trainable_parameters}`.
-        """
-        trainables = []
-        for i, item in enumerate(trainable_items):
-            owner_tag = f"{root_tag}[{i}]"
-            if isinstance(item, Circuit):
-                for j, op in enumerate(item.components):
-                    tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
-                    tagged_vars = op.parameters.tagged_variables(tag)
-                    trainables.append(tagged_vars.items())
-            elif hasattr(item, "parameters"):
-                tag = f"{owner_tag}:{item.__class__.__qualname__}"
-                tagged_vars = item.parameters.tagged_variables(tag)
-                trainables.append(tagged_vars.items())
-            elif math.from_backend(item) and math.is_trainable(item):
-                # the created parameter is wrapped into a list because the case above
-                # returns a list, hence ensuring we have a list of lists
-                tag = f"{owner_tag}:{math.__class__.__name__}/{getattr(item, 'name', item.__class__.__name__)}"
-                trainables.append([(tag, Variable(item, name="from _backend"))])
-
-        return dict(chain(*trainables))
 
     @eqx.filter_jit
     def make_step(
@@ -216,7 +219,7 @@ class OptimizerJax:
         r"""
         The core optimization loop.
         """
-        trainable_params = self._get_trainable_params(by_optimizing)
+        trainable_params = get_trainable_params(by_optimizing)
         model = Objective(trainable_params)
 
         def loss(params, static):

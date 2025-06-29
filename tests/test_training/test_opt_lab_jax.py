@@ -55,7 +55,7 @@ class TestOptimizerJax:
             return -(math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2)
 
         opt = OptimizerJax(learning_rate=0.01)
-        opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
+        (S,) = opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
 
         expected = 1 / (n + 1) * (n / (n + 1)) ** n
         assert math.allclose(-cost_fn(S), expected, atol=1e-5)
@@ -84,11 +84,12 @@ class TestOptimizerJax:
             return math.abs(circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k]) ** 2
 
         opt = OptimizerJax(learning_rate=0.01)
-        opt.minimize(
+        (circ,) = opt.minimize(
             cost_fn,
             by_optimizing=[circ],
             max_steps=300,
         )
+        bs = circ.components[2]
         assert math.allclose(math.cos(bs.parameters.theta.value) ** 2, k / (i + k), atol=1e-2)
 
     def test_learning_two_mode_squeezing(self):
@@ -116,7 +117,7 @@ class TestOptimizerJax:
 
         opt = OptimizerJax(learning_rate=0.05)
 
-        opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
+        (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
         assert math.allclose(-cost_fn(circ), 0.25, atol=1e-5)
 
     def test_squeezing_hong_ou_mandel_optimizer(self):
@@ -142,7 +143,8 @@ class TestOptimizerJax:
             return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
 
         opt = OptimizerJax(learning_rate=0.001)
-        opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
+        (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
+        S_12 = circ.components[3]
         assert math.allclose(math.sinh(S_12.parameters.r.value) ** 2, 1, atol=1e-2)
 
     def test_parameter_passthrough(self):
@@ -162,7 +164,8 @@ class TestOptimizerJax:
             return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
 
         opt = OptimizerJax(learning_rate=0.001)
-        opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
+        (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
+        r_var = circ.components[3].parameters.r
         assert math.allclose(math.sinh(r_var.value) ** 2, 1, atol=1e-2)
 
     def test_dgate_optimization(self):
@@ -175,7 +178,7 @@ class TestOptimizerJax:
             return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
         opt = OptimizerJax()
-        opt.minimize(cost_fn, by_optimizing=[dgate])
+        (dgate,) = opt.minimize(cost_fn, by_optimizing=[dgate])
 
         assert math.allclose(dgate.parameters.x.value, 0.1, atol=0.01)
         assert math.allclose(dgate.parameters.y.value, 0.2, atol=0.01)
@@ -190,7 +193,7 @@ class TestOptimizerJax:
             return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
         opt = OptimizerJax()
-        opt.minimize(cost_fn, by_optimizing=[sgate])
+        (sgate,) = opt.minimize(cost_fn, by_optimizing=[sgate])
 
         assert math.allclose(sgate.parameters.r.value, 0.1, atol=0.01)
         assert math.allclose(sgate.parameters.phi.value, 0.2, atol=0.01)
@@ -204,7 +207,7 @@ class TestOptimizerJax:
             return -(math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2)
 
         opt = OptimizerJax()
-        opt.minimize(cost_fn, by_optimizing=[bsgate])
+        (bsgate,) = opt.minimize(cost_fn, by_optimizing=[bsgate])
 
         assert math.allclose(bsgate.parameters.theta.value, 0.1, atol=0.01)
         assert math.allclose(bsgate.parameters.phi.value, 0.2, atol=0.01)
@@ -220,7 +223,7 @@ class TestOptimizerJax:
             return -math.real((num >> squeezing >> vac) ** 2)
 
         opt = OptimizerJax(learning_rate=0.05)
-        opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
+        (squeezing,) = opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
 
         assert squeezing.parameters.r.value != og_r
 
@@ -236,7 +239,7 @@ class TestOptimizerJax:
             return -math.real((num >> disp >> vac) ** 2)
 
         opt = OptimizerJax(learning_rate=0.05)
-        opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
+        (disp,) = opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
         assert og_x != disp.parameters.x.value
         assert og_y != disp.parameters.y.value
 
@@ -254,6 +257,6 @@ class TestOptimizerJax:
             )
 
         opt = OptimizerJax(learning_rate=0.05)
-        opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
+        (sq,) = opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
 
         assert og_r != sq.parameters.r.value
