@@ -129,6 +129,17 @@ class Constant:
     def __rmul__(self, value):
         return type(self)(value=self.value * value, name=self.name)
 
+    def _tree_flatten(self):
+        children = ()
+        aux_data = (self.value, self.name)
+        return (children, aux_data)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        ret = cls.__new__(cls)
+        ret._value, ret._name = aux_data
+        return ret
+
 
 class Variable:
     r"""
