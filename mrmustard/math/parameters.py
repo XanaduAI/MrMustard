@@ -292,3 +292,15 @@ class Variable:
             bounds=self.bounds,
             update_fn=self.update_fn,
         )
+
+    def _tree_flatten(self):
+        children = (self.value,)
+        aux_data = (self.name, self.bounds, self.update_fn)
+        return (children, aux_data)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        ret = cls.__new__(cls)
+        ret._value = children[0]
+        ret._name, ret._bounds, ret._update_fn = aux_data
+        return ret
