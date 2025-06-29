@@ -234,3 +234,15 @@ class ParameterSet:
             and self._constants == other._constants
             and self._variables == other._variables
         )
+
+    def _tree_flatten(self):
+        children = (self.variables,)
+        aux_data = (self.names, self.constants)
+        return (children, aux_data)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        ret = cls.__new__(cls)
+        ret._variables = children[0]
+        ret._names, ret._constants = aux_data
+        return ret

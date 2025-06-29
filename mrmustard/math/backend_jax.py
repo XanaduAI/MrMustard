@@ -36,6 +36,7 @@ from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
+from .parameter_set import ParameterSet
 from .parameters import Constant, Variable
 
 jax.config.update("jax_enable_x64", True)
@@ -763,4 +764,9 @@ class BackendJax(BackendBase):
 # This allows to skip specifying `self` in static_argnames.
 jax.tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
 jax.tree_util.register_pytree_node(Constant, Constant._tree_flatten, Constant._tree_unflatten)
+jax.tree_util.register_pytree_node(
+    ParameterSet,
+    ParameterSet._tree_flatten,
+    ParameterSet._tree_unflatten,
+)
 jax.tree_util.register_pytree_node(Variable, Variable._tree_flatten, Variable._tree_unflatten)
