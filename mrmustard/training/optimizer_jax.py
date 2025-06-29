@@ -155,7 +155,7 @@ class OptimizerJax:
         cost_fn: Callable,
         by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
         max_steps: int = 1000,
-    ) -> None:
+    ) -> Sequence[Variable | CircuitComponent | Circuit]:
         r"""
         Minimizes the given cost function by optimizing ``Variable``s either on their own or within a ``CircuitComponent`` / ``Circuit``.
 
@@ -165,18 +165,22 @@ class OptimizerJax:
             by_optimizing: A list of elements that contain the parameters to optimize.
             max_steps: The minimization keeps going until the loss is stable or max_steps are
                 reached (if ``max_steps=0`` it will only stop when the loss is stable).
+
+        Returns:
+            The list of elements optimized.
         """
         if settings.PROGRESSBAR:
             progress_bar = ProgressBar(max_steps)
             with progress_bar:
-                self._optimization_loop(
+                by_optimizing = self._optimization_loop(
                     cost_fn,
                     by_optimizing,
                     max_steps=max_steps,
                     progress_bar=progress_bar,
                 )
         else:
-            self._optimization_loop(cost_fn, by_optimizing, max_steps=max_steps)
+            by_optimizing = self._optimization_loop(cost_fn, by_optimizing, max_steps=max_steps)
+        return by_optimizing
 
     def should_stop(self, max_steps: int) -> bool:
         r"""
@@ -208,7 +212,7 @@ class OptimizerJax:
         by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
         max_steps: int,
         progress_bar: ProgressBar | None = None,
-    ) -> None:
+    ) -> Sequence[Variable | CircuitComponent | Circuit]:
         r"""
         The core optimization loop.
         """
@@ -232,3 +236,5 @@ class OptimizerJax:
         # update the parameters one last time
         for key, val in zip(model.static, model.dynamic):
             trainable_params[key].value = val
+
+        return by_optimizing
