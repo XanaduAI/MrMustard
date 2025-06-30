@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Literal
 
 from numpy.typing import ArrayLike
@@ -27,37 +28,96 @@ from mrmustard.physics.ansatz.base import Ansatz
 from mrmustard.physics.triples import identity_Abc
 
 
+@dataclass
+class ContractionData:
+    """Holds the mutable data during contraction."""
+
+    ansatze: list[Ansatz]
+    batch_lists: list[list[str]]
+    core_lists: list[list[int | str]]
+
+
+@dataclass
+class ContractionConfig:
+    """Holds the configuration for contraction."""
+
+    fock_dims: dict[int | str, int]
+    output_batch: list[str]
+    output_core: list[int | str]
+    char_map: dict[str, str]
+
+
+def mm_einsum(
+    *args: Ansatz | list[int | str],
+    output_batch: list[str],
+    output_core: list[int | str],
+    fock_dims: dict[int | str, int],
+    contraction_path: list[tuple[int, int]],
+    path_type: Literal["SSA", "LA", "UA"] = "LA",
+) -> PolyExpAnsatz | ArrayAnsatz | ArrayLike:
+    """Contract ansatze using specified path."""
+
+    ansatze, batch_lists, core_lists = _parse_args(args)
+    data = ContractionData(ansatze, batch_lists, core_lists)
+
+    _promote_string_indices(data, fock_dims)
+
+    char_map = _create_batch_char_map(data.batch_lists, output_batch)
+    config = ContractionConfig(fock_dims, output_batch, output_core, char_map)
+
+    path = _convert_path_to_LA(contraction_path, path_type)
+
+    for i, j in path:
+        _contract_pair(data, config, i, j)
+
+    if len(data.ansatze) != 1:
+        raise ValueError(f"Expected 1 result, got {len(data.ansatze)}")
+
+    return _finalize_result(
+        data.ansatze[0],
+        data.batch_lists[0],
+        data.core_lists[0],
+        config,
+    )
+
+
 def _parse_args(args):
     """Parse args into (ansatz, batch, core) triplets."""
     return list(args[::3]), list(args[1::3]), list(args[2::3])
 
 
-def _promote_string_indices(ansatze, batch_lists, core_lists, fock_dims):
+def _promote_string_indices(data, fock_dims):
     """Move string indices from core to batch via promotion."""
-    for i in range(len(ansatze)):
-        strings_in_core = [idx for idx in core_lists[i] if isinstance(idx, str)]
+    for i in range(len(data.ansatze)):
+        strings_in_core = [idx for idx in data.core_lists[i] if isinstance(idx, str)]
         if not strings_in_core:
             continue
 
-        shape = tuple(fock_dims[idx] for idx in core_lists[i])
-        ansatze[i] = to_fock(ansatze[i], shape)
+        shape = tuple(fock_dims[idx] for idx in data.core_lists[i])
+        data.ansatze[i] = to_fock(data.ansatze[i], shape)
 
-        promote_pos = [j for j, idx in enumerate(core_lists[i]) if isinstance(idx, str)]
-        ansatze[i] = ansatze[i].promote_core_to_batch(promote_pos)
+        promote_pos = [j for j, idx in enumerate(data.core_lists[i]) if isinstance(idx, str)]
+        data.ansatze[i] = data.ansatze[i].promote_core_to_batch(promote_pos)
 
-        batch_lists[i] = batch_lists[i] + strings_in_core
-        core_lists[i] = [idx for idx in core_lists[i] if isinstance(idx, int)]
+        data.batch_lists[i] = data.batch_lists[i] + strings_in_core
+        data.core_lists[i] = [idx for idx in data.core_lists[i] if isinstance(idx, int)]
 
 
 def _create_batch_char_map(batch_lists, output_batch):
-    """Create mapping from batch names to single characters."""
-    all_names = set(output_batch)
+    """Create mapping from batch names to single characters.
+
+    Includes all batch indices from input ansatze and final output.
+    """
+    all_names = set()
+    # Collect all batch names from all input ansatze
     for batch_list in batch_lists:
         all_names.update(batch_list)
+    # Also include final output batch names
+    all_names.update(output_batch)
     return {name: chr(97 + i) for i, name in enumerate(sorted(all_names))}
 
 
-def _convert_path(path, path_type):
+def _convert_path_to_LA(path, path_type):
     """Convert path to linear format."""
     if path_type == "SSA":
         return ssa_to_linear(path)
@@ -135,12 +195,11 @@ def _compute_output_indices(
     core_j,
     remaining_batches,
     remaining_cores,
-    output_batch,
-    output_core,
+    config,
 ):
     """Determine which indices to keep after contraction."""
-    needed_batch = set(output_batch)
-    needed_core = set(output_core)
+    needed_batch = set(config.output_batch)
+    needed_core = set(config.output_core)
 
     for batch_list in remaining_batches:
         needed_batch.update(batch_list)
@@ -160,122 +219,67 @@ def _compute_output_indices(
     return out_batch, out_core
 
 
-def _contract_pair(
-    ansatze,
-    batch_lists,
-    core_lists,
-    i,
-    j,
-    char_map,
-    fock_dims,
-    output_batch,
-    output_core,
-):
+def _contract_pair(data, config, i, j):
     """Contract two ansatze and update the lists."""
     # Prepare ansatze
     ansatz_a, ansatz_b = _prepare_ansatze_for_contraction(
-        ansatze[i],
-        ansatze[j],
-        core_lists[i],
-        core_lists[j],
-        fock_dims,
+        data.ansatze[i],
+        data.ansatze[j],
+        data.core_lists[i],
+        data.core_lists[j],
+        config.fock_dims,
     )
 
     # Build contraction indices
-    chars_a = [char_map[name] for name in batch_lists[i]]
-    chars_b = [char_map[name] for name in batch_lists[j]]
-    idx_a = chars_a + core_lists[i]
-    idx_b = chars_b + core_lists[j]
+    chars_a = [config.char_map[name] for name in data.batch_lists[i]]
+    chars_b = [config.char_map[name] for name in data.batch_lists[j]]
+    idx_a = chars_a + data.core_lists[i]
+    idx_b = chars_b + data.core_lists[j]
 
     # Determine output indices
-    remaining_batches = [batch_lists[k] for k in range(len(ansatze)) if k not in (i, j)]
-    remaining_cores = [core_lists[k] for k in range(len(ansatze)) if k not in (i, j)]
+    remaining_batches = [data.batch_lists[k] for k in range(len(data.ansatze)) if k not in (i, j)]
+    remaining_cores = [data.core_lists[k] for k in range(len(data.ansatze)) if k not in (i, j)]
 
     out_batch, out_core = _compute_output_indices(
-        batch_lists[i],
-        batch_lists[j],
-        core_lists[i],
-        core_lists[j],
+        data.batch_lists[i],
+        data.batch_lists[j],
+        data.core_lists[i],
+        data.core_lists[j],
         remaining_batches,
         remaining_cores,
-        output_batch,
-        output_core,
+        config,
     )
 
-    out_chars = [char_map[name] for name in out_batch]
+    out_chars = [config.char_map[name] for name in out_batch]
     idx_out = out_chars + out_core
 
     # Contract and update lists
     result = ansatz_a.contract(ansatz_b, idx_a, idx_b, idx_out)
 
     i, j = sorted([i, j])
-    ansatze.pop(j), ansatze.pop(i)
-    batch_lists.pop(j), batch_lists.pop(i)
-    core_lists.pop(j), core_lists.pop(i)
+    data.ansatze.pop(j), data.ansatze.pop(i)
+    data.batch_lists.pop(j), data.batch_lists.pop(i)
+    data.core_lists.pop(j), data.core_lists.pop(i)
 
-    ansatze.append(result)
-    batch_lists.append(out_batch)
-    core_lists.append(out_core)
+    data.ansatze.append(result)
+    data.batch_lists.append(out_batch)
+    data.core_lists.append(out_core)
 
 
-def _finalize_result(result, final_batch, final_core, output_batch, output_core, fock_dims):
+def _finalize_result(result, final_batch, final_core, config):
     """Apply final reordering and conversion."""
-    if len(output_batch) > 1:
-        batch_order = [final_batch.index(name) for name in output_batch]
+    if len(config.output_batch) > 1:
+        batch_order = [final_batch.index(name) for name in config.output_batch]
         result = result.reorder_batch(batch_order)
 
-    if len(output_core) > 1:
-        core_order = [final_core.index(idx) for idx in output_core]
+    if len(config.output_core) > 1:
+        core_order = [final_core.index(idx) for idx in config.output_core]
         result = result.reorder(core_order)
 
-    if final_core and all(fock_dims.get(idx, 1) == 0 for idx in final_core):
+    if final_core and all(config.fock_dims.get(idx, 1) == 0 for idx in final_core):
         result = to_bargmann(result)
 
     return result
-
-
-def mm_einsum(
-    *args: Ansatz | list[int | str],
-    output_batch: list[str],
-    output_core: list[int | str],
-    fock_dims: dict[int | str, int],
-    contraction_path: list[tuple[int, int]],
-    path_type: Literal["SSA", "LA", "UA"] = "LA",
-) -> PolyExpAnsatz | ArrayAnsatz | ArrayLike:
-    """Contract ansatze using specified path."""
-
-    ansatze, batch_lists, core_lists = _parse_args(args)
-
-    _promote_string_indices(ansatze, batch_lists, core_lists, fock_dims)
-
-    char_map = _create_batch_char_map(batch_lists, output_batch)
-
-    path = _convert_path(contraction_path, path_type)
-
-    for i, j in path:
-        _contract_pair(
-            ansatze,
-            batch_lists,
-            core_lists,
-            i,
-            j,
-            char_map,
-            fock_dims,
-            output_batch,
-            output_core,
-        )
-
-    if len(ansatze) != 1:
-        raise ValueError(f"Expected 1 result, got {len(ansatze)}")
-
-    return _finalize_result(
-        ansatze[0],
-        batch_lists[0],
-        core_lists[0],
-        output_batch,
-        output_core,
-        fock_dims,
-    )
 
 
 def ua_to_linear(ua: list[tuple[int, int]]) -> list[tuple[int, int]]:
