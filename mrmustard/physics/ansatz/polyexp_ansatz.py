@@ -127,6 +127,36 @@ class PolyExpAnsatz(Ansatz):
         self._fn_kwargs = {}
         self._lin_sup = lin_sup
 
+    def _tree_flatten(self):
+        children = (self._fn_kwargs,)
+        aux_data = (
+            self._A,
+            self._b,
+            self._c,
+            self._batch_shape,
+            self._lin_sup,
+            self._fn,
+            self._simplified,
+            self.name,
+        )
+        return (children, aux_data)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        ret = cls.__new__(cls)
+        (ret._fn_kwargs,) = children
+        (
+            ret._A,
+            ret._b,
+            ret._c,
+            ret._batch_shape,
+            ret._lin_sup,
+            ret._fn,
+            ret._simplified,
+            ret.name,
+        ) = aux_data
+        return ret
+
     @property
     def A(self) -> Batch[ComplexMatrix]:
         r"""

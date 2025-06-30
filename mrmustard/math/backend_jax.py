@@ -28,7 +28,8 @@ import optax
 from opt_einsum import contract
 from platformdirs import user_cache_dir
 
-from mrmustard.lab import CircuitComponent
+from mrmustard.lab import CircuitComponent, Coherent
+from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .backend_base import BackendBase
 from .jax_vjps import beamsplitter_jax, displacement_jax, hermite_renormalized_unbatched_jax
@@ -769,10 +770,16 @@ jax.tree_util.register_pytree_node(
     CircuitComponent._tree_flatten,
     CircuitComponent._tree_unflatten,
 )
+jax.tree_util.register_pytree_node(Coherent, Coherent._tree_flatten, Coherent._tree_unflatten)
 jax.tree_util.register_pytree_node(Constant, Constant._tree_flatten, Constant._tree_unflatten)
 jax.tree_util.register_pytree_node(
     ParameterSet,
     ParameterSet._tree_flatten,
     ParameterSet._tree_unflatten,
+)
+jax.tree_util.register_pytree_node(
+    PolyExpAnsatz,
+    PolyExpAnsatz._tree_flatten,
+    PolyExpAnsatz._tree_unflatten,
 )
 jax.tree_util.register_pytree_node(Variable, Variable._tree_flatten, Variable._tree_unflatten)

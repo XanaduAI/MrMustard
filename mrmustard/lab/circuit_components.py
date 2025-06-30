@@ -76,15 +76,20 @@ class CircuitComponent:
         self._wires = wires or Wires(set(), set(), set(), set())
 
     def _tree_flatten(self):
-        children = (self.parameters,)
-        aux_data = (self.ansatz, self.wires, self.name)
+        children = (self.parameters, self.ansatz)
+        aux_data = (self.wires, self.name)
         return (children, aux_data)
 
     @classmethod
     def _tree_unflatten(cls, aux_data, children):
         ret = cls.__new__(cls)
-        ret._parameters = children[0]
-        ret._ansatz, ret._wires, ret._name = aux_data
+        ret._parameters, ret._ansatz = children
+        ret._wires, ret._name = aux_data
+
+        # make sure the ansatz parameters match the parameter set
+        for param_name, param in ret.ansatz._fn_kwargs.items():
+            ret.ansatz._fn_kwargs[param_name] = ret.parameters.all_parameters[param.name]
+
         return ret
 
     @property
