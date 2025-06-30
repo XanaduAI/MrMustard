@@ -442,10 +442,10 @@ class TestMmEinsum:
             fock_dims={0: 0, 1: 0, 2: 0, 3: 20, 4: d1 + d2, 5: d1, 6: d2},
         )
         circuit = (s1 >> (s0 >> bs)) >> ((s2 >> bs12).to_fock((d1 + d2, d1 + d2, d1 + d2)))
-        expected = (circuit >> f1.dual >> f2.dual >> g0.dual).ansatz
+        expected = circuit >> f1.dual >> f2.dual >> g0.dual
         assert isinstance(res, ArrayAnsatz)
         assert res.batch_shape == (2, 3)
-        assert math.allclose(res.array, expected.array)
+        assert math.allclose(res.array, expected)
 
     def test_diagonal_fock_operator(self):
         """Test that mm_einsum works for a diagonal fock operator."""
