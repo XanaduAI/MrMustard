@@ -467,7 +467,7 @@ class TestMmEinsum:
         )
         assert isinstance(res, ArrayAnsatz)
         assert res.array.shape == (d,)
-        expected = np.diag(np.outer(R.fock_array(d), f0.fock_array()))
+        expected = np.diag(R.fock_array(d)) * f0.fock_array()
         assert math.allclose(res.array, expected)
 
     def test_with_linear_superposition_in_fock(self):
@@ -483,10 +483,11 @@ class TestMmEinsum:
             output_batch=[],
             output_core=[],
             contraction_path=[(0, 1)],
-            fock_dims={0: 10},  # force fock
+            fock_dims={0: 100},  # force fock
         )
         assert isinstance(res, ArrayAnsatz)
-        assert math.allclose(res.scalar, (g >> g.dual))
+        expected = g.fock_array(100) @ g.dual.fock_array(100)
+        assert math.allclose(res.scalar, expected)
 
     def test_with_linear_superposition_in_bargmann(self):
         """Test that mm_einsum works for a linear superposition."""
