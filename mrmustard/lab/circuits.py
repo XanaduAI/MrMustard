@@ -83,6 +83,18 @@ class Circuit:
             (0, i) for i in range(1, len(self.components))
         ]  # default path (likely not optimal)
 
+    def _tree_flatten(self):
+        children = (self.components,)
+        aux_data = (self.path,)
+        return (children, aux_data)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        ret = cls.__new__(cls)
+        (ret.components,) = children
+        (ret.path,) = aux_data
+        return ret
+
     def optimize(
         self,
         n_init: int = 100,

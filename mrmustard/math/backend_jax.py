@@ -28,7 +28,18 @@ import optax
 from opt_einsum import contract
 from platformdirs import user_cache_dir
 
-from mrmustard.lab import CircuitComponent, Coherent, TwoModeSqueezedVacuum
+from mrmustard.lab import (
+    BSgate,
+    Circuit,
+    CircuitComponent,
+    Coherent,
+    Dgate,
+    S2gate,
+    Sgate,
+    SqueezedVacuum,
+    TwoModeSqueezedVacuum,
+    Vacuum,
+)
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .backend_base import BackendBase
@@ -765,6 +776,8 @@ class BackendJax(BackendBase):
 
 # defining custom pytree nodes
 jax.tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
+jax.tree_util.register_pytree_node(BSgate, BSgate._tree_flatten, BSgate._tree_unflatten)
+jax.tree_util.register_pytree_node(Circuit, Circuit._tree_flatten, Circuit._tree_unflatten)
 jax.tree_util.register_pytree_node(
     CircuitComponent,
     CircuitComponent._tree_flatten,
@@ -772,6 +785,7 @@ jax.tree_util.register_pytree_node(
 )
 jax.tree_util.register_pytree_node(Coherent, Coherent._tree_flatten, Coherent._tree_unflatten)
 jax.tree_util.register_pytree_node(Constant, Constant._tree_flatten, Constant._tree_unflatten)
+jax.tree_util.register_pytree_node(Dgate, Dgate._tree_flatten, Dgate._tree_unflatten)
 jax.tree_util.register_pytree_node(
     ParameterSet,
     ParameterSet._tree_flatten,
@@ -782,9 +796,17 @@ jax.tree_util.register_pytree_node(
     PolyExpAnsatz._tree_flatten,
     PolyExpAnsatz._tree_unflatten,
 )
+jax.tree_util.register_pytree_node(Sgate, Sgate._tree_flatten, Sgate._tree_unflatten)
+jax.tree_util.register_pytree_node(S2gate, S2gate._tree_flatten, S2gate._tree_unflatten)
+jax.tree_util.register_pytree_node(
+    SqueezedVacuum,
+    SqueezedVacuum._tree_flatten,
+    SqueezedVacuum._tree_unflatten,
+)
 jax.tree_util.register_pytree_node(
     TwoModeSqueezedVacuum,
     TwoModeSqueezedVacuum._tree_flatten,
     TwoModeSqueezedVacuum._tree_unflatten,
 )
+jax.tree_util.register_pytree_node(Vacuum, Vacuum._tree_flatten, Vacuum._tree_unflatten)
 jax.tree_util.register_pytree_node(Variable, Variable._tree_flatten, Variable._tree_unflatten)

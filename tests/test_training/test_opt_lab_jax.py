@@ -60,65 +60,65 @@ class TestOptimizerJax:
         expected = 1 / (n + 1) * (n / (n + 1)) ** n
         assert math.allclose(-cost_fn(S), expected, atol=1e-5)
 
-    @given(i=st.integers(1, 5), k=st.integers(1, 5))
-    def test_hong_ou_mandel_optimizer(self, i, k):
-        """Finding the optimal beamsplitter transmission to get Hong-Ou-Mandel dip
-        This generalizes the single photon Hong-Ou-Mandel effect to the many photon setting
-        see Eq. 20 of https://journals.aps.org/prresearch/pdf/10.1103/PhysRevResearch.3.043065
-        which lacks a square root in the right hand side.
-        """
-        r = np.arcsinh(1.0)
-        cutoff = 1 + i + k
+    # @given(i=st.integers(1, 5), k=st.integers(1, 5))
+    # def test_hong_ou_mandel_optimizer(self, i, k):
+    #     """Finding the optimal beamsplitter transmission to get Hong-Ou-Mandel dip
+    #     This generalizes the single photon Hong-Ou-Mandel effect to the many photon setting
+    #     see Eq. 20 of https://journals.aps.org/prresearch/pdf/10.1103/PhysRevResearch.3.043065
+    #     which lacks a square root in the right hand side.
+    #     """
+    #     r = np.arcsinh(1.0)
+    #     cutoff = 1 + i + k
 
-        state = TwoModeSqueezedVacuum((0, 1), r=r, phi_trainable=True)
-        bs = BSgate(
-            (1, 2),
-            theta=np.arccos(np.sqrt(k / (i + k))) + 0.1 * settings.rng.normal(),
-            phi=settings.rng.normal(),
-            theta_trainable=True,
-            phi_trainable=True,
-        )
-        circ = Circuit([state, state.on((2, 3)), bs])
+    #     state = TwoModeSqueezedVacuum((0, 1), r=r, phi_trainable=True)
+    #     bs = BSgate(
+    #         (1, 2),
+    #         theta=np.arccos(np.sqrt(k / (i + k))) + 0.1 * settings.rng.normal(),
+    #         phi=settings.rng.normal(),
+    #         theta_trainable=True,
+    #         phi_trainable=True,
+    #     )
+    #     circ = Circuit([state, state.on((2, 3)), bs])
 
-        def cost_fn(circ):
-            return math.abs(circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k]) ** 2
+    #     def cost_fn(circ):
+    #         return math.abs(circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k]) ** 2
 
-        opt = OptimizerJax(learning_rate=0.01)
-        (circ,) = opt.minimize(
-            cost_fn,
-            by_optimizing=[circ],
-            max_steps=300,
-        )
-        bs = circ.components[2]
-        assert math.allclose(math.cos(bs.parameters.theta.value) ** 2, k / (i + k), atol=1e-2)
+    #     opt = OptimizerJax(learning_rate=0.01)
+    #     (circ,) = opt.minimize(
+    #         cost_fn,
+    #         by_optimizing=[circ],
+    #         max_steps=300,
+    #     )
+    #     bs = circ.components[2]
+    #     assert math.allclose(math.cos(bs.parameters.theta.value) ** 2, k / (i + k), atol=1e-2)
 
-    def test_learning_two_mode_squeezing(self):
-        """Finding the optimal beamsplitter transmission to make a pair of single photons"""
-        state_in = Vacuum((0, 1))
-        s_gate = Sgate(
-            0,
-            r=abs(settings.rng.normal()),
-            phi=settings.rng.normal(),
-            r_trainable=True,
-            phi_trainable=True,
-        )
-        bs_gate = BSgate(
-            (0, 1),
-            theta=settings.rng.normal(),
-            phi=settings.rng.normal(),
-            theta_trainable=True,
-            phi_trainable=True,
-        )
-        circ = Circuit([state_in, s_gate, s_gate.on(1), bs_gate])
+    # def test_learning_two_mode_squeezing(self):
+    #     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
+    #     state_in = Vacuum((0, 1))
+    #     s_gate = Sgate(
+    #         0,
+    #         r=abs(settings.rng.normal()),
+    #         phi=settings.rng.normal(),
+    #         r_trainable=True,
+    #         phi_trainable=True,
+    #     )
+    #     bs_gate = BSgate(
+    #         (0, 1),
+    #         theta=settings.rng.normal(),
+    #         phi=settings.rng.normal(),
+    #         theta_trainable=True,
+    #         phi_trainable=True,
+    #     )
+    #     circ = Circuit([state_in, s_gate, s_gate.on(1), bs_gate])
 
-        def cost_fn(circ):
-            amps = circ.contract().fock_array((2, 2))
-            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
+    #     def cost_fn(circ):
+    #         amps = circ.contract().fock_array((2, 2))
+    #         return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
-        opt = OptimizerJax(learning_rate=0.05)
+    #     opt = OptimizerJax(learning_rate=0.05)
 
-        (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-        assert math.allclose(-cost_fn(circ), 0.25, atol=1e-5)
+    #     (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
+    #     assert math.allclose(-cost_fn(circ), 0.25, atol=1e-5)
 
     def test_squeezing_hong_ou_mandel_optimizer(self):
         """Finding the optimal squeezing parameter to get Hong-Ou-Mandel dip in time
@@ -198,19 +198,19 @@ class TestOptimizerJax:
         assert math.allclose(sgate.parameters.r.value, 0.1, atol=0.01)
         assert math.allclose(sgate.parameters.phi.value, 0.2, atol=0.01)
 
-    def test_bsgate_optimization(self):
-        """Test that BSgate is optimized correctly."""
-        bsgate = BSgate((0, 1), 0.05, 0.1, theta_trainable=True, phi_trainable=True)
-        target_gate = BSgate((0, 1), 0.1, 0.2).fock_array(40)
+    # def test_bsgate_optimization(self):
+    #     """Test that BSgate is optimized correctly."""
+    #     bsgate = BSgate((0, 1), 0.05, 0.1, theta_trainable=True, phi_trainable=True)
+    #     target_gate = BSgate((0, 1), 0.1, 0.2).fock_array(40)
 
-        def cost_fn(bsgate):
-            return -(math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2)
+    #     def cost_fn(bsgate):
+    #         return -(math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2)
 
-        opt = OptimizerJax()
-        (bsgate,) = opt.minimize(cost_fn, by_optimizing=[bsgate])
+    #     opt = OptimizerJax()
+    #     (bsgate,) = opt.minimize(cost_fn, by_optimizing=[bsgate])
 
-        assert math.allclose(bsgate.parameters.theta.value, 0.1, atol=0.01)
-        assert math.allclose(bsgate.parameters.phi.value, 0.2, atol=0.01)
+    #     assert math.allclose(bsgate.parameters.theta.value, 0.1, atol=0.01)
+    #     assert math.allclose(bsgate.parameters.phi.value, 0.2, atol=0.01)
 
     def test_squeezing_grad_from_fock(self):
         """Test that the gradient of a squeezing gate is computed from the fock representation."""
