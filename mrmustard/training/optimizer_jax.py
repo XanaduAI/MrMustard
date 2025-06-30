@@ -75,8 +75,10 @@ class OptimizerJax:
         Returns:
             The updated model, the updated optimizer state, and the loss value.
         """
-        loss_value, grads = jax.value_and_grad(cost_fn)(*by_optimizing)
-        updates, opt_state = optim.update([grads], opt_state, by_optimizing)
+        loss_value, grads = jax.value_and_grad(cost_fn, argnums=list(range(len(by_optimizing))))(
+            *by_optimizing,
+        )
+        updates, opt_state = optim.update(grads, opt_state, by_optimizing)
         by_optimizing = eqx.apply_updates(by_optimizing, updates)
         return by_optimizing, opt_state, loss_value
 
@@ -146,7 +148,7 @@ class OptimizerJax:
         r"""
         The core optimization loop.
         """
-        by_optimizing = deepcopy(by_optimizing)
+        by_optimizing = tuple(deepcopy(by_optimizing))
         optim = math.euclidean_opt(learning_rate=self.learning_rate)
         opt_state = optim.init(by_optimizing)
 
