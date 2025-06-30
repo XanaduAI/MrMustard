@@ -19,7 +19,6 @@ A Jax based optimizer for any parametrized object.
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from copy import deepcopy
 
 import equinox as eqx
 import jax
@@ -55,7 +54,7 @@ class OptimizerJax:
         self.log = create_logger(__name__)
         self.stable_threshold = stable_threshold
 
-    @eqx.filter_jit
+    # @eqx.filter_jit
     def make_step(
         self,
         optim: GradientTransformation,
@@ -148,7 +147,7 @@ class OptimizerJax:
         r"""
         The core optimization loop.
         """
-        by_optimizing = tuple(deepcopy(by_optimizing))
+        by_optimizing = tuple(by_optimizing)
         optim = math.euclidean_opt(learning_rate=self.learning_rate)
         opt_state = optim.init(by_optimizing)
 
