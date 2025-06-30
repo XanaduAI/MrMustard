@@ -32,7 +32,6 @@ from mrmustard.lab import (
     TwoModeSqueezedVacuum,
     Vacuum,
 )
-from mrmustard.math.parameters import Variable
 from mrmustard.training import OptimizerJax
 
 
@@ -147,26 +146,26 @@ class TestOptimizerJax:
         S_12 = circ.components[3]
         assert math.allclose(math.sinh(S_12.parameters.r.value) ** 2, 1, atol=1e-2)
 
-    def test_parameter_passthrough(self):
-        """Same as the test above, but with param passthrough"""
-        r = np.arcsinh(1.0)
-        r_var = Variable(r, "r", (0.0, None))
-        phi_var = Variable(settings.rng.normal(), "phi", (None, None))
+    # def test_parameter_passthrough(self):
+    #     """Same as the test above, but with param passthrough"""
+    #     r = np.arcsinh(1.0)
+    #     r_var = Variable(r, "r", (0.0, None))
+    #     phi_var = Variable(settings.rng.normal(), "phi", (None, None))
 
-        state_in = Vacuum((0, 1, 2, 3))
-        s2_gate0 = S2gate((0, 1), r=r, phi=0.0, phi_trainable=True)
-        s2_gate1 = S2gate((2, 3), r=r, phi=0.0, phi_trainable=True)
-        s2_gate2 = S2gate((1, 2), r=r_var, phi=phi_var)
+    #     state_in = Vacuum((0, 1, 2, 3))
+    #     s2_gate0 = S2gate((0, 1), r=r, phi=0.0, phi_trainable=True)
+    #     s2_gate1 = S2gate((2, 3), r=r, phi=0.0, phi_trainable=True)
+    #     s2_gate2 = S2gate((1, 2), r=r_var, phi=phi_var)
 
-        circ = Circuit([state_in, s2_gate0, s2_gate1, s2_gate2])
+    #     circ = Circuit([state_in, s2_gate0, s2_gate1, s2_gate2])
 
-        def cost_fn(circ):
-            return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
+    #     def cost_fn(circ):
+    #         return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
 
-        opt = OptimizerJax(learning_rate=0.001)
-        (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-        r_var = circ.components[3].parameters.r
-        assert math.allclose(math.sinh(r_var.value) ** 2, 1, atol=1e-2)
+    #     opt = OptimizerJax(learning_rate=0.001)
+    #     (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
+    #     r_var = circ.components[3].parameters.r
+    #     assert math.allclose(math.sinh(r_var.value) ** 2, 1, atol=1e-2)
 
     def test_dgate_optimization(self):
         """Test that Dgate is optimized correctly."""

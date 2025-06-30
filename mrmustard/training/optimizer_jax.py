@@ -62,18 +62,18 @@ class OptimizerJax:
         cost_fn: Callable,
         by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
         opt_state: OptState,
-    ) -> tuple[eqx.Module, OptState, float]:
+    ) -> tuple[Sequence[Variable | CircuitComponent | Circuit], OptState, float]:
         r"""
         Make a step of the optimization.
 
         Args:
             optim: The optimizer to use.
-            loss: The loss function to minimize.
-            model: The model to optimize.
+            cost_fn: The cost function to minimize.
+            by_optimizing: The items to optimize.
             opt_state: The current state of the optimizer.
 
         Returns:
-            The updated model, the updated optimizer state, and the loss value.
+            The updated by_optimizing, the updated optimizer state, and the loss value.
         """
         loss_value, grads = jax.value_and_grad(cost_fn, argnums=list(range(len(by_optimizing))))(
             *by_optimizing,
