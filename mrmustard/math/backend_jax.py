@@ -28,7 +28,7 @@ import optax
 from opt_einsum import contract
 from platformdirs import user_cache_dir
 
-from mrmustard.lab import CircuitComponent, Coherent
+from mrmustard.lab import CircuitComponent, Coherent, TwoModeSqueezedVacuum
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .backend_base import BackendBase
@@ -781,5 +781,10 @@ jax.tree_util.register_pytree_node(
     PolyExpAnsatz,
     PolyExpAnsatz._tree_flatten,
     PolyExpAnsatz._tree_unflatten,
+)
+jax.tree_util.register_pytree_node(
+    TwoModeSqueezedVacuum,
+    TwoModeSqueezedVacuum._tree_flatten,
+    TwoModeSqueezedVacuum._tree_unflatten,
 )
 jax.tree_util.register_pytree_node(Variable, Variable._tree_flatten, Variable._tree_unflatten)
