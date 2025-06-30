@@ -24,7 +24,7 @@ import numpy as np
 
 from ..lattice import strategies
 
-__all__ = ["hermite_renormalized_unbatched_jax"]
+__all__ = ["hermite_renormalized_batched_jax", "hermite_renormalized_unbatched_jax"]
 
 # ~~~~~~~~~~~~~~~~~
 # hermite_renormalized_unbatched
@@ -92,4 +92,72 @@ def hermite_renormalized_unbatched_jax_bwd(shape, stable, res, g):
 hermite_renormalized_unbatched_jax.defvjp(
     hermite_renormalized_unbatched_jax_fwd,
     hermite_renormalized_unbatched_jax_bwd,
+)
+
+
+# ~~~~~~~~~~~~~~~~~
+# hermite_renormalized_batched
+# ~~~~~~~~~~~~~~~~~
+
+
+@partial(jax.custom_vjp, nondiff_argnums=(3, 4))
+@partial(jax.jit, static_argnums=(3, 4))
+def hermite_renormalized_batched_jax(
+    A: jnp.ndarray,
+    b: jnp.ndarray,
+    c: jnp.ndarray,
+    shape: tuple[int],
+    stable: bool,
+) -> jnp.ndarray:
+    r"""
+    The jax custom gradient for hermite_renormalized_batched.
+    """
+    batch_size = A.shape[0]
+    output_shape = (batch_size, *shape)
+    return jax.pure_callback(
+        lambda A, b, c: strategies.vanilla_batch_numba(
+            shape,
+            np.asarray(A),
+            np.asarray(b),
+            np.asarray(c),
+            stable,
+            None,
+        ),
+        jax.ShapeDtypeStruct(output_shape, jnp.complex128),
+        A,
+        b,
+        c,
+    )
+
+
+def hermite_renormalized_batched_jax_fwd(A, b, c, shape, stable):
+    r"""
+    The jax forward pass for hermite_renormalized_batched.
+    """
+    G = hermite_renormalized_batched_jax(A, b, c, shape, stable)
+    return (G, (G, A, b, c))
+
+
+def hermite_renormalized_batched_jax_bwd(shape, stable, res, g):
+    r"""
+    The jax backward pass for hermite_renormalized_batched.
+    """
+    G, A, b, c = res
+    dLdA, dLdB, dLdC = jax.pure_callback(
+        lambda G, c, g: strategies.vanilla_batch_vjp_numba(np.array(G), np.array(c), np.array(g)),
+        (
+            jax.ShapeDtypeStruct(A.shape, jnp.complex128),
+            jax.ShapeDtypeStruct(b.shape, jnp.complex128),
+            jax.ShapeDtypeStruct(c.shape, jnp.complex128),
+        ),
+        G,
+        c,
+        g,
+    )
+    return dLdA, dLdB, dLdC
+
+
+hermite_renormalized_batched_jax.defvjp(
+    hermite_renormalized_batched_jax_fwd,
+    hermite_renormalized_batched_jax_bwd,
 )
