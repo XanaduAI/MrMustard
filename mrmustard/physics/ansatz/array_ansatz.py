@@ -53,12 +53,13 @@ class ArrayAnsatz(Ansatz):
         batch_dims: The number of batch dimensions.
     """
 
-    def __init__(self, array: Batch[Tensor] | None, batch_dims: int = 0):
+    def __init__(self, array: Batch[Tensor] | None, batch_dims: int = 0, name: str = ""):
         super().__init__()
         self._array = array
         self._batch_dims = batch_dims
         self._batch_shape = tuple(self._array.shape[:batch_dims]) if array is not None else ()
         self._original_abc_data = None
+        self.name = name
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -315,7 +316,7 @@ class ArrayAnsatz(Ansatz):
         new_array = math.transpose(self.array, new_order)
         new_batch_dims = self.batch_dims + len(core_indices)
 
-        return ArrayAnsatz(new_array, new_batch_dims)
+        return ArrayAnsatz(new_array, new_batch_dims, name=self.name)
 
     def demote_batch_to_core(self, batch_indices: Sequence[int]) -> ArrayAnsatz:
         r"""
@@ -469,3 +470,6 @@ class ArrayAnsatz(Ansatz):
 
     def __truediv__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:
         return ArrayAnsatz(array=self.array / other, batch_dims=self.batch_dims)
+
+    def __repr__(self):
+        return f"ArrayAnsatz(name={self.name}, batch_dims={self.batch_dims}, core_shape={self.core_shape})"
