@@ -28,6 +28,14 @@ from mrmustard.physics.ansatz.base import Ansatz
 from mrmustard.physics.triples import identity_Abc
 
 
+def _strings(lst):
+    return [idx for idx in lst if isinstance(idx, str)]
+
+
+def _ints(lst):
+    return [idx for idx in lst if isinstance(idx, int)]
+
+
 @dataclass
 class ContractionData:
     """Holds the mutable data during contraction."""
@@ -57,28 +65,18 @@ def mm_einsum(
 ) -> PolyExpAnsatz | ArrayAnsatz | ArrayLike:
     """Contract ansatze using specified path."""
 
-    ansatze, batch_lists, core_lists = _parse_args(args)
-    data = ContractionData(ansatze, batch_lists, core_lists)
-
-    _promote_string_indices(data, fock_dims)
-
+    data = ContractionData(*_parse_args(args))
+    data = _promote_string_indices(data, fock_dims)
     char_map = _create_batch_char_map(data.batch_lists, output_batch)
     config = ContractionConfig(fock_dims, output_batch, output_core, char_map)
 
-    path = _convert_path_to_LA(contraction_path, path_type)
-
-    for i, j in path:
+    path_LA = _convert_path_to_LA(contraction_path, path_type)
+    for i, j in path_LA:
         _contract_pair(data, config, i, j)
 
     if len(data.ansatze) != 1:
         raise ValueError(f"Expected 1 result, got {len(data.ansatze)}")
-
-    return _finalize_result(
-        data.ansatze[0],
-        data.batch_lists[0],
-        data.core_lists[0],
-        config,
-    )
+    return _finalize_result(data, config)
 
 
 def _parse_args(args):
@@ -86,21 +84,23 @@ def _parse_args(args):
     return list(args[::3]), list(args[1::3]), list(args[2::3])
 
 
-def _promote_string_indices(data, fock_dims):
+def _promote_string_indices(
+    data: ContractionData,
+    fock_dims: dict[int | str, int],
+) -> ContractionData:
     """Move string indices from core to batch via promotion."""
-    for i in range(len(data.ansatze)):
-        strings_in_core = [idx for idx in data.core_lists[i] if isinstance(idx, str)]
-        if not strings_in_core:
-            continue
-
-        shape = tuple(fock_dims[idx] for idx in data.core_lists[i])
-        data.ansatze[i] = to_fock(data.ansatze[i], shape)
-
-        promote_pos = [j for j, idx in enumerate(data.core_lists[i]) if isinstance(idx, str)]
-        data.ansatze[i] = data.ansatze[i].promote_core_to_batch(promote_pos)
-
-        data.batch_lists[i] = data.batch_lists[i] + strings_in_core
-        data.core_lists[i] = [idx for idx in data.core_lists[i] if isinstance(idx, int)]
+    for i, (ansatz, batch_list, core_list) in enumerate(
+        zip(data.ansatze, data.batch_lists, data.core_lists),
+    ):
+        if strings_in_core := _strings(core_list):
+            data.batch_lists[i] = batch_list + strings_in_core
+            data.core_lists[i] = _ints(core_list)
+            shape = tuple(fock_dims[idx] for idx in core_list)
+            ansatz_fock = to_fock(ansatz, shape)
+            promote_pos = [j for j, idx in enumerate(core_list) if isinstance(idx, str)]
+            ansatz_fock = ansatz_fock.promote_core_to_batch(promote_pos)
+            data.ansatze[i] = ansatz_fock
+    return data
 
 
 def _create_batch_char_map(batch_lists, output_batch):
@@ -144,9 +144,9 @@ def _get_shapes(ansatz_i, ansatz_j, core_i, core_j, fock_dims):
 
     # Handle shared indices - take minimum shape
     for idx in shared_core:
-        if idx in fock_dims:
+        try:
             dim = fock_dims[idx]
-        else:
+        except KeyError:
             dim = 1_000_000_000
             if isinstance(ansatz_i, ArrayAnsatz):
                 dim = min(dim, ansatz_i.core_shape[core_i.index(idx)])
@@ -167,18 +167,27 @@ def _get_shapes(ansatz_i, ansatz_j, core_i, core_j, fock_dims):
     return (tuple(shape_i[idx] for idx in core_i), tuple(shape_j[idx] for idx in core_j))
 
 
-def _prepare_ansatze_for_contraction(ansatz_i, ansatz_j, core_i, core_j, fock_dims):
+def _prepare_ansatze_for_contraction(
+    ansatz_i,
+    batch_i,
+    core_i,
+    ansatz_j,
+    batch_j,
+    core_j,
+    fock_dims,
+):
     """Convert ansatze to appropriate representation for contraction."""
     shared_core = set(core_i) & set(core_j)
+    shared_batch = set(batch_i) & set(batch_j)
 
-    # Follow original logic: check only shared indices
     if shared_core:
         force_bargmann = all(fock_dims.get(idx, 1) == 0 for idx in shared_core)
         force_fock = all(fock_dims.get(idx, 1) != 0 for idx in shared_core)
+    elif shared_batch:
+        force_bargmann = False
+        force_fock = True
     else:
-        # No shared indices - decide based on all indices being 0 (empty set -> True)
-        force_bargmann = True  # Original behavior: all([]) returns True
-        force_fock = False
+        raise ValueError("outer products not allowed")
 
     if force_bargmann:
         return to_bargmann(ansatz_i), to_bargmann(ansatz_j)
@@ -224,8 +233,10 @@ def _contract_pair(data, config, i, j):
     # Prepare ansatze
     ansatz_a, ansatz_b = _prepare_ansatze_for_contraction(
         data.ansatze[i],
-        data.ansatze[j],
+        data.batch_lists[i],
         data.core_lists[i],
+        data.ansatze[j],
+        data.batch_lists[j],
         data.core_lists[j],
         config.fock_dims,
     )
@@ -265,18 +276,23 @@ def _contract_pair(data, config, i, j):
     data.batch_lists.append(out_batch)
     data.core_lists.append(out_core)
 
+    return data, config
 
-def _finalize_result(result, final_batch, final_core, config):
+
+def _finalize_result(data: ContractionData, config: ContractionConfig) -> ArrayAnsatz:
     """Apply final reordering and conversion."""
+    result = data.ansatze[-1]
     if len(config.output_batch) > 1:
-        batch_order = [final_batch.index(name) for name in config.output_batch]
+        batch_order = [data.batch_lists[-1].index(name) for name in config.output_batch]
         result = result.reorder_batch(batch_order)
 
     if len(config.output_core) > 1:
-        core_order = [final_core.index(idx) for idx in config.output_core]
+        core_order = [data.core_lists[-1].index(idx) for idx in config.output_core]
         result = result.reorder(core_order)
 
-    if final_core and all(config.fock_dims.get(idx, 1) == 0 for idx in final_core):
+    if data.core_lists[-1] and all(
+        config.fock_dims.get(idx, 1) == 0 for idx in data.core_lists[-1]
+    ):
         result = to_bargmann(result)
 
     return result
@@ -300,12 +316,12 @@ def to_fock(ansatz: Ansatz, shape: tuple[int, ...], stable: bool = False) -> Arr
     if 0 in shape:
         raise ValueError("Fock space dimension is 0.")
     if isinstance(ansatz, ArrayAnsatz):
-        return ansatz.reduce(shape)
-
-    array = math.hermite_renormalized(*ansatz.triple, shape, stable)
+        array = ansatz.reduce(shape).array
+    else:
+        array = math.hermite_renormalized(*ansatz.triple, shape, stable)
     if ansatz._lin_sup:
         array = math.sum(array, axis=0)
-    return ArrayAnsatz(array, ansatz.batch_dims)
+    return ArrayAnsatz(array, ansatz.batch_dims, name=ansatz.name)
 
 
 def to_bargmann(ansatz: Ansatz) -> PolyExpAnsatz:
