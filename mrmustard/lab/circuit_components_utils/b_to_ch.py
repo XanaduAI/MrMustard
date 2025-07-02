@@ -93,7 +93,6 @@ class BtoChar(Map):
         )
         for w in self.wires.output.wires:
             w.repr = ReprEnum.CHARACTERISTIC
-            w.repr_params_func = lambda: self.parameters.s
 
     def inverse(self):
         ret = BtoChar(self.modes, self.parameters.s)

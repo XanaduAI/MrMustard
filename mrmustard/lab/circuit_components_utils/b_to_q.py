@@ -75,7 +75,6 @@ class BtoQ(Operation):
             w.repr = ReprEnum.BARGMANN
         for w in self.wires.output.wires:
             w.repr = ReprEnum.QUADRATURE
-            w.repr_params_func = lambda: self.parameters.phi
 
     def inverse(self):
         if self.modes == ():

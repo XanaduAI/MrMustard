@@ -88,10 +88,6 @@ class QuadratureEigenstate(Ket):
 
         for w in self.wires.output.wires:
             w.repr = ReprEnum.QUADRATURE
-            w.repr_params_func = lambda w=w: [
-                self.parameters.x.value,
-                self.parameters.phi.value,
-            ]
 
     @property
     def L2_norm(self):

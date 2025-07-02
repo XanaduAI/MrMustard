@@ -524,18 +524,15 @@ class CircuitComponent:
         if isinstance(other, numbers.Number | np.ndarray):
             return self * other
 
-        if type(self.ansatz) is type(other.ansatz):
-            self_ansatz = self.ansatz
-            other_ansatz = other.ansatz
-            self_wires = self.wires
-            other_wires = other.wires
+        if type(self.ansatz) is not type(other.ansatz):
+            self_rep = self.to_fock()
+            other_rep = other.to_fock()
         else:
-            self_fock = self.to_fock()
-            other_fock = other.to_fock()
-            self_ansatz = self_fock.ansatz
-            other_ansatz = other_fock.ansatz
-            self_wires = self_fock.wires
-            other_wires = other_fock.wires
+            self_rep = self
+            other_rep = other
+
+        self_ansatz, self_wires = self_rep.ansatz, self_rep.wires
+        other_ansatz, other_wires = other_rep.ansatz, other_rep.wires
 
         wires_result, _ = self_wires @ other_wires
         core1, core2, core_out = self_wires.contracted_labels(other_wires)

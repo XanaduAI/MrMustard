@@ -62,4 +62,3 @@ class BtoPS(Map):
         )
         for w in self.wires.output.wires:
             w.repr = ReprEnum.PHASESPACE
-            w.repr_params_func = lambda: self.parameters.s

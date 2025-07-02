@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from functools import cached_property
 from random import randint
-from typing import Any
 
 from IPython.display import display
 
@@ -74,15 +73,7 @@ class QuantumWire:
     is_ket: bool
     index: int
     repr: ReprEnum = ReprEnum.BARGMANN
-    repr_params_func: Callable[[], Any] = lambda: None
     id: int = field(default_factory=lambda: randint(0, 2**32 - 1), compare=False)
-
-    @property
-    def repr_params(self) -> Any:
-        r"""
-        Returns the parameters of the representation of this wire.
-        """
-        return self.repr_params_func()
 
     def __hash__(self) -> int:
         return hash((self.mode, self.is_out, self.is_ket, self.repr))
@@ -113,7 +104,6 @@ class QuantumWire:
             is_ket=self.is_ket,
             index=self.index,
             repr=self.repr,
-            repr_params_func=self.repr_params_func,
             id=self.id if not new_id else randint(0, 2**32 - 1),
         )
 
@@ -142,15 +132,7 @@ class ClassicalWire:
     is_out: bool
     index: int
     repr: ReprEnum = ReprEnum.UNSPECIFIED
-    repr_params_func: Callable[[], Any] = lambda: None
     id: int = field(default_factory=lambda: randint(0, 2**32 - 1))
-
-    @property
-    def repr_params(self) -> Any:
-        r"""
-        Returns the parameters of the representation of this wire.
-        """
-        return self.repr_params_func()
 
     def __hash__(self) -> int:
         return hash((self.mode, self.is_out, self.repr))
@@ -168,7 +150,6 @@ class ClassicalWire:
             is_out=self.is_out,
             index=self.index,
             repr=self.repr,
-            repr_params_func=self.repr_params_func,
             id=self.id if not new_id else randint(0, 2**32 - 1),
         )
 
