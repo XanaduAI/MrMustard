@@ -78,6 +78,8 @@ class BtoQ(Operation):
             w.repr_params_func = lambda: self.parameters.phi
 
     def inverse(self):
+        if self.modes == ():
+            return self
         ret = BtoQ(self.modes, self.parameters.phi)
         ret._ansatz = super().inverse().ansatz
         ret._wires = ret.wires.dual
