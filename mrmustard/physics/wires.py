@@ -92,6 +92,7 @@ class QuantumWire:
             is_ket=self.is_ket,
             index=self.index,
             repr=self.repr,
+            fock_size=self.fock_size,
             id=self.id if not new_id else randint(0, 2**32 - 1),
         )
 
