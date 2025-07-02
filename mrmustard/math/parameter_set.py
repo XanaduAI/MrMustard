@@ -14,10 +14,13 @@
 
 """This module contains the classes to describe sets of parameters."""
 
+import io
 from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
+from rich.console import Console
+from rich.table import Table
 
 from mrmustard.math.backend_manager import BackendManager
 
@@ -216,6 +219,91 @@ class ParameterSet:
                 ret.add_parameter(var)
 
         return ret
+
+    def _format_value(self, param: Constant | Variable) -> tuple[str, str]:
+        r"""Format parameter value and shape strings."""
+        if hasattr(param.value, "shape") and param.value.shape != ():
+            try:
+                value = math.asnumpy(param.value)
+                if len(value.flat) <= 3:
+                    value_str = str(value.tolist())
+                else:
+                    flat = value.flatten()
+                    preview = [f"{x:.3g}" for x in flat[:3]]
+                    value_str = f"[{', '.join(preview)}, ...]"
+            except (ValueError, TypeError, AttributeError):
+                value_str = "array"
+            shape_str = str(param.value.shape)
+        else:
+            try:
+                value = math.asnumpy(param.value)
+                value_str = (
+                    f"{float(value):.6g}" if np.isrealobj(value) else f"{complex(value):.6g}"
+                )
+            except (ValueError, TypeError, AttributeError):
+                value_str = str(param.value)
+            shape_str = "scalar"
+        return value_str, shape_str
+
+    def _format_dtype(self, param: Constant | Variable) -> str:
+        r"""Format parameter dtype string."""
+        try:
+            dtype_str = str(param.value.dtype)
+            dtype_map = {
+                "float64": "float64",
+                "float32": "float32",
+                "complex128": "complex128",
+                "complex64": "complex64",
+            }
+            for key, value in dtype_map.items():
+                if key in dtype_str:
+                    return value
+            return dtype_str
+        except (ValueError, TypeError, AttributeError):
+            return "unknown"
+
+    def _format_bounds(self, param: Constant | Variable) -> str:
+        r"""Format parameter bounds string."""
+        if not isinstance(param, Variable):
+            return "—"
+
+        bounds = param.bounds
+        if bounds == (None, None):
+            return "(-∞, +∞)"
+
+        low = "-∞" if bounds[0] is None else f"{bounds[0]:.3g}"
+        high = "+∞" if bounds[1] is None else f"{bounds[1]:.3g}"
+        return f"({low}, {high})"
+
+    def __repr__(self) -> str:
+        r"""
+        Returns a rich-formatted string representation of this parameter set.
+        """
+        if not self:
+            return "ParameterSet()"
+
+        table = Table(title=f"ParameterSet ({len(self.names)} parameters)", show_header=True)
+
+        table.add_column("Name", style="#FFB3B3", header_style="#FFB3B3", no_wrap=True)
+        table.add_column("Type", style="#FFCC99", header_style="#FFCC99", width=9)
+        table.add_column("Value", style="#FFFFBA", header_style="#FFFFBA")
+        table.add_column("Dtype", style="#BAFFC9", header_style="#BAFFC9", width=10)
+        table.add_column("Bounds", style="#B3E5FF", header_style="#B3E5FF")
+        table.add_column("Shape", style="#E1BAFF", header_style="#E1BAFF")
+
+        for name in self.names:
+            param = self.all_parameters[name]
+            param_type = "Constant" if isinstance(param, Constant) else "Variable"
+
+            value_str, shape_str = self._format_value(param)
+            dtype_str = self._format_dtype(param)
+            bounds_str = self._format_bounds(param)
+
+            table.add_row(name, param_type, value_str, dtype_str, bounds_str, shape_str)
+
+        console = Console(file=io.StringIO(), width=100, legacy_windows=False)
+        console.print(table)
+        return console.file.getvalue().strip()
 
     def __bool__(self) -> bool:
         r"""
