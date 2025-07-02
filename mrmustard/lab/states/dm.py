@@ -139,8 +139,9 @@ class DM(State):
             )
         wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
         if isinstance(ansatz, ArrayAnsatz):
-            for w in wires:
+            for w in wires.quantum_wires:
                 w.repr = ReprEnum.FOCK
+                w.fock_size = ansatz.core_shape[w.index]
         return DM(ansatz, wires, name=name)
 
     @classmethod

@@ -60,12 +60,13 @@ class QuantumWire:
     Represents a quantum wire in a circuit.
 
     Args:
-        mode: The mode number this wire represents
-        is_out: Whether this is an output wire
-        is_ket: Whether this wire is on the ket side
-        index: The index of this wire in the circuit
-        repr: The representation of this wire
-        id: Unique identifier for this wire
+        mode: The mode number this wire represents.
+        is_out: Whether this is an output wire.
+        is_ket: Whether this wire is on the ket side.
+        index: The index of this wire in the circuit.
+        repr: The representation of this wire.
+        fock_size: The (optional) size of the Fock array for this wire.
+        id: Unique identifier for this wire.
     """
 
     mode: int
@@ -73,21 +74,8 @@ class QuantumWire:
     is_ket: bool
     index: int
     repr: ReprEnum = ReprEnum.BARGMANN
+    fock_size: int | None = None
     id: int = field(default_factory=lambda: randint(0, 2**32 - 1), compare=False)
-
-    def __hash__(self) -> int:
-        return hash((self.mode, self.is_out, self.is_ket, self.repr))
-
-    def __repr__(self) -> str:
-        return f"QuantumWire(mode={self.mode}, {'out' if self.is_out else 'in'}, {'ket' if self.is_ket else 'bra'}, repr={self.repr}, index={self.index})"
-
-    def __eq__(self, other: QuantumWire) -> bool:
-        return (
-            self.mode == other.mode
-            and self.is_out == other.is_out
-            and self.is_ket == other.is_ket
-            and self.repr == other.repr
-        )
 
     def copy(self, new_id: bool = False) -> QuantumWire:
         """Create a copy of the quantum wire.
@@ -114,6 +102,20 @@ class QuantumWire:
         """
         return self.mode + 10_000 * (1 - 2 * self.is_out) - 100_000 * (1 - 2 * self.is_ket)
 
+    def __eq__(self, other: QuantumWire) -> bool:
+        return (
+            self.mode == other.mode
+            and self.is_out == other.is_out
+            and self.is_ket == other.is_ket
+            and self.repr == other.repr
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.mode, self.is_out, self.is_ket, self.repr))
+
+    def __repr__(self) -> str:
+        return f"QuantumWire(mode={self.mode}, {'out' if self.is_out else 'in'}, {'ket' if self.is_ket else 'bra'}, index={self.index}, repr={self.repr}, fock_size={self.fock_size})"
+
 
 @dataclass
 class ClassicalWire:
@@ -134,15 +136,6 @@ class ClassicalWire:
     repr: ReprEnum = ReprEnum.UNSPECIFIED
     id: int = field(default_factory=lambda: randint(0, 2**32 - 1))
 
-    def __hash__(self) -> int:
-        return hash((self.mode, self.is_out, self.repr))
-
-    def __repr__(self) -> str:
-        return f"ClassicalWire(mode={self.mode}, out={self.is_out}, repr={self.repr}, index={self.index})"
-
-    def __eq__(self, other: ClassicalWire) -> bool:
-        return self.mode == other.mode and self.is_out == other.is_out and self.repr == other.repr
-
     def copy(self, new_id: bool = False) -> ClassicalWire:
         """Returns a copy of the classical wire."""
         return ClassicalWire(
@@ -159,6 +152,15 @@ class ClassicalWire:
         Order is by out/in, then mode. Classical wires always come after quantum wires.
         """
         return 1000_000 + self.mode + 10_000 * (1 - 2 * self.is_out)
+
+    def __eq__(self, other: ClassicalWire) -> bool:
+        return self.mode == other.mode and self.is_out == other.is_out and self.repr == other.repr
+
+    def __hash__(self) -> int:
+        return hash((self.mode, self.is_out, self.repr))
+
+    def __repr__(self) -> str:
+        return f"ClassicalWire(mode={self.mode}, out={self.is_out}, repr={self.repr}, index={self.index})"
 
 
 class Wires:

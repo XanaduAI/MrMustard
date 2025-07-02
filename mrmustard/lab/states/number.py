@@ -80,3 +80,4 @@ class Number(Ket):
 
         for w in self.wires.output.wires:
             w.repr = ReprEnum.FOCK
+            w.fock_size = self.ansatz.core_shape[w.index]

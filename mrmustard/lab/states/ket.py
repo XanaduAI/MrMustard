@@ -147,6 +147,7 @@ class Ket(State):
         if isinstance(ansatz, ArrayAnsatz):
             for w in wires.quantum_wires:
                 w.repr = ReprEnum.FOCK
+                w.fock_size = ansatz.core_shape[w.index]
         return Ket(ansatz, wires, name=name)
 
     @classmethod

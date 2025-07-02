@@ -66,5 +66,6 @@ class TestNumber:
     def test_wires(self):
         """Test that the wires are correct."""
         state = Number(0, n=1)
-        for w in state.wires:
+        for w in state.wires.quantum_wires:
             assert w.repr == ReprEnum.FOCK
+            assert w.fock_size == state.ansatz.core_shape[w.index]

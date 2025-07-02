@@ -191,13 +191,14 @@ class TestCircuitComponent:
         assert d_fock.ansatz == ArrayAnsatz(
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6)),
         )
-        for w in d_fock.wires.wires:
+        for w in d_fock.wires.quantum_wires:
             assert w.repr == ReprEnum.FOCK
+            assert w.fock_size == d_fock.ansatz.core_shape[w.index]
 
         d_fock_barg = d_fock.to_bargmann()
         assert d_fock.ansatz._original_abc_data == d.ansatz.triple
         assert d_fock_barg == d
-        for w in d_fock_barg.wires.wires:
+        for w in d_fock_barg.wires.quantum_wires:
             assert w.repr == ReprEnum.BARGMANN
 
     def test_to_fock_bargmann_poly_exp(self):
