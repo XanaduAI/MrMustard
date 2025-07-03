@@ -77,7 +77,6 @@ class QuadratureEigenstate(Ket):
         self.parameters.add_parameter(
             make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
         )
-        self.manual_shape = (50,)
 
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.quadrature_eigenstates_Abc,
@@ -86,8 +85,9 @@ class QuadratureEigenstate(Ket):
         )
         self._wires = Wires(modes_out_ket={mode})
 
-        for w in self.wires.output.sorted_wires:
+        for w in self.wires.sorted_wires:
             w.repr = ReprEnum.QUADRATURE
+            w.fock_size = 50  # we want to avoid state autoshape on a quadrature eigenstate?
 
     @property
     def L2_norm(self):
