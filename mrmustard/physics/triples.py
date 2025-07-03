@@ -151,8 +151,7 @@ def squeezed_vacuum_state_Abc(
 
 
 def displaced_squeezed_vacuum_state_Abc(
-    x: float | Sequence[float],
-    y: float | Sequence[float] = 0,
+    alpha: complex | Sequence[complex] = 0,
     r: float | Sequence[float] = 0,
     phi: float | Sequence[float] = 0,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
@@ -160,21 +159,23 @@ def displaced_squeezed_vacuum_state_Abc(
     The ``(A, b, c)`` triple of a displaced squeezed vacuum state.
 
     Args:
+        alpha: The complex displacement.
         r: The squeezing magnitudes.
         phi: The squeezing angles.
-        x: The real parts of the displacements, in units of :math:`\sqrt{\hbar}`.
-        y: The imaginary parts of the displacements, in units of :math:`\sqrt{\hbar}`.
 
     Returns:
         The ``(A, b, c)`` triple of the squeezed vacuum state.
     """
-    x, y, r, phi = math.broadcast_arrays(
-        math.astensor(x, dtype=math.complex128),
-        math.astensor(y, dtype=math.complex128),
+    alpha, r, phi = math.broadcast_arrays(
+        math.astensor(alpha, dtype=math.complex128),
         math.astensor(r, dtype=math.complex128),
         math.astensor(phi, dtype=math.complex128),
     )
-    batch_shape = x.shape
+    batch_shape = alpha.shape
+
+    # Extract real and imaginary parts
+    x = math.real(alpha)
+    y = math.imag(alpha)
 
     A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), (*batch_shape, 1, 1))
     b = math.reshape(
