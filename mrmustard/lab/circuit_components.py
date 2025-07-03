@@ -646,20 +646,20 @@ class CircuitComponent:
 
     def to_bargmann(self) -> CircuitComponent:
         r"""
-                Returns a new ``CircuitComponent`` in the ``Bargmann`` representation.
+        Returns a new ``CircuitComponent`` in the ``Bargmann`` representation.
 
-                .. code-block::
+        .. code-block::
 
-                    >>> from mrmustard.lab import Number
-                    >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+            >>> from mrmustard.lab import Number
+            >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 
-                    >>> d = Dgate(1, alpha = 0.1+0.1j)
-                    >>> d_fock = d.to_fock(shape=3)
-                    >>> d_bargmann = d_fock.to_bargmann()
-                    >>> num = Number(0, n=2)
-                    >>> assert isinstance(num.ansatz, ArrayAnsatz) # in Fock representation
-                    >>> num_bargmann = num.to_bargmann()
-                    >>> assert isinstance(num_bargmann.ansatz, PolyExpAnsatz) # in Bargmann representation
+            >>> d = Dgate(1, alpha = 0.1+0.1j)
+            >>> d_fock = d.to_fock(shape=3)
+            >>> d_bargmann = d_fock.to_bargmann()
+            >>> num = Number(0, n=2)
+            >>> assert isinstance(num.ansatz, ArrayAnsatz) # in Fock representation
+            >>> num_bargmann = num.to_bargmann()
+            >>> assert isinstance(num_bargmann.ansatz, PolyExpAnsatz) # in Bargmann representation
         """
         if isinstance(self.ansatz, PolyExpAnsatz):
             return self
@@ -693,27 +693,27 @@ class CircuitComponent:
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
         r"""
-                Returns a new ``CircuitComponent`` in the ``Fock`` representation.
+        Returns a new ``CircuitComponent`` in the ``Fock`` representation.
 
-                Args:
-                    shape: The shape of the returned representation. If ``shape`` is given as
-                        an ``int``, it is broadcasted to all dimensions. If ``None``, it
-                        is generated via ``auto_shape``.
+        Args:
+            shape: The shape of the returned representation. If ``shape`` is given as
+                an ``int``, it is broadcasted to all dimensions. If ``None``, it
+                is generated via ``auto_shape``.
 
-                Returns:
-                    A new ``CircuitComponent`` in the ``Fock`` representation.
+        Returns:
+            A new ``CircuitComponent`` in the ``Fock`` representation.
 
-                .. code-block::
+        .. code-block::
 
-                    >>> from mrmustard.lab import Dgate
-                    >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+            >>> from mrmustard.lab import Dgate
+            >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 
-                    >>> d = Dgate(1, alpha = 0.1+0.1j)
-                    >>> d_fock = d.to_fock(shape=3)
+            >>> d = Dgate(1, alpha = 0.1+0.1j)
+            >>> d_fock = d.to_fock(shape=3)
 
-                    >>> assert d_fock.name == d.name
-                    >>> assert isinstance(d.ansatz, PolyExpAnsatz) # in Bargmann representation
-                    >>> assert isinstance(d_fock.ansatz, ArrayAnsatz) # in Fock representation
+            >>> assert d_fock.name == d.name
+            >>> assert isinstance(d.ansatz, PolyExpAnsatz) # in Bargmann representation
+            >>> assert isinstance(d_fock.ansatz, ArrayAnsatz) # in Fock representation
         """
         shape = shape or self.auto_shape()
         batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
