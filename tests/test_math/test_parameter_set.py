@@ -173,7 +173,7 @@ class TestParameterSet:
         assert shape_str == "scalar"
 
         # Test scalar complex constant
-        const_complex = Constant(1 + 2j, "const_complex")
+        const_complex = Constant(1 + 2j, "const_complex", dtype=np.complex128)
         value_str, shape_str = ps._format_value(const_complex)
         assert value_str == "1+2j"
         assert shape_str == "scalar"

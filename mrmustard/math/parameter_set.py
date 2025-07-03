@@ -256,10 +256,16 @@ class ParameterSet:
         # Handle scalars
         if np.issubdtype(value.dtype, np.integer):
             value_str = str(int(value))
-        elif np.isrealobj(value):
-            value_str = f"{float(value):.6g}"
+        elif np.iscomplexobj(value) or np.issubdtype(value.dtype, np.complexfloating):
+            # Format complex numbers with g format for both real and imaginary parts
+            real_part = f"{value.real:.6g}"
+            imag_part = f"{value.imag:.6g}"
+            if value.imag >= 0:
+                value_str = f"{real_part}+{imag_part}j"
+            else:
+                value_str = f"{real_part}{imag_part}j"
         else:
-            value_str = f"{complex(value):.6g}"
+            value_str = f"{float(value):.6g}"
 
         return value_str, "scalar"
 
