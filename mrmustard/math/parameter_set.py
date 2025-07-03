@@ -222,42 +222,55 @@ class ParameterSet:
 
     def _format_value(self, param: Constant | Variable) -> tuple[str, str]:
         r"""Format parameter value and shape strings."""
+        try:
+            value = math.asnumpy(param.value)
+        except (ValueError, TypeError, AttributeError):
+            return "array", str(getattr(param.value, "shape", "scalar"))
+
+        # Handle arrays
         if hasattr(param.value, "shape") and param.value.shape != ():
-            try:
-                value = math.asnumpy(param.value)
-                if len(value.flat) <= 3:
-                    value_str = str(value.tolist())
-                else:
-                    flat = value.flatten()
-                    preview = [f"{x:.3g}" for x in flat[:3]]
-                    value_str = f"[{', '.join(preview)}, ...]"
-            except (ValueError, TypeError, AttributeError):
-                value_str = "array"
             shape_str = str(param.value.shape)
+
+            # Check if values should be formatted as integers
+            is_integer_like = np.issubdtype(value.dtype, np.integer) or np.all(
+                np.equal(np.mod(value, 1), 0),
+            )
+
+            flat = value.flat
+            if len(flat) <= 3:
+                # Small arrays: preserve structure, format integers appropriately
+                if is_integer_like:
+                    # Simple approach: convert string representation
+                    value_str = str(value.astype(int).tolist())
+                else:
+                    value_str = str(value.tolist())
+            else:
+                # Large arrays: show preview with ellipsis
+                if is_integer_like:
+                    preview = [str(int(x)) for x in flat[:3]]
+                else:
+                    preview = [f"{x:.3g}" for x in flat[:3]]
+                value_str = f"[{', '.join(preview)}, ...]"
+            return value_str, shape_str
+
+        # Handle scalars
+        if np.issubdtype(value.dtype, np.integer):
+            value_str = str(int(value))
+        elif np.isrealobj(value):
+            value_str = f"{float(value):.6g}"
         else:
-            try:
-                value = math.asnumpy(param.value)
-                value_str = (
-                    f"{float(value):.6g}" if np.isrealobj(value) else f"{complex(value):.6g}"
-                )
-            except (ValueError, TypeError, AttributeError):
-                value_str = str(param.value)
-            shape_str = "scalar"
-        return value_str, shape_str
+            value_str = f"{complex(value):.6g}"
+
+        return value_str, "scalar"
 
     def _format_dtype(self, param: Constant | Variable) -> str:
         r"""Format parameter dtype string."""
         try:
             dtype_str = str(param.value.dtype)
-            dtype_map = {
-                "float64": "float64",
-                "float32": "float32",
-                "complex128": "complex128",
-                "complex64": "complex64",
-            }
-            for key, value in dtype_map.items():
-                if key in dtype_str:
-                    return value
+            common_dtypes = {"float64", "float32", "complex128", "complex64"}
+            for dtype in common_dtypes:
+                if dtype in dtype_str:
+                    return dtype
             return dtype_str
         except (ValueError, TypeError, AttributeError):
             return "unknown"
