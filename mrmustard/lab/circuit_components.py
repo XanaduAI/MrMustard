@@ -653,15 +653,11 @@ class CircuitComponent:
                     >>> from mrmustard.lab import Number
                     >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 
-        <<<<<<< ours
                     >>> d = Dgate(1, alpha = 0.1+0.1j)
                     >>> d_fock = d.to_fock(shape=3)
                     >>> d_bargmann = d_fock.to_bargmann()
-        =======
                     >>> num = Number(0, n=2)
                     >>> assert isinstance(num.ansatz, ArrayAnsatz) # in Fock representation
-        >>>>>>> theirs
-
                     >>> num_bargmann = num.to_bargmann()
                     >>> assert isinstance(num_bargmann.ansatz, PolyExpAnsatz) # in Bargmann representation
         """
@@ -712,18 +708,11 @@ class CircuitComponent:
                     >>> from mrmustard.lab import Dgate
                     >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 
-        <<<<<<< ours
                     >>> d = Dgate(1, alpha = 0.1+0.1j)
                     >>> d_fock = d.to_fock(shape=3)
 
                     >>> assert d_fock.name == d.name
-                    >>> assert isinstance(d_fock.ansatz, ArrayAnsatz)
-        =======
-                    >>> d = Dgate(1, x=0.1, y=0.1)
                     >>> assert isinstance(d.ansatz, PolyExpAnsatz) # in Bargmann representation
-        >>>>>>> theirs
-
-                    >>> d_fock = d.to_fock(shape=3)
                     >>> assert isinstance(d_fock.ansatz, ArrayAnsatz) # in Fock representation
         """
         shape = shape or self.auto_shape()
