@@ -339,13 +339,6 @@ class Wires:
         for i, m in enumerate(sorted(classical_in)):
             self.classical_wires.add(ClassicalWire(mode=m, is_out=False, index=n + i))
 
-    @property
-    def fock_shape(self) -> list[int | None]:
-        r"""
-        The Fock cutoff for each wire.
-        """
-        return [w.fock_size for w in self.quantum.sorted_wires]
-
     @classmethod
     def from_wires(
         cls,
@@ -377,28 +370,20 @@ class Wires:
         r"""
         New ``Wires`` object with the adjoint quantum wires (ket becomes bra and vice versa).
         """
-        return Wires(
-            modes_out_bra=self.output.ket.modes,
-            modes_in_bra=self.input.ket.modes,
-            modes_out_ket=self.output.bra.modes,
-            modes_in_ket=self.input.bra.modes,
-            classical_out=self.output.classical.modes,
-            classical_in=self.input.classical.modes,
-        )
+        ret = self.copy(new_ids=True)
+        for w in ret.quantum:
+            w.is_ket = not w.is_ket
+        return ret
 
     @cached_property
     def dual(self) -> Wires:
         r"""
         New ``Wires`` object with dual quantum and classical wires (input becomes output and vice versa).
         """
-        return Wires(
-            modes_out_bra=self.input.bra.modes,
-            modes_in_bra=self.output.bra.modes,
-            modes_out_ket=self.input.ket.modes,
-            modes_in_ket=self.output.ket.modes,
-            classical_out=self.input.classical.modes,
-            classical_in=self.output.classical.modes,
-        )
+        ret = self.copy(new_ids=True)
+        for w in ret:
+            w.is_out = not w.is_out
+        return ret
 
     ###### SUBSETS OF WIRES ######
 

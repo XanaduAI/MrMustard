@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import numbers
 from collections.abc import Sequence
-from functools import cached_property
 from inspect import signature
 from pydoc import locate
 from typing import Any
@@ -129,7 +128,7 @@ class CircuitComponent:
             ret.parameters.add_parameter(param)
         return ret
 
-    @cached_property
+    @property
     def manual_shape(self) -> tuple[int | None]:
         r"""
         The shape of this Component in the Fock representation. If not manually set,
@@ -143,10 +142,12 @@ class CircuitComponent:
         The order of the elements in the shape is intended the same order as the wires
         in the `.wires` attribute.
         """
-        try:  # to read it from array ansatz
-            return self.ansatz.array.shape[self.ansatz.batch_dims :]
-        except AttributeError:  # bargmann
-            return (None,) * len(self.wires)
+        return tuple(w.fock_size for w in self.wires.quantum.sorted_wires)
+
+    @manual_shape.setter
+    def manual_shape(self, shape: tuple[int | None]):
+        for w, s in zip(self.wires.quantum.sorted_wires, shape):
+            w.fock_size = s
 
     @property
     def modes(self) -> list[int]:
@@ -681,9 +682,6 @@ class CircuitComponent:
             ret._wires = wires
         else:
             ret = self._from_attributes(ansatz, wires, self.name)
-
-        if "manual_shape" in ret.__dict__:
-            del ret.manual_shape
         return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
@@ -735,9 +733,6 @@ class CircuitComponent:
             ret._wires = wires
         else:
             ret = self._from_attributes(fock, wires, self.name)
-
-        if "manual_shape" in ret.__dict__:
-            del ret.manual_shape
         return ret
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
