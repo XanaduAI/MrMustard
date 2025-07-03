@@ -130,7 +130,7 @@ class CircuitComponent:
         return ret
 
     @cached_property
-    def manual_shape(self) -> list[int | None]:
+    def manual_shape(self) -> tuple[int | None]:
         r"""
         The shape of this Component in the Fock representation. If not manually set,
         it is a list of M ``None``s where M is the number of wires of the component.
@@ -144,9 +144,9 @@ class CircuitComponent:
         in the `.wires` attribute.
         """
         try:  # to read it from array ansatz
-            return list(self.ansatz.array.shape[self.ansatz.batch_dims :])
+            return self.ansatz.array.shape[self.ansatz.batch_dims :]
         except AttributeError:  # bargmann
-            return [None] * len(self.wires)
+            return (None,) * len(self.wires)
 
     @property
     def modes(self) -> list[int]:

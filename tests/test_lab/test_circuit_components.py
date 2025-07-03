@@ -67,7 +67,7 @@ class TestCircuitComponent:
         assert cc.modes == (1, 8)
         assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.ansatz == ansatz
-        assert cc.manual_shape == [None] * 4
+        assert cc.manual_shape == (None,) * 4
 
     def test_missing_name(self):
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2))

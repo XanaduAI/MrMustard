@@ -76,7 +76,7 @@ class Number(Ket):
         self._ansatz = ArrayAnsatz.from_function(fock_state, n=n, cutoffs=cutoff)
         self._wires = Wires(modes_out_ket={mode})
         self.short_name = str(int(n))
-        self.manual_shape[0] = cutoff + 1
+        self.manual_shape = (cutoff + 1,)
 
         for w in self.wires.output:
             w.repr = ReprEnum.FOCK
