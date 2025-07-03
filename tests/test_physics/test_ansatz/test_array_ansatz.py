@@ -14,8 +14,6 @@
 
 """This module contains tests for ``ArrayAnsatz`` objects."""
 
-# pylint: disable = missing-function-docstring, disable=too-many-public-methods
-
 from unittest.mock import patch
 
 import numpy as np
@@ -23,17 +21,17 @@ import pytest
 from ipywidgets import HTML, HBox, Tab, VBox
 from plotly.graph_objs import FigureWidget
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 
 
 class TestArrayAnsatz:
     r"""Tests the array ansatz."""
 
-    array578 = np.random.random((5, 7, 8))
-    array1578 = np.random.random((1, 5, 7, 8))
-    array2578 = np.random.random((2, 5, 7, 8))
-    array5578 = np.random.random((5, 5, 7, 8))
+    array578 = settings.rng.random((5, 7, 8))
+    array1578 = settings.rng.random((1, 5, 7, 8))
+    array2578 = settings.rng.random((2, 5, 7, 8))
+    array5578 = settings.rng.random((5, 5, 7, 8))
 
     def test_init_batched(self):
         fock = ArrayAnsatz(self.array1578, batch_dims=1)
@@ -55,17 +53,17 @@ class TestArrayAnsatz:
         assert np.allclose(fock1_add_fock2.array[1], self.array2578[1] + self.array2578[1])
 
     def test_sum_with_different_batch_raise_errors(self):
-        array = np.random.random((2, 4, 5))
-        array2 = np.random.random((3, 4, 8, 9))
+        array = settings.rng.random((2, 4, 5))
+        array2 = settings.rng.random((3, 4, 8, 9))
         aa1 = ArrayAnsatz(array=array, batch_dims=0)
         aa2 = ArrayAnsatz(array=array2, batch_dims=1)
 
         with pytest.raises(ValueError):
-            aa1 + aa2  # pylint: disable=pointless-statement
+            aa1 + aa2
 
     def test_and(self):
-        array5123 = np.random.random((5, 1, 2, 3))
-        array5234 = np.random.random((5, 2, 3, 4))
+        array5123 = settings.rng.random((5, 1, 2, 3))
+        array5234 = settings.rng.random((5, 2, 3, 4))
         fock1 = ArrayAnsatz(array=array5123, batch_dims=1)
         fock2 = ArrayAnsatz(array=array5234, batch_dims=1)
         fock_test = fock1 & fock2
@@ -86,11 +84,15 @@ class TestArrayAnsatz:
         fock1 = ArrayAnsatz(self.array2578, batch_dims=1)
         fock2 = ArrayAnsatz(self.array1578, batch_dims=1)
         fock_test = fock1.contract(
-            fock2, idx1=["a", 0, 1, 2], idx2=["b", 0, 1, 3], idx_out=["a", "b", 2, 3]
+            fock2,
+            idx1=["a", 0, 1, 2],
+            idx2=["b", 0, 1, 3],
+            idx_out=["a", "b", 2, 3],
         )
         assert fock_test.array.shape == (2, 1, 8, 8)
         assert np.allclose(
-            fock_test.array, np.einsum("acde, bcdh -> abeh", self.array2578, self.array1578)
+            fock_test.array,
+            np.einsum("acde, bcdh -> abeh", self.array2578, self.array1578),
         )
 
     def test_divide_by_scalar(self):
@@ -99,7 +101,7 @@ class TestArrayAnsatz:
         assert np.allclose(fock_test.array, self.array1578 / 1.5)
 
     def test_equal(self):
-        array = np.random.random((2, 4, 5))
+        array = settings.rng.random((2, 4, 5))
         aa1 = ArrayAnsatz(array=array)
         aa2 = ArrayAnsatz(array=array)
         assert aa1 == aa2
@@ -108,7 +110,7 @@ class TestArrayAnsatz:
         def gen_array(x):
             return x
 
-        x = math.astensor(np.random.random((5, 8, 8)))
+        x = math.astensor(settings.rng.random((5, 8, 8)))
         fock = ArrayAnsatz.from_function(gen_array, batch_dims=1, x=x)
         assert fock.array.shape == (5, 8, 8)
         assert math.allclose(fock.array, x)
@@ -119,7 +121,7 @@ class TestArrayAnsatz:
         assert np.allclose(fock_test.array, 1.3 * self.array1578)
 
     def test_neg(self):
-        array = np.random.random((2, 4, 5))
+        array = settings.rng.random((2, 4, 5))
         aa = ArrayAnsatz(array=array)
         minusaa = -aa
         assert isinstance(minusaa, ArrayAnsatz)
@@ -172,19 +174,19 @@ class TestArrayAnsatz:
         assert np.allclose(fock1_add_fock2.array[1], self.array2578[1] - self.array2578[1])
 
     def test_to_from_dict(self):
-        array1 = math.astensor(np.random.random((2, 5, 5, 1)))
+        array1 = math.astensor(settings.rng.random((2, 5, 5, 1)))
         fock1 = ArrayAnsatz(array1, batch_dims=1)
         assert ArrayAnsatz.from_dict(fock1.to_dict()) == fock1
 
     def test_trace(self):
-        array1 = math.astensor(np.random.random((2, 5, 5, 1, 3, 3)))
+        array1 = math.astensor(settings.rng.random((2, 5, 5, 1, 3, 3)))
         fock1 = ArrayAnsatz(array1, batch_dims=1)
         fock2 = fock1.trace([0, 3], [1, 4])
         assert fock2.array.shape == (2, 1)
         assert np.allclose(fock2.array, np.einsum("abbdee->ad", array1))
 
     def test_truediv_by_scalar(self):
-        array = np.random.random((2, 4, 5))
+        array = settings.rng.random((2, 4, 5))
         aa1 = ArrayAnsatz(array=array)
         aa1_scalar = aa1 / 6
         assert isinstance(aa1_scalar, ArrayAnsatz)
@@ -194,8 +196,8 @@ class TestArrayAnsatz:
     @patch("mrmustard.physics.ansatz.array_ansatz.display")
     def test_ipython_repr(self, mock_display, shape):
         """Test the IPython repr function."""
-        rep = ArrayAnsatz(np.random.random(shape), batch_dims=1)
-        rep._ipython_display_()
+        rep_np = ArrayAnsatz(settings.rng.random(shape), batch_dims=1)
+        rep_np._ipython_display_()
         [hbox] = mock_display.call_args.args
         assert isinstance(hbox, HBox)
 
@@ -217,21 +219,21 @@ class TestArrayAnsatz:
     @patch("mrmustard.physics.ansatz.array_ansatz.display")
     def test_ipython_repr_expects_batch_1(self, mock_display):
         """Test the IPython repr function does nothing with real batch."""
-        rep = ArrayAnsatz(np.random.random((2, 8)), batch_dims=1)
+        rep = ArrayAnsatz(settings.rng.random((2, 8)), batch_dims=1)
         rep._ipython_display_()
         mock_display.assert_not_called()
 
     @patch("mrmustard.physics.ansatz.array_ansatz.display")
     def test_ipython_repr_expects_3_dims_or_less(self, mock_display):
         """Test the IPython repr function does nothing with 4+ dims."""
-        rep = ArrayAnsatz(np.random.random((1, 4, 4, 4)), batch_dims=1)
+        rep = ArrayAnsatz(settings.rng.random((1, 4, 4, 4)), batch_dims=1)
         rep._ipython_display_()
         mock_display.assert_not_called()
 
     @patch("mrmustard.widgets.IN_INTERACTIVE_SHELL", True)
     def test_ipython_repr_interactive(self, capsys):
         """Test the IPython repr function."""
-        rep = ArrayAnsatz(np.random.random((1, 8)), batch_dims=1)
+        rep = ArrayAnsatz(settings.rng.random((1, 8)), batch_dims=1)
         rep._ipython_display_()
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(rep)

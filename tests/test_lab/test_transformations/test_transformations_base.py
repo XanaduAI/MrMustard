@@ -14,12 +14,10 @@
 
 """Tests for the base transformation subpackage."""
 
-# pylint: disable=missing-function-docstring, expression-not-assigned
-
 import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.lab.states import Coherent, Vacuum
 from mrmustard.lab.transformations import (
@@ -69,9 +67,9 @@ class TestUnitary:
     def test_rshift(self):
         unitary1 = Dgate(0, 1) >> Dgate(1, 1)
         unitary2 = Dgate(1, 2) >> Dgate(2, 2)
-        u_component = CircuitComponent(unitary1.representation, unitary1.name)
+        u_component = CircuitComponent(unitary1.ansatz, unitary1.wires, unitary1.name)
         channel = Attenuator(1, 1)
-        ch_component = CircuitComponent(channel.representation, channel.name)
+        ch_component = CircuitComponent(channel.ansatz, channel.wires, channel.name)
 
         assert isinstance(unitary1 >> unitary2, Unitary)
         assert isinstance(unitary1 >> channel, Channel)
@@ -80,7 +78,7 @@ class TestUnitary:
 
     def test_repr(self):
         unitary1 = Dgate(0, 1)
-        u_component = CircuitComponent(unitary1.representation, unitary1.name)
+        u_component = CircuitComponent(unitary1.ansatz, unitary1.wires, unitary1.name)
         assert repr(unitary1) == "Dgate(modes=(0,), name=Dgate, repr=PolyExpAnsatz)"
         assert repr(unitary1.to_fock(5)) == "Dgate(modes=(0,), name=Dgate, repr=ArrayAnsatz)"
         assert repr(u_component) == "CircuitComponent(modes=(0,), name=Dgate, repr=PolyExpAnsatz)"
@@ -117,9 +115,8 @@ class TestUnitary:
     def test_inverse_unitary(self, batch_shape):
         r = math.broadcast_to(0.1, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
-        gate = Unitary(
-            Sgate(0, r, phi).contract(Dgate(0, r), "zip").representation
-        )  # TODO: revisit rshift
+        u = Sgate(0, r, phi).contract(Dgate(0, r + 1j * phi), "zip")
+        gate = Unitary(u.ansatz, u.wires, u.name)
         gate_inv = gate.inverse()
         gate_inv_inv = gate_inv.inverse()
         assert gate_inv_inv == gate
@@ -140,10 +137,10 @@ class TestMap:
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_init_from_bargmann(self, batch_shape):
         A, b, c = Abc_triple(4, batch_shape)
-        map = Map.from_bargmann((0,), (0,), (A, b, c), "my_map")
-        assert math.allclose(map.ansatz.A, A)
-        assert math.allclose(map.ansatz.b, b)
-        assert math.allclose(map.ansatz.c, c)
+        my_map = Map.from_bargmann((0,), (0,), (A, b, c), "my_map")
+        assert math.allclose(my_map.ansatz.A, A)
+        assert math.allclose(my_map.ansatz.b, b)
+        assert math.allclose(my_map.ansatz.c, c)
 
 
 class TestChannel:
@@ -175,10 +172,10 @@ class TestChannel:
 
     def test_rshift(self):
         unitary = Dgate(0, 1) >> Dgate(1, 1)
-        u_component = CircuitComponent(unitary.representation, unitary.name)
+        u_component = CircuitComponent(unitary.ansatz, unitary.wires, unitary.name)
         channel1 = Attenuator(1, 0.9) >> Attenuator(2, 0.9)
         channel2 = Attenuator(2, 0.9) >> Attenuator(3, 0.9)
-        ch_component = CircuitComponent(channel1.representation, channel1.name)
+        ch_component = CircuitComponent(channel1.ansatz, channel1.wires, channel1.name)
 
         assert isinstance(channel1 >> unitary, Channel)
         assert isinstance(channel1 >> channel2, Channel)
@@ -187,21 +184,21 @@ class TestChannel:
 
     def test_repr(self):
         channel1 = Attenuator(0, 0.9)
-        ch_component = CircuitComponent(channel1.representation, channel1.name)
+        ch_component = CircuitComponent(channel1.ansatz, channel1.wires, channel1.name)
 
         assert repr(channel1) == "Attenuator(modes=(0,), name=Att~, repr=PolyExpAnsatz)"
         assert repr(ch_component) == "CircuitComponent(modes=(0,), name=Att~, repr=PolyExpAnsatz)"
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_inverse_channel(self, batch_shape):
-        r = math.broadcast_to(0.1, batch_shape)
+        r = math.broadcast_to(0.1 + 0.2j, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
-        gate = Channel(
+        g = (
             Sgate(0, r, phi)
-            .contract(Dgate(0, r), "zip")
+            .contract(Dgate(0, r + 1j * phi), "zip")
             .contract(Attenuator(0, 0.5), "zip")
-            .representation
-        )  # TODO: revisit rshift
+        )
+        gate = Channel(g.ansatz, g.wires, g.name)
         should_be_identity = gate >> gate.inverse()
         assert should_be_identity.ansatz == Attenuator(0, 1.0).ansatz
 
@@ -230,17 +227,25 @@ class TestChannel:
 
         transmissivity = math.broadcast_to(0.2, batch_shape)
         X, Y = Attenuator(0, transmissivity).XY
-        expected_X = math.broadcast_to(np.sqrt(0.2), batch_shape + (2, 2)) * np.eye(2)
-        expected_Y = math.broadcast_to(0.4, batch_shape + (2, 2)) * np.eye(2)
+        expected_X = math.broadcast_to(np.sqrt(0.2), (*batch_shape, 2, 2)) * np.eye(2)
+        expected_Y = math.broadcast_to(0.4, (*batch_shape, 2, 2)) * np.eye(2)
         assert math.allclose(X, expected_X) and math.allclose(Y, expected_Y)
 
     @pytest.mark.parametrize("nmodes", [1, 2, 3])
     def test_from_XY(self, nmodes):
-        X = np.random.random((2 * nmodes, 2 * nmodes))
-        Y = np.random.random((2 * nmodes, 2 * nmodes))
+        X = settings.rng.random((2 * nmodes, 2 * nmodes))
+        Y = settings.rng.random((2 * nmodes, 2 * nmodes))
         x, y = Channel.from_XY(tuple(range(nmodes)), tuple(range(nmodes)), X, Y).XY
         assert math.allclose(x, X)
         assert math.allclose(y, Y)
+
+    @pytest.mark.parametrize("nmodes", [1, 2, 3])
+    def test_from_XY_batched(self, nmodes):
+        ch1 = Channel.random(list(range(nmodes))) + Channel.random(list(range(nmodes)))
+        X, Y = ch1.XY
+
+        ch2 = Channel.from_XY(tuple(range(nmodes)), tuple(range(nmodes)), X, Y)
+        assert ch1 == ch2
 
     def test_from_fock(self):
         # Here we test our from_fock method by a PhaseNoise example
@@ -256,5 +261,5 @@ class TestChannel:
         psi = Coherent(0, 2) >> phi
 
         assert psi.to_fock((cutoff, cutoff)) == (Coherent(0, 2) >> PhaseNoise(0, sigma)).to_fock(
-            (cutoff, cutoff)
+            (cutoff, cutoff),
         )

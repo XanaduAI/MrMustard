@@ -14,8 +14,6 @@
 
 """Tests for the ``QuadratureEigenstate`` class."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 import numpy as np
 import pytest
 
@@ -88,5 +86,5 @@ class TestQuadratureEigenstate:
     def test_wires(self):
         """Test that the wires are correct."""
         state = QuadratureEigenstate(0, 0, 0)
-        for w in state.representation.wires:
+        for w in state.wires:
             assert w.repr == ReprEnum.QUADRATURE

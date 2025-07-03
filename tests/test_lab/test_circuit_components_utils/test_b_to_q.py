@@ -14,8 +14,6 @@
 
 """Tests for BtoQ."""
 
-# pylint: disable=fixme, missing-function-docstring, pointless-statement
-
 import numpy as np
 
 from mrmustard import math, settings
@@ -75,7 +73,10 @@ class TestBtoQ:
         step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple()
 
         new_A, new_b, new_c = join_Abc_real(
-            (Ainter, binter, cinter), (step2A, step2b, step2c), [0, 1], [2, 3]
+            (Ainter, binter, cinter),
+            (step2A, step2b, step2c),
+            [0, 1],
+            [2, 3],
         )
 
         Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0, 1])
@@ -103,7 +104,10 @@ class TestBtoQ:
         step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple()
 
         new_A, new_b, new_c = join_Abc_real(
-            (Ainter, binter, cinter), (step2A, step2b, step2c), [0], [1]
+            (Ainter, binter, cinter),
+            (step2A, step2b, step2c),
+            [0],
+            [1],
         )
 
         Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0])
@@ -126,10 +130,11 @@ class TestBtoQ:
             )
             return c * np.exp(0.5 * A * quad**2 + b * quad)
 
-        x = np.random.random()
-        y = np.random.random()
-        axis_angle = np.random.random()
-        quad = np.random.random()
+        rng = settings.rng
+        x = rng.random()
+        y = rng.random()
+        axis_angle = rng.random()
+        quad = rng.random()
 
         state = Coherent(0, x + 1j * y)
         wavefunction = (state >> BtoQ((0,), axis_angle)).ansatz

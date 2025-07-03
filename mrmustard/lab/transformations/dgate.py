@@ -17,18 +17,18 @@ The class representing a displacement gate.
 """
 
 from __future__ import annotations
-from typing import Sequence
+
+from collections.abc import Sequence
 from dataclasses import replace
 
-from mrmustard.utils.typing import ComplexTensor
 from mrmustard import math
-from ...physics.wires import Wires, ReprEnum
-from .base import Unitary
-from ...physics.representations import Representation
-from ...physics.ansatz import PolyExpAnsatz, ArrayAnsatz
-from ...physics import triples, fock_utils
-from ..utils import make_parameter
+from mrmustard.utils.typing import ComplexTensor
 
+from ...physics import triples
+from ...physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from ...physics.wires import ReprEnum, Wires
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["Dgate"]
 
@@ -44,7 +44,8 @@ class Dgate(Unitary):
         alpha_trainable: Whether ``alpha`` is a trainable variable.
         alpha_bounds: The bounds for the absolute value of ``alpha``.
 
-    .. code-block ::
+    .. code-block::
+
         >>> from mrmustard.lab import Dgate
 
         >>> unitary = Dgate(mode=1, alpha=0.1+0.2j)
@@ -83,17 +84,15 @@ class Dgate(Unitary):
     ) -> None:
         super().__init__(name="Dgate")
         self.parameters.add_parameter(
-            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128)
+            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128),
         )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_gate_Abc, alpha=self.parameters.alpha
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.displacement_gate_Abc,
+            alpha=self.parameters.alpha,
+        )
+        self._wires = Wires(set(), set(), {mode}, {mode})
 
-    def fock_array(self, shape: int | Sequence[int] = None) -> ComplexTensor:
+    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
         Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
 
@@ -111,24 +110,19 @@ class Dgate(Unitary):
         shape = tuple(shape)
         if len(shape) != len(auto_shape):
             raise ValueError(
-                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}"
+                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}",
             )
         if self.ansatz.batch_shape:
             alpha = math.astensor(self.parameters.alpha.value)
             alpha = math.reshape(alpha, (-1,))
-            ret = math.astensor(
-                [fock_utils.displacement(alpha_i, shape=shape) for alpha_i in alpha]
-            )
+            ret = math.astensor([math.displacement(alpha_i, shape=shape) for alpha_i in alpha])
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
         else:
-            ret = fock_utils.displacement(
-                self.parameters.alpha.value,
-                shape=shape,
-            )
+            ret = math.displacement(self.parameters.alpha.value, shape=shape)
         return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
-        batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
+        batch_dims = self.ansatz.batch_dims - self.ansatz._lin_sup
         fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
         fock._original_abc_data = self.ansatz.triple
         ret = self.__class__(self.modes[0], **self.parameters.to_dict())
@@ -136,5 +130,6 @@ class Dgate(Unitary):
             quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
             classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
         )
-        ret._representation = Representation(fock, wires)
+        ret._ansatz = fock
+        ret._wires = wires
         return ret

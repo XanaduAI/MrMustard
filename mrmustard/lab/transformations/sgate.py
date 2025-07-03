@@ -17,12 +17,15 @@ The class representing a squeezing gate.
 """
 
 from __future__ import annotations
-from typing import Sequence
 
-from .base import Unitary
-from ...physics.ansatz import PolyExpAnsatz
+from collections.abc import Sequence
+
+from mrmustard.physics.wires import Wires
+
 from ...physics import triples
+from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["Sgate"]
 
@@ -41,7 +44,7 @@ class Sgate(Unitary):
         r_bounds: The bounds for ``r``.
         phi_bounds: The bounds for ``phi``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import Sgate
 
@@ -87,14 +90,20 @@ class Sgate(Unitary):
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="Sgate")
-        self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.squeezing_gate_Abc,
-                r=self.parameters.r,
-                phi=self.parameters.phi,
-            ),
-        ).representation
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
+        )
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
+        )
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.squeezing_gate_Abc,
+            r=self.parameters.r,
+            phi=self.parameters.phi,
+        )
+        self._wires = Wires(
+            modes_in_bra=set(),
+            modes_out_bra=set(),
+            modes_in_ket={mode},
+            modes_out_ket={mode},
+        )

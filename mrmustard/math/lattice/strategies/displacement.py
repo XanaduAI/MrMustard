@@ -17,17 +17,17 @@
 import numpy as np
 from numba import jit
 
-__all__ = ["displacement", "laguerre", "grad_displacement", "jacobian_displacement"]
+__all__ = ["displacement", "grad_displacement", "jacobian_displacement", "laguerre"]
 
 
 @jit(nopython=True)
-def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
+def displacement(cutoffs, alpha=np.complex128, dtype=np.complex128):  # pragma: no cover
     r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
     Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
 
     Args:
-        alpha (complex): displacement magnitude and angle
         cutoffs (tuple[int, int]): Fock ladder output-input cutoffs
+        alpha (complex): displacement magnitude and angle
         dtype (data type): Specifies the data type used for the calculation
 
     Returns:
@@ -57,7 +57,7 @@ def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
                 + n_minus_m * np.log(r)
                 - (r**2.0) / 2.0
                 + conj * 1j * phi * n_minus_m
-                + logL[m]
+                + logL[m],
             )
             if n < M:
                 D[m, n] = (-1.0) ** n_minus_m * np.conj(D[n, m])
@@ -76,7 +76,7 @@ def laguerre(x, N, alpha, dtype=np.complex128):  # pragma: no cover
     L = np.zeros(N, dtype=dtype)
     L[0] = 1.0
     if N > 1:
-        for m in range(0, N - 1):
+        for m in range(N - 1):
             L[m + 1] = ((2 * m + 1 + alpha - x) * L[m] - (m + alpha) * L[m - 1]) / (m + 1)
     return L
 

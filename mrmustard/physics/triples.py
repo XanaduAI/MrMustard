@@ -16,15 +16,17 @@
 This module contains the ``(A, b, c)`` triples for the Fock-Bargmann representation of
 various states and transformations.
 """
+
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector, ComplexTensor, RealMatrix
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector, RealMatrix
+
 from .bargmann_utils import symplectic2Au
 
 #  ~~~~~~~~~
@@ -43,14 +45,14 @@ def _vacuum_A_matrix(n_modes: int) -> ComplexMatrix:
     r"""
     The A matrix of the vacuum state.
     """
-    return math.zeros((n_modes, n_modes), math.complex128)
+    return math.zeros((n_modes, n_modes), dtype=math.complex128)
 
 
 def _vacuum_B_vector(n_modes: int) -> ComplexVector:
     r"""
     The B vector of the vacuum state.
     """
-    return math.zeros((n_modes,), math.complex128)
+    return math.zeros((n_modes,), dtype=math.complex128)
 
 
 #  ~~~~~~~~~~~
@@ -68,6 +70,7 @@ def vacuum_state_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, Comple
     Returns:
         The ``(A, b, c)`` triple of the vacuum states.
     """
+
     A = _vacuum_A_matrix(n_modes)
     b = _vacuum_B_vector(n_modes)
     c = math.astensor(1.0 + 0.0j)
@@ -90,8 +93,8 @@ def bargmann_eigenstate_Abc(
     alpha = math.astensor(alpha, dtype=math.complex128)
     batch_shape = alpha.shape
 
-    A = math.broadcast_to(_vacuum_A_matrix(1), batch_shape + (1, 1))
-    b = math.reshape(alpha, batch_shape + (1,))
+    A = math.broadcast_to(_vacuum_A_matrix(1), (*batch_shape, 1, 1))
+    b = math.reshape(alpha, (*batch_shape, 1))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
@@ -113,15 +116,16 @@ def coherent_state_Abc(
 
     batch_shape = alpha.shape
 
-    A = math.broadcast_to(_vacuum_A_matrix(1), batch_shape + (1, 1))
-    b = math.reshape(alpha, batch_shape + (1,))
+    A = math.broadcast_to(_vacuum_A_matrix(1), (*batch_shape, 1, 1))
+    b = math.reshape(alpha, (*batch_shape, 1))
     c = math.cast(math.exp(-0.5 * (math.abs(alpha) ** 2)), math.complex128)
 
     return A, b, c
 
 
 def squeezed_vacuum_state_Abc(
-    r: float | Sequence[float], phi: float | Sequence[float] = 0
+    r: float | Sequence[float],
+    phi: float | Sequence[float] = 0,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a squeezed vacuum state.
@@ -134,12 +138,13 @@ def squeezed_vacuum_state_Abc(
         The ``(A, b, c)`` triple of a squeezed vacuum state.
     """
     r, phi = math.broadcast_arrays(
-        math.astensor(r, dtype=math.complex128), math.astensor(phi, dtype=math.complex128)
+        math.astensor(r, dtype=math.complex128),
+        math.astensor(phi, dtype=math.complex128),
     )
     batch_shape = r.shape
 
-    A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
-    b = math.broadcast_to(_vacuum_B_vector(1), batch_shape + (1,))
+    A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), (*batch_shape, 1, 1))
+    b = math.broadcast_to(_vacuum_B_vector(1), (*batch_shape, 1))
     c = 1 / math.sqrt(math.cosh(r))
 
     return A, b, c
@@ -171,21 +176,22 @@ def displaced_squeezed_vacuum_state_Abc(
     )
     batch_shape = x.shape
 
-    A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), batch_shape + (1, 1))
+    A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), (*batch_shape, 1, 1))
     b = math.reshape(
         (x + 1j * y) + (x - 1j * y) * math.sinh(r) / math.cosh(r) * math.exp(1j * phi),
-        batch_shape + (1,),
+        (*batch_shape, 1),
     )
     c = math.exp(
         -0.5 * (x**2 + y**2)
-        - 0.5 * (x - 1j * y) ** 2 * math.sinh(r) / math.cosh(r) * math.exp(1j * phi)
+        - 0.5 * (x - 1j * y) ** 2 * math.sinh(r) / math.cosh(r) * math.exp(1j * phi),
     ) / math.sqrt(math.cosh(r))
 
     return A, b, c
 
 
 def two_mode_squeezed_vacuum_state_Abc(
-    r: float | Sequence[float], phi: float | Sequence[float] = 0
+    r: float | Sequence[float],
+    phi: float | Sequence[float] = 0,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a two mode squeezed vacuum state.
@@ -208,7 +214,7 @@ def two_mode_squeezed_vacuum_state_Abc(
         [math.stack([O_matrix, tanhr], batch_dim), math.stack([tanhr, O_matrix], batch_dim)],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), (*batch_shape, 2))
     c = math.cast(1 / math.cosh(r), math.complex128)
 
     return A, b, c
@@ -230,7 +236,7 @@ def gket_state_Abc(symplectic: RealMatrix):
     Au = symplectic2Au(symplectic)
 
     A = Au[..., :m, :m]
-    b = math.zeros(batch_shape + (m,), dtype=A.dtype)
+    b = math.zeros((*batch_shape, m), dtype=A.dtype)
     c = (
         (-1) ** m
         * math.det(Au[..., m:, m:] @ math.conj(Au[..., m:, m:]) - math.eye_like(Au[..., m:, m:]))
@@ -252,13 +258,13 @@ def gdm_state_Abc(betas: ComplexVector, symplectic: RealMatrix):
     """
     batch_shape = symplectic.shape[:-2]
     m = len(betas)
-    betas = math.broadcast_to(betas, batch_shape + (m,), dtype=math.complex128)
+    betas = math.broadcast_to(betas, (*batch_shape, m), dtype=math.complex128)
     Au = symplectic2Au(symplectic)
     A_udagger_u = math.block(
         [
             [math.conj(Au), math.zeros((2 * m, 2 * m), dtype="complex128")],
             [math.zeros((2 * m, 2 * m), dtype="complex128"), Au],
-        ]
+        ],
     )
 
     D = math.diag(math.exp(-betas))
@@ -266,17 +272,20 @@ def gdm_state_Abc(betas: ComplexVector, symplectic: RealMatrix):
         [
             [math.zeros((m, m), dtype=math.complex128), D],
             [D, math.zeros((m, m), dtype=math.complex128)],
-        ]
+        ],
     )
-    c_fd = math.prod((1 - math.exp(-betas)))
-    t_fd = (A_fd, math.zeros(batch_shape + (2 * m,), dtype=A_fd.dtype), c_fd)
+    c_fd = math.prod(1 - math.exp(-betas))
+    t_fd = (A_fd, math.zeros((*batch_shape, 2 * m), dtype=A_fd.dtype), c_fd)
     c_u = (
         (-1) ** m
         * math.det(Au[..., m:, m:] @ math.conj(Au[..., m:, m:]) - math.eye_like(Au[..., m:, m:]))
     ) ** (0.5)
-    t_u = (A_udagger_u, math.zeros(batch_shape + (4 * m,)), c_u)
+    t_u = (A_udagger_u, math.zeros((*batch_shape, 4 * m)), c_u)
     return complex_gaussian_integral_2(
-        t_fd, t_u, list(range(2 * m)), list(range(m, 2 * m)) + list(range(3 * m, 4 * m))
+        t_fd,
+        t_u,
+        list(range(2 * m)),
+        list(range(m, 2 * m)) + list(range(3 * m, 4 * m)),
     )
 
 
@@ -300,7 +309,10 @@ def sauron_state_Abc(n: int, epsilon: float) -> tuple[ComplexMatrix, ComplexVect
 
     # normalization
     probs = complex_gaussian_integral_2(
-        (np.conj(As), np.conj(bs), np.conj(cs)), (As, bs, cs), [0], [0]
+        (np.conj(As), np.conj(bs), np.conj(cs)),
+        (As, bs, cs),
+        [0],
+        [0],
     )[2]
     prob = np.sum(probs)
     cs /= np.sqrt(prob)
@@ -309,7 +321,8 @@ def sauron_state_Abc(n: int, epsilon: float) -> tuple[ComplexMatrix, ComplexVect
 
 
 def quadrature_eigenstates_Abc(
-    x: float | Sequence[float], phi: float | Sequence[float]
+    x: float | Sequence[float],
+    phi: float | Sequence[float],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a quadrature eigenstate.
@@ -322,13 +335,14 @@ def quadrature_eigenstates_Abc(
         The ``(A, b, c)`` triple of the squeezed vacuum state.
     """
     x, phi = math.broadcast_arrays(
-        math.astensor(x, dtype=math.complex128), math.astensor(phi, dtype=math.complex128)
+        math.astensor(x, dtype=math.complex128),
+        math.astensor(phi, dtype=math.complex128),
     )
     batch_shape = x.shape
 
     hbar = settings.HBAR
-    A = math.reshape(-math.exp(1j * 2 * phi), batch_shape + (1, 1))
-    b = math.reshape(x * math.exp(1j * phi) * math.sqrt(2 / hbar), batch_shape + (1,))
+    A = math.reshape(-math.exp(1j * 2 * phi), (*batch_shape, 1, 1))
+    b = math.reshape(x * math.exp(1j * phi) * math.sqrt(2 / hbar), (*batch_shape, 1))
     c = math.cast(1 / (np.pi) ** (1 / 4) * math.exp(-(x**2) / (2 * hbar)), math.complex128)
 
     return A, b, c
@@ -364,7 +378,7 @@ def thermal_state_Abc(
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), (*batch_shape, 2))
     c = math.cast(1 / (nbar + 1), math.complex128)
 
     return A, b, c
@@ -400,7 +414,7 @@ def rotation_gate_Abc(
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), (*batch_shape, 2))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
@@ -424,7 +438,7 @@ def displacement_gate_Abc(
     batch_shape = alpha.shape
     batch_dim = len(batch_shape)
 
-    A = math.broadcast_to(_X_matrix_for_unitary(1), batch_shape + (2, 2))
+    A = math.broadcast_to(_X_matrix_for_unitary(1), (*batch_shape, 2, 2))
     b = math.stack([alpha, -math.conj(alpha)], batch_dim)
     c = math.cast(math.exp(-(math.abs(alpha) ** 2) / 2), math.complex128)
 
@@ -432,7 +446,8 @@ def displacement_gate_Abc(
 
 
 def squeezing_gate_Abc(
-    r: float | Sequence[float], phi: float | Sequence[float] = 0
+    r: float | Sequence[float],
+    phi: float | Sequence[float] = 0,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a squeezing gate.
@@ -445,7 +460,8 @@ def squeezing_gate_Abc(
         The ``(A, b, c)`` triple of the squeezing gate.
     """
     r, phi = math.broadcast_arrays(
-        math.astensor(r, dtype=math.complex128), math.astensor(phi, dtype=math.complex128)
+        math.astensor(r, dtype=math.complex128),
+        math.astensor(phi, dtype=math.complex128),
     )
     batch_shape = r.shape
     batch_dim = len(batch_shape)
@@ -460,14 +476,15 @@ def squeezing_gate_Abc(
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), (*batch_shape, 2))
     c = math.cast(1 / math.sqrt(math.cosh(r)), math.complex128)
 
     return A, b, c
 
 
 def beamsplitter_gate_Abc(
-    theta: float | Sequence[float], phi: float | Sequence[float] = 0
+    theta: float | Sequence[float],
+    phi: float | Sequence[float] = 0,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of a two-mode beamsplitter gate.
@@ -480,12 +497,13 @@ def beamsplitter_gate_Abc(
         The ``(A, b, c)`` triple of the beamsplitter gate.
     """
     theta, phi = math.broadcast_arrays(
-        math.astensor(theta, dtype=math.complex128), math.astensor(phi, dtype=math.complex128)
+        math.astensor(theta, dtype=math.complex128),
+        math.astensor(phi, dtype=math.complex128),
     )
     batch_shape = theta.shape
     batch_dim = len(batch_shape)
 
-    O_matrix = math.zeros(batch_shape + (2, 2), math.complex128)
+    O_matrix = math.zeros((*batch_shape, 2, 2), math.complex128)
     costheta = math.cos(theta)
     sintheta = math.sin(theta)
 
@@ -497,14 +515,15 @@ def beamsplitter_gate_Abc(
         batch_dim,
     )
     A = math.block([[O_matrix, V], [math.einsum("...ij->...ji", V), O_matrix]])
-    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), (*batch_shape, 4))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
 
 
 def twomode_squeezing_gate_Abc(
-    r: float | Sequence[float], phi: float | Sequence[float] = 0
+    r: float | Sequence[float],
+    phi: float | Sequence[float] = 0,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of a two-mode squeezing gate.
@@ -517,7 +536,8 @@ def twomode_squeezing_gate_Abc(
         The ``(A, b, c)`` triple of the two mode squeezing gate.
     """
     r, phi = math.broadcast_arrays(
-        math.astensor(r, dtype=math.complex128), math.astensor(phi, dtype=math.complex128)
+        math.astensor(r, dtype=math.complex128),
+        math.astensor(phi, dtype=math.complex128),
     )
     batch_shape = r.shape
     batch_dim = len(batch_shape)
@@ -542,7 +562,7 @@ def twomode_squeezing_gate_Abc(
         batch_dim,
     )
     A = math.block([[A_block1, A_block3], [A_block3, A_block2]])
-    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), (*batch_shape, 4))
     c = 1 / math.cosh(r)
 
     return A, b, c
@@ -608,7 +628,7 @@ def attenuator_Abc(
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), (*batch_shape, 4))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
@@ -632,7 +652,9 @@ def amplifier_Abc(g: float | Sequence[float]) -> tuple[ComplexMatrix, ComplexVec
     batch_dim = len(batch_shape)
 
     math.error_if(
-        g, math.any(math.real(g) < 1), "Found amplifier with gain ``g`` smaller than `1`."
+        g,
+        math.any(math.real(g) < 1),
+        "Found amplifier with gain ``g`` smaller than `1`.",
     )
 
     O_matrix = math.zeros(batch_shape, math.complex128)
@@ -647,7 +669,7 @@ def amplifier_Abc(g: float | Sequence[float]) -> tuple[ComplexMatrix, ComplexVec
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(4), batch_shape + (4,))
+    b = math.broadcast_to(_vacuum_B_vector(4), (*batch_shape, 4))
     c = 1 / g
 
     return A, b, c
@@ -673,9 +695,10 @@ def fock_damping_Abc(
     B_n = math.exp(-beta)
 
     A = math.stack(
-        [math.stack([O_matrix, B_n], batch_dim), math.stack([B_n, O_matrix], batch_dim)], batch_dim
+        [math.stack([O_matrix, B_n], batch_dim), math.stack([B_n, O_matrix], batch_dim)],
+        batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(2), batch_shape + (2,))
+    b = math.broadcast_to(_vacuum_B_vector(2), (*batch_shape, 2))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
@@ -697,7 +720,7 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[ComplexMatrix, ComplexVect
     xi = math.eye(2 * m, dtype=math.complex128) + Y / settings.HBAR
     xi_inv = math.inv(xi)
     xi_inv_in_blocks = math.block(
-        [[math.eye(2 * m) - xi_inv, xi_inv], [xi_inv, math.eye(2 * m) - xi_inv]]
+        [[math.eye(2 * m) - xi_inv, xi_inv], [xi_inv, math.eye(2 * m) - xi_inv]],
     )
     R = (
         1
@@ -724,19 +747,20 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[ComplexMatrix, ComplexVect
                     math.eye(m, dtype=math.complex128),
                     1j * math.eye(m, dtype=math.complex128),
                 ],
-            ]
+            ],
         )
     )
 
     A = math.Xmat(2 * m) @ R @ xi_inv_in_blocks @ math.conj(R).T
-    b = math.zeros(batch_shape + (4 * m,))
+    b = math.zeros((*batch_shape, 4 * m))
     c = 1 / math.sqrt(math.det(xi))
 
     return A, b, c
 
 
 def bargmann_to_quadrature_Abc(
-    n_modes: int, phi: float | Sequence[float]
+    n_modes: int,
+    phi: float | Sequence[float],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle` between bargmann representation with ABC Ansatz form and quadrature representation with ABC Ansatz.
@@ -774,7 +798,7 @@ def bargmann_to_quadrature_Abc(
         ),
         Id,
     )
-    b = math.broadcast_to(_vacuum_B_vector(2 * n_modes), batch_shape + (2 * n_modes,))
+    b = math.broadcast_to(_vacuum_B_vector(2 * n_modes), (*batch_shape, 2 * n_modes))
     c = math.ones(batch_shape, math.complex128) / (np.pi * hbar) ** (0.25 * n_modes)
 
     return A, b, c
@@ -786,12 +810,15 @@ def bargmann_to_quadrature_Abc(
 
 
 def displacement_map_s_parametrized_Abc(
-    s: float | Sequence[float], n_modes: int
+    s: float | Sequence[float],
+    n_modes: int,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map.
+
     :math:
         D_s(\vec{\gamma}^*, \vec{\gamma}) = e^{\frac{s}{2}|\vec{\gamma}|^2} D(\vec{\gamma}^*, \vec{\gamma}) = e^{\frac{s}{2}|\vec{\gamma}|^2} e^{\frac{1}{2}|\vec{z}|^2} e^{\vec{z}^*\vec{\gamma} - \vec{z} \vec{\gamma}^*}.
+
     The indices of the final triple correspond to the variables :math:`(\gamma_1^*, \gamma_2^*, ..., z_1, z_2, ..., \gamma_1, \gamma_2, ..., z_1^*, z_2^*, ...)` of the Bargmann function of the s-parametrized displacement map, and correspond to ``out_bra, in_bra, out_ket, in_ket`` wires.
 
     Args:
@@ -806,16 +833,16 @@ def displacement_map_s_parametrized_Abc(
 
     Zmat = math.broadcast_to(
         -math.Zmat(num_modes=n_modes),
-        batch_shape + (2 * n_modes, 2 * n_modes),
+        (*batch_shape, 2 * n_modes, 2 * n_modes),
         dtype=math.complex128,
     )
     Xmat = math.broadcast_to(
         math.Xmat(num_modes=n_modes),
-        batch_shape + (2 * n_modes, 2 * n_modes),
+        (*batch_shape, 2 * n_modes, 2 * n_modes),
         dtype=math.complex128,
     )
     A = math.block(
-        [[(s[..., None, None] - 1) / 2 * math.Xmat(num_modes=n_modes), Zmat], [Zmat, Xmat]]
+        [[(s[..., None, None] - 1) / 2 * math.Xmat(num_modes=n_modes), Zmat], [Zmat, Xmat]],
     )
     order_list = math.arange(4 * n_modes)  # [0,3,1,2]
     order_list = list(
@@ -828,18 +855,19 @@ def displacement_map_s_parametrized_Abc(
                 axis=0,
             ),
             math.int32,
-        )
+        ),
     )
 
     A = A[..., order_list, :][..., :, order_list]
-    b = math.broadcast_to(_vacuum_B_vector(4 * n_modes), batch_shape + (4 * n_modes,))
+    b = math.broadcast_to(_vacuum_B_vector(4 * n_modes), (*batch_shape, 4 * n_modes))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
 
 
 def bargmann_to_wigner_Abc(
-    s: float, n_modes: int
+    s: float,
+    n_modes: int,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The Abc triple of the Bargmann to Wigner/Husimi transformation.
@@ -857,7 +885,7 @@ def bargmann_to_wigner_Abc(
                 [-In, On, On, (s + 1) / 2 * In],
                 [In, On, On, -In],
                 [On, (s + 1) / 2 * In, -In, On],
-            ]
+            ],
         )
     )
     b = math.zeros(4 * n_modes, dtype=math.complex128)
@@ -900,14 +928,16 @@ def attenuator_kraus_Abc(
         ],
         batch_dim,
     )
-    b = math.broadcast_to(_vacuum_B_vector(3), batch_shape + (3,))
+    b = math.broadcast_to(_vacuum_B_vector(3), (*batch_shape, 3))
     c = math.ones(batch_shape, math.complex128)
 
     return A, b, c
 
 
 def XY_to_channel_Abc(
-    X: RealMatrix, Y: RealMatrix, d: ComplexVector | None = None
+    X: RealMatrix,
+    Y: RealMatrix,
+    d: ComplexVector | None = None,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The method to compute the A matrix of a channel based on its X, Y, and d.
@@ -922,14 +952,17 @@ def XY_to_channel_Abc(
 
     if X.shape != Y.shape:
         raise ValueError(
-            "The dimension of X and Y matrices are not the same."
-            f"X.shape = {X.shape}, Y.shape = {Y.shape}"
+            f"The dimension of X and Y matrices are not the same.X.shape = {X.shape}, Y.shape = {Y.shape}",
         )
-
-    xi = 1 / 2 * math.eye(2 * m, dtype=math.complex128) + 1 / 2 * X @ X.T + Y / settings.HBAR
+    batch_shape = X.shape[:-2]
+    Im = math.broadcast_to(math.eye(2 * m, dtype=math.complex128), (*batch_shape, 2 * m, 2 * m))
+    im = math.broadcast_to(math.eye(m, dtype=math.complex128), (*batch_shape, m, m))
+    Xm = math.broadcast_to(math.Xmat(2 * m), (*batch_shape, 4 * m, 4 * m))
+    X_transpose = math.einsum("...ij->...ji", X)
+    xi = 1 / 2 * Im + 1 / 2 * X @ X_transpose + Y / settings.HBAR
     xi_inv = math.inv(xi)
     xi_inv_in_blocks = math.block(
-        [[math.eye(2 * m) - xi_inv, xi_inv @ X], [X.T @ xi_inv, math.eye(2 * m) - X.T @ xi_inv @ X]]
+        [[Im - xi_inv, xi_inv @ X], [X_transpose @ xi_inv, Im - X_transpose @ xi_inv @ X]],
     )
     R = (
         1
@@ -937,32 +970,35 @@ def XY_to_channel_Abc(
         * math.block(
             [
                 [
-                    math.eye(m, dtype=math.complex128),
-                    1j * math.eye(m, dtype=math.complex128),
-                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    im,
+                    1j * im,
+                    math.zeros((*batch_shape, m, 2 * m), dtype=math.complex128),
                 ],
                 [
-                    math.zeros((m, 2 * m), dtype=math.complex128),
-                    math.eye(m, dtype=math.complex128),
-                    -1j * math.eye(m, dtype=math.complex128),
+                    math.zeros((*batch_shape, m, 2 * m), dtype=math.complex128),
+                    im,
+                    -1j * im,
                 ],
                 [
-                    math.eye(m, dtype=math.complex128),
-                    -1j * math.eye(m, dtype=math.complex128),
-                    math.zeros((m, 2 * m), dtype=math.complex128),
+                    im,
+                    -1j * im,
+                    math.zeros((*batch_shape, m, 2 * m), dtype=math.complex128),
                 ],
                 [
-                    math.zeros((m, 2 * m), dtype=math.complex128),
-                    math.eye(m, dtype=math.complex128),
-                    1j * math.eye(m, dtype=math.complex128),
+                    math.zeros((*batch_shape, m, 2 * m), dtype=math.complex128),
+                    im,
+                    1j * im,
                 ],
-            ]
+            ],
         )
     )
-
-    A = math.Xmat(2 * m) @ R @ xi_inv_in_blocks @ math.conj(R).T
-    temp = math.block([[(xi_inv @ d).reshape(2 * m, 1)], [(-X.T @ xi_inv @ d).reshape((2 * m, 1))]])
-    b = 1 / math.sqrt(complex(settings.HBAR)) * math.conj(R) @ temp
-    c = math.exp(-0.5 / settings.HBAR * d @ xi_inv @ d) / math.sqrt(math.det(xi))
+    R_transpose = math.einsum("...ij->...ji", R)
+    A = Xm @ R @ xi_inv_in_blocks @ math.conj(R_transpose)
+    xi_inv_d = math.einsum("...ij,...j->...i", xi_inv, d)
+    x_xi_inv_d = math.einsum("...ij,...jk,...k->...i", X_transpose, xi_inv, d)
+    temp = math.concat([xi_inv_d, x_xi_inv_d], -1)
+    b = 1 / math.sqrt(complex(settings.HBAR)) * math.einsum("...ij,...j->...i", math.conj(R), temp)
+    sandwiched_xi_inv = math.einsum("...i,...ij,...j->...", d, xi_inv, d)
+    c = math.exp(-0.5 / settings.HBAR * sandwiched_xi_inv) / math.sqrt(math.det(xi))
 
     return A, b, c

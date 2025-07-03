@@ -15,7 +15,7 @@
 
 """neighbours functions"""
 
-from typing import Iterator
+from collections.abc import Iterator
 
 from numba import njit
 from numba.cpython.unsafe.tuple import tuple_setitem
@@ -28,7 +28,7 @@ from numba.cpython.unsafe.tuple import tuple_setitem
 @njit
 def all_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"""yields the indices of all the neighbours of the given index."""
-    for j in range(len(pivot)):  # pylint: disable=consider-using-enumerate
+    for j in range(len(pivot)):
         yield j, tuple_setitem(pivot, j, pivot[j] - 1)
         yield j, tuple_setitem(pivot, j, pivot[j] + 1)
 
@@ -41,7 +41,7 @@ def all_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]
 @njit
 def lower_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"""yields the indices of the lower neighbours of the given index."""
-    for j in range(len(pivot)):  # pylint: disable=consider-using-enumerate
+    for j in range(len(pivot)):
         yield j, tuple_setitem(pivot, j, pivot[j] - 1)
 
 
@@ -64,7 +64,8 @@ def upper_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ..
 
 @njit
 def bitstring_neighbors(
-    pivot: tuple[int, ...], bitstring: tuple[int, ...]
+    pivot: tuple[int, ...],
+    bitstring: tuple[int, ...],
 ) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"yields the indices of the bitstring neighbours of the given index"
     for i, b in enumerate(bitstring):

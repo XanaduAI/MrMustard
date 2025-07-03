@@ -17,12 +17,16 @@ The class representing a Bargmann eigenstate.
 """
 
 from __future__ import annotations
-from typing import Sequence
+
+from collections.abc import Sequence
+
 from mrmustard import math
-from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
-from .ket import Ket
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
+
 from ..utils import make_parameter
+from .ket import Ket
 
 __all__ = ["BargmannEigenstate"]
 
@@ -66,11 +70,17 @@ class BargmannEigenstate(Ket):
         super().__init__(name="BargmannEigenstate")
 
         self.parameters.add_parameter(
-            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128)
+            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128),
         )
         self._representation = self.from_ansatz(
             modes=(mode,),
             ansatz=PolyExpAnsatz.from_function(
-                fn=triples.bargmann_eigenstate_Abc, alpha=self.parameters.alpha
+                fn=triples.bargmann_eigenstate_Abc,
+                alpha=self.parameters.alpha,
             ),
-        ).representation
+        )
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.bargmann_eigenstate_Abc,
+            alpha=self.parameters.alpha,
+        )
+        self._wires = Wires(modes_out_ket={mode})

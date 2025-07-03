@@ -14,7 +14,6 @@
 
 """Tests for the fast diagonal module"""
 
-
 import numpy as np
 
 from mrmustard import math

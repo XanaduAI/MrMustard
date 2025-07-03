@@ -17,11 +17,15 @@ The class representing a two-mode squeezed vacuum state.
 """
 
 from __future__ import annotations
-from typing import Sequence
-from mrmustard.physics.ansatz import PolyExpAnsatz
+
+from collections.abc import Sequence
+
 from mrmustard.physics import triples
-from .ket import Ket
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
+
 from ..utils import make_parameter
+from .ket import Ket
 
 __all__ = ["TwoModeSqueezedVacuum"]
 
@@ -63,13 +67,15 @@ class TwoModeSqueezedVacuum(Ket):
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="TwoModeSqueezedVacuum")
-        self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
-        self._representation = self.from_ansatz(
-            modes=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.two_mode_squeezed_vacuum_state_Abc,
-                r=self.parameters.r,
-                phi=self.parameters.phi,
-            ),
-        ).representation
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
+        )
+        self.parameters.add_parameter(
+            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
+        )
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.two_mode_squeezed_vacuum_state_Abc,
+            r=self.parameters.r,
+            phi=self.parameters.phi,
+        )
+        self._wires = Wires(modes_out_ket=set(modes))

@@ -17,13 +17,16 @@ The class representing a Phase noise channel.
 """
 
 from __future__ import annotations
+
 import numpy as np
+
+from mrmustard import math
 from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
-from mrmustard.physics.representations import Representation
-from mrmustard import math
-from .base import Channel
+from mrmustard.physics.wires import Wires
+
 from ..utils import make_parameter
+from .base import Channel
 
 __all__ = ["PhaseNoise"]
 
@@ -42,6 +45,7 @@ class PhaseNoise(Channel):
         phase_stdev_bounds: The bounds for ``phase_stdev``.
 
     .. code-block::
+
         >>> from mrmustard.lab import PhaseNoise, Coherent, DM
         >>> phase_noise = PhaseNoise(0, phase_stdev=0.5)
         >>> assert isinstance(Coherent(0, 1) >> phase_noise, DM)
@@ -61,11 +65,15 @@ class PhaseNoise(Channel):
     ):
         super().__init__(name="PhaseNoise")
         self.parameters.add_parameter(
-            make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds)
+            make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds),
         )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,), modes_out=(mode,), ansatz=None
-        ).representation
+        self._ansatz = None
+        self._wires = Wires(
+            modes_in_bra={mode},
+            modes_out_bra={mode},
+            modes_in_ket={mode},
+            modes_out_ket={mode},
+        )
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -86,10 +94,11 @@ class PhaseNoise(Channel):
             phase_factors = math.exp(
                 -0.5
                 * (mode_indices[mode] - mode_indices[other.n_modes + mode]) ** 2
-                * self.parameters.phase_stdev.value**2
+                * self.parameters.phase_stdev.value**2,
             )
             array *= phase_factors
-        return CircuitComponent(
-            Representation(ArrayAnsatz(array, batch_dims=other.ansatz.batch_dims), other.wires),
+        return CircuitComponent._from_attributes(
+            ArrayAnsatz(array, batch_dims=other.ansatz.batch_dims),
+            other.wires,
             self.name,
         )

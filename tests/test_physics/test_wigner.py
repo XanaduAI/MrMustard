@@ -91,7 +91,6 @@ class TestWignerDiscretized:
     def test_cat_state(self, method, hbar):
         r"""Tests DWF for cat states"""
         with settings(DISCRETIZATION_METHOD=method, HBAR=hbar):
-
             q_vec = np.linspace(-4, 4, 100)
             p_vec = np.linspace(-1.5, 1.5, 100)
 
@@ -118,7 +117,6 @@ class TestWignerDiscretized:
             AUTOSHAPE_MIN=100,
             AUTOSHAPE_MAX=150,
         ):
-
             # centering the intervals around alpha--away from the center,
             # the values are small and unstable.
             left = (np.real(alpha) * 2**0.5 - 1) * (settings.HBAR) ** 0.5
@@ -128,7 +126,9 @@ class TestWignerDiscretized:
 
             state = Coherent(0, alpha)
             W_mm, q_mat, p_mat = wigner_discretized(
-                state.dm().fock_array(100, standard_order=True), q_vec, p_vec
+                state.dm().fock_array(100, standard_order=True),
+                q_vec,
+                p_vec,
             )
             W_th = W_coherent(q_vec, p_vec, alpha, 0)
 
@@ -165,7 +165,9 @@ class TestWignerDiscretized:
             s = 1
             state = SqueezedVacuum(0, s)
             W_mm, q_mat, p_mat = wigner_discretized(
-                state.dm().fock_array(100, standard_order=True), q_vec, p_vec
+                state.dm().fock_array(100, standard_order=True),
+                q_vec,
+                p_vec,
             )
             W_th = W_coherent(q_vec, p_vec, 0j, s)
 
@@ -179,14 +181,15 @@ class TestWignerDiscretized:
         The iterative method cannot produce a DWF that matched with the analytical one.
         """
         with settings(DISCRETIZATION_METHOD=method, AUTOSHAPE_MIN=100, AUTOSHAPE_MAX=150):
-
             q_vec = np.linspace(-0.2, 0.2, 50)
             p_vec = np.linspace(-5, 5, 50)
 
             s = 2
             state = SqueezedVacuum(0, s)
             W_mm, _, _ = wigner_discretized(
-                state.dm().fock_array(100, standard_order=True), q_vec, p_vec
+                state.dm().fock_array(100, standard_order=True),
+                q_vec,
+                p_vec,
             )
             W_th = W_coherent(q_vec, p_vec, 0j, s)
 

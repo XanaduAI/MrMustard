@@ -19,10 +19,11 @@ The class representing a number state.
 from __future__ import annotations
 
 from mrmustard.physics.ansatz import ArrayAnsatz
-from mrmustard.physics.wires import ReprEnum
 from mrmustard.physics.fock_utils import fock_state
-from .ket import Ket
+from mrmustard.physics.wires import ReprEnum, Wires
+
 from ..utils import make_parameter
+from .ket import Ket
 
 __all__ = ["Number"]
 
@@ -69,17 +70,14 @@ class Number(Ket):
         super().__init__(name="N")
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
         self.parameters.add_parameter(
-            make_parameter(False, cutoff, "cutoff", (None, None), dtype="int64")
+            make_parameter(False, cutoff, "cutoff", (None, None), dtype="int64"),
         )
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=ArrayAnsatz.from_function(
-                fock_state, n=self.parameters.n, cutoffs=self.parameters.cutoff
-            ),
-        ).representation
+
+        self._ansatz = ArrayAnsatz.from_function(fock_state, n=n, cutoffs=cutoff)
+        self._wires = Wires(modes_out_ket={mode})
         self.short_name = str(int(n))
         self.manual_shape[0] = cutoff + 1
 
-        for w in self.representation.wires.output.wires:
+        for w in self.wires.output.wires:
             w.repr = ReprEnum.FOCK
             w.repr_params_func = lambda w=w: [int(self.parameters.n.value)]

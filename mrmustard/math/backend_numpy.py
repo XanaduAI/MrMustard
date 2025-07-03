@@ -14,26 +14,23 @@
 
 """This module contains the numpy backend."""
 
-# pylint: disable = missing-function-docstring, missing-class-docstring, fixme, too-many-positional-arguments
-
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from math import lgamma as mlgamma
-from typing import Sequence, Callable
 
 import numpy as np
 import scipy as sp
-from scipy.signal import convolve2d as scipy_convolve2d
+from opt_einsum import contract
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
+from scipy.signal import convolve2d as scipy_convolve2d
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
 
 from ..utils.settings import settings
-from .autocast import Autocast
 from .backend_base import BackendBase
 from .lattice import strategies
-
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
@@ -42,8 +39,7 @@ from .lattice.strategies.compactFock.inputValidation import (
 np.set_printoptions(legacy="1.25")
 
 
-# pylint: disable=too-many-public-methods
-class BackendNumpy(BackendBase):  # pragma: no cover
+class BackendNumpy(BackendBase):
     r"""
     A numpy backend.
     """
@@ -77,22 +73,22 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.any(array)
 
     def arange(
-        self, start: int, limit: int | None = None, delta: int = 1, dtype=np.float64
+        self,
+        start: int,
+        limit: int | None = None,
+        delta: int = 1,
+        dtype=np.float64,
     ) -> np.ndarray:
         return np.arange(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: np.ndarray) -> np.ndarray:
-        if isinstance(tensor, np.ndarray):
-            return tensor
-        return np.array(tensor)
+        return np.asarray(tensor)
 
     def assign(self, tensor: np.ndarray, value: np.ndarray) -> np.ndarray:
-        tensor = value
-        return tensor
+        return value
 
     def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
-        array = np.array(array)
-        return self.cast(array, dtype=dtype or array.dtype)
+        return np.asarray(array, dtype=dtype)
 
     def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
         return np.array(array, ndmin=n, dtype=dtype)
@@ -107,14 +103,14 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return sp.linalg.block_diag(*blocks)
 
     def boolean_mask(self, tensor: np.ndarray, mask: np.ndarray) -> np.ndarray:
-        return np.array([t for i, t in enumerate(tensor) if mask[i]])
+        return np.asarray([t for i, t in enumerate(tensor) if mask[i]])
 
     def cast(self, array: np.ndarray, dtype=None) -> np.ndarray:
         if dtype is None:
             return array
         if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
             array = self.real(array)
-        return np.array(array, dtype=dtype)
+        return np.asarray(array, dtype=dtype)
 
     def clip(self, array, a_min, a_max) -> np.ndarray:
         return np.clip(array, a_min, a_max)
@@ -124,7 +120,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         try:
             return np.concatenate(values, axis)
         except ValueError:
-            return np.array(values)
+            return np.asarray(values)
 
     def conj(self, array: np.ndarray) -> np.ndarray:
         return np.conj(array)
@@ -134,7 +130,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         array: np.ndarray,
         filters: np.ndarray,
         padding: str = "VALID",
-        data_format: str | None = None,  # pylint: disable=unused-argument
+        data_format: str | None = None,
     ) -> np.ndarray:
         """Performs a 2D convolution operation similar to tf.nn.convolution.
 
@@ -159,7 +155,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             pad_h = (kernel_h - 1) // 2
             pad_w = (kernel_w - 1) // 2
             array = np.pad(
-                array[:, :, :, 0], ((0, 0), (pad_h, pad_h), (pad_w, pad_w)), mode="constant"
+                array[:, :, :, 0],
+                ((0, 0), (pad_h, pad_h), (pad_w, pad_w)),
+                mode="constant",
             )
         else:
             array = array[:, :, :, 0]
@@ -191,28 +189,23 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def det(self, matrix: np.ndarray) -> np.ndarray:
         with np.errstate(divide="ignore", invalid="ignore"):
             det = np.linalg.det(matrix)
-        return det
+        return det  # noqa: RET504
 
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
         if array.ndim in (1, 2):
             return np.diag(array, k=k)
-        else:
-            # fallback into more complex algorithm
-            original_sh = array.shape
+        # fallback into more complex algorithm
+        original_sh = array.shape
 
-            ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
-            array = array.ravel().reshape(*ravelled_sh)
+        ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
+        array = array.ravel().reshape(*ravelled_sh)
 
-            ret = []
-            for line in array:
-                ret.append(np.diag(line, k))
-
-            ret = np.array(ret)
-            inner_shape = (
-                original_sh[-1] + abs(k),
-                original_sh[-1] + abs(k),
-            )
-            return ret.reshape(original_sh[:-1] + inner_shape)
+        ret = np.asarray([np.diag(line, k) for line in array])
+        inner_shape = (
+            original_sh[-1] + abs(k),
+            original_sh[-1] + abs(k),
+        )
+        return ret.reshape(original_sh[:-1] + inner_shape)
 
     def diag_part(self, array: np.ndarray, k: int) -> np.ndarray:
         ret = np.diagonal(array, offset=k, axis1=-2, axis2=-1)
@@ -232,10 +225,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
         return array
 
-    def einsum(self, string: str, *tensors) -> np.ndarray | None:
-        if type(string) is str:
-            return np.einsum(string, *tensors)
-        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
+    def einsum(self, string: str, *tensors, optimize: bool | str) -> np.ndarray:
+        return contract(string, *tensors, optimize=optimize, backend="numpy")
 
     def exp(self, array: np.ndarray) -> np.ndarray:
         return np.exp(array)
@@ -264,11 +255,11 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def inv(self, tensor: np.ndarray) -> np.ndarray:
         return np.linalg.inv(tensor)
 
-    def is_trainable(self, tensor: np.ndarray) -> bool:  # pylint: disable=unused-argument
+    def is_trainable(self, tensor: np.ndarray) -> bool:
         return False
 
     def lgamma(self, x: np.ndarray) -> np.ndarray:
-        return np.array([mlgamma(v) for v in x])
+        return np.asarray([mlgamma(v) for v in x])
 
     def log(self, x: np.ndarray) -> np.ndarray:
         return np.log(x)
@@ -276,27 +267,26 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def make_complex(self, real: np.ndarray, imag: np.ndarray) -> np.ndarray:
         return real + 1j * imag
 
-    @Autocast()
     def matmul(self, *matrices: np.ndarray) -> np.ndarray:
         mat = matrices[0]
         for matrix in matrices[1:]:
             mat = np.matmul(mat, matrix)
         return mat
 
-    @Autocast()
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return self.matmul(a, b[..., None])[..., 0]
 
-    @Autocast()
     def maximum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.maximum(a, b)
 
-    @Autocast()
     def minimum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.minimum(a, b)
 
     def moveaxis(
-        self, array: np.ndarray, old: int | Sequence[int], new: int | Sequence[int]
+        self,
+        array: np.ndarray,
+        old: int | Sequence[int],
+        new: int | Sequence[int],
     ) -> np.ndarray:
         return np.moveaxis(array, old, new)
 
@@ -306,11 +296,11 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         bounds: tuple[float | None, float | None] | None,
         name: str,
         dtype=np.float64,
-    ):  # pylint: disable=unused-argument
+    ):
         return np.array(value, dtype=dtype)
 
-    def new_constant(self, value, name: str, dtype=np.float64):  # pylint: disable=unused-argument
-        return np.array(value, dtype=dtype)
+    def new_constant(self, value, name: str, dtype=np.float64):
+        return np.asarray(value, dtype=dtype)
 
     def norm(self, array: np.ndarray) -> np.ndarray:
         return np.linalg.norm(array)
@@ -325,20 +315,20 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.full_like(array, np.inf)
 
     def conditional(
-        self, cond: np.ndarray, true_fn: Callable, false_fn: Callable, *args
+        self,
+        cond: np.ndarray,
+        true_fn: Callable,
+        false_fn: Callable,
+        *args,
     ) -> np.ndarray:
         if cond.all():
             return true_fn(*args)
-        else:
-            return false_fn(*args)
+        return false_fn(*args)
 
-    def error_if(
-        self, array: np.ndarray, condition: np.ndarray, msg: str
-    ):  # pylint: disable=unused-argument
+    def error_if(self, array: np.ndarray, condition: np.ndarray, msg: str):
         if np.any(condition):
             raise ValueError(msg)
 
-    @Autocast()
     def outer(self, array1: np.ndarray, array2: np.ndarray) -> np.ndarray:
         return np.tensordot(array1, array2, [[], []])
 
@@ -357,7 +347,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def pinv(matrix: np.ndarray) -> np.ndarray:
         return np.linalg.pinv(matrix)
 
-    @Autocast()
     def pow(self, x: np.ndarray, y: float) -> np.ndarray:
         return np.power(x, y)
 
@@ -373,7 +362,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def reshape(self, array: np.ndarray, shape: Sequence[int]) -> np.ndarray:
         return np.reshape(array, shape)
 
-    def repeat(self, array: np.ndarray, repeats: int, axis: int = None) -> np.ndarray:
+    def repeat(self, array: np.ndarray, repeats: int, axis: int | None = None) -> np.ndarray:
         return np.repeat(array, repeats, axis=axis)
 
     def round(self, array: np.ndarray, decimals: int = 0) -> np.ndarray:
@@ -403,7 +392,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
         return np.sum(array, axis=axis)
 
-    @Autocast()
     def tensordot(self, a: np.ndarray, b: np.ndarray, axes: list[int]) -> np.ndarray:
         return np.tensordot(a, b, axes)
 
@@ -416,18 +404,20 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def transpose(self, a: np.ndarray, perm: Sequence[int] | None = None) -> np.ndarray | None:
         return np.transpose(a, axes=perm)
 
-    @Autocast()
     def update_tensor(
-        self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
+        self,
+        tensor: np.ndarray,
+        indices: np.ndarray,
+        values: np.ndarray,
     ) -> np.ndarray:
-        indices = self.atleast_nd(indices, 2)
-        for i, v in zip(indices, values):
-            tensor[tuple(i)] = v
+        tensor[indices] = values
         return tensor
 
-    @Autocast()
     def update_add_tensor(
-        self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
+        self,
+        tensor: np.ndarray,
+        indices: np.ndarray,
+        values: np.ndarray,
     ) -> np.ndarray:
         indices = self.atleast_nd(indices, 2)
         for i, v in zip(indices, values):
@@ -438,26 +428,26 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.zeros(shape, dtype=dtype)
 
     def zeros_like(self, array: np.ndarray) -> np.ndarray:
-        return np.zeros(np.array(array).shape, dtype=array.dtype)
+        return np.zeros_like(array, dtype=array.dtype)
 
     def map_fn(self, func, elements):
         # Is this done like this?
-        return np.array([func(e) for e in elements])
+        return np.asarray([func(e) for e in elements])
 
     def squeeze(self, tensor, axis=None):
         return np.squeeze(tensor, axis=axis)
 
-    def cholesky(self, input: np.ndarray):
-        return np.linalg.cholesky(input)
+    def cholesky(self, tensor: np.ndarray):
+        return np.linalg.cholesky(tensor)
 
-    def Categorical(self, probs: np.ndarray, name: str):  # pylint: disable=unused-argument
+    def Categorical(self, probs: np.ndarray, name: str):
         class Generator:
             def __init__(self, probs):
                 self._probs = probs
 
             def sample(self):
                 idx = [i for i, _ in enumerate(probs)]
-                return np.random.choice(idx, p=probs / sum(probs))
+                return np.random.choice(idx, p=probs / sum(probs))  # noqa: NPY002
 
         return Generator(probs)
 
@@ -467,10 +457,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
                 self._mean = mean
                 self._cov = cov
 
-            def sample(self, dtype=None):  # pylint: disable=unused-argument
+            def sample(self, dtype=None):
                 fn = np.random.default_rng().multivariate_normal
-                ret = fn(self._mean, self._cov)
-                return ret
+                return fn(self._mean, self._cov)
 
             def prob(self, x):
                 return multivariate_normal.pdf(x, mean=self._mean, cov=self._cov)
@@ -500,25 +489,33 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    # ~~~~~~~~~~~~~~~~~
-    # Special functions
-    # ~~~~~~~~~~~~~~~~~
-
     @staticmethod
     def DefaultEuclideanOptimizer() -> None:
         return None
 
     def hermite_renormalized_unbatched(
-        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        c: np.ndarray,
+        shape: tuple[int],
+        stable: bool = False,
+        out: np.ndarray | None = None,
     ) -> np.ndarray:
         if stable:
-            return strategies.stable_numba(tuple(shape), A, b, c)
-        return strategies.vanilla_numba(tuple(shape), A, b, c)
+            return strategies.stable_numba(tuple(shape), A, b, c, out)
+        return strategies.vanilla_numba(tuple(shape), A, b, c, out)
 
     def hermite_renormalized_batched(
-        self, A: np.ndarray, b: np.ndarray, c: np.ndarray, shape: tuple[int], stable: bool = False
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        c: np.ndarray,
+        shape: tuple[int],
+        stable: bool = False,
+        out: np.ndarray | None = None,
     ) -> np.ndarray:
-        return strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable)
+        return strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable, out)
 
     def hermite_renormalized_binomial(
         self,
@@ -568,7 +565,11 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return A, B
 
     def hermite_renormalized_diagonal(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
@@ -577,7 +578,11 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -600,14 +605,22 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return poly0
 
     def hermite_renormalized_diagonal_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB_batch(
-        self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: tuple[int]
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        cutoffs: tuple[int],
     ) -> np.ndarray:
         r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
 
@@ -634,18 +647,30 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         stable: bool = False,
     ) -> np.ndarray:
         return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
-            (-2, -1) + tuple(range(len(pnr_cutoffs)))
+            (-2, -1, *tuple(range(len(pnr_cutoffs)))),
         )
 
-    @staticmethod
-    def getitem(tensor, *, key):
-        value = np.array(tensor)[key]
-        return value
+    def displacement(self, alpha: complex, shape: tuple[int, int], tol: float):
+        if self.abs(alpha) > tol:
+            gate = strategies.displacement(tuple(shape), complex(alpha))
+        else:
+            gate = self.eye(max(shape), dtype=self.complex128)[: shape[0], : shape[1]]
+        return self.astensor(gate, dtype=self.complex128)
 
-    @staticmethod
-    def setitem(tensor, value, *, key):
-        _tensor = np.array(tensor)
-        value = np.array(value)
-        _tensor[key] = value
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
+        t, s = self.asnumpy(theta), self.asnumpy(phi)
+        if method == "vanilla":
+            bs_unitary = strategies.beamsplitter(shape, t, s)
+        elif method == "schwinger":
+            bs_unitary = strategies.beamsplitter_schwinger(shape, t, s)
+        elif method == "stable":
+            bs_unitary = strategies.stable_beamsplitter(shape, t, s)
+        return self.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
 
-        return _tensor
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
+        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
+        sq_ket = strategies.squeezer(shape, self.asnumpy(r), self.asnumpy(phi))
+        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)

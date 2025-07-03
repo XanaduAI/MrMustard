@@ -26,22 +26,8 @@ from mrmustard.math.lattice.strategies.beamsplitter import (
     sector_u,
 )
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
-from mrmustard.math.lattice.strategies.displacement import displacement
+from mrmustard.math.lattice.strategies.displacement import displacement, grad_displacement
 from mrmustard.math.lattice.strategies.vanilla import vanilla_numba
-
-
-def test_vanillaNumba_vs_binomial():
-    """Test that the vanilla method and the binomial method give the same result."""
-    settings.SEED = 42
-    A, b, c = Ket.random((0, 1)).bargmann_triple()
-    A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)
-
-    ket_vanilla = vanilla_numba(shape=(10, 10), A=A, b=b, c=c)[:5, :5]
-    ket_binomial = binomial(local_cutoffs=(5, 5), A=A, b=b, c=c, max_l2=0.9999, global_cutoff=12)[
-        0
-    ][:5, :5]
-
-    assert np.allclose(ket_vanilla, ket_binomial)
 
 
 def test_binomial_vs_binomialDict():
@@ -56,8 +42,25 @@ def test_binomial_vs_binomialDict():
     G, _ = binomial(local_cutoffs, A, b, c, max_prob, global_cutoff)
     D = binomial_dict(local_cutoffs, A, b, complex(c), max_prob, global_cutoff)
 
-    for idx in D.keys():
+    for idx in D:
         assert np.isclose(D[idx], G[idx])
+
+
+def test_bs_schwinger():
+    "test that the schwinger method to apply a BS works correctly"
+    G = Ket.random((0, 1)).fock_array([20, 20])
+    G = math.asnumpy(G)
+    BS = beamsplitter((20, 20, 20, 20), 1.0, 1.0)
+    manual = np.einsum("ab, cdab", G, BS)
+    G = apply_BS_schwinger(1.0, 1.0, 0, 1, G)
+    assert np.allclose(manual, G)
+
+    Gg = Unitary.random((0, 1)).fock_array([20, 20, 20, 20])
+    Gg = math.asnumpy(Gg)
+    BS = beamsplitter((20, 20, 20, 20), 2.0, -1.0)
+    manual = np.einsum("cdab, abef", BS, Gg)
+    Gg = apply_BS_schwinger(2.0, -1.0, 0, 1, Gg)
+    assert np.allclose(manual, Gg)
 
 
 @pytest.mark.parametrize("batch_size", [1, 3])
@@ -80,21 +83,24 @@ def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
         assert np.allclose(G_ref, G_batched[:, :, :, nb])
 
 
-def test_bs_schwinger():
-    "test that the schwinger method to apply a BS works correctly"
-    G = Ket.random((0, 1)).fock_array([20, 20])
-    G = math.asnumpy(G)
-    BS = beamsplitter((20, 20, 20, 20), 1.0, 1.0)
-    manual = np.einsum("ab, cdab", G, BS)
-    G = apply_BS_schwinger(1.0, 1.0, 0, 1, G)
-    assert np.allclose(manual, G)
+def test_displacement_grad():
+    """Tests the value of the analytic gradient for the Dgate against finite differences"""
+    cutoff = 4
+    r = 2.0
+    theta = np.pi / 8
+    T = displacement((cutoff, cutoff), r * np.exp(1j * theta))
+    Dr, Dtheta = grad_displacement(T, r, theta)
 
-    Gg = Unitary.random((0, 1)).fock_array([20, 20, 20, 20])
-    Gg = math.asnumpy(Gg)
-    BS = beamsplitter((20, 20, 20, 20), 2.0, -1.0)
-    manual = np.einsum("cdab, abef", BS, Gg)
-    Gg = apply_BS_schwinger(2.0, -1.0, 0, 1, Gg)
-    assert np.allclose(manual, Gg)
+    dr = 0.001
+    dtheta = 0.001
+    Drp = displacement((cutoff, cutoff), (r + dr) * np.exp(1j * theta))
+    Drm = displacement((cutoff, cutoff), (r - dr) * np.exp(1j * theta))
+    Dthetap = displacement((cutoff, cutoff), r * np.exp(1j * (theta + dtheta)))
+    Dthetam = displacement((cutoff, cutoff), r * np.exp(1j * (theta - dtheta)))
+    Drapprox = (Drp - Drm) / (2 * dr)
+    Dthetaapprox = (Dthetap - Dthetam) / (2 * dtheta)
+    assert np.allclose(Dr, Drapprox, atol=1e-5, rtol=0)
+    assert np.allclose(Dtheta, Dthetaapprox, atol=1e-5, rtol=0)
 
 
 def test_sector_idx():
@@ -111,6 +117,20 @@ def test_sector_u():
     for i in range(1, 10):
         u = sector_u(i, theta=1.129, phi=0.318)
         assert u @ u.conj().T == pytest.approx(np.eye(i + 1))
+
+
+def test_vanillaNumba_vs_binomial():
+    """Test that the vanilla method and the binomial method give the same result."""
+    settings.SEED = 42
+    A, b, c = Ket.random((0, 1)).bargmann_triple()
+    A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)
+
+    ket_vanilla = vanilla_numba(shape=(10, 10), A=A, b=b, c=c)[:5, :5]
+    ket_binomial = binomial(local_cutoffs=(5, 5), A=A, b=b, c=c, max_l2=0.9999, global_cutoff=12)[
+        0
+    ][:5, :5]
+
+    assert np.allclose(ket_vanilla, ket_binomial)
 
 
 def test_vanilla_stable():

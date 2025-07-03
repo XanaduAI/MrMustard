@@ -14,8 +14,6 @@
 
 """Tests for Wires class."""
 
-# pylint: disable=missing-function-docstring
-
 from unittest.mock import patch
 
 import pytest
@@ -23,8 +21,6 @@ from ipywidgets import HTML
 
 from mrmustard.lab.states import QuadratureEigenstate
 from mrmustard.physics.wires import Wires
-
-from ..conftest import skip_jax, skip_np
 
 
 class TestWires:
@@ -86,8 +82,8 @@ class TestWires:
     def test_add_error(self):
         w1 = Wires({0}, {1}, {2}, {3})
         w2 = Wires({0}, {2}, {3}, {4})
-        with pytest.raises(Exception):
-            w1 + w2  # pylint: disable=pointless-statement
+        with pytest.raises(ValueError, match="Overlapping quantum wires"):
+            w1 + w2
 
     def test_bool(self):
         assert Wires({0})
@@ -149,7 +145,7 @@ class TestWires:
         u = Wires(set(), set(), {0}, set())  # only output wire
         v = Wires(set(), set(), {0}, set())  # only output wire
         with pytest.raises(ValueError):
-            u @ v  # pylint: disable=pointless-statement
+            u @ v
 
     def test_contracted_labels1(self):
         w1 = Wires({0}, {0}, {2}, {2})
@@ -194,11 +190,10 @@ class TestWiresDisplay:
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(wires)
 
+    @pytest.mark.requires_backend("tensorflow")
     def test_repr_params(self):
         "test that repr params change when the params change"
-        skip_np()
-        skip_jax()
         q = QuadratureEigenstate(mode=0, x=0.0, phi=1.0, phi_trainable=True)
-        assert q.representation.wires.output.wires[0].repr_params[1] == 1.0
+        assert q.wires.output.wires[0].repr_params[1] == 1.0
         q.parameters.phi.value.assign(2.0)
-        assert q.representation.wires.output.wires[0].repr_params[1] == 2.0
+        assert q.wires.output.wires[0].repr_params[1] == 2.0

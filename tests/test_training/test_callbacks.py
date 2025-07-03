@@ -15,20 +15,17 @@
 """callbacks tests"""
 
 import numpy as np
+import pytest
 import tensorflow as tf
 
 from mrmustard import math, settings
 from mrmustard.lab import BSgate, Circuit, S2gate, Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
 
-from ..conftest import skip_jax, skip_np
 
-
+@pytest.mark.requires_backend("tensorflow")
 def test_tensorboard_callback(tmp_path):
     """Tests tensorboard callbacks on hong-ou-mandel optimization."""
-    skip_np()
-    skip_jax()
-
     settings.SEED = 42
     i, k = 2, 3
     r = np.arcsinh(1.0)
@@ -51,7 +48,7 @@ def test_tensorboard_callback(tmp_path):
 
     def cost_fn():
         return tf.abs(
-            circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k]
+            circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k],
         ) ** 2 + tf.reduce_sum(free_var**2)
 
     tbcb = TensorboardCallback(

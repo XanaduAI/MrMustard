@@ -17,12 +17,15 @@ The class representing a coherent state.
 """
 
 from __future__ import annotations
-from typing import Sequence
+
+from collections.abc import Sequence
+
 from mrmustard import math
-from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.lab.states.ket import Ket
+from mrmustard.lab.utils import make_parameter
 from mrmustard.physics import triples
-from .ket import Ket
-from ..utils import make_parameter
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 
 __all__ = ["Coherent"]
 
@@ -41,6 +44,13 @@ class Coherent(Ket):
     Returns:
         A ``Ket`` object representing a coherent state.
 
+    .. code-block::
+
+        >>> from mrmustard.lab import Coherent, Vacuum, Dgate
+
+        >>> state = Coherent(mode=0, x=0.3, y=0.2)
+        >>> assert state == Vacuum(0) >> Dgate(0, x=0.3, y=0.2)
+
     .. details::
 
         For any :math:`\bar{\alpha} = \bar{x} + i\bar{y}` of length :math:`N`, the :math:`N`-mode
@@ -53,6 +63,7 @@ class Coherent(Ket):
 
         .. math::
             A = O_{N\text{x}N}\text{, }b=\bar{\alpha}\text{, and }c=\text{exp}\big(-|\bar{\alpha}^2|/2\big).
+
         Note that vector of means in phase space for a coherent state with parameters ``x,y`` is
         ``np.sqrt(2)*x, np.sqrt(2)*y`` (with units ``settings.HBAR=1``).
 
@@ -78,12 +89,11 @@ class Coherent(Ket):
     ):
         super().__init__(name="Coherent")
         self.parameters.add_parameter(
-            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128)
+            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128),
         )
 
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.coherent_state_Abc, alpha=self.parameters.alpha
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.coherent_state_Abc,
+            alpha=self.parameters.alpha,
+        )
+        self._wires = Wires(modes_out_ket={mode})

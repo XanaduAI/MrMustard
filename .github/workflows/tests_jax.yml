@@ -4,6 +4,11 @@ on:
     branches:
       - develop
   pull_request:
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-jax
+  cancel-in-progress: true
 
 jobs:
   pytest:
@@ -13,30 +18,31 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.10', '3.12']
-    concurrency:
-      group: ${{ github.workflow }}-${{ matrix.python-version }}-${{ github.ref }}
-      cancel-in-progress: true
     env:
       HYPOTHESIS_PROFILE: ci
-      UPLOAD_TIMINGS: ${{ github.event_name == 'push' && matrix.python-version == '3.12' && 'true' || 'false' }}
+      UPLOAD_TIMINGS: ${{ github.event_name != 'pull_request' && matrix.python-version == '3.12' && 'true' || 'false' }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "0.5.23"
+          version: "0.5.29"
+          python-version: ${{ matrix.python-version }}
 
       - name: Create durations file name
         id: record_file
         run: echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
+
+      - name: JAX compilation cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mrmustard/jax_cache/
+          key: jax-cache-${{ matrix.python-version }}-${{ github.sha }}
+          restore-keys: |
+            jax-cache-${{ matrix.python-version }}-
 
       - name: Run tests
         run: |

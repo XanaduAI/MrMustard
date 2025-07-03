@@ -18,31 +18,24 @@ This module contains the defintion of the ket class ``Ket``.
 
 from __future__ import annotations
 
-from typing import Collection, Sequence
-
-from IPython.display import display
+from collections.abc import Collection, Sequence
 
 import numpy as np
+from IPython.display import display
 
 from mrmustard import math, settings, widgets
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.representations import Representation
-from mrmustard.physics.wires import Wires, ReprEnum
-from mrmustard.utils.typing import (
-    Scalar,
-    Batch,
-    ComplexMatrix,
-    ComplexVector,
-)
+from mrmustard.physics.wires import ReprEnum, Wires
+from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Scalar
 
-from .base import State, _validate_operator, OperatorType
-from .dm import DM
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
-from ..transformations import Unitary, Operation
+from ..transformations import Operation, Unitary
 from ..utils import shape_check
+from .base import OperatorType, State, _validate_operator
+from .dm import DM
 
 __all__ = ["Ket"]
 
@@ -69,6 +62,7 @@ class Ket(State):
 
         Example:
         .. code-block::
+
             >>> from mrmustard.lab import Ket
 
             >>> psi = Ket.random([0])
@@ -77,18 +71,20 @@ class Ket(State):
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for a linear superposition of states."
+                "Physicality conditions are not implemented for a linear superposition of states.",
             )
         if self.ansatz.num_derived_vars > 0:
             raise NotImplementedError(
-                "Physicality conditions are not implemented for derived variables."
+                "Physicality conditions are not implemented for derived variables.",
             )
         if isinstance(self.ansatz, ArrayAnsatz):
             raise NotImplementedError(
-                "Physicality conditions are not implemented for states with ArrayAnsatz."
+                "Physicality conditions are not implemented for states with ArrayAnsatz.",
             )
         return math.all(math.abs(math.eigvals(self.ansatz.A)) < 1) and math.allclose(
-            self.probability, 1, settings.ATOL
+            self.probability,
+            1,
+            settings.ATOL,
         )
 
     @property
@@ -101,6 +97,7 @@ class Ket(State):
 
         Example:
         .. code-block::
+
             >>> from mrmustard import math
             >>> from mrmustard.lab import Ket
 
@@ -120,6 +117,7 @@ class Ket(State):
 
         Example:
         .. code-block::
+
             >>> from mrmustard.lab import Ket
             >>> assert Ket.random([0]).purity == 1.0
         """
@@ -143,13 +141,13 @@ class Ket(State):
         modes = set(modes)
         if ansatz and ansatz.num_vars != len(modes):
             raise ValueError(
-                f"Expected an ansatz with {len(modes)} variables, found {ansatz.num_vars}."
+                f"Expected an ansatz with {len(modes)} variables, found {ansatz.num_vars}.",
             )
         wires = Wires(modes_out_ket=modes)
         if isinstance(ansatz, ArrayAnsatz):
             for w in wires.quantum_wires:
                 w.repr = ReprEnum.FOCK
-        return Ket(Representation(ansatz, wires), name)
+        return Ket(ansatz, wires, name=name)
 
     @classmethod
     def from_phase_space(
@@ -197,6 +195,7 @@ class Ket(State):
 
         Example:
         .. code-block::
+
             >>> from mrmustard.lab import Ket
             >>> assert isinstance(Ket.random([0,1]), Ket)
         """
@@ -216,7 +215,7 @@ class Ket(State):
                         -1j * math.eye(m, dtype=math.complex128),
                         1j * math.eye(m, dtype=math.complex128),
                     ],
-                ]
+                ],
             )
         )
         S = math.conj(math.transpose(transformation)) @ S @ transformation
@@ -239,23 +238,22 @@ class Ket(State):
             >>> from mrmustard.lab import Vacuum, DM
             >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
-        repr = self.representation.contract(self.adjoint.representation, mode="zip")
-        ret = DM(repr, self.name)
-        ret.manual_shape = self.manual_shape + self.manual_shape
-        return ret
+        ret = self.contract(self.adjoint, mode="zip")
+        return DM._from_attributes(ret.ansatz, ret.wires, name=self.name)
 
-    def expectation(self, operator: CircuitComponent):
+    def expectation(self, operator: CircuitComponent, mode: str = "kron") -> Batch[Scalar]:
         r"""
         The expectation value of an operator calculated with respect to this Ket.
 
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
+            mode: The mode of contraction. Can either "zip" the batch dimensions, "kron" the batch dimensions,
+                or pass a custom einsum-style batch string like "ab,cb->ac".
 
         Returns:
             Expectation value as a complex number.
 
         Raises:
-            NotImplementedError: If the state or ``operator`` are batched.
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
                 component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
@@ -282,11 +280,6 @@ class Ket(State):
 
             >>> assert math.allclose(psi.expectation(Rgate(0, theta)), answer)
         """
-        if (self.ansatz and self.ansatz.batch_shape) or (
-            operator.ansatz and operator.ansatz.batch_shape
-        ):  # pragma: no cover
-            raise NotImplementedError("Batched expectation values are not implemented.")
-
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
             raise ValueError(msg)
@@ -298,18 +291,16 @@ class Ket(State):
 
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
-            result = self.contract(operator.dual)
-            result = result.contract(result.adjoint)
-            result >>= TraceOut(leftover_modes)
-
+            result = self.contract(operator.dual, mode=mode)
+            result = result.contract(result.adjoint, mode="zip") >> TraceOut(leftover_modes)
         elif op_type is OperatorType.DM_LIKE:
-            result = (self.adjoint.contract(self.contract(operator.dual))) >> TraceOut(
-                leftover_modes
-            )
-
+            result = self.adjoint.contract(
+                self.contract(operator.dual, mode=mode),
+                mode="zip",
+            ) >> TraceOut(leftover_modes)
         else:
-            result = (self.contract(operator)) >> self.dual
-
+            result = (self.contract(operator, mode=mode)).contract(self.dual, mode="zip")
+            result = result >> TraceOut(result.modes)
         return result
 
     def fidelity(self, other: State) -> float:
@@ -318,8 +309,9 @@ class Ket(State):
 
         .. details::
 
-        .. math::
-            F(|\psi\rangle, \phi\rangle) = |\langle \psi, \phi \rangle|^2
+            .. math::
+                F(|\psi\rangle, \phi\rangle) = |\langle \psi, \phi \rangle|^2
+
         """
         if self.modes != other.modes:
             raise ValueError("Cannot compute fidelity between states with different modes.")
@@ -348,6 +340,7 @@ class Ket(State):
             e.g., being sparse.
 
         .. code-block::
+
             >>> from mrmustard.lab import Ket
 
             >>> psi = Ket.random([0,1])
@@ -375,10 +368,10 @@ class Ket(State):
 
         batch_shape = self.ansatz.batch_shape
 
-        Om = math.zeros(batch_shape + (M, M), dtype=math.complex128)
+        Om = math.zeros((*batch_shape, M, M), dtype=math.complex128)
         As = math.block([[Om, R_transpose], [R, An]])
 
-        bs = math.concat([math.zeros(batch_shape + (M,), dtype=math.complex128), bn], -1)
+        bs = math.concat([math.zeros((*batch_shape, M), dtype=math.complex128), bn], -1)
         cs = c
 
         inverse_order = np.argsort(new_order)
@@ -390,14 +383,14 @@ class Ket(State):
 
         if batch_shape != ():
             Im = math.stack(
-                [math.eye(M, dtype=math.complex128)] * int(math.prod(batch_shape))
+                [math.eye(M, dtype=math.complex128)] * int(math.prod(batch_shape)),
             ).reshape(batch_shape + (M,) * 2)
         else:
             Im = math.eye(M, dtype=math.complex128)
 
         At = math.block([[Am, Im], [Im, Om]])
 
-        bt = math.concat([bm, math.zeros(batch_shape + (M,), dtype=math.complex128)], -1)
+        bt = math.concat([bm, math.zeros((*batch_shape, M), dtype=math.complex128)], -1)
         ct = math.ones_like(c)
         t = Operation.from_bargmann(core_modes, core_modes, (At, bt, ct))
 
@@ -426,6 +419,7 @@ class Ket(State):
             e.g., being sparse.
 
         .. code-block::
+
             >>> from mrmustard import math
             >>> from mrmustard.lab import Ket
 
@@ -470,7 +464,10 @@ class Ket(State):
         Au = math.block([[Am, gamma], [gamma_transpose, -math.conj(Am)]])
 
         bu_in = -math.einsum(
-            "...ij,...jk,...k->...i", math.conj(Am), gamma_inv_T, bm
+            "...ij,...jk,...k->...i",
+            math.conj(Am),
+            gamma_inv_T,
+            bm,
         ) - math.einsum("...ij,...j->...i", gamma_inv, math.conj(bm))
         bu = math.concat([bm, bu_in], -1)
         cu = math.ones(batch_shape, dtype=math.complex128)
@@ -483,9 +480,9 @@ class Ket(State):
         R_T = math.einsum("...ij->...ji", R)
         A_core = math.block(
             [
-                [math.zeros(batch_shape + (M, M), dtype=math.complex128), gamma_inv @ R_T],
+                [math.zeros((*batch_shape, M, M), dtype=math.complex128), gamma_inv @ R_T],
                 [R @ gamma_inv_T, An + R @ math.inv(math.inv(math.conj(Am)) - Am) @ R_T],
-            ]
+            ],
         )
 
         Rc = R @ gamma_inv_T
@@ -552,13 +549,16 @@ class Ket(State):
             >>> assert isinstance(psi >> U, Ket)
             >>> assert isinstance(psi >> channel, DM)
         """
-        result = super().__rshift__(other)
+        result = super().__rshift__(
+            other,
+        )  # this would be the output if we didn't override __rshift__
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here
 
+        # TODO: Reminder: replace with result.wires.ket_like and result.wires.dm_like
         if not result.wires.input:
             if not result.wires.bra:
-                return Ket(result.representation)
-            elif result.wires.bra.modes == result.wires.ket.modes:
-                return DM(result.representation)
+                return Ket._from_attributes(result.ansatz, result.wires)
+            if result.wires.bra.modes == result.wires.ket.modes:
+                return DM._from_attributes(result.ansatz, result.wires)
         return result
