@@ -16,7 +16,7 @@
 
 import pytest
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.lab.states import Number
 from mrmustard.physics.fock_utils import fock_state
 from mrmustard.physics.wires import ReprEnum
@@ -42,7 +42,7 @@ class TestNumber:
     def test_auto_shape(self):
         # meant to cover the case where we have derived variables
         state = Number(0, 2).to_bargmann().dm()
-        assert state.auto_shape() == (settings.DEFAULT_FOCK_SIZE, settings.DEFAULT_FOCK_SIZE)
+        assert state.auto_shape() == (3, 3)
 
     @pytest.mark.parametrize("n", [2, 3, 4])
     @pytest.mark.parametrize("cutoffs", [None, 4, 5])
