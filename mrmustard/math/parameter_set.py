@@ -301,9 +301,10 @@ class ParameterSet:
 
             table.add_row(name, param_type, value_str, dtype_str, bounds_str, shape_str)
 
-        console = Console(file=io.StringIO(), width=100, legacy_windows=False)
-        console.print(table)
-        return console.file.getvalue().strip()
+        with io.StringIO() as string_buffer:
+            console = Console(file=string_buffer, width=100, legacy_windows=False)
+            console.print(table)
+            return string_buffer.getvalue().strip()
 
     def __bool__(self) -> bool:
         r"""
