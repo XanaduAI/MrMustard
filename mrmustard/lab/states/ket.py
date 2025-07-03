@@ -27,7 +27,7 @@ from mrmustard import math, settings, widgets
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.wires import ReprEnum, Wires
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Scalar
 
 from ..circuit_components import CircuitComponent
@@ -144,10 +144,6 @@ class Ket(State):
                 f"Expected an ansatz with {len(modes)} variables, found {ansatz.num_vars}.",
             )
         wires = Wires(modes_out_ket=modes)
-        if isinstance(ansatz, ArrayAnsatz):
-            for w in wires.quantum_wires:
-                w.repr = ReprEnum.FOCK
-                w.fock_size = ansatz.core_shape[w.index]
         return Ket(ansatz, wires, name=name)
 
     @classmethod

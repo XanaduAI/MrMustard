@@ -74,6 +74,11 @@ class CircuitComponent:
         self._parameters = ParameterSet()
         self._wires = wires or Wires(set(), set(), set(), set())
 
+        if isinstance(ansatz, ArrayAnsatz):
+            for w in self.wires.quantum_wires:
+                w.repr = ReprEnum.FOCK
+                w.fock_size = ansatz.core_shape[w.index]
+
     @property
     def adjoint(self) -> CircuitComponent:
         r"""
@@ -800,7 +805,12 @@ class CircuitComponent:
             raise ValueError("Cannot add components with different wires.")
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(ansatz, self.wires, name)
+        ret = self._from_attributes(ansatz, self.wires, name)
+        ret.manual_shape = tuple(
+            max(a, b) if a is not None and b is not None else a or b
+            for a, b in zip(self.manual_shape, other.manual_shape)
+        )
+        return ret
 
     def __eq__(self, other) -> bool:
         r"""
