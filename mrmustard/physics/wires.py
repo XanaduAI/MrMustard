@@ -65,7 +65,7 @@ class QuantumWire:
         is_ket: Whether this wire is on the ket side.
         index: The index of this wire in the circuit.
         repr: The representation of this wire.
-        fock_size: The (optional) size of the Fock array for this wire.
+        fock_size: The (optional) Fock cutoff size for this wire.
         id: Unique identifier for this wire.
     """
 
