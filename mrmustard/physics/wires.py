@@ -114,9 +114,6 @@ class QuantumWire:
     def __hash__(self) -> int:
         return hash((self.mode, self.is_out, self.is_ket, self.repr))
 
-    def __repr__(self) -> str:
-        return f"QuantumWire(mode={self.mode}, {'out' if self.is_out else 'in'}, {'ket' if self.is_ket else 'bra'}, index={self.index}, repr={self.repr}, fock_size={self.fock_size})"
-
 
 @dataclass
 class ClassicalWire:
@@ -159,9 +156,6 @@ class ClassicalWire:
 
     def __hash__(self) -> int:
         return hash((self.mode, self.is_out, self.repr))
-
-    def __repr__(self) -> str:
-        return f"ClassicalWire(mode={self.mode}, out={self.is_out}, repr={self.repr}, index={self.index})"
 
 
 class Wires:
@@ -373,6 +367,8 @@ class Wires:
         ret = self.copy(new_ids=True)
         for w in ret.quantum:
             w.is_ket = not w.is_ket
+        for i, w in enumerate(ret.sorted_wires):
+            w.index = i
         return ret
 
     @cached_property
@@ -383,6 +379,8 @@ class Wires:
         ret = self.copy(new_ids=True)
         for w in ret:
             w.is_out = not w.is_out
+        for i, w in enumerate(ret.sorted_wires):
+            w.index = i
         return ret
 
     ###### SUBSETS OF WIRES ######
@@ -488,7 +486,7 @@ class Wires:
             self.classical.input.modes,
         )
 
-    @cached_property
+    @property
     def sorted_wires(self) -> list[QuantumWire | ClassicalWire]:
         r"""
         A list of all wires sorted in standard order.
