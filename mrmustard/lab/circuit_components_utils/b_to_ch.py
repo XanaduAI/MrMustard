@@ -91,7 +91,7 @@ class BtoChar(Map):
             modes_in_ket=set(modes),
             modes_out_ket=set(modes),
         )
-        for w in self.wires.output.wires:
+        for w in self.wires.output.sorted_wires:
             w.repr = ReprEnum.CHARACTERISTIC
 
     def inverse(self):

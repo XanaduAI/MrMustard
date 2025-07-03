@@ -78,6 +78,6 @@ class Number(Ket):
         self.short_name = str(int(n))
         self.manual_shape[0] = cutoff + 1
 
-        for w in self.wires.output.wires:
+        for w in self.wires.output:
             w.repr = ReprEnum.FOCK
             w.fock_size = self.ansatz.core_shape[w.index]

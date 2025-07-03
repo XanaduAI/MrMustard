@@ -339,6 +339,13 @@ class Wires:
         for i, m in enumerate(sorted(classical_in)):
             self.classical_wires.add(ClassicalWire(mode=m, is_out=False, index=n + i))
 
+    @property
+    def fock_shape(self) -> list[int | None]:
+        r"""
+        The Fock cutoff for each wire.
+        """
+        return [w.fock_size for w in self.quantum.sorted_wires]
+
     @classmethod
     def from_wires(
         cls,
@@ -473,14 +480,14 @@ class Wires:
         r"""
         The ids of the wires in standard order.
         """
-        return tuple(w.id for w in self.wires)
+        return tuple(w.id for w in self.sorted_wires)
 
     @property
     def indices(self) -> tuple[int, ...]:
         r"""
         The indices of the wires in standard order.
         """
-        return tuple(w.index for w in self.wires)
+        return tuple(w.index for w in self.sorted_wires)
 
     @property
     def args(self) -> tuple[tuple[int, ...], ...]:
@@ -497,9 +504,9 @@ class Wires:
         )
 
     @cached_property
-    def wires(self) -> list[QuantumWire | ClassicalWire]:
+    def sorted_wires(self) -> list[QuantumWire | ClassicalWire]:
         r"""
-        A list of all wires in standard order.
+        A list of all wires sorted in standard order.
         """
         return sorted({*self.quantum_wires, *self.classical_wires}, key=lambda s: s._order())
 
@@ -546,17 +553,19 @@ class Wires:
         for i, j in zip(idxA, idxB):
             lblB[j] = lblA[i]
         output_labels = set(lblA) ^ set(lblB)
-        id2label = {w.id: lbl for w, lbl in zip(self.wires, lblA)}
-        id2label.update({w.id: lbl for w, lbl in zip(other_copy.wires, lblB)})
+        id2label = {w.id: lbl for w, lbl in zip(self.sorted_wires, lblA)}
+        id2label.update({w.id: lbl for w, lbl in zip(other_copy.sorted_wires, lblB)})
         wires_out, _ = self @ other_copy
-        lbl_out = [id2label[w.id] for w in wires_out.wires if id2label[w.id] in output_labels]
+        lbl_out = [
+            id2label[w.id] for w in wires_out.sorted_wires if id2label[w.id] in output_labels
+        ]
         return lblA, lblB, lbl_out
 
     def _reindex(self) -> None:
         r"""
         Updates the indices of the wires according to the standard order.
         """
-        for i, w in enumerate(self.wires):
+        for i, w in enumerate(self.sorted_wires):
             w.index = i
 
     def __add__(self, other: Wires) -> Wires:
@@ -585,7 +594,7 @@ class Wires:
         )
 
     def __iter__(self) -> Iterator[QuantumWire | ClassicalWire]:
-        return iter(self.wires)
+        return iter(self.sorted_wires)
 
     def __bool__(self) -> bool:
         return bool(self.quantum_wires) or bool(self.classical_wires)
@@ -654,16 +663,19 @@ class Wires:
 
         # get the wires
         new_wires = Wires.from_wires(
-            quantum=bra_out.wires + bra_in.wires + ket_out.wires + ket_in.wires,
-            classical=cl_out.wires + cl_in.wires,
+            quantum=bra_out.sorted_wires
+            + bra_in.sorted_wires
+            + ket_out.sorted_wires
+            + ket_in.sorted_wires,
+            classical=cl_out.sorted_wires + cl_in.sorted_wires,
             copy=True,  # because we will call _reindex()
         )
         new_wires._reindex()
 
-        combined = [w for w in self.wires if w.id in new_wires.ids] + [
-            w for w in other.wires if w.id in new_wires.ids
+        combined = [w for w in self.sorted_wires if w.id in new_wires.ids] + [
+            w for w in other.sorted_wires if w.id in new_wires.ids
         ]  # NOTE: assumes self and other have different ids
-        perm = [combined.index(w) for w in new_wires.wires]
+        perm = [combined.index(w) for w in new_wires.sorted_wires]
         return new_wires, perm
 
     def _ipython_display_(self):
