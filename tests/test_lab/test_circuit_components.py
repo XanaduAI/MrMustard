@@ -31,6 +31,7 @@ from mrmustard.lab import (
     Coherent,
     Dgate,
     DisplacedSqueezed,
+    Interferometer,
     Ket,
     Map,
     Number,
@@ -484,6 +485,15 @@ class TestCircuitComponent:
 
         assert repr(c1) == "CircuitComponent(modes=(0, 1, 2), name=CC012)"
         assert repr(c2) == "CircuitComponent(modes=(0, 1, 2), name=my_component)"
+
+    def test_to_fock_shape_lookahead(self):
+        r = settings.rng.uniform(-0.5, 0.5, 3)
+        interf = Interferometer([0, 1])
+        gaussian_part = SqueezedVacuum(0, r[0]) >> SqueezedVacuum(1, r[1]) >> interf
+        gauss_auto_shape = gaussian_part.auto_shape()
+        fock_explicit_shape = gaussian_part.to_fock((gauss_auto_shape[0], 7)) >> Number(1, 6).dual
+        fock_lookahead_shape = gaussian_part >> Number(1, 6).dual
+        assert fock_lookahead_shape == fock_explicit_shape
 
     def test_to_fock_keeps_bargmann(self):
         "tests that to_fock doesn't lose the bargmann representation"
