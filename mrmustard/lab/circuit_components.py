@@ -727,7 +727,6 @@ class CircuitComponent:
         except AttributeError:
             fock._original_abc_data = None
         wires = self.wires.copy()
-
         for w in wires.quantum_wires:
             w.repr = ReprEnum.FOCK
             w.fock_size = fock.core_shape[w.index]
