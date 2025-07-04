@@ -525,7 +525,7 @@ class CircuitComponent:
             >>> from mrmustard.lab import Coherent, Attenuator
             >>> coh = Coherent(0, 1.0)
             >>> att = Attenuator(0, 0.5)
-            >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
+            >>> assert coh.contract(att).wires.input.bra  # the input bra is still uncontracted
         """
         if isinstance(other, numbers.Number | np.ndarray):
             return self * other
