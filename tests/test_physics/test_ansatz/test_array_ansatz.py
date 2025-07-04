@@ -265,8 +265,8 @@ class TestArrayAnsatzSlicing:
     def test_slice_slicing(self, ansatz, array):
         "Tests slicing with a slice object."
         sliced = ansatz[0:2]
-        assert sliced.batch_shape == (2,)
-        assert sliced.batch_dims == 1
+        assert sliced.batch_shape == (2, 3)
+        assert sliced.batch_dims == 2
         assert math.allclose(sliced.array, array[0:2])
 
     def test_ellipsis_slicing(self, ansatz, array):
@@ -286,8 +286,8 @@ class TestArrayAnsatzSlicing:
     def test_advanced_list_indexing(self, ansatz, array):
         "Tests advanced indexing with a list."
         sliced = ansatz[[0, 1]]
-        assert sliced.batch_shape == (2,)
-        assert sliced.batch_dims == 1
+        assert sliced.batch_shape == (2, 3)
+        assert sliced.batch_dims == 2
         assert math.allclose(sliced.array, array[[0, 1]])
 
     def test_slicing_returns_correct_type(self, ansatz):
