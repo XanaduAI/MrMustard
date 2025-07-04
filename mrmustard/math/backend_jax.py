@@ -40,6 +40,7 @@ from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
+    hermite_multidimensional_diagonal_batch_ABC,
 )
 
 jax.config.update("jax_enable_x64", True)
@@ -527,7 +528,7 @@ class BackendJax(BackendBase):
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann_utils the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
-        ordering = jnp.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
+        ordering = jnp.arange(2 * A.shape[-1] // 2).reshape(2, -1).T.flatten()
         A = self.gather(A, ordering, axis=1)
         A = self.gather(A, ordering)
         B = self.gather(B, ordering, axis=0)
@@ -570,9 +571,71 @@ class BackendJax(BackendBase):
     ) -> jnp.ndarray:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
+
+        Supports multiple batching modes:
+        - No batching: A (2M, 2M), B (2M,), C scalar
+        - B-only batching: A (2M, 2M), B (2M, batch_size), C scalar
+        - Full ABC batching: A (batch_size, 2M, 2M), B (batch_size, 2M), C (batch_size,)
         """
+        # Batch detection logic based on shapes
+        if len(A.shape) == 3:  # A is batched -> full ABC batching
+            # Use pure callback for batched reordering
+            def batch_reorder(A, B):
+                batch_results = []
+                for k in range(A.shape[0]):
+                    A_k, B_k = self.reorder_AB_bargmann(A[k], B[k])
+                    batch_results.append((A_k, B_k))
+                A_reordered = jnp.stack([r[0] for r in batch_results])
+                B_reordered = jnp.stack([r[1] for r in batch_results])
+                return A_reordered, B_reordered
+
+            # Use lax.cond for conditional execution
+            A_reordered, B_reordered = jax.lax.cond(
+                A.shape[0] > 0,
+                lambda: batch_reorder(A, B),
+                lambda: (A, B),
+            )
+            return self.hermite_renormalized_diagonal_batch_ABC(
+                A_reordered,
+                B_reordered,
+                C,
+                cutoffs,
+            )
+        if len(B.shape) == 2:  # Only B is batched -> B-only batching
+            A, B = self.reorder_AB_bargmann(A, B)
+            return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
+        # No batching -> single instance
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
+
+    @partial(jax.jit, static_argnames=["cutoffs"])
+    def hermite_renormalized_diagonal_batch_ABC(
+        self,
+        A: jnp.ndarray,
+        B: jnp.ndarray,
+        C: jnp.ndarray,
+        cutoffs: tuple[int],
+    ) -> jnp.ndarray:
+        r"""Compute hermite diagonal for batched A, B, and C parameters using pure callback.
+
+        Args:
+            A: Batched A matrices with shape (batch_size, 2*M, 2*M)
+            B: Batched B vectors with shape (batch_size, 2*M)
+            C: Batched C scalars with shape (batch_size,)
+            cutoffs: upper boundary of photon numbers in each mode
+
+        Returns:
+            The renormalized Hermite polynomial with shape (batch_size, *cutoffs).
+        """
+        batch_size = A.shape[0]
+        function = partial(hermite_multidimensional_diagonal_batch_ABC, cutoffs=tuple(cutoffs))
+        return jax.pure_callback(
+            lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
+            jax.ShapeDtypeStruct((batch_size, *cutoffs), jnp.complex128),
+            A,
+            B,
+            C,
+        )
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB(

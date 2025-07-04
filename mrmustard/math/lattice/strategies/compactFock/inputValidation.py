@@ -10,6 +10,7 @@ import numpy as np
 
 from mrmustard.math.lattice.strategies.compactFock.diagonal_amps import (
     fock_representation_diagonal_amps,
+    fock_representation_diagonal_amps_batch_ABC,
 )
 from mrmustard.math.lattice.strategies.compactFock.diagonal_grad import (
     fock_representation_diagonal_grad,
@@ -155,3 +156,50 @@ def hermite_multidimensional_diagonal_batch(A, B, G0, cutoffs, rtol=1e-05, atol=
     if A.shape[0] // 2 != M:
         raise ValueError("The matrix A and cutoffs have incompatible dimensions")
     return fock_representation_diagonal_amps(A, B, G0, M, cutoffs)
+
+
+def hermite_multidimensional_diagonal_batch_ABC(A, B, G0, cutoffs, rtol=1e-05, atol=1e-08):  # noqa: C901
+    """
+    Validation of user input for batched A, B, and G0 hermite diagonal computation.
+    All inputs should have the same batch dimension on the first axis.
+    """
+    # Check that all inputs are batched with compatible shapes
+    if len(A.shape) != 3:
+        raise ValueError("A should be three dimensional (batch_size, 2*M, 2*M)")
+    if len(B.shape) != 2:
+        raise ValueError("B should be two dimensional (batch_size, 2*M)")
+    if len(G0.shape) != 1:
+        raise ValueError("G0 should be one dimensional (batch_size,)")
+
+    batch_size_A = A.shape[0]
+    batch_size_B = B.shape[0]
+    batch_size_G0 = G0.shape[0]
+
+    if not (batch_size_A == batch_size_B == batch_size_G0):
+        raise ValueError(
+            f"Batch dimensions must match: A[{batch_size_A}], B[{batch_size_B}], G0[{batch_size_G0}]",
+        )
+
+    # Validate each element in the batch
+    for k in range(batch_size_A):
+        try:
+            input_validation(A[k], atol=atol, rtol=rtol)
+        except ValueError as e:
+            raise ValueError(f"A[{k}] validation failed: {e}") from e
+
+    # Check dimensional compatibility
+    if A.shape[1] != A.shape[2]:
+        raise ValueError("Each A matrix must be square")
+    if A.shape[1] != B.shape[1]:
+        raise ValueError("The matrix A and vector B have incompatible dimensions")
+
+    if isinstance(cutoffs, Iterable):
+        cutoffs = tuple(cutoffs)
+    else:
+        raise ValueError("cutoffs should be array like of length M")
+
+    M = len(cutoffs)
+    if A.shape[1] // 2 != M:
+        raise ValueError("The matrix A and cutoffs have incompatible dimensions")
+
+    return fock_representation_diagonal_amps_batch_ABC(A, B, G0, M, cutoffs)

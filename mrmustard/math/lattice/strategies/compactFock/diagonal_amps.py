@@ -197,6 +197,86 @@ def fock_representation_diagonal_amps_NUMBA(
     return arr0, arr2, arr1010, arr1001, arr1
 
 
+def fock_representation_diagonal_amps_batch_ABC(A, B, G0, M, cutoffs):
+    """
+    Batched version of fock_representation_diagonal_amps that supports batching over A, B, and G0.
+    This function processes multiple instances in a loop (non-parallel for now to avoid typing issues).
+
+    Args:
+        A (array): batched A matrices with shape (batch_size, 2*M, 2*M)
+        B (array): batched B vectors with shape (batch_size, 2*M)
+        G0 (array): batched vacuum amplitudes with shape (batch_size,)
+        M (int): number of modes
+        cutoffs (tuple): upper bounds for the number of photons in each mode
+
+    Returns:
+        tuple: (arr0, arr2, arr1010, arr1001, arr1) where arr0 has shape (batch_size, *cutoffs)
+    """
+    batch_size = A.shape[0]
+    cutoffs = tuple(cutoffs)
+
+    # Pre-allocate numba types
+    tuple_type = numba.types.UniTuple(numba.int64, M)
+    list_type = numba.types.ListType(tuple_type)
+
+    # Initialize output arrays with batch dimension
+    arr0 = np.zeros((batch_size, *cutoffs), dtype=np.complex128)
+    arr2 = np.zeros((batch_size, M, *cutoffs), dtype=np.complex128)
+    arr1 = np.zeros((batch_size, 2 * M, *cutoffs), dtype=np.complex128)
+
+    if M == 1:
+        arr1010 = np.zeros((batch_size, 1, 1, 1), dtype=np.complex128)
+        arr1001 = np.zeros((batch_size, 1, 1, 1), dtype=np.complex128)
+    else:
+        arr1010 = np.zeros((batch_size, M, M - 1, *cutoffs), dtype=np.complex128)
+        arr1001 = np.zeros((batch_size, M, M - 1, *cutoffs), dtype=np.complex128)
+
+    # Set vacuum amplitudes
+    for k in range(batch_size):
+        arr0[k][(0,) * M] = G0[k]
+
+    # Sequential computation over batch dimension
+    for k in range(batch_size):
+        # Initialize temporary arrays for this batch element
+        arr0_k = np.zeros(cutoffs, dtype=np.complex128)
+        arr2_k = np.zeros((M, *cutoffs), dtype=np.complex128)
+        arr1_k = np.zeros((2 * M, *cutoffs), dtype=np.complex128)
+
+        if M == 1:
+            arr1010_k = np.zeros((1, 1, 1), dtype=np.complex128)
+            arr1001_k = np.zeros((1, 1, 1), dtype=np.complex128)
+        else:
+            arr1010_k = np.zeros((M, M - 1, *cutoffs), dtype=np.complex128)
+            arr1001_k = np.zeros((M, M - 1, *cutoffs), dtype=np.complex128)
+
+        # Set vacuum amplitude for this batch element
+        arr0_k[(0,) * M] = G0[k]
+
+        # Call the existing single-instance function
+        arr0_k, arr2_k, arr1010_k, arr1001_k, arr1_k = fock_representation_diagonal_amps_NUMBA(
+            A[k],
+            B[k],
+            M,
+            cutoffs,
+            arr0_k,
+            arr2_k,
+            arr1010_k,
+            arr1001_k,
+            arr1_k,
+            tuple_type,
+            list_type,
+        )
+
+        # Store results back to batch arrays
+        arr0[k] = arr0_k
+        arr2[k] = arr2_k
+        arr1010[k] = arr1010_k
+        arr1001[k] = arr1001_k
+        arr1[k] = arr1_k
+
+    return arr0, arr2, arr1010, arr1001, arr1
+
+
 def fock_representation_diagonal_amps(A, B, G0, M, cutoffs):
     """
     First initialise the submatrices of G (of which the shape depends on cutoff and M)

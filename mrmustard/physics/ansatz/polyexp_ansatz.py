@@ -357,8 +357,7 @@ class PolyExpAnsatz(Ansatz):
         # Check contracted core labels don't appear in output
         if not set(core_out).isdisjoint(contracted_cores := set(core1) & set(core2)):
             raise ValueError(
-                "idx_out cannot contain core labels that are contracted: "
-                f"{set(core_out) & contracted_cores}",
+                f"idx_out cannot contain core labels that are contracted: {set(core_out) & contracted_cores}",
             )
 
         # --- Prepare for complex_gaussian_integral_2 ---  # TODO: finish fixing this
@@ -408,7 +407,7 @@ class PolyExpAnsatz(Ansatz):
         This means that the number of continuous variables remains ``n``, the number of derived variables decreases from
         ``m`` to ``n``, and the number of discrete variables remains ``d``. The price we pay is that the order of the
         derivatives is larger (the order of each derivative is the sum of all the orders of the initial derivatives).
-        This decomposition is typically favourable if ``m > n`` and the sum of the elements in ``c.shape[1:]`` is not too large.
+        This decomposition is typically favourable if ``m > n`` and the sum of the elements in ``c.shape[:m]`` is not too large.
         This method will actually decompose the ansatz only if ``m > n`` and return the original ansatz otherwise.
         """
         if self.num_derived_vars < self.num_CV_vars:
@@ -485,8 +484,7 @@ class PolyExpAnsatz(Ansatz):
         """
         if len(z) > self.num_CV_vars:
             raise ValueError(
-                f"The ansatz was called with {len(z)} variables, "
-                f"but it only has {self.num_CV_vars} CV variables.",
+                f"The ansatz was called with {len(z)} variables, but it only has {self.num_CV_vars} CV variables.",
             )
 
         evaluated_indices = [i for i, zi in enumerate(z) if zi is not None]
