@@ -365,6 +365,18 @@ class ArrayAnsatz(Ansatz):
             atol=settings.ATOL,
         )
 
+    def __getitem__(self, item: Any) -> ArrayAnsatz:
+        if not isinstance(item, tuple):
+            item = (item,)
+
+        if len(item) > self.batch_dims:
+            msg = f"Too many indices for ansatz with {self.batch_dims} batch dimensions. You cannot slice into the core dimensions."
+            raise IndexError(msg)
+
+        sliced_array = self.array[item]
+        new_batch_dims = sliced_array.ndim - self.core_dims
+        return self.__class__(array=sliced_array, batch_dims=new_batch_dims)
+
     def __mul__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:
         return ArrayAnsatz(array=self.array * other, batch_dims=self.batch_dims)
 

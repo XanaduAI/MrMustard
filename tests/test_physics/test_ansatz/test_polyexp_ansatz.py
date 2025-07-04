@@ -637,3 +637,63 @@ class TestPolyExpAnsatz:
         gaussian = np.exp((x**2) / 2) / 2
 
         assert math.allclose(ans.PS(x, 0), gaussian)
+
+
+class TestPolyExpAnsatzSlicing:
+    "Tests the __getitem__ method of the PolyExpAnsatz class."
+
+    @pytest.fixture
+    def A(self):
+        return math.astensor(np.arange(2 * 3 * 4 * 4).reshape((2, 3, 4, 4)))
+
+    @pytest.fixture
+    def b(self):
+        return math.astensor(np.arange(2 * 3 * 4).reshape((2, 3, 4)))
+
+    @pytest.fixture
+    def c(self):
+        return math.astensor(np.arange(2 * 3 * 5).reshape((2, 3, 5)))
+
+    @pytest.fixture
+    def ansatz(self, A, b, c):
+        return PolyExpAnsatz(A, b, c)
+
+    def test_integer_slicing(self, ansatz, A, b, c):
+        "Tests slicing with a single integer."
+        sliced = ansatz[1]
+        assert sliced.batch_shape == (3,)
+        assert math.allclose(sliced.A, A[1])
+        assert math.allclose(sliced.b, b[1])
+        assert math.allclose(sliced.c, c[1])
+
+    def test_slice_slicing(self, ansatz, A, b, c):
+        "Tests slicing with a slice object."
+        sliced = ansatz[0:2]
+        assert sliced.batch_shape == (2, 3)
+        assert math.allclose(sliced.A, A[0:2])
+        assert math.allclose(sliced.b, b[0:2])
+        assert math.allclose(sliced.c, c[0:2])
+
+    def test_multidimensional_slicing(self, ansatz, A, b, c):
+        "Tests slicing with multiple indices."
+        sliced = ansatz[0, 1:3]
+        assert sliced.batch_shape == (2,)
+        assert math.allclose(sliced.A, A[0, 1:3])
+        assert math.allclose(sliced.b, b[0, 1:3])
+        assert math.allclose(sliced.c, c[0, 1:3])
+
+    def test_slicing_returns_correct_type(self, ansatz):
+        "Tests that slicing returns an object of the same class."
+        sliced = ansatz[0]
+        assert isinstance(sliced, PolyExpAnsatz)
+
+    def test_slicing_preserves_lin_sup(self, A, b, c):
+        "Tests that slicing preserves the lin_sup flag."
+        ansatz = PolyExpAnsatz(A, b, c, lin_sup=True)
+        sliced = ansatz[0]
+        assert sliced._lin_sup
+
+    def test_slicing_core_dimensions_raises_error(self, ansatz):
+        "Tests that slicing into core dimensions raises an IndexError."
+        with pytest.raises(IndexError, match="Too many indices"):
+            ansatz[0, 0, 0]

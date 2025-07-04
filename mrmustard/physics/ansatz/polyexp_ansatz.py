@@ -357,8 +357,7 @@ class PolyExpAnsatz(Ansatz):
         # Check contracted core labels don't appear in output
         if not set(core_out).isdisjoint(contracted_cores := set(core1) & set(core2)):
             raise ValueError(
-                "idx_out cannot contain core labels that are contracted: "
-                f"{set(core_out) & contracted_cores}",
+                f"idx_out cannot contain core labels that are contracted: {set(core_out) & contracted_cores}",
             )
 
         # --- Prepare for complex_gaussian_integral_2 ---  # TODO: finish fixing this
@@ -485,8 +484,7 @@ class PolyExpAnsatz(Ansatz):
         """
         if len(z) > self.num_CV_vars:
             raise ValueError(
-                f"The ansatz was called with {len(z)} variables, "
-                f"but it only has {self.num_CV_vars} CV variables.",
+                f"The ansatz was called with {len(z)} variables, but it only has {self.num_CV_vars} CV variables.",
             )
 
         evaluated_indices = [i for i, zi in enumerate(z) if zi is not None]
@@ -963,13 +961,26 @@ class PolyExpAnsatz(Ansatz):
             and math.allclose(self_c, other_c, atol=settings.ATOL)
         )
 
+    def __getitem__(self, item: Any) -> PolyExpAnsatz:
+        if not isinstance(item, tuple):
+            item = (item,)
+
+        if len(item) > self.batch_dims:
+            msg = f"Too many indices for ansatz with {self.batch_dims} batch dimensions. You cannot slice into the core dimensions."
+            raise IndexError(msg)
+
+        new_A = self.A[item]
+        new_b = self.b[item]
+        new_c = self.c[item]
+
+        return self.__class__(new_A, new_b, new_c, name=self.name, lin_sup=self._lin_sup)
+
     def __mul__(self, other: Scalar | ArrayLike | PolyExpAnsatz) -> PolyExpAnsatz:
         if not isinstance(other, PolyExpAnsatz):  # could be a number
             try:
                 return PolyExpAnsatz(self.A, self.b, self.c * other, lin_sup=self._lin_sup)
             except Exception as e:
                 raise TypeError(f"Cannot multiply PolyExpAnsatz and {other.__class__}.") from e
-
         else:
             raise NotImplementedError(
                 "Multiplication of PolyExpAnsatz with other PolyExpAnsatz is not implemented.",

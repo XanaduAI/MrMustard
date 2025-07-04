@@ -242,3 +242,60 @@ class TestArrayAnsatz:
         fock = ArrayAnsatz(self.array1578, batch_dims=2)
         fock_reordered = fock.reorder_batch([1, 0])
         assert fock_reordered.array.shape == (5, 1, 7, 8)
+
+
+class TestArrayAnsatzSlicing:
+    "Tests the __getitem__ method of the ArrayAnsatz class."
+
+    @pytest.fixture
+    def array(self):
+        return math.astensor(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)))
+
+    @pytest.fixture
+    def ansatz(self, array):
+        return ArrayAnsatz(array, batch_dims=2)
+
+    def test_integer_slicing(self, ansatz, array):
+        "Tests slicing with a single integer."
+        sliced = ansatz[1]
+        assert sliced.batch_shape == (3,)
+        assert sliced.batch_dims == 1
+        assert math.allclose(sliced.array, array[1])
+
+    def test_slice_slicing(self, ansatz, array):
+        "Tests slicing with a slice object."
+        sliced = ansatz[0:2]
+        assert sliced.batch_shape == (2,)
+        assert sliced.batch_dims == 1
+        assert math.allclose(sliced.array, array[0:2])
+
+    def test_ellipsis_slicing(self, ansatz, array):
+        "Tests slicing with an ellipsis."
+        sliced = ansatz[...]
+        assert sliced.batch_shape == ansatz.batch_shape
+        assert sliced.batch_dims == ansatz.batch_dims
+        assert math.allclose(sliced.array, array)
+
+    def test_multidimensional_slicing(self, ansatz, array):
+        "Tests slicing with multiple indices."
+        sliced = ansatz[0, 1:3]
+        assert sliced.batch_shape == (2,)
+        assert sliced.batch_dims == 1
+        assert math.allclose(sliced.array, array[0, 1:3])
+
+    def test_advanced_list_indexing(self, ansatz, array):
+        "Tests advanced indexing with a list."
+        sliced = ansatz[[0, 1]]
+        assert sliced.batch_shape == (2,)
+        assert sliced.batch_dims == 1
+        assert math.allclose(sliced.array, array[[0, 1]])
+
+    def test_slicing_returns_correct_type(self, ansatz):
+        "Tests that slicing returns an object of the same class."
+        sliced = ansatz[0]
+        assert isinstance(sliced, ArrayAnsatz)
+
+    def test_slicing_core_dimensions_raises_error(self, ansatz):
+        "Tests that slicing into core dimensions raises an IndexError."
+        with pytest.raises(IndexError, match="Too many indices"):
+            ansatz[0, 0, 0]
