@@ -75,7 +75,7 @@ class CircuitComponent:
         self._wires = wires or Wires(set(), set(), set(), set())
 
         if isinstance(ansatz, ArrayAnsatz):
-            for w in self.wires.quantum_wires:
+            for w in self.wires.quantum:
                 w.repr = ReprEnum.FOCK
                 w.fock_size = ansatz.core_shape[w.index]
 
@@ -728,7 +728,7 @@ class CircuitComponent:
         except AttributeError:
             fock._original_abc_data = None
         wires = self.wires.copy()
-        for w in wires.quantum_wires:
+        for w in wires.quantum:
             w.repr = ReprEnum.FOCK
             w.fock_size = fock.core_shape[w.index]
 
