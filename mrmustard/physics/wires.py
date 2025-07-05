@@ -341,6 +341,7 @@ class Wires:
         ret = self.copy(new_ids=True)
         for w in ret.quantum:
             w.is_ket = not w.is_ket
+        ret.__dict__.pop("sorted_wires", None)
         ret._reindex()
         return ret
 
@@ -382,6 +383,7 @@ class Wires:
         ret = self.copy(new_ids=True)
         for w in ret:
             w.is_out = not w.is_out
+        ret.__dict__.pop("sorted_wires", None)
         ret._reindex()
         return ret
 
@@ -444,7 +446,7 @@ class Wires:
         """
         return Wires.from_wires(quantum=self.quantum_wires)
 
-    @property
+    @cached_property
     def sorted_wires(self) -> list[QuantumWire | ClassicalWire]:
         r"""
         A list of all wires sorted in standard order.
