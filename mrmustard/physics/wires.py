@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import functools
+import inspect
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -341,7 +343,7 @@ class Wires:
         ret = self.copy(new_ids=True)
         for w in ret.quantum:
             w.is_ket = not w.is_ket
-        ret.__dict__.pop("sorted_wires", None)
+        ret._clear_cached_properties()
         ret._reindex()
         return ret
 
@@ -383,7 +385,7 @@ class Wires:
         ret = self.copy(new_ids=True)
         for w in ret:
             w.is_out = not w.is_out
-        ret.__dict__.pop("sorted_wires", None)
+        ret._clear_cached_properties()
         ret._reindex()
         return ret
 
@@ -531,6 +533,16 @@ class Wires:
             print(self)
             return
         display(widgets.wires(self))
+
+    def _clear_cached_properties(self) -> None:
+        r"""
+        Clears the cached properties of the Wires object.
+        Note: This is required whenever the Wires object has been mutated to
+        ensure it's properties are recomputed.
+        """
+        for name, value in inspect.getmembers(Wires):
+            if isinstance(value, functools.cached_property):
+                self.__dict__.pop(name, None)
 
     def _reindex(self) -> None:
         r"""
