@@ -42,6 +42,9 @@ class OptimizerJax:
     Args:
         learning_rate: The learning rate of the optimizer.
         stable_threshold: The threshold for the loss to be considered stable.
+
+    Raises:
+        ValueError: If the set backend is not "jax".
     """
 
     def __init__(
@@ -49,12 +52,16 @@ class OptimizerJax:
         learning_rate: float = 0.001,
         stable_threshold: float = 1e-6,
     ):
+        if math.backend_name != "jax":
+            raise ValueError(
+                "OptimizerJax only supports the Jax backend. Please set the backend to Jax using `math.change_backend('jax')`.",
+            )
         self.learning_rate = learning_rate
         self.opt_history = [0]
         self.log = create_logger(__name__)
         self.stable_threshold = stable_threshold
 
-    # @eqx.filter_jit
+    @eqx.filter_jit
     def make_step(
         self,
         optim: GradientTransformation,
@@ -78,8 +85,18 @@ class OptimizerJax:
             *by_optimizing,
         )
         updates, opt_state = optim.update(grads, opt_state, by_optimizing)
-        by_optimizing = eqx.apply_updates(by_optimizing, updates)
+        by_optimizing = self._apply_updates(by_optimizing, updates)
         return by_optimizing, opt_state, loss_value
+
+    def _apply_updates(
+        self,
+        by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
+        updates: Sequence[Variable | CircuitComponent | Circuit],
+    ) -> Sequence[Variable | CircuitComponent | Circuit]:
+        r"""
+        Applies the updates to the by_optimizing.
+        """
+        return eqx.apply_updates(by_optimizing, updates)
 
     def minimize(
         self,
