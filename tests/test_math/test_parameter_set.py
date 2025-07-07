@@ -166,9 +166,15 @@ class TestParameterSet:
         """
         ps = ParameterSet()
 
-        # Test scalar real constant
-        const_real = Constant(3.14159, "const_real")
-        value_str, shape_str = ps._format_value(const_real)
+        # Test scalar real integer constant
+        const_real_int = Constant(3, "const_real_int")
+        value_str, shape_str = ps._format_value(const_real_int)
+        assert value_str == "3"
+        assert shape_str == "scalar"
+
+        # Test scalar real float constant
+        const_real_float = Constant(3.14159, "const_real_float")
+        value_str, shape_str = ps._format_value(const_real_float)
         assert value_str == "3.14159"
         assert shape_str == "scalar"
 
