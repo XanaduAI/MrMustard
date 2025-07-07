@@ -330,6 +330,18 @@ class TestCircuitComponent:
         assert math.allclose(result.ansatz.b, d0.ansatz.b)
         assert math.allclose(result.ansatz.c, 0.8 * d0.ansatz.c)
 
+    def test_contract_diff_representations(self):
+        coh0 = Coherent(0, x=0.1, y=0.1)
+        coh1 = Coherent(1, x=0.2, y=0.2).to_fock()
+
+        with settings(DEFAULT_REPRESENTATION="Bargmann"):
+            result1 = coh0.contract(coh1)
+            assert isinstance(result1.ansatz, PolyExpAnsatz)
+
+        with settings(DEFAULT_REPRESENTATION="Fock"):
+            result2 = coh0.contract(coh1)
+            assert isinstance(result2.ansatz, ArrayAnsatz)
+
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum((0, 1, 2))
         d0 = Dgate(0, alpha=0.1 + 0.1j)
