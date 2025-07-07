@@ -85,18 +85,8 @@ class OptimizerJax:
             *by_optimizing,
         )
         updates, opt_state = optim.update(grads, opt_state, by_optimizing)
-        by_optimizing = self._apply_updates(by_optimizing, updates)
+        by_optimizing = eqx.apply_updates(by_optimizing, updates)
         return by_optimizing, opt_state, loss_value
-
-    def _apply_updates(
-        self,
-        by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
-        updates: Sequence[Variable | CircuitComponent | Circuit],
-    ) -> Sequence[Variable | CircuitComponent | Circuit]:
-        r"""
-        Applies the updates to the by_optimizing.
-        """
-        return eqx.apply_updates(by_optimizing, updates)
 
     def minimize(
         self,
