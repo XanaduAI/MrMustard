@@ -35,6 +35,7 @@ class TestSettings:
         assert settings.AUTOSHAPE_MIN == 1
         assert settings.DISCRETIZATION_METHOD == "clenshaw"
         assert settings.DEFAULT_FOCK_SIZE == 50
+        assert settings.DEFAULT_REPRESENTATION == "Fock"
         assert settings.PROGRESSBAR is True
 
     def test_setters(self):
