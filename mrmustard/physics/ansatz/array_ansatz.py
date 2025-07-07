@@ -365,7 +365,7 @@ class ArrayAnsatz(Ansatz):
             atol=settings.ATOL,
         )
 
-    def __getitem__(self, item: Any) -> ArrayAnsatz:
+    def __getitem__(self, item: int | Sequence[int]) -> ArrayAnsatz:
         if not isinstance(item, tuple):
             item = (item,) if isinstance(item, int) else tuple(item)
 
