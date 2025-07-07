@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import rich.table
@@ -81,16 +82,16 @@ class Settings:
         self.DEFAULT_FOCK_SIZE: int = 50
         r"""The default size for the Fock representation. Default is ``50``."""
 
-        self.DEFAULT_REPRESENTATION: str = "Fock"
+        self.DEFAULT_REPRESENTATION: Literal["Bargmann", "Fock"] = "Fock"
         r"""The representation to use when contracting two circuit components in different representations. Can be ``Fock`` or ``Bargmann``. Default is ``Fock``."""
 
-        self.DISCRETIZATION_METHOD: str = "clenshaw"
+        self.DISCRETIZATION_METHOD: Literal["clenshaw", "iterative"] = "clenshaw"
         r"""The method used to discretize the Wigner function. Can be ``clenshaw`` (better, default) or ``iterative`` (worse, faster). Default is ``clenshaw``."""
 
         self.DRAW_CIRCUIT_PARAMS: bool = True
         r"""Whether or not to draw the parameters of a circuit. Default is ``True``."""
 
-        self.EINSUM_OPTIMIZE: bool | str = "greedy"
+        self.EINSUM_OPTIMIZE: bool | Literal["greedy", "optimal", "auto"] = "greedy"
         r"""Whether to optimize the contraction order when using the Einstein summation convention.
         Allowed values are True, False, "greedy", "optimal" or "auto".
         Note the TF backend does not support False and converts it to "greedy".
