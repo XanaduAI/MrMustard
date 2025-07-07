@@ -28,17 +28,10 @@ from plotly.subplots import make_subplots
 from mrmustard import math, settings
 from mrmustard.math.lattice.autoshape import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.bargmann_utils import (
-    bargmann_Abc_to_phasespace_cov_means,
-)
+from mrmustard.physics.bargmann_utils import bargmann_Abc_to_phasespace_cov_means
 from mrmustard.physics.fock_utils import quadrature_distribution
 from mrmustard.physics.wigner import wigner_discretized
-from mrmustard.utils.typing import (
-    ComplexMatrix,
-    ComplexTensor,
-    ComplexVector,
-    RealVector,
-)
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector, RealVector
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import BtoChar, BtoPS, BtoQ
@@ -347,27 +340,24 @@ class State(CircuitComponent):
         respect_manual_shape=True,
     ) -> tuple[int, ...]:
         r"""
-        A good enough estimate of the Fock shape of this state, defined as the shape of the Fock
-        array (batch excluded) if it exists, and if it doesn't exist it is computed as the shape
-        that captures at least ``settings.AUTOSHAPE_PROBABILITY`` of the probability mass of each
-        single-mode marginal (default 99.9%).
+        Generates an estimate for the Fock shape. If the state is in Fock the core shape is used.
+        If in Bargmann, the shape is computed as the shape that captures at least ``settings.AUTOSHAPE_PROBABILITY``
+        of the probability mass of each single-mode marginal (default 99.9%) so long as the state has no derived variables
+        and is unbatched. Otherwise, defaults to ``settings.DEFAULT_FOCK_SIZE``. If ``respect_manual_shape`` is ``True``,
+        the non-None values in ``self.manual_shape`` are used to override the shape.
 
         Args:
-            max_prob: The maximum probability mass to capture in the shape (default from ``settings.AUTOSHAPE_PROBABILITY``).
-            max_shape: The maximum shape cutoff (default is ``settings.AUTOSHAPE_MAX``).
-            min_shape: The minimum shape cutoff (default is ``settings.AUTOSHAPE_MIN``).
-            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``.
+            max_prob: The maximum probability mass to capture in the shape. Default is ``settings.AUTOSHAPE_PROBABILITY``.
+            max_shape: The maximum shape cutoff. Default is ``settings.AUTOSHAPE_MAX``.
+            min_shape: The minimum shape cutoff. Default is ``settings.AUTOSHAPE_MIN``.
+            respect_manual_shape: Whether to respect the non-None values in ``manual_shape``. Default is ``True``.
 
         Returns:
-            array: The Fock representation of this component.
+            The Fock shape of this component.
 
-        Raises:
-            NotImplementedError: If the state is batched.
 
         Note:
-            If the ``respect_manual_shape`` flag is set to ``True``, auto_shape will respect the
-            non-``None`` values in ``manual_shape``.
-
+            If jitted, the shape will default to ``settings.DEFAULT_FOCK_SIZE``.
         Example:
         .. code-block::
 
@@ -376,39 +366,31 @@ class State(CircuitComponent):
 
             >>> assert math.allclose(Vacuum([0]).fock_array(), 1)
         """
-        batch_shape = (
-            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
-        )
-        if batch_shape:
-            raise NotImplementedError("Batched auto_shape is not implemented.")
-        if not self.ansatz._lin_sup:
-            try:  # fock
-                shape = self.ansatz.core_shape
-            except AttributeError:  # bargmann
-                if self.ansatz.num_derived_vars == 0:
-                    if not self.wires.ket or not self.wires.bra:
-                        ansatz = self.ansatz.conj & self.ansatz
-                    else:
-                        ansatz = self.ansatz
-                    A, b, c = ansatz.triple
-                    try:
-                        shape = autoshape_numba(
-                            math.asnumpy(A),
-                            math.asnumpy(b),
-                            math.asnumpy(c),
-                            max_prob or settings.AUTOSHAPE_PROBABILITY,
-                            max_shape or settings.AUTOSHAPE_MAX,
-                            min_shape or settings.AUTOSHAPE_MIN,
-                        )
-                    # covers the case where auto_shape is jitted
-                    except math.BackendError:  # pragma: no cover
-                        shape = super().auto_shape()
-                    if self.wires.ket and self.wires.bra:
-                        shape = tuple(shape) + tuple(shape)
+        try:
+            shape = self.ansatz.core_shape
+        except AttributeError:
+            if self.ansatz.num_derived_vars == 0 and self.ansatz.batch_dims == 0:
+                if not self.wires.ket or not self.wires.bra:
+                    ansatz = self.ansatz.conj & self.ansatz
                 else:
+                    ansatz = self.ansatz
+                A, b, c = ansatz.triple
+                try:
+                    shape = autoshape_numba(
+                        math.asnumpy(A),
+                        math.asnumpy(b),
+                        math.asnumpy(c),
+                        max_prob or settings.AUTOSHAPE_PROBABILITY,
+                        max_shape or settings.AUTOSHAPE_MAX,
+                        min_shape or settings.AUTOSHAPE_MIN,
+                    )
+                # covers the case where auto_shape is jitted
+                except math.BackendError:  # pragma: no cover
                     shape = super().auto_shape()
-        else:
-            shape = super().auto_shape()
+                if self.wires.ket and self.wires.bra:
+                    shape = tuple(shape) + tuple(shape)
+            else:
+                shape = super().auto_shape()
         if respect_manual_shape:
             return tuple(c or s for c, s in zip(self.manual_shape, shape))
         return tuple(shape)

@@ -27,14 +27,8 @@ from mrmustard import math, settings, widgets
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.wires import ReprEnum, Wires
-from mrmustard.utils.typing import (
-    Batch,
-    ComplexMatrix,
-    ComplexVector,
-    Scalar,
-)
+from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Scalar
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
@@ -153,7 +147,7 @@ class Ket(State):
         if isinstance(ansatz, ArrayAnsatz):
             for w in wires.quantum_wires:
                 w.repr = ReprEnum.FOCK
-        return Ket(Representation(ansatz, wires), name)
+        return Ket(ansatz, wires, name=name)
 
     @classmethod
     def from_phase_space(
@@ -244,23 +238,22 @@ class Ket(State):
             >>> from mrmustard.lab import Vacuum, DM
             >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
-        dm_repr = self.representation.contract(self.adjoint.representation, mode="zip")
-        ret = DM(dm_repr, self.name)
-        ret.manual_shape = self.manual_shape + self.manual_shape
-        return ret
+        ret = self.contract(self.adjoint, mode="zip")
+        return DM._from_attributes(ret.ansatz, ret.wires, name=self.name)
 
-    def expectation(self, operator: CircuitComponent):
+    def expectation(self, operator: CircuitComponent, mode: str = "kron") -> Batch[Scalar]:
         r"""
         The expectation value of an operator calculated with respect to this Ket.
 
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
+            mode: The mode of contraction. Can either "zip" the batch dimensions, "kron" the batch dimensions,
+                or pass a custom einsum-style batch string like "ab,cb->ac".
 
         Returns:
             Expectation value as a complex number.
 
         Raises:
-            NotImplementedError: If the state or ``operator`` are batched.
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
                 component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
@@ -287,11 +280,6 @@ class Ket(State):
 
             >>> assert math.allclose(psi.expectation(Rgate(0, theta)), answer)
         """
-        if (self.ansatz and self.ansatz.batch_shape) or (
-            operator.ansatz and operator.ansatz.batch_shape
-        ):  # pragma: no cover
-            raise NotImplementedError("Batched expectation values are not implemented.")
-
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
             raise ValueError(msg)
@@ -303,18 +291,16 @@ class Ket(State):
 
         leftover_modes = self.wires.modes - operator.wires.modes
         if op_type is OperatorType.KET_LIKE:
-            result = self.contract(operator.dual)
-            result = result.contract(result.adjoint)
-            result >>= TraceOut(leftover_modes)
-
+            result = self.contract(operator.dual, mode=mode)
+            result = result.contract(result.adjoint, mode="zip") >> TraceOut(leftover_modes)
         elif op_type is OperatorType.DM_LIKE:
-            result = (self.adjoint.contract(self.contract(operator.dual))) >> TraceOut(
-                leftover_modes,
-            )
-
+            result = self.adjoint.contract(
+                self.contract(operator.dual, mode=mode),
+                mode="zip",
+            ) >> TraceOut(leftover_modes)
         else:
-            result = (self.contract(operator)) >> self.dual
-
+            result = (self.contract(operator, mode=mode)).contract(self.dual, mode="zip")
+            result = result >> TraceOut(result.modes)
         return result
 
     def fidelity(self, other: State) -> float:
@@ -563,13 +549,16 @@ class Ket(State):
             >>> assert isinstance(psi >> U, Ket)
             >>> assert isinstance(psi >> channel, DM)
         """
-        result = super().__rshift__(other)
+        result = super().__rshift__(
+            other,
+        )  # this would be the output if we didn't override __rshift__
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here
 
+        # TODO: Reminder: replace with result.wires.ket_like and result.wires.dm_like
         if not result.wires.input:
             if not result.wires.bra:
-                return Ket(result.representation)
+                return Ket._from_attributes(result.ansatz, result.wires)
             if result.wires.bra.modes == result.wires.ket.modes:
-                return DM(result.representation)
+                return DM._from_attributes(result.ansatz, result.wires)
         return result

@@ -30,7 +30,6 @@ from collections.abc import Sequence
 from mrmustard import math, settings
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import XY_of_channel, au2Symplectic, symplectic2Au
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import XY_to_channel_Abc
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, RealMatrix, Vector
@@ -139,6 +138,13 @@ class Transformation(CircuitComponent):
         Raises:
             NotImplementedError: If the input and output wires have different lengths.
             NotImplementedError: If the transformation is not in the Bargmann representation.
+
+        .. code-block::
+            >>> from mrmustard.lab import GDM, Identity
+
+            >>> rho = GDM(0, beta = 0.1)
+            >>> rho_as_operator = Operation.from_bargmann([0], [0], rho.ansatz.triple)
+            >>> assert rho_as_operator >> rho_as_operator.inverse() == Identity([0])
         """
         if not len(self.wires.input) == len(self.wires.output):
             raise NotImplementedError(
@@ -147,28 +153,37 @@ class Transformation(CircuitComponent):
         if not isinstance(self.ansatz, PolyExpAnsatz):  # pragma: no cover
             raise NotImplementedError("Only Bargmann representation is supported.")
 
+        A_orig, b_orig, c_orig = self.ansatz.triple
         A, b, _ = self.dual.ansatz.conj.triple
-        almost_inverse = self._from_attributes(
-            Representation(
-                PolyExpAnsatz(
-                    math.inv(A),
-                    math.einsum("...ij,...j->...i", -math.inv(A), b),
-                    math.ones(self.ansatz.batch_shape, dtype=math.complex128),
-                ),
-                self.wires.copy(new_ids=True),
-            ),
+        A_inv = math.inv(A)
+        b_of_inverse = math.einsum("...ij,...j->...i", -math.inv(A), b)
+
+        in_idx = self.wires.input.indices
+        out_idx = self.wires.output.indices
+        A_orig_out = A_orig[..., out_idx, :][..., :, out_idx]
+        A_inv_in = A_inv[..., in_idx, :][..., :, in_idx]
+        b_orig_out = b_orig[..., out_idx]
+        b_of_inverse_in = b_of_inverse[..., in_idx]
+        m = A.shape[-1] // 2
+        Im = math.broadcast_to(math.eye(m, dtype=math.complex128), (*A.shape[:-2], m, m))
+        M = math.block([[A_orig_out, -Im], [-Im, A_inv_in]])
+        combined_b = math.concat([b_orig_out, b_of_inverse_in], axis=-1)
+        c_of_inverse = (
+            1
+            / c_orig
+            * math.sqrt(math.cast(math.det(1j * M), dtype=math.complex128))
+            * math.exp(
+                0.5 * math.einsum("...i,...ij,...j->...", combined_b, math.inv(M), combined_b),
+            )
         )
-        almost_identity = self.contract(almost_inverse, "zip")
-        invert_this_c = almost_identity.ansatz.c
+
         return self._from_attributes(
-            Representation(
-                PolyExpAnsatz(
-                    math.inv(A),
-                    math.einsum("...ij,...j->...i", -math.inv(A), b),
-                    1 / invert_this_c,
-                ),
-                self.wires.copy(new_ids=True),
+            PolyExpAnsatz(
+                math.inv(A),
+                math.einsum("...ij,...j->...i", -math.inv(A), b),
+                c_of_inverse,
             ),
+            self.wires.copy(new_ids=True),
             self.name + "_inv",
         )
 
@@ -194,10 +209,8 @@ class Operation(Transformation):
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Operation(
-            representation=Representation(
-                ansatz=ansatz,
-                wires=Wires(set(), set(), set(modes_out), set(modes_in)),
-            ),
+            ansatz=ansatz,
+            wires=Wires(set(), set(), set(modes_out), set(modes_in)),
             name=name,
         )
 
@@ -229,10 +242,8 @@ class Unitary(Operation):
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Unitary(
-            representation=Representation(
-                ansatz=ansatz,
-                wires=Wires(set(), set(), set(modes_out), set(modes_in)),
-            ),
+            ansatz=ansatz,
+            wires=Wires(set(), set(), set(modes_out), set(modes_in)),
             name=name,
         )
 
@@ -296,7 +307,8 @@ class Unitary(Operation):
         """
         unitary_dual = self.dual
         return Unitary(
-            representation=unitary_dual.representation,
+            ansatz=unitary_dual.ansatz,
+            wires=unitary_dual.wires,
             name=unitary_dual.name,
         )
 
@@ -318,9 +330,9 @@ class Unitary(Operation):
         ret = super().__rshift__(other)
 
         if isinstance(other, Unitary):
-            return Unitary(ret.representation)
+            return Unitary(ret.ansatz, ret.wires)
         if isinstance(other, Channel):
-            return Channel(ret.representation)
+            return Channel(ret.ansatz, ret.wires)
         return ret
 
 
@@ -344,10 +356,8 @@ class Map(Transformation):
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Map(
-            representation=Representation(
-                ansatz=ansatz,
-                wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
-            ),
+            ansatz=ansatz,
+            wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
             name=name,
         )
 
@@ -474,10 +484,8 @@ class Channel(Map):
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
         return Channel(
-            representation=Representation(
-                ansatz=ansatz,
-                wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
-            ),
+            ansatz=ansatz,
+            wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
             name=name,
         )
 
@@ -570,5 +578,5 @@ class Channel(Map):
         """
         ret = super().__rshift__(other)
         if isinstance(other, Channel | Unitary):
-            return Channel(ret.representation)
+            return Channel(ret.ansatz, ret.wires)
         return ret

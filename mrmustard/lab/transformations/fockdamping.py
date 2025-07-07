@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard.physics.wires import Wires
+
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
@@ -81,11 +83,8 @@ class FockDamping(Operation):
                 None,
             ),
         )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.fock_damping_Abc,
-                beta=self.parameters.damping,
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.fock_damping_Abc,
+            beta=self.parameters.damping,
+        )
+        self._wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})

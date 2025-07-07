@@ -26,7 +26,6 @@ from mrmustard.utils.typing import ComplexTensor
 
 from ...physics import triples
 from ...physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from ...physics.representations import Representation
 from ...physics.wires import ReprEnum, Wires
 from ..utils import make_parameter
 from .base import Unitary
@@ -93,15 +92,12 @@ class Dgate(Unitary):
         super().__init__(name="Dgate")
         self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displacement_gate_Abc,
-                x=self.parameters.x,
-                y=self.parameters.y,
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.displacement_gate_Abc,
+            x=self.parameters.x,
+            y=self.parameters.y,
+        )
+        self._wires = Wires(set(), set(), {mode}, {mode})
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
@@ -134,7 +130,7 @@ class Dgate(Unitary):
         return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
-        batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
+        batch_dims = self.ansatz.batch_dims - self.ansatz._lin_sup
         fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
         fock._original_abc_data = self.ansatz.triple
         ret = self.__class__(self.modes[0], **self.parameters.to_dict())
@@ -142,5 +138,6 @@ class Dgate(Unitary):
             quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
             classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
         )
-        ret._representation = Representation(fock, wires)
+        ret._ansatz = fock
+        ret._wires = wires
         return ret

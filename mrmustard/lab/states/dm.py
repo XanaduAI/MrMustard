@@ -29,13 +29,9 @@ from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
 from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
-from mrmustard.physics.representations import Representation
+from mrmustard.physics.utils import outer_product_batch_str
 from mrmustard.physics.wires import ReprEnum, Wires
-from mrmustard.utils.typing import (
-    ComplexMatrix,
-    ComplexTensor,
-    ComplexVector,
-)
+from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
@@ -145,7 +141,7 @@ class DM(State):
         if isinstance(ansatz, ArrayAnsatz):
             for w in wires:
                 w.repr = ReprEnum.FOCK
-        return DM(Representation(ansatz, wires), name)
+        return DM(ansatz, wires, name=name)
 
     @classmethod
     def from_phase_space(
@@ -243,7 +239,7 @@ class DM(State):
         """
         return self
 
-    def expectation(self, operator: CircuitComponent):
+    def expectation(self, operator: CircuitComponent, mode: str = "kron") -> Batch[Scalar]:
         r"""
         The expectation value of an operator with respect to this DM.
 
@@ -256,12 +252,12 @@ class DM(State):
 
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
-
+            mode: The mode of contraction. Can either "zip" the batch dimensions, "kron" the batch dimensions,
+                or pass a custom einsum-style batch string like "ab,cb->ac".
         Returns:
-            Expectation value as a complex number.
+            Expectation value either as a complex number or a batch of complex numbers.
 
         Raise:
-            NotImplementedError: If the state is batched or ``operator`` is batched.
             ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
                 component.
             ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
@@ -279,10 +275,6 @@ class DM(State):
 
             >>> assert math.allclose(rho.expectation(Rgate(0, np.pi)), answer)
         """
-        if (self.ansatz and self.ansatz.batch_shape) or (
-            operator.ansatz and operator.ansatz.batch_shape
-        ):
-            raise NotImplementedError("Batched expectation values are not implemented.")
         op_type, msg = _validate_operator(operator)
         if op_type is OperatorType.INVALID_TYPE:
             raise ValueError(msg)
@@ -293,12 +285,31 @@ class DM(State):
             raise ValueError(msg)
 
         leftover_modes = self.wires.modes - operator.wires.modes
-        if op_type is OperatorType.KET_LIKE or op_type is OperatorType.DM_LIKE:
-            result = self >> operator.dual
-            if leftover_modes:
-                result >>= TraceOut(leftover_modes)
+        if op_type is OperatorType.KET_LIKE:
+            # if mode is not zip we need to generate a new eins_str for the second contraction
+            if mode != "zip":
+                eins_str = (
+                    outer_product_batch_str(
+                        self.ansatz.batch_dims - self.ansatz._lin_sup,
+                        operator.ansatz.batch_dims - operator.ansatz._lin_sup,
+                    )
+                    if mode == "kron"
+                    else mode
+                )
+                batch_in, batch_out = eins_str.split("->")
+                _, batch2 = batch_in.split(",")
+                eins_str2 = f"{batch_out},{batch2}->{batch_out}"
+            else:
+                eins_str = mode
+                eins_str2 = mode
+            result = self.contract(operator.dual.adjoint, mode=eins_str).contract(
+                operator.dual,
+                mode=eins_str2,
+            ) >> TraceOut(leftover_modes)
+        elif op_type is OperatorType.DM_LIKE:
+            result = self.contract(operator.dual, mode=mode) >> TraceOut(leftover_modes)
         else:
-            result = (self.contract(operator)) >> TraceOut(self.modes)
+            result = (self.contract(operator, mode=mode)) >> TraceOut(self.modes)
 
         return result
 
@@ -390,9 +401,7 @@ class DM(State):
         array = super().fock_array(shape or self.auto_shape())
         if standard_order:
             m = self.n_modes
-            batch_dims = (
-                self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
-            )
+            batch_dims = self.ansatz.batch_dims - self.ansatz._lin_sup
             axes = (
                 tuple(range(batch_dims))
                 + tuple(range(batch_dims + m, 2 * m + batch_dims))
@@ -791,7 +800,7 @@ class DM(State):
         idxz = [i for i, m in enumerate(self.modes) if m not in modes]
         idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
         ansatz = self.ansatz.trace(idxz, idxz_conj)
-        return DM(Representation(ansatz, wires), self.name)
+        return DM(ansatz, wires, name=self.name)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -815,7 +824,7 @@ class DM(State):
             >>> from mrmustard.lab import CircuitComponent, DM, TraceOut
 
             >>> assert isinstance(DM.random([0]).dual >> DM.random([0]), CircuitComponent)
-            >>> assert isinstance(DM.random([0,1]) >> TraceOut([0]), DM)
+            >>> assert isinstance(DM.random([0,1]) >> TraceOut(0), DM)
         """
 
         result = super().__rshift__(other)
@@ -823,5 +832,5 @@ class DM(State):
             return result  # scalar case handled here
 
         if not result.wires.input and result.wires.bra.modes == result.wires.ket.modes:
-            return DM(result.representation)
+            return DM._from_attributes(result.ansatz, result.wires)
         return result

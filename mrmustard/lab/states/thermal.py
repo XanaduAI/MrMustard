@@ -22,6 +22,7 @@ from collections.abc import Sequence
 
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 
 from ..utils import make_parameter
 from .dm import DM
@@ -61,11 +62,16 @@ class Thermal(DM):
         nbar_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
         super().__init__(name="Thermal")
-        self.parameters.add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.thermal_state_Abc,
-                nbar=self.parameters.nbar,
+        self.parameters.add_parameter(
+            make_parameter(
+                is_trainable=nbar_trainable,
+                value=nbar,
+                name="nbar",
+                bounds=nbar_bounds,
             ),
-        ).representation
+        )
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.thermal_state_Abc,
+            nbar=self.parameters.nbar,
+        )
+        self._wires = Wires(modes_out_bra={mode}, modes_out_ket={mode})
