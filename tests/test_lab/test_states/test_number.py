@@ -40,9 +40,9 @@ class TestNumber:
         assert all(isinstance(x, int) for x in state.manual_shape)
 
     def test_auto_shape(self):
-        # meant to cover the case where we have derived variables
-        state = Number(0, 2).to_bargmann().dm()
-        assert state.auto_shape() == (3, 3)
+        n = 2
+        state = Number(0, n=n).to_bargmann().dm()
+        assert state.auto_shape() == (n + 1, n + 1)
 
     @pytest.mark.parametrize("n", [2, 3, 4])
     @pytest.mark.parametrize("cutoffs", [None, 4, 5])

@@ -87,7 +87,7 @@ class QuadratureEigenstate(Ket):
 
         for w in self.wires.sorted_wires:
             w.repr = ReprEnum.QUADRATURE
-            w.fock_size = 50  # we want to avoid state autoshape on a quadrature eigenstate?
+            w.fock_size = 50
 
     @property
     def L2_norm(self):
