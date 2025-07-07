@@ -367,7 +367,7 @@ class ArrayAnsatz(Ansatz):
 
     def __getitem__(self, item: Any) -> ArrayAnsatz:
         if not isinstance(item, tuple):
-            item = (item,)
+            item = (item,) if isinstance(item, int) else tuple(item)
 
         if len(item) > self.batch_dims:
             msg = f"Too many indices for ansatz with {self.batch_dims} batch dimensions. You cannot slice into the core dimensions."
