@@ -24,7 +24,6 @@ import jax
 import jax.numpy as jnp
 import jax.scipy as jsp
 import numpy as np
-import optax
 from opt_einsum import contract
 from platformdirs import user_cache_dir
 
@@ -532,9 +531,8 @@ class BackendJax(BackendBase):
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    # Special functions for optimization
     def DefaultEuclideanOptimizer(self):
-        return optax.inject_hyperparams(optax.adamw)
+        return None
 
     @jax.jit
     def reorder_AB_bargmann(

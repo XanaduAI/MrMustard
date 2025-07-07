@@ -22,7 +22,7 @@ from collections.abc import Callable, Sequence
 
 import equinox as eqx
 import jax
-from optax import GradientTransformation, OptState
+from optax import GradientTransformation, OptState, adamw
 
 from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
@@ -103,6 +103,7 @@ class OptimizerJax:
         cost_fn: Callable,
         by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
         max_steps: int = 1000,
+        euclidean_optim: type[GradientTransformation] | None = None,
     ) -> Sequence[Variable | CircuitComponent | Circuit]:
         r"""
         Minimizes the given cost function by optimizing ``Variable``s either on their own or within a ``CircuitComponent`` / ``Circuit``.
@@ -113,6 +114,7 @@ class OptimizerJax:
             by_optimizing: A list of elements that contain the parameters to optimize.
             max_steps: The minimization keeps going until the loss is stable or max_steps are
                 reached (if ``max_steps=0`` it will only stop when the loss is stable).
+            euclidean_optim: The type of euclidean optimizer to use. If ``None``, the default optimizer used is ``optax.adamw``.
 
         Returns:
             The list of elements optimized.
@@ -125,9 +127,15 @@ class OptimizerJax:
                     by_optimizing,
                     max_steps=max_steps,
                     progress_bar=progress_bar,
+                    euclidean_optim=euclidean_optim,
                 )
         else:
-            by_optimizing = self._optimization_loop(cost_fn, by_optimizing, max_steps=max_steps)
+            by_optimizing = self._optimization_loop(
+                cost_fn,
+                by_optimizing,
+                max_steps=max_steps,
+                euclidean_optim=euclidean_optim,
+            )
         return by_optimizing
 
     def should_stop(self, max_steps: int) -> bool:
@@ -160,12 +168,17 @@ class OptimizerJax:
         by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
         max_steps: int,
         progress_bar: ProgressBar | None = None,
+        euclidean_optim: type[GradientTransformation] | None = None,
     ) -> Sequence[Variable | CircuitComponent | Circuit]:
         r"""
         The core optimization loop.
         """
         by_optimizing = tuple(by_optimizing)
-        optim = math.euclidean_opt(learning_rate=self.learning_rate)
+        optim = (
+            euclidean_optim(learning_rate=self.learning_rate)
+            if euclidean_optim is not None
+            else adamw(learning_rate=self.learning_rate)
+        )
         opt_state = optim.init(by_optimizing)
 
         # optimize
