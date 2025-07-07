@@ -172,10 +172,16 @@ class TestParameterSet:
         assert value_str == "3.14159"
         assert shape_str == "scalar"
 
-        # Test scalar complex constant
-        const_complex = Constant(1 + 2j, "const_complex", dtype=np.complex128)
-        value_str, shape_str = ps._format_value(const_complex)
+        # Test scalar complex constant positive imaginary part
+        const_complex_pos_imag = Constant(1 + 2j, "const_complex_pos_imag", dtype=np.complex128)
+        value_str, shape_str = ps._format_value(const_complex_pos_imag)
         assert value_str == "1+2j"
+        assert shape_str == "scalar"
+
+        # Test scalar complex constant negative imaginary part
+        const_complex_neg_imag = Constant(1 - 2j, "const_complex_neg_imag", dtype=np.complex128)
+        value_str, shape_str = ps._format_value(const_complex_neg_imag)
+        assert value_str == "1-2j"
         assert shape_str == "scalar"
 
         # Test scalar variable
@@ -190,15 +196,27 @@ class TestParameterSet:
         """
         ps = ParameterSet()
 
-        # Test small array (≤3 elements)
-        const_small = Constant([1, 2, 3], "const_small")
-        value_str, shape_str = ps._format_value(const_small)
+        # Test small array integer-like (≤3 elements)
+        const_small_int = Constant([1.0, 2.0, 3.0], "const_small_int")
+        value_str, shape_str = ps._format_value(const_small_int)
         assert value_str == "[1, 2, 3]"
         assert shape_str == "(3,)"
 
-        # Test large array (>3 elements)
-        const_large = Constant([1, 2, 3, 4, 5, 6], "const_large")
-        value_str, shape_str = ps._format_value(const_large)
+        # Test small array floats (≤3 elements)
+        const_small_float = Constant([1.2, 3.4, 5.6], "const_small_float")
+        value_str, shape_str = ps._format_value(const_small_float)
+        assert value_str == "[1.2, 3.4, 5.6]"
+        assert shape_str == "(3,)"
+
+        # Test large array integer-like (>3 elements)
+        const_large_int = Constant([1.2, 3.4, 5.6, 7.8, 9.0, 10.1], "const_large_int")
+        value_str, shape_str = ps._format_value(const_large_int)
+        assert "1.2, 3.4, 5.6, ..." in value_str
+        assert shape_str == "(6,)"
+
+        # Test large array floats (>3 elements)
+        const_large_float = Constant([1, 2, 3, 4, 5, 6], "const_large_float")
+        value_str, shape_str = ps._format_value(const_large_float)
         assert "1, 2, 3, ..." in value_str
         assert shape_str == "(6,)"
 
