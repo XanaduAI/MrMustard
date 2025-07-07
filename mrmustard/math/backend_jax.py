@@ -28,18 +28,7 @@ import optax
 from opt_einsum import contract
 from platformdirs import user_cache_dir
 
-from mrmustard.lab import (
-    BSgate,
-    Circuit,
-    CircuitComponent,
-    Coherent,
-    Dgate,
-    S2gate,
-    Sgate,
-    SqueezedVacuum,
-    TwoModeSqueezedVacuum,
-    Vacuum,
-)
+from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .backend_base import BackendBase
@@ -60,8 +49,26 @@ jax.config.update("jax_persistent_cache_min_compile_time_secs", 0)
 jax.config.update("jax_persistent_cache_enable_xla_caches", "xla_gpu_per_fusion_autotune_cache_dir")
 
 
+# ~~~~~~~
+# Helpers
+# ~~~~~~~
+
+
+def get_all_subclasses(cls):
+    r"""
+    Returns all subclasses of a given class.
+    """
+    all_subclasses = []
+    for subclass in cls.__subclasses__():
+        all_subclasses.append(subclass)
+        all_subclasses.extend(get_all_subclasses(subclass))
+    return all_subclasses
+
+
 class BackendJax(BackendBase):
-    """A JAX backend implementation."""
+    r"""
+    A JAX backend implementation.
+    """
 
     int32 = jnp.int32
     int64 = jnp.int64
@@ -776,16 +783,16 @@ class BackendJax(BackendBase):
 
 # defining custom pytree nodes
 jax.tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
-jax.tree_util.register_pytree_node(BSgate, BSgate._tree_flatten, BSgate._tree_unflatten)
 jax.tree_util.register_pytree_node(Circuit, Circuit._tree_flatten, Circuit._tree_unflatten)
 jax.tree_util.register_pytree_node(
     CircuitComponent,
     CircuitComponent._tree_flatten,
     CircuitComponent._tree_unflatten,
 )
-jax.tree_util.register_pytree_node(Coherent, Coherent._tree_flatten, Coherent._tree_unflatten)
+# register all subclasses of CircuitComponent
+for cls in get_all_subclasses(CircuitComponent):
+    jax.tree_util.register_pytree_node(cls, cls._tree_flatten, cls._tree_unflatten)
 jax.tree_util.register_pytree_node(Constant, Constant._tree_flatten, Constant._tree_unflatten)
-jax.tree_util.register_pytree_node(Dgate, Dgate._tree_flatten, Dgate._tree_unflatten)
 jax.tree_util.register_pytree_node(
     ParameterSet,
     ParameterSet._tree_flatten,
@@ -796,17 +803,4 @@ jax.tree_util.register_pytree_node(
     PolyExpAnsatz._tree_flatten,
     PolyExpAnsatz._tree_unflatten,
 )
-jax.tree_util.register_pytree_node(Sgate, Sgate._tree_flatten, Sgate._tree_unflatten)
-jax.tree_util.register_pytree_node(S2gate, S2gate._tree_flatten, S2gate._tree_unflatten)
-jax.tree_util.register_pytree_node(
-    SqueezedVacuum,
-    SqueezedVacuum._tree_flatten,
-    SqueezedVacuum._tree_unflatten,
-)
-jax.tree_util.register_pytree_node(
-    TwoModeSqueezedVacuum,
-    TwoModeSqueezedVacuum._tree_flatten,
-    TwoModeSqueezedVacuum._tree_unflatten,
-)
-jax.tree_util.register_pytree_node(Vacuum, Vacuum._tree_flatten, Vacuum._tree_unflatten)
 jax.tree_util.register_pytree_node(Variable, Variable._tree_flatten, Variable._tree_unflatten)
