@@ -209,15 +209,15 @@ class TestParameterSet:
         assert shape_str == "(3,)"
 
         # Test large array integer-like (>3 elements)
-        const_large_int = Constant([1.2, 3.4, 5.6, 7.8, 9.0, 10.1], "const_large_int")
+        const_large_int = Constant([1, 2, 3, 4, 5, 6], "const_large_int")
         value_str, shape_str = ps._format_value(const_large_int)
-        assert "1.2, 3.4, 5.6, ..." in value_str
+        assert "1, 2, 3, ..." in value_str
         assert shape_str == "(6,)"
 
         # Test large array floats (>3 elements)
-        const_large_float = Constant([1, 2, 3, 4, 5, 6], "const_large_float")
+        const_large_float = Constant([1.2, 3.4, 5.6, 7.8, 9.0, 10.1], "const_large_float")
         value_str, shape_str = ps._format_value(const_large_float)
-        assert "1, 2, 3, ..." in value_str
+        assert "1.2, 3.4, 5.6, ..." in value_str
         assert shape_str == "(6,)"
 
         # Test 2D array (gets flattened for display since it has >3 elements)
