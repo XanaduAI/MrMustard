@@ -285,10 +285,10 @@ class TestArrayAnsatzSlicing:
 
     def test_advanced_list_indexing(self, ansatz, array):
         "Tests advanced indexing with a list."
-        sliced = ansatz[[0, 1]]
+        sliced = ansatz[math.astensor([0, 1])]
         assert sliced.batch_shape == (2, 3)
         assert sliced.batch_dims == 2
-        assert math.allclose(sliced.array, array[[0, 1]])
+        assert math.allclose(sliced.array, array[math.astensor([0, 1])])
 
     def test_slicing_returns_correct_type(self, ansatz):
         "Tests that slicing returns an object of the same class."
