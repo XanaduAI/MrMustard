@@ -48,9 +48,9 @@ class Dgate(Unitary):
 
         >>> from mrmustard.lab import Dgate
 
-        >>> unitary = Dgate(mode=1, alpha=0.1+0.2j)
+        >>> unitary = Dgate(mode=1, alpha=0.1 + 0.2j)
         >>> assert unitary.modes == (1,)
-        >>> assert unitary.parameters.alpha.value == 0.1+0.2j
+        >>> assert unitary.parameters.alpha.value == 0.1 + 0.2j
 
     .. details::
 

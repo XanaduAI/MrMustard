@@ -709,7 +709,7 @@ class CircuitComponent:
             >>> from mrmustard.lab import Dgate
             >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 
-            >>> d = Dgate(1, alpha = 0.1+0.1j)
+            >>> d = Dgate(1, alpha=0.1 + 0.1j)
             >>> d_fock = d.to_fock(shape=3)
 
             >>> assert d_fock.name == d.name

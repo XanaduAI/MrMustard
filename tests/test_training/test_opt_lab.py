@@ -485,7 +485,7 @@ class TestOptimizer:
         rng.reset_from_seed(settings.SEED)
 
         dgate = Dgate(0, alpha_trainable=True)
-        target_state = DisplacedSqueezed(0, r=0.0, x=0.1 + 0.2j).fock_array((40,))
+        target_state = DisplacedSqueezed(0, alpha=0.1 + 0.2j, r=0.0).fock_array((40,))
 
         def cost_fn():
             state_out = Vacuum(0) >> dgate
@@ -551,14 +551,14 @@ class TestOptimizer:
         """Test that the gradient of a displacement gate is computed from the fock representation."""
 
         disp = Dgate(0, 1.0 + 0.5j, alpha_trainable=True)
-        og_x = math.asnumpy(disp.parameters.alpha.value)
+        og_alpha = math.asnumpy(disp.parameters.alpha.value)
 
         def cost_fn():
             return -((Number(0, 2) >> (disp >> Vacuum(0).dual)) ** 2)
 
         opt = Optimizer(euclidean_lr=0.05)
         opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
-        assert og_x != disp.parameters.alpha.value
+        assert og_alpha != disp.parameters.alpha.value
 
     def test_bsgate_grad_from_fock(self):
         """Test that the gradient of a beamsplitter gate is computed from the fock representation."""

@@ -167,8 +167,8 @@ class TestOptimizerJax:
 
     def test_dgate_optimization(self):
         """Test that Dgate is optimized correctly."""
-        dgate = Dgate(0, x_trainable=True, y_trainable=True)
-        target_state = DisplacedSqueezed(0, r=0.0, x=0.1, y=0.2).fock_array((40,))
+        dgate = Dgate(0, alpha_trainable=True)
+        target_state = DisplacedSqueezed(0, alpha=0.1 + 0.2j, r=0.0).fock_array((40,))
 
         def cost_fn(dgate):
             state_out = Vacuum(0) >> dgate
@@ -226,9 +226,8 @@ class TestOptimizerJax:
 
     def test_displacement_grad_from_fock(self):
         """Test that the gradient of a displacement gate is computed from the fock representation."""
-        disp = Dgate(0, x=1.0, y=0.5, x_trainable=True, y_trainable=True)
-        og_x = math.asnumpy(disp.parameters.x.value)
-        og_y = math.asnumpy(disp.parameters.y.value)
+        disp = Dgate(0, alpha=1.0 + 0.5j, alpha_trainable=True)
+        og_alpha = math.asnumpy(disp.parameters.alpha.value)
         num = Number(0, 2)
         vac = Vacuum(0).dual
 
@@ -237,8 +236,7 @@ class TestOptimizerJax:
 
         opt = OptimizerJax(learning_rate=0.05)
         opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
-        assert og_x != disp.parameters.x.value
-        assert og_y != disp.parameters.y.value
+        assert og_alpha != disp.parameters.alpha.value
 
     def test_bsgate_grad_from_fock(self):
         """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
