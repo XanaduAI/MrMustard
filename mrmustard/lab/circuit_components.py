@@ -651,10 +651,10 @@ class CircuitComponent:
 
         .. code-block::
 
-            >>> from mrmustard.lab import Number
+            >>> from mrmustard.lab import Dgate, Number
             >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 
-            >>> d = Dgate(1, alpha = 0.1+0.1j)
+            >>> d = Dgate(1, alpha=0.1 + 0.1j)
             >>> d_fock = d.to_fock(shape=3)
             >>> d_bargmann = d_fock.to_bargmann()
             >>> num = Number(0, n=2)
