@@ -177,8 +177,7 @@ class TestOptimizerJax:
         opt = OptimizerJax()
         opt.minimize(cost_fn, by_optimizing=[dgate])
 
-        assert math.allclose(dgate.parameters.x.value, 0.1, atol=0.01)
-        assert math.allclose(dgate.parameters.y.value, 0.2, atol=0.01)
+        assert math.allclose(dgate.parameters.alpha.value, 0.1 + 0.2j, atol=0.01)
 
     def test_sgate_optimization(self):
         """Test that Sgate is optimized correctly."""
