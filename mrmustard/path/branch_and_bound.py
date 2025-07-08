@@ -51,16 +51,26 @@ class GraphComponent:
         ansatz: The name of the ansatz of the component.
         wires: The wires of the component.
         shape: The fock shape of the component.
+        batch_shape: The batch shape of the component.
         name: The name of the component.
         cost: The cost of obtaining this component.
     """
 
-    def __init__(self, ansatz: str, wires: Wires, shape: list[int], name: str = "", cost: int = 0):
+    def __init__(
+        self,
+        ansatz: str,
+        wires: Wires,
+        shape: list[int],
+        batch_shape: list[int],
+        name: str = "",
+        cost: int = 0,
+    ):
         if None in shape:
             raise ValueError("Detected `None`s in shape. Please provide a full shape.")
         self.ansatz = ansatz
         self.wires = wires
         self.shape = list(shape)
+        self.batch_shape = list(batch_shape)
         self.name = name
         self.cost = cost
 
@@ -76,6 +86,7 @@ class GraphComponent:
             ansatz=str(c.ansatz.__class__.__name__),
             wires=Wires(*c.wires.args),
             shape=c.auto_shape(),
+            batch_shape=c.ansatz.batch_shape,
             name=c.__class__.__name__,
         )
 
@@ -125,9 +136,9 @@ class GraphComponent:
                 + np.prod(self.shape) * (self.ansatz == "PolyExpAnsatz")  # conversion
                 + np.prod(other.shape) * (other.ansatz == "PolyExpAnsatz")  # conversion
             )
-        return int(cost)
+        return int(cost * np.prod(self.batch_shape + other.batch_shape))
 
-    def __matmul__(self, other) -> GraphComponent:
+    def __matmul__(self, other: GraphComponent) -> GraphComponent:
         r"""
         Returns the contracted GraphComponent.
 
@@ -144,12 +155,13 @@ class GraphComponent:
             "PolyExpAnsatz" if self.ansatz == other.ansatz == "PolyExpAnsatz" else "ArrayAnsatz",
             new_wires,
             new_shape,
+            self.batch_shape + other.batch_shape,
             f"({self.name}@{other.name})",
             self.contraction_cost(other) + self.cost + other.cost,
         )
 
     def __repr__(self):
-        return f"{self.name}({self.shape}, {self.wires})"
+        return f"{self.name}({self.batch_shape} x {self.shape}, {self.wires})"
 
 
 class Graph(nx.DiGraph):
@@ -220,7 +232,13 @@ class Graph(nx.DiGraph):
             tuple(self.nodes)
             + tuple(self.edges)
             + tuple(self.solution)
-            + tuple(functools.reduce(operator.iadd, (c.shape for c in self.components()), [])),
+            + tuple(
+                functools.reduce(
+                    operator.iadd,
+                    (c.batch_shape + c.shape for c in self.components()),
+                    [],
+                ),
+            ),
         )
 
 
