@@ -135,6 +135,7 @@ def displacement_jax(alpha: complex, shape: tuple[int, ...], tol: float) -> jnp.
         jnp.abs(alpha) > tol,
         partial(true_branch, shape),
         partial(false_branch, shape),
+        alpha,
     )
 
 
