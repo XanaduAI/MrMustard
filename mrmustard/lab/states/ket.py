@@ -381,12 +381,9 @@ class Ket(State):
 
         s = Ket.from_bargmann(self.modes, (As, bs, cs))
 
+        Im = math.eye(M, dtype=math.complex128)
         if batch_shape != ():
-            Im = math.stack(
-                [math.eye(M, dtype=math.complex128)] * int(math.prod(batch_shape)),
-            ).reshape(batch_shape + (M,) * 2)
-        else:
-            Im = math.eye(M, dtype=math.complex128)
+            Im = math.broadcast_to(Im, (*batch_shape, M, M))
 
         At = math.block([[Am, Im], [Im, Om]])
 
