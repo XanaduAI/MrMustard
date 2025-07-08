@@ -1399,6 +1399,19 @@ class BackendManager:
             axis = tuple(sorted(neg) + sorted(pos)[::-1])
         return self._apply("sum", (array, axis))
 
+    def swapaxes(self, array: Tensor, axis1: int, axis2: int) -> Tensor:
+        r"""Swaps two axes of an array.
+
+        Args:
+            array: The array to swap axes of.
+            axis1: The first axis to swap.
+            axis2: The second axis to swap.
+
+        Returns:
+            The array with swapped axes.
+        """
+        return self._apply("swapaxes", (array, axis1, axis2))
+
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         r"""The tensordot product of ``a`` and ``b``.
 
@@ -1904,7 +1917,7 @@ class BackendManager:
             Matrix: symplectic gradient tensor
         """
         Jmat = self.J(S.shape[-1] // 2)
-        Z = self.matmul(self.transpose(S), dS_euclidean)
+        Z = self.matmul(self.swapaxes(S, -1, -2), dS_euclidean)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
 
     def euclidean_to_unitary(self, U: Matrix, dU_euclidean: Matrix) -> Matrix:

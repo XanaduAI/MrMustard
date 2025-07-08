@@ -405,6 +405,9 @@ class BackendNumpy(BackendBase):
     def transpose(self, a: np.ndarray, perm: Sequence[int] | None = None) -> np.ndarray | None:
         return np.transpose(a, axes=perm)
 
+    def swapaxes(self, array: np.ndarray, axis1: int, axis2: int) -> np.ndarray:
+        return np.swapaxes(array, axis1, axis2)
+
     def update_tensor(
         self,
         tensor: np.ndarray,

@@ -471,6 +471,10 @@ class BackendJax(BackendBase):
     def transpose(self, a: jnp.ndarray, perm: Sequence[int] | None = None) -> jnp.ndarray:
         return jnp.transpose(a, perm)
 
+    @jax.jit
+    def swapaxes(self, array: jnp.ndarray, axis1: int, axis2: int) -> jnp.ndarray:
+        return jnp.swapaxes(array, axis1, axis2)
+
     def zeros(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.zeros(shape, dtype=dtype)
