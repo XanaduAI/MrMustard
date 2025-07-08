@@ -119,7 +119,7 @@ def displacement_jax(alpha: complex, shape: tuple[int, ...], tol: float) -> jnp.
 
     def true_branch(shape, alpha):
         return jax.pure_callback(
-            lambda x, y: strategies.displacement(
+            lambda alpha: strategies.displacement(
                 cutoffs=shape,
                 alpha=np.asarray(alpha),
                 dtype=np.complex128,
@@ -162,7 +162,7 @@ def displacement_jax_bwd(
     """
     gate, alpha = res
     dD_da, dD_dac = jax.pure_callback(
-        lambda gate, x, y: strategies.jacobian_displacement(
+        lambda gate, alpha: strategies.jacobian_displacement(
             np.asarray(gate),
             np.asarray(alpha),
         ),
