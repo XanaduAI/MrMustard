@@ -851,6 +851,17 @@ class BackendManager:
         """
         return self._apply("inv", (tensor,))
 
+    def isnan(self, array: Tensor) -> Tensor:
+        r"""Whether the given array contains any NaN values.
+
+        Args:
+            array: The array to check for NaN values.
+
+        Returns:
+            Whether the given array contains any NaN values.
+        """
+        return self._apply("isnan", (array,))
+
     def is_trainable(self, tensor: Tensor) -> bool:
         r"""Whether the given tensor is trainable.
 
@@ -1254,7 +1265,8 @@ class BackendManager:
         return self._apply("sum", (array, axis))
 
     def swapaxes(self, array: Tensor, axis1: int, axis2: int) -> Tensor:
-        r"""Swaps two axes of an array.
+        r"""
+        Swap two axes of an array.
 
         Args:
             array: The array to swap axes of.
@@ -1262,7 +1274,7 @@ class BackendManager:
             axis2: The second axis to swap.
 
         Returns:
-            The array with swapped axes.
+            The array with the axes swapped.
         """
         return self._apply("swapaxes", (array, axis1, axis2))
 

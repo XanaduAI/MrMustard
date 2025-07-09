@@ -179,6 +179,9 @@ class BackendNumpy(BackendBase):
     def inv(self, tensor: np.ndarray) -> np.ndarray:
         return np.linalg.inv(tensor)
 
+    def isnan(self, array: np.ndarray) -> np.ndarray:
+        return np.isnan(array)
+
     def is_trainable(self, tensor: np.ndarray) -> bool:
         return False
 
@@ -309,6 +312,9 @@ class BackendNumpy(BackendBase):
 
     def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
         return np.sum(array, axis=axis)
+
+    def swapaxes(self, array: np.ndarray, axis1: int, axis2: int) -> np.ndarray:
+        return np.swapaxes(array, axis1, axis2)
 
     def tensordot(self, a: np.ndarray, b: np.ndarray, axes: list[int]) -> np.ndarray:
         return np.tensordot(a, b, axes)
