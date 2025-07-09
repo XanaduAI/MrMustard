@@ -119,7 +119,7 @@ def displacement_jax(alpha: complex, shape: tuple[int, ...], tol: float) -> jnp.
 
     def true_branch(shape, alpha):
         return jax.pure_callback(
-            lambda x, y: strategies.displacement(
+            lambda alpha: strategies.displacement(
                 cutoffs=shape,
                 alpha=complex(alpha),
                 dtype=np.complex128,
