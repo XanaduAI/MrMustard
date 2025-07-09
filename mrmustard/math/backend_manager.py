@@ -1266,6 +1266,20 @@ class BackendManager:
             axis = tuple(sorted(neg) + sorted(pos)[::-1])
         return self._apply("sum", (array, axis))
 
+    def swapaxes(self, array: Tensor, axis1: int, axis2: int) -> Tensor:
+        r"""
+        Swap two axes of an array.
+
+        Args:
+            array: The array to swap axes of.
+            axis1: The first axis to swap.
+            axis2: The second axis to swap.
+
+        Returns:
+            The array with the axes swapped.
+        """
+        return self._apply("swapaxes", (array, axis1, axis2))
+
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         r"""The tensordot product of ``a`` and ``b``.
 

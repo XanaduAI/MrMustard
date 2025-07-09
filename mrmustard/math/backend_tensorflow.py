@@ -346,6 +346,9 @@ class BackendTensorflow(BackendBase):
     def sum(self, array: tf.Tensor, axis: int | tuple[int] | None = None):
         return tf.reduce_sum(array, axis)
 
+    def swapaxes(self, array: tf.Tensor, axis1: int, axis2: int) -> tf.Tensor:
+        return tf.experimental.numpy.swapaxes(array, axis1, axis2)
+
     @Autocast()
     def tensordot(self, a: tf.Tensor, b: tf.Tensor, axes: list[int]) -> tf.Tensor:
         return tf.tensordot(a, b, axes)

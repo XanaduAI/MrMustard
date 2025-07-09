@@ -312,6 +312,9 @@ class BackendNumpy(BackendBase):
     def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
         return np.sum(array, axis=axis)
 
+    def swapaxes(self, array: np.ndarray, axis1: int, axis2: int) -> np.ndarray:
+        return np.swapaxes(array, axis1, axis2)
+
     def tensordot(self, a: np.ndarray, b: np.ndarray, axes: list[int]) -> np.ndarray:
         return np.tensordot(a, b, axes)
 

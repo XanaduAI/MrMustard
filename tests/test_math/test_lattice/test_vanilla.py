@@ -28,8 +28,8 @@ def random_triple(n, batch=(), seed=None):
     rng = np.random.RandomState(seed) if seed is not None else np.random
 
     A = rng.random((*batch, n, n)) + 1j * rng.random((*batch, n, n))
-    A = A + np.swapaxes(A, -1, -2)
-    A /= np.abs(np.linalg.eigvals(A)).max() + 0.2
+    A = A + math.swapaxes(A, -1, -2)
+    A /= math.abs(math.eigvals(A)).max() + 0.2
     b = rng.random((*batch, n)) + 1j * rng.random((*batch, n))
     c = rng.random(batch) + 1j * rng.random(batch)
     return A, b, c
@@ -57,29 +57,29 @@ class TestVanilla:
 
         # Compute finite difference for c
         dGdc_fd = (strategies.vanilla_numba(shape, A, b, c + epsilon) - G) / epsilon
-        dLdc_fd = np.sum(dLdG * dGdc_fd)
+        dLdc_fd = math.sum(dLdG * dGdc_fd)
 
         # Compute finite differences for b
-        dGdb_fd = np.zeros(G.shape + b.shape, dtype=np.complex128)
+        dGdb_fd = math.zeros(G.shape + b.shape, dtype=math.complex128)
         for i in range(b.shape[0]):
-            eps = np.zeros_like(b)
+            eps = math.zeros_like(b)
             eps[i] = epsilon
             dGdb_fd[..., i] = (strategies.vanilla_numba(shape, A, b + eps, c) - G) / epsilon
-        dLdb_fd = np.zeros_like(b)
+        dLdb_fd = math.zeros_like(b)
         for i in range(b.shape[0]):
-            dLdb_fd[i] = np.sum(dLdG * dGdb_fd[..., i])
+            dLdb_fd[i] = math.sum(dLdG * dGdb_fd[..., i])
 
         # Compute finite differences for A
-        dGdA_fd = np.zeros(G.shape + A.shape, dtype=np.complex128)
+        dGdA_fd = math.zeros(G.shape + A.shape, dtype=math.complex128)
         for i in range(A.shape[0]):
             for j in range(A.shape[1]):
-                eps = np.zeros_like(A)
+                eps = math.zeros_like(A)
                 eps[i, j] = epsilon
                 dGdA_fd[..., i, j] = (strategies.vanilla_numba(shape, A + eps, b, c) - G) / epsilon
-        dLdA_fd = np.zeros_like(A)
+        dLdA_fd = math.zeros_like(A)
         for i in range(A.shape[0]):
             for j in range(A.shape[1]):
-                dLdA_fd[i, j] = np.sum(dLdG * dGdA_fd[..., i, j])
+                dLdA_fd[i, j] = math.sum(dLdG * dGdA_fd[..., i, j])
 
         dLdA, dLdb, dLdc = strategies.vanilla_vjp_numba(G, c, dLdG)
         assert math.allclose(dLdc, dLdc_fd)
@@ -103,50 +103,50 @@ class TestVanilla:
         )  # upstream gradient
 
         # Compute finite difference for c
-        dGdc_fd = np.zeros(G.shape + c.shape, dtype=np.complex128)
+        dGdc_fd = math.zeros(G.shape + c.shape, dtype=math.complex128)
         for i in range(c.shape[0]):
-            eps = np.zeros_like(c)
+            eps = math.zeros_like(c)
             eps[i] = epsilon
             dGdc_fd[..., i] = (strategies.vanilla_batch_numba(shape, A, b, c + eps) - G) / epsilon
 
         # Contract with upstream gradient
-        dLdc_fd = np.zeros_like(c)
+        dLdc_fd = math.zeros_like(c)
         for i in range(c.shape[0]):
-            dLdc_fd[i] = np.sum(dLdG * dGdc_fd[..., i])
+            dLdc_fd[i] = math.sum(dLdG * dGdc_fd[..., i])
 
         # Compute finite differences for b
-        dGdb_fd = np.zeros(G.shape + b.shape, dtype=np.complex128)  # shape: G.shape + b.shape
+        dGdb_fd = math.zeros(G.shape + b.shape, dtype=math.complex128)  # shape: G.shape + b.shape
         for i in range(b.shape[0]):
             for j in range(b.shape[1]):
-                eps = np.zeros_like(b)
+                eps = math.zeros_like(b)
                 eps[i, j] = epsilon
                 dGdb_fd[..., i, j] = (
                     strategies.vanilla_batch_numba(shape, A, b + eps, c) - G
                 ) / epsilon
 
         # Contract with upstream gradient
-        dLdb_fd = np.zeros_like(b)
+        dLdb_fd = math.zeros_like(b)
         for i in range(b.shape[0]):
             for j in range(b.shape[1]):
-                dLdb_fd[i, j] = np.sum(dLdG * dGdb_fd[..., i, j])
+                dLdb_fd[i, j] = math.sum(dLdG * dGdb_fd[..., i, j])
 
         # Compute finite differences for A
-        dGdA_fd = np.zeros(G.shape + A.shape, dtype=np.complex128)  # shape: G.shape + A.shape
+        dGdA_fd = math.zeros(G.shape + A.shape, dtype=math.complex128)  # shape: G.shape + A.shape
         for i in range(A.shape[0]):
             for j in range(A.shape[1]):
                 for k in range(A.shape[2]):
-                    eps = np.zeros_like(A)
+                    eps = math.zeros_like(A)
                     eps[i, j, k] = epsilon
                     dGdA_fd[..., i, j, k] = (
                         strategies.vanilla_batch_numba(shape, A + eps, b, c) - G
                     ) / epsilon
 
         # Contract with upstream gradient
-        dLdA_fd = np.zeros_like(A)
+        dLdA_fd = math.zeros_like(A)
         for i in range(A.shape[0]):
             for j in range(A.shape[1]):
                 for k in range(A.shape[2]):
-                    dLdA_fd[i, j, k] = np.sum(dLdG * dGdA_fd[..., i, j, k])
+                    dLdA_fd[i, j, k] = math.sum(dLdG * dGdA_fd[..., i, j, k])
 
         # Use the VJP function to compute gradients
         assert not math.any(math.isnan(G))
@@ -160,7 +160,7 @@ class TestVanilla:
         # Verify results
         assert math.allclose(dLdc, dLdc_fd, atol=2e-7)
         assert math.allclose(dLdb, dLdb_fd, atol=2e-7)
-        assert math.allclose(dLdA, (dLdA_fd + np.swapaxes(dLdA_fd, -1, -2)) / 2, atol=2e-7)
+        assert math.allclose(dLdA, (dLdA_fd + math.swapaxes(dLdA_fd, -1, -2)) / 2, atol=2e-7)
 
     @pytest.mark.parametrize("stable", [True, False])
     def test_hermite_renormalized_unbatched(self, stable):

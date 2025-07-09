@@ -666,6 +666,14 @@ class TestBackendManager:
         res = math.asnumpy(math.sum(arr))
         assert math.allclose(res, 12)
 
+    def test_swapaxes(self):
+        r"""
+        Tests the ``swapaxes`` method.
+        """
+        arr = np.array([[1.0, 1.0, 1.0], [2.0, 2.0, 2.0]])
+        res = np.array([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0]])
+        assert math.allclose(res, math.swapaxes(arr, 0, 1))
+
     def test_displacement(self):
         r"""
         Tests the ``displacement`` method.

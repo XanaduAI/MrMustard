@@ -374,6 +374,9 @@ class BackendJax(BackendBase):
     def sum(self, array: jnp.ndarray, axes: Sequence[int] | None = None):
         return jnp.sum(array, axis=axes)
 
+    def swapaxes(self, array: jnp.ndarray, axis1: int, axis2: int) -> jnp.ndarray:
+        return jnp.swapaxes(array, axis1, axis2)
+
     @jax.jit
     def norm(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.norm(array)
