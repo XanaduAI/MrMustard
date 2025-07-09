@@ -24,7 +24,7 @@ from .core import stable_numba, vanilla_numba
 # ruff: noqa: RUF005
 
 
-@njit(parallel=True)
+@njit(cache=True, parallel=True)
 def vanilla_batch_numba(
     shape: tuple[int, ...],
     A,

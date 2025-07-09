@@ -22,7 +22,7 @@ from mrmustard.utils.typing import ComplexTensor
 SQRT = np.sqrt(np.arange(100000))
 
 
-@njit
+@njit(cache=True)
 def vanilla_numba(
     shape: tuple[int, ...],
     A,
@@ -124,7 +124,7 @@ def vanilla_numba(
     return G.reshape(shape)
 
 
-@njit
+@njit(cache=True)
 def stable_numba(
     shape: tuple[int, ...],
     A,
