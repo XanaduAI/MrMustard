@@ -39,7 +39,7 @@ jobs:
       - name: Numba compilation cache
         uses: actions/cache@v4
         with:
-          path: ${{ runner.temp }}/numba_cache
+          path: ./.numba_cache
           key: numba-cache-${{ matrix.python-version }}-jax-${{ github.sha }}
           restore-keys: |
             numba-cache-${{ matrix.python-version }}-jax-
@@ -55,7 +55,7 @@ jobs:
 
       - name: Run tests
         env:
-          NUMBA_CACHE_DIR: ${{ runner.temp }}/numba_cache
+          NUMBA_CACHE_DIR: ./.numba_cache
         run: |
           set -o pipefail
           uv run --all-extras pytest tests --backend=jax -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
