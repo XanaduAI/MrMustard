@@ -171,10 +171,7 @@ def displacement_jax_bwd(
         gate,
         alpha,
     )
-    dL_dac = jnp.sum(jnp.conj(g) * dD_dac + g * jnp.conj(dD_da))
-    dLdx = 2 * jnp.real(dL_dac)
-    dLdy = 2 * jnp.imag(dL_dac)
-    return dLdx, dLdy
+    return (2 * jnp.sum(jnp.conj(g) * dD_dac + g * jnp.conj(dD_da)),)
 
 
 displacement_jax.defvjp(displacement_jax_fwd, displacement_jax_bwd)

@@ -134,6 +134,10 @@ class BackendJax(BackendBase):
 
         @jax.jit
         def constraint(x):
+            if x.dtype in (jnp.complex128, jnp.complex64):
+                return jnp.clip(jnp.abs(x), lower, upper) * jnp.exp(
+                    1j * jnp.angle(x),
+                )
             return jnp.clip(x, lower, upper)
 
         return constraint
