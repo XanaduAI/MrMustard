@@ -853,6 +853,17 @@ class BackendManager:
         """
         return self._apply("inv", (tensor,))
 
+    def isnan(self, array: Tensor) -> Tensor:
+        r"""Whether the given array contains any NaN values.
+
+        Args:
+            array: The array to check for NaN values.
+
+        Returns:
+            Whether the given array contains any NaN values.
+        """
+        return self._apply("isnan", (array,))
+
     def is_trainable(self, tensor: Tensor) -> bool:
         r"""Whether the given tensor is trainable.
 

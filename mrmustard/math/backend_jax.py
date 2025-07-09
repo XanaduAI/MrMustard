@@ -264,6 +264,9 @@ class BackendJax(BackendBase):
     def inv(self, tensor: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.inv(tensor)
 
+    def isnan(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.isnan(array)
+
     def is_trainable(self, tensor: jnp.ndarray) -> bool:
         return False
 

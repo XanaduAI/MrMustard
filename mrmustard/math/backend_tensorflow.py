@@ -209,6 +209,9 @@ class BackendTensorflow(BackendBase):
     def inv(self, tensor: tf.Tensor) -> tf.Tensor:
         return tf.linalg.inv(tensor)
 
+    def isnan(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.is_nan(array)
+
     def is_trainable(self, tensor: tf.Tensor) -> bool:
         return isinstance(tensor, tf.Variable)
 

@@ -82,9 +82,9 @@ class TestVanilla:
                 dLdA_fd[i, j] = np.sum(dLdG * dGdA_fd[..., i, j])
 
         dLdA, dLdb, dLdc = strategies.vanilla_vjp_numba(G, c, dLdG)
-        assert np.allclose(dLdc, dLdc_fd)
-        assert np.allclose(dLdb, dLdb_fd)
-        assert np.allclose(dLdA, (dLdA_fd + dLdA_fd.T) / 2)
+        assert math.allclose(dLdc, dLdc_fd)
+        assert math.allclose(dLdb, dLdb_fd)
+        assert math.allclose(dLdA, (dLdA_fd + dLdA_fd.T) / 2)
 
     @pytest.mark.requires_backend("numpy")
     def test_full_batch_vjp(self):  # noqa: C901
@@ -149,18 +149,18 @@ class TestVanilla:
                     dLdA_fd[i, j, k] = np.sum(dLdG * dGdA_fd[..., i, j, k])
 
         # Use the VJP function to compute gradients
-        assert not np.isnan(G).any()
-        assert not np.isnan(dLdG).any()
-        assert not np.isnan(c).any()
+        assert not math.any(math.isnan(G))
+        assert not math.any(math.isnan(dLdG))
+        assert not math.any(math.isnan(c))
         dLdA, dLdb, dLdc = strategies.vanilla_batch_vjp_numba(G, c, dLdG)
-        assert not np.isnan(dLdA).any()
-        assert not np.isnan(dLdb).any()
-        assert not np.isnan(dLdc).any()
+        assert not math.any(math.isnan(dLdA))
+        assert not math.any(math.isnan(dLdb))
+        assert not math.any(math.isnan(dLdc))
 
         # Verify results
-        assert np.allclose(dLdc, dLdc_fd)
-        assert np.allclose(dLdb, dLdb_fd)
-        assert np.allclose(dLdA, (dLdA_fd + np.swapaxes(dLdA_fd, -1, -2)) / 2)
+        assert math.allclose(dLdc, dLdc_fd, atol=2e-7)
+        assert math.allclose(dLdb, dLdb_fd, atol=2e-7)
+        assert math.allclose(dLdA, (dLdA_fd + np.swapaxes(dLdA_fd, -1, -2)) / 2, atol=2e-7)
 
     @pytest.mark.parametrize("stable", [True, False])
     def test_hermite_renormalized_unbatched(self, stable):

@@ -178,6 +178,9 @@ class BackendNumpy(BackendBase):
     def inv(self, tensor: np.ndarray) -> np.ndarray:
         return np.linalg.inv(tensor)
 
+    def isnan(self, array: np.ndarray) -> np.ndarray:
+        return np.isnan(array)
+
     def is_trainable(self, tensor: np.ndarray) -> bool:
         return False
 
