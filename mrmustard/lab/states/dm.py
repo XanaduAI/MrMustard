@@ -721,7 +721,7 @@ class DM(State):
         R_c_transpose = math.einsum("...ij->...ji", R_c)
 
         Aphi_out = Am
-        gamma = np.linalg.pinv(R_c) @ R
+        gamma = math.pinv(R_c) @ R
         gamma_transpose = math.einsum("...ij->...ji", gamma)
         Aphi_in = gamma @ math.inv(Aphi_out - math.Xmat(M)) @ gamma_transpose + math.Xmat(M)
 
