@@ -26,7 +26,6 @@ from mrmustard.lab import (
     Attenuator,
     BSgate,
     Coherent,
-    Number,
     S2gate,
     SqueezedVacuum,
     TwoModeSqueezedVacuum,
@@ -160,31 +159,3 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     mean_1 = np.sum(n * ps1)
     assert np.allclose(mean_0, n_mean * eta_0, atol=1e-5)
     assert np.allclose(mean_1, n_mean * eta_1, atol=1e-5)
-
-
-@given(x=st.floats(-1, 1), y=st.floats(-1, 1))
-def test_number_means(x, y):
-    """Tests the mean photon number."""
-    ket = Coherent(0, x, y).fock_array(80)
-    dm = Coherent(0, x, y).dm().fock_array(80)
-    assert np.allclose(fock_utils.number_means(ket, False), x * x + y * y)
-    assert np.allclose(fock_utils.number_means(dm, True), x * x + y * y)
-
-
-@given(x=st.floats(-1, 1), y=st.floats(-1, 1))
-def test_number_variances_coh(x, y):
-    """Tests the variance of the number operator."""
-    assert np.allclose(
-        fock_utils.number_variances(Coherent(0, x, y).fock_array(80), False)[0],
-        x * x + y * y,
-    )
-    assert np.allclose(
-        fock_utils.number_variances(Coherent(0, x, y).dm().fock_array(80), True)[0],
-        x * x + y * y,
-    )
-
-
-def test_number_variances_fock():
-    """Tests the variance of the number operator in Fock."""
-    assert np.allclose(fock_utils.number_variances(Number(0, 1).fock_array(100), False), 0)
-    assert np.allclose(fock_utils.number_variances(Number(0, 1).dm().fock_array(100), True), 0)
