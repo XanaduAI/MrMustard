@@ -433,6 +433,16 @@ class TestBackendManager:
         inv = math.inv(arr)
         assert math.allclose(math.asnumpy(arr @ inv), np.eye(2))
 
+    def test_isnan(self):
+        r"""
+        Tests the ``isnan`` method.
+        """
+        arr = np.array([1.0, 2.0, 3.0, 4.0])
+        assert not math.any(math.isnan(arr))
+
+        arr_nan = np.array([1.0, 2.0, np.nan, 4.0])
+        assert math.any(math.isnan(arr_nan))
+
     def test_is_trainable(self):
         r"""
         Tests the ``is_trainable`` method.
@@ -655,6 +665,14 @@ class TestBackendManager:
         arr = 4 * np.eye(3)
         res = math.asnumpy(math.sum(arr))
         assert math.allclose(res, 12)
+
+    def test_swapaxes(self):
+        r"""
+        Tests the ``swapaxes`` method.
+        """
+        arr = np.array([[1.0, 1.0, 1.0], [2.0, 2.0, 2.0]])
+        res = np.array([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0]])
+        assert math.allclose(res, math.swapaxes(arr, 0, 1))
 
     def test_displacement(self):
         r"""
