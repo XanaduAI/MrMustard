@@ -121,12 +121,11 @@ def displacement_jax(alpha: complex, shape: tuple[int, ...], tol: float) -> jnp.
         return jax.pure_callback(
             lambda x, y: strategies.displacement(
                 cutoffs=shape,
-                alpha=np.asarray(x) + 1j * np.asarray(y),
+                alpha=complex(alpha),
                 dtype=np.complex128,
             ),
             jax.ShapeDtypeStruct(shape, jnp.complex128),
-            jnp.real(alpha),
-            jnp.imag(alpha),
+            alpha,
         )
 
     def false_branch(shape, *_):

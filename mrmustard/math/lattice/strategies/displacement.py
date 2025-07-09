@@ -21,7 +21,7 @@ __all__ = ["displacement", "grad_displacement", "jacobian_displacement", "laguer
 
 
 @jit(nopython=True)
-def displacement(cutoffs, alpha=np.complex128, dtype=np.complex128):  # pragma: no cover
+def displacement(cutoffs, alpha: np.complex128, dtype=np.complex128):  # pragma: no cover
     r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
     Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
 
