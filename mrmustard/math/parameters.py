@@ -44,10 +44,9 @@ def update_symplectic(grads_and_vars, symplectic_lr: float):
     for dS_euclidean, S in grads_and_vars:
         Y = math.euclidean_to_symplectic(S, dS_euclidean)
         YT = math.transpose(Y)
-        new_value = math.matmul(
-            S,
-            math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT)),
-        )
+        geodesic1 = math.expm(-symplectic_lr * YT)
+        geodesic2 = math.expm(-symplectic_lr * (Y - YT))
+        new_value = math.matmul(S, geodesic1, geodesic2)
         math.assign(S, new_value)
 
 
@@ -59,7 +58,8 @@ def update_orthogonal(grads_and_vars, orthogonal_lr: float):
     """
     for dO_euclidean, O in grads_and_vars:
         Y = math.euclidean_to_unitary(O, math.real(dO_euclidean))
-        new_value = math.matmul(O, math.expm(-orthogonal_lr * Y))
+        geodesic = math.expm(-orthogonal_lr * Y)
+        new_value = math.matmul(O, geodesic)
         math.assign(O, new_value)
 
 
@@ -71,7 +71,8 @@ def update_unitary(grads_and_vars, unitary_lr: float):
     """
     for dU_euclidean, U in grads_and_vars:
         Y = math.euclidean_to_unitary(U, dU_euclidean)
-        new_value = math.matmul(U, math.expm(-unitary_lr * Y))
+        geodesic = math.expm(-unitary_lr * Y)
+        new_value = math.matmul(U, geodesic)
         math.assign(U, new_value)
 
 

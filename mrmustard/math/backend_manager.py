@@ -1450,7 +1450,7 @@ class BackendManager:
         return self._apply("trace", (array, dtype))
 
     def transpose(self, a: Tensor, perm: Sequence[int] | None = None):
-        r"""The transposed arrays.
+        r"""The transposed arrays. Transposes the last two axes of the array by default.
 
         Args:
             a: The array to transpose
@@ -1459,10 +1459,9 @@ class BackendManager:
         Returns:
             The transposed array
         """
-        if a is None:
-            return None  # TODO: remove and address None inputs where tranpose is used
-        perm = tuple(perm) if perm is not None else None
-        return self._apply("transpose", (a, perm))
+        n = len(a.shape)
+        perm = perm or tuple(*tuple(range(n - 2)), n - 1, n - 2)
+        return self._apply("transpose", (a, tuple(perm)))
 
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         r"""Updates a tensor in place with the given values.
@@ -1714,18 +1713,15 @@ class BackendManager:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def dagger(self, array: Tensor) -> Tensor:
-        """The adjoint of ``array``. This operation swaps the first
-        and second half of the indexes and then conjugates the matrix.
+        r"""This operation swaps the last two axes and conjugates.
 
         Args:
-            array: The array to take the adjoint of
+            array: The (batch of) matrix to take the dagger of
 
         Returns:
-            The adjoint of ``array``
+            The (batch of) conjugate transpose
         """
-        N = len(array.shape) // 2
-        perm = list(range(N, 2 * N)) + list(range(N))
-        return self.conj(self.transpose(array, perm=perm))
+        return self.conj(self.transpose(array))
 
     def unitary_to_orthogonal(self, U):
         r"""Unitary to orthogonal mapping.
@@ -1901,8 +1897,8 @@ class BackendManager:
         )[0, ..., 0]
 
     def euclidean_to_symplectic(self, S: Matrix, dS_euclidean: Matrix) -> Matrix:
-        r"""Convert the Euclidean gradient to a Riemannian gradient on the
-        tangent bundle of the symplectic manifold.
+        r"""Returns the projection of the Euclidean gradient onto the
+        tangent space of the symplectic group Sp(2N,R) at S.
 
         Implemented from:
             Wang J, Sun H, Fiori S. A Riemannian‐steepest‐descent approach
@@ -1916,13 +1912,16 @@ class BackendManager:
         Returns:
             Matrix: symplectic gradient tensor
         """
-        Jmat = self.J(S.shape[-1] // 2)
-        Z = self.matmul(self.swapaxes(S, -1, -2), dS_euclidean)
-        return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
+        N = S.shape[-1] // 2
+        J_ = self.J(N)
+        J = self.broadcast_to(J_, S.shape[:-2] + J_.shape)
+        Z = self.matmul(self.transpose(S), dS_euclidean)
+        return 0.5 * (Z + self.matmul(J, self.transpose(Z), J))
 
     def euclidean_to_unitary(self, U: Matrix, dU_euclidean: Matrix) -> Matrix:
-        r"""Convert the Euclidean gradient to a Riemannian gradient on the
-        tangent bundle of the unitary manifold.
+        r"""Returns the projection of the Euclidean gradient onto the
+        tangent space of the unitary group U(N) at U. Serves also as O(N)
+        projection.
 
         Implemented from:
             Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
@@ -1932,7 +1931,7 @@ class BackendManager:
             dU_euclidean (Matrix): Euclidean gradient tensor
 
         Returns:
-            Matrix: unitary gradient tensor
+            dU_unitary: unitary gradient tensor
         """
-        Z = self.matmul(self.conj(self.transpose(U)), dU_euclidean)
-        return 0.5 * (Z - self.conj(self.transpose(Z)))
+        Z = self.matmul(self.dagger(U), dU_euclidean)
+        return 0.5 * (Z - self.dagger(Z))

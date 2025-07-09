@@ -93,7 +93,11 @@ class BackendTensorflow(BackendBase):
         return tensor
 
     def astensor(self, array: np.ndarray | tf.Tensor, dtype=None) -> tf.Tensor:
-        dtype = dtype or np.array(array).dtype.name
+        if dtype is None:
+            try:
+                dtype = array.dtype.name
+            except AttributeError:
+                dtype = np.array(array).dtype.name
         return tf.cast(tf.convert_to_tensor(array, dtype_hint=dtype), dtype)
 
     def atleast_nd(self, array: tf.Tensor, n: int, dtype=None) -> tf.Tensor:
@@ -137,8 +141,6 @@ class BackendTensorflow(BackendBase):
         return tf.clip_by_value(array, a_min, a_max)
 
     def concat(self, values: Sequence[tf.Tensor], axis: int) -> tf.Tensor:
-        if any(tf.rank(v) == 0 for v in values):
-            return tf.stack(values, axis)
         return tf.concat(values, axis)
 
     def conj(self, array: tf.Tensor) -> tf.Tensor:
