@@ -121,16 +121,21 @@ def test_sector_u():
 
 def test_vanillaNumba_vs_binomial():
     """Test that the vanilla method and the binomial method give the same result."""
-    settings.SEED = 42
-    A, b, c = Ket.random((0, 1)).bargmann_triple()
-    A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)
+    with settings(SEED=42):
+        A, b, c = Ket.random((0, 1)).bargmann_triple()
+        A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)
 
-    ket_vanilla = vanilla_numba(shape=(10, 10), A=A, b=b, c=c)[:5, :5]
-    ket_binomial = binomial(local_cutoffs=(5, 5), A=A, b=b, c=c, max_l2=0.9999, global_cutoff=12)[
-        0
-    ][:5, :5]
+        ket_vanilla = vanilla_numba(shape=(10, 10), A=A, b=b, c=c)[:5, :5]
+        ket_binomial = binomial(
+            local_cutoffs=(5, 5),
+            A=A,
+            b=b,
+            c=c,
+            max_l2=0.9999,
+            global_cutoff=12,
+        )[0][:5, :5]
 
-    assert np.allclose(ket_vanilla, ket_binomial)
+        assert np.allclose(ket_vanilla, ket_binomial)
 
 
 def test_vanilla_stable():
