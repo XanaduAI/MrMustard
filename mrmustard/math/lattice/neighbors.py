@@ -25,7 +25,7 @@ from numba.cpython.unsafe.tuple import tuple_setitem
 #################################################################################
 
 
-@njit(cache=True)
+@njit
 def all_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"""yields the indices of all the neighbours of the given index."""
     for j in range(len(pivot)):
@@ -38,7 +38,7 @@ def all_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]
 ####################################################################################
 
 
-@njit(cache=True)
+@njit
 def lower_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"""yields the indices of the lower neighbours of the given index."""
     for j in range(len(pivot)):
@@ -50,7 +50,7 @@ def lower_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ..
 ####################################################################################
 
 
-@njit(cache=True)
+@njit
 def upper_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"""yields the indices of the lower neighbours of the given index."""
     for j in range(len(pivot)):
@@ -62,7 +62,7 @@ def upper_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ..
 ####################################################################################################
 
 
-@njit(cache=True)
+@njit
 def bitstring_neighbors(
     pivot: tuple[int, ...],
     bitstring: tuple[int, ...],
