@@ -32,18 +32,21 @@ jobs:
           version: "0.5.29"
           python-version: ${{ matrix.python-version }}
 
-      - name: Create durations file name
-        id: record_file
-        run: echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
+      - name: Create environment variables
+        id: dynamic_env
+        run: |
+          echo "MODEL_NAME=$(lscpu | grep 'Model name' | cut -d':' -f 2 | sha256sum | head -c 8)" >> "$GITHUB_OUTPUT"
+          echo "CPU_FLAGS=$(lscpu | grep 'Flags' | cut -d':' -f 2 | sha256sum | head -c 8)" >> "$GITHUB_OUTPUT"
+          echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
 
       - name: Numba compilation cache
         uses: actions/cache@v4
         with:
           path: ./.numba_cache
-          key: numba-cache-${{ matrix.python-version }}-tensorflow-${{ github.sha }}
+          key: numba-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-tensorflow-${{ github.sha }}
           restore-keys: |
-            numba-cache-${{ matrix.python-version }}-tensorflow-
-            numba-cache-${{ matrix.python-version }}-
+            numba-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-tensorflow-
+            numba-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-
 
       - name: Run tests
         env:
@@ -72,5 +75,5 @@ jobs:
         env:
           REF_NAME: ${{ github.ref_name }}
         run: |
-          grep ' call ' durations.txt | awk '{print $3,$1}' > ${{ steps.record_file.outputs.filename }}
-          aws s3 cp ./${{ steps.record_file.outputs.filename }} s3://${{ secrets.AWS_TIMINGS_BUCKET }}/tf_tests/$REF_NAME/
+          grep ' call ' durations.txt | awk '{print $3,$1}' > ${{ steps.dynamic_env.outputs.filename }}
+          aws s3 cp ./${{ steps.dynamic_env.outputs.filename }} s3://${{ secrets.AWS_TIMINGS_BUCKET }}/tf_tests/$REF_NAME/
