@@ -20,20 +20,11 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from mrmustard import math, settings
-from mrmustard.lab import (
-    BSgate,
-    Circuit,
-    Dgate,
-    DisplacedSqueezed,
-    Number,
-    S2gate,
-    Sgate,
-    SqueezedVacuum,
-    TwoModeSqueezedVacuum,
-    Vacuum,
-)
+from mrmustard.lab import *
 from mrmustard.math.parameters import Variable
 from mrmustard.training import OptimizerJax
+
+# ruff: noqa: F405
 
 
 @pytest.mark.requires_backend("jax")
@@ -209,51 +200,57 @@ class TestOptimizerJax:
         assert math.allclose(bsgate.parameters.theta.value, 0.1, atol=0.01)
         assert math.allclose(bsgate.parameters.phi.value, 0.2, atol=0.01)
 
-    def test_squeezing_grad_from_fock(self):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (3, 2)])
+    def test_squeezing_grad_from_fock(self, batch_shape):
         """Test that the gradient of a squeezing gate is computed from the fock representation."""
-        squeezing = Sgate(0, r=1.0, r_trainable=True)
+        squeezing = Sgate(0, r=math.ones(batch_shape), r_trainable=True)
         og_r = math.asnumpy(squeezing.parameters.r.value)
         num = Number(0, 2)
         vac = Vacuum(0).dual
 
         def cost_fn(squeezing):
-            return -math.real((num >> squeezing >> vac) ** 2)
+            norm = 1 / squeezing.ansatz.batch_size if squeezing.ansatz.batch_shape else 1
+            return -math.real(norm * math.sum(num >> squeezing >> vac) ** 2)
 
         opt = OptimizerJax(learning_rate=0.05)
         opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
 
-        assert squeezing.parameters.r.value != og_r
+        assert math.all(squeezing.parameters.r.value != og_r)
 
-    def test_displacement_grad_from_fock(self):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (3, 2)])
+    def test_displacement_grad_from_fock(self, batch_shape):
         """Test that the gradient of a displacement gate is computed from the fock representation."""
-        disp = Dgate(0, x=1.0, y=0.5, x_trainable=True, y_trainable=True)
+        disp = Dgate(0, x=math.ones(batch_shape), y=0.5, x_trainable=True, y_trainable=True)
         og_x = math.asnumpy(disp.parameters.x.value)
         og_y = math.asnumpy(disp.parameters.y.value)
         num = Number(0, 2)
         vac = Vacuum(0).dual
 
         def cost_fn(disp):
-            return -math.real((num >> disp >> vac) ** 2)
+            norm = 1 / disp.ansatz.batch_size if disp.ansatz.batch_shape else 1
+            return -math.real(norm * math.sum(num >> disp >> vac) ** 2)
 
         opt = OptimizerJax(learning_rate=0.05)
         opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
-        assert og_x != disp.parameters.x.value
-        assert og_y != disp.parameters.y.value
+        assert math.all(og_x != disp.parameters.x.value)
+        assert math.all(og_y != disp.parameters.y.value)
 
-    def test_bsgate_grad_from_fock(self):
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (3, 2)])
+    def test_bsgate_grad_from_fock(self, batch_shape):
         """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
-        sq = SqueezedVacuum(0, r=1.0, r_trainable=True)
+        sq = SqueezedVacuum(0, r=math.ones(batch_shape), r_trainable=True)
         og_r = math.asnumpy(sq.parameters.r.value)
         num = Number(1, 1)
         vac = Vacuum(0)
         bs = BSgate((0, 1), 0.5)
 
         def cost_fn(sq):
+            norm = 1 / sq.ansatz.batch_size if sq.ansatz.batch_shape else 1
             return -math.real(
-                (sq >> num >> bs >> (vac >> num).dual) ** 2,
+                norm * math.sum(sq >> num >> bs >> (vac >> num).dual) ** 2,
             )
 
         opt = OptimizerJax(learning_rate=0.05)
         opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
 
-        assert og_r != sq.parameters.r.value
+        assert math.all(og_r != sq.parameters.r.value)
