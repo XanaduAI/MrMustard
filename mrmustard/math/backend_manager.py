@@ -853,6 +853,17 @@ class BackendManager:
         """
         return self._apply("inv", (tensor,))
 
+    def isnan(self, array: Tensor) -> Tensor:
+        r"""Whether the given array contains any NaN values.
+
+        Args:
+            array: The array to check for NaN values.
+
+        Returns:
+            Whether the given array contains any NaN values.
+        """
+        return self._apply("isnan", (array,))
+
     def is_trainable(self, tensor: Tensor) -> bool:
         r"""Whether the given tensor is trainable.
 
@@ -1254,6 +1265,20 @@ class BackendManager:
             pos = [a for a in axis if a >= 0]
             axis = tuple(sorted(neg) + sorted(pos)[::-1])
         return self._apply("sum", (array, axis))
+
+    def swapaxes(self, array: Tensor, axis1: int, axis2: int) -> Tensor:
+        r"""
+        Swap two axes of an array.
+
+        Args:
+            array: The array to swap axes of.
+            axis1: The first axis to swap.
+            axis2: The second axis to swap.
+
+        Returns:
+            The array with the axes swapped.
+        """
+        return self._apply("swapaxes", (array, axis1, axis2))
 
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         r"""The tensordot product of ``a`` and ``b``.
