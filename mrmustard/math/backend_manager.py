@@ -1460,7 +1460,7 @@ class BackendManager:
             The transposed array
         """
         n = len(a.shape)
-        perm = perm or tuple(*tuple(range(n - 2)), n - 1, n - 2)
+        perm = perm or (*tuple(range(n - 2)), n - 1, n - 2)
         return self._apply("transpose", (a, tuple(perm)))
 
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
