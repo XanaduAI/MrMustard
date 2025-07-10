@@ -51,6 +51,8 @@ jobs:
       - name: Run tests
         env:
           NUMBA_CACHE_DIR: ./.numba_cache
+          NUMBA_CPU_NAME: generic
+          NUMBA_CPU_FEATURES: ""
         run: |
           set -o pipefail
           uv run --all-extras pytest tests --backend=tensorflow --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt

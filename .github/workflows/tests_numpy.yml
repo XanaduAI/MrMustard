@@ -35,12 +35,8 @@ jobs:
       - name: Create environment variables
         id: dynamic_env
         run: |
-          model_name=$(lscpu | grep 'Model name' | cut -d':' -f 2)
-          cpu_flags=$(lscpu | grep 'Flags' | cut -d':' -f 2)
-          echo "model_name: $model_name"
-          echo "cpu_flags: $cpu_flags"
-          echo "MODEL_NAME=$(echo $model_name | sha256sum | head -c 8)" >> "$GITHUB_OUTPUT"
-          echo "CPU_FLAGS=$(echo $cpu_flags | sha256sum | head -c 8)" >> "$GITHUB_OUTPUT"
+          echo "MODEL_NAME=$(lscpu | grep 'Model name' | cut -d':' -f 2 | sha256sum | head -c 8)" >> "$GITHUB_OUTPUT"
+          echo "CPU_FLAGS=$(lscpu | grep 'Flags' | cut -d':' -f 2 | sha256sum | head -c 8)" >> "$GITHUB_OUTPUT"
           echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
 
       - name: Numba compilation cache
@@ -55,13 +51,11 @@ jobs:
       - name: Run tests
         env:
           NUMBA_CACHE_DIR: ./.numba_cache
-          NUMBA_DEBUG_CACHE: 1
           NUMBA_CPU_NAME: generic
           NUMBA_CPU_FEATURES: ""
         run: |
           set -o pipefail
-          ls -l ${{ env.NUMBA_CACHE_DIR }}
-          uv run --all-extras pytest -s tests --backend=numpy -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
+          uv run --all-extras pytest tests --backend=numpy -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
 
       - name: configure aws credentials
