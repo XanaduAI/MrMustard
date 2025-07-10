@@ -36,18 +36,7 @@ jobs:
         id: record_file
         run: echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
 
-      - name: Numba compilation cache
-        uses: actions/cache@v4
-        with:
-          path: ./.numba_cache
-          key: numba-cache-${{ matrix.python-version }}-tensorflow-${{ github.sha }}
-          restore-keys: |
-            numba-cache-${{ matrix.python-version }}-tensorflow-
-            numba-cache-${{ matrix.python-version }}-
-
       - name: Run tests
-        env:
-          NUMBA_CACHE_DIR: ./.numba_cache
         run: |
           set -o pipefail
           uv run --all-extras pytest tests --backend=tensorflow --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
