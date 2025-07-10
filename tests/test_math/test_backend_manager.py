@@ -680,8 +680,8 @@ class TestBackendManager:
         """
         cutoff = 5
         alpha = 0.3 + 0.5j
-        # This data is obtained by using qutip
-        # np.array(displace(40,alpha).data.todense())[0:5,0:d5]
+        # This data is obtained by using qutip 5.2.0
+        # np.array(displace(40,alpha).full())[0:5,0:5]
         expected = np.array(
             [
                 [
