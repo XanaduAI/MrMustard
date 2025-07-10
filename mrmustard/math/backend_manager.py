@@ -24,7 +24,6 @@ from typing import Any
 
 import numpy as np
 from jax.errors import TracerArrayConversionError
-from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
 
 from ..utils.settings import settings
@@ -288,7 +287,6 @@ class BackendManager:
         Returns:
             The complex phase of ``array``.
         """
-
         return self._apply("angle", (array,))
 
     def any(self, array: Tensor) -> bool:
@@ -320,7 +318,6 @@ class BackendManager:
         Returns:
             The array of evenly spaced values.
         """
-        # NOTE: is float64 by default
         return self._apply("arange", (start, limit, delta, dtype))
 
     def asnumpy(self, tensor: Tensor) -> Tensor:
@@ -359,45 +356,6 @@ class BackendManager:
         """
         return self._apply("astensor", (array, dtype))
 
-    def atleast_1d(self, array: Tensor, dtype=None) -> Tensor:
-        r"""Returns an array with at least one dimension.
-
-        Args:
-            array: The array to convert.
-            dtype: The data type of the array. If ``None``, the returned array
-                is of the same type as the given one.
-
-        Returns:
-            The array with at least one dimension.
-        """
-        return self._apply("atleast_nd", (array, 1, dtype))
-
-    def atleast_2d(self, array: Tensor, dtype=None) -> Tensor:
-        r"""Returns an array with at least two dimensions.
-
-        Args:
-            array: The array to convert.
-            dtype: The data type of the array. If ``None``, the returned array
-                is of the same type as the given one.
-
-        Returns:
-            The array with at least two dimensions.
-        """
-        return self._apply("atleast_nd", (array, 2, dtype))
-
-    def atleast_3d(self, array: Tensor, dtype=None) -> Tensor:
-        r"""Returns an array with at least three dimensions.
-
-        Args:
-            array: The array to convert.
-            dtype: The data type of the array. If ``None``, the returned array
-                is of the same type as the given one.
-
-        Returns:
-            The array with at least three dimensions.
-        """
-        return self._apply("atleast_nd", (array, 3, dtype))
-
     def atleast_nd(self, array: Tensor, n: int, dtype=None) -> Tensor:
         r"""Returns an array with at least n dimensions. Note that dimensions are
         prepended to meet the minimum number of dimensions.
@@ -411,31 +369,6 @@ class BackendManager:
             The array with at least n dimensions.
         """
         return self._apply("atleast_nd", (array, n, dtype))
-
-    def block_diag(self, mat1: Matrix, mat2: Matrix) -> Matrix:
-        r"""Returns a block diagonal matrix from the given matrices.
-
-        Args:
-            mat1: A matrix.
-            mat2: A matrix.
-
-        Returns:
-            A block diagonal matrix from the given matrices.
-        """
-        return self._apply("block_diag", (mat1, mat2))
-
-    def boolean_mask(self, tensor: Tensor, mask: Tensor) -> Tensor:
-        """
-        Returns a tensor based on the truth value of the boolean mask.
-
-        Args:
-            tensor: A tensor.
-            mask: A boolean mask.
-
-        Returns:
-            A tensor based on the truth value of the boolean mask.
-        """
-        return self._apply("boolean_mask", (tensor, mask))
 
     def block(self, blocks: list[list[Tensor]], axes=(-2, -1)) -> Tensor:
         r"""
@@ -524,44 +457,6 @@ class BackendManager:
             The complex conjugate of the given ``array``.
         """
         return self._apply("conj", (array,))
-
-    def constraint_func(self, bounds: tuple[float | None, float | None]) -> Callable | None:
-        r"""Returns a constraint function for the given bounds.
-
-        A constraint function will clip the value to the interval given by the bounds.
-
-        .. note::
-
-            The upper and/or lower bounds can be ``None``, in which case the constraint
-            function will not clip the value.
-
-        Args:
-            bounds: The bounds of the constraint.
-
-        Returns:
-            The constraint function.
-        """
-        return self._apply("constraint_func", (bounds))
-
-    def convolution(
-        self,
-        array: Tensor,
-        filters: Tensor,
-        padding: str | None = None,
-        data_format="NWC",
-    ) -> Tensor:  # TODO: remove strides and data_format?
-        r"""Performs a convolution on array with filters.
-
-        Args:
-            array: The array to convolve.
-            filters: The filters to convolve with.
-            padding: The padding mode.
-            data_format: The data format of the array.
-
-        Returns:
-            The convolved array.
-        """
-        return self._apply("convolution", (array, filters, padding, data_format))
 
     def cos(self, array: Tensor) -> Tensor:
         r"""The cosine of an array.
@@ -958,6 +853,17 @@ class BackendManager:
         """
         return self._apply("inv", (tensor,))
 
+    def isnan(self, array: Tensor) -> Tensor:
+        r"""Whether the given array contains any NaN values.
+
+        Args:
+            array: The array to check for NaN values.
+
+        Returns:
+            Whether the given array contains any NaN values.
+        """
+        return self._apply("isnan", (array,))
+
     def is_trainable(self, tensor: Tensor) -> bool:
         r"""Whether the given tensor is trainable.
 
@@ -970,13 +876,14 @@ class BackendManager:
         return self._apply("is_trainable", (tensor,))
 
     def lgamma(self, x: Tensor) -> Tensor:
-        r"""The natural logarithm of the gamma function of ``x``.
+        r"""
+        The natural logarithm of the gamma function of ``x``.
 
         Args:
-            x: The array to take the natural logarithm of the gamma function of
+            x: The array to take the natural logarithm of the gamma function of.
 
         Returns:
-            The natural logarithm of the gamma function of ``x``
+            The natural logarithm of the gamma function of ``x``.
         """
         return self._apply("lgamma", (x,))
 
@@ -1028,11 +935,12 @@ class BackendManager:
         return self._apply("matvec", (a, b))
 
     def maximum(self, a: Tensor, b: Tensor) -> Tensor:
-        r"""The element-wise maximum of ``a`` and ``b``.
+        r"""
+        The element-wise maximum of ``a`` and ``b``.
 
         Args:
-            a: The first array to take the maximum of
-            b: The second array to take the maximum of
+            a: The first array to take the maximum of.
+            b: The second array to take the maximum of.
 
         Returns:
             The element-wise maximum of ``a`` and ``b``
@@ -1046,11 +954,12 @@ class BackendManager:
         )
 
     def minimum(self, a: Tensor, b: Tensor) -> Tensor:
-        r"""The element-wise minimum of ``a`` and ``b``.
+        r"""
+        The element-wise minimum of ``a`` and ``b``.
 
         Args:
-            a: The first array to take the minimum of
-            b: The second array to take the minimum of
+            a: The first array to take the minimum of.
+            b: The second array to take the minimum of.
 
         Returns:
             The element-wise minimum of ``a`` and ``b``
@@ -1066,13 +975,10 @@ class BackendManager:
     def moveaxis(self, array: Tensor, old: Tensor, new: Tensor) -> Tensor:
         r"""
         Moves the axes of an array to a new position.
-
         Args:
             array: The array to move the axes of.
             old: The old index position
             new: The new index position
-
-
         Returns:
             The updated array
         """
@@ -1248,20 +1154,6 @@ class BackendManager:
         """
         return self._apply("real", (array,))
 
-    def repeat(self, array: Tensor, repeats: int, axis: int | None = None) -> Tensor:
-        """
-        Repeats elements of a tensor along a specified axis.
-
-        Args:
-            array: The input tensor.
-            repeats: The number of repetitions for each element.
-            axis: The axis along which to repeat values. If None, use the flattened input tensor.
-
-        Returns:
-            The tensor with repeated elements.
-        """
-        return self._apply("repeat", (array, repeats, axis))
-
     def reshape(self, array: Tensor, shape: Sequence[int]) -> Tensor:
         r"""The reshaped array.
 
@@ -1274,31 +1166,6 @@ class BackendManager:
         """
         shape = (shape,) if isinstance(shape, int) else tuple(shape)
         return self._apply("reshape", (array, shape))
-
-    def round(self, array: Tensor, decimals: int) -> Tensor:
-        r"""The array rounded to the nearest integer.
-
-        Args:
-            array: The array to round
-            decimals: number of decimals to round to
-
-        Returns:
-            The array rounded to the nearest integer
-        """
-        return self._apply("round", (array, decimals))
-
-    def set_diag(self, array: Tensor, diag: Tensor, k: int) -> Tensor:
-        r"""The array with the diagonal set to ``diag``.
-
-        Args:
-            array: The array to set the diagonal of
-            diag: The diagonal to set
-            k (int): diagonal to set
-
-        Returns:
-            The array with the diagonal set to ``diag``
-        """
-        return self._apply("set_diag", (array, diag, k))
 
     def sin(self, array: Tensor) -> Tensor:
         r"""The sine of ``array``.
@@ -1399,6 +1266,20 @@ class BackendManager:
             axis = tuple(sorted(neg) + sorted(pos)[::-1])
         return self._apply("sum", (array, axis))
 
+    def swapaxes(self, array: Tensor, axis1: int, axis2: int) -> Tensor:
+        r"""
+        Swap two axes of an array.
+
+        Args:
+            array: The array to swap axes of.
+            axis1: The first axis to swap.
+            axis2: The second axis to swap.
+
+        Returns:
+            The array with the axes swapped.
+        """
+        return self._apply("swapaxes", (array, axis1, axis2))
+
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         r"""The tensordot product of ``a`` and ``b``.
 
@@ -1446,8 +1327,6 @@ class BackendManager:
         Returns:
             The transposed array
         """
-        if a is None:
-            return None  # TODO: remove and address None inputs where tranpose is used
         perm = tuple(perm) if perm is not None else None
         return self._apply("transpose", (a, perm))
 
@@ -1577,56 +1456,6 @@ class BackendManager:
         """
         return self._apply("map_fn", (fn, elements))
 
-    def squeeze(self, tensor: Tensor, axis: list[int] | None = None) -> Tensor:
-        """Removes dimensions of size 1 from the shape of a tensor.
-
-        Args:
-            tensor (Tensor): the tensor to squeeze
-            axis (Optional[List[int]]): if specified, only squeezes the
-                dimensions listed, defaults to []
-
-        Returns:
-            Tensor: tensor with one or more dimensions of size 1 removed
-        """
-        return self._apply("squeeze", (tensor, axis))
-
-    def cholesky(self, tensor: Tensor) -> Tensor:
-        """Computes the Cholesky decomposition of square matrices.
-
-        Args:
-            tensor (Tensor)
-
-        Returns:
-            Tensor: tensor with the same type as input
-        """
-        return self._apply("cholesky", (tensor,))
-
-    def Categorical(self, probs: Tensor, name: str):
-        """Categorical distribution over integers.
-
-        Args:
-            probs: The unnormalized probabilities of a set of Categorical distributions.
-            name: The name prefixed to operations created by this class.
-
-        Returns:
-            tfp.distributions.Categorical: instance of ``tfp.distributions.Categorical`` class
-        """
-        return self._apply("Categorical", (probs, name))
-
-    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
-        """Multivariate normal distribution on `R^k` and parameterized by a (batch of) length-k loc
-        vector (aka "mu") and a (batch of) k x k scale matrix; covariance = scale @ scale.T
-        where @ denotes matrix-multiplication.
-
-        Args:
-            loc (Tensor): if this is set to None, loc is implicitly 0
-            scale_tril: lower-triangular Tensor with non-zero diagonal elements
-
-        Returns:
-            tfp.distributions.MultivariateNormalTriL: instance of ``tfp.distributions.MultivariateNormalTriL``
-        """
-        return self._apply("MultivariateNormalTriL", (loc, scale_tril))
-
     def DefaultEuclideanOptimizer(self):
         r"""Default optimizer for the Euclidean parameters."""
         return self._apply("DefaultEuclideanOptimizer")
@@ -1668,7 +1497,7 @@ class BackendManager:
         """
         return self._apply("beamsplitter", (theta, phi), {"shape": shape, "method": method})
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):  # pragma: no cover
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
         r"""
         Creates a single mode squeezed state matrix using a numba-based fock lattice strategy.
 
@@ -1715,7 +1544,8 @@ class BackendManager:
         return self.conj(self.transpose(array, perm=perm))
 
     def unitary_to_orthogonal(self, U):
-        r"""Unitary to orthogonal mapping.
+        r"""
+        Unitary to orthogonal mapping.
 
         Args:
             U: The unitary matrix in ``U(n)``
@@ -1728,13 +1558,14 @@ class BackendManager:
         return self.block([[X, -Y], [Y, X]])
 
     def random_symplectic(self, num_modes: int, max_r: float = 1.0) -> Tensor:
-        r"""A random symplectic matrix in ``Sp(2*num_modes)``.
+        r"""
+        A random symplectic matrix in ``Sp(2*num_modes)``.
 
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
         """
         if num_modes == 1:
-            W = np.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
-            V = np.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
+            W = self.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
+            V = self.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
         else:
             W = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
             V = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
@@ -1746,44 +1577,26 @@ class BackendManager:
 
     @staticmethod
     def random_orthogonal(N: int) -> Tensor:
-        """A random orthogonal matrix in :math:`O(N)`."""
+        r"""
+        A random orthogonal matrix in :math:`O(N)`.
+        """
         if N == 1:
             return np.array([[1.0]])
         return ortho_group.rvs(dim=N, random_state=settings.rng)
 
     def random_unitary(self, N: int) -> Tensor:
-        """a random unitary matrix in :math:`U(N)`"""
+        r"""
+        A random unitary matrix in :math:`U(N)`.
+        """
         if N == 1:
             return self.exp(1j * settings.rng.uniform(size=(1, 1)))
         return unitary_group.rvs(dim=N, random_state=settings.rng)
 
-    def single_mode_to_multimode_vec(self, vec, num_modes: int):
-        r"""Apply the same 2-vector (i.e. single-mode) to a larger number of modes."""
-        if vec.shape[-1] != 2:
-            raise ValueError("vec must be 2-dimensional (i.e. single-mode)")
-        x, y = vec[..., -2], vec[..., -1]
-        return self.concat(
-            [
-                self.tile(self.astensor([x]), (num_modes,)),
-                self.tile(self.astensor([y]), (num_modes,)),
-            ],
-            axis=-1,
-        )
-
-    def single_mode_to_multimode_mat(self, mat: Tensor, num_modes: int):
-        r"""Apply the same :math:`2\times 2` matrix (i.e. single-mode) to a larger number of modes."""
-        if mat.shape[-2:] != (2, 2):
-            raise ValueError("mat must be a single-mode (2x2) matrix")
-        mat = self.diag(
-            self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)),
-            k=0,
-        )  # shape [2,2,N,N]
-        return self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
-
     @staticmethod
     @lru_cache
     def Xmat(num_modes: int):
-        r"""The matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}.`
+        r"""
+        The matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}.`
 
         Args:
             num_modes (int): positive integer
@@ -1834,58 +1647,6 @@ class BackendManager:
             return self.real(self.reshape(diag, cutoffs))
 
         return self.reshape(diag, cutoffs)
-
-    def poisson(self, max_k: int, rate: Tensor) -> Tensor:
-        """Poisson distribution up to ``max_k``."""
-        k = self.arange(max_k, dtype=rate.dtype)
-        return self.exp(k * self.log(rate + 1e-9) - rate - self.lgamma(k + 1.0))
-
-    def binomial_conditional_prob(self, success_prob: Tensor, dim_out: int, dim_in: int):
-        """:math:`P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out`."""
-        in_ = self.arange(dim_in)[None, :]
-        out_ = self.arange(dim_out)[:, None]
-        return (
-            self.cast(binom(in_, out_), in_.dtype)
-            * self.pow(success_prob, out_)
-            * self.pow(1.0 - success_prob, self.maximum(in_ - out_, 0.0))
-        )
-
-    def convolve_probs_1d(self, prob: Tensor, other_probs: list[Tensor]) -> Tensor:
-        """Convolution of a joint probability with a list of single-index probabilities."""
-
-        if prob.ndim > 3 or len(other_probs) > 3:
-            raise ValueError("cannot convolve arrays with more than 3 axes")
-        if not all(q.ndim == 1 for q in other_probs):
-            raise ValueError("other_probs must contain 1d arrays")
-        if not all((len(q) == s for q, s in zip(other_probs, prob.shape))):
-            raise ValueError("The length of the 1d prob vectors must match shape of prob")
-
-        q = other_probs[0]
-        for q_ in other_probs[1:]:
-            q = q[..., None] * q_[(None,) * q.ndim + (slice(None),)]
-
-        return self.convolve_probs(prob, q)
-
-    def convolve_probs(self, prob: Tensor, other: Tensor) -> Tensor:
-        r"""Convolve two probability distributions (up to 3D) with the same shape.
-
-        Note that the output is not guaranteed to be a complete joint probability,
-        as it's computed only up to the dimension of the base probs.
-        """
-        if prob.ndim > 3 or other.ndim > 3:
-            raise ValueError("cannot convolve arrays with more than 3 axes")
-        if not prob.shape == other.shape:
-            raise ValueError("prob and other must have the same shape")
-
-        prob_padded = self.pad(prob, [(s - 1, 0) for s in other.shape])
-        other_reversed = other[(slice(None, None, -1),) * other.ndim]
-        return self.convolution(
-            prob_padded[None, ..., None],
-            other_reversed[..., None, None],
-            data_format="N"
-            + ("HD"[: other.ndim - 1])[::-1]
-            + "WC",  # TODO: rewrite this to be more readable (do we need it?)
-        )[0, ..., 0]
 
     def euclidean_to_symplectic(self, S: Matrix, dS_euclidean: Matrix) -> Matrix:
         r"""Convert the Euclidean gradient to a Riemannian gradient on the

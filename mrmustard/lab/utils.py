@@ -64,7 +64,7 @@ def reshape_params(n_modes: int, **kwargs) -> Generator:
         nor ``n_modes``.
     """
     for name, val in kwargs.items():
-        val = math.atleast_1d(val)  # noqa: PLW2901
+        val = math.atleast_nd(val, 1)  # noqa: PLW2901
         if len(val) == 1:
             val = math.tile(val, (n_modes,))  # noqa: PLW2901
         elif len(val) != n_modes:

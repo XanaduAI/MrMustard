@@ -74,6 +74,7 @@ class BackendJax(BackendBase):
     def all(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.all(array)
 
+    @jax.jit
     def angle(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.angle(array)
 
@@ -119,25 +120,6 @@ class BackendJax(BackendBase):
     def atleast_nd(self, array: jnp.ndarray, n: int, dtype=None) -> jnp.ndarray:
         return jnp.array(array, ndmin=n, dtype=dtype)
 
-    @jax.jit
-    def block_diag(self, mat1: jnp.ndarray, mat2: jnp.ndarray) -> jnp.ndarray:
-        Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
-        Zb = self.zeros((mat2.shape[-2], mat1.shape[-1]), dtype=mat1.dtype)
-        return self.concat(
-            [self.concat([mat1, Za], axis=-1), self.concat([Zb, mat2], axis=-1)],
-            axis=-2,
-        )
-
-    def constraint_func(self, bounds: tuple[float | None, float | None]) -> Callable:
-        lower = -jnp.inf if bounds[0] is None else bounds[0]
-        upper = jnp.inf if bounds[1] is None else bounds[1]
-
-        @jax.jit
-        def constraint(x):
-            return jnp.clip(x, lower, upper)
-
-        return constraint
-
     @partial(jax.jit, static_argnames=["dtype"])
     def cast(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
         if dtype is None:
@@ -164,43 +146,11 @@ class BackendJax(BackendBase):
         return jnp.clip(array, a_min, a_max)
 
     @jax.jit
-    def maximum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
-        return jnp.maximum(a, b)
-
-    @jax.jit
-    def minimum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
-        return jnp.minimum(a, b)
-
-    @jax.jit
-    def lgamma(self, array: jnp.ndarray) -> jnp.ndarray:
-        return jax.lax.lgamma(array)
-
-    @jax.jit
     def conj(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.conj(array)
 
     def pow(self, x: jnp.ndarray, y: float) -> jnp.ndarray:
         return jnp.power(x, y)
-
-    def Categorical(self, probs: jnp.ndarray, name: str):
-        class Generator:
-            def __init__(self, probs):
-                self._probs = probs
-
-            def sample(self):
-                key = jax.random.PRNGKey(0)
-                idx = jnp.arange(len(self._probs))
-                return jax.random.choice(key, idx, p=self._probs / jnp.sum(self._probs))
-
-        return Generator(probs)
-
-    @partial(jax.jit, static_argnames=["k"])
-    def set_diag(self, array: jnp.ndarray, diag: jnp.ndarray, k: int) -> jnp.ndarray:
-        i = jnp.arange(0, array.shape[-2] - abs(k))
-        j = jnp.arange(abs(k), array.shape[-1])
-        i = jnp.where(k < 0, i - array.shape[-2] + abs(k), i)
-        j = jnp.where(k < 0, j - abs(k), j)
-        return array.at[..., i, j].set(diag)
 
     def new_variable(
         self,
@@ -213,23 +163,12 @@ class BackendJax(BackendBase):
 
     @jax.jit
     def outer(self, array1: jnp.ndarray, array2: jnp.ndarray) -> jnp.ndarray:
-        return jnp.tensordot(array1, array2, [[], []])
+        return self.tensordot(array1, array2, [[], []])
 
     @partial(jax.jit, static_argnames=["name", "dtype"])
     def new_constant(self, value, name: str, dtype=None):
         dtype = dtype or self.float64
         return self.astensor(value, dtype)
-
-    @partial(jax.jit, static_argnames=["data_format", "padding"])
-    def convolution(
-        self,
-        array: jnp.ndarray,
-        filters: jnp.ndarray,
-        padding: str | None = None,
-        data_format="NWC",
-    ) -> jnp.ndarray:
-        padding = padding or "VALID"
-        return jax.lax.conv(array, filters, (1, 1), padding)
 
     def tile(self, array: jnp.ndarray, repeats: Sequence[int]) -> jnp.ndarray:
         return jnp.tile(array, repeats)
@@ -313,10 +252,6 @@ class BackendJax(BackendBase):
     def from_backend(self, value) -> bool:
         return isinstance(value, jnp.ndarray)
 
-    @partial(jax.jit, static_argnames=["repeats", "axis"])
-    def repeat(self, array: jnp.ndarray, repeats: int, axis: int | None = None) -> jnp.ndarray:
-        return jnp.repeat(array, repeats, axis=axis)
-
     @partial(jax.jit, static_argnames=["axis"])
     def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: int = 0) -> jnp.ndarray:
         return jnp.take(array, indices, axis=axis)
@@ -329,8 +264,15 @@ class BackendJax(BackendBase):
     def inv(self, tensor: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.inv(tensor)
 
+    def isnan(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.isnan(array)
+
     def is_trainable(self, tensor: jnp.ndarray) -> bool:
         return False
+
+    @jax.jit
+    def lgamma(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jax.lax.lgamma(array)
 
     @jax.jit
     def make_complex(self, real: jnp.ndarray, imag: jnp.ndarray) -> jnp.ndarray:
@@ -339,6 +281,14 @@ class BackendJax(BackendBase):
     @jax.jit
     def matmul(self, *matrices: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.multi_dot(matrices)
+
+    @jax.jit
+    def maximum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return jnp.maximum(a, b)
+
+    @jax.jit
+    def minimum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return jnp.minimum(a, b)
 
     @partial(jax.jit, static_argnames=["old", "new"])
     def moveaxis(
@@ -393,10 +343,6 @@ class BackendJax(BackendBase):
     def reshape(self, array: jnp.ndarray, shape: Sequence[int]) -> jnp.ndarray:
         return jnp.reshape(array, shape)
 
-    @partial(jax.jit, static_argnames=["decimals"])
-    def round(self, array: jnp.ndarray, decimals: int = 0) -> jnp.ndarray:
-        return jnp.round(array, decimals)
-
     @jax.jit
     def sin(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.sin(array)
@@ -424,12 +370,12 @@ class BackendJax(BackendBase):
     def kron(self, tensor1: jnp.ndarray, tensor2: jnp.ndarray):
         return jnp.kron(tensor1, tensor2)
 
-    def boolean_mask(self, tensor: jnp.ndarray, mask: jnp.ndarray) -> jnp.ndarray:
-        return tensor[mask]
-
     @partial(jax.jit, static_argnames=["axes"])
     def sum(self, array: jnp.ndarray, axes: Sequence[int] | None = None):
         return jnp.sum(array, axis=axes)
+
+    def swapaxes(self, array: jnp.ndarray, axis1: int, axis2: int) -> jnp.ndarray:
+        return jnp.swapaxes(array, axis1, axis2)
 
     @jax.jit
     def norm(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -437,23 +383,6 @@ class BackendJax(BackendBase):
 
     def map_fn(self, func, elements):
         return jax.vmap(func)(elements)
-
-    def MultivariateNormalTriL(self, loc: jnp.ndarray, scale_tril: jnp.ndarray, key: int = 0):
-        class Generator:
-            def __init__(self, mean, cov, key):
-                self._mean = mean
-                self._cov = cov
-                self._rng = jax.random.PRNGKey(key)
-
-            def sample(self, dtype=None):
-                fn = jax.random.multivariate_normal
-                return fn(self._rng, self._mean, self._cov)
-
-            def prob(self, x):
-                return jsp.stats.multivariate_normal.pdf(x, mean=self._mean, cov=self._cov)
-
-        scale_tril = scale_tril @ jnp.transpose(scale_tril)
-        return Generator(loc, scale_tril, key)
 
     def tensordot(self, a: jnp.ndarray, b: jnp.ndarray, axes: Sequence[int]) -> jnp.ndarray:
         return jnp.tensordot(a, b, axes)
@@ -472,14 +401,6 @@ class BackendJax(BackendBase):
     @partial(jax.jit, static_argnames=["dtype"])
     def zeros_like(self, array: jnp.ndarray, dtype: str = "complex128") -> jnp.ndarray:
         return jnp.zeros_like(array, dtype=dtype)
-
-    @partial(jax.jit, static_argnames=["axis"])
-    def squeeze(self, tensor: jnp.ndarray, axis=None):
-        return jnp.squeeze(tensor, axis=axis)
-
-    @jax.jit
-    def cholesky(self, tensor: jnp.ndarray):
-        return jnp.linalg.cholesky(tensor)
 
     @staticmethod
     @jax.jit

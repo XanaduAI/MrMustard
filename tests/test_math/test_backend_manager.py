@@ -21,6 +21,7 @@ import pytest
 import tensorflow as tf
 from jax import numpy as jnp
 from jax.errors import TracerArrayConversionError
+from scipy.special import loggamma as scipy_loggamma
 
 from mrmustard import math, settings
 
@@ -120,6 +121,13 @@ class TestBackendManager:
             with pytest.raises(ValueError, match="Incompatible shapes"):
                 math.allclose(arr2, arr1)
 
+    def test_angle(self):
+        r"""
+        Tests the ``angle`` method.
+        """
+        arr = math.astensor([1.0 + 1.0j, 2.0 + 2.0j, 3.0 + 3.0j, 4.0 + 4.0j])
+        assert math.allclose(math.asnumpy(math.angle(arr)), np.angle(arr))
+
     @pytest.mark.parametrize("l", lists)
     def test_any(self, l):
         r"""
@@ -178,61 +186,6 @@ class TestBackendManager:
             assert math.allclose(res, exp)
 
     @pytest.mark.parametrize("t", types)
-    @pytest.mark.parametrize("l", [l1, l3])
-    def test_atleast_1d(self, t, l):
-        r"""
-        Tests the ``atleast_1d`` method.
-        """
-        dtype = getattr(math, t, None)
-        arr = np.array(l)
-
-        res = math.asnumpy(math.atleast_1d(arr, dtype=dtype))
-
-        exp = np.atleast_1d(arr)
-        if dtype:
-            np_dtype = getattr(np, t, None)
-            exp = exp.astype(np_dtype)
-
-        assert math.allclose(res, exp)
-
-    @pytest.mark.parametrize("t", types)
-    @pytest.mark.parametrize("l", [l1, l3])
-    def test_atleast_2d(self, t, l):
-        r"""
-        Tests the ``atleast_2d`` method.
-        """
-        dtype = getattr(math, t, None)
-        arr = np.array(l)
-
-        res = math.asnumpy(math.atleast_2d(arr, dtype=dtype))
-
-        exp = np.atleast_2d(arr)
-        if dtype:
-            np_dtype = getattr(np, t, None)
-            exp = exp.astype(np_dtype)
-
-        assert math.allclose(res, exp)
-
-    @pytest.mark.parametrize("t", types)
-    @pytest.mark.parametrize("l", [l1, l3, l5])
-    def test_atleast_3d(self, t, l):
-        r"""
-        Tests the ``atleast_3d`` method.
-        """
-        dtype = getattr(math, t, None)
-        arr = np.array(l)
-
-        res = math.asnumpy(math.atleast_3d(arr, dtype=dtype))
-
-        if arr.ndim == 1:
-            exp_shape = (1, 1, *arr.shape)
-        elif arr.ndim == 2:
-            exp_shape = (1, *arr.shape)
-        else:
-            exp_shape = arr.shape
-        assert res.shape == exp_shape
-
-    @pytest.mark.parametrize("t", types)
     @pytest.mark.parametrize("l", [l1, l3, l5])
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_atleast_nd(self, t, l, n):
@@ -246,16 +199,6 @@ class TestBackendManager:
 
         exp_shape = (1,) * (n - arr.ndim) + arr.shape if arr.ndim < n else arr.shape
         assert res.shape == exp_shape
-
-    def test_boolean_mask(self):
-        r"""
-        Tests the ``boolean_mask`` method.
-        """
-        arr = math.astensor([1, 2, 3, 4])
-        mask = math.astensor([True, False, True, True])
-        res = math.boolean_mask(arr, mask)
-        exp = math.astensor([1, 3, 4])
-        assert math.allclose(res, exp)
 
     def test_block(self):
         r"""
@@ -272,16 +215,6 @@ class TestBackendManager:
             ],
         )
         assert R.shape == (16, 16)
-
-    def test_block_diag(self):
-        r"""
-        Tests the ``block_diag`` method.
-        """
-        I = math.ones(shape=(4, 4), dtype=math.complex128)
-        O = math.zeros(shape=(4, 4), dtype=math.complex128)
-        R = math.block_diag(I, 1j * I)
-        assert R.shape == (8, 8)
-        assert math.allclose(math.block([[I, O], [O, 1j * I]]), R)
 
     def test_broadcast_arrays(self):
         r"""
@@ -500,6 +433,16 @@ class TestBackendManager:
         inv = math.inv(arr)
         assert math.allclose(math.asnumpy(arr @ inv), np.eye(2))
 
+    def test_isnan(self):
+        r"""
+        Tests the ``isnan`` method.
+        """
+        arr = np.array([1.0, 2.0, 3.0, 4.0])
+        assert not math.any(math.isnan(arr))
+
+        arr_nan = np.array([1.0, 2.0, np.nan, 4.0])
+        assert math.any(math.isnan(arr_nan))
+
     def test_is_trainable(self):
         r"""
         Tests the ``is_trainable`` method.
@@ -520,7 +463,7 @@ class TestBackendManager:
         Tests the ``lgamma`` method.
         """
         arr = np.array([1.0, 2.0, 3.0, 4.0])
-        assert math.allclose(math.asnumpy(math.lgamma(arr)), math.lgamma(arr))
+        assert math.allclose(math.asnumpy(math.lgamma(arr)), scipy_loggamma(arr))
 
     def test_log(self):
         r"""
@@ -536,6 +479,19 @@ class TestBackendManager:
         r = 1.0
         i = 2.0
         assert math.asnumpy(math.make_complex(r, i)) == r + i * 1j
+
+    def test_moveaxis(self):
+        r"""
+        Tests the ``moveaxis`` method.
+        """
+        arr1 = settings.rng.random(size=(1, 2, 3))
+        arr2 = settings.rng.random(size=(2, 1, 3))
+        arr2_moved = math.moveaxis(arr2, 0, 1)
+        assert math.allclose(arr1.shape, arr2_moved.shape)
+
+        arr1_moved1 = math.moveaxis(arr1, 0, 1)
+        arr1_moved2 = math.moveaxis(arr1_moved1, 1, 0)
+        assert math.allclose(arr1, arr1_moved2)
 
     def test_maximum(self):
         r"""
@@ -554,19 +510,6 @@ class TestBackendManager:
         arr2 = 2 * np.eye(3)
         res = math.asnumpy(math.minimum(arr1, arr2))
         assert math.allclose(res, arr1)
-
-    def test_moveaxis(self):
-        r"""
-        Tests the ``moveaxis`` method.
-        """
-        arr1 = settings.rng.random(size=(1, 2, 3))
-        arr2 = settings.rng.random(size=(2, 1, 3))
-        arr2_moved = math.moveaxis(arr2, 0, 1)
-        assert math.allclose(arr1.shape, arr2_moved.shape)
-
-        arr1_moved1 = math.moveaxis(arr1, 0, 1)
-        arr1_moved2 = math.moveaxis(arr1_moved1, 1, 0)
-        assert math.allclose(arr1, arr1_moved2)
 
     @pytest.mark.parametrize("t", types)
     def test_new_variable(self, t):
@@ -664,14 +607,6 @@ class TestBackendManager:
         arr = math.reshape(arr, shape)
         assert arr.shape == shape
 
-    def test_set_diag(self):
-        r"""
-        Tests the ``set_diag`` method.
-        """
-        arr = np.zeros(shape=(3, 3))
-        diag = np.ones(shape=(3,))
-        assert math.allclose(math.asnumpy(math.set_diag(arr, diag, 0)), np.eye(3))
-
     @pytest.mark.parametrize("l", lists)
     def test_sin(self, l):
         r"""
@@ -731,13 +666,13 @@ class TestBackendManager:
         res = math.asnumpy(math.sum(arr))
         assert math.allclose(res, 12)
 
-    def test_categorical(self):
+    def test_swapaxes(self):
         r"""
-        Tests the ``Categorical`` method.
+        Tests the ``swapaxes`` method.
         """
-        probs = np.array([1e-6 for _ in range(300)])
-        results = [math.Categorical(probs, "") for _ in range(100)]
-        assert len(set(results)) > 1
+        arr = np.array([[1.0, 1.0, 1.0], [2.0, 2.0, 2.0]])
+        res = np.array([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0]])
+        assert math.allclose(res, math.swapaxes(arr, 0, 1))
 
     def test_displacement(self):
         r"""

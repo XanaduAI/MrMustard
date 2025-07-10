@@ -45,9 +45,8 @@ class TestBtoPS:
         vec = np.linspace(-4.5, 4.5, 100)
         wigner, _, _ = wigner_discretized(dm, vec, vec)
 
-        settings.HBAR = hbar
-        Wigner = (state >> BtoPS(0, s=0)).ansatz
-        settings.HBAR = 1.0
+        with settings(HBAR=hbar):
+            Wigner = (state >> BtoPS(0, s=0)).ansatz
 
         X, Y = np.meshgrid(vec / np.sqrt(2 * settings.HBAR), vec / np.sqrt(2 * settings.HBAR))
         assert math.allclose(
