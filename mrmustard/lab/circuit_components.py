@@ -46,6 +46,7 @@ from mrmustard.utils.typing import (
     RealVector,
     Scalar,
 )
+from mrmustard.math.parameters import Variable
 
 __all__ = ["CircuitComponent"]
 
@@ -88,7 +89,10 @@ class CircuitComponent:
 
         # make sure the ansatz parameters match the parameter set
         for param_name, param in ret.ansatz._fn_kwargs.items():
-            ret.ansatz._fn_kwargs[param_name] = ret.parameters.all_parameters[param.name]
+            if isinstance(param, Variable):
+                ret.ansatz._fn_kwargs[param_name] = ret.parameters.all_parameters[param.name]
+            else:  # need this to build pytree of labels
+                ret.ansatz._fn_kwargs[param_name] = param
 
         return ret
 

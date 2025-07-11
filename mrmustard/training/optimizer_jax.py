@@ -22,6 +22,7 @@ from collections.abc import Callable, Sequence
 
 import equinox as eqx
 import jax
+import optax
 from optax import GradientTransformation, OptState, adamw
 
 from mrmustard import math, settings
@@ -29,9 +30,13 @@ from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.math.parameters import Variable
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
+from mrmustard.training.parameter_update_jax import update_symplectic, update_unitary
 
 __all__ = ["OptimizerJax"]
 
+def get_pytree_of_optimizer_labels(node):
+    if isinstance(node, Variable):
+        return str(node.update_fn.__name__)
 
 class OptimizerJax:
     r"""
@@ -50,6 +55,8 @@ class OptimizerJax:
     def __init__(
         self,
         learning_rate: float = 0.001,
+        symplectic_lr: float = 0.001,
+        unitary_lr: float = 0.001,
         stable_threshold: float = 1e-6,
     ):
         if math.backend_name != "jax":
@@ -57,6 +64,8 @@ class OptimizerJax:
                 "OptimizerJax only supports the Jax backend. Please set the backend to Jax using `math.change_backend('jax')`.",
             )
         self.learning_rate = learning_rate
+        self.symplectic_lr = symplectic_lr
+        self.unitary_lr = unitary_lr
         self.opt_history = [0]
         self.log = create_logger(__name__)
         self.stable_threshold = stable_threshold
@@ -164,11 +173,27 @@ class OptimizerJax:
         The core optimization loop.
         """
         by_optimizing = tuple(by_optimizing)
-        optim = (
+        euclidean_optim = (
             euclidean_optim(learning_rate=self.learning_rate)
             if euclidean_optim is not None
             else adamw(learning_rate=self.learning_rate)
         )
+
+        labels_pytree = jax.tree_util.tree_map(
+            get_pytree_of_optimizer_labels,
+            by_optimizing,
+            is_leaf = lambda n: isinstance(n, Variable)
+        )
+
+        optim = optax.multi_transform(
+            {
+                'update_euclidean': euclidean_optim,
+                'update_unitary': update_unitary(self.unitary_lr),
+                'update_symplectic': update_symplectic(self.symplectic_lr),
+            },
+            labels_pytree,
+        )
+
         opt_state = optim.init(by_optimizing)
 
         # optimize
