@@ -22,7 +22,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from .core import SQRT
 
 
-@njit
+@njit(cache=True)
 def vanilla_vjp_numba(
     G,
     c,
@@ -82,7 +82,7 @@ def vanilla_vjp_numba(
     return (dLdA + dLdA.T) / 2, dLdb, dLdc
 
 
-@njit(parallel=True)
+@njit(cache=True, parallel=True)
 def vanilla_batch_vjp_numba(
     G: ComplexTensor,
     c: ComplexVector,
