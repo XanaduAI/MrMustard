@@ -81,7 +81,7 @@ class Dgate(Unitary):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         x: float | Sequence[float] = 0.0,
         y: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
@@ -89,6 +89,7 @@ class Dgate(Unitary):
         x_bounds: tuple[float | None, float | None] = (None, None),
         y_bounds: tuple[float | None, float | None] = (None, None),
     ) -> None:
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Dgate")
         self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
@@ -97,7 +98,7 @@ class Dgate(Unitary):
             x=self.parameters.x,
             y=self.parameters.y,
         )
-        self._wires = Wires(set(), set(), {mode}, {mode})
+        self._wires = Wires(set(), set(), set(mode), set(mode))
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""

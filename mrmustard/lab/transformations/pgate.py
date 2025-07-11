@@ -54,11 +54,12 @@ class Pgate(Unitary):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         shearing: float | Sequence[float] = 0.0,
         shearing_trainable: bool = False,
         shearing_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Pgate")
         self.parameters.add_parameter(
             make_parameter(
@@ -75,4 +76,4 @@ class Pgate(Unitary):
             ).bargmann_triple(),
             shearing=self.parameters.shearing,
         )
-        self._wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
+        self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))

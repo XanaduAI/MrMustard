@@ -61,11 +61,12 @@ class BargmannEigenstate(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         alpha: float | Sequence[float] = 0.0,
         alpha_trainable: bool = False,
         alpha_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="BargmannEigenstate")
 
         self.parameters.add_parameter(
@@ -80,4 +81,4 @@ class BargmannEigenstate(Ket):
             fn=triples.bargmann_eigenstate_Abc,
             alpha=self.parameters.alpha,
         )
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))

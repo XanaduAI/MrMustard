@@ -68,11 +68,12 @@ class FockDamping(Operation):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         damping: float | Sequence[float] = 0.0,
         damping_trainable: bool = False,
         damping_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="FockDamping")
         self.parameters.add_parameter(
             make_parameter(
@@ -87,4 +88,4 @@ class FockDamping(Operation):
             fn=triples.fock_damping_Abc,
             beta=self.parameters.damping,
         )
-        self._wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
+        self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))

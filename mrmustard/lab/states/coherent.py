@@ -75,7 +75,7 @@ class Coherent(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         x: float | Sequence[float] = 0.0,
         y: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
@@ -83,6 +83,7 @@ class Coherent(Ket):
         x_bounds: tuple[float | None, float | None] = (None, None),
         y_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Coherent")
         self.parameters.add_parameter(
             make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds),
@@ -96,4 +97,4 @@ class Coherent(Ket):
             x=self.parameters.x,
             y=self.parameters.y,
         )
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))

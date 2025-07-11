@@ -79,11 +79,12 @@ class Amplifier(Channel):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         gain: float | Sequence[float] = 1.0,
         gain_trainable: bool = False,
         gain_bounds: tuple[float | None, float | None] = (1.0, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Amp~")
         self.parameters.add_parameter(
             make_parameter(
@@ -95,8 +96,8 @@ class Amplifier(Channel):
         )
         self._ansatz = PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain)
         self._wires = Wires(
-            modes_in_bra={mode},
-            modes_out_bra={mode},
-            modes_in_ket={mode},
-            modes_out_ket={mode},
+            modes_in_bra=set(mode),
+            modes_out_bra=set(mode),
+            modes_in_ket=set(mode),
+            modes_out_ket=set(mode),
         )

@@ -66,7 +66,7 @@ class DisplacedSqueezed(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         x: float | Sequence[float] = 0.0,
         y: float | Sequence[float] = 0.0,
         r: float | Sequence[float] = 0.0,
@@ -80,6 +80,7 @@ class DisplacedSqueezed(Ket):
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="DisplacedSqueezed")
         self.parameters.add_parameter(
             make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds),
@@ -101,4 +102,4 @@ class DisplacedSqueezed(Ket):
             r=self.parameters.r,
             phi=self.parameters.phi,
         )
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))

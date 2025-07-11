@@ -55,7 +55,8 @@ class Sauron(Ket):
         >>> assert psi.modes == (0,)
     """
 
-    def __init__(self, mode: int, n: int, epsilon: float = 0.1):
+    def __init__(self, mode: int | tuple[int], n: int, epsilon: float = 0.1):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name=f"Sauron-{n}")
 
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
@@ -66,5 +67,5 @@ class Sauron(Ket):
             n=self.parameters.n,
             epsilon=self.parameters.epsilon,
         )
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))
         self.ansatz._lin_sup = True

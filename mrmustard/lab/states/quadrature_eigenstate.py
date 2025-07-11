@@ -61,7 +61,7 @@ class QuadratureEigenstate(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         x: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
@@ -69,6 +69,7 @@ class QuadratureEigenstate(Ket):
         x_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="QuadratureEigenstate")
 
         self.parameters.add_parameter(
@@ -84,7 +85,7 @@ class QuadratureEigenstate(Ket):
             x=self.parameters.x,
             phi=self.parameters.phi,
         )
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))
 
         for w in self.wires.output.wires:
             w.repr = ReprEnum.QUADRATURE
