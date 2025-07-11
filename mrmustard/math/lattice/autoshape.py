@@ -20,7 +20,7 @@ from numba import njit
 SQRT = np.sqrt(np.arange(100000))
 
 
-@njit
+@njit(cache=True)
 def autoshape_numba(A, b, c, max_prob, max_shape, min_shape) -> int:  # pragma: no cover
     r"""Strategy to compute the shape of the Fock representation of a Gaussian DM
     such that its trace is above a certain bound given as ``max_prob``.

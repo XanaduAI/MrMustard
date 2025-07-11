@@ -33,7 +33,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 SQRT = np.sqrt(np.arange(100000))  # precompute sqrt of the first 100k integers
 
 
-@njit
+@njit(cache=True)
 def vanilla_step(
     G: ComplexTensor,
     A: ComplexMatrix,
@@ -67,7 +67,7 @@ def vanilla_step(
     return value_at_index / SQRT[index[i]]
 
 
-@njit
+@njit(cache=True)
 def vanilla_step_batch(
     G: ComplexTensor,
     A: ComplexMatrix,
@@ -101,7 +101,7 @@ def vanilla_step_batch(
     return value_at_index / SQRT[index[i]]
 
 
-@njit
+@njit(cache=True)
 def vanilla_step_jacobian(
     G: ComplexTensor,
     A: ComplexMatrix,
@@ -141,7 +141,7 @@ def vanilla_step_jacobian(
     return dGdA, dGdB
 
 
-@njit
+@njit(cache=True)
 def vanilla_step_grad(
     G: ComplexTensor,
     index: tuple[int, ...],
@@ -171,7 +171,7 @@ def vanilla_step_grad(
     return dA, db
 
 
-@njit
+@njit(cache=True)
 def vanilla_step_dict(
     data: types.DictType,
     A: ComplexMatrix,
@@ -204,7 +204,7 @@ def vanilla_step_dict(
     return value_at_index
 
 
-@njit
+@njit(cache=True)
 def binomial_step(
     G: ComplexTensor,
     A: ComplexMatrix,
@@ -235,7 +235,7 @@ def binomial_step(
     return G, norm
 
 
-@njit
+@njit(cache=True)
 def binomial_step_dict(
     G: types.DictType,
     A: ComplexMatrix,
