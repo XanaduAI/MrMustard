@@ -355,6 +355,7 @@ class BackendJax(BackendBase):
     ) -> jnp.ndarray:
         return jnp.moveaxis(array, old, new)
 
+    # @partial(jax.jit, static_argnames=["shape", "dtype"])
     def ones(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.ones(shape, dtype=dtype)
