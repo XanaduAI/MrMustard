@@ -155,7 +155,7 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def batch_size(self) -> int:
-        return int(math.prod(self.batch_shape)) if self.batch_shape else 0
+        return math.prod(self.batch_shape) if self.batch_shape else 0
 
     @property
     def c(self) -> Batch[ComplexTensor]:
