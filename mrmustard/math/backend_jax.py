@@ -484,7 +484,7 @@ class BackendJax(BackendBase):
         out: jnp.ndarray | None = None,
     ) -> jnp.ndarray:
         if out is not None:
-            raise ValueError("'out' keyword is not supported in the JAX backend")
+            raise ValueError("The 'out' keyword is not supported in the JAX backend.")
         return hermite_renormalized_batched_jax(A, b, c, shape, stable)
 
     @partial(jax.jit, static_argnames=["cutoffs"])

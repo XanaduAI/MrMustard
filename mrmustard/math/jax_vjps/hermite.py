@@ -132,7 +132,7 @@ def hermite_renormalized_batched_jax(
 
 def hermite_renormalized_batched_jax_fwd(A, b, c, shape, stable):
     r"""
-    The jax forward pass for hermite_renormalized_batched.
+    The jax forward pass for hermite_renormalized_unbatched.
     """
     G = hermite_renormalized_batched_jax(A, b, c, shape, stable)
     return (G, (G, A, b, c))
@@ -140,7 +140,7 @@ def hermite_renormalized_batched_jax_fwd(A, b, c, shape, stable):
 
 def hermite_renormalized_batched_jax_bwd(shape, stable, res, g):
     r"""
-    The jax backward pass for hermite_renormalized_batched.
+    The jax backward pass for hermite_renormalized_unbatched.
     """
     G, A, b, c = res
     dLdA, dLdB, dLdC = jax.pure_callback(
