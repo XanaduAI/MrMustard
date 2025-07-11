@@ -17,7 +17,7 @@ from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
 # ruff: noqa: RUF005
 
 
-@njit
+@njit(cache=True)
 def write_block(
     i,
     arr_write,
@@ -73,7 +73,7 @@ def write_block(
     return arr_write
 
 
-@njit
+@njit(cache=True)
 def read_block(
     arr_write,
     idx_write,
@@ -97,7 +97,7 @@ def read_block(
     return arr_write
 
 
-@njit
+@njit(cache=True)
 def use_offDiag_pivot(
     A,
     B,
@@ -221,7 +221,7 @@ def use_offDiag_pivot(
     return arr0, arr2, arr1010, arr1001
 
 
-@njit
+@njit(cache=True)
 def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1):
     """
     Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
@@ -286,7 +286,7 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
     return arr1
 
 
-@njit
+@njit(cache=True)
 def fock_representation_1leftoverMode_amps_NUMBA(
     A,
     B,

@@ -125,7 +125,7 @@ def binomial_dict(
     return G
 
 
-@njit
+@njit(cache=True)
 def binomial_numba(
     local_cutoffs: tuple[int, ...],
     A: ComplexMatrix,

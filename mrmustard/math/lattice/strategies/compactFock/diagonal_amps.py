@@ -15,7 +15,7 @@ from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
 )
 
 
-@njit
+@njit(cache=True)
 def use_offDiag_pivot(  # noqa: C901
     A,
     B,
@@ -94,7 +94,7 @@ def use_offDiag_pivot(  # noqa: C901
     return arr0, arr2, arr1010, arr1001
 
 
-@njit
+@njit(cache=True)
 def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):  # pragma: no cover
     """
     Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
@@ -141,7 +141,7 @@ def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):  # pragma: no cover
     return arr1
 
 
-@njit
+@njit(cache=True)
 def fock_representation_diagonal_amps_NUMBA(
     A,
     B,

@@ -15,7 +15,7 @@ from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
 )
 
 
-@njit
+@njit(cache=True)
 def calc_dA_dB(
     m,
     n,
@@ -46,7 +46,7 @@ def calc_dA_dB(
     return dA / K_i[i - 2], dB / K_i[i - 2]
 
 
-@njit
+@njit(cache=True)
 def write_block_grad(
     i,
     write,
@@ -225,7 +225,7 @@ def write_block_grad(
     return arr_write_dA, arr_write_dB
 
 
-@njit
+@njit(cache=True)
 def read_block(
     arr_write,
     arr_write_dA,
@@ -250,7 +250,7 @@ def read_block(
     return arr_write, arr_write_dA, arr_write_dB
 
 
-@njit
+@njit(cache=True)
 def use_offDiag_pivot_grad(  # noqa: C901
     A,
     B,
@@ -461,7 +461,7 @@ def use_offDiag_pivot_grad(  # noqa: C901
     )
 
 
-@njit
+@njit(cache=True)
 def use_diag_pivot_grad(
     A,
     B,
@@ -556,7 +556,7 @@ def use_diag_pivot_grad(
     return arr1_dA, arr1_dB
 
 
-@njit
+@njit(cache=True)
 def fock_representation_1leftoverMode_grad_NUMBA(
     A,
     B,

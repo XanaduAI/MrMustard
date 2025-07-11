@@ -31,7 +31,12 @@ from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 from .backend_base import BackendBase
-from .jax_vjps import beamsplitter_jax, displacement_jax, hermite_renormalized_unbatched_jax
+from .jax_vjps import (
+    beamsplitter_jax,
+    displacement_jax,
+    hermite_renormalized_batched_jax,
+    hermite_renormalized_unbatched_jax,
+)
 from .lattice import strategies
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
@@ -493,24 +498,9 @@ class BackendJax(BackendBase):
         stable: bool = False,
         out: jnp.ndarray | None = None,
     ) -> jnp.ndarray:
-        batch_size = A.shape[0]
-        output_shape = (batch_size, *shape)
         if out is not None:
-            raise ValueError("'out' keyword is not supported in the JAX backend")
-        return jax.pure_callback(
-            lambda A, b, c: strategies.vanilla_batch_numba(
-                shape,
-                np.asarray(A),
-                np.asarray(b),
-                np.asarray(c),
-                stable,
-                None,
-            ),
-            jax.ShapeDtypeStruct(output_shape, jnp.complex128),
-            A,
-            b,
-            c,
-        )
+            raise ValueError("The 'out' keyword is not supported in the JAX backend.")
+        return hermite_renormalized_batched_jax(A, b, c, shape, stable)
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal(

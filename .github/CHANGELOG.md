@@ -44,6 +44,10 @@
 * Changed np.array -> np.asarray to reduce memory overhead.
   [(#600)](https://github.com/XanaduAI/MrMustard/pull/600)
 
+* Numba jitted functions are now marked as cached, speeding up first-load times
+  across multiple processes
+  [(#622)](https://github.com/XanaduAI/MrMustard/pull/622)
+
 ### Bug fixes
 * Fix the bug in the order of indices of the triples for DsMap CircuitComponent.
   [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)

@@ -15,7 +15,7 @@ from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
 )
 
 
-@njit
+@njit(cache=True)
 def calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB):
     """
     Calculate the derivatives of one Fock amplitude w.r.t A and B.
@@ -37,7 +37,7 @@ def calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_va
     return dA / K_i[i], dB / K_i[i]
 
 
-@njit
+@njit(cache=True)
 def use_offDiag_pivot_grad(
     A,
     B,
@@ -197,7 +197,7 @@ def use_offDiag_pivot_grad(
     )
 
 
-@njit
+@njit(cache=True)
 def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB):
     """
     Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
@@ -257,7 +257,7 @@ def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, 
     return arr1_dA, arr1_dB
 
 
-@njit
+@njit(cache=True)
 def fock_representation_diagonal_grad_NUMBA(
     A,
     B,
