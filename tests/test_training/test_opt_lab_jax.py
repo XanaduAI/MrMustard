@@ -20,11 +20,20 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from mrmustard import math, settings
-from mrmustard.lab import *
+from mrmustard.lab import (
+    BSgate,
+    Circuit,
+    Dgate,
+    DisplacedSqueezed,
+    Number,
+    S2gate,
+    Sgate,
+    SqueezedVacuum,
+    TwoModeSqueezedVacuum,
+    Vacuum,
+)
 from mrmustard.math.parameters import Variable
 from mrmustard.training import OptimizerJax
-
-# ruff: noqa: F405
 
 
 @pytest.mark.requires_backend("jax")
