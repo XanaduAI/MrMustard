@@ -75,6 +75,7 @@ class BargmannEigenstate(Ket):
                 value=alpha,
                 name="alpha",
                 bounds=alpha_bounds,
+                dtype=float,
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(

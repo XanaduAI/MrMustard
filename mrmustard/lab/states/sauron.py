@@ -59,8 +59,10 @@ class Sauron(Ket):
         mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name=f"Sauron-{n}")
 
-        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
-        self.parameters.add_parameter(make_parameter(False, epsilon, "epsilon", (None, None)))
+        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=int))
+        self.parameters.add_parameter(
+            make_parameter(False, epsilon, "epsilon", (None, None), dtype=float)
+        )
 
         self._ansatz = PolyExpAnsatz.from_function(
             triples.sauron_state_Abc,

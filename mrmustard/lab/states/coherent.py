@@ -86,10 +86,14 @@ class Coherent(Ket):
         mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Coherent")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds),
+            make_parameter(
+                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=float
+            ),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=y_trainable, value=y, name="y", bounds=y_bounds),
+            make_parameter(
+                is_trainable=y_trainable, value=y, name="y", bounds=y_bounds, dtype=float
+            ),
         )
 
         self._ansatz = PolyExpAnsatz.from_function(

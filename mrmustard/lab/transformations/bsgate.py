@@ -98,8 +98,12 @@ class BSgate(Unitary):
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="BSgate")
-        self.parameters.add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+        self.parameters.add_parameter(
+            make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=float)
+        )
+        self.parameters.add_parameter(
+            make_parameter(phi_trainable, phi, "phi", phi_bounds, dtype=float)
+        )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.beamsplitter_gate_Abc,
             theta=self.parameters.theta,

@@ -161,9 +161,7 @@ def test_MZgate_internal_tms(phi_a, phi_b):
 def test_amplifier_on_coherent_is_thermal_coherent(g, x, y):
     """Tests that amplifying a coherent state is equivalent to preparing a thermal state displaced state"""
     assert Vacuum(0) >> Dgate(0, x, y) >> Amplifier(0, g) == Thermal(0, g - 1) >> Dgate(
-        0,
-        np.sqrt(g) * x,
-        np.sqrt(g) * y,
+        0, np.sqrt(g) * x, np.sqrt(g) * y
     )
 
 
@@ -171,6 +169,5 @@ def test_amplifier_on_coherent_is_thermal_coherent(g, x, y):
 def test_amplifier_attenuator_on_coherent_coherent(eta, x, y):
     """Tests that amplifying and the attenuating a coherent state is equivalent to preparing a thermal state displaced state"""
     assert Vacuum(0) >> Dgate(0, x, y) >> Amplifier(0, 1 / eta) >> Attenuator(0, eta) == Thermal(
-        0,
-        ((1 / eta) - 1) * eta,
+        0, ((1 / eta) - 1) * eta
     ) >> Dgate(0, x, y)

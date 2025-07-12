@@ -66,7 +66,9 @@ class PhaseNoise(Channel):
         mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="PhaseNoise")
         self.parameters.add_parameter(
-            make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds),
+            make_parameter(
+                phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds, dtype=float
+            ),
         )
         self._ansatz = None
         self._wires = Wires(

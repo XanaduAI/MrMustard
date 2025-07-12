@@ -73,10 +73,14 @@ class QuadratureEigenstate(Ket):
         super().__init__(name="QuadratureEigenstate")
 
         self.parameters.add_parameter(
-            make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds),
+            make_parameter(
+                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=float
+            ),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
+            make_parameter(
+                is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds, dtype=float
+            ),
         )
         self.manual_shape = (50,)
 

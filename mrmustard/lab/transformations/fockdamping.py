@@ -82,6 +82,7 @@ class FockDamping(Operation):
                 "damping",
                 damping_bounds,
                 None,
+                dtype=float,
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(

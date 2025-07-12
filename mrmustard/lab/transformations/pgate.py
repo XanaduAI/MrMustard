@@ -67,6 +67,7 @@ class Pgate(Unitary):
                 value=shearing,
                 name="shearing",
                 bounds=shearing_bounds,
+                dtype=float,
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(

@@ -92,10 +92,14 @@ class Sgate(Unitary):
         mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Sgate")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
+            make_parameter(
+                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=float
+            ),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
+            make_parameter(
+                is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds, dtype=float
+            ),
         )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.squeezing_gate_Abc,

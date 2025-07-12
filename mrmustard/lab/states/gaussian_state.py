@@ -177,6 +177,7 @@ class GDM(DM):
                 value=betas,
                 name="beta",
                 bounds=(0, None),
+                dtype=float,
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(

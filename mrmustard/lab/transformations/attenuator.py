@@ -92,6 +92,7 @@ class Attenuator(Channel):
                 value=transmissivity,
                 name="transmissivity",
                 bounds=transmissivity_bounds,
+                dtype=float,
             ),
         )
 
