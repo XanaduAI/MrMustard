@@ -98,10 +98,10 @@ class BSgate(Unitary):
     ):
         super().__init__(name="BSgate")
         self.parameters.add_parameter(
-            make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=float)
+            make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=math.float64)
         )
         self.parameters.add_parameter(
-            make_parameter(phi_trainable, phi, "phi", phi_bounds, dtype=float)
+            make_parameter(phi_trainable, phi, "phi", phi_bounds, dtype=math.float64)
         )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.beamsplitter_gate_Abc,

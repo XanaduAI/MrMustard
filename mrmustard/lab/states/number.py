@@ -18,6 +18,7 @@ The class representing a number state.
 
 from __future__ import annotations
 
+from mrmustard import math
 from mrmustard.physics.ansatz import ArrayAnsatz
 from mrmustard.physics.fock_utils import fock_state
 from mrmustard.physics.wires import ReprEnum, Wires
@@ -67,9 +68,9 @@ class Number(Ket):
         mode = (mode,) if isinstance(mode, int) else mode
         cutoffs = n if cutoffs is None else cutoffs
         super().__init__(name="N")
-        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=int))
+        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=math.int64))
         self.parameters.add_parameter(
-            make_parameter(False, cutoffs, "cutoffs", (None, None), dtype=int),
+            make_parameter(False, cutoffs, "cutoffs", (None, None), dtype=math.int64),
         )
 
         self._ansatz = ArrayAnsatz.from_function(fock_state, n=n, cutoffs=cutoffs)

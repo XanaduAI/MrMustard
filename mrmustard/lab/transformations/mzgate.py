@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 
@@ -73,10 +74,10 @@ class MZgate(Unitary):
     ):
         super().__init__(name="MZgate")
         self.parameters.add_parameter(
-            make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds, dtype=float)
+            make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds, dtype=math.float64)
         )
         self.parameters.add_parameter(
-            make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds, dtype=float)
+            make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds, dtype=math.float64)
         )
 
         self._ansatz = PolyExpAnsatz.from_function(

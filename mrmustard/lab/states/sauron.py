@@ -18,6 +18,7 @@ The Sauron state is an approximation of the `n`-th Fock states using a ring of `
 
 from __future__ import annotations
 
+from mrmustard import math
 from mrmustard.lab.states.ket import Ket
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
@@ -59,9 +60,9 @@ class Sauron(Ket):
         mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name=f"Sauron-{n}")
 
-        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=int))
+        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=math.int64))
         self.parameters.add_parameter(
-            make_parameter(False, epsilon, "epsilon", (None, None), dtype=float)
+            make_parameter(False, epsilon, "epsilon", (None, None), dtype=math.float64)
         )
 
         self._ansatz = PolyExpAnsatz.from_function(

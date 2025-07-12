@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.lab.states.ket import Ket
 from mrmustard.lab.utils import make_parameter
 from mrmustard.physics import triples
@@ -87,12 +88,12 @@ class Coherent(Ket):
         super().__init__(name="Coherent")
         self.parameters.add_parameter(
             make_parameter(
-                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=float
+                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=math.float64
             ),
         )
         self.parameters.add_parameter(
             make_parameter(
-                is_trainable=y_trainable, value=y, name="y", bounds=y_bounds, dtype=float
+                is_trainable=y_trainable, value=y, name="y", bounds=y_bounds, dtype=math.float64
             ),
         )
 

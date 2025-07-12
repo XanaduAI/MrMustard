@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 
@@ -67,7 +68,7 @@ class Pgate(Unitary):
                 value=shearing,
                 name="shearing",
                 bounds=shearing_bounds,
-                dtype=float,
+                dtype=math.float64,
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(

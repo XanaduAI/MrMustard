@@ -90,8 +90,12 @@ class Dgate(Unitary):
     ) -> None:
         mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Dgate")
-        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds, dtype=float))
-        self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds, dtype=float))
+        self.parameters.add_parameter(
+            make_parameter(x_trainable, x, "x", x_bounds, dtype=math.float64)
+        )
+        self.parameters.add_parameter(
+            make_parameter(y_trainable, y, "y", y_bounds, dtype=math.float64)
+        )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.displacement_gate_Abc,
             x=self.parameters.x,

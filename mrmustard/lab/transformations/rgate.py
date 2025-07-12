@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.physics.wires import Wires
 
 from ...physics import triples
@@ -61,7 +62,7 @@ class Rgate(Unitary):
         mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Rgate")
         self.parameters.add_parameter(
-            make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=float)
+            make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=math.float64)
         )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.rotation_gate_Abc,
