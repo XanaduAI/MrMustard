@@ -67,7 +67,11 @@ class PhaseNoise(Channel):
         super().__init__(name="PhaseNoise")
         self.parameters.add_parameter(
             make_parameter(
-                phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds, dtype=float
+                phase_stdev_trainable,
+                phase_stdev,
+                "phase_stdev",
+                phase_stdev_bounds,
+                dtype=math.float64,
             ),
         )
         self._ansatz = None

@@ -22,6 +22,7 @@ from collections.abc import Sequence
 
 import numpy as np
 
+from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import ReprEnum, Wires
@@ -74,12 +75,16 @@ class QuadratureEigenstate(Ket):
 
         self.parameters.add_parameter(
             make_parameter(
-                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=float
+                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=math.float64
             ),
         )
         self.parameters.add_parameter(
             make_parameter(
-                is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds, dtype=float
+                is_trainable=phi_trainable,
+                value=phi,
+                name="phi",
+                bounds=phi_bounds,
+                dtype=math.float64,
             ),
         )
         self.manual_shape = (50,)

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 
@@ -69,7 +70,7 @@ class CXgate(Unitary):
         super().__init__(name="CXgate")
         self.parameters.add_parameter(
             make_parameter(
-                is_trainable=s_trainable, value=s, name="s", bounds=s_bounds, dtype=float
+                is_trainable=s_trainable, value=s, name="s", bounds=s_bounds, dtype=math.float64
             ),
         )
 

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
@@ -75,7 +76,7 @@ class BargmannEigenstate(Ket):
                 value=alpha,
                 name="alpha",
                 bounds=alpha_bounds,
-                dtype=float,
+                dtype=math.float64,
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(

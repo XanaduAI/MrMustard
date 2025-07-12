@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
@@ -84,22 +85,26 @@ class DisplacedSqueezed(Ket):
         super().__init__(name="DisplacedSqueezed")
         self.parameters.add_parameter(
             make_parameter(
-                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=float
+                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=math.float64
             ),
         )
         self.parameters.add_parameter(
             make_parameter(
-                is_trainable=y_trainable, value=y, name="y", bounds=y_bounds, dtype=float
+                is_trainable=y_trainable, value=y, name="y", bounds=y_bounds, dtype=math.float64
             ),
         )
         self.parameters.add_parameter(
             make_parameter(
-                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=float
+                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
             ),
         )
         self.parameters.add_parameter(
             make_parameter(
-                is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds, dtype=float
+                is_trainable=phi_trainable,
+                value=phi,
+                name="phi",
+                bounds=phi_bounds,
+                dtype=math.float64,
             ),
         )
 
