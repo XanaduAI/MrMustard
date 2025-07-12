@@ -676,11 +676,7 @@ class CircuitComponent:
         cls = type(self)
         params = signature(cls).parameters
         if "mode" in params or "modes" in params:
-            ret = (
-                self.__class__(self.modes[0], **self.parameters.to_dict())
-                if "mode" in params
-                else self.__class__(self.modes, **self.parameters.to_dict())
-            )
+            ret = self.__class__(self.modes, **self.parameters.to_dict())
             ret._ansatz = ansatz
             ret._wires = wires
         else:
@@ -728,11 +724,7 @@ class CircuitComponent:
         cls = type(self)
         params = signature(cls).parameters
         if "mode" in params or "modes" in params:
-            ret = (
-                self.__class__(self.modes[0], **self.parameters.to_dict())
-                if "mode" in params
-                else self.__class__(self.modes, **self.parameters.to_dict())
-            )
+            ret = self.__class__(self.modes, **self.parameters.to_dict())
             ret._ansatz = fock
             ret._wires = wires
         else:
@@ -787,7 +779,7 @@ class CircuitComponent:
         if "modes" in params:
             serializable["modes"] = tuple(self.wires.modes)
         elif "mode" in params:
-            serializable["mode"] = next(iter(self.wires.modes))
+            serializable["mode"] = tuple(self.wires.modes)
         else:
             raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
 
