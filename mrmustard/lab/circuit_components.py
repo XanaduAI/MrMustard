@@ -798,7 +798,13 @@ class CircuitComponent:
         """
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
-        if self.ansatz._fn is not None and self.ansatz._fn == other.ansatz._fn:
+
+        # TODO: [sc-95331]
+        if (
+            isinstance(self.ansatz, PolyExpAnsatz)
+            and self.ansatz._fn is not None
+            and self.ansatz._fn == other.ansatz._fn
+        ):
             new_params = {}
             for name in self.ansatz._kwargs:
                 self_param = getattr(self.parameters, name)
@@ -807,12 +813,16 @@ class CircuitComponent:
                     raise ValueError(
                         f"Parameter '{name}' is a {type(self_param).__name__} for one component and a {type(other_param).__name__} for the other."
                     )
-                self_val = self_param.value
-                other_val = other_param.value
-                self_val = [self_val] if not isinstance(self_val, Sequence) else list(self_val)
-                other_val = [other_val] if not isinstance(other_val, Sequence) else list(other_val)
-                new_params[name] = math.concat(math.astensor([self_val, other_val]), axis=0)
-                new_params[name + "_trainable"] = bool(isinstance(self_param, Variable))
+                if isinstance(self_param, Variable):
+                    if self_param.bounds != other_param.bounds:
+                        raise ValueError(
+                            f"Parameter '{name}' has bounds {self_param.bounds} and {other_param.bounds} for the two components."
+                        )
+                    new_params[name + "_trainable"] = True
+                    new_params[name + "_bounds"] = self_param.bounds
+                self_val = math.atleast_nd(self_param.value, 1)
+                other_val = math.atleast_nd(other_param.value, 1)
+                new_params[name] = math.concat((self_val, other_val), axis=0)
             ret = self.__class__(self.modes, **new_params)
             ret.ansatz._lin_sup = True
             return ret

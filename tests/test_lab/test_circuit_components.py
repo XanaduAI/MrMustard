@@ -243,12 +243,16 @@ class TestCircuitComponent:
         d1 = Dgate(1, x=0.1, y=0.1)
         d2 = Dgate(2, x=0.2, y=0.2)
         d3 = Dgate(1, x=0.1, y=0.1, x_trainable=True)
+        d4 = Dgate(1, x=0.1, y=0.1, x_trainable=True, x_bounds=(0, 1))
 
         with pytest.raises(ValueError):
             d1 + d2
 
-        with pytest.raises(ValueError, match="Parameter 'x' is a Constant"):
+        with pytest.raises(ValueError, match="Parameter 'x' is a"):
             d1 + d3
+
+        with pytest.raises(ValueError, match="Parameter 'x' has bounds"):
+            d3 + d4
 
     def test_sub(self):
         s1 = DisplacedSqueezed(1, x=1.0, y=0.5, r=0.1)

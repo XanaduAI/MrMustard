@@ -280,7 +280,7 @@ class TestOptimizerJax:
         opt = OptimizerJax(learning_rate=0.001)
         opt.minimize(cost_fn, by_optimizing=[cat_state], max_steps=3000)
 
-        # TODO: test this when sc-94940 is completed to see if we get more accurate results
+        # TODO: [sc-94940]
         assert math.allclose(
             cat_state.parameters.x.value, expected_cat.parameters.x.value, atol=1e-2
         )

@@ -147,6 +147,8 @@ class BSgate(Unitary):
                 [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta, phi)],
             )
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
+            if self.ansatz._lin_sup:
+                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
             ret = math.beamsplitter(
                 self.parameters.theta.value,
