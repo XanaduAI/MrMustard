@@ -445,7 +445,6 @@ class BackendManager:
         Returns:
             The concatenated values.
         """
-        values = self.astensor(values)
         return self._apply("concat", (values, axis))
 
     def conj(self, array: Tensor) -> Tensor:

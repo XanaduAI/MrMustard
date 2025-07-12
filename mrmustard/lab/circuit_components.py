@@ -811,7 +811,7 @@ class CircuitComponent:
                 other_val = other_param.value
                 self_val = [self_val] if not isinstance(self_val, Sequence) else list(self_val)
                 other_val = [other_val] if not isinstance(other_val, Sequence) else list(other_val)
-                new_params[name] = math.concat([self_val, other_val], axis=0)
+                new_params[name] = math.concat(math.astensor([self_val, other_val]), axis=0)
                 new_params[name + "_trainable"] = bool(isinstance(self_param, Variable))
             ret = self.__class__(self.modes, **new_params)
             ret.ansatz._lin_sup = True

@@ -23,6 +23,7 @@ from mrmustard import math, settings
 from mrmustard.lab import (
     BSgate,
     Circuit,
+    Coherent,
     Dgate,
     DisplacedSqueezed,
     Number,
@@ -263,3 +264,23 @@ class TestOptimizerJax:
         opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
 
         assert math.all(og_r != sq.parameters.r.value)
+
+    def test_cat_state_optimization(self):
+        # Note: we need to intitialize the cat state with a non-zero value. This is because
+        # the gradients are zero when
+        cat_state = Coherent(0, x=0.1, x_trainable=True) + Coherent(0, x=-0.1, x_trainable=True)
+        expected_cat = Coherent(0, x=np.sqrt(np.pi)) + Coherent(0, x=-np.sqrt(np.pi))
+        expected_cat_fock = expected_cat.fock_array(50)
+
+        def cost_fn(cat_state):
+            return (
+                -(math.abs(math.sum(math.conj(cat_state.fock_array(50)) * expected_cat_fock)) ** 2)
+            )
+
+        opt = OptimizerJax(learning_rate=0.001)
+        opt.minimize(cost_fn, by_optimizing=[cat_state], max_steps=3000)
+
+        # TODO: test this when sc-94940 is completed to see if we get more accurate results
+        assert math.allclose(
+            cat_state.parameters.x.value, expected_cat.parameters.x.value, atol=1e-2
+        )
