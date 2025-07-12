@@ -32,12 +32,10 @@ class Number(Ket):
     r"""
     The number state in Fock representation.
 
-
     Args:
         mode: The mode of the number state.
         n: The number of photons.
-        cutoffs: The cutoffs. If ``cutoffs`` is ``None``, it
-            defaults to ``n+1``.
+        cutoffs: The cutoff. If ``cutoffs`` is ``None``, it defaults to ``n+1``.
 
     .. code-block::
 
@@ -64,20 +62,20 @@ class Number(Ket):
         self,
         mode: int | tuple[int],
         n: int,
-        cutoff: int | None = None,
+        cutoffs: int | None = None,
     ) -> None:
         mode = (mode,) if isinstance(mode, int) else mode
-        cutoff = n if cutoff is None else cutoff
+        cutoffs = n if cutoffs is None else cutoffs
         super().__init__(name="N")
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=int))
         self.parameters.add_parameter(
-            make_parameter(False, cutoff, "cutoff", (None, None), dtype=int),
+            make_parameter(False, cutoffs, "cutoffs", (None, None), dtype=int),
         )
 
-        self._ansatz = ArrayAnsatz.from_function(fock_state, n=n, cutoffs=cutoff)
+        self._ansatz = ArrayAnsatz.from_function(fock_state, n=n, cutoffs=cutoffs)
         self._wires = Wires(modes_out_ket=set(mode))
         self.short_name = str(int(n))
-        self.manual_shape[0] = cutoff + 1
+        self.manual_shape[0] = cutoffs + 1
 
         for w in self.wires.output.wires:
             w.repr = ReprEnum.FOCK

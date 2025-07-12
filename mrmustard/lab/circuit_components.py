@@ -800,12 +800,12 @@ class CircuitComponent:
             raise ValueError("Cannot add components with different wires.")
         if self.ansatz._fn is not None and self.ansatz._fn == other.ansatz._fn:
             new_params = {}
-            for name in self.ansatz._fn_kwargs:
+            for name in self.ansatz._kwargs:
                 self_param = getattr(self.parameters, name)
                 other_param = getattr(other.parameters, name)
                 if type(self_param) is not type(other_param):
                     raise ValueError(
-                        f"Parameter '{name}' is a {type(self_param)} for one component and a {type(other_param)} for the other."
+                        f"Parameter '{name}' is a {type(self_param).__name__} for one component and a {type(other_param).__name__} for the other."
                     )
                 self_val = self_param.value
                 other_val = other_param.value

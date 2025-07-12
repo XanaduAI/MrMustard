@@ -19,14 +19,13 @@ The class representing a beam splitter gate.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import replace
 
 from mrmustard import math
 from mrmustard.utils.typing import ComplexTensor
 
 from ...physics import triples
-from ...physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from ...physics.wires import ReprEnum, Wires
+from ...physics.ansatz import PolyExpAnsatz
+from ...physics.wires import Wires
 from ..utils import make_parameter
 from .base import Unitary
 
@@ -155,17 +154,4 @@ class BSgate(Unitary):
                 shape=shape,
                 method=method,
             )
-        return ret
-
-    def to_fock(self, shape: int | Sequence[int] | None = None) -> BSgate:
-        batch_dims = self.ansatz.batch_dims - self.ansatz._lin_sup
-        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
-        fock._original_abc_data = self.ansatz.triple
-        ret = self.__class__(self.modes, **self.parameters.to_dict())
-        wires = Wires.from_wires(
-            quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
-            classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
-        )
-        ret._ansatz = fock
-        ret._wires = wires
         return ret
