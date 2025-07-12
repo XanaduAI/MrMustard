@@ -79,11 +79,12 @@ class Attenuator(Channel):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         transmissivity: float | Sequence[float] = 1.0,
         transmissivity_trainable: bool = False,
         transmissivity_bounds: tuple[float | None, float | None] = (0.0, 1.0),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Att~")
         self.parameters.add_parameter(
             make_parameter(
@@ -91,6 +92,7 @@ class Attenuator(Channel):
                 value=transmissivity,
                 name="transmissivity",
                 bounds=transmissivity_bounds,
+                dtype=float,
             ),
         )
 
@@ -99,8 +101,8 @@ class Attenuator(Channel):
             eta=self.parameters.transmissivity,
         )
         self._wires = Wires(
-            modes_in_bra={mode},
-            modes_out_bra={mode},
-            modes_in_ket={mode},
-            modes_out_ket={mode},
+            modes_in_bra=set(mode),
+            modes_out_bra=set(mode),
+            modes_in_ket=set(mode),
+            modes_out_ket=set(mode),
         )

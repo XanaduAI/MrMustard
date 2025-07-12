@@ -53,15 +53,18 @@ class Rgate(Unitary):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         theta: float | Sequence[float] = 0.0,
         theta_trainable: bool = False,
         theta_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Rgate")
-        self.parameters.add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+        self.parameters.add_parameter(
+            make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=float)
+        )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.rotation_gate_Abc,
             theta=self.parameters.theta,
         )
-        self._wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
+        self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))

@@ -68,7 +68,9 @@ class CXgate(Unitary):
     ):
         super().__init__(name="CXgate")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=s_trainable, value=s, name="s", bounds=s_bounds),
+            make_parameter(
+                is_trainable=s_trainable, value=s, name="s", bounds=s_bounds, dtype=float
+            ),
         )
 
         self._ansatz = PolyExpAnsatz.from_function(

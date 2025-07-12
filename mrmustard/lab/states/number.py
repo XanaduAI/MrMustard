@@ -62,19 +62,20 @@ class Number(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         n: int,
         cutoff: int | None = None,
     ) -> None:
+        mode = (mode,) if isinstance(mode, int) else mode
         cutoff = n if cutoff is None else cutoff
         super().__init__(name="N")
-        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
+        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=int))
         self.parameters.add_parameter(
-            make_parameter(False, cutoff, "cutoff", (None, None), dtype="int64"),
+            make_parameter(False, cutoff, "cutoff", (None, None), dtype=int),
         )
 
         self._ansatz = ArrayAnsatz.from_function(fock_state, n=n, cutoffs=cutoff)
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))
         self.short_name = str(int(n))
         self.manual_shape[0] = cutoff + 1
 

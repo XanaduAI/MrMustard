@@ -81,7 +81,7 @@ class Sgate(Unitary):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
         r_trainable: bool = False,
@@ -89,12 +89,17 @@ class Sgate(Unitary):
         r_bounds: tuple[float | None, float | None] = (0.0, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Sgate")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
+            make_parameter(
+                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=float
+            ),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
+            make_parameter(
+                is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds, dtype=float
+            ),
         )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.squeezing_gate_Abc,
@@ -104,6 +109,6 @@ class Sgate(Unitary):
         self._wires = Wires(
             modes_in_bra=set(),
             modes_out_bra=set(),
-            modes_in_ket={mode},
-            modes_out_ket={mode},
+            modes_in_ket=set(mode),
+            modes_out_ket=set(mode),
         )
