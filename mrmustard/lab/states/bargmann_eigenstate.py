@@ -63,9 +63,9 @@ class BargmannEigenstate(Ket):
     def __init__(
         self,
         mode: int | tuple[int],
-        alpha: float | Sequence[float] = 0.0,
+        alpha: complex | Sequence[complex] = 0.0j,
         alpha_trainable: bool = False,
-        alpha_bounds: tuple[float | None, float | None] = (None, None),
+        alpha_bounds: tuple[complex | None, complex | None] = (None, None),
     ):
         mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="BargmannEigenstate")
@@ -76,7 +76,7 @@ class BargmannEigenstate(Ket):
                 value=alpha,
                 name="alpha",
                 bounds=alpha_bounds,
-                dtype=math.float64,
+                dtype=math.complex128,
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(
