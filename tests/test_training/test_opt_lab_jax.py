@@ -267,14 +267,14 @@ class TestOptimizerJax:
 
     def test_cat_state_optimization(self):
         # Note: we need to intitialize the cat state with a non-zero value. This is because
-        # the gradients are zero when
+        # the gradients are zero when x is zero.
         cat_state = Coherent(0, x=0.1, x_trainable=True) + Coherent(0, x=-0.1, x_trainable=True)
         expected_cat = Coherent(0, x=np.sqrt(np.pi)) + Coherent(0, x=-np.sqrt(np.pi))
         expected_cat_fock = expected_cat.fock_array(50)
 
         def cost_fn(cat_state):
-            return (
-                -(math.abs(math.sum(math.conj(cat_state.fock_array(50)) * expected_cat_fock)) ** 2)
+            return -(
+                math.abs(math.sum(math.conj(cat_state.fock_array(50)) * expected_cat_fock)) ** 2
             )
 
         opt = OptimizerJax(learning_rate=0.001)
