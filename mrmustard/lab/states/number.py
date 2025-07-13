@@ -18,8 +18,11 @@ The class representing a number state.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
+from mrmustard import math
 from mrmustard.physics.ansatz import ArrayAnsatz
-from mrmustard.physics.fock_utils import fock_state_batched
+from mrmustard.physics.fock_utils import fock_state
 from mrmustard.physics.wires import ReprEnum, Wires
 
 from ..utils import make_parameter
@@ -32,12 +35,11 @@ class Number(Ket):
     r"""
     The number state in Fock representation.
 
-
     Args:
         mode: The mode of the number state.
-        n: The number of photons.
-        cutoffs: The cutoffs. If ``cutoffs`` is ``None``, it
-            defaults to ``n+1``.
+        n: The (batchable) number of photons.
+        cutoff: The photon cutoff. If ``cutoff`` is ``None``, it
+            defaults to ``math.max(n)+1``.
 
     .. code-block::
 
@@ -63,21 +65,25 @@ class Number(Ket):
     def __init__(
         self,
         mode: int,
-        n: int,
+        n: int | Sequence[int],
         cutoff: int | None = None,
     ) -> None:
-        cutoff = n + 1 if cutoff is None else cutoff
+        n = math.astensor(n, dtype=math.int64)
+        cutoff = int(math.max(n) + 1) if cutoff is None else cutoff
+        batch_dims = len(n.shape)
         super().__init__(name="N")
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
         self.parameters.add_parameter(
             make_parameter(False, cutoff, "cutoff", (None, None), dtype="int64"),
         )
 
-        self._ansatz = ArrayAnsatz.from_function(fock_state_batched, n=n, cutoff=cutoff)
+        self._ansatz = ArrayAnsatz.from_function(
+            fock_state, n=n, cutoff=cutoff, batch_dims=batch_dims
+        )
         self._wires = Wires(modes_out_ket={mode})
-        self.short_name = str(int(n))
+        self.short_name = str(n) if batch_dims == 0 else "N_batched"
         self.manual_shape[0] = cutoff
 
         for w in self.wires.output.wires:
             w.repr = ReprEnum.FOCK
-            w.repr_params_func = lambda w=w: [int(self.parameters.n.value)]
+            w.repr_params_func = lambda w=w: [int(self.cutoff.value)]
