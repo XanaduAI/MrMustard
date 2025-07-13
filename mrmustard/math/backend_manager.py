@@ -1200,16 +1200,6 @@ class BackendManager:
         """
         return self._apply("sinh", (array,))
 
-    def size(self, array: Tensor) -> int:
-        r"""
-        The size of the array.
-        Args:
-            array: The array to take the size of
-        Returns:
-            The size of the array
-        """
-        return self._apply("size", (array,))
-
     def solve(self, matrix: Tensor, rhs: Tensor) -> Tensor:
         r"""The solution of the linear system :math:`Ax = b`.
 

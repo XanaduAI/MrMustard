@@ -81,7 +81,7 @@ class Number(Ket):
             fock_state, n=n, cutoff=cutoff, batch_dims=batch_dims
         )
         self._wires = Wires(modes_out_ket={mode})
-        self.short_name = str(n) if batch_dims == 0 else "N_batched"
+        self.short_name = str(int(n)) if batch_dims == 0 else "N_batched"
         self.manual_shape[0] = cutoff
 
         for w in self.wires.output.wires:

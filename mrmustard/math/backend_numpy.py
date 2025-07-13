@@ -297,9 +297,6 @@ class BackendNumpy(BackendBase):
     def sinh(self, array: np.ndarray) -> np.ndarray:
         return np.sinh(array)
 
-    def size(self, array: np.ndarray) -> int:
-        return np.size(array)
-
     def solve(self, matrix: np.ndarray, rhs: np.ndarray) -> np.ndarray:
         if len(rhs.shape) == len(matrix.shape) - 1:
             rhs = np.expand_dims(rhs, -1)

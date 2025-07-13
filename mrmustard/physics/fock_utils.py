@@ -21,6 +21,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from functools import lru_cache
 
+import jax
 import numpy as np
 from scipy.special import comb, factorial
 
@@ -48,11 +49,19 @@ def fock_state(n: int | Sequence[int], cutoff: int | None = None) -> Tensor:
     Raises:
         ValueError: If the photon numbers are larger than the corresponding cutoffs.
     """
-    n = math.astensor(n)
+    n = math.astensor(n, dtype=math.int64)
     if cutoff is None:
         cutoff = int(math.max(n) + 1)
-    if math.any(n >= cutoff):
-        raise ValueError("Photon numbers cannot be larger than the corresponding cutoff.")
+
+    def check_photon_numbers(n, cutoff):
+        if math.any(n >= cutoff):
+            raise ValueError("Photon numbers cannot be larger than the corresponding cutoff.")
+
+    if math.backend_name == "jax":
+        jax.debug.callback(check_photon_numbers, n, cutoff)
+    else:
+        check_photon_numbers(n, cutoff)
+
     return math.eye(cutoff)[n]
 
 
