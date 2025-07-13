@@ -77,6 +77,14 @@ def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = Non
     return array
 
 
+def fock_state_batched(n, cutoff=None):
+    if cutoff is None:
+        cutoff = math.max(n) + 1
+    if math.max(n) > cutoff:
+        raise ValueError("Photon numbers cannot be larger than the corresponding cutoff.")
+    return math.eye(cutoff)[n]
+
+
 def fidelity(dm_a, dm_b) -> Scalar:
     r"""Computes the fidelity between two states in Fock representation."""
     # Richard Jozsa (1994) Fidelity for Mixed Quantum States,
