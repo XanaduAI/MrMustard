@@ -57,7 +57,7 @@ def fock_state(n: int | Sequence[int], cutoff: int | None = None) -> Tensor:
         if math.any(n >= cutoff):
             raise ValueError("Photon numbers cannot be larger than the corresponding cutoff.")
 
-    if math.backend_name == "jax":
+    if math.backend_name == "jax":  # pragma: no cover
         jax.debug.callback(check_photon_numbers, n, cutoff)
     else:
         check_photon_numbers(n, cutoff)
