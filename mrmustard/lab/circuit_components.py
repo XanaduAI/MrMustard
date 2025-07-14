@@ -137,15 +137,13 @@ class CircuitComponent:
     def manual_shape(self) -> tuple[int | None]:
         r"""
         The shape of this Component in the Fock representation. If not manually set,
-        it is a list of M ``None``s where M is the number of wires of the component.
-        The manual_shape is a list and therefore it is mutable. In fact, it can evolve
-        over time as we learn more about the component or its neighbours. For
+        it is a tuple of M ``None``s where M is the number of wires of the component. For
         each wire, the entry is either an integer or ``None``. If it is an integer, it
-        is the dimension of the corresponding Fock space. If it is ``None``, it means
+        is the cutoff of the corresponding Fock space. If it is ``None``, it means
         the best shape is not known yet. ``None``s automatically become integers when
         ``auto_shape`` is called, but the integers already set are not changed.
         The order of the elements in the shape is intended the same order as the wires
-        in the `.wires` attribute.
+        in the `.sorted_wires` attribute.
         """
         return tuple(w.fock_cutoff for w in self.wires.quantum.sorted_wires)
 
