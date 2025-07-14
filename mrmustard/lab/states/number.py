@@ -80,13 +80,13 @@ class Number(Ket):
         self._ansatz = ArrayAnsatz.from_function(
             fock_state,
             n=self.parameters.n.value,
-            cutoff=self.parameters.cutoff.value,
+            cutoff=int(self.parameters.cutoff.value),
             batch_dims=batch_dims,
         )
         self._wires = Wires(modes_out_ket=set(mode))
         self.short_name = str(int(self.parameters.n.value)) if batch_dims == 0 else "N_batched"
-        self.manual_shape[0] = int(self.parameters.cutoff.value)
+        self.manual_shape = (int(self.parameters.cutoff.value),)
 
-        for w in self.wires.output.wires:
+        for w in self.wires.output:
             w.repr = ReprEnum.FOCK
-            w.repr_params_func = lambda w=w: [int(self.parameters.cutoff.value)]
+            w.fock_cutoff = int(self.parameters.cutoff.value)

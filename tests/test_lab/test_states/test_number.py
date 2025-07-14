@@ -16,7 +16,7 @@
 
 import pytest
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.lab.states import Number
 from mrmustard.physics.fock_utils import fock_state
 from mrmustard.physics.wires import ReprEnum
@@ -40,8 +40,10 @@ class TestNumber:
         assert all(isinstance(x, int) for x in state.manual_shape)
 
     def test_auto_shape(self):
-        state = Number(0, 2).to_bargmann().dm()
-        assert state.auto_shape() == (settings.DEFAULT_FOCK_SIZE, settings.DEFAULT_FOCK_SIZE)
+        # meant to cover the case where we have derived variables
+        n = 2
+        state = Number(0, n=n).to_bargmann().dm()
+        assert state.auto_shape() == (n + 1, n + 1)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (3, 4)])
     @pytest.mark.parametrize("n", [2, 3, 4])
@@ -67,5 +69,6 @@ class TestNumber:
     def test_wires(self):
         """Test that the wires are correct."""
         state = Number(0, n=1)
-        for w in state.wires:
+        for w in state.wires.quantum:
             assert w.repr == ReprEnum.FOCK
+            assert w.fock_cutoff == state.ansatz.core_shape[w.index]

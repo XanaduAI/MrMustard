@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import numbers
 from collections.abc import Sequence
-from functools import cached_property
 from inspect import signature
 from pydoc import locate
 from typing import Any
@@ -74,6 +73,11 @@ class CircuitComponent:
         self._name = name
         self._parameters = ParameterSet()
         self._wires = wires or Wires(set(), set(), set(), set())
+
+        if isinstance(ansatz, ArrayAnsatz):
+            for w in self.wires.quantum:
+                w.repr = ReprEnum.FOCK
+                w.fock_cutoff = ansatz.core_shape[w.index]
 
     @property
     def adjoint(self) -> CircuitComponent:
@@ -129,24 +133,24 @@ class CircuitComponent:
             ret.parameters.add_parameter(param)
         return ret
 
-    @cached_property
-    def manual_shape(self) -> list[int | None]:
+    @property
+    def manual_shape(self) -> tuple[int | None]:
         r"""
         The shape of this Component in the Fock representation. If not manually set,
-        it is a list of M ``None``s where M is the number of wires of the component.
-        The manual_shape is a list and therefore it is mutable. In fact, it can evolve
-        over time as we learn more about the component or its neighbours. For
+        it is a tuple of M ``None``s where M is the number of wires of the component. For
         each wire, the entry is either an integer or ``None``. If it is an integer, it
-        is the dimension of the corresponding Fock space. If it is ``None``, it means
+        is the cutoff of the corresponding Fock space. If it is ``None``, it means
         the best shape is not known yet. ``None``s automatically become integers when
         ``auto_shape`` is called, but the integers already set are not changed.
         The order of the elements in the shape is intended the same order as the wires
-        in the `.wires` attribute.
+        in the `.sorted_wires` attribute.
         """
-        try:  # to read it from array ansatz
-            return list(self.ansatz.array.shape[self.ansatz.batch_dims :])
-        except AttributeError:  # bargmann
-            return [None] * len(self.wires)
+        return tuple(w.fock_cutoff for w in self.wires.quantum.sorted_wires)
+
+    @manual_shape.setter
+    def manual_shape(self, shape: tuple[int | None]):
+        for w, s in zip(self.wires.quantum.sorted_wires, shape):
+            w.fock_cutoff = s
 
     @property
     def modes(self) -> list[int]:
@@ -519,7 +523,7 @@ class CircuitComponent:
             >>> from mrmustard.lab import Coherent, Attenuator
             >>> coh = Coherent(0, 1.0)
             >>> att = Attenuator(0, 0.5)
-            >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
+            >>> assert coh.contract(att).wires.input.bra  # the input bra is still uncontracted
         """
         if isinstance(other, numbers.Number | np.ndarray):
             return self * other
@@ -529,8 +533,15 @@ class CircuitComponent:
                 self_rep = self.to_bargmann()
                 other_rep = other.to_bargmann()
             else:
-                self_rep = self.to_fock()
-                other_rep = other.to_fock()
+                self_shape = list(self.auto_shape())
+                other_shape = list(other.auto_shape())
+                contracted_idxs = self.wires.contracted_indices(other.wires)
+                for idx1, idx2 in zip(*contracted_idxs):
+                    max_shape = max(self_shape[idx1], other_shape[idx2])
+                    self_shape[idx1] = max_shape
+                    other_shape[idx2] = max_shape
+                self_rep = self.to_fock(tuple(self_shape))
+                other_rep = other.to_fock(tuple(other_shape))
         else:
             self_rep = self
             other_rep = other
@@ -681,9 +692,6 @@ class CircuitComponent:
             ret._wires = wires
         else:
             ret = self._from_attributes(ansatz, wires, self.name)
-
-        if "manual_shape" in ret.__dict__:
-            del ret.manual_shape
         return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
@@ -718,8 +726,9 @@ class CircuitComponent:
         except AttributeError:
             fock._original_abc_data = None
         wires = self.wires.copy()
-        for w in wires.quantum_wires:
+        for w in wires.quantum:
             w.repr = ReprEnum.FOCK
+            w.fock_cutoff = fock.core_shape[w.index]
 
         cls = type(self)
         params = signature(cls).parameters
@@ -729,9 +738,6 @@ class CircuitComponent:
             ret._wires = wires
         else:
             ret = self._from_attributes(fock, wires, self.name)
-
-        if "manual_shape" in ret.__dict__:
-            del ret.manual_shape
         return ret
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
@@ -799,7 +805,12 @@ class CircuitComponent:
             raise ValueError("Cannot add components with different wires.")
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(ansatz, self.wires, name)
+        ret = self._from_attributes(ansatz, self.wires, name)
+        ret.manual_shape = tuple(
+            max(a, b) if a is not None and b is not None else a or b
+            for a, b in zip(self.manual_shape, other.manual_shape)
+        )
+        return ret
 
     def __eq__(self, other) -> bool:
         r"""

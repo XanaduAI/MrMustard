@@ -87,7 +87,6 @@ class QuadratureEigenstate(Ket):
                 dtype=math.float64,
             ),
         )
-        self.manual_shape = (50,)
 
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.quadrature_eigenstates_Abc,
@@ -96,12 +95,9 @@ class QuadratureEigenstate(Ket):
         )
         self._wires = Wires(modes_out_ket=set(mode))
 
-        for w in self.wires.output.wires:
+        for w in self.wires.sorted_wires:
             w.repr = ReprEnum.QUADRATURE
-            w.repr_params_func = lambda w=w: [
-                self.parameters.x.value,
-                self.parameters.phi.value,
-            ]
+            w.fock_cutoff = 50
 
     @property
     def L2_norm(self):
