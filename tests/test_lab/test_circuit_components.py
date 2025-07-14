@@ -229,12 +229,14 @@ class TestCircuitComponent:
         assert cc12.ansatz._lin_sup is True
 
     def test_add_built_in(self):
-        d1 = Dgate(1, x=0.1, y=0.1)
-        d2 = Dgate(1, x=0.2, y=0.2)
+        d1 = Dgate(1, x=0.1, y=0.1, x_trainable=True, x_bounds=(0, 1))
+        d2 = Dgate(1, x=0.2, y=0.2, x_trainable=True, x_bounds=(0, 1))
 
         d12 = d1 + d2
 
         assert isinstance(d12, Dgate)
+        assert isinstance(d12.parameters.x, Variable)
+        assert d12.parameters.x.bounds == (0, 1)
         assert math.allclose(d12.parameters.x.value, [0.1, 0.2])
         assert math.allclose(d12.parameters.y.value, [0.1, 0.2])
         assert d12.ansatz._lin_sup is True
