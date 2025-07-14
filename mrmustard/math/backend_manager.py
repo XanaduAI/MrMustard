@@ -690,7 +690,9 @@ class BackendManager:
         """
 
         def check_out_shape(batch_shape):
-            if out is not None and any(d_out < d for d_out, d in zip(out.shape, batch_shape + shape)):
+            if out is not None and any(
+                d_out < d for d_out, d in zip(out.shape, batch_shape + shape)
+            ):
                 raise ValueError(
                     f"batch+shape {batch_shape + shape} is too large for out.shape={out.shape}",
                 )
@@ -931,6 +933,17 @@ class BackendManager:
             The matrix vector product of ``a`` and ``b``
         """
         return self._apply("matvec", (a, b))
+
+    def max(self, array: Tensor) -> Tensor:
+        r"""The maximum value of an array.
+
+        Args:
+            array: The array to take the maximum value of.
+
+        Returns:
+            The maximum value of the array.
+        """
+        return self._apply("max", (array,))
 
     def maximum(self, a: Tensor, b: Tensor) -> Tensor:
         r"""

@@ -289,6 +289,10 @@ class BackendJax(BackendBase):
         return jnp.linalg.multi_dot(matrices)
 
     @jax.jit
+    def max(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.max(array)
+
+    @jax.jit
     def maximum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.maximum(a, b)
 
@@ -380,9 +384,6 @@ class BackendJax(BackendBase):
     @partial(jax.jit, static_argnames=["axes"])
     def sum(self, array: jnp.ndarray, axes: Sequence[int] | None = None):
         return jnp.sum(array, axis=axes)
-
-    def swapaxes(self, array: jnp.ndarray, axis1: int, axis2: int) -> jnp.ndarray:
-        return jnp.swapaxes(array, axis1, axis2)
 
     @jax.jit
     def norm(self, array: jnp.ndarray) -> jnp.ndarray:

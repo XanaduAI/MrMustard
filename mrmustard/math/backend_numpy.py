@@ -203,6 +203,9 @@ class BackendNumpy(BackendBase):
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return self.matmul(a, b[..., None])[..., 0]
 
+    def max(self, array: np.ndarray) -> np.ndarray:
+        return np.max(array)
+
     def maximum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.maximum(a, b)
 
@@ -327,9 +330,6 @@ class BackendNumpy(BackendBase):
 
     def transpose(self, a: np.ndarray, perm: Sequence[int] | None = None) -> np.ndarray | None:
         return np.transpose(a, axes=perm)
-
-    def swapaxes(self, array: np.ndarray, axis1: int, axis2: int) -> np.ndarray:
-        return np.swapaxes(array, axis1, axis2)
 
     def update_tensor(
         self,

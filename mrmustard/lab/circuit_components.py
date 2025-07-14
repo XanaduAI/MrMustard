@@ -397,7 +397,10 @@ class CircuitComponent:
             # Convert each dimension to quadrature
             fock_string = "".join([chr(97 + self.n_modes + dim) for dim in range(dims)])
             q_string = "".join(
-                [f"{fock_string[idx]}{chr(97 + wire.mode)}," for idx, wire in enumerate(self.wires)],
+                [
+                    f"{fock_string[idx]}{chr(97 + wire.mode)},"
+                    for idx, wire in enumerate(self.wires)
+                ],
             )[:-1]
             out_string = "".join([chr(97 + mode) for mode in self.modes])
             ret = math.einsum(
@@ -413,7 +416,9 @@ class CircuitComponent:
                 + "".join([chr(97 + mode) for mode in self.modes])
             )
             ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
-        batch_shape = self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
+        batch_shape = (
+            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
+        )
         batch_dims = len(batch_shape)
         size = int(math.prod(ret.shape[:-batch_dims] if batch_shape else ret.shape))
         return math.reshape(ret, (size, *batch_shape))
@@ -569,7 +574,11 @@ class CircuitComponent:
             array: The Fock representation of this component.
         """
         shape = shape or self.auto_shape()
-        num_vars = self.ansatz.num_CV_vars if isinstance(self.ansatz, PolyExpAnsatz) else self.ansatz.num_vars
+        num_vars = (
+            self.ansatz.num_CV_vars
+            if isinstance(self.ansatz, PolyExpAnsatz)
+            else self.ansatz.num_vars
+        )
         if isinstance(shape, int):
             shape = (shape,) * num_vars
         shape = tuple(shape)
@@ -667,11 +676,7 @@ class CircuitComponent:
         cls = type(self)
         params = signature(cls).parameters
         if "mode" in params or "modes" in params:
-            ret = (
-                self.__class__(self.modes[0], **self.parameters.to_dict())
-                if "mode" in params
-                else self.__class__(self.modes, **self.parameters.to_dict())
-            )
+            ret = self.__class__(self.modes, **self.parameters.to_dict())
             ret._ansatz = ansatz
             ret._wires = wires
         else:
@@ -719,11 +724,7 @@ class CircuitComponent:
         cls = type(self)
         params = signature(cls).parameters
         if "mode" in params or "modes" in params:
-            ret = (
-                self.__class__(self.modes[0], **self.parameters.to_dict())
-                if "mode" in params
-                else self.__class__(self.modes, **self.parameters.to_dict())
-            )
+            ret = self.__class__(self.modes, **self.parameters.to_dict())
             ret._ansatz = fock
             ret._wires = wires
         else:
@@ -778,7 +779,7 @@ class CircuitComponent:
         if "modes" in params:
             serializable["modes"] = tuple(self.wires.modes)
         elif "mode" in params:
-            serializable["mode"] = next(iter(self.wires.modes))
+            serializable["mode"] = tuple(self.wires.modes)
         else:
             raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
 
@@ -822,7 +823,11 @@ class CircuitComponent:
         repr_name = ansatz.__class__.__name__
         if repr_name == "NoneType":
             return self.__class__.__name__ + f"(modes={self.modes}, name={self.name})"
-        return self.__class__.__name__ + f"(modes={self.modes}, name={self.name}" + f", repr={repr_name})"
+        return (
+            self.__class__.__name__
+            + f"(modes={self.modes}, name={self.name}"
+            + f", repr={repr_name})"
+        )
 
     def __rmatmul__(self, other: Scalar) -> CircuitComponent:
         r"""

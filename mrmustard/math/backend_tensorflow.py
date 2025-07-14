@@ -239,6 +239,10 @@ class BackendTensorflow(BackendBase):
         return tf.complex(real, imag)
 
     @Autocast()
+    def max(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.reduce_max(array)
+
+    @Autocast()
     def maximum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.maximum(a, b)
 
@@ -364,9 +368,6 @@ class BackendTensorflow(BackendBase):
 
     def transpose(self, a: tf.Tensor, perm: Sequence[int] | None = None) -> tf.Tensor:
         return tf.transpose(a, perm)
-
-    def swapaxes(self, array: tf.Tensor, axis1: int, axis2: int) -> tf.Tensor:
-        return tf.experimental.numpy.swapaxes(array, axis1, axis2)
 
     def update_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor) -> tf.Tensor:
         indices = tf.convert_to_tensor([indices], dtype=tf.int32)
