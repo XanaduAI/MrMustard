@@ -310,6 +310,10 @@ class BackendJax(BackendBase):
         return jnp.linalg.multi_dot(matrices)
 
     @jax.jit
+    def max(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.max(array)
+
+    @jax.jit
     def maximum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.maximum(a, b)
 

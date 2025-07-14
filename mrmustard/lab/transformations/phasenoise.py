@@ -58,21 +58,28 @@ class PhaseNoise(Channel):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         phase_stdev: float = 0.0,
         phase_stdev_trainable: bool = False,
         phase_stdev_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="PhaseNoise")
         self.parameters.add_parameter(
-            make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds),
+            make_parameter(
+                phase_stdev_trainable,
+                phase_stdev,
+                "phase_stdev",
+                phase_stdev_bounds,
+                dtype=math.float64,
+            ),
         )
         self._ansatz = None
         self._wires = Wires(
-            modes_in_bra={mode},
-            modes_out_bra={mode},
-            modes_in_ket={mode},
-            modes_out_ket={mode},
+            modes_in_bra=set(mode),
+            modes_out_bra=set(mode),
+            modes_in_ket=set(mode),
+            modes_out_ket=set(mode),
         )
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:

@@ -493,6 +493,13 @@ class TestBackendManager:
         arr1_moved2 = math.moveaxis(arr1_moved1, 1, 0)
         assert math.allclose(arr1, arr1_moved2)
 
+    def test_max(self):
+        r"""
+        Tests the ``max`` method.
+        """
+        arr = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        assert math.allclose(math.max(arr), 5.0)
+
     def test_maximum(self):
         r"""
         Tests the ``maximum`` method.

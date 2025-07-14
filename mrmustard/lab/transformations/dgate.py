@@ -19,14 +19,13 @@ The class representing a displacement gate.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import replace
 
 from mrmustard import math
 from mrmustard.utils.typing import ComplexTensor
 
 from ...physics import triples
-from ...physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from ...physics.wires import ReprEnum, Wires
+from ...physics.ansatz import PolyExpAnsatz
+from ...physics.wires import Wires
 from ..utils import make_parameter
 from .base import Unitary
 
@@ -81,7 +80,7 @@ class Dgate(Unitary):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         x: float | Sequence[float] = 0.0,
         y: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
@@ -89,15 +88,20 @@ class Dgate(Unitary):
         x_bounds: tuple[float | None, float | None] = (None, None),
         y_bounds: tuple[float | None, float | None] = (None, None),
     ) -> None:
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Dgate")
-        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
-        self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
+        self.parameters.add_parameter(
+            make_parameter(x_trainable, x, "x", x_bounds, dtype=math.float64)
+        )
+        self.parameters.add_parameter(
+            make_parameter(y_trainable, y, "y", y_bounds, dtype=math.float64)
+        )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.displacement_gate_Abc,
             x=self.parameters.x,
             y=self.parameters.y,
         )
-        self._wires = Wires(set(), set(), {mode}, {mode})
+        self._wires = Wires(set(), set(), set(mode), set(mode))
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
@@ -127,17 +131,4 @@ class Dgate(Unitary):
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
         else:
             ret = math.displacement(self.parameters.x.value, self.parameters.y.value, shape=shape)
-        return ret
-
-    def to_fock(self, shape: int | Sequence[int] | None = None) -> Dgate:
-        batch_dims = self.ansatz.batch_dims - self.ansatz._lin_sup
-        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
-        fock._original_abc_data = self.ansatz.triple
-        ret = self.__class__(self.modes[0], **self.parameters.to_dict())
-        wires = Wires.from_wires(
-            quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
-            classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
-        )
-        ret._ansatz = fock
-        ret._wires = wires
         return ret
