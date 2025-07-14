@@ -625,7 +625,7 @@ class Wires:
             f"classical_in={self.input.classical.modes})"
         )
 
-    def __matmul__(self, other: Wires) -> tuple[Wires, list[int], list[int]]:
+    def __matmul__(self, other: Wires) -> tuple[Wires, list[int]]:
         r"""
         Returns the ``Wires`` for the circuit component resulting from the composition of self and other.
         Returns also the permutations of the CV and DV wires to reorder the wires to standard order.
