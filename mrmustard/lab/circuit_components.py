@@ -77,7 +77,7 @@ class CircuitComponent:
         if isinstance(ansatz, ArrayAnsatz):
             for w in self.wires.quantum:
                 w.repr = ReprEnum.FOCK
-                w.fock_size = ansatz.core_shape[w.index]
+                w.fock_cutoff = ansatz.core_shape[w.index]
 
     @property
     def adjoint(self) -> CircuitComponent:
@@ -147,12 +147,12 @@ class CircuitComponent:
         The order of the elements in the shape is intended the same order as the wires
         in the `.wires` attribute.
         """
-        return tuple(w.fock_size for w in self.wires.quantum.sorted_wires)
+        return tuple(w.fock_cutoff for w in self.wires.quantum.sorted_wires)
 
     @manual_shape.setter
     def manual_shape(self, shape: tuple[int | None]):
         for w, s in zip(self.wires.quantum.sorted_wires, shape):
-            w.fock_size = s
+            w.fock_cutoff = s
 
     @property
     def modes(self) -> list[int]:
@@ -730,7 +730,7 @@ class CircuitComponent:
         wires = self.wires.copy()
         for w in wires.quantum:
             w.repr = ReprEnum.FOCK
-            w.fock_size = fock.core_shape[w.index]
+            w.fock_cutoff = fock.core_shape[w.index]
 
         cls = type(self)
         params = signature(cls).parameters

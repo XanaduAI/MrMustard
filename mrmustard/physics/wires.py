@@ -67,7 +67,7 @@ class QuantumWire:
         is_ket: Whether this wire is on the ket side.
         index: The index of this wire in the circuit.
         repr: The representation of this wire.
-        fock_size: The (optional) Fock cutoff size for this wire.
+        fock_cutoff: The (optional) Fock cutoff for this wire.
         id: Unique identifier for this wire.
     """
 
@@ -76,7 +76,7 @@ class QuantumWire:
     is_ket: bool
     index: int
     repr: ReprEnum = ReprEnum.BARGMANN
-    fock_size: int | None = None
+    fock_cutoff: int | None = None
     id: int = field(default_factory=lambda: randint(0, 2**32 - 1), compare=False)
 
     def copy(self, new_id: bool = False) -> QuantumWire:
@@ -94,7 +94,7 @@ class QuantumWire:
             is_ket=self.is_ket,
             index=self.index,
             repr=self.repr,
-            fock_size=self.fock_size,
+            fock_cutoff=self.fock_cutoff,
             id=self.id if not new_id else randint(0, 2**32 - 1),
         )
 

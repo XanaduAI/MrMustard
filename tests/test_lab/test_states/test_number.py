@@ -71,4 +71,4 @@ class TestNumber:
         state = Number(0, n=1)
         for w in state.wires.quantum:
             assert w.repr == ReprEnum.FOCK
-            assert w.fock_size == state.ansatz.core_shape[w.index]
+            assert w.fock_cutoff == state.ansatz.core_shape[w.index]

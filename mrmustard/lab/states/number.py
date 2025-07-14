@@ -89,4 +89,4 @@ class Number(Ket):
 
         for w in self.wires.output:
             w.repr = ReprEnum.FOCK
-            w.fock_size = int(self.parameters.cutoff.value)
+            w.fock_cutoff = int(self.parameters.cutoff.value)

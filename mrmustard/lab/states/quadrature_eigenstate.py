@@ -97,7 +97,7 @@ class QuadratureEigenstate(Ket):
 
         for w in self.wires.sorted_wires:
             w.repr = ReprEnum.QUADRATURE
-            w.fock_size = 50
+            w.fock_cutoff = 50
 
     @property
     def L2_norm(self):

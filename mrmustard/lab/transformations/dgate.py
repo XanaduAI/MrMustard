@@ -141,7 +141,7 @@ class Dgate(Unitary):
         ret = self.__class__(self.modes[0], **self.parameters.to_dict())
         wires = Wires.from_wires(
             quantum={
-                replace(w, repr=ReprEnum.FOCK, fock_size=fock.core_shape[w.index])
+                replace(w, repr=ReprEnum.FOCK, fock_cutoff=fock.core_shape[w.index])
                 for w in self.wires.quantum
             },
             classical={replace(w) for w in self.wires.classical},

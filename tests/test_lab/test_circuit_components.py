@@ -194,7 +194,7 @@ class TestCircuitComponent:
         )
         for w in d_fock.wires.quantum:
             assert w.repr == ReprEnum.FOCK
-            assert w.fock_size == d_fock.ansatz.core_shape[w.index]
+            assert w.fock_cutoff == d_fock.ansatz.core_shape[w.index]
 
         d_fock_barg = d_fock.to_bargmann()
         assert d_fock.ansatz._original_abc_data == d.ansatz.triple
