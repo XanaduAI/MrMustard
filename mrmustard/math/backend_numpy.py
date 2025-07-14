@@ -202,6 +202,9 @@ class BackendNumpy(BackendBase):
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return self.matmul(a, b[..., None])[..., 0]
 
+    def max(self, array: np.ndarray) -> np.ndarray:
+        return np.max(array)
+
     def maximum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.maximum(a, b)
 

@@ -934,6 +934,17 @@ class BackendManager:
         """
         return self._apply("matvec", (a, b))
 
+    def max(self, array: Tensor) -> Tensor:
+        r"""The maximum value of an array.
+
+        Args:
+            array: The array to take the maximum value of.
+
+        Returns:
+            The maximum value of the array.
+        """
+        return self._apply("max", (array,))
+
     def maximum(self, a: Tensor, b: Tensor) -> Tensor:
         r"""
         The element-wise maximum of ``a`` and ``b``.
