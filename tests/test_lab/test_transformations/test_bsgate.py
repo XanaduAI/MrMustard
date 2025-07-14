@@ -91,7 +91,7 @@ class TestBSgate:
         assert bs_with_batch.fock_array(5, method="stable").shape == (3, 2, 5, 5, 5, 5)
 
     def test_to_fock_lin_sup(self):
-        dgate = (BSgate((0, 1), 2, 3) + BSgate((0, 1), -2, -3)).to_fock(5)
-        assert dgate.ansatz.batch_dims == 0
-        assert dgate.ansatz.batch_shape == ()
-        assert dgate.ansatz.array.shape == (5, 5, 5, 5)
+        bsgate = (BSgate((0, 1), 2, 3) + BSgate((0, 1), -2, -3)).to_fock(5)
+        assert bsgate.ansatz.batch_dims == 0
+        assert bsgate.ansatz.batch_shape == ()
+        assert bsgate.ansatz.array.shape == (5, 5, 5, 5)

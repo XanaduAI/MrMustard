@@ -246,7 +246,7 @@ class TestCircuitComponent:
         d3 = Dgate(1, x=0.1, y=0.1, x_trainable=True)
         d4 = Dgate(1, x=0.1, y=0.1, x_trainable=True, x_bounds=(0, 1))
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="different wires"):
             d1 + d2
 
         with pytest.raises(ValueError, match="Parameter 'x' is a"):
