@@ -80,7 +80,7 @@ class Number(Ket):
         self._ansatz = ArrayAnsatz.from_function(
             fock_state,
             n=self.parameters.n.value,
-            cutoff=self.parameters.cutoff.value,
+            cutoff=int(self.parameters.cutoff.value),
             batch_dims=batch_dims,
         )
         self._wires = Wires(modes_out_ket=set(mode))
