@@ -40,18 +40,21 @@ class TestNumber:
         assert all(isinstance(x, int) for x in state.manual_shape)
 
     def test_auto_shape(self):
+        # meant to cover the case where we have derived variables
         n = 2
         state = Number(0, n=n).to_bargmann().dm()
         assert state.auto_shape() == (n + 1, n + 1)
 
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (3, 4)])
     @pytest.mark.parametrize("n", [2, 3, 4])
-    @pytest.mark.parametrize("cutoffs", [None, 4, 5])
-    def test_representation(self, n, cutoffs):
-        rep1 = Number(0, n, cutoffs).ansatz.array
-        exp1 = fock_state(n, cutoffs)
+    @pytest.mark.parametrize("cutoff", [None, 7])
+    def test_representation(self, batch_shape, n, cutoff):
+        n = math.broadcast_to(n, batch_shape)
+        rep1 = Number(0, n, cutoff).ansatz.array
+        exp1 = fock_state(n, cutoff)
         assert math.allclose(rep1, exp1)
 
-        rep2 = Number(0, n, cutoffs).to_fock().ansatz.array
+        rep2 = Number(0, n, cutoff).to_fock().ansatz.array
         assert math.allclose(rep2, rep1)
 
     def test_scalar_bargmann(self):
