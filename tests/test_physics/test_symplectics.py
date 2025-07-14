@@ -157,7 +157,7 @@ def test_MZgate_internal_tms(phi_a, phi_b):
     assert np.allclose(cov, expected, atol=1e-6)
 
 
-@given(g=st.integers(1, 3), x=st.floats(-2, 2), y=st.floats(-2, 2))
+@given(g=st.floats(1, 3), x=st.floats(-2, 2), y=st.floats(-2, 2))
 def test_amplifier_on_coherent_is_thermal_coherent(g, x, y):
     """Tests that amplifying a coherent state is equivalent to preparing a thermal displaced state"""
     assert Vacuum(0) >> Dgate(0, x, y) >> Amplifier(0, g) == Thermal(0, g - 1) >> Dgate(
