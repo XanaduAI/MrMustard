@@ -270,13 +270,10 @@ class TestOptimizerJax:
         # the gradients are zero when x is zero.
         cat_state = Coherent(0, x=0.1, x_trainable=True) + Coherent(0, x=-0.1, x_trainable=True)
         expected_cat = Coherent(0, x=np.sqrt(np.pi)) + Coherent(0, x=-np.sqrt(np.pi))
-        expected_cat_fock = expected_cat.normalize().fock_array(50)
 
         def cost_fn(cat_state):
             cat_state = cat_state.normalize()
-            return -(
-                math.abs(math.sum(math.conj(cat_state.fock_array(50)) * expected_cat_fock)) ** 2
-            )
+            return -math.abs(cat_state.fidelity(expected_cat.normalize()))
 
         opt = OptimizerJax(learning_rate=0.001, stable_threshold=1e-14)
         opt.minimize(cost_fn, by_optimizing=[cat_state], max_steps=10000)
