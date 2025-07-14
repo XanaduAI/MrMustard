@@ -799,7 +799,6 @@ class CircuitComponent:
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
 
-        # TODO: [sc-95331]
         if (
             isinstance(self.ansatz, PolyExpAnsatz)
             and self.ansatz._fn is not None
