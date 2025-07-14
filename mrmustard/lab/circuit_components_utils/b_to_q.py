@@ -71,11 +71,10 @@ class BtoQ(Operation):
             phi=self.parameters.phi,
         )
         self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
-        for w in self.wires.input.wires:
+        for w in self.wires.input.sorted_wires:
             w.repr = ReprEnum.BARGMANN
-        for w in self.wires.output.wires:
+        for w in self.wires.output.sorted_wires:
             w.repr = ReprEnum.QUADRATURE
-            w.repr_params_func = lambda: self.parameters.phi
 
     def inverse(self):
         if self.modes == ():

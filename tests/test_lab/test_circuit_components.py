@@ -31,6 +31,7 @@ from mrmustard.lab import (
     Coherent,
     Dgate,
     DisplacedSqueezed,
+    Interferometer,
     Ket,
     Map,
     Number,
@@ -67,7 +68,7 @@ class TestCircuitComponent:
         assert cc.modes == (1, 8)
         assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.ansatz == ansatz
-        assert cc.manual_shape == [None] * 4
+        assert cc.manual_shape == (None,) * 4
 
     def test_missing_name(self):
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2))
@@ -191,13 +192,14 @@ class TestCircuitComponent:
         assert d_fock.ansatz == ArrayAnsatz(
             math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6)),
         )
-        for w in d_fock.wires.wires:
+        for w in d_fock.wires.quantum:
             assert w.repr == ReprEnum.FOCK
+            assert w.fock_cutoff == d_fock.ansatz.core_shape[w.index]
 
         d_fock_barg = d_fock.to_bargmann()
         assert d_fock.ansatz._original_abc_data == d.ansatz.triple
         assert d_fock_barg == d
-        for w in d_fock_barg.wires.wires:
+        for w in d_fock_barg.wires.quantum:
             assert w.repr == ReprEnum.BARGMANN
 
     def test_to_fock_bargmann_poly_exp(self):
@@ -520,6 +522,15 @@ class TestCircuitComponent:
 
         assert repr(c1) == "CircuitComponent(modes=(0, 1, 2), name=CC012)"
         assert repr(c2) == "CircuitComponent(modes=(0, 1, 2), name=my_component)"
+
+    def test_to_fock_shape_lookahead(self):
+        r = settings.rng.uniform(-0.5, 0.5, 3)
+        interf = Interferometer([0, 1])
+        gaussian_part = SqueezedVacuum(0, r[0]) >> SqueezedVacuum(1, r[1]) >> interf
+        gauss_auto_shape = gaussian_part.auto_shape()
+        fock_explicit_shape = gaussian_part.to_fock((gauss_auto_shape[0], 7)) >> Number(1, 6).dual
+        fock_lookahead_shape = gaussian_part >> Number(1, 6).dual
+        assert fock_lookahead_shape == fock_explicit_shape
 
     def test_to_fock_keeps_bargmann(self):
         "tests that to_fock doesn't lose the bargmann representation"

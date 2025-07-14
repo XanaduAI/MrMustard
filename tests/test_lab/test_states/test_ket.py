@@ -74,15 +74,15 @@ class TestKet:
 
     def test_manual_shape(self):
         ket = Coherent(0, x=1)
-        assert ket.manual_shape == [None]
-        ket.manual_shape[0] = 19
-        assert ket.manual_shape == [19]
+        assert ket.manual_shape == (None,)
+        ket.manual_shape = (19,)
+        assert ket.manual_shape == (19,)
 
     def test_auto_shape(self):
         ket = Coherent(0, x=1)
         assert ket.auto_shape() == (8,)
 
-        ket.manual_shape[0] = 19
+        ket.manual_shape = (19,)
         assert ket.auto_shape() == (19,)
         assert ket.auto_shape(respect_manual_shape=False) == (8,)
 
