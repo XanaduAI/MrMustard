@@ -64,26 +64,29 @@ class Number(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         n: int | Sequence[int],
         cutoff: int | None = None,
     ) -> None:
-        n = math.astensor(n, dtype=math.int64)
+        mode = (mode,) if isinstance(mode, int) else mode
         cutoff = int(math.max(n) + 1) if cutoff is None else cutoff
-        batch_dims = len(n.shape)
         super().__init__(name="N")
-        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
+        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=math.int64))
         self.parameters.add_parameter(
-            make_parameter(False, cutoff, "cutoff", (None, None), dtype="int64"),
+            make_parameter(False, cutoff, "cutoff", (None, None), dtype=math.int64),
         )
 
+        batch_dims = len(self.parameters.n.value.shape)
         self._ansatz = ArrayAnsatz.from_function(
-            fock_state, n=n, cutoff=cutoff, batch_dims=batch_dims
+            fock_state,
+            n=self.parameters.n.value,
+            cutoff=self.parameters.cutoff.value,
+            batch_dims=batch_dims,
         )
-        self._wires = Wires(modes_out_ket={mode})
-        self.short_name = str(int(n)) if batch_dims == 0 else "N_batched"
-        self.manual_shape[0] = cutoff
+        self._wires = Wires(modes_out_ket=set(mode))
+        self.short_name = str(int(self.parameters.n.value)) if batch_dims == 0 else "N_batched"
+        self.manual_shape[0] = int(self.parameters.cutoff.value)
 
         for w in self.wires.output.wires:
             w.repr = ReprEnum.FOCK
-            w.repr_params_func = lambda w=w: [int(self.cutoff.value)]
+            w.repr_params_func = lambda w=w: [int(self.parameters.cutoff.value)]

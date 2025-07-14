@@ -22,6 +22,7 @@ from collections.abc import Sequence
 
 import numpy as np
 
+from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import ReprEnum, Wires
@@ -61,7 +62,7 @@ class QuadratureEigenstate(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         x: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
@@ -69,13 +70,22 @@ class QuadratureEigenstate(Ket):
         x_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="QuadratureEigenstate")
 
         self.parameters.add_parameter(
-            make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds),
+            make_parameter(
+                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=math.float64
+            ),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
+            make_parameter(
+                is_trainable=phi_trainable,
+                value=phi,
+                name="phi",
+                bounds=phi_bounds,
+                dtype=math.float64,
+            ),
         )
         self.manual_shape = (50,)
 
@@ -84,7 +94,7 @@ class QuadratureEigenstate(Ket):
             x=self.parameters.x,
             phi=self.parameters.phi,
         )
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))
 
         for w in self.wires.output.wires:
             w.repr = ReprEnum.QUADRATURE

@@ -56,11 +56,12 @@ class Thermal(DM):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         nbar: int | Sequence[int] = 0,
         nbar_trainable: bool = False,
         nbar_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="Thermal")
         self.parameters.add_parameter(
             make_parameter(
@@ -74,4 +75,4 @@ class Thermal(DM):
             fn=triples.thermal_state_Abc,
             nbar=self.parameters.nbar,
         )
-        self._wires = Wires(modes_out_bra={mode}, modes_out_ket={mode})
+        self._wires = Wires(modes_out_bra=set(mode), modes_out_ket=set(mode))
