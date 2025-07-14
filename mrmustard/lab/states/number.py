@@ -18,6 +18,8 @@ The class representing a number state.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from mrmustard import math
 from mrmustard.physics.ansatz import ArrayAnsatz
 from mrmustard.physics.fock_utils import fock_state
@@ -35,8 +37,9 @@ class Number(Ket):
 
     Args:
         mode: The mode of the number state.
-        n: The number of photons.
-        cutoffs: The cutoff. If ``cutoffs`` is ``None``, it defaults to ``n+1``.
+        n: The (batchable) number of photons.
+        cutoff: The photon cutoff. If ``cutoff`` is ``None``, it
+            defaults to ``math.max(n)+1``.
 
     .. code-block::
 
@@ -62,22 +65,28 @@ class Number(Ket):
     def __init__(
         self,
         mode: int | tuple[int],
-        n: int,
-        cutoffs: int | None = None,
+        n: int | Sequence[int],
+        cutoff: int | None = None,
     ) -> None:
         mode = (mode,) if isinstance(mode, int) else mode
-        cutoffs = n if cutoffs is None else cutoffs
+        cutoff = int(math.max(n) + 1) if cutoff is None else cutoff
         super().__init__(name="N")
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=math.int64))
         self.parameters.add_parameter(
-            make_parameter(False, cutoffs, "cutoffs", (None, None), dtype=math.int64),
+            make_parameter(False, cutoff, "cutoff", (None, None), dtype=math.int64),
         )
 
-        self._ansatz = ArrayAnsatz.from_function(fock_state, n=n, cutoffs=cutoffs)
+        batch_dims = len(self.parameters.n.value.shape)
+        self._ansatz = ArrayAnsatz.from_function(
+            fock_state,
+            n=self.parameters.n.value,
+            cutoff=self.parameters.cutoff.value,
+            batch_dims=batch_dims,
+        )
         self._wires = Wires(modes_out_ket=set(mode))
-        self.short_name = str(int(n))
-        self.manual_shape[0] = cutoffs + 1
+        self.short_name = str(int(self.parameters.n.value)) if batch_dims == 0 else "N_batched"
+        self.manual_shape[0] = int(self.parameters.cutoff.value)
 
         for w in self.wires.output.wires:
             w.repr = ReprEnum.FOCK
-            w.repr_params_func = lambda w=w: [int(self.parameters.n.value)]
+            w.repr_params_func = lambda w=w: [int(self.parameters.cutoff.value)]
