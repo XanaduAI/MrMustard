@@ -224,6 +224,7 @@ class TestCircuitComponent:
 
         cc12 = cc1 + cc2
 
+        assert isinstance(cc12, CircuitComponent)
         assert cc12.ansatz == cc1.ansatz + cc2.ansatz
         assert cc12.ansatz._lin_sup is True
 
