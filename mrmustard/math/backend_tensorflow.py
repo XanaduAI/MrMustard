@@ -236,6 +236,10 @@ class BackendTensorflow(BackendBase):
         return tf.complex(real, imag)
 
     @Autocast()
+    def max(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.reduce_max(array)
+
+    @Autocast()
     def maximum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.maximum(a, b)
 

@@ -21,7 +21,7 @@ from hypothesis import strategies as st
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab import (
     Attenuator,
     BSgate,
@@ -37,23 +37,24 @@ from mrmustard.physics import fock_utils
 st_angle = st.floats(min_value=0, max_value=2 * np.pi)
 
 
-def test_fock_state():
+@pytest.mark.parametrize("batch_shape", [(), (2,), (3, 4)])
+def test_fock_state(batch_shape):
     r"""
     Tests that the `fock_state` method gives expected values.
     """
-    n = [4, 5, 6]
+    batch_indices = np.indices(batch_shape)
+    n = settings.rng.integers(0, 10, size=batch_shape)
 
     array1 = fock_utils.fock_state(n)
-    assert array1.shape == (5, 6, 7)
-    assert array1[4, 5, 6] == 1
+    assert array1.shape == (*batch_shape, math.max(n) + 1)
+    assert math.all(array1[(*batch_indices, n)] == 1)
 
-    array2 = fock_utils.fock_state(n, cutoffs=10)
-    assert array2.shape == (11, 11, 11)
-    assert array2[4, 5, 6] == 1
+    array2 = fock_utils.fock_state(n, cutoff=math.max(n) + 1)
+    assert math.allclose(array1, array2)
 
-    array3 = fock_utils.fock_state(n, cutoffs=[5, 6, 7])
-    assert array3.shape == (6, 7, 8)
-    assert array3[4, 5, 6] == 1
+    array3 = fock_utils.fock_state(n, cutoff=15)
+    assert array3.shape == (*batch_shape, 15)
+    assert math.all(array3[(*batch_indices, n)] == 1)
 
 
 def test_fock_state_error():
@@ -62,14 +63,8 @@ def test_fock_state_error():
     """
     n = [4, 5]
 
-    with pytest.raises(ValueError):
-        fock_utils.fock_state(n, cutoffs=[5, 6, 7])
-
-    if math.backend_name == "jax":
-        pytest.skip("Jax does not raise and silently ignores out of bounds indices.")
-
-    with pytest.raises(ValueError):
-        fock_utils.fock_state(n, cutoffs=2)
+    with pytest.raises(ValueError, match="cannot be larger than"):
+        fock_utils.fock_state(n, cutoff=4)
 
 
 @given(n_mean=st.floats(0, 3), phi=st_angle)
