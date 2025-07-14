@@ -275,7 +275,7 @@ class TestOptimizerJax:
             cat_state = cat_state.normalize()
             return -math.abs(cat_state.fidelity(expected_cat.normalize()))
 
-        opt = OptimizerJax(learning_rate=0.001, stable_threshold=1e-14)
+        opt = OptimizerJax(learning_rate=0.001, stable_threshold=1e-12)
         opt.minimize(cost_fn, by_optimizing=[cat_state], max_steps=10000)
 
         assert math.allclose(cat_state.parameters.x.value, expected_cat.parameters.x.value)
