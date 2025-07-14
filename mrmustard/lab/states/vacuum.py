@@ -76,3 +76,14 @@ class Vacuum(Ket):
         if not set(idx).issubset(set(self.modes)):
             raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
         return Vacuum(idx)
+
+    # TODO: investigate this workaround for jax
+    def _tree_flatten(self):
+        children = ()
+        aux_data = (self.modes,)
+        return (children, aux_data)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        (modes,) = aux_data
+        return cls(modes)
