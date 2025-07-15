@@ -834,10 +834,14 @@ class CircuitComponent:
             for name in self.ansatz._kwargs:
                 self_param = getattr(self.parameters, name)
                 other_param = getattr(other.parameters, name)
-                if type(self_param) is not type(other_param):
+                if (self_type := type(self_param)) is not (other_type := type(other_param)):
                     raise ValueError(
-                        f"Parameter '{name}' is a {type(self_param).__name__} for one component and a {type(other_param).__name__} for the other."
+                        f"Parameter '{name}' is a {self_type.__name__} for one component and a {other_type.__name__} for the other."
                     )
+                if (self.ansatz.batch_dims - self.ansatz._lin_sup) > 0 or (
+                    other.ansatz.batch_dims - other.ansatz._lin_sup
+                ) > 0:
+                    raise ValueError("Cannot add batched components.")
                 if isinstance(self_param, Variable):
                     if self_param.bounds != other_param.bounds:
                         raise ValueError(
