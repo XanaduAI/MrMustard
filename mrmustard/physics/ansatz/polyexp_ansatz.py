@@ -126,7 +126,7 @@ class PolyExpAnsatz(Ansatz):
         self._lin_sup = lin_sup
 
     def _tree_flatten(self):
-        children = (self._fn_kwargs,)
+        children = (self._kwargs,)
         aux_data = (
             self._A,
             self._b,
@@ -142,7 +142,7 @@ class PolyExpAnsatz(Ansatz):
     @classmethod
     def _tree_unflatten(cls, aux_data, children):
         ret = cls.__new__(cls)
-        (ret._fn_kwargs,) = children
+        (ret._kwargs,) = children
         (
             ret._A,
             ret._b,
