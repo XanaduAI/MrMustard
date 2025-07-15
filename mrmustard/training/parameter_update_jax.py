@@ -83,3 +83,31 @@ def update_symplectic(symplectic_lr: float):
         return updates, state
 
     return optax.GradientTransformation(init_fn, update_fn)
+
+
+def update_orthogonal(orthogonal_lr: float):
+    r"""
+    Creates an optax GradientTransformation for orthogonal parameter updates.
+    Implemented from:
+        Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
+
+    Args:
+        orthogonal_lr: Learning rate for orthogonal updates
+
+    Returns:
+        An optax.GradientTransformation for orthogonal updates
+    """
+
+    def init_fn(params):
+        return None
+
+    def update_fn(grads, state, params):
+        def update_single(dS_euclidean, S):
+            Y = math.euclidean_to_unitary(S, math.real(dS_euclidean))
+            new_value = math.matmul(S, math.expm(-orthogonal_lr * Y))
+            return new_value - S
+
+        updates = jax.tree_util.tree_map(update_single, grads, params)
+        return updates, state
+
+    return optax.GradientTransformation(init_fn, update_fn)

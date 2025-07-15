@@ -28,15 +28,16 @@ from optax import GradientTransformation, OptState, adamw
 from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.math.parameters import Variable
+from mrmustard.training.parameter_update_jax import (
+    update_orthogonal,
+    update_symplectic,
+    update_unitary,
+)
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
-from mrmustard.training.parameter_update_jax import update_symplectic, update_unitary
 
 __all__ = ["OptimizerJax"]
 
-def get_pytree_of_optimizer_labels(node):
-    if isinstance(node, Variable):
-        return str(node.update_fn.__name__)
 
 class OptimizerJax:
     r"""
@@ -57,6 +58,7 @@ class OptimizerJax:
         learning_rate: float = 0.001,
         symplectic_lr: float = 0.001,
         unitary_lr: float = 0.001,
+        orthogonal_lr: float = 0.1,
         stable_threshold: float = 1e-6,
     ):
         if math.backend_name != "jax":
@@ -66,6 +68,7 @@ class OptimizerJax:
         self.learning_rate = learning_rate
         self.symplectic_lr = symplectic_lr
         self.unitary_lr = unitary_lr
+        self.orthogonal_lr = orthogonal_lr
         self.opt_history = [0]
         self.log = create_logger(__name__)
         self.stable_threshold = stable_threshold
@@ -172,6 +175,12 @@ class OptimizerJax:
         r"""
         The core optimization loop.
         """
+
+        def get_pytree_of_optimizer_labels(node):
+            if isinstance(node, Variable):
+                return str(node.update_fn.__name__)
+            return None
+
         by_optimizing = tuple(by_optimizing)
         euclidean_optim = (
             euclidean_optim(learning_rate=self.learning_rate)
@@ -180,16 +189,15 @@ class OptimizerJax:
         )
 
         labels_pytree = jax.tree_util.tree_map(
-            get_pytree_of_optimizer_labels,
-            by_optimizing,
-            is_leaf = lambda n: isinstance(n, Variable)
+            get_pytree_of_optimizer_labels, by_optimizing, is_leaf=lambda n: isinstance(n, Variable)
         )
 
         optim = optax.multi_transform(
             {
-                'update_euclidean': euclidean_optim,
-                'update_unitary': update_unitary(self.unitary_lr),
-                'update_symplectic': update_symplectic(self.symplectic_lr),
+                "update_euclidean": euclidean_optim,
+                "update_unitary": update_unitary(self.unitary_lr),
+                "update_symplectic": update_symplectic(self.symplectic_lr),
+                "update_orthogonal": update_orthogonal(self.orthogonal_lr),
             },
             labels_pytree,
         )

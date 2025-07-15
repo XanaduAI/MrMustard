@@ -433,6 +433,9 @@ class BackendJax(BackendBase):
     def zeros_like(self, array: jnp.ndarray, dtype: str = "complex128") -> jnp.ndarray:
         return jnp.zeros_like(array, dtype=dtype)
 
+    def xlogy(self, x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+        return jax.scipy.special.xlogy(x, y)
+
     @staticmethod
     @jax.jit
     def eigh(tensor: jnp.ndarray) -> tuple:
