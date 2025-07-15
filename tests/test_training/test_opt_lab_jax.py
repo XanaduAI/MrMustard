@@ -61,7 +61,7 @@ class TestOptimizerJax:
         def cost_fn(S):
             return -(math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2)
 
-        opt = OptimizerJax(learning_rate=0.01)
+        opt = OptimizerJax(euclidean_lr=0.01)
         (S,) = opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
 
         expected = 1 / (n + 1) * (n / (n + 1)) ** n
@@ -90,7 +90,7 @@ class TestOptimizerJax:
         def cost_fn(circ):
             return math.abs(circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k]) ** 2
 
-        opt = OptimizerJax(learning_rate=0.01)
+        opt = OptimizerJax(euclidean_lr=0.01)
         (circ,) = opt.minimize(
             cost_fn,
             by_optimizing=[circ],
@@ -122,7 +122,7 @@ class TestOptimizerJax:
             amps = circ.contract().fock_array((2, 2))
             return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
-        opt = OptimizerJax(learning_rate=0.05)
+        opt = OptimizerJax(euclidean_lr=0.05)
 
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
         assert math.allclose(-cost_fn(circ), 0.25, atol=1e-5)
@@ -135,7 +135,7 @@ class TestOptimizerJax:
             amps = G.fock_array((2, 2))
             return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
-        opt = OptimizerJax(symplectic_lr=0.5, learning_rate=0.01)
+        opt = OptimizerJax(symplectic_lr=0.5, euclidean_lr=0.01)
 
         (G,) = opt.minimize(cost_fn, by_optimizing=[G], max_steps=500)
         assert math.allclose(-cost_fn(G), 0.25, atol=1e-4)
@@ -157,7 +157,7 @@ class TestOptimizerJax:
             amps = circ.contract().fock_array((2, 2))
             return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
-        opt = OptimizerJax(unitary_lr=0.5, learning_rate=0.01)
+        opt = OptimizerJax(unitary_lr=0.5, euclidean_lr=0.01)
 
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
         assert math.allclose(-cost_fn(circ), 0.25, atol=1e-5)
@@ -187,7 +187,7 @@ class TestOptimizerJax:
             amps = circ.contract().fock_array((2, 2))
             return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
-        opt = OptimizerJax(orthogonal_lr=0.5, learning_rate=0.01)
+        opt = OptimizerJax(orthogonal_lr=0.5, euclidean_lr=0.01)
 
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
         assert math.allclose(-cost_fn(circ), 0.25, atol=1e-5)
@@ -343,7 +343,7 @@ class TestOptimizerJax:
         def cost_fn(circ):
             return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
 
-        opt = OptimizerJax(learning_rate=0.001)
+        opt = OptimizerJax(euclidean_lr=0.001)
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
         S_12 = circ.components[3]
         assert math.allclose(math.sinh(S_12.parameters.r.value) ** 2, 1, atol=1e-2)
@@ -364,7 +364,7 @@ class TestOptimizerJax:
         def cost_fn(circ):
             return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
 
-        opt = OptimizerJax(learning_rate=0.001)
+        opt = OptimizerJax(euclidean_lr=0.001)
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
         r_var = circ.components[3].parameters.r
         assert math.allclose(math.sinh(r_var.value) ** 2, 1, atol=1e-2)
@@ -459,7 +459,7 @@ class TestOptimizerJax:
             norm = 1 / squeezing.ansatz.batch_size if squeezing.ansatz.batch_shape else 1
             return -math.real(norm * math.sum(num >> squeezing >> vac) ** 2)
 
-        opt = OptimizerJax(learning_rate=0.05)
+        opt = OptimizerJax(euclidean_lr=0.05)
         (squeezing,) = opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
 
         assert math.all(squeezing.parameters.r.value != og_r)
@@ -477,7 +477,7 @@ class TestOptimizerJax:
             norm = 1 / disp.ansatz.batch_size if disp.ansatz.batch_shape else 1
             return -math.real(norm * math.sum(num >> disp >> vac) ** 2)
 
-        opt = OptimizerJax(learning_rate=0.05)
+        opt = OptimizerJax(euclidean_lr=0.05)
         (disp,) = opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
         assert math.all(og_x != disp.parameters.x.value)
         assert math.all(og_y != disp.parameters.y.value)
@@ -497,7 +497,7 @@ class TestOptimizerJax:
                 norm * math.sum(sq >> num >> bs >> (vac >> num).dual) ** 2,
             )
 
-        opt = OptimizerJax(learning_rate=0.05)
+        opt = OptimizerJax(euclidean_lr=0.05)
         (sq,) = opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
 
         assert math.all(og_r != sq.parameters.r.value)

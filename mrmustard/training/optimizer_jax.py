@@ -43,8 +43,6 @@ class OptimizerJax:
     r"""
     A Jax based optimizer for any parametrized object.
 
-    Note that this optimizer currently only supports Euclidean optimizations.
-
     Args:
         learning_rate: The learning rate of the optimizer.
         stable_threshold: The threshold for the loss to be considered stable.
@@ -55,7 +53,7 @@ class OptimizerJax:
 
     def __init__(
         self,
-        learning_rate: float = 0.001,
+        euclidean_lr: float = 0.001,
         symplectic_lr: float = 0.001,
         unitary_lr: float = 0.001,
         orthogonal_lr: float = 0.1,
@@ -65,7 +63,7 @@ class OptimizerJax:
             raise ValueError(
                 "OptimizerJax only supports the Jax backend. Please set the backend to Jax using `math.change_backend('jax')`.",
             )
-        self.learning_rate = learning_rate
+        self.euclidean_lr = euclidean_lr
         self.symplectic_lr = symplectic_lr
         self.unitary_lr = unitary_lr
         self.orthogonal_lr = orthogonal_lr
@@ -183,9 +181,9 @@ class OptimizerJax:
 
         by_optimizing = tuple(by_optimizing)
         euclidean_optim = (
-            euclidean_optim(learning_rate=self.learning_rate)
+            euclidean_optim(learning_rate=self.euclidean_lr)
             if euclidean_optim is not None
-            else adamw(learning_rate=self.learning_rate)
+            else adamw(learning_rate=self.euclidean_lr)
         )
 
         labels_pytree = jax.tree_util.tree_map(
