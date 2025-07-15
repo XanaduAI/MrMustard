@@ -92,11 +92,11 @@ class CircuitComponent:
         ret._wires, ret._name = aux_data
 
         # make sure the ansatz parameters match the parameter set
-        for param_name, param in ret.ansatz._fn_kwargs.items():
+        for param_name, param in ret.ansatz._kwargs.items():
             if isinstance(param, Variable):
-                ret.ansatz._fn_kwargs[param_name] = ret.parameters.all_parameters[param.name]
+                ret.ansatz._kwargs[param_name] = ret.parameters.all_parameters[param.name]
             else:  # need this to build pytree of labels
-                ret.ansatz._fn_kwargs[param_name] = param
+                ret.ansatz._kwargs[param_name] = param
 
         return ret
 
