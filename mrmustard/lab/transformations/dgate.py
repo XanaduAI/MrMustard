@@ -129,6 +129,8 @@ class Dgate(Unitary):
             y = math.reshape(y, (-1,))
             ret = math.astensor([math.displacement(xi, yi, shape=shape) for xi, yi in zip(x, y)])
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
+            if self.ansatz._lin_sup:
+                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
             ret = math.displacement(self.parameters.x.value, self.parameters.y.value, shape=shape)
         return ret

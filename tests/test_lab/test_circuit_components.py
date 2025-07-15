@@ -221,11 +221,43 @@ class TestCircuitComponent:
         assert math.allclose(barg_cc.ansatz.c, fock_cc.ansatz.data)
 
     def test_add(self):
-        d1 = Dgate(1, x=0.1, y=0.1)
-        d2 = Dgate(1, x=0.2, y=0.2)
+        cc1 = CircuitComponent.from_bargmann(Abc_triple(1), modes_out_ket=(0,))
+        cc2 = CircuitComponent.from_bargmann(Abc_triple(1), modes_out_ket=(0,))
+
+        cc12 = cc1 + cc2
+
+        assert isinstance(cc12, CircuitComponent)
+        assert cc12.ansatz == cc1.ansatz + cc2.ansatz
+        assert cc12.ansatz._lin_sup is True
+
+    def test_add_built_in(self):
+        d1 = Dgate(1, x=0.1, y=0.1, x_trainable=True, x_bounds=(0, 1))
+        d2 = Dgate(1, x=0.2, y=0.2, x_trainable=True, x_bounds=(0, 1))
 
         d12 = d1 + d2
+
+        assert isinstance(d12, Dgate)
+        assert isinstance(d12.parameters.x, Variable)
+        assert d12.parameters.x.bounds == (0, 1)
+        assert math.allclose(d12.parameters.x.value, [0.1, 0.2])
+        assert math.allclose(d12.parameters.y.value, [0.1, 0.2])
+        assert d12.ansatz._lin_sup is True
         assert d12.ansatz == d1.ansatz + d2.ansatz
+
+    def test_add_error(self):
+        d1 = Dgate(1, x=0.1, y=0.1)
+        d2 = Dgate(2, x=0.2, y=0.2)
+        d3 = Dgate(1, x=0.1, y=0.1, x_trainable=True)
+        d4 = Dgate(1, x=0.1, y=0.1, x_trainable=True, x_bounds=(0, 1))
+
+        with pytest.raises(ValueError, match="different wires"):
+            d1 + d2
+
+        with pytest.raises(ValueError, match="Parameter 'x' is a"):
+            d1 + d3
+
+        with pytest.raises(ValueError, match="Parameter 'x' has bounds"):
+            d3 + d4
 
     def test_sub(self):
         s1 = DisplacedSqueezed(1, x=1.0, y=0.5, r=0.1)
@@ -245,13 +277,6 @@ class TestCircuitComponent:
 
         assert (d1 / 3).ansatz == d1.ansatz / 3
         assert isinstance(d1 / 3, Unitary)
-
-    def test_add_error(self):
-        d1 = Dgate(1, x=0.1, y=0.1)
-        d2 = Dgate(2, x=0.2, y=0.2)
-
-        with pytest.raises(ValueError):
-            d1 + d2
 
     def test_eq(self):
         d1 = Dgate(1, x=0.1, y=0.1)
