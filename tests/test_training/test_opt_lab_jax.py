@@ -281,6 +281,6 @@ class TestOptimizerJax:
         # stable_threshold and max_steps are set to whatever gives us optimized parameters
         # that are within the default ATOL=1e-8 of the expected values
         opt = OptimizerJax(stable_threshold=1e-12)
-        opt.minimize(cost_fn, by_optimizing=[cat_state], max_steps=6000)
+        (cat_state,) = opt.minimize(cost_fn, by_optimizing=[cat_state], max_steps=6000)
 
         assert math.allclose(cat_state.parameters.x.value, expected_cat.parameters.x.value)
