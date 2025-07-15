@@ -240,10 +240,7 @@ class ParameterSet:
 
     def _format_value(self, param: Constant | Variable) -> tuple[str, str]:
         r"""Format parameter value and shape strings."""
-        try:
-            value = math.asnumpy(param.value)
-        except (ValueError, TypeError, AttributeError):
-            return "array", str(getattr(param.value, "shape", "scalar"))
+        value = math.asnumpy(param.value)
 
         # Handle arrays
         if hasattr(param.value, "shape") and param.value.shape != ():
@@ -289,15 +286,12 @@ class ParameterSet:
 
     def _format_dtype(self, param: Constant | Variable) -> str:
         r"""Format parameter dtype string."""
-        try:
-            dtype_str = str(param.value.dtype)
-            common_dtypes = {"float64", "float32", "complex128", "complex64"}
-            for dtype in common_dtypes:
-                if dtype in dtype_str:
-                    return dtype
-            return dtype_str
-        except (ValueError, TypeError, AttributeError):
-            return "unknown"
+        dtype_str = str(param.value.dtype)
+        common_dtypes = {"float64", "float32", "complex128", "complex64"}
+        for dtype in common_dtypes:
+            if dtype in dtype_str:
+                return dtype
+        return dtype_str
 
     def _format_bounds(self, param: Constant | Variable) -> str:
         r"""Format parameter bounds string."""
