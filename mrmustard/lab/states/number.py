@@ -69,13 +69,12 @@ class Number(Ket):
         cutoff: int | None = None,
     ) -> None:
         mode = (mode,) if isinstance(mode, int) else mode
-        cutoff = int(math.max(n) + 1) if cutoff is None else cutoff
         super().__init__(name="N")
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=math.int64))
+        cutoff = int(math.max(self.parameters.n.value) + 1) if cutoff is None else cutoff
         self.parameters.add_parameter(
             make_parameter(False, cutoff, "cutoff", (None, None), dtype=math.int64),
         )
-
         batch_dims = len(self.parameters.n.value.shape)
         self._ansatz = ArrayAnsatz.from_function(
             fock_state,
