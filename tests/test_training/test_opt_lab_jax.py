@@ -26,6 +26,7 @@ from mrmustard.lab import (
     Coherent,
     Dgate,
     DisplacedSqueezed,
+    GKet,
     Number,
     S2gate,
     Sgate,
@@ -120,6 +121,19 @@ class TestOptimizerJax:
 
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
         assert math.allclose(-cost_fn(circ), 0.25, atol=1e-5)
+
+    def test_learning_two_mode_Ggate(self):
+        """Finding the optimal Ggate to make a pair of single photons"""
+        G = GKet((0, 1), symplectic_trainable=True)
+
+        def cost_fn(G):
+            amps = G.fock_array((2, 2))
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
+
+        opt = OptimizerJax(symplectic_lr=0.5, learning_rate=0.01)
+
+        (G,) = opt.minimize(cost_fn, by_optimizing=[G], max_steps=500)
+        assert math.allclose(-cost_fn(G), 0.25, atol=1e-4)
 
     def test_squeezing_hong_ou_mandel_optimizer(self):
         """Finding the optimal squeezing parameter to get Hong-Ou-Mandel dip in time
