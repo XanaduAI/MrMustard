@@ -27,6 +27,7 @@ from mrmustard.lab import (
     Dgate,
     DisplacedSqueezed,
     GKet,
+    Interferometer,
     Number,
     S2gate,
     Sgate,
@@ -134,6 +135,28 @@ class TestOptimizerJax:
 
         (G,) = opt.minimize(cost_fn, by_optimizing=[G], max_steps=500)
         assert math.allclose(-cost_fn(G), 0.25, atol=1e-4)
+
+    def test_learning_two_mode_Interferometer(self):
+        """Finding the optimal Interferometer to make a pair of single photons"""
+        state_in = Vacuum((0, 1))
+        s_gate = Sgate(
+            0,
+            r=settings.rng.normal() ** 2,
+            phi=settings.rng.normal(),
+            r_trainable=True,
+            phi_trainable=True,
+        )
+        interferometer = Interferometer((0, 1), unitary_trainable=True)
+        circ = Circuit([state_in, s_gate, s_gate.on(1), interferometer])
+
+        def cost_fn(circ):
+            amps = circ.contract().fock_array((2, 2))
+            return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
+
+        opt = OptimizerJax(unitary_lr=0.5, learning_rate=0.01)
+
+        (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
+        assert math.allclose(-cost_fn(circ), 0.25, atol=1e-5)
 
     def test_squeezing_hong_ou_mandel_optimizer(self):
         """Finding the optimal squeezing parameter to get Hong-Ou-Mandel dip in time

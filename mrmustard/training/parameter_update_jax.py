@@ -16,33 +16,41 @@
 
 import jax
 import optax
+
 from mrmustard import math
-from mrmustard.utils.typing import Tensor
+
 
 def update_unitary(unitary_lr: float):
     r"""Creates an optax GradientTransformation for unitary parameter updates.
     Implemented from:
         Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
-        
+
     Args:
         unitary_lr: Learning rate for unitary updates
-        
+
     Returns:
         An optax.GradientTransformation for unitary updates
     """
+
     def init_fn(params):
         return None
-        
+
     def update_fn(grads, state, params):
-        def update_single(param, grad):
-            Y = math.euclidean_to_unitary(param, grad)
-            new_value = math.matmul(param, math.expm(-unitary_lr * Y))
-            return new_value - param
-        
-        updates = jax.tree_util.tree_map(update_single, params, grads)
+        def update_single(dS_euclidean, S):
+            # for dU_euclidean, U in grads_and_vars:
+            #     Y = math.euclidean_to_unitary(U, dU_euclidean)
+            #     new_value = math.matmul(U, math.expm(-unitary_lr * Y))
+            #     math.assign(U, new_value)
+
+            Y = math.euclidean_to_unitary(S, math.conj(dS_euclidean))
+            new_value = math.matmul(S, math.expm(-unitary_lr * Y))
+            return new_value - S
+
+        updates = jax.tree_util.tree_map(update_single, grads, params)
         return updates, state
-        
+
     return optax.GradientTransformation(init_fn, update_fn)
+
 
 def update_symplectic(symplectic_lr: float):
     r"""Creates an optax GradientTransformation for symplectic parameter updates.
@@ -50,13 +58,14 @@ def update_symplectic(symplectic_lr: float):
         Wang J, Sun H, Fiori S. A Riemannian-steepest-descent approach
         for optimization on the real symplectic group.
         Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
-        
+
     Args:
         symplectic_lr: Learning rate for symplectic updates
-        
+
     Returns:
         An optax.GradientTransformation for symplectic updates
     """
+
     def init_fn(params):
         return None
 
