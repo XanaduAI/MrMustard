@@ -818,6 +818,10 @@ class CircuitComponent:
                     raise ValueError(
                         f"Parameter '{name}' is a {type(self_param).__name__} for one component and a {type(other_param).__name__} for the other."
                     )
+                if (self.ansatz.batch_dims - self.ansatz._lin_sup) > 0 or (
+                    other.ansatz.batch_dims - other.ansatz._lin_sup
+                ) > 0:
+                    raise ValueError("Cannot add batched components.")
                 if isinstance(self_param, Variable):
                     if self_param.bounds != other_param.bounds:
                         raise ValueError(
