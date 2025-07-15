@@ -23,6 +23,7 @@ from mrmustard import math, settings
 from mrmustard.lab import (
     BSgate,
     Circuit,
+    Coherent,
     Dgate,
     DisplacedSqueezed,
     Number,
@@ -263,3 +264,20 @@ class TestOptimizerJax:
         opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
 
         assert math.all(og_r != sq.parameters.r.value)
+
+    def test_cat_state_optimization(self):
+        # Note: we need to intitialize the cat state with a non-zero value. This is because
+        # the gradients are zero when x is zero.
+        cat_state = Coherent(0, x=0.1, x_trainable=True) + Coherent(0, x=-0.1, x_trainable=True)
+        expected_cat = Coherent(0, x=np.sqrt(np.pi)) + Coherent(0, x=-np.sqrt(np.pi))
+
+        def cost_fn(cat_state):
+            cat_state = cat_state.normalize()
+            return -math.abs(cat_state.fidelity(expected_cat.normalize()))
+
+        # stable_threshold and max_steps are set to whatever gives us optimized parameters
+        # that are within the default ATOL=1e-8 of the expected values
+        opt = OptimizerJax(stable_threshold=1e-12)
+        opt.minimize(cost_fn, by_optimizing=[cat_state], max_steps=6000)
+
+        assert math.allclose(cat_state.parameters.x.value, expected_cat.parameters.x.value)

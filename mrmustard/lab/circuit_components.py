@@ -32,6 +32,7 @@ from numpy.typing import ArrayLike
 from mrmustard import math, settings
 from mrmustard import widgets as mmwidgets
 from mrmustard.math.parameter_set import ParameterSet
+from mrmustard.math.parameters import Variable
 from mrmustard.physics.ansatz import Ansatz, ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.fock_utils import oscillator_eigenstate
 from mrmustard.physics.triples import identity_Abc
@@ -803,6 +804,37 @@ class CircuitComponent:
         """
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
+
+        if (
+            isinstance(self.ansatz, PolyExpAnsatz)
+            and self.ansatz._fn is not None
+            and self.ansatz._fn == other.ansatz._fn
+        ):
+            new_params = {}
+            for name in self.ansatz._kwargs:
+                self_param = getattr(self.parameters, name)
+                other_param = getattr(other.parameters, name)
+                if (self_type := type(self_param)) is not (other_type := type(other_param)):
+                    raise ValueError(
+                        f"Parameter '{name}' is a {self_type.__name__} for one component and a {other_type.__name__} for the other."
+                    )
+                if (self.ansatz.batch_dims - self.ansatz._lin_sup) > 0 or (
+                    other.ansatz.batch_dims - other.ansatz._lin_sup
+                ) > 0:
+                    raise ValueError("Cannot add batched components.")
+                if isinstance(self_param, Variable):
+                    if self_param.bounds != other_param.bounds:
+                        raise ValueError(
+                            f"Parameter '{name}' has bounds {self_param.bounds} and {other_param.bounds} for the two components."
+                        )
+                    new_params[name + "_trainable"] = True
+                    new_params[name + "_bounds"] = self_param.bounds
+                self_val = math.atleast_nd(self_param.value, 1)
+                other_val = math.atleast_nd(other_param.value, 1)
+                new_params[name] = math.concat((self_val, other_val), axis=0)
+            ret = self.__class__(self.modes, **new_params)
+            ret.ansatz._lin_sup = True
+            return ret
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
         ret = self._from_attributes(ansatz, self.wires, name)
