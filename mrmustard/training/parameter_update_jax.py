@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""TODO: document this module"""
+"""
+Custom optax ``GradientTransformation``s for non-euclidean parameter updates.
+"""
 
 import jax
 import optax
@@ -20,31 +22,28 @@ import optax
 from mrmustard import math
 
 
-def update_unitary(unitary_lr: float):
-    r"""Creates an optax GradientTransformation for unitary parameter updates.
+def update_orthogonal(orthogonal_lr: float):
+    r"""
+    Creates an optax GradientTransformation for orthogonal parameter updates.
+
     Implemented from:
         Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
 
     Args:
-        unitary_lr: Learning rate for unitary updates
+        orthogonal_lr: The learning rate for orthogonal updates.
 
     Returns:
-        An optax.GradientTransformation for unitary updates
+        An optax.GradientTransformation for orthogonal updates.
     """
 
     def init_fn(params):
         return None
 
     def update_fn(grads, state, params):
-        def update_single(dS_euclidean, S):
-            # for dU_euclidean, U in grads_and_vars:
-            #     Y = math.euclidean_to_unitary(U, dU_euclidean)
-            #     new_value = math.matmul(U, math.expm(-unitary_lr * Y))
-            #     math.assign(U, new_value)
-
-            Y = math.euclidean_to_unitary(S, math.conj(dS_euclidean))
-            new_value = math.matmul(S, math.expm(-unitary_lr * Y))
-            return new_value - S
+        def update_single(dO_euclidean, O):
+            Y = math.euclidean_to_unitary(O, math.real(dO_euclidean))
+            new_value = math.matmul(O, math.expm(-orthogonal_lr * Y))
+            return new_value - O
 
         updates = jax.tree_util.tree_map(update_single, grads, params)
         return updates, state
@@ -54,16 +53,17 @@ def update_unitary(unitary_lr: float):
 
 def update_symplectic(symplectic_lr: float):
     r"""Creates an optax GradientTransformation for symplectic parameter updates.
+
     Implemented from:
         Wang J, Sun H, Fiori S. A Riemannian-steepest-descent approach
         for optimization on the real symplectic group.
         Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
 
     Args:
-        symplectic_lr: Learning rate for symplectic updates
+        symplectic_lr: The learning rate for symplectic updates.
 
     Returns:
-        An optax.GradientTransformation for symplectic updates
+        An optax.GradientTransformation for symplectic updates.
     """
 
     def init_fn(params):
@@ -85,27 +85,28 @@ def update_symplectic(symplectic_lr: float):
     return optax.GradientTransformation(init_fn, update_fn)
 
 
-def update_orthogonal(orthogonal_lr: float):
+def update_unitary(unitary_lr: float):
     r"""
-    Creates an optax GradientTransformation for orthogonal parameter updates.
+    Creates an optax GradientTransformation for unitary parameter updates.
+
     Implemented from:
         Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
 
     Args:
-        orthogonal_lr: Learning rate for orthogonal updates
+        unitary_lr: The learning rate for unitary updates.
 
     Returns:
-        An optax.GradientTransformation for orthogonal updates
+        An optax.GradientTransformation for unitary updates.
     """
 
     def init_fn(params):
         return None
 
     def update_fn(grads, state, params):
-        def update_single(dS_euclidean, S):
-            Y = math.euclidean_to_unitary(S, math.real(dS_euclidean))
-            new_value = math.matmul(S, math.expm(-orthogonal_lr * Y))
-            return new_value - S
+        def update_single(dU_euclidean, U):
+            Y = math.euclidean_to_unitary(U, math.conj(dU_euclidean))
+            new_value = math.matmul(U, math.expm(-unitary_lr * Y))
+            return new_value - U
 
         updates = jax.tree_util.tree_map(update_single, grads, params)
         return updates, state
