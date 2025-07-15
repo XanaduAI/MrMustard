@@ -44,7 +44,10 @@ class OptimizerJax:
     A Jax based optimizer for any parametrized object.
 
     Args:
-        learning_rate: The learning rate of the optimizer.
+        euclidean_lr: The euclidean learning rate of the optimizer.
+        symplectic_lr: The symplectic learning rate of the optimizer.
+        unitary_lr: The unitary learning rate of the optimizer.
+        orthogonal_lr: The orthogonal learning rate of the optimizer.
         stable_threshold: The threshold for the loss to be considered stable.
 
     Raises:
