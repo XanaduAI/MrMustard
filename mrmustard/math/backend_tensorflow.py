@@ -21,7 +21,6 @@ from collections.abc import Callable, Sequence
 from importlib import metadata
 
 import numpy as np
-import tensorflow_probability as tfp
 from opt_einsum import contract
 from semantic_version import Version
 
@@ -98,14 +97,6 @@ class BackendTensorflow(BackendBase):
     def atleast_nd(self, array: tf.Tensor, n: int, dtype=None) -> tf.Tensor:
         return tf.experimental.numpy.array(array, ndmin=n, dtype=dtype)
 
-    def block_diag(self, mat1: tf.Tensor, mat2: tf.Tensor) -> tf.Tensor:
-        Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
-        Zb = self.zeros((mat2.shape[-2], mat1.shape[-1]), dtype=mat1.dtype)
-        return self.concat(
-            [self.concat([mat1, Za], axis=-1), self.concat([Zb, mat2], axis=-1)],
-            axis=-2,
-        )
-
     def broadcast_to(self, array: tf.Tensor, shape: tuple[int]) -> tf.Tensor:
         return tf.broadcast_to(array, shape)
 
@@ -124,9 +115,6 @@ class BackendTensorflow(BackendBase):
         # Broadcast each array to the common shape
         return [tf.broadcast_to(arr, broadcasted_shape) for arr in arrays]
 
-    def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
-        return tf.boolean_mask(tensor, mask)
-
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
@@ -143,7 +131,8 @@ class BackendTensorflow(BackendBase):
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
-    def constraint_func(self, bounds: tuple[float | None, float | None]) -> Callable | None:
+    @staticmethod
+    def constraint_func(bounds: tuple[float | None, float | None]) -> Callable | None:
         bounds = (
             -np.inf if bounds[0] is None else bounds[0],
             np.inf if bounds[1] is None else bounds[1],
@@ -156,17 +145,6 @@ class BackendTensorflow(BackendBase):
         else:
             constraint = None
         return constraint
-
-    @Autocast()
-    def convolution(
-        self,
-        array: tf.Tensor,
-        filters: tf.Tensor,
-        padding: str | None = None,
-        data_format="NWC",
-    ) -> tf.Tensor:
-        padding = padding or "VALID"
-        return tf.nn.convolution(array, filters=filters, padding=padding, data_format=data_format)
 
     def cos(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cos(array)
@@ -231,6 +209,9 @@ class BackendTensorflow(BackendBase):
     def inv(self, tensor: tf.Tensor) -> tf.Tensor:
         return tf.linalg.inv(tensor)
 
+    def isnan(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.is_nan(array)
+
     def is_trainable(self, tensor: tf.Tensor) -> bool:
         return isinstance(tensor, tf.Variable)
 
@@ -253,6 +234,10 @@ class BackendTensorflow(BackendBase):
 
     def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
         return tf.complex(real, imag)
+
+    @Autocast()
+    def max(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.reduce_max(array)
 
     @Autocast()
     def maximum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
@@ -303,7 +288,7 @@ class BackendTensorflow(BackendBase):
 
     @Autocast()
     def outer(self, array1: tf.Tensor, array2: tf.Tensor) -> tf.Tensor:
-        return tf.tensordot(array1, array2, [[], []])
+        return self.tensordot(array1, array2, [[], []])
 
     def pad(
         self,
@@ -316,7 +301,14 @@ class BackendTensorflow(BackendBase):
 
     @staticmethod
     def pinv(matrix: tf.Tensor) -> tf.Tensor:
-        return tf.linalg.pinv(matrix)
+        # need to handle complex case on our own
+        # https://stackoverflow.com/questions/60025950/tensorflow-pseudo-inverse-doesnt-work-for-complex-matrices
+        real_matrix = tf.math.real(matrix)
+        imag_matrix = tf.math.imag(matrix)
+        r0 = tf.linalg.pinv(real_matrix) @ imag_matrix
+        y11 = tf.linalg.pinv(imag_matrix @ r0 + real_matrix)
+        y10 = -r0 @ y11
+        return tf.cast(tf.complex(y11, y10), dtype=matrix.dtype)
 
     @Autocast()
     def pow(self, x: tf.Tensor, y: float) -> tf.Tensor:
@@ -333,15 +325,6 @@ class BackendTensorflow(BackendBase):
 
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
-
-    def repeat(self, array: tf.Tensor, repeats: int, axis: int | None = None) -> tf.Tensor:
-        return tf.repeat(array, repeats, axis=axis)
-
-    def round(self, array: tf.Tensor, decimals: int = 0) -> tf.Tensor:
-        return tf.round(10**decimals * array) / 10**decimals
-
-    def set_diag(self, array: tf.Tensor, diag: tf.Tensor, k: int) -> tf.Tensor:
-        return tf.linalg.set_diag(array, diag, k=k)
 
     def sin(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.sin(array)
@@ -366,6 +349,9 @@ class BackendTensorflow(BackendBase):
 
     def sum(self, array: tf.Tensor, axis: int | tuple[int] | None = None):
         return tf.reduce_sum(array, axis)
+
+    def swapaxes(self, array: tf.Tensor, axis1: int, axis2: int) -> tf.Tensor:
+        return tf.experimental.numpy.swapaxes(array, axis1, axis2)
 
     @Autocast()
     def tensordot(self, a: tf.Tensor, b: tf.Tensor, axes: list[int]) -> tf.Tensor:
@@ -402,18 +388,6 @@ class BackendTensorflow(BackendBase):
 
     def map_fn(self, func, elements):
         return tf.map_fn(func, elements)
-
-    def squeeze(self, tensor, axis=None):
-        return tf.squeeze(tensor, axis=axis or [])
-
-    def cholesky(self, tensor: Tensor):
-        return tf.linalg.cholesky(tensor)
-
-    def Categorical(self, probs: Tensor, name: str):
-        return tfp.distributions.Categorical(probs=probs, name=name)
-
-    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
-        return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
 
     @staticmethod
     def eigh(tensor: tf.Tensor) -> Tensor:

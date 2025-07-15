@@ -30,7 +30,7 @@ from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.utils import outer_product_batch_str
-from mrmustard.physics.wires import ReprEnum, Wires
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
 
 from ..circuit_components import CircuitComponent
@@ -138,9 +138,6 @@ class DM(State):
                 f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.num_vars}.",
             )
         wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
-        if isinstance(ansatz, ArrayAnsatz):
-            for w in wires:
-                w.repr = ReprEnum.FOCK
         return DM(ansatz, wires, name=name)
 
     @classmethod
@@ -721,7 +718,7 @@ class DM(State):
         R_c_transpose = math.einsum("...ij->...ji", R_c)
 
         Aphi_out = Am
-        gamma = np.linalg.pinv(R_c) @ R
+        gamma = math.pinv(R_c) @ R
         gamma_transpose = math.einsum("...ij->...ji", gamma)
         Aphi_in = gamma @ math.inv(Aphi_out - math.Xmat(M)) @ gamma_transpose + math.Xmat(M)
 

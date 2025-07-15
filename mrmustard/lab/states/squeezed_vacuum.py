@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
@@ -56,7 +57,7 @@ class SqueezedVacuum(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
         r_trainable: bool = False,
@@ -64,12 +65,21 @@ class SqueezedVacuum(Ket):
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if isinstance(mode, int) else mode
         super().__init__(name="SqueezedVacuum")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
+            make_parameter(
+                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
+            ),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
+            make_parameter(
+                is_trainable=phi_trainable,
+                value=phi,
+                name="phi",
+                bounds=phi_bounds,
+                dtype=math.float64,
+            ),
         )
 
         self._ansatz = PolyExpAnsatz.from_function(
@@ -77,4 +87,4 @@ class SqueezedVacuum(Ket):
             r=self.parameters.r,
             phi=self.parameters.phi,
         )
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))

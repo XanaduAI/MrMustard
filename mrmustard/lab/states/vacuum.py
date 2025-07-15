@@ -69,8 +69,7 @@ class Vacuum(Ket):
         wires = Wires(modes_out_ket=set(modes))
         super().__init__(ansatz, wires, name="Vac")
 
-        for i in range(len(modes)):
-            self.manual_shape[i] = 1
+        self.manual_shape = (1,) * len(modes)
 
     def __getitem__(self, idx: int | Collection[int]) -> Vacuum:
         idx = (idx,) if isinstance(idx, int) else idx

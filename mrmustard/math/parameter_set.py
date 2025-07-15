@@ -60,25 +60,18 @@ class ParameterSet:
         self._variables: dict[str, Variable] = {}
 
     @property
-    def constants(self) -> dict[str, Constant]:
-        r"""
-        The constant parameters in this parameter set.
-        """
-        return self._constants
-
-    @property
-    def variables(self) -> dict[str, Variable]:
-        r"""
-        The variable parameters in this parameter set.
-        """
-        return self._variables
-
-    @property
     def all_parameters(self) -> dict[str, Constant | Variable]:
         r"""
         The constant and variable parameters in this parameter set.
         """
         return self.constants | self.variables
+
+    @property
+    def constants(self) -> dict[str, Constant]:
+        r"""
+        The constant parameters in this parameter set.
+        """
+        return self._constants
 
     @property
     def names(self) -> Sequence[str]:
@@ -87,6 +80,13 @@ class ParameterSet:
         were added.
         """
         return self._names
+
+    @property
+    def variables(self) -> dict[str, Variable]:
+        r"""
+        The variable parameters in this parameter set.
+        """
+        return self._variables
 
     def add_parameter(self, parameter: Constant | Variable) -> None:
         r"""
@@ -160,6 +160,24 @@ class ParameterSet:
                 string = f"{name}"
             strings.append(string)
         return ", ".join(strings)
+
+    def __bool__(self) -> bool:
+        r"""
+        ``False`` if this parameter set is empty, ``True`` otherwise.
+        """
+        return bool(self._constants or self._variables)
+
+    def __eq__(self, other: object) -> bool:
+        r"""
+        Returns whether ``other`` is equivalent to this parameter set.
+        """
+        if not isinstance(other, ParameterSet):
+            return False
+        return (
+            self._names == other._names
+            and self._constants == other._constants
+            and self._variables == other._variables
+        )
 
     def __getitem__(self, items: int | Sequence[int]):
         r"""

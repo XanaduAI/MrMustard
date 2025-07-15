@@ -123,8 +123,6 @@ class PolyExpAnsatz(Ansatz):
 
         self.name = name
         self._simplified = False
-        self._fn = None
-        self._fn_kwargs = {}
         self._lin_sup = lin_sup
 
     @property
@@ -155,7 +153,7 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def batch_size(self) -> int:
-        return int(math.prod(self.batch_shape)) if self.batch_shape else 0
+        return math.prod(self.batch_shape) if self.batch_shape else 0
 
     @property
     def c(self) -> Batch[ComplexTensor]:
@@ -285,7 +283,7 @@ class PolyExpAnsatz(Ansatz):
         """
         ansatz = cls(None, None, None, None)
         ansatz._fn = fn
-        ansatz._fn_kwargs = kwargs
+        ansatz._kwargs = kwargs
         return ansatz
 
     def contract(
@@ -678,7 +676,7 @@ class PolyExpAnsatz(Ansatz):
         """
         if self._should_regenerate():
             params = {}
-            for name, param in self._fn_kwargs.items():
+            for name, param in self._kwargs.items():
                 try:
                     params[name] = param.value
                 except AttributeError:
@@ -808,7 +806,7 @@ class PolyExpAnsatz(Ansatz):
             self._A is None
             or self._b is None
             or self._c is None
-            or Variable in {type(param) for param in self._fn_kwargs.values()}
+            or Variable in {type(param) for param in self._kwargs.values()}
         )
 
     def __add__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
@@ -1005,8 +1003,8 @@ class PolyExpAnsatz(Ansatz):
         if self._fn is not None:
             fn_name = getattr(self._fn, "__name__", str(self._fn))
             repr_str.append(f"  Generated from: {fn_name}")
-            if self._fn_kwargs:
-                param_str = ", ".join(f"{k}={v}" for k, v in self._fn_kwargs.items())
+            if self._kwargs:
+                param_str = ", ".join(f"{k}={v}" for k, v in self._kwargs.items())
                 repr_str.append(f"  Parameters: {param_str}")
 
         return "\n".join(repr_str)
