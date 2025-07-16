@@ -85,7 +85,7 @@ class Attenuator(Channel):
         transmissivity_trainable: bool = False,
         transmissivity_bounds: tuple[float | None, float | None] = (0.0, 1.0),
     ):
-        mode = (mode,) if isinstance(mode, int) else mode
+        mode = (mode,) if isinstance(mode, int | math.int64) else mode
         super().__init__(name="Att~")
         self.parameters.add_parameter(
             make_parameter(

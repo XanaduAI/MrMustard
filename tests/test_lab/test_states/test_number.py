@@ -39,7 +39,7 @@ class TestNumber:
         assert state.modes == (modes,)
         assert all(isinstance(x, int) for x in state.manual_shape)
 
-        state_math_n = Number(modes, math.cast(n, math.int64), cutoffs)
+        state_math_n = Number(math.int64(modes), n, cutoffs)
         assert all(isinstance(x, int) for x in state_math_n.manual_shape)
 
         batched_number = Number(modes, [n] * 3, cutoffs)

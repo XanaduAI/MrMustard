@@ -65,7 +65,7 @@ class SqueezedVacuum(Ket):
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        mode = (mode,) if isinstance(mode, int) else mode
+        mode = (mode,) if isinstance(mode, int | math.int64) else mode
         super().__init__(name="SqueezedVacuum")
         self.parameters.add_parameter(
             make_parameter(
