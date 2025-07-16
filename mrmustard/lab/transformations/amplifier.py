@@ -85,7 +85,7 @@ class Amplifier(Channel):
         gain_trainable: bool = False,
         gain_bounds: tuple[float | None, float | None] = (1.0, None),
     ):
-        mode = (mode,) if isinstance(mode, int | math.int64) else mode
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Amp~")
         self.parameters.add_parameter(
             make_parameter(

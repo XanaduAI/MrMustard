@@ -81,7 +81,7 @@ class DisplacedSqueezed(Ket):
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        mode = (mode,) if isinstance(mode, int | math.int64) else mode
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="DisplacedSqueezed")
         self.parameters.add_parameter(
             make_parameter(

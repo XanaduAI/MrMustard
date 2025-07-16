@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
@@ -62,7 +61,7 @@ class Thermal(DM):
         nbar_trainable: bool = False,
         nbar_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
-        mode = (mode,) if isinstance(mode, int | math.int64) else mode
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Thermal")
         self.parameters.add_parameter(
             make_parameter(

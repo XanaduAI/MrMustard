@@ -60,7 +60,7 @@ class Pgate(Unitary):
         shearing_trainable: bool = False,
         shearing_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        mode = (mode,) if isinstance(mode, int | math.int64) else mode
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Pgate")
         self.parameters.add_parameter(
             make_parameter(
