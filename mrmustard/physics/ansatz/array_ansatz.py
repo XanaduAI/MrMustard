@@ -79,6 +79,8 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def batch_shape(self) -> tuple[int, ...]:
+        if self._array is None:
+            self._generate_ansatz()
         return self._batch_shape
 
     @property
