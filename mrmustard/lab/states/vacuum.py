@@ -18,8 +18,6 @@ The class repesenting a vacuum state.
 
 from __future__ import annotations
 
-from collections.abc import Collection
-
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
@@ -70,12 +68,6 @@ class Vacuum(Ket):
         super().__init__(ansatz, wires, name="Vac")
 
         self.manual_shape = (1,) * len(modes)
-
-    def __getitem__(self, idx: int | Collection[int]) -> Vacuum:
-        idx = (idx,) if isinstance(idx, int) else idx
-        if not set(idx).issubset(set(self.modes)):
-            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
-        return Vacuum(idx)
 
     # TODO: investigate this workaround for jax
     def _tree_flatten(self):
