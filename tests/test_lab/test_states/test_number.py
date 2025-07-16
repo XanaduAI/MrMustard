@@ -39,6 +39,12 @@ class TestNumber:
         assert state.modes == (modes,)
         assert all(isinstance(x, int) for x in state.manual_shape)
 
+        state_math_n = Number(modes, math.cast(n, math.int64), cutoffs)
+        assert all(isinstance(x, int) for x in state_math_n.manual_shape)
+
+        batched_number = Number(modes, [n] * 3, cutoffs)
+        assert batched_number.ansatz.batch_shape == (3,)
+
     def test_auto_shape(self):
         # meant to cover the case where we have derived variables
         n = 2
