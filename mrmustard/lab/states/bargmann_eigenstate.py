@@ -67,7 +67,7 @@ class BargmannEigenstate(Ket):
         alpha_trainable: bool = False,
         alpha_bounds: tuple[complex | None, complex | None] = (None, None),
     ):
-        mode = (mode,) if isinstance(mode, int) else mode
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="BargmannEigenstate")
 
         self.parameters.add_parameter(

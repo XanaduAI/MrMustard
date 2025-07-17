@@ -88,7 +88,7 @@ class Dgate(Unitary):
         x_bounds: tuple[float | None, float | None] = (None, None),
         y_bounds: tuple[float | None, float | None] = (None, None),
     ) -> None:
-        mode = (mode,) if isinstance(mode, int) else mode
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Dgate")
         self.parameters.add_parameter(
             make_parameter(x_trainable, x, "x", x_bounds, dtype=math.float64)

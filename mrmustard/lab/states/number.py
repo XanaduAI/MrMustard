@@ -68,7 +68,7 @@ class Number(Ket):
         n: int | Sequence[int],
         cutoff: int | None = None,
     ) -> None:
-        mode = (mode,) if isinstance(mode, int) else mode
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="N")
         self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=math.int64))
         cutoff = int(math.max(self.parameters.n.value) + 1) if cutoff is None else cutoff

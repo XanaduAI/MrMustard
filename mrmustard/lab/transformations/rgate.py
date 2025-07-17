@@ -59,7 +59,7 @@ class Rgate(Unitary):
         theta_trainable: bool = False,
         theta_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
-        mode = (mode,) if isinstance(mode, int) else mode
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Rgate")
         self.parameters.add_parameter(
             make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=math.float64)

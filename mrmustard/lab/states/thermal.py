@@ -61,7 +61,7 @@ class Thermal(DM):
         nbar_trainable: bool = False,
         nbar_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
-        mode = (mode,) if isinstance(mode, int) else mode
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Thermal")
         self.parameters.add_parameter(
             make_parameter(

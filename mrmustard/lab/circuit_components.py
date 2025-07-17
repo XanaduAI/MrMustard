@@ -340,7 +340,10 @@ class CircuitComponent:
             ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
             ansatz = locate(ansatz_cls).from_dict(data)
             return cls._from_attributes(ansatz, Wires(*tuple(set(m) for m in wires)), name=name)
-
+        if "modes" in data:
+            data["modes"] = tuple(data["modes"])
+        elif "mode" in data:
+            data["mode"] = tuple(data["mode"])
         return cls(**data)
 
     def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
