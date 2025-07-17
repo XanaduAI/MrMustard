@@ -176,12 +176,6 @@ class OptimizerJax:
         r"""
         The core optimization loop.
         """
-
-        def get_pytree_of_optimizer_labels(node):
-            if isinstance(node, Variable):
-                return str(node.update_fn.__name__)
-            return None
-
         by_optimizing = tuple(by_optimizing)
         euclidean_optim = (
             euclidean_optim(learning_rate=self.euclidean_lr)
@@ -190,7 +184,9 @@ class OptimizerJax:
         )
 
         labels_pytree = jax.tree_util.tree_map(
-            get_pytree_of_optimizer_labels, by_optimizing, is_leaf=lambda n: isinstance(n, Variable)
+            lambda node: str(node.update_fn.__name__),
+            by_optimizing,
+            is_leaf=lambda n: isinstance(n, Variable),
         )
 
         optim = optax.multi_transform(
