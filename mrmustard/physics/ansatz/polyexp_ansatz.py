@@ -287,7 +287,7 @@ class PolyExpAnsatz(Ansatz):
         return ansatz
 
     @classmethod
-    def _tree_unflatten(cls, aux_data, children):
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
         ret = cls.__new__(cls)
         (ret._kwargs,) = children
         (

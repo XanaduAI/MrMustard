@@ -207,7 +207,7 @@ class Variable:
         self._value = self._get_value(value, self.bounds, self.name)
 
     @classmethod
-    def _tree_unflatten(cls, aux_data, children):
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
         ret = cls.__new__(cls)
         ret._value = children[0]
         ret._name, ret._bounds, ret._update_fn = aux_data
@@ -295,7 +295,7 @@ class Variable:
             return math.new_variable(value, bounds, name, value.dtype)
         return math.new_variable(value, bounds, name, dtype)
 
-    def _tree_flatten(self):
+    def _tree_flatten(self):  # pragma: no cover
         children = (self.value,)
         aux_data = (self.name, self.bounds, self.update_fn)
         return (children, aux_data)
