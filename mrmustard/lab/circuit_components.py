@@ -80,13 +80,13 @@ class CircuitComponent:
                 w.repr = ReprEnum.FOCK
                 w.fock_cutoff = ansatz.core_shape[w.index]
 
-    def _tree_flatten(self):
+    def _tree_flatten(self):  # pragma: no cover
         children = (self.parameters, self.ansatz)
         aux_data = (self.wires, self.name)
         return (children, aux_data)
 
     @classmethod
-    def _tree_unflatten(cls, aux_data, children):
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
         ret = cls.__new__(cls)
         ret._parameters, ret._ansatz = children
         ret._wires, ret._name = aux_data

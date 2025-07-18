@@ -78,12 +78,12 @@ class Vacuum(Ket):
         return Vacuum(idx)
 
     # TODO: investigate this workaround for jax
-    def _tree_flatten(self):
+    def _tree_flatten(self):  # pragma: no cover
         children = ()
         aux_data = (self.modes,)
         return (children, aux_data)
 
     @classmethod
-    def _tree_unflatten(cls, aux_data, children):
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
         (modes,) = aux_data
         return cls(modes)

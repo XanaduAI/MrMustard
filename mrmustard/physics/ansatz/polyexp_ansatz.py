@@ -125,7 +125,7 @@ class PolyExpAnsatz(Ansatz):
         self._simplified = False
         self._lin_sup = lin_sup
 
-    def _tree_flatten(self):
+    def _tree_flatten(self):  # pragma: no cover
         children = (self._kwargs,)
         aux_data = (
             self._A,
