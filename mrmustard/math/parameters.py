@@ -123,22 +123,22 @@ class Constant:
         """
         return self._value
 
-    def __mul__(self, value):
-        return type(self)(value=value * self.value, name=self.name)
-
-    def __rmul__(self, value):
-        return type(self)(value=self.value * value, name=self.name)
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        ret._value, ret._name = aux_data
+        return ret
 
     def _tree_flatten(self):  # pragma: no cover
         children = ()
         aux_data = (self.value, self.name)
         return (children, aux_data)
 
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
-        ret = cls.__new__(cls)
-        ret._value, ret._name = aux_data
-        return ret
+    def __mul__(self, value):
+        return type(self)(value=value * self.value, name=self.name)
+
+    def __rmul__(self, value):
+        return type(self)(value=self.value * value, name=self.name)
 
 
 class Variable:
@@ -169,16 +169,6 @@ class Variable:
         self._name = name
         self._bounds = bounds
         self._update_fn = update_fn
-
-    def _get_value(self, value, bounds, name, dtype=None):
-        r"""
-        Returns a variable from given ``value``, ``bounds``, and ``name``.
-        """
-        if math.from_backend(value) and math.is_trainable(value):
-            return value
-        if hasattr(value, "dtype"):
-            return math.new_variable(value, bounds, name, value.dtype)
-        return math.new_variable(value, bounds, name, dtype)
 
     @property
     def bounds(self) -> tuple[float | None, float | None]:
@@ -215,6 +205,13 @@ class Variable:
     @value.setter
     def value(self, value):
         self._value = self._get_value(value, self.bounds, self.name)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        ret = cls.__new__(cls)
+        ret._value = children[0]
+        ret._name, ret._bounds, ret._update_fn = aux_data
+        return ret
 
     @staticmethod
     def orthogonal(
@@ -288,6 +285,21 @@ class Variable:
         value = value or math.random_unitary(N)
         return Variable(value, name, bounds, update_unitary)
 
+    def _get_value(self, value, bounds, name, dtype=None):
+        r"""
+        Returns a variable from given ``value``, ``bounds``, and ``name``.
+        """
+        if math.from_backend(value) and math.is_trainable(value):
+            return value
+        if hasattr(value, "dtype"):
+            return math.new_variable(value, bounds, name, value.dtype)
+        return math.new_variable(value, bounds, name, dtype)
+
+    def _tree_flatten(self):
+        children = (self.value,)
+        aux_data = (self.name, self.bounds, self.update_fn)
+        return (children, aux_data)
+
     def __mul__(self, value):
         return type(self)(
             value=value * self.value,
@@ -303,15 +315,3 @@ class Variable:
             bounds=self.bounds,
             update_fn=self.update_fn,
         )
-
-    def _tree_flatten(self):
-        children = (self.value,)
-        aux_data = (self.name, self.bounds, self.update_fn)
-        return (children, aux_data)
-
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):
-        ret = cls.__new__(cls)
-        ret._value = children[0]
-        ret._name, ret._bounds, ret._update_fn = aux_data
-        return ret

@@ -71,19 +71,18 @@ class Vacuum(Ket):
 
         self.manual_shape = (1,) * len(modes)
 
-    def __getitem__(self, idx: int | Collection[int]) -> Vacuum:
-        idx = (idx,) if isinstance(idx, int) else idx
-        if not set(idx).issubset(set(self.modes)):
-            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
-        return Vacuum(idx)
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        (modes,) = aux_data
+        return cls(modes)
 
-    # TODO: investigate this workaround for jax
     def _tree_flatten(self):  # pragma: no cover
         children = ()
         aux_data = (self.modes,)
         return (children, aux_data)
 
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
-        (modes,) = aux_data
-        return cls(modes)
+    def __getitem__(self, idx: int | Collection[int]) -> Vacuum:
+        idx = (idx,) if isinstance(idx, int) else idx
+        if not set(idx).issubset(set(self.modes)):
+            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
+        return Vacuum(idx)

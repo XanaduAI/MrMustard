@@ -125,36 +125,6 @@ class PolyExpAnsatz(Ansatz):
         self._simplified = False
         self._lin_sup = lin_sup
 
-    def _tree_flatten(self):  # pragma: no cover
-        children = (self._kwargs,)
-        aux_data = (
-            self._A,
-            self._b,
-            self._c,
-            self._batch_shape,
-            self._lin_sup,
-            self._fn,
-            self._simplified,
-            self.name,
-        )
-        return (children, aux_data)
-
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):
-        ret = cls.__new__(cls)
-        (ret._kwargs,) = children
-        (
-            ret._A,
-            ret._b,
-            ret._c,
-            ret._batch_shape,
-            ret._lin_sup,
-            ret._fn,
-            ret._simplified,
-            ret.name,
-        ) = aux_data
-        return ret
-
     @property
     def A(self) -> Batch[ComplexMatrix]:
         r"""
@@ -315,6 +285,22 @@ class PolyExpAnsatz(Ansatz):
         ansatz._fn = fn
         ansatz._kwargs = kwargs
         return ansatz
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        ret = cls.__new__(cls)
+        (ret._kwargs,) = children
+        (
+            ret._A,
+            ret._b,
+            ret._c,
+            ret._batch_shape,
+            ret._lin_sup,
+            ret._fn,
+            ret._simplified,
+            ret.name,
+        ) = aux_data
+        return ret
 
     def contract(
         self,
@@ -838,6 +824,20 @@ class PolyExpAnsatz(Ansatz):
             or self._c is None
             or Variable in {type(param) for param in self._kwargs.values()}
         )
+
+    def _tree_flatten(self):  # pragma: no cover
+        children = (self._kwargs,)
+        aux_data = (
+            self._A,
+            self._b,
+            self._c,
+            self._batch_shape,
+            self._lin_sup,
+            self._fn,
+            self._simplified,
+            self.name,
+        )
+        return (children, aux_data)
 
     def __add__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
