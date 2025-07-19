@@ -18,8 +18,11 @@ The class representing an operation that changes Bargmann into phase space.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from mrmustard.physics import triples
 from mrmustard.physics.wires import Wires
+from mrmustard.utils.typing import ComplexTensor
 
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
@@ -62,3 +65,6 @@ class BtoPS(Map):
         )
         for w in self.wires.output.sorted_wires:
             w.repr = ReprEnum.PHASESPACE
+
+    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
+        raise NotImplementedError("BtoPS does not have a Fock representation.")

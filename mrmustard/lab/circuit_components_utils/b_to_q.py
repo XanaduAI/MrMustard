@@ -22,6 +22,7 @@ from collections.abc import Sequence
 
 from mrmustard.physics import triples
 from mrmustard.physics.wires import Wires
+from mrmustard.utils.typing import ComplexTensor
 
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
@@ -83,3 +84,6 @@ class BtoQ(Operation):
         ret._ansatz = super().inverse().ansatz
         ret._wires = ret.wires.dual
         return ret
+
+    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
+        raise NotImplementedError("BtoQ does not have a Fock representation.")
