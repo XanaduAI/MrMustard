@@ -555,6 +555,10 @@ class TestCircuitComponent:
         back = Ket.from_quadrature((0,), ket.quadrature_triple())
         assert ket == back
 
+        ket_fock = Number(0, n=1)
+        back2 = Ket.from_quadrature((0,), ket_fock.quadrature_triple())
+        assert ket_fock.to_bargmann() == back2
+
     def test_quadrature_channel(self):
         C = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2) >> Attenuator(0, 0.9)
         back = Channel.from_quadrature((0,), (0,), C.quadrature_triple())
