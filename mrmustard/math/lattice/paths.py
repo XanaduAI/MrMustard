@@ -52,6 +52,8 @@ def _binomial_subspace_basis(
             _binomial_subspace_basis(cutoffs, weight - photons, mode + 1, basis_element, basis)
 
 
+# Note: we do not cache this and ``_binomial_subspace_basis`` as caching recursive numba functions
+# has known issues. See https://github.com/numba/numba/issues/6061
 @njit
 def binomial_subspace_basis(cutoffs: tuple[int, ...], weight: int):
     r"""Returns all indices of a tensor with given weight.

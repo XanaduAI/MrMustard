@@ -39,8 +39,17 @@ class TestNumber:
         assert state.modes == (modes,)
         assert all(isinstance(x, int) for x in state.manual_shape)
 
+        batched_number = Number(modes, [n] * 3, cutoffs)
+        assert batched_number.ansatz.batch_shape == (3,)
+
+    @pytest.mark.requires_backend("numpy")
+    def test_init_with_np_int(self):
+        state = Number(math.int64(0), n=1)
+        assert state.name == "N"
+        assert state.modes == (0,)
+        assert all(isinstance(x, int) for x in state.manual_shape)
+
     def test_auto_shape(self):
-        # meant to cover the case where we have derived variables
         n = 2
         state = Number(0, n=n).to_bargmann().dm()
         assert state.auto_shape() == (n + 1, n + 1)
