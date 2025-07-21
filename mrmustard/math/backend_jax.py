@@ -28,7 +28,7 @@ from opt_einsum import contract
 from platformdirs import user_cache_dir
 
 from mrmustard.lab import Circuit, CircuitComponent
-from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.ansatz import Ansatz
 
 from .backend_base import BackendBase
 from .jax_vjps import (
@@ -698,6 +698,8 @@ class BackendJax(BackendBase):
 
 
 # defining custom pytree nodes
+for cls in get_all_subclasses(Ansatz):
+    jax.tree_util.register_pytree_node(cls, cls._tree_flatten, cls._tree_unflatten)
 jax.tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
 jax.tree_util.register_pytree_node(Circuit, Circuit._tree_flatten, Circuit._tree_unflatten)
 jax.tree_util.register_pytree_node(
@@ -713,10 +715,5 @@ jax.tree_util.register_pytree_node(
     ParameterSet,
     ParameterSet._tree_flatten,
     ParameterSet._tree_unflatten,
-)
-jax.tree_util.register_pytree_node(
-    PolyExpAnsatz,
-    PolyExpAnsatz._tree_flatten,
-    PolyExpAnsatz._tree_unflatten,
 )
 jax.tree_util.register_pytree_node(Variable, Variable._tree_flatten, Variable._tree_unflatten)

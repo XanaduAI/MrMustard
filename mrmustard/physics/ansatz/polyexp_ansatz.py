@@ -113,17 +113,18 @@ class PolyExpAnsatz(Ansatz):
         lin_sup: bool = False,
     ):
         super().__init__()
+        self.name = name
+        self._simplified = False
+        self._lin_sup = lin_sup
+
         self._A = math.astensor(A) if A is not None else None
         self._b = math.astensor(b) if b is not None else None
         self._c = math.astensor(c) if c is not None else None
 
         verify_batch_triple(self._A, self._b, self._c)
 
-        self._batch_shape = tuple(self._A.shape[:-2]) if A is not None else ()
-
-        self.name = name
-        self._simplified = False
-        self._lin_sup = lin_sup
+        if A is not None:
+            self._batch_shape = tuple(self._A.shape[:-2])
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -291,12 +292,12 @@ class PolyExpAnsatz(Ansatz):
         ret = cls.__new__(cls)
         (ret._kwargs,) = children
         (
-            ret._A,
-            ret._b,
-            ret._c,
             ret._batch_shape,
             ret._lin_sup,
             ret._fn,
+            ret._A,
+            ret._b,
+            ret._c,
             ret._simplified,
             ret.name,
         ) = aux_data
@@ -826,17 +827,8 @@ class PolyExpAnsatz(Ansatz):
         )
 
     def _tree_flatten(self):  # pragma: no cover
-        children = (self._kwargs,)
-        aux_data = (
-            self._A,
-            self._b,
-            self._c,
-            self._batch_shape,
-            self._lin_sup,
-            self._fn,
-            self._simplified,
-            self.name,
-        )
+        children, aux_data = super()._tree_flatten()
+        aux_data += (self._A, self._b, self._c, self._simplified, self.name)
         return (children, aux_data)
 
     def __add__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
