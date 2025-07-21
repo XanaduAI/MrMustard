@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from functools import partial
+from typing import Any
 
 import equinox as eqx
 import jax
@@ -292,8 +293,14 @@ class BackendJax(BackendBase):
     def inv(self, tensor: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.inv(tensor)
 
+    def iscomplexobj(self, x: Any) -> bool:
+        return jnp.iscomplexobj(x)
+
     def isnan(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.isnan(array)
+
+    def issubdtype(self, arg1, arg2) -> bool:
+        return jnp.issubdtype(arg1, arg2)
 
     def is_trainable(self, tensor: jnp.ndarray) -> bool:
         return False

@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from typing import Any
 
 import numpy as np
 from opt_einsum import contract
@@ -178,8 +179,14 @@ class BackendNumpy(BackendBase):
     def inv(self, tensor: np.ndarray) -> np.ndarray:
         return np.linalg.inv(tensor)
 
+    def iscomplexobj(self, x: Any) -> bool:
+        return np.iscomplexobj(x)
+
     def isnan(self, array: np.ndarray) -> np.ndarray:
         return np.isnan(array)
+
+    def issubdtype(self, arg1, arg2) -> bool:
+        return np.issubdtype(arg1, arg2)
 
     def is_trainable(self, tensor: np.ndarray) -> bool:
         return False

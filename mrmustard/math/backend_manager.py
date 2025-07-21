@@ -853,6 +853,18 @@ class BackendManager:
         """
         return self._apply("inv", (tensor,))
 
+    def iscomplexobj(self, x: Any) -> bool:
+        r"""
+        Whether the given object is complex.
+
+        Args:
+            x: The object to check.
+
+        Returns:
+            Whether the given array is a complex object.
+        """
+        return self._apply("iscomplexobj", (x,))
+
     def isnan(self, array: Tensor) -> Tensor:
         r"""Whether the given array contains any NaN values.
 
@@ -863,6 +875,19 @@ class BackendManager:
             Whether the given array contains any NaN values.
         """
         return self._apply("isnan", (array,))
+
+    def issubdtype(self, arg1, arg2) -> bool:
+        r"""
+        Whether the ``arg1`` is a typecode lower/equal in type hierarchy to ``arg2``.
+
+        Args:
+            arg1: The first argument.
+            arg2: The second argument.
+
+        Returns:
+            Whether arg1 is a subdtype of arg2.
+        """
+        return self._apply("issubdtype", (arg1, arg2))
 
     def is_trainable(self, tensor: Tensor) -> bool:
         r"""Whether the given tensor is trainable.

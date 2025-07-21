@@ -19,6 +19,7 @@ from __future__ import annotations
 import os
 from collections.abc import Callable, Sequence
 from importlib import metadata
+from typing import Any
 
 import numpy as np
 from opt_einsum import contract
@@ -209,8 +210,14 @@ class BackendTensorflow(BackendBase):
     def inv(self, tensor: tf.Tensor) -> tf.Tensor:
         return tf.linalg.inv(tensor)
 
+    def iscomplexobj(self, x: Any) -> bool:
+        return tf.experimental.numpy.iscomplexobj(x)
+
     def isnan(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.is_nan(array)
+
+    def issubdtype(self, arg1, arg2) -> bool:
+        return tf.experimental.numpy.issubdtype(arg1, arg2)
 
     def is_trainable(self, tensor: tf.Tensor) -> bool:
         return isinstance(tensor, tf.Variable)

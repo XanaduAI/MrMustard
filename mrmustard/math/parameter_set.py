@@ -173,6 +173,74 @@ class ParameterSet:
             strings.append(string)
         return ", ".join(strings)
 
+    def _format_bounds(self, param: Constant | Variable) -> str:
+        r"""Format parameter bounds string."""
+        if not isinstance(param, Variable):
+            return "—"
+
+        bounds = param.bounds
+        if bounds == (None, None):
+            return "(-∞, +∞)"
+
+        low = "-∞" if bounds[0] is None else f"{bounds[0]:.3g}"
+        high = "+∞" if bounds[1] is None else f"{bounds[1]:.3g}"
+        return f"({low}, {high})"
+
+    def _format_dtype(self, param: Constant | Variable) -> str:
+        r"""Format parameter dtype string."""
+        dtype_str = str(param.value.dtype)
+        common_dtypes = {"float64", "float32", "complex128", "complex64"}
+        for dtype in common_dtypes:
+            if dtype in dtype_str:
+                return dtype
+        return dtype_str
+
+    def _format_value(self, param: Constant | Variable) -> tuple[str, str]:
+        r"""Format parameter value and shape strings."""
+        value = param.value
+
+        # Handle arrays
+        if hasattr(param.value, "shape") and param.value.shape != ():
+            shape_str = str(param.value.shape)
+
+            # Check if values should be formatted as integers
+            is_integer_like = np.issubdtype(value.dtype, np.integer) or np.all(
+                np.equal(np.mod(value, 1), 0),
+            )
+
+            flat = value.flat
+            if len(flat) <= 3:
+                # Small arrays: preserve structure, format integers appropriately
+                if is_integer_like:
+                    # Simple approach: convert string representation
+                    value_str = str(value.astype(int).tolist())
+                else:
+                    value_str = str(value.tolist())
+            else:
+                # Large arrays: show preview with ellipsis
+                if is_integer_like:
+                    preview = [str(int(x)) for x in flat[:3]]
+                else:
+                    preview = [f"{x:.3g}" for x in flat[:3]]
+                value_str = f"[{', '.join(preview)}, ...]"
+            return value_str, shape_str
+
+        # Handle scalars
+        if math.issubdtype(value.dtype, math.int64):
+            value_str = str(int(value))
+        elif math.iscomplexobj(value) or math.issubdtype(value.dtype, math.complex128):
+            # Format complex numbers with g format for both real and imaginary parts
+            real_part = f"{value.real:.6g}"
+            imag_part = f"{value.imag:.6g}"
+            if value.imag >= 0:
+                value_str = f"{real_part}+{imag_part}j"
+            else:
+                value_str = f"{real_part}{imag_part}j"
+        else:
+            value_str = f"{float(value):.6g}"
+
+        return value_str, "scalar"
+
     def _tree_flatten(self):  # pragma: no cover
         children = (self.variables,)
         aux_data = (self.names, self.constants)
@@ -254,74 +322,6 @@ class ParameterSet:
                 ret.add_parameter(var)
 
         return ret
-
-    def _format_value(self, param: Constant | Variable) -> tuple[str, str]:
-        r"""Format parameter value and shape strings."""
-        value = math.asnumpy(param.value)
-
-        # Handle arrays
-        if hasattr(param.value, "shape") and param.value.shape != ():
-            shape_str = str(param.value.shape)
-
-            # Check if values should be formatted as integers
-            is_integer_like = np.issubdtype(value.dtype, np.integer) or np.all(
-                np.equal(np.mod(value, 1), 0),
-            )
-
-            flat = value.flat
-            if len(flat) <= 3:
-                # Small arrays: preserve structure, format integers appropriately
-                if is_integer_like:
-                    # Simple approach: convert string representation
-                    value_str = str(value.astype(int).tolist())
-                else:
-                    value_str = str(value.tolist())
-            else:
-                # Large arrays: show preview with ellipsis
-                if is_integer_like:
-                    preview = [str(int(x)) for x in flat[:3]]
-                else:
-                    preview = [f"{x:.3g}" for x in flat[:3]]
-                value_str = f"[{', '.join(preview)}, ...]"
-            return value_str, shape_str
-
-        # Handle scalars
-        if np.issubdtype(value.dtype, np.integer):
-            value_str = str(int(value))
-        elif np.iscomplexobj(value) or np.issubdtype(value.dtype, np.complexfloating):
-            # Format complex numbers with g format for both real and imaginary parts
-            real_part = f"{value.real:.6g}"
-            imag_part = f"{value.imag:.6g}"
-            if value.imag >= 0:
-                value_str = f"{real_part}+{imag_part}j"
-            else:
-                value_str = f"{real_part}{imag_part}j"
-        else:
-            value_str = f"{float(value):.6g}"
-
-        return value_str, "scalar"
-
-    def _format_dtype(self, param: Constant | Variable) -> str:
-        r"""Format parameter dtype string."""
-        dtype_str = str(param.value.dtype)
-        common_dtypes = {"float64", "float32", "complex128", "complex64"}
-        for dtype in common_dtypes:
-            if dtype in dtype_str:
-                return dtype
-        return dtype_str
-
-    def _format_bounds(self, param: Constant | Variable) -> str:
-        r"""Format parameter bounds string."""
-        if not isinstance(param, Variable):
-            return "—"
-
-        bounds = param.bounds
-        if bounds == (None, None):
-            return "(-∞, +∞)"
-
-        low = "-∞" if bounds[0] is None else f"{bounds[0]:.3g}"
-        high = "+∞" if bounds[1] is None else f"{bounds[1]:.3g}"
-        return f"({low}, {high})"
 
     def __repr__(self) -> str:
         r"""

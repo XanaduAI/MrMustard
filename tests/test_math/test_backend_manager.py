@@ -433,6 +433,14 @@ class TestBackendManager:
         inv = math.inv(arr)
         assert math.allclose(math.asnumpy(arr @ inv), np.eye(2))
 
+    def test_iscomplexobj(self):
+        r"""
+        Tests the ``iscomplexobj`` method.
+        """
+        assert math.iscomplexobj(1 + 2j)
+        assert not math.iscomplexobj(1)
+        assert not math.iscomplexobj(np.array([1, 2, 3]))
+
     def test_isnan(self):
         r"""
         Tests the ``isnan`` method.
@@ -442,6 +450,14 @@ class TestBackendManager:
 
         arr_nan = np.array([1.0, 2.0, np.nan, 4.0])
         assert math.any(math.isnan(arr_nan))
+
+    def test_issubdtype(self):
+        r"""
+        Tests the ``issubdtype`` method.
+        """
+        ints = np.array([1, 2, 3], dtype=np.int32)
+        assert math.issubdtype(ints.dtype, np.integer)
+        assert not math.issubdtype(ints.dtype, np.floating)
 
     def test_is_trainable(self):
         r"""
