@@ -118,7 +118,7 @@ Format and code style
 ---------------------
 
 Contributions are checked for format alignment and linting in the pipeline.
-This process is typically automated via ``pre-commit`
+This process is typically automated via `pre-commit`
 
 .. code-block:: bash
 
