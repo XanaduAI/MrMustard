@@ -336,21 +336,3 @@ class ParameterSet:
             console = Console(file=string_buffer, width=100, legacy_windows=False)
             console.print(table)
             return string_buffer.getvalue().strip()
-
-    def __bool__(self) -> bool:
-        r"""
-        ``False`` if this parameter set is empty, ``True`` otherwise.
-        """
-        return bool(self._constants or self._variables)
-
-    def __eq__(self, other: object) -> bool:
-        r"""
-        Returns whether ``other`` is equivalent to this parameter set.
-        """
-        if not isinstance(other, ParameterSet):
-            return False
-        return (
-            self._names == other._names
-            and self._constants == other._constants
-            and self._variables == other._variables
-        )
