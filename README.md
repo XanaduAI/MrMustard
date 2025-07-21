@@ -49,7 +49,7 @@ both_modes[0]
 
 <img width="571" alt="Screen Shot 2021-12-06 at 1 31 17 PM" src="https://user-images.githubusercontent.com/8944955/144902008-8d26d59c-8600-4391-9144-ffcc1b2215c2.png">
 
-# Wigner function of the projected state
+### Wigner function of the projected state
 
 ```python
 both_modes >> Number(mode=0, n=3).dual
@@ -57,7 +57,7 @@ both_modes >> Number(mode=0, n=3).dual
 
 <img width="571" alt="Screen Shot 2021-12-06 at 1 31 17 PM" src="https://user-images.githubusercontent.com/8944955/144902008-8d26d59c-8600-4391-9144-ffcc1b2215c2.png">
 
-# Fock amplitudes of the projected state (exact down to machine precision)
+### Fock amplitudes of the projected state (exact down to machine precision)
 
 ```python
 both_modes.fock_amplitudes(shape=(100, 4))[:,3]
