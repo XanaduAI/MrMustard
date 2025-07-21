@@ -47,7 +47,7 @@ both_modes = cat_vertical >> cat_horizontal >> BSgate(modes=(0, 1), theta=np.pi/
 both_modes[0]
 ```
 
-<img width="571" alt="Screen Shot 2021-12-06 at 1 31 17 PM" src="https://user-images.githubusercontent.com/8944955/144902008-8d26d59c-8600-4391-9144-ffcc1b2215c2.png">
+<img width="571" alt="Wigner function of the marginal" src="https://github.com/user-attachments/assets/85477eef-abd3-4fe3-a00f-c0a6b1dc0260" />
 
 ### Wigner function of the projected state
 
@@ -55,7 +55,8 @@ both_modes[0]
 both_modes >> Number(mode=0, n=3).dual
 ```
 
-<img width="571" alt="Screen Shot 2021-12-06 at 1 31 17 PM" src="https://user-images.githubusercontent.com/8944955/144902008-8d26d59c-8600-4391-9144-ffcc1b2215c2.png">
+<img width="571" height="502" alt="Wigner function of the projected state" src="https://github.com/user-attachments/assets/1f4367d2-1dbd-4088-baed-d66e294b554b" />
+
 
 ### Fock amplitudes of the projected state (exact down to machine precision)
 
