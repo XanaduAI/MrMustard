@@ -6,7 +6,7 @@ Dependencies
 
 Mr Mustard requires the following to be installed:
 
-* `Python <http://python.org/>`_ >= 3.10, >3.13
+* `Python <http://python.org/>`_ >= 3.10, <3.13
 * `uv <https://github.com/astral-sh/uv>`_ >= 0.7.0
 
 Installation
