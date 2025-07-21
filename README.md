@@ -116,16 +116,15 @@ both_modes.fock_array(shape=(100, 4))[:,3]
 ```python
 from mrmustard.lab.states import Vacuum
 from mrmustard.lab.transformations import BSgate, Dgate, Sgate
-from mrmustard.lab.samplers import PNRSampler
+from mrmustard.lab.samplers import HomodyneSampler
 
 # Create and apply a circuit
 input_state = Vacuum(modes=(0, 1))
 output_state = input_state >> BSgate(modes=(0, 1)) >> Sgate(mode=0, r=0.5) >> Dgate(mode=1, x=0.5)
 
 # Measure the result
-pnr = PNRSampler(cutoff=100)
-samples = pnr.sample(state=output_state, n_samples=100)
-# ValueError: Probabilities sum to 0.9998666303494861 and not 1.0.
+homodyne = HomodyneSampler()
+samples = homodyne.sample(state=output_state, n_samples=100)
 ```
 
 ### Optimization
