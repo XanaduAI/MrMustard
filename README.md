@@ -2,7 +2,7 @@
 ![Logo](https://github.com/XanaduAI/MrMustard/blob/main/mm_dark.png#gh-dark-mode-only)
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
-[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/tests_numpy/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
+[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Numpy%20tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
 [![Python version](https://img.shields.io/pypi/pyversions/mrmustard.svg?style=popout-square)](https://pypi.org/project/MrMustard/)
 
 # MrMustard: A differentiable quantum simulator that speaks all representations
@@ -56,7 +56,6 @@ both_modes >> Number(mode=0, n=3).dual
 ```
 
 <img width="571" height="502" alt="Wigner function of the projected state" src="https://github.com/user-attachments/assets/1f4367d2-1dbd-4088-baed-d66e294b554b" />
-
 
 ### Fock amplitudes of the projected state (exact down to machine precision)
 
