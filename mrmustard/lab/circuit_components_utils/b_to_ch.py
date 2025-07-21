@@ -104,4 +104,4 @@ class BtoChar(Map):
         return ret
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
-        raise NotImplementedError("BtoChar does not have a Fock representation.")
+        raise NotImplementedError(f"{self.__class__.__name__} does not have a Fock representation.")
