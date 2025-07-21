@@ -14,11 +14,9 @@
 
 """Tests for the ``Number`` class."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 import pytest
 
-from mrmustard import math, settings
+from mrmustard import math
 from mrmustard.lab.states import Number
 from mrmustard.physics.fock_utils import fock_state
 from mrmustard.physics.wires import ReprEnum
@@ -41,19 +39,31 @@ class TestNumber:
         assert state.modes == (modes,)
         assert all(isinstance(x, int) for x in state.manual_shape)
 
-    def test_auto_shape(self):
-        # meant to cover the case where we have derived variables
-        state = Number(0, 2).to_bargmann().dm()
-        assert state.auto_shape() == (settings.DEFAULT_FOCK_SIZE, settings.DEFAULT_FOCK_SIZE)
+        batched_number = Number(modes, [n] * 3, cutoffs)
+        assert batched_number.ansatz.batch_shape == (3,)
 
+    @pytest.mark.requires_backend("numpy")
+    def test_init_with_np_int(self):
+        state = Number(math.int64(0), n=1)
+        assert state.name == "N"
+        assert state.modes == (0,)
+        assert all(isinstance(x, int) for x in state.manual_shape)
+
+    def test_auto_shape(self):
+        n = 2
+        state = Number(0, n=n).to_bargmann().dm()
+        assert state.auto_shape() == (n + 1, n + 1)
+
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (3, 4)])
     @pytest.mark.parametrize("n", [2, 3, 4])
-    @pytest.mark.parametrize("cutoffs", [None, 4, 5])
-    def test_representation(self, n, cutoffs):
-        rep1 = Number(0, n, cutoffs).ansatz.array
-        exp1 = fock_state(n, cutoffs)
+    @pytest.mark.parametrize("cutoff", [None, 7])
+    def test_representation(self, batch_shape, n, cutoff):
+        n = math.broadcast_to(n, batch_shape)
+        rep1 = Number(0, n, cutoff).ansatz.array
+        exp1 = fock_state(n, cutoff)
         assert math.allclose(rep1, exp1)
 
-        rep2 = Number(0, n, cutoffs).to_fock().ansatz.array
+        rep2 = Number(0, n, cutoff).to_fock().ansatz.array
         assert math.allclose(rep2, rep1)
 
     def test_scalar_bargmann(self):
@@ -68,5 +78,6 @@ class TestNumber:
     def test_wires(self):
         """Test that the wires are correct."""
         state = Number(0, n=1)
-        for w in state.representation.wires:
+        for w in state.wires.quantum:
             assert w.repr == ReprEnum.FOCK
+            assert w.fock_cutoff == state.ansatz.core_shape[w.index]

@@ -14,7 +14,6 @@
 
 """Tests for the density matrix."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
 import numpy as np
 import pytest
 
@@ -27,10 +26,8 @@ from mrmustard.lab import (
     Dgate,
     Ket,
     Number,
-    TraceOut,
     Vacuum,
 )
-from mrmustard.physics.representations import Representation
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wires import Wires
 
@@ -50,7 +47,7 @@ def coherent_state_quad(q, x, y, phi=0):
     )
 
 
-class TestDM:  # pylint:disable=too-many-public-methods
+class TestDM:
     r"""
     Tests for the ``DM`` class.
     """
@@ -60,20 +57,20 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_init(self, name, modes):
         state = DM.from_ansatz(modes, None, name)
 
-        assert state.name in ("DM0", "DM01", "DM2319") if not name else name
+        assert name if name else state.name in ("DM0", "DM01", "DM2319")
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
     def test_manual_shape(self):
         dm = Coherent(0, x=1).dm()
-        assert dm.manual_shape == [None, None]
-        dm.manual_shape[0] = 19
-        assert dm.manual_shape == [19, None]
+        assert dm.manual_shape == (None, None)
+        dm.manual_shape = (19, None)
+        assert dm.manual_shape == (19, None)
 
     def test_auto_shape(self):
         dm = Coherent(0, x=1).dm()
         assert dm.auto_shape() == (8, 8)
-        dm.manual_shape[0] = 1
+        dm.manual_shape = (1, 8)
         assert dm.auto_shape() == (1, 8)
 
         dm = Coherent(0, x=1).dm() >> Number(1, 10).dual
@@ -156,7 +153,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = DM.from_fock(
-            (modes,), array_in, "my_dm", batch_dims=state_in_fock.ansatz.batch_dims
+            (modes,),
+            array_in,
+            "my_dm",
+            batch_dims=state_in_fock.ansatz.batch_dims,
         )
         assert state_in_fock == state_out
 
@@ -181,7 +181,10 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = DM.from_fock(
-            (0,), array_in, "my_dm", batch_dims=lin_sup_state_batch.ansatz.batch_dims - 1
+            (0,),
+            array_in,
+            "my_dm",
+            batch_dims=lin_sup_state_batch.ansatz.batch_dims - 1,
         )
         assert state_in_fock == state_out
 
@@ -291,18 +294,21 @@ class TestDM:  # pylint:disable=too-many-public-methods
         q = np.linspace(-10, 10, 100)
         ket = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
         bra = math.kron(
-            np.conj(coherent_state_quad(q, x, y)), np.conj(coherent_state_quad(q, x, y))
+            np.conj(coherent_state_quad(q, x, y)),
+            np.conj(coherent_state_quad(q, x, y)),
         )
         assert math.allclose(state.quadrature(q, q, q, q), bra * ket)
         assert math.allclose(state.quadrature_distribution(q), math.abs(bra) ** 2)
 
         ket_slice = math.kron(coherent_state_quad(q + 1, x, y), coherent_state_quad(q + 1, x, y))
         bra_slice = math.kron(
-            np.conj(coherent_state_quad(q, x, y)), np.conj(coherent_state_quad(q, x, y))
+            np.conj(coherent_state_quad(q, x, y)),
+            np.conj(coherent_state_quad(q, x, y)),
         )
 
         assert math.allclose(
-            state.to_fock(40).quadrature(q, q, q + 1, q + 1), bra_slice * ket_slice
+            state.to_fock(40).quadrature(q, q, q + 1, q + 1),
+            bra_slice * ket_slice,
         )
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra_slice) ** 2)
 
@@ -313,7 +319,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
         q2 = np.linspace(-10, 10, 100)
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
         assert math.allclose(
-            state.quadrature_distribution(q1, q2).reshape(100, 100), abs(psi_q) ** 2
+            state.quadrature_distribution(q1, q2).reshape(100, 100),
+            abs(psi_q) ** 2,
         )
 
     def test_quadrature_batch(self):
@@ -326,7 +333,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
 
         ket = math.astensor([coherent_state_quad(q, x1, y1), coherent_state_quad(q, x2, y2)]).T
         bra = math.astensor(
-            [np.conj(coherent_state_quad(q, x1, y1)), np.conj(coherent_state_quad(q, x2, y2))]
+            [np.conj(coherent_state_quad(q, x1, y1)), np.conj(coherent_state_quad(q, x2, y2))],
         ).T
 
         assert math.allclose(state.quadrature(q, q), bra * ket)
@@ -334,88 +341,118 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(state.to_fock(40).quadrature(q, q), bra * ket)
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
-    def test_expectation_bargmann_ket(self):
-        ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+    @pytest.mark.parametrize("fock", [False, True])
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
+    def test_expectation(self, batch_shape, fock):
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
+
+        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
+        coh_1 = Coherent(1, x=math.real(alpha_1), y=math.imag(alpha_1))
+        # TODO: clean this up once we have a better way to create batched multimode states
+        ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
+        ket = ket.to_fock(40) if fock else ket
         dm = ket.dm()
 
-        k0 = Coherent(0, x=1, y=2)
-        k1 = Coherent(1, x=1, y=3)
-        k01 = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+        # ket operator
+        exp_coh_0 = dm.expectation(coh_0)
+        exp_coh_1 = dm.expectation(coh_1)
+        exp_ket = dm.expectation(ket)
 
-        res_k0 = (dm.contract(k0.dual).contract(k0.dual.adjoint)) >> TraceOut(1)
-        res_k1 = (dm.contract(k1.dual).contract(k1.dual.adjoint)) >> TraceOut(0)
-        res_k01 = dm.contract(k01.dual).contract(k01.dual.adjoint)
+        assert exp_coh_0.shape == batch_shape * 2
+        assert exp_coh_1.shape == batch_shape * 2
+        assert exp_ket.shape == batch_shape * 2
 
-        assert math.allclose(dm.expectation(k0), res_k0)
-        assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01.ansatz.c)
+        assert math.allclose(exp_coh_0, 1)
+        assert math.allclose(exp_coh_1, 1)
+        assert math.allclose(exp_ket, 1)
 
-    def test_expectation_bargmann_dm(self):
-        dm0 = Coherent(0, x=1, y=2).dm()
-        dm1 = Coherent(1, x=1, y=3).dm()
-        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
+        # dm operator
+        dm0 = coh_0.dm()
+        dm1 = coh_1.dm()
 
-        res_dm0 = (dm01.contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (dm01.contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = dm01 >> dm01.dual
+        exp_dm0 = dm.expectation(dm0)
+        exp_dm1 = dm.expectation(dm1)
+        exp_dm01 = dm.expectation(dm)
 
-        assert math.allclose(dm01.expectation(dm0), res_dm0)
-        assert math.allclose(dm01.expectation(dm1), res_dm1)
-        assert math.allclose(dm01.expectation(dm01), res_dm01)
+        assert exp_dm0.shape == batch_shape * 2
+        assert exp_dm1.shape == batch_shape * 2
+        assert exp_dm01.shape == batch_shape * 2
 
-    def test_expectation_bargmann_u(self):
-        dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
-        u0 = Dgate(0, x=0.1)
-        u1 = Dgate(1, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
+        assert math.allclose(exp_dm0, 1)
+        assert math.allclose(exp_dm1, 1)
+        assert math.allclose(exp_dm01, 1)
 
-        res_u0 = (dm.contract(u0)) >> TraceOut(0) >> TraceOut(1)
-        res_u1 = (dm.contract(u1)) >> TraceOut(0) >> TraceOut(1)
-        res_u01 = (dm.contract(u01)) >> TraceOut(0) >> TraceOut(1)
+        # u operator
+        beta_0 = 0.1
+        beta_1 = 0.2
 
-        assert math.allclose(dm.expectation(u0), res_u0)
-        assert math.allclose(dm.expectation(u1), res_u1)
-        assert math.allclose(dm.expectation(u01), res_u01)
+        u0 = Dgate(0, x=beta_0)
+        u1 = Dgate(1, x=beta_1)
+        u01 = u0 >> u1
 
-    def test_expectation_fock(self):
-        ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
-        dm = ket.dm()
+        exp_u0 = dm.expectation(u0)
+        exp_u1 = dm.expectation(u1)
+        exp_u01 = dm.expectation(u01)
 
-        k0 = Coherent(0, x=1, y=2).to_fock(10)
-        k1 = Coherent(1, x=1, y=3).to_fock(10)
-        k01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
+        assert exp_u0.shape == batch_shape
+        assert exp_u1.shape == batch_shape
+        assert exp_u01.shape == batch_shape
 
-        res_k0 = (dm.contract(k0.dual).contract(k0.dual.adjoint)) >> TraceOut(1)
-        res_k1 = (dm.contract(k1.dual).contract(k1.dual.adjoint)) >> TraceOut(0)
-        res_k01 = dm.contract(k01.dual) >> k01.dual.adjoint
+        expected_u0 = math.exp(-(math.abs(beta_0) ** 2) / 2) * math.exp(
+            beta_0 * math.conj(alpha_0) - math.conj(beta_0) * alpha_0,
+        )
+        expected_u1 = math.exp(-(math.abs(beta_1) ** 2) / 2) * math.exp(
+            beta_1 * math.conj(alpha_1) - math.conj(beta_1) * alpha_1,
+        )
 
-        assert math.allclose(dm.expectation(k0), res_k0)
-        assert math.allclose(dm.expectation(k1), res_k1)
-        assert math.allclose(dm.expectation(k01), res_k01)
+        assert math.allclose(exp_u0, expected_u0)
+        assert math.allclose(exp_u1, expected_u1)
 
-        dm0 = Coherent(0, x=1, y=2).to_fock(10).dm()
-        dm1 = Coherent(1, x=1, y=3).to_fock(10).dm()
-        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10).dm()
+        exp_u0_coh = coh_0.expectation(u0)
+        exp_u1_coh = coh_1.expectation(u1)
 
-        res_dm0 = (dm.contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (dm.contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = dm >> dm01.dual
+        assert math.allclose(exp_u0, exp_u0_coh)
+        assert math.allclose(exp_u1, exp_u1_coh)
+        assert math.allclose(exp_u01, exp_u0_coh * exp_u1_coh)
 
-        assert math.allclose(dm.expectation(dm0), res_dm0)
-        assert math.allclose(dm.expectation(dm1), res_dm1)
-        assert math.allclose(dm.expectation(dm01), res_dm01)
+    @pytest.mark.parametrize("batch_shape", [(2,), (2, 3)])
+    @pytest.mark.parametrize("batch_shape_2", [(7,), (4, 5, 7)])
+    def test_expectation_diff_batch_shapes(self, batch_shape, batch_shape_2):
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
+        dm = coh_0.dm()
 
-        u0 = Dgate(0, x=0.1).to_fock(10)
-        u1 = Dgate(1, x=0.2).to_fock(10)
-        u01 = (Dgate(0, x=0.3) >> Dgate(1, x=0.4)).to_fock(10)
+        # ket operator
+        alpha_1 = math.broadcast_to(0.3 + 0.2j, batch_shape_2)
+        coh_1 = Coherent(0, x=math.real(alpha_1), y=math.imag(alpha_1))
+        exp_coh_1 = dm.expectation(coh_1)
+        assert exp_coh_1.shape == batch_shape + batch_shape_2
 
-        res_u0 = (dm.contract(u0)) >> TraceOut(0) >> TraceOut(1)
-        res_u1 = (dm.contract(u1)) >> TraceOut(0) >> TraceOut(1)
-        res_u01 = (dm.contract(u01)) >> TraceOut(0) >> TraceOut(1)
+        # dm operator
+        dm1 = coh_1.dm()
+        exp_dm1 = dm.expectation(dm1)
+        assert exp_dm1.shape == batch_shape + batch_shape_2
 
-        assert math.allclose(dm.expectation(u0), res_u0)
-        assert math.allclose(dm.expectation(u1), res_u1)
-        assert math.allclose(dm.expectation(u01), res_u01)
+        # u operator
+        beta_0 = math.broadcast_to(0.3, batch_shape_2)
+        u0 = Dgate(0, x=beta_0)
+        exp_u0 = dm.expectation(u0)
+        assert exp_u0.shape == batch_shape + batch_shape_2
+
+    def test_expectation_lin_sup(self):
+        cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
+        cat_dm = cat.dm()
+        assert math.allclose(cat_dm.expectation(cat, mode="zip"), 1.0)
+        assert math.allclose(cat_dm.expectation(cat_dm, mode="zip"), 1.0)
+        assert math.allclose(
+            cat_dm.expectation(Dgate(0, x=[0.1, 0.2, 0.3])),
+            [
+                cat_dm.expectation(Dgate(0, x=0.1)),
+                cat_dm.expectation(Dgate(0, x=0.2)),
+                cat_dm.expectation(Dgate(0, x=0.3)),
+            ],
+        )
 
     def test_expectation_error(self):
         dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
@@ -424,7 +461,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             dm.expectation(op1)
 
-        op2 = CircuitComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
+        op2 = CircuitComponent._from_attributes(None, Wires(set(), set(), {1}, {0}))
         with pytest.raises(ValueError, match="different modes"):
             dm.expectation(op2)
 
@@ -442,9 +479,9 @@ class TestDM:  # pylint:disable=too-many-public-methods
     def test_rshift(self):
         ket = Coherent(0, 1) >> Coherent(1, 1)
         unitary = Dgate(0, 1)
-        u_component = CircuitComponent(unitary.representation, unitary.name)
+        u_component = CircuitComponent(unitary.ansatz, unitary.wires, unitary.name)
         channel = Attenuator(1, 1)
-        ch_component = CircuitComponent(channel.representation, channel.name)
+        ch_component = CircuitComponent(channel.ansatz, channel.wires, channel.name)
 
         dm = ket >> channel
 
@@ -468,7 +505,7 @@ class TestDM:  # pylint:disable=too-many-public-methods
         Lambda = A[..., m:, m:]
         Temp = Gamma + math.conj(Lambda.T) @ math.inv(1 - Gamma.T) @ Lambda
         assert np.all(
-            np.linalg.eigvals(Gamma) >= 0
+            np.linalg.eigvals(Gamma) >= 0,
         )  # checks if the off-diagonal block of dm is PSD
         assert np.all(np.linalg.eigvals(Gamma) < 1)
         assert np.all(np.linalg.eigvals(Temp) < 1)
@@ -503,7 +540,8 @@ class TestDM:  # pylint:disable=too-many-public-methods
         rho_fock = rho.fock_array(standard_order=True)
 
         assert math.allclose(
-            rho_fock, math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]])
+            rho_fock,
+            math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]]),
         )
         assert math.allclose(
             Coherent(0, x=1).dm().fock_array(8, standard_order=True),
@@ -614,7 +652,6 @@ class TestDM:  # pylint:disable=too-many-public-methods
         assert math.allclose(core.dm().contract(phi, mode="zip").ansatz.b, sigma.ansatz.b)
 
     def test_wigner(self):
-
         ans = Vacuum(0).dm().wigner
         x = np.linspace(0, 1, 100)
 

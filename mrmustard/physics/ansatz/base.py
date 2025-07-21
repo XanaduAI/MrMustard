@@ -17,8 +17,10 @@ This module contains the base ansatz class.
 """
 
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from numpy.typing import ArrayLike
 
@@ -42,6 +44,7 @@ class Ansatz(ABC):
 
     def __init__(self) -> None:
         self._lin_sup = False
+        self._batch_shape = ()
         self._fn = None
         self._kwargs = {}
 
@@ -190,6 +193,15 @@ class Ansatz(ABC):
         This method computes and sets data given a function
         and some kwargs.
         """
+
+    def _tree_flatten(self):  # pragma: no cover
+        children = (self._kwargs,)
+        aux_data = (
+            self._batch_shape,
+            self._lin_sup,
+            self._fn,
+        )
+        return (children, aux_data)
 
     @abstractmethod
     def __add__(self, other: Ansatz) -> Ansatz:

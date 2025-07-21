@@ -14,8 +14,6 @@
 
 """Tests for the state visualization."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 import json
 from pathlib import Path
 
@@ -72,7 +70,7 @@ class TestVisualization:
 
     def test_visualize_dm(self):
         st = Coherent(0, y=1) + Coherent(0, y=-1)
-        st.manual_shape[0] = 20
+        st.manual_shape = (20,)
         fig = st.visualize_dm(20, return_fig=True)
         data = fig.to_dict()
 

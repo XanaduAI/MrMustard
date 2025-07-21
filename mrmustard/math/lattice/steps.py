@@ -33,7 +33,7 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 SQRT = np.sqrt(np.arange(100000))  # precompute sqrt of the first 100k integers
 
 
-@njit
+@njit(cache=True)
 def vanilla_step(
     G: ComplexTensor,
     A: ComplexMatrix,
@@ -67,7 +67,7 @@ def vanilla_step(
     return value_at_index / SQRT[index[i]]
 
 
-@njit
+@njit(cache=True)
 def vanilla_step_batch(
     G: ComplexTensor,
     A: ComplexMatrix,
@@ -93,15 +93,15 @@ def vanilla_step_batch(
     i, pivot = first_available_pivot(index)
 
     # contribution from G[pivot]
-    value_at_index = b[..., i] * G[(slice(None),) + pivot]
+    value_at_index = b[..., i] * G[(slice(None), *pivot)]
     # contributions from G[neighbor]
     for j, neighbor in lower_neighbors(pivot):
-        value_at_index += A[..., i, j] * SQRT[pivot[j]] * G[(slice(None),) + neighbor]
+        value_at_index += A[..., i, j] * SQRT[pivot[j]] * G[(slice(None), *neighbor)]
 
     return value_at_index / SQRT[index[i]]
 
 
-@njit
+@njit(cache=True)
 def vanilla_step_jacobian(
     G: ComplexTensor,
     A: ComplexMatrix,
@@ -129,19 +129,19 @@ def vanilla_step_jacobian(
 
     # pivot contribution
     dGdB[index] += b[i] * dGdB[pivot] / SQRT[index[i]]
-    dGdB[index + (i,)] += G[pivot] / SQRT[index[i]]
+    dGdB[(*index, i)] += G[pivot] / SQRT[index[i]]
     dGdA[index] += b[i] * dGdA[pivot] / SQRT[index[i]]
 
     # neighbors contribution
     for j, neighbor in lower_neighbors(pivot):
         dGdB[index] += A[i, j] * dGdB[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
         dGdA[index] += A[i, j] * dGdA[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
-        dGdA[index + (i, j)] += G[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
+        dGdA[(*index, i, j)] += G[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
 
     return dGdA, dGdB
 
 
-@njit
+@njit(cache=True)
 def vanilla_step_grad(
     G: ComplexTensor,
     index: tuple[int, ...],
@@ -161,7 +161,7 @@ def vanilla_step_grad(
     Returns:
         tuple[array, array]: the updated dGdB and dGdA tensors
     """
-    for i in range(len(db)):  # pylint: disable=consider-using-enumerate
+    for i in range(len(db)):
         pivot_i = tuple_setitem(index, i, index[i] - 1)
         db[i] = SQRT[index[i]] * G[pivot_i]
         dA[i, i] = 0.5 * SQRT[index[i] * pivot_i[i]] * G[tuple_setitem(pivot_i, i, pivot_i[i] - 1)]
@@ -171,9 +171,12 @@ def vanilla_step_grad(
     return dA, db
 
 
-@njit
+@njit(cache=True)
 def vanilla_step_dict(
-    data: types.DictType, A: ComplexMatrix, b: ComplexVector, index: tuple[int, ...]
+    data: types.DictType,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    index: tuple[int, ...],
 ) -> complex:
     r"""Fock-Bargmann recurrence relation step, vanilla version with numba dict.
     This function calculates the index `index` of the Gaussian tensor `G`.
@@ -201,7 +204,7 @@ def vanilla_step_dict(
     return value_at_index
 
 
-@njit
+@njit(cache=True)
 def binomial_step(
     G: ComplexTensor,
     A: ComplexMatrix,
@@ -232,7 +235,7 @@ def binomial_step(
     return G, norm
 
 
-@njit
+@njit(cache=True)
 def binomial_step_dict(
     G: types.DictType,
     A: ComplexMatrix,

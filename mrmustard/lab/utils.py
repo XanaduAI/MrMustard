@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=no-member
-
 """
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """
+
 from __future__ import annotations
 
-from typing import Any, Callable, Generator
+from collections.abc import Callable, Generator
+from typing import Any
 
 from mrmustard import math
-from mrmustard.math.parameters import update_euclidean, Constant, Variable
+from mrmustard.math.parameters import Constant, Variable, update_euclidean
 
 
 def make_parameter(
@@ -44,7 +44,7 @@ def make_parameter(
         update_fn: The update_fn of the returned parameter (ignored if ``is_trainable`` is ``False``).
         dtype: The dtype of the returned parameter.
     """
-    if isinstance(value, (Constant, Variable)):
+    if isinstance(value, Constant | Variable):
         return value
     if not is_trainable:
         return Constant(value=value, name=name, dtype=dtype)
@@ -63,19 +63,14 @@ def reshape_params(n_modes: int, **kwargs) -> Generator:
         ValueError: If a parameter has a length which is neither equal to ``1``
         nor ``n_modes``.
     """
-    names = list(kwargs.keys())
-    vars = list(kwargs.values())
-
-    vars = [math.atleast_1d(var) for var in vars]
-
-    for i, var in enumerate(vars):
-        if len(var) == 1:
-            var = math.tile(var, (n_modes,))
-        else:
-            if len(var) != n_modes:
-                msg = f"Parameter {names[i]} has an incompatible shape."
-                raise ValueError(msg)
-        yield var
+    for name, val in kwargs.items():
+        val = math.atleast_nd(val, 1)  # noqa: PLW2901
+        if len(val) == 1:
+            val = math.tile(val, (n_modes,))  # noqa: PLW2901
+        elif len(val) != n_modes:
+            msg = f"Parameter {name} has an incompatible shape."
+            raise ValueError(msg)
+        yield val
 
 
 def shape_check(mat, vec, dim: int, name: str):

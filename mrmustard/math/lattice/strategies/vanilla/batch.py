@@ -19,12 +19,19 @@ from numba import njit, prange
 
 from mrmustard.utils.typing import ComplexTensor
 
-from .core import vanilla_numba, stable_numba
+from .core import stable_numba, vanilla_numba
+
+# ruff: noqa: RUF005
 
 
-@njit(parallel=True)
+@njit(cache=True, parallel=True)
 def vanilla_batch_numba(
-    shape: tuple[int, ...], A, b, c, stable: bool = False, out: ComplexTensor | None = None
+    shape: tuple[int, ...],
+    A,
+    b,
+    c,
+    stable: bool = False,
+    out: ComplexTensor | None = None,
 ) -> ComplexTensor:  # pragma: no cover
     r"""Batched version of the vanilla algorithm for calculating the fock representation of a
     Gaussian tensor. This implementation assumes that the batch dimension is on the first

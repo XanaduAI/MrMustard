@@ -20,12 +20,13 @@ A class to simulate quantum circuits.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Sequence
+from collections.abc import Sequence
 from pydoc import locate
+
 from mrmustard import math, settings
-from mrmustard.utils.serialize import save
 from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.path import optimal_path
+from mrmustard.utils.serialize import save
 
 __all__ = ["Circuit"]
 
@@ -82,22 +83,26 @@ class Circuit:
             (0, i) for i in range(1, len(self.components))
         ]  # default path (likely not optimal)
 
-    def optimize(
-        self, n_init: int = 100, with_BF_heuristic: bool = True, verbose: bool = True
-    ) -> None:
-        r"""
-        Optimizes the Fock shapes and the contraction path of this circuit.
-        It allows one to exclude the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
-        components with multimode Bargmann/Fock components leads to a higher total cost.
+    @classmethod
+    def deserialize(cls, data: dict) -> Circuit:
+        r"""Deserialize a Circuit."""
+        comps, path = data.pop("components"), data.pop("path")
 
-        Args:
-            n_init: The number of random contractions to find an initial cost upper bound.
-            with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
-            verbose: If True (default), the progress of the optimization is shown.
-        """
-        self.path = optimal_path(
-            self.components, n_init=n_init, with_BF_heuristic=with_BF_heuristic, verbose=verbose
-        )
+        for k, v in data.items():
+            kwarg, i = k.split(":")
+            comps[int(i)][kwarg] = v
+
+        classes: list[CircuitComponent] = [locate(c.pop("class")) for c in comps]
+        circ = cls([c._deserialize(comp_data) for c, comp_data in zip(classes, comps)])
+        circ.path = [tuple(p) for p in path]
+        return circ
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        (ret.components,) = children
+        (ret.path,) = aux_data
+        return ret
 
     def contract(self) -> CircuitComponent:
         r"""
@@ -120,7 +125,7 @@ class Circuit:
         for idx0, idx1 in self.path:
             ret[idx0] = ret[idx0] >> ret.pop(idx1)
 
-        return list(ret.values())[0]
+        return next(iter(ret.values()))
 
     def check_contraction(self, n: int) -> None:
         r"""
@@ -237,7 +242,30 @@ class Circuit:
 
         print(msg)
 
-    def serialize(self, filestem: str = None):
+    def optimize(
+        self,
+        n_init: int = 100,
+        with_BF_heuristic: bool = True,
+        verbose: bool = True,
+    ) -> None:
+        r"""
+        Optimizes the Fock shapes and the contraction path of this circuit.
+        It allows one to exclude the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
+        components with multimode Bargmann/Fock components leads to a higher total cost.
+
+        Args:
+            n_init: The number of random contractions to find an initial cost upper bound.
+            with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
+            verbose: If True (default), the progress of the optimization is shown.
+        """
+        self.path = optimal_path(
+            self.components,
+            n_init=n_init,
+            with_BF_heuristic=with_BF_heuristic,
+            verbose=verbose,
+        )
+
+    def serialize(self, filestem: str | None = None):
         r"""
         Serialize a Circuit.
 
@@ -252,19 +280,10 @@ class Circuit:
         }
         return save(type(self), filename=filestem, **kwargs)
 
-    @classmethod
-    def deserialize(cls, data: dict) -> Circuit:
-        r"""Deserialize a Circuit."""
-        comps, path = data.pop("components"), data.pop("path")
-
-        for k, v in data.items():
-            kwarg, i = k.split(":")
-            comps[int(i)][kwarg] = v
-
-        classes: list[CircuitComponent] = [locate(c.pop("class")) for c in comps]
-        circ = cls([c._deserialize(comp_data) for c, comp_data in zip(classes, comps)])
-        circ.path = [tuple(p) for p in path]
-        return circ
+    def _tree_flatten(self):  # pragma: no cover
+        children = (self.components,)
+        aux_data = (self.path,)
+        return (children, aux_data)
 
     def __eq__(self, other: Circuit) -> bool:
         if not isinstance(other, Circuit):
@@ -277,17 +296,17 @@ class Circuit:
         """
         return self.components[idx]
 
-    def __len__(self):
-        r"""
-        The number of components in this circuit.
-        """
-        return len(self.components)
-
     def __iter__(self):
         r"""
         An iterator over the components in this circuit.
         """
         return iter(self.components)
+
+    def __len__(self):
+        r"""
+        The number of components in this circuit.
+        """
+        return len(self.components)
 
     def __rshift__(self, other: CircuitComponent | Circuit) -> Circuit:
         r"""
@@ -299,8 +318,7 @@ class Circuit:
             other = Circuit([other])
         return Circuit(self.components + other.components)
 
-    # pylint: disable=too-many-branches,too-many-statements
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # noqa: C901
         r"""
         A string-based representation of this component.
         """
@@ -341,9 +359,9 @@ class Circuit:
                 values = []
                 for name in comp.parameters.names:
                     param = comp.parameters.constants.get(name) or comp.parameters.variables.get(
-                        name
+                        name,
                     )
-                    new_values = math.atleast_1d(param.value)
+                    new_values = math.atleast_nd(param.value, 1)
                     if len(new_values) == 1 and cc_name not in control_gates:
                         new_values = math.tile(new_values, (len(comp.modes),))
                     values.append(math.asnumpy(new_values))
@@ -355,7 +373,7 @@ class Circuit:
         if len(self) == 0:
             return ""
 
-        modes = set(sorted([m for c in self.components for m in c.modes]))
+        modes = set(m for c in self.components for m in c.modes)  # noqa: C401
         n_modes = len(modes)
 
         # update this when new controlled gates are added
@@ -370,7 +388,7 @@ class Circuit:
 
         # create a dictionary ``wires`` that maps height ``h`` to "──" if the line contains
         # a mode, or to "  " if the line does not contain a mode
-        wires = {h: "  " for h in range(n_modes)}
+        wires = dict.fromkeys(range(n_modes), "  ")
 
         # generate a dictionary to map x-axis coordinates to the components drawn at
         # those coordinates
@@ -388,7 +406,7 @@ class Circuit:
             layers[x].append(c1)
 
         # store the returned drawing in a dictionary mapping heigths to strings
-        drawing_dict = {height: "" for height in range(n_modes)}
+        drawing_dict = dict.fromkeys(range(n_modes), "")
 
         # loop through the layers and add the components to ``drawing_dict``
         for layer in layers.values():

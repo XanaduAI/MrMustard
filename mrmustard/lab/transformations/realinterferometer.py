@@ -21,11 +21,12 @@ from __future__ import annotations
 from mrmustard import math
 from mrmustard.math.parameters import update_orthogonal
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
-from .base import Unitary
-from ..utils import make_parameter
 from ...physics import symplectics
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["RealInterferometer"]
 
@@ -60,7 +61,7 @@ class RealInterferometer(Unitary):
         num_modes = len(modes)
         if orthogonal is not None and orthogonal.shape[-1] != num_modes:
             raise ValueError(
-                f"The size of the orthogonal matrix must match the number of modes: {orthogonal.shape[-1]} =/= {num_modes}"
+                f"The size of the orthogonal matrix must match the number of modes: {orthogonal.shape[-1]} =/= {num_modes}",
             )
 
         orthogonal = orthogonal if orthogonal is not None else math.random_orthogonal(num_modes)
@@ -68,16 +69,18 @@ class RealInterferometer(Unitary):
         super().__init__(name="RealInterferometer")
         self.parameters.add_parameter(
             make_parameter(
-                orthogonal_trainable, orthogonal, "orthogonal", (None, None), update_orthogonal
-            )
-        )
-        self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=lambda ortho: Unitary.from_symplectic(
-                    modes, symplectics.realinterferometer_symplectic(ortho)
-                ).bargmann_triple(),
-                ortho=self.parameters.orthogonal,
+                is_trainable=orthogonal_trainable,
+                value=orthogonal,
+                name="orthogonal",
+                bounds=(None, None),
+                update_fn=update_orthogonal,
             ),
-        ).representation
+        )
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=lambda ortho: Unitary.from_symplectic(
+                modes,
+                symplectics.realinterferometer_symplectic(ortho),
+            ).bargmann_triple(),
+            ortho=self.parameters.orthogonal,
+        )
+        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))

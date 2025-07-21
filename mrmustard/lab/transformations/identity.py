@@ -18,9 +18,11 @@ The classes representing an identity gate.
 
 from __future__ import annotations
 
-from .base import Unitary
-from ...physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
+
 from ...physics import triples
+from ...physics.ansatz import PolyExpAnsatz
+from .base import Unitary
 
 __all__ = ["Identity"]
 
@@ -32,7 +34,7 @@ class Identity(Unitary):
     Args:
         modes: The modes this gate is applied to.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import Identity
 
@@ -66,8 +68,11 @@ class Identity(Unitary):
     ):
         modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="Identity")
-        self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
-        ).representation
+
+        self._ansatz = PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes))
+        self._wires = Wires(
+            modes_in_bra=set(),
+            modes_out_bra=set(),
+            modes_in_ket=set(modes),
+            modes_out_ket=set(modes),
+        )

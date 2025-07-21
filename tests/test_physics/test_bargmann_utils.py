@@ -16,14 +16,11 @@
 
 import numpy as np
 
-from mrmustard import math
-from mrmustard.lab import DM, Channel, Dgate, Ket, Unitary, Vacuum
+from mrmustard.lab import DM, Channel, Dgate, Ket
 from mrmustard.physics.bargmann_utils import (
     XY_of_channel,
     au2Symplectic,
-    norm_ket,
     symplectic2Au,
-    trace_dm,
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
 )
@@ -51,22 +48,6 @@ def test_wigner_to_bargmann_rho():
     assert np.allclose(c, c_exp)
 
 
-def test_norm_ket():
-    """Test that the norm of a ket is calculated correctly"""
-
-    ket = Vacuum((0, 1)) >> Unitary.from_symplectic((0, 1), math.random_symplectic(2))
-    A, b, c = ket.bargmann_triple()
-    assert np.isclose(norm_ket(A, b, c), ket.probability)
-
-
-def test_trace_dm():
-    """Test that the trace of a density matrix is calculated correctly"""
-    ket = Vacuum((0, 1, 2, 3)) >> Unitary.from_symplectic((0, 1, 2, 3), math.random_symplectic(4))
-    dm = ket[0, 1]
-    A, b, c = dm.bargmann_triple()
-    assert np.allclose(trace_dm(A, b, c), dm.probability)
-
-
 def test_au2Symplectic():
     """Tests the Au -> symplectic code; we check two simple examples"""
     # Beam splitter example
@@ -82,7 +63,7 @@ def test_au2Symplectic():
             [
                 [np.eye(2), np.eye(2)],
                 [-1j * np.eye(2), 1j * np.eye(2)],
-            ]
+            ],
         )
     )
     S_by_hand = transformation @ S_by_hand @ np.conjugate(np.transpose(transformation))
@@ -113,7 +94,7 @@ def test_symplectic2Au():
             [0, np.cosh(r), 0, np.sinh(r)],
             [-np.sinh(r), 0, np.cosh(r), 0],
             [0, np.sinh(r), 0, np.cosh(r)],
-        ]
+        ],
     )
 
     S = S_bs @ S_sq
@@ -123,7 +104,7 @@ def test_symplectic2Au():
     # the following lines of code transform the quadrature symplectic matrix to
     # the annihilation one
     transformation = np.block(
-        [[np.eye(m), np.eye(m)], [-1j * np.eye(m), 1j * np.eye(m)]]
+        [[np.eye(m), np.eye(m)], [-1j * np.eye(m), 1j * np.eye(m)]],
     ) / np.sqrt(2)
     S = transformation @ S @ np.conjugate(np.transpose(transformation))
     A = symplectic2Au(S)
@@ -133,7 +114,7 @@ def test_symplectic2Au():
     C = np.diag([np.cosh(r), np.cosh(r)])
     Sec = np.linalg.pinv(C)
     A_by_hand = np.block(
-        [[-W @ T @ np.transpose(W), W @ Sec], [Sec @ np.transpose(W), np.conjugate(T)]]
+        [[-W @ T @ np.transpose(W), W @ Sec], [Sec @ np.transpose(W), np.conjugate(T)]],
     )
 
     assert np.allclose(A, A_by_hand)

@@ -35,6 +35,7 @@ class TestSettings:
         assert settings.AUTOSHAPE_MIN == 1
         assert settings.DISCRETIZATION_METHOD == "clenshaw"
         assert settings.DEFAULT_FOCK_SIZE == 50
+        assert settings.DEFAULT_REPRESENTATION == "Fock"
         assert settings.PROGRESSBAR is True
 
     def test_setters(self):
@@ -42,7 +43,7 @@ class TestSettings:
 
         cw = settings.COMPLEX_WARNING
         settings.COMPLEX_WARNING = not cw
-        assert settings.COMPLEX_WARNING == (not cw)
+        assert (not cw) == settings.COMPLEX_WARNING
         settings.COMPLEX_WARNING = cw
 
         s0 = settings.SEED

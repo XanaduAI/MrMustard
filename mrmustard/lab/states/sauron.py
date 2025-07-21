@@ -15,11 +15,15 @@
 r"""
 The Sauron state is an approximation of the `n`-th Fock states using a ring of `n+1` coherent states.
 """
+
 from __future__ import annotations
 
+from mrmustard import math
 from mrmustard.lab.states.ket import Ket
-from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
+
 from ..utils import make_parameter
 
 
@@ -52,18 +56,19 @@ class Sauron(Ket):
         >>> assert psi.modes == (0,)
     """
 
-    def __init__(self, mode: int, n: int, epsilon: float = 0.1):
+    def __init__(self, mode: int | tuple[int], n: int, epsilon: float = 0.1):
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name=f"Sauron-{n}")
 
-        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype="int64"))
-        self.parameters.add_parameter(make_parameter(False, epsilon, "epsilon", (None, None)))
+        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=math.int64))
+        self.parameters.add_parameter(
+            make_parameter(False, epsilon, "epsilon", (None, None), dtype=math.float64)
+        )
 
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                triples.sauron_state_Abc,
-                n=self.parameters.n,
-                epsilon=self.parameters.epsilon,
-            ),
-        ).representation
-        self._representation.ansatz._lin_sup = True
+        self._ansatz = PolyExpAnsatz.from_function(
+            triples.sauron_state_Abc,
+            n=self.parameters.n,
+            epsilon=self.parameters.epsilon,
+        )
+        self._wires = Wires(modes_out_ket=set(mode))
+        self.ansatz._lin_sup = True

@@ -45,8 +45,6 @@ the Flask web application framework:
 https://github.com/pallets/flask/blob/master/tests/test_logging.py
 """
 
-# pylint: disable=no-self-use
-
 import logging
 import sys
 

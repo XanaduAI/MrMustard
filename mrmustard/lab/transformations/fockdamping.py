@@ -18,12 +18,15 @@ The class representing a rotation gate.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
-from .base import Operation
-from ...physics.ansatz import PolyExpAnsatz
+from mrmustard import math
+from mrmustard.physics.wires import Wires
+
 from ...physics import triples
+from ...physics.ansatz import PolyExpAnsatz
 from ..utils import make_parameter
+from .base import Operation
 
 __all__ = ["FockDamping"]
 
@@ -39,7 +42,7 @@ class FockDamping(Operation):
         damping_trainable: Whether ``damping`` is trainable.
         damping_bounds: The bounds for ``damping``.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import FockDamping, Coherent
 
@@ -66,11 +69,12 @@ class FockDamping(Operation):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         damping: float | Sequence[float] = 0.0,
         damping_trainable: bool = False,
         damping_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="FockDamping")
         self.parameters.add_parameter(
             make_parameter(
@@ -79,12 +83,11 @@ class FockDamping(Operation):
                 "damping",
                 damping_bounds,
                 None,
-            )
-        )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.fock_damping_Abc, beta=self.parameters.damping
+                dtype=math.float64,
             ),
-        ).representation
+        )
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.fock_damping_Abc,
+            beta=self.parameters.damping,
+        )
+        self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))

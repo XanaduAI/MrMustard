@@ -22,9 +22,13 @@ from mrmustard.utils.typing import ComplexTensor
 SQRT = np.sqrt(np.arange(100000))
 
 
-@njit
+@njit(cache=True)
 def vanilla_numba(
-    shape: tuple[int, ...], A, b, c, out: ComplexTensor | None = None
+    shape: tuple[int, ...],
+    A,
+    b,
+    c,
+    out: ComplexTensor | None = None,
 ) -> ComplexTensor:  # pragma: no cover
     r"""Vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     This implementation works on flattened tensors and reshapes the tensor before returning.
@@ -81,11 +85,13 @@ def vanilla_numba(
     for flat_index in range(1, strides[0]):
         index = next(nd_index)
 
+        i = 0
         # calculate (flat) pivot
-        for i, s in enumerate(strides):
+        for s in strides:
             pivot = flat_index - s
             if pivot >= 0:  # if pivot not outside array
                 break
+            i += 1
 
         # contribution from pivot
         value_at_index = b[i] * G[pivot]
@@ -118,9 +124,13 @@ def vanilla_numba(
     return G.reshape(shape)
 
 
-@njit
+@njit(cache=True)
 def stable_numba(
-    shape: tuple[int, ...], A, b, c, out: ComplexTensor | None = None
+    shape: tuple[int, ...],
+    A,
+    b,
+    c,
+    out: ComplexTensor | None = None,
 ) -> ComplexTensor:  # pragma: no cover
     r"""Stable version of the vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     This implementation works on flattened tensors and reshapes the tensor before returning.

@@ -14,8 +14,6 @@
 
 """Tests for the ``Circuit`` class."""
 
-# pylint: disable=missing-function-docstring, expression-not-assigned
-
 import pytest
 
 from mrmustard import settings
@@ -158,7 +156,7 @@ class TestCircuit:
         n0 = Number(0, n=3)
         n1 = Number(1, n=3)
         n2 = Number(2, n=3)
-        cc = CircuitComponent(bs01.representation, "my_cc")
+        cc = CircuitComponent(bs01.ansatz, bs01.wires, "my_cc")
 
         assert repr(Circuit()) == ""
 
@@ -171,8 +169,8 @@ class TestCircuit:
 
         circ2 = Circuit([vac012, s0, s1, bs01, bs12, cc, n0.dual, n1.dual])
         r2 = ""
-        r2 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC──|3)=(3,3)"
-        r2 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC──|3)=(3,3)"
+        r2 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC──|3)=(3,4)"
+        r2 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC──|3)=(3,4)"
         r2 += "\nmode 2:     ◖Vac◗────────────────────────────╰BS(0.0,0.0)───────────────"
         assert repr(circ2) == r2 + "\n\n"
 
@@ -191,9 +189,9 @@ class TestCircuit:
 
         circ4 = Circuit([vac01, s0, s1, vac2, bs01, bs12, n2.dual, cc, n0.dual, n1.dual])
         r4 = ""
-        r4 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC─────────|3)=(3,3)"
-        r4 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC─────────|3)=(3,3)"
-        r4 += "\nmode 2:            ◖Vac◗─────────────────────╰BS(0.0,0.0)──|3)=(3,3)           "
+        r4 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC─────────|3)=(3,4)"
+        r4 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC─────────|3)=(3,4)"
+        r4 += "\nmode 2:            ◖Vac◗─────────────────────╰BS(0.0,0.0)──|3)=(3,4)           "
         assert repr(circ4) == r4 + "\n\n"
 
         circ5 = Circuit() >> vac1 >> bs01 >> vac1.dual >> vac1 >> bs01 >> vac1.dual

@@ -3,8 +3,8 @@ This module calculates all possible Fock representations of mode 0,where all oth
 This is done by applying the recursion relation in a selective manner.
 """
 
-import numpy as np
 import numba
+import numpy as np
 from numba import int64, njit
 from numba.cpython.unsafe.tuple import tuple_setitem
 
@@ -14,10 +14,21 @@ from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
     repeat_twice,
 )
 
+# ruff: noqa: RUF005
 
-@njit
+
+@njit(cache=True)
 def write_block(
-    i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode
+    i,
+    arr_write,
+    write,
+    arr_read_pivot,
+    read_GB,
+    G_in,
+    GB,
+    A,
+    K_i,
+    cutoff_leftoverMode,
 ):  # pragma: no cover
     """
     Apply the recurrence relation to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
@@ -32,7 +43,7 @@ def write_block(
     A_adapted = A[i, 1:]
     for n in range(1, cutoff_leftoverMode):
         G_in_adapted = np.hstack(
-            (np.array([arr_read_pivot[(0, n - 1) + read_GB] * np.sqrt(n)]), G_in[0, n])
+            (np.array([arr_read_pivot[(0, n - 1) + read_GB] * np.sqrt(n)]), G_in[0, n]),
         )
         arr_write[(0, n) + write] = (GB[0, n, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
 
@@ -40,7 +51,7 @@ def write_block(
     A_adapted = np.hstack((np.array([A[i, 0]]), A[i, 2:]))
     for m in range(1, cutoff_leftoverMode):
         G_in_adapted = np.hstack(
-            (np.array([arr_read_pivot[(m - 1, 0) + read_GB] * np.sqrt(m)]), G_in[m, 0])
+            (np.array([arr_read_pivot[(m - 1, 0) + read_GB] * np.sqrt(m)]), G_in[m, 0]),
         )
         arr_write[(m, 0) + write] = (GB[m, 0, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
 
@@ -53,18 +64,22 @@ def write_block(
                         [
                             arr_read_pivot[(m - 1, n) + read_GB] * np.sqrt(m),
                             arr_read_pivot[(m, n - 1) + read_GB] * np.sqrt(n),
-                        ]
+                        ],
                     ),
                     G_in[m, n],
-                )
+                ),
             )
             arr_write[(m, n) + write] = (GB[m, n, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
     return arr_write
 
 
-@njit
+@njit(cache=True)
 def read_block(
-    arr_write, idx_write, arr_read, idx_read_tail, cutoff_leftoverMode
+    arr_write,
+    idx_write,
+    arr_read,
+    idx_read_tail,
+    cutoff_leftoverMode,
 ):  # pragma: no cover
     """
     Read the blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
@@ -82,7 +97,7 @@ def read_block(
     return arr_write
 
 
-@njit
+@njit(cache=True)
 def use_offDiag_pivot(
     A,
     B,
@@ -162,7 +177,16 @@ def use_offDiag_pivot(
     if params[d] + 2 < cutoffs_tail[d]:
         write = (d,) + params
         arr2 = write_block(
-            2 * d + 2, arr2, write, arr1, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode
+            2 * d + 2,
+            arr2,
+            write,
+            arr1,
+            read_GB,
+            G_in,
+            GB,
+            A,
+            K_i,
+            cutoff_leftoverMode,
         )
 
     # Array11
@@ -197,7 +221,7 @@ def use_offDiag_pivot(
     return arr0, arr2, arr1010, arr1001
 
 
-@njit
+@njit(cache=True)
 def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1):
     """
     Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
@@ -241,27 +265,28 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
 
     # Array1
     for i in range(2 * M):
-        if params[i // 2] + 1 < cutoffs_tail[i // 2]:
+        if params[i // 2] + 1 < cutoffs_tail[i // 2] and (
+            i != 1 or params[0] + 2 < cutoffs_tail[0]
+        ):
             # this if statement prevents a few elements from being written that will never be read
-            if i != 1 or params[0] + 2 < cutoffs_tail[0]:
-                write = (i,) + params
-                arr1 = write_block(
-                    i + 2,
-                    arr1,
-                    write,
-                    arr0,
-                    read_GB,
-                    G_in,
-                    GB,
-                    A,
-                    K_i,
-                    cutoff_leftoverMode,
-                )
+            write = (i,) + params
+            arr1 = write_block(
+                i + 2,
+                arr1,
+                write,
+                arr0,
+                read_GB,
+                G_in,
+                GB,
+                A,
+                K_i,
+                cutoff_leftoverMode,
+            )
 
     return arr1
 
 
-@njit
+@njit(cache=True)
 def fock_representation_1leftoverMode_amps_NUMBA(
     A,
     B,
@@ -314,7 +339,14 @@ def fock_representation_1leftoverMode_amps_NUMBA(
             # diagonal pivots: aa,bb,cc,dd,...
             if (cutoffs_tail[0] == 1) or (params[0] < cutoffs_tail[0] - 1):
                 arr1 = use_diag_pivot(
-                    A, B, M - 1, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1
+                    A,
+                    B,
+                    M - 1,
+                    cutoff_leftoverMode,
+                    cutoffs_tail,
+                    params,
+                    arr0,
+                    arr1,
                 )
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
             for d in range(M - 1):

@@ -17,11 +17,16 @@ The class representing a displaced squeezed state.
 """
 
 from __future__ import annotations
-from typing import Sequence
-from mrmustard.physics.ansatz import PolyExpAnsatz
+
+from collections.abc import Sequence
+
+from mrmustard import math
 from mrmustard.physics import triples
-from .ket import Ket
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
+
 from ..utils import make_parameter
+from .ket import Ket
 
 __all__ = ["DisplacedSqueezed"]
 
@@ -62,7 +67,7 @@ class DisplacedSqueezed(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         x: float | Sequence[float] = 0.0,
         y: float | Sequence[float] = 0.0,
         r: float | Sequence[float] = 0.0,
@@ -76,19 +81,38 @@ class DisplacedSqueezed(Ket):
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="DisplacedSqueezed")
-        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
-        self.parameters.add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
-        self.parameters.add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
-
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.displaced_squeezed_vacuum_state_Abc,
-                x=self.parameters.x,
-                y=self.parameters.y,
-                r=self.parameters.r,
-                phi=self.parameters.phi,
+        self.parameters.add_parameter(
+            make_parameter(
+                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=math.float64
             ),
-        ).representation
+        )
+        self.parameters.add_parameter(
+            make_parameter(
+                is_trainable=y_trainable, value=y, name="y", bounds=y_bounds, dtype=math.float64
+            ),
+        )
+        self.parameters.add_parameter(
+            make_parameter(
+                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
+            ),
+        )
+        self.parameters.add_parameter(
+            make_parameter(
+                is_trainable=phi_trainable,
+                value=phi,
+                name="phi",
+                bounds=phi_bounds,
+                dtype=math.float64,
+            ),
+        )
+
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.displaced_squeezed_vacuum_state_Abc,
+            x=self.parameters.x,
+            y=self.parameters.y,
+            r=self.parameters.r,
+            phi=self.parameters.phi,
+        )
+        self._wires = Wires(modes_out_ket=set(mode))

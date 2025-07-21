@@ -21,11 +21,12 @@ from __future__ import annotations
 from mrmustard import math
 from mrmustard.math.parameters import update_unitary
 from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexMatrix
 
-from .base import Unitary
-from ..utils import make_parameter
 from ...physics import symplectics
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["Interferometer"]
 
@@ -44,7 +45,7 @@ class Interferometer(Unitary):
     Raises:
         ValueError: If the size of the unitary does not match the number of modes.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import Interferometer
@@ -67,19 +68,17 @@ class Interferometer(Unitary):
         unitary = unitary if unitary is not None else math.random_unitary(num_modes)
         if unitary.shape[-1] != num_modes:
             raise ValueError(
-                f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}"
+                f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}",
             )
         super().__init__(name="Interferometer")
         self.parameters.add_parameter(
-            make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary)
+            make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary),
         )
-        self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=lambda uni: Unitary.from_symplectic(
-                    modes, symplectics.interferometer_symplectic(uni)
-                ).bargmann_triple(),
-                uni=self.parameters.unitary,
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=lambda uni: Unitary.from_symplectic(
+                modes,
+                symplectics.interferometer_symplectic(uni),
+            ).bargmann_triple(),
+            uni=self.parameters.unitary,
+        )
+        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))

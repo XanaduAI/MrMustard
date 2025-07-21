@@ -14,8 +14,6 @@
 
 """Tests for the ket."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 import numpy as np
 import pytest
 from ipywidgets import HTML, Box, HBox, VBox
@@ -35,10 +33,10 @@ from mrmustard.lab import (
     Number,
     QuadratureEigenstate,
     SqueezedVacuum,
-    TraceOut,
     Vacuum,
 )
-from mrmustard.physics.representations import Representation
+
+# Representation class has been removed - functionality moved to CircuitComponent
 from mrmustard.physics.triples import coherent_state_Abc
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.physics.wires import Wires
@@ -60,7 +58,7 @@ def coherent_state_quad(q, x, y, phi=0):
     )
 
 
-class TestKet:  # pylint: disable=too-many-public-methods
+class TestKet:
     r"""
     Tests for the ``Ket`` class.
     """
@@ -70,21 +68,21 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_init(self, name, modes):
         state = Ket.from_ansatz(modes, None, name)
 
-        assert state.name in ("Ket0", "Ket01", "Ket2319") if not name else name
+        assert name if name else state.name in ("Ket0", "Ket01", "Ket2319")
         assert state.modes == modes
         assert state.wires == Wires(modes_out_ket=set(modes))
 
     def test_manual_shape(self):
         ket = Coherent(0, x=1)
-        assert ket.manual_shape == [None]
-        ket.manual_shape[0] = 19
-        assert ket.manual_shape == [19]
+        assert ket.manual_shape == (None,)
+        ket.manual_shape = (19,)
+        assert ket.manual_shape == (19,)
 
     def test_auto_shape(self):
         ket = Coherent(0, x=1)
         assert ket.auto_shape() == (8,)
 
-        ket.manual_shape[0] = 19
+        ket.manual_shape = (19,)
         assert ket.auto_shape() == (19,)
         assert ket.auto_shape(respect_manual_shape=False) == (8,)
 
@@ -191,7 +189,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(array_in, state_in_fock.ansatz.array)
 
         state_out = Ket.from_fock(
-            (modes,), array_in, "my_ket", batch_dims=state_in_fock.ansatz.batch_dims
+            (modes,),
+            array_in,
+            "my_ket",
+            batch_dims=state_in_fock.ansatz.batch_dims,
         )
         assert state_in_fock == state_out
 
@@ -210,7 +211,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     def test_from_phase_space(self, modes):
-
         rnd = Ket.random(modes)
         cov, means, coeff = rnd.phase_space(s=0)
         rnd2 = Ket.from_phase_space(modes, (cov, means, coeff))
@@ -348,7 +348,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(state.quadrature_distribution(q, phi=phi), abs(psi_phi) ** 2)
         assert math.allclose(state.to_fock(40).quadrature(q, phi=phi), psi_phi)
         assert math.allclose(
-            state.to_fock(40).quadrature_distribution(q, phi=phi), abs(psi_phi) ** 2
+            state.to_fock(40).quadrature_distribution(q, phi=phi),
+            abs(psi_phi) ** 2,
         )
 
     def test_quadrature_multimode_ket(self):
@@ -368,7 +369,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         q2 = np.linspace(-10, 10, 100)
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
         assert math.allclose(
-            state.quadrature_distribution(q1, q2).reshape(100, 100), abs(psi_q) ** 2
+            state.quadrature_distribution(q1, q2).reshape(100, 100),
+            abs(psi_q) ** 2,
         )
 
     def test_quadrature_batch(self):
@@ -384,86 +386,116 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert math.allclose(state.to_fock(40).quadrature(q), psi_q)
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), abs(psi_q) ** 2)
 
-    def test_expectation_bargmann(self):
-        ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+    @pytest.mark.parametrize("fock", [False, True])
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
+    def test_expectation(self, batch_shape, fock):
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
 
-        assert math.allclose(ket.expectation(ket), 1.0)
+        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
+        coh_1 = Coherent(1, x=math.real(alpha_1), y=math.imag(alpha_1))
+        # TODO: clean this up once we have a better way to create batched multimode states
+        ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
+        ket = ket.to_fock(40) if fock else ket
 
-        k0 = Coherent(0, x=1, y=2)
-        k1 = Coherent(1, x=1, y=3)
-        k01 = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+        # ket operator
+        exp_coh_0 = ket.expectation(coh_0)
+        exp_coh_1 = ket.expectation(coh_1)
+        exp_ket = ket.expectation(ket)
 
-        res_k0 = (ket.contract(k0.dual)) >> TraceOut(1)
-        res_k1 = (ket.contract(k1.dual)) >> TraceOut(0)
-        res_k01 = ket.contract(k01.dual)
+        assert exp_coh_0.shape == batch_shape * 2
+        assert exp_coh_1.shape == batch_shape * 2
+        assert exp_ket.shape == batch_shape * 2
 
-        assert math.allclose(ket.expectation(k0), res_k0)
-        assert math.allclose(ket.expectation(k1), res_k1)
-        assert math.allclose(ket.expectation(k01), math.sum(res_k01.ansatz.c))
+        assert math.allclose(exp_coh_0, 1)
+        assert math.allclose(exp_coh_1, 1)
+        assert math.allclose(exp_ket, 1)
 
-        dm0 = Coherent(0, x=1, y=2).dm()
-        dm1 = Coherent(1, x=1, y=3).dm()
-        dm01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
+        # dm operator
+        dm0 = coh_0.dm()
+        dm1 = coh_1.dm()
+        dm01 = ket.dm()
 
-        res_dm0 = (ket.contract(ket.adjoint).contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (ket.contract(ket.adjoint).contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = ket.contract(ket.adjoint).contract(dm01.dual)
+        exp_dm0 = ket.expectation(dm0)
+        exp_dm1 = ket.expectation(dm1)
+        exp_dm01 = ket.expectation(dm01)
 
-        assert math.allclose(ket.expectation(dm0), res_dm0)
-        assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), math.sum(res_dm01.ansatz.c))
+        assert exp_dm0.shape == batch_shape * 2
+        assert exp_dm1.shape == batch_shape * 2
+        assert exp_dm01.shape == batch_shape * 2
 
-        u0 = Dgate(0, x=0.1)
-        u1 = Dgate(1, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
+        assert math.allclose(exp_dm0, 1)
+        assert math.allclose(exp_dm1, 1)
+        assert math.allclose(exp_dm01, 1)
 
-        res_u0 = (ket.contract(u0)) >> ket.dual
-        res_u1 = (ket.contract(u1)) >> ket.dual
-        res_u01 = (ket.contract(u01)) >> ket.dual
+        # u operator
+        beta_0 = 0.1
+        beta_1 = 0.2
 
-        assert math.allclose(ket.expectation(u0), res_u0)
-        assert math.allclose(ket.expectation(u1), res_u1)
-        assert math.allclose(ket.expectation(u01), res_u01)
+        u0 = Dgate(0, x=beta_0)
+        u1 = Dgate(1, x=beta_1)
+        u01 = u0 >> u1
 
-    def test_expectation_fock(self):
-        ket = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
+        exp_u0 = ket.expectation(u0)
+        exp_u1 = ket.expectation(u1)
+        exp_u01 = ket.expectation(u01)
 
-        assert math.allclose(ket.expectation(ket), math.abs(ket >> ket.dual) ** 2)
-        k0 = Coherent(0, x=1, y=2).to_fock(10)
-        k1 = Coherent(1, x=1, y=3).to_fock(10)
-        k01 = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).to_fock(10)
+        assert exp_u0.shape == batch_shape
+        assert exp_u1.shape == batch_shape
+        assert exp_u01.shape == batch_shape
 
-        res_k0 = (ket.contract(k0.dual)) >> TraceOut(1)
-        res_k1 = (ket.contract(k1.dual)) >> TraceOut(0)
-        res_k01 = (ket >> k01.dual) ** 2
+        expected_u0 = math.exp(-(math.abs(beta_0) ** 2) / 2) * math.exp(
+            beta_0 * math.conj(alpha_0) - math.conj(beta_0) * alpha_0,
+        )
+        expected_u1 = math.exp(-(math.abs(beta_1) ** 2) / 2) * math.exp(
+            beta_1 * math.conj(alpha_1) - math.conj(beta_1) * alpha_1,
+        )
 
-        assert math.allclose(ket.expectation(k0), res_k0)
-        assert math.allclose(ket.expectation(k1), res_k1)
-        assert math.allclose(ket.expectation(k01), res_k01)
+        assert math.allclose(exp_u0, expected_u0)
+        assert math.allclose(exp_u1, expected_u1)
 
-        dm0 = Coherent(0, x=1, y=0.2).dm().to_fock(10)
-        dm1 = Coherent(1, x=1, y=0.3).dm().to_fock(10)
-        dm01 = (Coherent(0, x=1, y=0.2) >> Coherent(1, x=1, y=0.3)).dm().to_fock(10)
+        exp_u0_coh = coh_0.expectation(u0)
+        exp_u1_coh = coh_1.expectation(u1)
 
-        res_dm0 = (ket.contract(ket.adjoint).contract(dm0.dual)) >> TraceOut(1)
-        res_dm1 = (ket.contract(ket.adjoint).contract(dm1.dual)) >> TraceOut(0)
-        res_dm01 = (ket.contract(ket.adjoint).contract(dm01.dual)).to_fock(10).ansatz.array
+        assert math.allclose(exp_u0, exp_u0_coh)
+        assert math.allclose(exp_u1, exp_u1_coh)
+        assert math.allclose(exp_u01, exp_u0_coh * exp_u1_coh)
 
-        assert math.allclose(ket.expectation(dm0), res_dm0)
-        assert math.allclose(ket.expectation(dm1), res_dm1)
-        assert math.allclose(ket.expectation(dm01), res_dm01)
+    @pytest.mark.parametrize("batch_shape", [(2,), (2, 3)])
+    @pytest.mark.parametrize("batch_shape_2", [(7,), (4, 5, 7)])
+    def test_expectation_diff_batch_shapes(self, batch_shape, batch_shape_2):
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
 
-        u0 = Dgate(1, x=0.1)
-        u1 = Dgate(0, x=0.2)
-        u01 = Dgate(0, x=0.3) >> Dgate(1, x=0.4)
+        # ket operator
+        alpha_1 = math.broadcast_to(0.3 + 0.2j, batch_shape_2)
+        coh_1 = Coherent(0, x=math.real(alpha_1), y=math.imag(alpha_1))
+        exp_coh_1 = coh_0.expectation(coh_1)
+        assert exp_coh_1.shape == batch_shape + batch_shape_2
 
-        res_u0 = (ket.contract(u0).contract(ket.dual)).to_fock(10).ansatz.array
-        res_u1 = (ket.contract(u1).contract(ket.dual)).to_fock(10).ansatz.array
-        res_u01 = (ket.contract(u01).contract(ket.dual)).to_fock(10).ansatz.array
+        # dm operator
+        dm1 = coh_1.dm()
+        exp_dm1 = coh_0.expectation(dm1)
+        assert exp_dm1.shape == batch_shape + batch_shape_2
 
-        assert math.allclose(ket.expectation(u0), res_u0)
-        assert math.allclose(ket.expectation(u1), res_u1)
-        assert math.allclose(ket.expectation(u01), res_u01)
+        # u operator
+        beta_0 = math.broadcast_to(0.3, batch_shape_2)
+        u0 = Dgate(0, x=beta_0)
+        exp_u0 = coh_0.expectation(u0)
+        assert exp_u0.shape == batch_shape + batch_shape_2
+
+    def test_expectation_lin_sup(self):
+        cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
+        assert math.allclose(cat.expectation(cat, mode="zip"), 1.0)
+        assert math.allclose(cat.expectation(cat.dm(), mode="zip"), 1.0)
+        assert math.allclose(
+            cat.expectation(Dgate(0, x=[0.1, 0.2, 0.3])),
+            [
+                cat.expectation(Dgate(0, x=0.1)),
+                cat.expectation(Dgate(0, x=0.2)),
+                cat.expectation(Dgate(0, x=0.3)),
+            ],
+        )
 
     def test_expectation_error(self):
         ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
@@ -472,7 +504,7 @@ class TestKet:  # pylint: disable=too-many-public-methods
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op1)
 
-        op2 = CircuitComponent(Representation(wires=Wires(set(), set(), {1}, {0})))
+        op2 = CircuitComponent._from_attributes(None, Wires(set(), set(), {1}, {0}))
         with pytest.raises(ValueError, match="different modes"):
             ket.expectation(op2)
 
@@ -483,10 +515,11 @@ class TestKet:  # pylint: disable=too-many-public-methods
     def test_rshift(self):
         ket = Coherent(0, 1) >> Coherent(1, 1)
         unitary = Dgate(0, 1)
-        u_component = CircuitComponent(unitary.representation, unitary.name)
+        u_component = CircuitComponent(unitary.ansatz, unitary.wires, unitary.name)
         channel = Attenuator(1, 1)
         ch_component = CircuitComponent(
-            channel.representation,
+            channel.ansatz,
+            channel.wires,
             channel.name,
         )
 
@@ -522,7 +555,8 @@ class TestKet:  # pylint: disable=too-many-public-methods
         A = psi.ansatz.A
         assert math.allclose(psi.probability, 1)  # checks if the state is normalized
         assert math.allclose(
-            A - math.transpose(A), math.zeros((2, 2))
+            A - math.transpose(A),
+            math.zeros((2, 2)),
         )  # checks if the A matrix is symmetric
 
     def test_ipython_repr(self):
@@ -583,8 +617,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
         psi = Ket.random([0, 1, 2])
         phi = Ket.random([0, 1, 2])
 
-        (psi + phi).ansatz.batch_shape
-
         sigma = psi + phi
         sigma.ansatz._lin_sup = False
         core, U = sigma.physical_stellar_decomposition([0])
@@ -609,12 +641,10 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
         assert psi == core1 >> phi1
         assert psi == core12 >> phi12
-        assert (core12 >> Vacuum((0)).dual).normalize() == Vacuum((1, 2))
+        assert (core12 >> Vacuum(0).dual).normalize() == Vacuum((1, 2))
 
         psi = Ket.random([0, 1, 2])
         phi = Ket.random([0, 1, 2])
-
-        (psi + phi).ansatz.batch_shape
 
         sigma = psi + phi
         core, U = sigma.formal_stellar_decomposition([0])
@@ -622,7 +652,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
         assert sigma == core.contract(U, mode="zip")
 
     def test_wigner(self):
-
         ans = Vacuum(0).wigner
         x = np.linspace(0, 1, 100)
         solution = np.exp(-(x**2)) / np.pi
@@ -631,7 +660,6 @@ class TestKet:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_wigner_poly_exp(self, n):
-
         psi = (Number(0, n).dm().to_bargmann()) >> Ggate(0)
         xs = np.linspace(-5, 5, 100)
         poly_exp_wig = math.real(psi.wigner(xs, 0))

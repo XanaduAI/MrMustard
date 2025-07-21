@@ -17,15 +17,18 @@ The class representing a quadrature eigenstate.
 """
 
 from __future__ import annotations
-from typing import Sequence
+
+from collections.abc import Sequence
 
 import numpy as np
 
-from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard import math
 from mrmustard.physics import triples
-from mrmustard.physics.wires import ReprEnum
-from .ket import Ket
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import ReprEnum, Wires
+
 from ..utils import make_parameter
+from .ket import Ket
 
 __all__ = ["QuadratureEigenstate"]
 
@@ -43,7 +46,7 @@ class QuadratureEigenstate(Ket):
         x_bounds: The bounds of `x`.
         phi_bounds: The bounds of `phi`.
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import QuadratureEigenstate
 
@@ -59,7 +62,7 @@ class QuadratureEigenstate(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         x: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
         x_trainable: bool = False,
@@ -67,27 +70,34 @@ class QuadratureEigenstate(Ket):
         x_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="QuadratureEigenstate")
 
-        self.parameters.add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
-        self.manual_shape = (50,)
-
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.quadrature_eigenstates_Abc,
-                x=self.parameters.x,
-                phi=self.parameters.phi,
+        self.parameters.add_parameter(
+            make_parameter(
+                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=math.float64
             ),
-        ).representation
+        )
+        self.parameters.add_parameter(
+            make_parameter(
+                is_trainable=phi_trainable,
+                value=phi,
+                name="phi",
+                bounds=phi_bounds,
+                dtype=math.float64,
+            ),
+        )
 
-        for w in self.representation.wires.output.wires:
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=triples.quadrature_eigenstates_Abc,
+            x=self.parameters.x,
+            phi=self.parameters.phi,
+        )
+        self._wires = Wires(modes_out_ket=set(mode))
+
+        for w in self.wires.sorted_wires:
             w.repr = ReprEnum.QUADRATURE
-            w.repr_params_func = lambda w=w: [
-                self.parameters.x.value,
-                self.parameters.phi.value,
-            ]
+            w.fock_cutoff = 50
 
     @property
     def L2_norm(self):

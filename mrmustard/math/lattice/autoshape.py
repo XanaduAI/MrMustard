@@ -20,7 +20,7 @@ from numba import njit
 SQRT = np.sqrt(np.arange(100000))
 
 
-@njit
+@njit(cache=True)
 def autoshape_numba(A, b, c, max_prob, max_shape, min_shape) -> int:  # pragma: no cover
     r"""Strategy to compute the shape of the Fock representation of a Gaussian DM
     such that its trace is above a certain bound given as ``max_prob``.
@@ -102,17 +102,17 @@ def autoshape_numba(A, b, c, max_prob, max_shape, min_shape) -> int:  # pragma: 
     A = A.reshape((2, M, 2, M)).transpose((1, 3, 0, 2))  # (M,M,2,2)
     b = b.reshape((2, M)).transpose()  # (M,2)
     zero = np.zeros((M - 1, M - 1), dtype=np.complex128)
-    id = np.eye(M - 1, dtype=np.complex128)
+    id = np.eye(M - 1, dtype=np.complex128)  # noqa: A001
     X = np.vstack((np.hstack((zero, id)), np.hstack((id, zero))))
     for m in range(M):
         idx_m = np.array([m])
         idx_n = np.delete(np.arange(M), m)
         A_mm = np.ascontiguousarray(A[idx_m, :][:, idx_m].transpose((2, 0, 3, 1))).reshape((2, 2))
         A_nn = np.ascontiguousarray(A[idx_n, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
-            (2 * M - 2, 2 * M - 2)
+            (2 * M - 2, 2 * M - 2),
         )
         A_mn = np.ascontiguousarray(A[idx_m, :][:, idx_n].transpose((2, 0, 3, 1))).reshape(
-            (2, 2 * M - 2)
+            (2, 2 * M - 2),
         )
         A_nm = np.transpose(A_mn)
         b_m = np.ascontiguousarray(b[idx_m].transpose()).reshape((2,))
@@ -151,5 +151,4 @@ def autoshape_numba(A, b, c, max_prob, max_shape, min_shape) -> int:  # pragma: 
             norm += np.abs(buf3[(k + 1) % 2, 1])
             k += 1
         shape[m] = k
-    shape = np.clip(shape, min_shape, max_shape)
-    return shape
+    return np.clip(shape, min_shape, max_shape)

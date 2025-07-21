@@ -16,14 +16,13 @@
 Custom vjps for fock utilities.
 """
 
-# pylint: disable=unused-argument
-
 from __future__ import annotations
+
 from functools import partial
 
-import numpy as np
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from mrmustard.math.lattice import strategies
 
@@ -65,7 +64,10 @@ def beamsplitter_jax(theta: float, phi: float, shape: tuple[int, ...], method: s
 
 
 def beamsplitter_jax_fwd(
-    theta: float, phi: float, shape: tuple[int, ...], method: str
+    theta: float,
+    phi: float,
+    shape: tuple[int, ...],
+    method: str,
 ) -> tuple[jnp.ndarray, tuple[jnp.ndarray, float, float]]:
     r"""
     The jax forward pass for the beamsplitter gate.
@@ -118,7 +120,9 @@ def displacement_jax(x: float, y: float, shape: tuple[int, ...], tol: float) -> 
     def true_branch(shape, x, y):
         return jax.pure_callback(
             lambda x, y: strategies.displacement(
-                cutoffs=shape, alpha=np.asarray(x) + 1j * np.asarray(y), dtype=np.complex128
+                cutoffs=shape,
+                alpha=np.asarray(x) + 1j * np.asarray(y),
+                dtype=np.complex128,
             ),
             jax.ShapeDtypeStruct(shape, jnp.complex128),
             x,
@@ -138,7 +142,10 @@ def displacement_jax(x: float, y: float, shape: tuple[int, ...], tol: float) -> 
 
 
 def displacement_jax_fwd(
-    x: float, y: float, shape: tuple[int, ...], tol: float
+    x: float,
+    y: float,
+    shape: tuple[int, ...],
+    tol: float,
 ) -> tuple[jnp.ndarray, tuple[jnp.ndarray, float, float]]:
     r"""
     The jax forward pass for the displacement gate.
@@ -159,7 +166,8 @@ def displacement_jax_bwd(
     gate, x, y = res
     dD_da, dD_dac = jax.pure_callback(
         lambda gate, x, y: strategies.jacobian_displacement(
-            np.asarray(gate), np.asarray(x) + 1j * np.asarray(y)
+            np.asarray(gate),
+            np.asarray(x) + 1j * np.asarray(y),
         ),
         (jax.ShapeDtypeStruct(shape, jnp.complex128), jax.ShapeDtypeStruct(shape, jnp.complex128)),
         gate,

@@ -17,12 +17,16 @@ The class representing a Mach-Zehnder gate.
 """
 
 from __future__ import annotations
-from typing import Sequence
-from mrmustard.physics.ansatz import PolyExpAnsatz
 
-from .base import Unitary
-from ..utils import make_parameter
+from collections.abc import Sequence
+
+from mrmustard import math
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
+
 from ...physics import symplectics
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["MZgate"]
 
@@ -45,7 +49,8 @@ class MZgate(Unitary):
         phi_b_bounds: The bounds for ``phi_b``.
         internal: Whether phases are both in the internal arms.
 
-    .. code-block ::
+    .. code-block::
+
         >>> from mrmustard.lab import MZgate
 
         >>> mz = MZgate((0, 1), phi_a=0.1, phi_b=0.2)
@@ -68,18 +73,20 @@ class MZgate(Unitary):
         internal: bool = False,
     ):
         super().__init__(name="MZgate")
-        self.parameters.add_parameter(make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds))
-        self.parameters.add_parameter(make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds))
+        self.parameters.add_parameter(
+            make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds, dtype=math.float64)
+        )
+        self.parameters.add_parameter(
+            make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds, dtype=math.float64)
+        )
 
-        self._representation = self.from_ansatz(
-            modes_in=modes,
-            modes_out=modes,
-            ansatz=PolyExpAnsatz.from_function(
-                fn=lambda phi_a, phi_b, internal: Unitary.from_symplectic(
-                    modes, symplectics.mzgate_symplectic(phi_a, phi_b, internal)
-                ).bargmann_triple(),
-                phi_a=self.parameters.phi_a,
-                phi_b=self.parameters.phi_b,
-                internal=internal,
-            ),
-        ).representation
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=lambda phi_a, phi_b, internal: Unitary.from_symplectic(
+                modes,
+                symplectics.mzgate_symplectic(phi_a, phi_b, internal),
+            ).bargmann_triple(),
+            phi_a=self.parameters.phi_a,
+            phi_b=self.parameters.phi_b,
+            internal=internal,
+        )
+        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
