@@ -11,7 +11,7 @@
 * Add the new ``jax`` backend. ``Jax`` is a Python library that supports array-oriented numerical computations, automatic differentation and JIT compilation.
 [(#546)](https://github.com/XanaduAI/MrMustard/pull/546)
 
-* New ``OptimizerJax`` class for handling optimizations of Euclidean parameters via the ``jax`` backend.
+* New ``OptimizerJax`` class for handling optimizations of parameters via the ``jax`` backend.
 [(#594)](https://github.com/XanaduAI/MrMustard/pull/594)
 
 ### Breaking changes
