@@ -2,7 +2,7 @@
 ![Logo](https://github.com/XanaduAI/MrMustard/blob/main/mm_dark.png#gh-dark-mode-only)
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
-[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
+[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/tests_numpy/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
 [![Python version](https://img.shields.io/pypi/pyversions/mrmustard.svg?style=popout-square)](https://pypi.org/project/MrMustard/)
 
 # MrMustard: A differentiable quantum simulator that speaks all representations
@@ -12,11 +12,13 @@ Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer
 ## Installation
 
 ### For Users
+
 ```bash
 pip install mrmustard
 ```
 
 ### For Developers
+
 ```bash
 git clone https://github.com/XanaduAI/MrMustard.git
 cd MrMustard
@@ -31,47 +33,59 @@ Make a four-lobed cat state:
 
 ```python
 import numpy as np
-from mrmustard.lab import *
+from mrmustard.lab.states import Coherent, Number
+from mrmustard.lab.transformations import BSgate
 
 # Create cat states
 cat_horizontal = (Coherent(mode=0, x=2) + Coherent(mode=0, x=-2)).normalize()
 cat_vertical = (Coherent(mode=1, y=2) + Coherent(mode=1, y=-2)).normalize()
 
 # merge with beamsplitter
-both_modes = cat_vertical >> cat_horizontal >> BSgate(modes=[0,1], theta=np.pi/4)
+both_modes = cat_vertical >> cat_horizontal >> BSgate(modes=(0, 1), theta=np.pi/4)
 
 # Wigner function of the marginal
 both_modes[0]
+```
+
 <img width="571" alt="Screen Shot 2021-12-06 at 1 31 17 PM" src="https://user-images.githubusercontent.com/8944955/144902008-8d26d59c-8600-4391-9144-ffcc1b2215c2.png">
 
 # Wigner function of the projected state
+
+```python
 both_modes >> Number(mode=0, n=3).dual
+```
+
 <img width="571" alt="Screen Shot 2021-12-06 at 1 31 17 PM" src="https://user-images.githubusercontent.com/8944955/144902008-8d26d59c-8600-4391-9144-ffcc1b2215c2.png">
 
 # Fock amplitudes of the projected state (exact down to machine precision)
-both_modes.fock_amplitudes(shape=(100,4))[:,3]
+
+```python
+both_modes.fock_amplitudes(shape=(100, 4))[:,3]
+# AttributeError: 'Ket' object has no attribute 'fock_amplitudes'
 ```
-
-
 
 ## Why Mr Mustard?
 
 ### 🔄 **Universal Representation Compatibility**
+
 - Initialize any component from any representation: `Ket.from_quadrature(...)`, `Channel.from_bargmann(...)`
 - Convert between representations seamlessly: `my_component.to_fock(...)`, `my_component.to_phasespace(...)`
 - Supported representations: Bargmann, Phase space, Characteristic functions, Quadrature, Fock
 
 ### ⚡ **Fast & Exact**
+
 - State-of-the-art algorithms for Fock amplitudes of Gaussian components
 - Exact computation up to arbitrary cutoff
 - Batch processing support
 
 ### 🎯 **Built-in Optimization**
+
 - Differentiable with respect to all parameters
 - Riemannian optimization on symplectic/unitary/orthogonal groups
 - Cost functions can mix different representations
 
 ### 🧩 **Flexible Circuit Construction**
+
 - Contract components in any order
 - Linear superpositions of compatible objects
 - Plug-and-play backends (`numpy`, `tensorflow`, `jax`)
@@ -79,34 +93,40 @@ both_modes.fock_amplitudes(shape=(100,4))[:,3]
 ## Available Components
 
 **Gates & Transformations:**
+
 - **Single-mode**: Squeezing, displacement, phase rotation, attenuator, amplifier, noise
 - **Two-mode**: Beam splitter, Mach-Zehnder, two-mode squeezing, CX, CZ, CPHASE
 - **N-mode**: Interferometer (unitary), RealInterferometer (orthogonal), Ggate (symplectic)
 
 **States:**
+
 - **Single-mode**: Vacuum, Coherent, SqueezedVacuum, DisplacedSqueezed, Thermal, Number, Sauron, QuadratureEigenstate, BargmannEigenstate
 - **Two-mode**: TwoModeSqueezedVacuum,
 - **N-mode**: GDM (Gaussian density matrix), GKet (Gaussian ket)
 
 **Measurements:**
+
 - **Projectors** implemented "for free" as dual pure density matrices.
 - **POVMs** implemented "for free" as dual density matrices.
 - **Detectors** HomodyneSampler, PNRSampler, ThresholdSampler
 
 ## Examples
 
-
-
 ### Circuit Simulation
 
 ```python
+from mrmustard.lab.states import Vacuum
+from mrmustard.lab.transformations import BSgate, Dgate, Sgate
+from mrmustard.lab.samplers import PNRSampler
+
 # Create and apply a circuit
-input_state = Vacuum(modes=(0,1))
-output_state = input_state >> BS >> S >> D
+input_state = Vacuum(modes=(0, 1))
+output_state = input_state >> BSgate(modes=(0, 1)) >> Sgate(mode=0, r=0.5) >> Dgate(mode=1, x=0.5)
 
 # Measure the result
 pnr = PNRSampler(cutoff=100)
 samples = pnr.sample(state=output_state, n_samples=100)
+# ValueError: Probabilities sum to 0.9998666303494861 and not 1.0.
 ```
 
 ### Optimization
@@ -115,6 +135,8 @@ Transform any simulation into an optimization by marking parameters as trainable
 
 ```python
 from mrmustard import math
+from mrmustard.lab.states import DisplacedSqueezed
+from mrmustard.lab.transformations import Dgate, Ggate
 from mrmustard.training import Optimizer
 
 math.change_backend("tensorflow")
@@ -137,6 +159,10 @@ opt.minimize(cost_fn, by_optimizing=[G, D])
 ### Advanced: Circuit Optimization
 
 ```python
+from mrmustard.lab.circuits import Circuit
+from mrmustard.lab.states import Coherent, Number
+from mrmustard.lab.transformations import Sgate
+
 # Optimize contraction path and Fock shapes
 circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Coherent(0, x=1.0).dual])
 circ.optimize(n_init=100, with_BF_heuristic=True, verbose=True)
@@ -164,19 +190,22 @@ math.cos(0.1)  # jax
 ## Architecture
 
 ### The `lab` Module
+
 Contains components you'd find in a quantum optics lab: states, transformations, measurements, and circuits. States can be used as initial conditions or as measurements (projections).
 
 ### The `physics` Module
+
 Contains the core quantum optics functionality, including the `Ansatz` class responsible for handling the numerics of circuit components.
 
 ### The `math` Module
+
 The backbone providing plug-and-play backend support. Acts as a drop-in replacement for `numpy`, `tensorflow`, or `jax`.
 
 ## Getting Started
 
 1. **Install**: `pip install mrmustard`
 2. **Try the examples** above
-3. **Read the docs**: [Documentation link]
-4. **Explore the tutorials**: [Tutorials link]
+3. **Read the docs**: <https://mrmustard.readthedocs.io/en/stable/>
+4. **Explore the tutorials**: [Tutorials link]?
 
 ---
