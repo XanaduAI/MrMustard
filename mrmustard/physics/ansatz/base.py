@@ -44,6 +44,7 @@ class Ansatz(ABC):
 
     def __init__(self) -> None:
         self._lin_sup = False
+        self._batch_shape = ()
         self._fn = None
         self._kwargs = {}
 
@@ -192,6 +193,15 @@ class Ansatz(ABC):
         This method computes and sets data given a function
         and some kwargs.
         """
+
+    def _tree_flatten(self):  # pragma: no cover
+        children = (self._kwargs,)
+        aux_data = (
+            self._batch_shape,
+            self._lin_sup,
+            self._fn,
+        )
+        return (children, aux_data)
 
     @abstractmethod
     def __add__(self, other: Ansatz) -> Ansatz:

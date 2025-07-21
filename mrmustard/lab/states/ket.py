@@ -139,9 +139,9 @@ class Ket(State):
         if not isinstance(modes, set) and sorted(modes) != list(modes):
             raise ValueError(f"Modes must be sorted. Got {modes}")
         modes = set(modes)
-        if ansatz and ansatz.num_vars != len(modes):
+        if ansatz and ansatz.core_dims != len(modes):
             raise ValueError(
-                f"Expected an ansatz with {len(modes)} variables, found {ansatz.num_vars}.",
+                f"Expected an ansatz with {len(modes)} variables, found {ansatz.core_dims}.",
             )
         wires = Wires(modes_out_ket=modes)
         return Ket(ansatz, wires, name=name)

@@ -28,6 +28,9 @@ import optax
 from opt_einsum import contract
 from platformdirs import user_cache_dir
 
+from mrmustard.lab import Circuit, CircuitComponent
+from mrmustard.physics.ansatz import Ansatz
+
 from .backend_base import BackendBase
 from .jax_vjps import (
     beamsplitter_jax,
@@ -41,6 +44,8 @@ from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
+from .parameter_set import ParameterSet
+from .parameters import Constant, Variable
 
 jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_compilation_cache_dir", f"{user_cache_dir('mrmustard')}/jax_cache")
@@ -49,8 +54,26 @@ jax.config.update("jax_persistent_cache_min_compile_time_secs", 0)
 jax.config.update("jax_persistent_cache_enable_xla_caches", "xla_gpu_per_fusion_autotune_cache_dir")
 
 
+# ~~~~~~~
+# Helpers
+# ~~~~~~~
+
+
+def get_all_subclasses(cls):
+    r"""
+    Returns all subclasses of a given class.
+    """
+    all_subclasses = []
+    for subclass in cls.__subclasses__():
+        all_subclasses.append(subclass)
+        all_subclasses.extend(get_all_subclasses(subclass))
+    return all_subclasses
+
+
 class BackendJax(BackendBase):
-    """A JAX backend implementation."""
+    r"""
+    A JAX backend implementation.
+    """
 
     int32 = jnp.int32
     int64 = jnp.int64
@@ -411,6 +434,9 @@ class BackendJax(BackendBase):
     def zeros_like(self, array: jnp.ndarray, dtype: str = "complex128") -> jnp.ndarray:
         return jnp.zeros_like(array, dtype=dtype)
 
+    def xlogy(self, x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+        return jax.scipy.special.xlogy(x, y)
+
     @staticmethod
     @jax.jit
     def eigh(tensor: jnp.ndarray) -> tuple:
@@ -439,7 +465,6 @@ class BackendJax(BackendBase):
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    # Special functions for optimization
     def DefaultEuclideanOptimizer(self):
         return optax.inject_hyperparams(optax.adamw)
 
@@ -673,6 +698,23 @@ class BackendJax(BackendBase):
         return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
 
 
-# defining the pytree node for the JaxBackend.
-# This allows to skip specifying `self` in static_argnames.
+# defining custom pytree nodes
+for cls in get_all_subclasses(Ansatz):
+    jax.tree_util.register_pytree_node(cls, cls._tree_flatten, cls._tree_unflatten)
 jax.tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
+jax.tree_util.register_pytree_node(Circuit, Circuit._tree_flatten, Circuit._tree_unflatten)
+jax.tree_util.register_pytree_node(
+    CircuitComponent,
+    CircuitComponent._tree_flatten,
+    CircuitComponent._tree_unflatten,
+)
+# register all subclasses of CircuitComponent
+for cls in get_all_subclasses(CircuitComponent):
+    jax.tree_util.register_pytree_node(cls, cls._tree_flatten, cls._tree_unflatten)
+jax.tree_util.register_pytree_node(Constant, Constant._tree_flatten, Constant._tree_unflatten)
+jax.tree_util.register_pytree_node(
+    ParameterSet,
+    ParameterSet._tree_flatten,
+    ParameterSet._tree_unflatten,
+)
+jax.tree_util.register_pytree_node(Variable, Variable._tree_flatten, Variable._tree_unflatten)

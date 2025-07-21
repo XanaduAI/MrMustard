@@ -133,9 +133,9 @@ class DM(State):
         if not isinstance(modes, set) and sorted(modes) != list(modes):
             raise ValueError(f"Modes must be sorted. got {modes}")
         modes = set(modes)
-        if ansatz and ansatz.num_vars != 2 * len(modes):
+        if ansatz and ansatz.core_dims != 2 * len(modes):
             raise ValueError(
-                f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.num_vars}.",
+                f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.core_dims}.",
             )
         wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
         return DM(ansatz, wires, name=name)

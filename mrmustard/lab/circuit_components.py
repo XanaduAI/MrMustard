@@ -326,111 +326,6 @@ class CircuitComponent:
             data["mode"] = tuple(data["mode"])
         return cls(**data)
 
-    def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
-        r"""
-        Returns a circuit component with the quadrature representation of this component
-        in terms of A,b,c.
-
-        Args:
-            phi (float): The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            A circuit component with the given quadrature representation.
-        """
-        from .circuit_components_utils.b_to_q import BtoQ  # noqa: PLC0415
-
-        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
-        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
-        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
-        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
-
-        object_to_convert = self
-        if isinstance(self.ansatz, ArrayAnsatz):
-            object_to_convert = self.to_bargmann()
-
-        return BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
-            BtoQ_ob,
-        )
-
-    def quadrature_triple(
-        self,
-        phi: float = 0.0,
-    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        r"""
-        The quadrature representation triple A,b,c of this circuit component.
-
-        Args:
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            A,b,c triple of the quadrature representation
-        """
-        return self.to_quadrature(phi=phi).ansatz.triple
-
-    def quadrature(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
-        r"""
-        The (discretized) quadrature basis representation of the circuit component.
-        This method considers the same basis in all the wires. For more fine-grained control,
-        use the BtoQ transformation or a combination of transformations.
-
-        Args:
-            quad: discretized quadrature points to evaluate over in the
-                quadrature representation. One vector of points per wire.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            A circuit component with the given quadrature representation.
-        """
-        if isinstance(self.ansatz, ArrayAnsatz):
-            conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
-            dims = self.ansatz.core_dims
-
-            if len(quad) != dims:
-                raise ValueError(
-                    f"The fock array has dimension {dims} whereas ``quad`` has {len(quad)}.",
-                )
-            # construct quadrature basis vectors
-            shapes = self.ansatz.core_shape
-            quad_basis_vecs = []
-            for dim in range(dims):
-                q_to_n = oscillator_eigenstate(quad[dim], shapes[dim])
-                if not math.allclose(phi, 0.0):
-                    theta = -math.arange(shapes[dim]) * phi
-                    Ur = math.make_complex(math.cos(theta), math.sin(theta))
-                    q_to_n = math.einsum("n,nq->nq", Ur, q_to_n)
-                if conjugates[dim]:
-                    q_to_n = math.conj(q_to_n)
-                quad_basis_vecs += [math.cast(q_to_n, "complex128")]
-
-            # Convert each dimension to quadrature
-            fock_string = "".join([chr(97 + self.n_modes + dim) for dim in range(dims)])
-            q_string = "".join(
-                [
-                    f"{fock_string[idx]}{chr(97 + wire.mode)},"
-                    for idx, wire in enumerate(self.wires)
-                ],
-            )[:-1]
-            out_string = "".join([chr(97 + mode) for mode in self.modes])
-            ret = math.einsum(
-                "..." + fock_string + "," + q_string + "->" + out_string + "...",
-                self.ansatz.array,
-                *quad_basis_vecs,
-                optimize=True,
-            )
-        else:
-            batch_str = (
-                "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1]
-                + "->"
-                + "".join([chr(97 + mode) for mode in self.modes])
-            )
-            ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
-        batch_shape = (
-            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
-        )
-        batch_dims = len(batch_shape)
-        size = int(math.prod(ret.shape[:-batch_dims] if batch_shape else ret.shape))
-        return math.reshape(ret, (size, *batch_shape))
-
     @classmethod
     def _from_attributes(
         cls,
@@ -465,6 +360,21 @@ class CircuitComponent:
             if tp.__name__ in types:
                 return tp(ansatz=ansatz, wires=wires, name=name)
         return CircuitComponent(ansatz, wires, name)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        ret._parameters, ret._ansatz = children
+        ret._wires, ret._name = aux_data
+
+        # make sure the ansatz parameters match the parameter set
+        for param_name, param in ret.ansatz._kwargs.items():
+            if isinstance(param, Variable):
+                ret.ansatz._kwargs[param_name] = ret.parameters.all_parameters[param.name]
+            else:  # need this to build pytree of labels
+                ret.ansatz._kwargs[param_name] = param
+
+        return ret
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
@@ -660,6 +570,85 @@ class CircuitComponent:
             ),
         )
 
+    def quadrature(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
+        r"""
+        The (discretized) quadrature basis representation of the circuit component.
+        This method considers the same basis in all the wires. For more fine-grained control,
+        use the BtoQ transformation or a combination of transformations.
+
+        Args:
+            quad: discretized quadrature points to evaluate over in the
+                quadrature representation. One vector of points per wire.
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A circuit component with the given quadrature representation.
+        """
+        if isinstance(self.ansatz, ArrayAnsatz):
+            conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
+            dims = self.ansatz.core_dims
+
+            if len(quad) != dims:
+                raise ValueError(
+                    f"The fock array has dimension {dims} whereas ``quad`` has {len(quad)}.",
+                )
+            # construct quadrature basis vectors
+            shapes = self.ansatz.core_shape
+            quad_basis_vecs = []
+            for dim in range(dims):
+                q_to_n = oscillator_eigenstate(quad[dim], shapes[dim])
+                if not math.allclose(phi, 0.0):
+                    theta = -math.arange(shapes[dim]) * phi
+                    Ur = math.make_complex(math.cos(theta), math.sin(theta))
+                    q_to_n = math.einsum("n,nq->nq", Ur, q_to_n)
+                if conjugates[dim]:
+                    q_to_n = math.conj(q_to_n)
+                quad_basis_vecs += [math.cast(q_to_n, "complex128")]
+
+            # Convert each dimension to quadrature
+            fock_string = "".join([chr(97 + self.n_modes + dim) for dim in range(dims)])
+            q_string = "".join(
+                [
+                    f"{fock_string[idx]}{chr(97 + wire.mode)},"
+                    for idx, wire in enumerate(self.wires)
+                ],
+            )[:-1]
+            out_string = "".join([chr(97 + mode) for mode in self.modes])
+            ret = math.einsum(
+                "..." + fock_string + "," + q_string + "->" + out_string + "...",
+                self.ansatz.array,
+                *quad_basis_vecs,
+                optimize=True,
+            )
+        else:
+            batch_str = (
+                "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1]
+                + "->"
+                + "".join([chr(97 + mode) for mode in self.modes])
+            )
+            ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
+        batch_shape = (
+            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
+        )
+        batch_dims = len(batch_shape)
+        size = int(math.prod(ret.shape[:-batch_dims] if batch_shape else ret.shape))
+        return math.reshape(ret, (size, *batch_shape))
+
+    def quadrature_triple(
+        self,
+        phi: float = 0.0,
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The quadrature representation triple A,b,c of this circuit component.
+
+        Args:
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A,b,c triple of the quadrature representation
+        """
+        return self.to_quadrature(phi=phi).ansatz.triple
+
     def to_bargmann(self) -> CircuitComponent:
         r"""
         Returns a new ``CircuitComponent`` in the ``Bargmann`` representation.
@@ -744,6 +733,32 @@ class CircuitComponent:
             ret = self._from_attributes(fock, wires, self.name)
         return ret
 
+    def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
+        r"""
+        Returns a circuit component with the quadrature representation of this component
+        in terms of A,b,c.
+
+        Args:
+            phi (float): The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A circuit component with the given quadrature representation.
+        """
+        from .circuit_components_utils.b_to_q import BtoQ  # noqa: PLC0415
+
+        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
+        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
+        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
+        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
+
+        object_to_convert = self
+        if isinstance(self.ansatz, ArrayAnsatz):
+            object_to_convert = self.to_bargmann()
+
+        return BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
+            BtoQ_ob,
+        )
+
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
         r"""
         Creates a "light" copy of this component by referencing its __dict__, except for the wires,
@@ -800,6 +815,11 @@ class CircuitComponent:
             return serializable, {k: v.value for k, v in self.parameters.all_parameters.items()}
 
         return serializable, {}
+
+    def _tree_flatten(self):  # pragma: no cover
+        children = (self.parameters, self.ansatz)
+        aux_data = (self.wires, self.name)
+        return (children, aux_data)
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
