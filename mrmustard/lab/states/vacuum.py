@@ -71,6 +71,16 @@ class Vacuum(Ket):
 
         self.manual_shape = (1,) * len(modes)
 
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        (modes,) = aux_data
+        return cls(modes)
+
+    def _tree_flatten(self):  # pragma: no cover
+        children = ()
+        aux_data = (self.modes,)
+        return (children, aux_data)
+
     def __getitem__(self, idx: int | Collection[int]) -> Vacuum:
         idx = (idx,) if isinstance(idx, int) else idx
         if not set(idx).issubset(set(self.modes)):

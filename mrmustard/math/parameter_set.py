@@ -88,6 +88,18 @@ class ParameterSet:
         """
         return self._variables
 
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        ret._variables = children[0]
+        ret._names, ret._constants = aux_data
+        for name in ret.names:
+            if name in ret.constants:
+                ret.__dict__[name] = ret.constants[name]
+            elif name in ret.variables:
+                ret.__dict__[name] = ret.variables[name]
+        return ret
+
     def add_parameter(self, parameter: Constant | Variable) -> None:
         r"""
         Adds a parameter to this parameter set.
@@ -160,6 +172,11 @@ class ParameterSet:
                 string = f"{name}"
             strings.append(string)
         return ", ".join(strings)
+
+    def _tree_flatten(self):  # pragma: no cover
+        children = (self.variables,)
+        aux_data = (self.names, self.constants)
+        return (children, aux_data)
 
     def __bool__(self) -> bool:
         r"""

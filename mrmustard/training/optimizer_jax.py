@@ -19,143 +19,94 @@ A Jax based optimizer for any parametrized object.
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from itertools import chain
 
 import equinox as eqx
 import jax
-from optax import GradientTransformation, OptState
+from optax import GradientTransformation, OptState, multi_transform
 
 from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.math.parameters import Variable
+from mrmustard.training.parameter_update_jax import (
+    update_orthogonal,
+    update_symplectic,
+    update_unitary,
+)
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
 
 __all__ = ["OptimizerJax"]
 
 
-class Objective(eqx.Module):
-    r"""
-    A dataclass used by equinox to store the Jax arrays of the trainable parameters.
-
-    Args:
-        static: The static parameters of the model. These are the keys associated with the trainable parameters.
-        dynamic: The dynamic parameters of the model. These are the arrays of the trainable parameters.
-    """
-
-    static: list[str]
-    dynamic: list[jax.Array]
-
-    def __init__(self, trainable_params: dict[str, Variable]):
-        self.static = list(trainable_params.keys())
-        self.dynamic = [array.value for array in trainable_params.values()]
-
-    def __call__(self, cost_fn: Callable, by_optimizing: Sequence[CircuitComponent]) -> float:
-        r"""
-        Updates the parameters in ``by_optimizing`` with the values in ``self.dynamic``
-        and calls the cost function. This is necessary because Jax does not support
-        in-place updates.
-
-        Args:
-            cost_fn: The cost function to minimize.
-            by_optimizing: The parameters to optimize.
-
-        Returns:
-            The loss value.
-        """
-        trainable_params = OptimizerJax._get_trainable_params(by_optimizing)
-        for key, val in zip(self.static, self.dynamic):
-            trainable_params[key].value = val
-        return cost_fn(*by_optimizing)
-
-
 class OptimizerJax:
     r"""
     A Jax based optimizer for any parametrized object.
 
-    Note that this optimizer currently only supports Euclidean optimizations.
-
     Args:
-        learning_rate: The learning rate of the optimizer.
+        euclidean_lr: The euclidean learning rate of the optimizer.
+        symplectic_lr: The symplectic learning rate of the optimizer.
+        unitary_lr: The unitary learning rate of the optimizer.
+        orthogonal_lr: The orthogonal learning rate of the optimizer.
         stable_threshold: The threshold for the loss to be considered stable.
+
+    Raises:
+        ValueError: If the set backend is not "jax".
     """
 
     def __init__(
         self,
-        learning_rate: float = 0.001,
+        euclidean_lr: float = 0.001,
+        symplectic_lr: float = 0.001,
+        unitary_lr: float = 0.001,
+        orthogonal_lr: float = 0.1,
         stable_threshold: float = 1e-6,
     ):
-        self.learning_rate = learning_rate
+        if math.backend_name != "jax":
+            raise ValueError(
+                "OptimizerJax only supports the Jax backend. Please set the backend to Jax using `math.change_backend('jax')`.",
+            )
+        self.euclidean_lr = euclidean_lr
+        self.symplectic_lr = symplectic_lr
+        self.unitary_lr = unitary_lr
+        self.orthogonal_lr = orthogonal_lr
         self.opt_history = [0]
         self.log = create_logger(__name__)
         self.stable_threshold = stable_threshold
-
-    @staticmethod
-    def _get_trainable_params(trainable_items, root_tag: str = "optimized") -> dict[str, Variable]:
-        r"""
-        Traverses all instances of ``CircuitComponent``\s or trainable items that belong to the backend
-        and return a dict of trainables of the form `{tags: trainable_parameters}` where the `tags`
-        are traversal paths of collecting all parent tags for reaching each parameter.
-
-        Args:
-            trainable_items: A list of trainable items.
-            root_tag: The root tag for the trainable items.
-
-        Returns:
-            A dict of trainables of the form `{tags: trainable_parameters}`.
-        """
-        trainables = []
-        for i, item in enumerate(trainable_items):
-            owner_tag = f"{root_tag}[{i}]"
-            if isinstance(item, Circuit):
-                for j, op in enumerate(item.components):
-                    tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
-                    tagged_vars = op.parameters.tagged_variables(tag)
-                    trainables.append(tagged_vars.items())
-            elif hasattr(item, "parameters"):
-                tag = f"{owner_tag}:{item.__class__.__qualname__}"
-                tagged_vars = item.parameters.tagged_variables(tag)
-                trainables.append(tagged_vars.items())
-            elif math.from_backend(item) and math.is_trainable(item):
-                # the created parameter is wrapped into a list because the case above
-                # returns a list, hence ensuring we have a list of lists
-                tag = f"{owner_tag}:{math.__class__.__name__}/{getattr(item, 'name', item.__class__.__name__)}"
-                trainables.append([(tag, Variable(item, name="from _backend"))])
-
-        return dict(chain(*trainables))
 
     @eqx.filter_jit
     def make_step(
         self,
         optim: GradientTransformation,
-        loss: Callable,
-        model: eqx.Module,
+        cost_fn: Callable,
+        by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
         opt_state: OptState,
-    ) -> tuple[eqx.Module, OptState, float]:
+    ) -> tuple[Sequence[Variable | CircuitComponent | Circuit], OptState, float]:
         r"""
         Make a step of the optimization.
 
         Args:
             optim: The optimizer to use.
-            loss: The loss function to minimize.
-            model: The model to optimize.
+            cost_fn: The cost function to minimize.
+            by_optimizing: The items to optimize.
             opt_state: The current state of the optimizer.
 
         Returns:
-            The updated model, the updated optimizer state, and the loss value.
+            The updated by_optimizing, the updated optimizer state, and the loss value.
         """
-        params, static = eqx.partition(model, eqx.is_array)
-        loss_value, grads = jax.value_and_grad(loss)(params, static)
-        updates, opt_state = optim.update(grads, opt_state, eqx.filter(model, eqx.is_array))
-        model = eqx.apply_updates(model, updates)
-        return model, opt_state, loss_value
+        loss_value, grads = jax.value_and_grad(cost_fn, argnums=tuple(range(len(by_optimizing))))(
+            *by_optimizing,
+        )
+        updates, opt_state = optim.update(grads, opt_state, by_optimizing)
+        by_optimizing = eqx.apply_updates(by_optimizing, updates)
+        return by_optimizing, opt_state, loss_value
 
     def minimize(
         self,
         cost_fn: Callable,
         by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
         max_steps: int = 1000,
-    ) -> None:
+        euclidean_optim: type[GradientTransformation] | None = None,
+    ) -> Sequence[Variable | CircuitComponent | Circuit]:
         r"""
         Minimizes the given cost function by optimizing ``Variable``s either on their own or within a ``CircuitComponent`` / ``Circuit``.
 
@@ -165,18 +116,29 @@ class OptimizerJax:
             by_optimizing: A list of elements that contain the parameters to optimize.
             max_steps: The minimization keeps going until the loss is stable or max_steps are
                 reached (if ``max_steps=0`` it will only stop when the loss is stable).
+            euclidean_optim: The type of euclidean optimizer to use. If ``None``, the default optimizer used is ``optax.adamw``.
+
+        Returns:
+            The list of elements optimized.
         """
         if settings.PROGRESSBAR:
             progress_bar = ProgressBar(max_steps)
             with progress_bar:
-                self._optimization_loop(
+                by_optimizing = self._optimization_loop(
                     cost_fn,
                     by_optimizing,
                     max_steps=max_steps,
                     progress_bar=progress_bar,
+                    euclidean_optim=euclidean_optim,
                 )
         else:
-            self._optimization_loop(cost_fn, by_optimizing, max_steps=max_steps)
+            by_optimizing = self._optimization_loop(
+                cost_fn,
+                by_optimizing,
+                max_steps=max_steps,
+                euclidean_optim=euclidean_optim,
+            )
+        return by_optimizing
 
     def should_stop(self, max_steps: int) -> bool:
         r"""
@@ -208,27 +170,46 @@ class OptimizerJax:
         by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
         max_steps: int,
         progress_bar: ProgressBar | None = None,
-    ) -> None:
+        euclidean_optim: type[GradientTransformation] | None = None,
+    ) -> Sequence[Variable | CircuitComponent | Circuit]:
         r"""
         The core optimization loop.
         """
-        trainable_params = self._get_trainable_params(by_optimizing)
-        model = Objective(trainable_params)
+        by_optimizing = tuple(by_optimizing)
+        euclidean_optim = (
+            euclidean_optim(learning_rate=self.euclidean_lr)
+            if euclidean_optim is not None
+            else math.euclidean_opt(learning_rate=self.euclidean_lr)
+        )
 
-        def loss(params, static):
-            model = eqx.combine(params, static)
-            return model(cost_fn, by_optimizing)
+        labels_pytree = jax.tree_util.tree_map(
+            lambda node: str(node.update_fn.__name__),
+            by_optimizing,
+            is_leaf=lambda n: isinstance(n, Variable),
+        )
 
-        optim = math.euclidean_opt(learning_rate=self.learning_rate)
-        opt_state = optim.init(eqx.filter(model, eqx.is_array))
+        optim = multi_transform(
+            {
+                "update_euclidean": euclidean_optim,
+                "update_unitary": update_unitary(self.unitary_lr),
+                "update_symplectic": update_symplectic(self.symplectic_lr),
+                "update_orthogonal": update_orthogonal(self.orthogonal_lr),
+            },
+            labels_pytree,
+        )
+
+        opt_state = optim.init(by_optimizing)
 
         # optimize
         while not self.should_stop(max_steps):
-            model, opt_state, loss_value = self.make_step(optim, loss, model, opt_state)
+            by_optimizing, opt_state, loss_value = self.make_step(
+                optim,
+                cost_fn,
+                by_optimizing,
+                opt_state,
+            )
             self.opt_history.append(loss_value)
             if progress_bar is not None:
                 progress_bar.step(math.asnumpy(loss_value))
 
-        # update the parameters one last time
-        for key, val in zip(model.static, model.dynamic):
-            trainable_params[key].value = val
+        return by_optimizing
