@@ -94,7 +94,7 @@ class OptimizerJax:
         Returns:
             The updated by_optimizing, the updated optimizer state, and the loss value.
         """
-        loss_value, grads = jax.value_and_grad(cost_fn, argnums=list(range(len(by_optimizing))))(
+        loss_value, grads = jax.value_and_grad(cost_fn, argnums=tuple(range(len(by_optimizing))))(
             *by_optimizing,
         )
         updates, opt_state = optim.update(grads, opt_state, by_optimizing)
