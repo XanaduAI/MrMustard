@@ -60,8 +60,7 @@ both_modes >> Number(mode=0, n=3).dual
 ### Fock amplitudes of the projected state (exact down to machine precision)
 
 ```python
-both_modes.fock_amplitudes(shape=(100, 4))[:,3]
-# AttributeError: 'Ket' object has no attribute 'fock_amplitudes'
+both_modes.fock_array(shape=(100, 4))[:,3]
 ```
 
 ## Why Mr Mustard?
@@ -206,6 +205,5 @@ The backbone providing plug-and-play backend support. Acts as a drop-in replacem
 1. **Install**: `pip install mrmustard`
 2. **Try the examples** above
 3. **Read the docs**: <https://mrmustard.readthedocs.io/en/stable/>
-4. **Explore the tutorials**: [Tutorials link]?
 
 ---
