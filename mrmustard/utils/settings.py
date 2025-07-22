@@ -12,146 +12,116 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A module containing the settings.
-"""
+"""A module containing global settings."""
 
-from typing import Any
-import os
-from rich import print
-import rich.table
+from __future__ import annotations
+
+import warnings
+from pathlib import Path
+from typing import Literal
+
 import numpy as np
+import rich.table
+from rich import print as rprint
 
 from mrmustard.utils.filters import add_complex_warning_filter, remove_complex_warning_filter
 
-__all__ = ["Settings", "settings"]
+__all__ = ["settings"]
 
 
-class ImmutableSetting:
-    r"""A setting that becomes immutable after the first time its value is queried.
-
-    Args:
-        value (any): the default value of this setting
-        name (str): the name of this setting
-    """
-
-    def __init__(self, value: Any, name: str) -> None:
-        self._value = value
-        self._name = name
-        self._is_immutable = False
-
-    @property
-    def name(self):
-        r"""The name of this setting."""
-        return self._name
-
-    @property
-    def value(self):
-        r"""The value of this setting."""
-        self._is_immutable = True
-        return self._value
-
-    @value.setter
-    def value(self, value):
-        if self._is_immutable:
-            raise ValueError(f"Cannot change the value of `settings.{self.name}`.")
-        self._value = value
-
-
-# pylint: disable=too-many-instance-attributes
 class Settings:
-    r"""A class containing various settings that are used by Mr Mustard throughout a session.
-
-    Some of these settings (such as those representing cutoff values) can be changed at any time,
-    while others (such as the value of the Planck constant) can only be changed before being
-    queried for the first time.
+    r"""
+    A class containing various settings that are used by Mr Mustard throughout a session.
 
     .. code-block::
 
         from mrmustard import settings
 
-        >>> settings.AUTOCUTOFF_MAX_CUTOFF  # check the default values
-        100
+        >>> settings.HBAR  # check the default values
+        1.0
 
-        >>> settings.AUTOCUTOFF_MAX_CUTOFF = 150  # update to new values
-        >>> settings.AUTOCUTOFF_MAX_CUTOFF
-        150
+        >>> settings.HBAR=2.0  # update globally to new values
+        >>> settings.HBAR
+        2.0
+
+        >>> with settings(HBAR=3.0): # update with context manager
+        >>>      settings.HBAR
+        3.0
+
+        >>> settings.HBAR # previous value remains
+        2.0
     """
 
+    _frozen = False
+
     def __new__(cls):  # singleton
-        if not hasattr(cls, "instance"):
-            cls.instance = super(Settings, cls).__new__(cls)
-        return cls.instance
+        if not hasattr(cls, "_instance"):
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(self):
-        self._hbar = ImmutableSetting(2.0, "HBAR")
-        self._debug = False
-        self._autocutoff_probability = 0.999  # capture at least 99.9% of the probability
-        self._autocutoff_max_cutoff = 100
-        self._autocutoff_min_cutoff = 1
-        self._circuit_decimals = 3
-        self._discretization_method = "iterative"
-        # use cutoff=5 for each mode when determining if two transformations in fock repr are equal
-        # 3 is enough to include a full step of the rec relations
-        self._eq_transformation_cutoff = 3
-        self._eq_transformation_rtol_fock = 1e-3
-        self._eq_transformation_rtol_gauss = 1e-6
-        # for the detectors
-        self._pnr_internal_cutoff = 50
-        self._homodyne_squeezing = 10.0
-        # misc
-        self._progressbar = True
-        self._seed = np.random.randint(0, 2**31 - 1)
+        self._hbar: float = 1.0
+        self._seed: int = np.random.randint(0, 2**31 - 1)  # noqa: NPY002
         self.rng = np.random.default_rng(self._seed)
-        self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
-        self._precision_bits_hermite_poly = 128
-        self._julia_initialized = (
-            False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
-        )
-        self._complex_warning = False
+        self._precision_bits_hermite_poly: int = 128
+        self._complex_warning: bool = False
+        self._cache_dir = Path(__file__).parents[2].absolute() / ".serialize_cache"
 
-    def _force_hbar(self, value):
-        r"can set the value of HBAR at any time. use with caution."
-        self._hbar._value = value
+        self.AUTOSHAPE_PROBABILITY: float = 0.99999
+        r"""The minimum l2_norm to reach before automatically stopping the Bargmann-to-Fock conversion. Default is ``0.99999``."""
 
-    @property
-    def AUTOCUTOFF_MAX_CUTOFF(self):
-        r"""The maximum value for autocutoff. Default is ``100``."""
-        return self._autocutoff_max_cutoff
+        self.AUTOSHAPE_MAX: int = 50
+        r"""The max shape for the autoshape. Default is ``50``."""
 
-    @AUTOCUTOFF_MAX_CUTOFF.setter
-    def AUTOCUTOFF_MAX_CUTOFF(self, value: int):
-        self._autocutoff_max_cutoff = value
+        self.AUTOSHAPE_MIN: int = 1
+        r"""The min shape for the autoshape. Default is ``1``."""
 
-    @property
-    def AUTOCUTOFF_MIN_CUTOFF(self):
-        r"""The minimum value for autocutoff. Default is ``1``."""
-        return self._autocutoff_min_cutoff
+        self.ATOL: float = 1e-8
+        r"""The absolute tolerance when comparing two values or arrays. Default is ``1e-8``."""
 
-    @AUTOCUTOFF_MIN_CUTOFF.setter
-    def AUTOCUTOFF_MIN_CUTOFF(self, value: int):
-        self._autocutoff_min_cutoff = value
+        self.DEFAULT_FOCK_SIZE: int = 50
+        r"""The default size for the Fock representation. Default is ``50``."""
 
-    @property
-    def AUTOCUTOFF_PROBABILITY(self):
-        r"""The autocutoff probability. Default is ``0.999``."""
-        return self._autocutoff_probability
+        self.DEFAULT_REPRESENTATION: Literal["Bargmann", "Fock"] = "Fock"
+        r"""The representation to use when contracting two circuit components in different representations. Can be ``Fock`` or ``Bargmann``. Default is ``Fock``."""
 
-    @AUTOCUTOFF_PROBABILITY.setter
-    def AUTOCUTOFF_PROBABILITY(self, value: float):
-        self._autocutoff_probability = value
+        self.DISCRETIZATION_METHOD: Literal["clenshaw", "iterative"] = "clenshaw"
+        r"""The method used to discretize the Wigner function. Can be ``clenshaw`` (better, default) or ``iterative`` (worse, faster). Default is ``clenshaw``."""
 
-    @property
-    def CIRCUIT_DECIMALS(self):
-        r"""The number of decimals displayed when drawing a circuit with parameters. Default is ``3``."""
-        return self._circuit_decimals
+        self.DRAW_CIRCUIT_PARAMS: bool = True
+        r"""Whether or not to draw the parameters of a circuit. Default is ``True``."""
 
-    @CIRCUIT_DECIMALS.setter
-    def CIRCUIT_DECIMALS(self, value: int):
-        self._circuit_decimals = value
+        self.EINSUM_OPTIMIZE: bool | Literal["greedy", "optimal", "auto"] = "greedy"
+        r"""Whether to optimize the contraction order when using the Einstein summation convention.
+        Allowed values are True, False, "greedy", "optimal" or "auto".
+        Note the TF backend does not support False and converts it to "greedy".
+        Default is ``"greedy"``.
+        """
+
+        self.PROGRESSBAR: bool = True
+        r"""Whether or not to display the progress bar when performing training. Default is ``True``."""
+
+        self.STABLE_FOCK_CONVERSION: bool = False
+        r"""Whether to use the ``stable`` function when computing Fock amplitudes (more stable, but slower). Default is ``False``."""
+
+        self._original_values = {}
+        self._frozen = True
 
     @property
-    def COMPLEX_WARNING(self):
-        r"""Whether tensorflow's ``ComplexWarning``s should be raised when a complex is casted to a float. Default is ``False``."""
+    def CACHE_DIR(self) -> Path:
+        r"""
+        The directory in which serialized MrMustard objects are saved.
+        """
+        return self._cache_dir
+
+    @CACHE_DIR.setter
+    def CACHE_DIR(self, path: str | Path):
+        self._cache_dir = Path(path)
+        self._cache_dir.mkdir(exist_ok=True, parents=True)
+
+    @property
+    def COMPLEX_WARNING(self) -> bool:
+        r"""Whether tensorflow's ``ComplexWarning`` should be raised when a complex is cast to a float. Default is ``False``."""
         return self._complex_warning
 
     @COMPLEX_WARNING.setter
@@ -163,168 +133,47 @@ class Settings:
             add_complex_warning_filter()
 
     @property
-    def DEBUG(self):
-        r"""Whether or not to print the vector of means and the covariance matrix alongside the
-        html representation of a state. Default is ``False``.
+    def HBAR(self) -> float:
+        r"""
+        The value of the Planck constant. Default is ``1``.
         """
-        return self._debug
-
-    @DEBUG.setter
-    def DEBUG(self, value: bool):
-        self._debug = value
-
-    @property
-    def DISCRETIZATION_METHOD(self):
-        r"""The method used to discretize the Wigner function. Default is ``iterative``.
-
-        Can be either ``'iterative'`` or ``'clenshaw'``.
-        """
-        return self._discretization_method
-
-    @DISCRETIZATION_METHOD.setter
-    def DISCRETIZATION_METHOD(self, value: str):
-        self._discretization_method = value
-
-    @property
-    def DEFAULT_BS_METHOD(self):
-        r"""The default method for computing the transformation operated by a beam splitter in
-         the Fock basis . Default is ``vanilla``.
-
-        Can be either ``'vanilla'`` or ``'schwinger'``.
-        """
-        return self._default_bs_method
-
-    @DEFAULT_BS_METHOD.setter
-    def DEFAULT_BS_METHOD(self, value: str):
-        self._default_bs_method = value
-
-    @property
-    def EQ_TRANSFORMATION_CUTOFF(self):
-        r"""The cutoff used when comparing two transformations via the Choi–Jamiolkowski
-        isomorphism. Default is ``3``."""
-        return self._eq_transformation_cutoff
-
-    @EQ_TRANSFORMATION_CUTOFF.setter
-    def EQ_TRANSFORMATION_CUTOFF(self, value: int):
-        self._eq_transformation_cutoff = value
-
-    @property
-    def EQ_TRANSFORMATION_RTOL_FOCK(self):
-        r"""The relative tolerance used when comparing two transformations via the Choi–Jamiolkowski
-        isomorphism. Default is ``1e-3``."""
-        return self._eq_transformation_rtol_fock
-
-    @EQ_TRANSFORMATION_RTOL_FOCK.setter
-    def EQ_TRANSFORMATION_RTOL_FOCK(self, value: float):
-        self._eq_transformation_rtol_fock = value
-
-    @property
-    def EQ_TRANSFORMATION_RTOL_GAUSS(self):
-        r"""The relative tolerance used when comparing two transformations on Gaussian states.
-        Default is ``1e-6``."""
-        return self._eq_transformation_rtol_gauss
-
-    @EQ_TRANSFORMATION_RTOL_GAUSS.setter
-    def EQ_TRANSFORMATION_RTOL_GAUSS(self, value: float):
-        self._eq_transformation_rtol_gauss = value
-
-    @property
-    def HBAR(self):
-        r"""The value of the Planck constant. Default is ``2``.
-
-        Cannot be changed after its value is queried for the first time.
-        """
-        return self._hbar.value
+        return self._hbar
 
     @HBAR.setter
     def HBAR(self, value: float):
-        self._hbar.value = value
+        warnings.warn("Changing HBAR can conflict with prior computations.", stacklevel=1)
+        self._hbar = value
 
     @property
-    def HOMODYNE_SQUEEZING(self):
-        r"""The value of squeezing for homodyne measurements. Default is ``10``."""
-        return self._homodyne_squeezing
-
-    @HOMODYNE_SQUEEZING.setter
-    def HOMODYNE_SQUEEZING(self, value: float):
-        self._homodyne_squeezing = value
-
-    @property
-    def PNR_INTERNAL_CUTOFF(self):
-        r"""The cutoff used when computing the output of a PNR detection. Default is ``50``."""
-        return self._pnr_internal_cutoff
-
-    @PNR_INTERNAL_CUTOFF.setter
-    def PNR_INTERNAL_CUTOFF(self, value: int):
-        self._pnr_internal_cutoff = value
-
-    @property
-    def PROGRESSBAR(self):
-        r"""Whether or not to display the progress bar when performing training. Default is ``True``."""
-        return self._progressbar
-
-    @PROGRESSBAR.setter
-    def PROGRESSBAR(self, value: bool):
-        self._progressbar = value
-
-    @property
-    def SEED(self):
+    def SEED(self) -> int:
         r"""Returns the seed value if set, otherwise returns a random seed."""
         if self._seed is None:
-            self._seed = np.random.randint(0, 2**31 - 1)
+            self._seed = np.random.randint(0, 2**31 - 1)  # noqa: NPY002
             self.rng = np.random.default_rng(self._seed)
         return self._seed
 
     @SEED.setter
-    def SEED(self, value: int):
+    def SEED(self, value: int | None):
         self._seed = value
         self.rng = np.random.default_rng(self._seed)
 
-    @property
-    def PRECISION_BITS_HERMITE_POLY(self):
+    def __call__(self, **kwargs):
         r"""
-        The number of bits used to represent a single Fock amplitude when calculating Hermite polynomials.
-        Default is 128 (i.e. the Fock representation has dtype complex128).
-        Currently allowed values: 128, 256, 384, 512
+        Allows for setting multiple settings at once and saving the original values.
         """
-        return self._precision_bits_hermite_poly
+        self._original_values = {k: getattr(self, k) for k in kwargs}
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        return self
 
-    @PRECISION_BITS_HERMITE_POLY.setter
-    def PRECISION_BITS_HERMITE_POLY(self, value: int):
-        allowed_values = [128, 256, 384, 512]
-        if value not in allowed_values:
-            raise ValueError(
-                f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"
-            )
-        self._precision_bits_hermite_poly = value
-        if (
-            value != 128 and not self._julia_initialized
-        ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
-            from julia.api import LibJulia  # pylint: disable=import-outside-toplevel
+    def __enter__(self):
+        "context manager enter method"
+        return self
 
-            # the next line must be run before "from julia import Main as Main_julia"
-            LibJulia.load().init_julia(
-                ["--compiled-modules=no", "--project=julia_pkg"]
-            )  # also loads julia environment
-            # the next line must be run after "LibJulia.load().init_julia()"
-            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
-
-            # import Julia functions
-            utils_directory = os.path.dirname(__file__)
-            Main_julia.cd(utils_directory)
-            Main_julia.include("../math/lattice/strategies/julia/getPrecision.jl")
-            Main_julia.include("../math/lattice/strategies/julia/vanilla.jl")
-            Main_julia.include("../math/lattice/strategies/julia/compactFock/helperFunctions.jl")
-            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_amps.jl")
-            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_grad.jl")
-            Main_julia.include(
-                "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_amps.jl"
-            )
-            Main_julia.include(
-                "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
-            )
-
-            self._julia_initialized = True
+    def __exit__(self, exc_type, exc_value, traceback):
+        "context manager exit method that resets the settings to their original values"
+        for k, v in self._original_values.items():
+            setattr(self, k, v)
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
@@ -338,14 +187,22 @@ class Settings:
         table.add_column("Value")
 
         for key, val in self.__dict__.items():
-            if key in not_displayed:
+            if key in not_displayed or key.startswith("_"):
                 continue
-            key = key.upper()[1:]
-            value = str(val._value) if isinstance(val, ImmutableSetting) else str(val)
+            key = key.upper()  # noqa: PLW2901
+            value = str(val)
             table.add_row(key, value)
 
-        print(table)
+        rprint(table)
         return ""
+
+    def __setattr__(self, name, value):
+        r"""
+        Once the class is initialized, do not allow the addition of new settings.
+        """
+        if self._frozen and not hasattr(self, name):
+            raise AttributeError(f"unknown MrMustard setting: '{name}'")
+        return super().__setattr__(name, value)
 
 
 settings = Settings()

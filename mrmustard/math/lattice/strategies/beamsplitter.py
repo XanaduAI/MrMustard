@@ -30,12 +30,15 @@ from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
 
-__all__ = ["beamsplitter", "beamsplitter_vjp", "beamsplitter_schwinger"]
+__all__ = ["beamsplitter", "beamsplitter_schwinger", "beamsplitter_vjp", "stable_beamsplitter"]
 
 
-@njit
+@njit(cache=True)
 def beamsplitter(
-    shape: tuple[int, int, int, int], theta: float, phi: float, dtype=np.complex128
+    shape: tuple[int, int, int, int],
+    theta: float,
+    phi: float,
+    dtype=np.complex128,
 ) -> ComplexTensor:  # pragma: no cover
     r"""Calculates the Fock representation of the beamsplitter.
     It takes advantage of input-output particle conservation (m+n=p+q)
@@ -87,7 +90,88 @@ def beamsplitter(
     return G
 
 
-@njit
+@njit(cache=True)
+def stable_beamsplitter(shape, theta, phi):  # pragma: no cover  # noqa: C901
+    r"""
+    Stable implementation of the Fock representation of the beamsplitter.
+    It is numerically stable up to arbitrary cutoffs.
+    The shape order is (out_0, out_1, in_0, in_1), assuming it acts on modes 0 and 1.
+
+    Args:
+        shape (tuple[int, int, int, int]): shape of the Fock representation
+        theta (float): beamsplitter angle
+        phi (float): beamsplitter phase
+
+    Returns:
+        array (ComplexTensor): The Fock representation of the gate
+    """
+    ct = np.cos(theta)
+    st = np.sin(theta) * np.exp(1j * phi)
+    stc = np.conj(st)
+
+    M, N, P, Q = shape
+    G = np.zeros(shape, dtype=np.complex128)
+    G[0, 0, 0, 0] = 1.0 + 0.0j
+
+    # rank 3
+    for m in range(M):
+        for n in range(min(N, P - m)):
+            p = m + n
+            val = 0
+            pivots = 0
+            if m > 0:  # pivot at (m-1, n, p, 0)
+                val += ct * SQRT[p] / SQRT[m] * G[m - 1, n, p - 1, 0]
+                pivots += 1
+            if n > 0:  # pivot at (m, n-1, p, 0)
+                val += st * SQRT[p] / SQRT[n] * G[m, n - 1, p - 1, 0]
+                pivots += 1
+            if p > 0:  # pivot at (m, n, p-1, 0)
+                val += (
+                    ct * SQRT[m] / SQRT[p] * G[m - 1, n, p - 1, 0]
+                    + st * SQRT[n] / SQRT[p] * G[m, n - 1, p - 1, 0]
+                )
+                pivots += 1
+            if m > 0 or n > 0 or p > 0:
+                G[m, n, p, 0] = val / pivots
+
+    # rank 4
+    for m in range(M):
+        for n in range(N):
+            for p in range(max(0, m + n - Q), min(P, m + n)):
+                q = m + n - p
+                if 0 < q < Q:
+                    val = 0
+                    pivots = 0
+                    if m > 0:
+                        val += (
+                            ct * SQRT[p] / SQRT[m] * G[m - 1, n, p - 1, q]
+                            - stc * SQRT[q] / SQRT[m] * G[m - 1, n, p, q - 1]
+                        )
+                        pivots += 1
+                    if n > 0:
+                        val += (
+                            st * SQRT[p] / SQRT[n] * G[m, n - 1, p - 1, q]
+                            + ct * SQRT[q] / SQRT[n] * G[m, n - 1, p, q - 1]
+                        )
+                        pivots += 1
+                    if p > 0:
+                        val += (
+                            ct * SQRT[m] / SQRT[p] * G[m - 1, n, p - 1, q]
+                            + st * SQRT[n] / SQRT[p] * G[m, n - 1, p - 1, q]
+                        )
+                        pivots += 1
+                    if q > 0:
+                        val += (
+                            -stc * SQRT[m] / SQRT[q] * G[m - 1, n, p, q - 1]
+                            + ct * SQRT[n] / SQRT[q] * G[m, n - 1, p, q - 1]
+                        )
+                        pivots += 1
+                    if m > 0 or n > 0 or p > 0 or q > 0:
+                        G[m, n, p, q] = val / pivots
+    return G
+
+
+@njit(cache=True)
 def beamsplitter_vjp(
     G: ComplexTensor,
     dLdG: ComplexTensor,
@@ -125,7 +209,7 @@ def beamsplitter_vjp(
 
     # rank 3
     for m in range(M):
-        for n in range(N - m):
+        for n in range(min(N, P - m)):
             p = m + n
             if 0 < p < P:
                 dA, db = steps.vanilla_step_grad(G, (m, n, p, 0), dA, db)
@@ -135,7 +219,7 @@ def beamsplitter_vjp(
     # rank 4
     for m in range(M):
         for n in range(N):
-            for p in range(P):
+            for p in range(max(0, m + n - Q), min(P, m + n)):
                 q = m + n - p
                 if 0 < q < Q:
                     dA, db = steps.vanilla_step_grad(G, (m, n, p, q), dA, db)
@@ -149,7 +233,7 @@ def beamsplitter_vjp(
 
     # omitting bottom-left block because dLdA should be zero there
     dLdtheta = 2 * np.real(
-        -st * dLdA[0, 2] - ct * em * dLdA[0, 3] + ct * e * dLdA[1, 2] - st * dLdA[1, 3]
+        -st * dLdA[0, 2] - ct * em * dLdA[0, 3] + ct * e * dLdA[1, 2] - st * dLdA[1, 3],
     )
     dLdphi = 2 * np.real(1j * st * em * dLdA[0, 3] + 1j * st * e * dLdA[1, 2])
 
@@ -202,3 +286,96 @@ def beamsplitter_schwinger(shape, theta, phi, max_N=None):
             for j in range(max(0, N + 1 - c1), min(N + 1, c2)):
                 U[N - i, i, N - j, j] = block[i, j]
     return U
+
+
+def sector_idx(N: int, shape: tuple):
+    """The action of a BSgate breaks down into N-dim unitaries acting
+    on each total photon number subspace, because the BS commutes with the
+    total photon number operator.
+
+    e.g. we have a two-mode ket of initial shape (4,4) (i.e. 0 to 3 photons in each mode)
+    The 3x3 BS unitary on the 2-photon subspace acts on indices [2,5,8] of
+    the flattened ket array.
+    Here is the ordered basis vectors |m,n> by total photons m+n for the example:
+
+    flat index  |m,n>
+    0            0,0  |-- 0 photons
+
+    1            1,0  |-- 1 photons
+    4            0,1  |
+
+    2            2,0  |-- 2 photons  <-- 2-photon subspace at indices [2,5,8]
+    5            1,1  |
+    8            0,2  |
+
+    3            3,0  |-- 3 photons
+    6            2,1  |
+    9            1,2  |
+    12           0,3  |
+
+    7            3,1  |-- 4 photons
+    10           2,2  |
+    13           1,3  |
+
+    11           3,2  |-- 5 photons
+    14           2,3  |
+
+    15           3,3  |-- 6 photons
+
+    The left column is the flattened order. This function returns the indices in
+    left column for the N-th block. E.g. sector_idx(3, (4,4)) is [3,6,9,12].
+
+    Args:
+        N (int): The total photon number of the subspace.
+        shape (tuple): The shape of the array the BS is operating on.
+
+    Returns:
+        list: The flattened indices of the N-photon subspace on which the BS acts.
+    """
+    return [
+        np.ravel_multi_index((i, N - i), shape) for i in range(N + 1) if max(i, N - i) < max(shape)
+    ]
+
+
+def sector_u(N: int, theta: float, phi: float) -> np.ndarray:
+    """Unitary of the BSgate acting on the (N+1)-dimensional N-photon subspace.
+    Each subspace is an irrep of SU(2) (Schwinger representation).
+
+    Args:
+        N (int): The total photon number of the subspace.
+        theta (float): The angle of the beamsplitter.
+        phi (float): The phase of the beamsplitter.
+
+    Returns:
+        np.ndarray: The ``N x N`` unitary of the BSgate acting on the N-photon subspace.
+    """
+    diag = np.exp(1j * phi) * np.sqrt(np.arange(N, 0, -1) * np.arange(1, N + 1, 1))
+    iJy = np.diag(diag, k=-1) - np.diag(np.conj(diag), k=1)  # we want exp(i theta J_y)
+    E, V = np.linalg.eigh(-1j * theta * iJy)
+    return V @ np.diag(np.exp(1j * E)) @ np.conj(V.T)
+
+
+def apply_BS_schwinger(theta, phi, i, j, array) -> np.ndarray:
+    """Applies the BS with given theta, phi to indices i,j of the given array.
+
+    Args:
+        theta (float): The angle of the beamsplitter.
+        phi (float): The phase of the beamsplitter.
+        i (int): The first index of the array where the BS is applied.
+        j (int): The second index of the array where the BS is applied.
+        array (np.ndarray): The array to which the BS is applied.
+    """
+    # step 1: reshape the pair of indices to which the BS is attached
+    order = [k for k in range(array.ndim) if k not in [i, j]] + [i, j]
+    array = array.transpose(order)  # move the indices to the end
+    shape_rest, shape = array.shape[:-2], array.shape[-2:]
+    array = array.reshape((*shape_rest, -1))  # flatten the last two dimensions
+    # step 2: apply each unitary to the corresponding indices
+    for N in range(sum(shape) - 1):
+        flat_idx = sector_idx(N, shape)
+        u = sector_u(N, theta, phi)
+        subset = [k for k in range(N + 1) if k < shape[0] and N - k < shape[1]]
+        array[..., flat_idx] @= u[subset, ...][..., subset] if 0 < len(subset) < N else u
+    # step 3: reshape back and reorder
+    array = array.reshape(shape_rest + shape)
+    return array.transpose(np.argsort(order))

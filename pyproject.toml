@@ -1,13 +1,18 @@
-[tool.poetry]
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[project]
 name = "mrmustard"
-version = "0.7.3"
+version = "1.0.0a1"
 description = "Differentiable quantum Gaussian circuits"
-authors = ["Xanadu <filippo@xanadu.ai>"]
-license = "Apache License 2.0"
+authors = [
+    {name= "Xanadu", email= "filippo@xanadu.ai"},
+]
+license = {text = "Apache License 2.0"}
 readme = "README.md"
-include = ["julia_pkg/*"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache Software License",
@@ -18,78 +23,157 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: Physics",
 ]
-
-[tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-grpcio = "1.60.0"
-numpy = "^1.23.5"
-scipy = "^1.8.0"
-numba = "^0.59"
-thewalrus = "^0.19.0"
-rich = "^10.15.1"
-matplotlib = "^3.5.0"
-ray = { version = "^2.5.0", extras = ["tune"], optional = true }
-scikit-optimize = { version = "^0.9.0", optional = true }
-networkx = "^3.1"
-julia = "0.6.1"
-ipython = ">=8.18.1"
-
-######################  The Tensorflow Section ###################### 
-# Dedicated for making sure that poetry can install tensorflow on all platforms.
-# This hopefully is a temporary workaround, pending TF starting doing a good job with their pypi release metadata.
-
-# Issue between poetry and tensorflow metadata since >=2.11
-# related to https://github.com/python-poetry/poetry/issues/8271
-# Inspired from https://github.com/tensorflow/tensorflow/blob/adb39b04e9cb116df4659a7e2de9eea27e62f25c/tensorflow/tools/pip_package/setup.py#L148-L162
-tensorflow = {version = "^2.15.0" }
-tensorflow-macos = { version = "2.15.0", platform = "darwin", markers = "platform_machine=='arm64'" }
-tensorflow-intel = { version = "^2.15.0", platform = "win32" }
-# Disabled to prevent taking over GPU:
-# tensorflow-cpu = [
-#     { version = "^2.15.0", platform = "linux", markers = "platform_machine!='arm64' and platform_machine!='aarch64'" },
-#     { version = "^2.15.0", platform = "darwin", markers = "platform_machine!='arm64' and platform_machine!='aarch64'" },]
-tensorflow-cpu-aws = { version = "^2.15.0", platform = "linux", markers = "platform_machine=='arm64' or platform_machine=='aarch64'" }
-# https://github.com/tensorflow/tensorflow/blob/adb39b04e9cb116df4659a7e2de9eea27e62f25c/tensorflow/tools/pip_package/setup.py#L107-L108
-# https://github.com/python-poetry/poetry/issues/8271#issuecomment-1697740447
-tensorflow-io-gcs-filesystem = [
-    { version = ">= 0.23.1", markers = "platform_machine!='arm64' or platform_system!='Darwin'" },
-    { version = "< 0.32.0", markers = "platform_system == 'Windows'" }
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "equinox>=0.11.10",
+    "grpcio == 1.60.0",
+    "importlib-resources>=6.5.2,<7",
+    "ipython >=8.18.1",
+    "ipywidgets >=8.1.3, <9",
+    "matplotlib >=3.5.0, <4",
+    "nbformat >=5.10, <6",
+    "networkx >=3.1, <4",
+    "numba >=0.59, <1",
+    "numpy >=2.0.0, <3",
+    "optax>=0.2.4,<0.3",
+    "platformdirs >=2.2.0",
+    "plotly >=5.20.0, <6",
+    "rich >=13.9.0, <14",
+    "scipy >=1.8.0, <2",
+    "semantic-version >=2.10.0, <3",
+    "tensorflow >=2.15.0, <2.19.0",
+    "tensorflow-intel>=2.15.0, <3; sys_platform == 'win32'",
+    "tensorflow-io-gcs-filesystem <0.32.0; (sys_platform == 'win32' and python_version < '3.12')",
+    "tensorflow-io-gcs-filesystem >= 0.23.1; (sys_platform != 'win32' and python_version < '3.12')",
+    "tensorflow-probability[tf] >=0.22.0,<1.0",
+    "thewalrus >=0.19.0,<1",
 ]
-tensorflow-probability = "^0.22.0"
 
-[tool.poetry.extras]
-ray = ["ray", "scikit-optimize"]
+[dependency-groups]
+dev = [
+    "hypothesis==6.31.6",
+    "pre-commit==3.7.1",
+    "pytest-cov==3.0.0",
+    "pytest==8.0",
+    "ruff>=0.12.0",
+]
+doc = [
+    "docutils>=0.20.1,<0.21",
+    "m2r2>=0.3.3.post2,<1",
+    "mistune==0.8.4",
+    "sphinx>=7.0.1,<8",
+    "sphinx-autodoc-typehints>=1.23.3,<2",
+    "sphinx-automodapi>=0.15.0,<1",
+    "sphinx-copybutton>=0.5.2,<1",
+    "sphinxcontrib-bibtex>=2.5.0,<3",
+    "xanadu-sphinx-theme==0.1.0",
+]
+interactive = [
+    "ipykernel >=6.21.2, <7.0.0",
+    "ipywidgets >=8.0.4, <9.0.0"
+]
 
-[tool.poetry.group.dev]
-optional = true
+[tool.coverage.run]
+source = ["mrmustard"]
+omit = [
+    "mrmustard/math/backend_jax.py",
+    "mrmustard/math/backend_tensorflow.py",
+    "mrmustard/math/backend_numpy.py",
+    "mrmustard/math/jax_vjps/*",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "8.0"
-pytest-cov ="3.0.0"
-hypothesis = "6.31.6"
-pylint = "^3.0"
-black = ">=22.1.0"
+[tool.coverage.report]
+omit = ["mrmustard/training/*"]
 
-[tool.poetry.group.doc]
-optional = true
+# Regexes for lines to exclude from consideration
+exclude_lines =[
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
 
-[tool.poetry.group.doc.dependencies]
-sphinx = "^7.0.1"
-docutils = "^0.20.1"
-m2r2 = "^0.3.3.post2"
-sphinx-autodoc-typehints = "^1.23.3"
-sphinx-copybutton = "^0.5.2"
-sphinx-automodapi = "^0.15.0"
-sphinxcontrib-bibtex = "^2.5.0"
-mistune = "0.8.4"
-xanadu-sphinx-theme = "0.1.0"
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "def __eq__",
+    "if self\\.debug",
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+    # print statements
+    "def __str__",
+    "def __format__",
+    "def _print_list",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "raise NotApplicableError",
+    "raise Exception",
+    "raise ValueError",
+    "raise ZeroDivisionError",
+    "raise TypeError",
+    "raise RuntimeError",
+    "raise IndexError",
+    "raise FileNotFoundError",
+    "raise NotADirectoryError",
+    "raise MergeFailure",
+    "return __version__",
+    "if len(lst) != self._num_modes:",
+    "elif max(lst) >= self._trunc:",
+    "except NotImplementedError as err",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "pass",
+    "if __name__ == .__main__.:",
+]
+
+ignore_errors = true
+
+[tool.coverage.html]
+directory = "coverage_html_report"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# revisit adding ANN, TC
+select = [
+    "E4", "E7", "E9", "F", # ruff default rules
+    "I", # isort
+    "BLE", # flake8-blind-except
+    "B", # flake8-bugbear
+    "A", # flake8-builtins
+    "COM", # flake8-commas
+    "C4", # flake8-comprehensions
+    "ISC", # flake8-implicit-str-concat
+    "ICN", # flake8-import-conventions
+    "PIE", # flake8-pie
+    "PYI", # flake8-pyi
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "C90", # mccabe
+    "NPY", # numpy-specific rules
+    "PERF", # perflint
+    "PL", # pylint
+    "UP", # pyupgrade
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "E741", 
+    "F403", 
+    "B905", 
+    "COM812",
+    "PERF203", "PLR2004", "PLR0124", 
+    "PLR0913", "PLR0912", "PLR0915", "PLC0414", "PLW1641", 
+    "RUF012", "RUF001", "RUF002",
+]
+
+[tool.pytest.ini_options]
+filterwarnings = "ignore::DeprecationWarning"
+
+[tool.setuptools.packages.find]
+where = ["."]

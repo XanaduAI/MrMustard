@@ -3,25 +3,26 @@ This module calculates the derivatives of the diagonal of the Fock representatio
 by applying the derivated recursion relation in a selective manner.
 """
 
-import numpy as np
 import numba
-from numba import njit, int64
+import numpy as np
+from numba import int64, njit
 from numba.cpython.unsafe.tuple import tuple_setitem
+
 from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
     SQRT,
-    repeat_twice,
     construct_dict_params,
+    repeat_twice,
 )
 
 
-@njit
+@njit(cache=True)
 def calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB):
     """
     Calculate the derivatives of one Fock amplitude w.r.t A and B.
     Args:
         i (int): the element of the multidim index that is increased
         G_in, G_in_dA, G_in_dB (array, array, array): all Fock amplitudes from the 'read' group in the recurrence relation and their derivatives w.r.t. A and B
-        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         K_l, K_i (vector, vector): SQRT[pivot], SQRT[pivot + 1]
         M (int): number of modes
         pivot_val, pivot_val_dA, pivot_val_dB (array, array, array): Fock amplitude at the position of the pivot and its derivatives w.r.t. A and B
@@ -36,7 +37,7 @@ def calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_va
     return dA / K_i[i], dB / K_i[i]
 
 
-@njit
+@njit(cache=True)
 def use_offDiag_pivot_grad(
     A,
     B,
@@ -59,11 +60,11 @@ def use_offDiag_pivot_grad(
     arr1010_dB,
     arr1001_dB,
     arr1_dB,
-):
+):  # pragma: no cover
     """
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
     Args:
-        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         params (tuple): (a,b,c,...)
@@ -79,8 +80,8 @@ def use_offDiag_pivot_grad(
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
     G_in = np.zeros(2 * M, dtype=np.complex128)
-    G_in_dA = np.zeros((2 * M,) + A.shape, dtype=np.complex128)
-    G_in_dB = np.zeros((2 * M,) + B.shape, dtype=np.complex128)
+    G_in_dA = np.zeros((2 * M, *A.shape), dtype=np.complex128)
+    G_in_dB = np.zeros((2 * M, *B.shape), dtype=np.complex128)
 
     ########## READ ##########
     pivot_val = arr1[2 * d][params]
@@ -115,19 +116,44 @@ def use_offDiag_pivot_grad(
     # Array0
     params_adapted = tuple_setitem(params, d, params[d] + 1)
     arr0_dA[params_adapted], arr0_dB[params_adapted] = calc_dA_dB(
-        2 * d + 1, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB
+        2 * d + 1,
+        G_in_dA,
+        G_in_dB,
+        G_in,
+        A,
+        B,
+        K_l,
+        K_i,
+        M,
+        pivot_val,
+        pivot_val_dA,
+        pivot_val_dB,
     )
 
     # Array2
     if params[d] + 2 < cutoffs[d]:
         arr2_dA[d][params], arr2_dB[d][params] = calc_dA_dB(
-            2 * d, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB
+            2 * d,
+            G_in_dA,
+            G_in_dB,
+            G_in,
+            A,
+            B,
+            K_l,
+            K_i,
+            M,
+            pivot_val,
+            pivot_val_dA,
+            pivot_val_dB,
         )
 
     # Array11
     for i in range(d + 1, M):
         if params[i] + 1 < cutoffs[i]:
-            arr1010_dA[d][i - d - 1][params], arr1010_dB[d][i - d - 1][params] = calc_dA_dB(
+            (
+                arr1010_dA[d][i - d - 1][params],
+                arr1010_dB[d][i - d - 1][params],
+            ) = calc_dA_dB(
                 2 * i,
                 G_in_dA,
                 G_in_dB,
@@ -141,7 +167,10 @@ def use_offDiag_pivot_grad(
                 pivot_val_dA,
                 pivot_val_dB,
             )
-            arr1001_dA[d][i - d - 1][params], arr1001_dB[d][i - d - 1][params] = calc_dA_dB(
+            (
+                arr1001_dA[d][i - d - 1][params],
+                arr1001_dB[d][i - d - 1][params],
+            ) = calc_dA_dB(
                 2 * i + 1,
                 G_in_dA,
                 G_in_dB,
@@ -156,15 +185,24 @@ def use_offDiag_pivot_grad(
                 pivot_val_dB,
             )
 
-    return arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB
+    return (
+        arr0_dA,
+        arr2_dA,
+        arr1010_dA,
+        arr1001_dA,
+        arr0_dB,
+        arr2_dB,
+        arr1010_dB,
+        arr1001_dB,
+    )
 
 
-@njit
+@njit(cache=True)
 def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB):
     """
     Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
     Args:
-        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         params (tuple): (a,b,c,...)
@@ -177,8 +215,8 @@ def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, 
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
     G_in = np.zeros(2 * M, dtype=np.complex128)
-    G_in_dA = np.zeros((2 * M,) + A.shape, dtype=np.complex128)
-    G_in_dB = np.zeros((2 * M,) + B.shape, dtype=np.complex128)
+    G_in_dA = np.zeros((2 * M, *A.shape), dtype=np.complex128)
+    G_in_dB = np.zeros((2 * M, *B.shape), dtype=np.complex128)
 
     ########## READ ##########
     pivot_val = arr0[params]
@@ -199,36 +237,45 @@ def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, 
 
     # Array1
     for i in range(2 * M):
-        if params[i // 2] + 1 < cutoffs[i // 2]:
+        if params[i // 2] + 1 < cutoffs[i // 2] and (i != 1 or params[0] + 2 < cutoffs[0]):
             # this if statement prevents a few elements from being written that will never be read
-            if i != 1 or params[0] + 2 < cutoffs[0]:
-                arr1_dA[i][params], arr1_dB[i][params] = calc_dA_dB(
-                    i,
-                    G_in_dA,
-                    G_in_dB,
-                    G_in,
-                    A,
-                    B,
-                    K_l,
-                    K_i,
-                    M,
-                    pivot_val,
-                    pivot_val_dA,
-                    pivot_val_dB,
-                )
+            arr1_dA[i][params], arr1_dB[i][params] = calc_dA_dB(
+                i,
+                G_in_dA,
+                G_in_dB,
+                G_in,
+                A,
+                B,
+                K_l,
+                K_i,
+                M,
+                pivot_val,
+                pivot_val_dA,
+                pivot_val_dB,
+            )
 
     return arr1_dA, arr1_dB
 
 
-@njit
+@njit(cache=True)
 def fock_representation_diagonal_grad_NUMBA(
-    A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type
+    A,
+    B,
+    M,
+    cutoffs,
+    arr0,
+    arr2,
+    arr1010,
+    arr1001,
+    arr1,
+    tuple_type,
+    list_type,
 ):
     """
     Returns the gradients of the PNR probabilities of a mixed state according to algorithm 1 of
     https://doi.org/10.22331/q-2023-08-29-1097
     Args:
-        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         arr0 (array): submatrix of the fock representation that contains Fock amplitudes of the type [a,a,b,b,c,c...]
@@ -257,7 +304,17 @@ def fock_representation_diagonal_grad_NUMBA(
             # diagonal pivots: aa,bb,cc,dd,...
             if (cutoffs[0] == 1) or (params[0] < cutoffs[0] - 1):
                 arr1_dA, arr1_dB = use_diag_pivot_grad(
-                    A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB
+                    A,
+                    B,
+                    M,
+                    cutoffs,
+                    params,
+                    arr0,
+                    arr1,
+                    arr0_dA,
+                    arr1_dA,
+                    arr0_dB,
+                    arr1_dB,
                 )
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
             for d in range(M):
@@ -307,5 +364,15 @@ def fock_representation_diagonal_grad(A, B, M, arr0, arr2, arr1010, arr1001, arr
     tuple_type = numba.types.UniTuple(int64, M)
     list_type = numba.types.ListType(tuple_type)
     return fock_representation_diagonal_grad_NUMBA(
-        A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type
+        A,
+        B,
+        M,
+        cutoffs,
+        arr0,
+        arr2,
+        arr1010,
+        arr1001,
+        arr1,
+        tuple_type,
+        list_type,
     )

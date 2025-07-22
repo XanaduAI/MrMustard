@@ -30,7 +30,7 @@ Mr Mustard Documentation
             </div>
             <div class="col-lg-8 col-12 align-middle mb-2">
                 <p class="lead grey-text">
-                    Mr Mustard is a differentiable bridge between phase space and Fock space with rich functionality in both representations.
+                    Mr Mustard: Your Universal Differentiable Toolkit for Quantum Optics
                 </p>
         </div>
         <div class="row mt-3">
@@ -58,52 +58,59 @@ Mr Mustard Documentation
 Features
 ========
 
-Mr Mustard supports the following in a fully differentiable way:
+🔄 **Universal Representation Compatibility**
 
-* Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
-
-..
-
-* Exact Fock representation of any Gaussian circuit and any Gaussian state up to an arbitrary cutoff
+* Initialize any component from any representation: ``Ket.from_quadrature(...)``, ``Channel.from_bargmann(...)``
 
 ..
 
-* Beam splitter, MZ interferometer, squeezer, displacement, phase rotation, bosonic lossy channel, thermal channel, more to come..
+* Convert between representations seamlessly: ``my_component.to_fock(...)``, ``my_component.to_quadrature(...)``
 
 ..
 
-* General Gaussian N-mode gate and general N-mode Interferometer with dedicated symplectic and orthogonal optimization routines
+* Supported representations: Bargmann, Phase space, Characteristic functions, Quadrature, Fock
 
 ..
 
-* Photon number moments
+⚡ **Fast & Exact**
+
+* State-of-the-art algorithms for Fock amplitudes of Gaussian components
 
 ..
 
-* PNR detectors, Threshold detectors with trainable quantum efficiency and dark counts
+* Exact computation up to arbitrary cutoff
 
 ..
 
-* Homodyne, Heterodyne and Generaldyne Gaussian measurements
+* Batch processing support
 
 ..
 
-* An optimizer with a spiffy progress bar
+🎯 **Built-in Optimization**
+
+* Differentiable with respect to all parameters
 
 ..
 
-* A composable Circuit object
+* Riemannian optimization on symplectic/unitary/orthogonal groups
 
 ..
 
-* Plug-and-play backends (TensorFlow and PyTorch)
+* Cost functions can mix different representations
 
 ..
 
-* An abstraction layer ``XPTensor`` for seamless symplectic algebra
+🧩 **Flexible Circuit Construction**
+
+* Contract components in any order
 
 ..
 
+* Linear superpositions of compatible objects
+
+..
+
+* Plug-and-play backends (``numpy``, ``tensorflow``, ``jax``)
 
 .. toctree::
    :maxdepth: 1
@@ -128,7 +135,6 @@ Mr Mustard supports the following in a fully differentiable way:
 
    code/mm
    code/lab
-   code/lab_dev
    code/physics
    code/math
    code/training

@@ -1,3 +1,5 @@
+.*
+
 .DS_Store
 .vscode
 *.egg-info*
@@ -9,12 +11,14 @@
 *.uxf
 *.npy
 
-__pycache__/
+.coverage
+.hypothesis/
+.ipynb_checkpoints/
 .mypy_cache/
 .pytest_cache/
-.ipynb_checkpoints/
-.hypothesis/
+/.serialize_cache/
+__pycache__/
+coverage.xml
 doc/_build
 doc/code/api/*
-coverage.xml
-.coverage
+notebooks/*

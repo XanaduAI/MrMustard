@@ -14,25 +14,20 @@
 
 """This module contains the backend manager."""
 
+from __future__ import annotations
 
 import importlib.util
 import sys
+from collections.abc import Callable, Sequence
 from functools import lru_cache
-from itertools import product
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any
 
 import numpy as np
-from scipy.special import binom
+from jax.errors import TracerArrayConversionError
 from scipy.stats import ortho_group, unitary_group
 
 from ..utils.settings import settings
-from ..utils.typing import (
-    Batch,
-    Matrix,
-    Tensor,
-    Trainable,
-    Vector,
-)
+from ..utils.typing import Batch, Matrix, Tensor, Trainable, Vector
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
 
@@ -69,6 +64,10 @@ module_np, loader_np = lazy_import(module_name_np)
 module_name_tf = "mrmustard.math.backend_tensorflow"
 module_tf, loader_tf = lazy_import(module_name_tf)
 
+# lazy import for jax
+module_name_jax = "mrmustard.math.backend_jax"
+module_jax, loader_jax = lazy_import(module_name_jax)
+
 all_modules = {
     "numpy": {"module": module_np, "loader": loader_np, "object": "BackendNumpy"},
     "tensorflow": {
@@ -76,10 +75,15 @@ all_modules = {
         "loader": loader_tf,
         "object": "BackendTensorflow",
     },
+    "jax": {
+        "module": module_jax,
+        "loader": loader_jax,
+        "object": "BackendJax",
+    },
 }
 
 
-class BackendManager:  # pylint: disable=too-many-public-methods, fixme
+class BackendManager:
     r"""
     A class to manage the different backends supported by Mr Mustard.
     """
@@ -88,26 +92,40 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     _backend = BackendNumpy()
 
     # the configured Euclidean optimizer.
-    _euclidean_opt: Optional[type] = None
-
-    # whether or not the backend can be changed
-    _is_immutable = False
+    _euclidean_opt: type | None = None
 
     def __init__(self) -> None:
         # binding types and decorators of numpy backend
         self._bind()
 
-    def _apply(self, fn: str, args: Optional[Sequence[Any]] = ()) -> Any:
+    def _apply(
+        self,
+        fn: str,
+        args: Sequence[Any] | None = (),
+        kwargs: dict | None = None,
+        backend_name: str | None = None,
+    ) -> Any:
         r"""
-        Applies a function ``fn`` from the backend in use to the given ``args``.
+        Applies a function ``fn`` from the backend in use to the given ``args`` and ``kwargs``.
+
+        Args:
+            fn: The function to apply.
+            args: The arguments to pass to the function.
+            kwargs: The keyword arguments to pass to the function.
+            backend_name: The name of the backend to use. If ``None``, the set backend is used.
+
+        Returns:
+            The result of the function application.
         """
+        kwargs = kwargs or {}
+        backend = self.get_backend(backend_name) if backend_name else self.backend
         try:
-            attr = getattr(self.backend, fn)
+            attr = getattr(backend, fn)
         except AttributeError:
-            msg = f"Function ``{fn}`` not implemented for backend ``{self.backend_name}``."
-            # pylint: disable=raise-missing-from
-            raise NotImplementedError(msg)
-        return attr(*args)
+            raise NotImplementedError(
+                f"Function ``{fn}`` not implemented for backend ``{backend.name}``.",
+            ) from None
+        return attr(*args, **kwargs)
 
     def _bind(self) -> None:
         r"""
@@ -115,14 +133,11 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         for name in [
             "int32",
+            "int64",
             "float32",
             "float64",
             "complex64",
             "complex128",
-            "hermite_renormalized",
-            "hermite_renormalized_binomial",
-            "hermite_renormalized_diagonal_reorderedAB",
-            "hermite_renormalized_1leftoverMode_reorderedAB",
         ]:
             setattr(self, name, getattr(self._backend, name))
 
@@ -131,7 +146,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         try:
             return cls.instance
         except AttributeError:
-            cls.instance = super(BackendManager, cls).__new__(cls)
+            cls.instance = super().__new__(cls)
             return cls.instance
 
     def __repr__(self) -> str:
@@ -142,7 +157,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         r"""
         The backend that is being used.
         """
-        self._is_immutable = True
         return self._backend
 
     @property
@@ -152,6 +166,23 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._backend.name
 
+    @property
+    def euclidean_opt(self):
+        r"""The configured Euclidean optimizer."""
+        if not self._euclidean_opt:
+            self._euclidean_opt = self.DefaultEuclideanOptimizer()
+        return self._euclidean_opt
+
+    @property
+    def BackendError(self):
+        r"""
+        The error class for backend specific errors.
+
+        Note that currently this only applies to the case where
+        ``auto_shape`` is jitted  via the ``jax`` backend.
+        """
+        return TracerArrayConversionError
+
     def change_backend(self, name: str) -> None:
         r"""
         Changes the backend to a different one.
@@ -159,30 +190,42 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Args:
             name: The name of the new backend.
         """
-        if name not in ["numpy", "tensorflow"]:
-            msg = "Backend must be either ``numpy`` or ``tensorflow``"
-            raise ValueError(msg)
+        if self.backend_name != name:
+            # switch backend
+            self._backend = self.get_backend(name)
+            # bind
+            self._bind()
+
+    def get_backend(self, name: str | None = None) -> BackendBase:
+        r"""
+        Returns the backend with the given name.
+
+        Args:
+            name: The name of the backend.
+
+        Returns:
+            The backend with the given name.
+
+        Raises:
+            ValueError: If the backend name is not a supported one.
+        """
+        if name not in ["numpy", "tensorflow", "jax"]:
+            raise ValueError("Backend must be either ``numpy`` or ``tensorflow`` or ``jax``.")
 
         if self.backend_name != name:
-            if self._is_immutable:
-                msg = "Can no longer change the backend in this session."
-                raise ValueError(msg)
-
             module = all_modules[name]["module"]
-            object = all_modules[name]["object"]
+            obj = all_modules[name]["object"]
             try:
-                backend = getattr(module, object)()
+                backend = getattr(module, obj)()
             except AttributeError:
                 # lazy import
                 loader = all_modules[name]["loader"]
                 loader.exec_module(module)
-                backend = getattr(module, object)()
+                backend = getattr(module, obj)()
+        else:
+            backend = self.backend
 
-            # switch backend
-            self._backend = backend
-
-            # bind
-            self._bind()
+        return backend
 
     # ~~~~~~~
     # Methods
@@ -200,7 +243,20 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("abs", (array,))
 
-    def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9) -> bool:
+    def all(self, array: Tensor) -> bool:
+        r"""
+        Returns ``True`` if all elements of array are ``True``, ``False`` otherwise.
+
+        Args:
+            array: The array to check.
+
+        Returns:
+            ``True`` if all elements of array are ``True``, ``False`` otherwise.
+        """
+        array = self.astensor(array)
+        return self._apply("all", (array,))
+
+    def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9, rtol=1e-5) -> bool:
         r"""
         Whether two arrays are equal within tolerance.
 
@@ -217,7 +273,21 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Raises:
             ValueError: If the shape of the two arrays do not match.
         """
-        return self._apply("allclose", (array1, array2, atol))
+        array1 = self.astensor(array1)
+        array2 = self.astensor(array2)
+        return self._apply("allclose", (array1, array2, atol, rtol))
+
+    def angle(self, array: Tensor) -> Tensor:
+        r"""
+        The complex phase of ``array``.
+
+        Args:
+            array: The array to take the complex phase of.
+
+        Returns:
+            The complex phase of ``array``.
+        """
+        return self._apply("angle", (array,))
 
     def any(self, array: Tensor) -> bool:
         r"""Returns ``True`` if any element of array is ``True``, ``False`` otherwise.
@@ -230,7 +300,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("any", (array,))
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype: Any = None) -> Tensor:
+    def arange(
+        self,
+        start: int,
+        limit: int | None = None,
+        delta: int = 1,
+        dtype: Any = None,
+    ) -> Tensor:
         r"""Returns an array of evenly spaced values within a given interval.
 
         Args:
@@ -242,7 +318,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The array of evenly spaced values.
         """
-        # NOTE: is float64 by default
         return self._apply("arange", (start, limit, delta, dtype))
 
     def asnumpy(self, tensor: Tensor) -> Tensor:
@@ -281,74 +356,23 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("astensor", (array, dtype))
 
-    def atleast_1d(self, array: Tensor, dtype=None) -> Tensor:
-        r"""Returns an array with at least one dimension.
+    def atleast_nd(self, array: Tensor, n: int, dtype=None) -> Tensor:
+        r"""Returns an array with at least n dimensions. Note that dimensions are
+        prepended to meet the minimum number of dimensions.
 
         Args:
             array: The array to convert.
+            n: The minimum number of dimensions.
             dtype: The data type of the array. If ``None``, the returned array
                 is of the same type as the given one.
-
         Returns:
-            The array with at least one dimension.
+            The array with at least n dimensions.
         """
-        return self._apply("atleast_1d", (array, dtype))
+        return self._apply("atleast_nd", (array, n, dtype))
 
-    def atleast_2d(self, array: Tensor, dtype=None) -> Tensor:
-        r"""Returns an array with at least two dimensions.
-
-        Args:
-            array: The array to convert.
-            dtype: The data type of the array. If ``None``, the returned array
-                is of the same type as the given one.
-
-        Returns:
-            The array with at least two dimensions.
-        """
-        return self._apply("atleast_2d", (array, dtype))
-
-    def atleast_3d(self, array: Tensor, dtype=None) -> Tensor:
-        r"""Returns an array with at least three dimensions by eventually inserting
-        new axes at the beginning. Note this is not the way atleast_3d works in numpy
-        and tensorflow, where it adds at the beginning and/or end.
-
-        Args:
-            array: The array to convert.
-            dtype: The data type of the array. If ``None``, the returned array
-                is of the same type as the given one.
-
-        Returns:
-            The array with at least three dimensions.
-        """
-        return self._apply("atleast_3d", (array, dtype))
-
-    def block_diag(self, mat1: Matrix, mat2: Matrix) -> Matrix:
-        r"""Returns a block diagonal matrix from the given matrices.
-
-        Args:
-            mat1: A matrix.
-            mat2: A matrix.
-
-        Returns:
-            A block diagonal matrix from the given matrices.
-        """
-        return self._apply("block_diag", (mat1, mat2))
-
-    def boolean_mask(self, tensor: Tensor, mask: Tensor) -> Tensor:
-        """
-        Returns a tensor based on the truth value of the boolean mask.
-
-        Args:
-            tensor: A tensor.
-            mask: A boolean mask.
-
-        Returns:
-            A tensor based on the truth value of the boolean mask.
-        """
-        return self._apply("boolean_mask", (tensor, mask))
-
-    def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
-        r"""Returns a matrix made from the given blocks.
+    def block(self, blocks: list[list[Tensor]], axes=(-2, -1)) -> Tensor:
+        r"""
+        Returns a matrix made from the given blocks.
 
         Args:
             blocks: A list of lists of compatible blocks.
@@ -357,7 +381,33 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The matrix made of blocks.
         """
-        return self._apply("block", (blocks, axes))
+        rows = [self.concat(row, axis=axes[1]) for row in blocks]
+        return self.concat(rows, axis=axes[0])
+
+    def broadcast_arrays(self, *arrays: list[Tensor]) -> list[Tensor]:
+        r"""
+        Broadcast arrays to a common shape.
+
+        Args:
+            *arrays: The arrays to broadcast.
+
+        Returns:
+            A list of broadcasted arrays.
+        """
+        return self._apply("broadcast_arrays", arrays)
+
+    def broadcast_to(self, array: Tensor, shape: tuple[int, ...], dtype=None) -> Tensor:
+        r"""Broadcasts an array to a new shape.
+
+        Args:
+            array: The array to broadcast.
+            shape: The shape to broadcast to.
+            dtype: The dtype to broadcast to.
+        Returns:
+            The broadcasted array.
+        """
+        array = self.astensor(array, dtype=dtype)
+        return self._apply("broadcast_to", (array, shape))
 
     def cast(self, array: Tensor, dtype=None) -> Tensor:
         r"""Casts ``array`` to ``dtype``.
@@ -407,46 +457,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The complex conjugate of the given ``array``.
         """
         return self._apply("conj", (array,))
-
-    def constraint_func(
-        self, bounds: Tuple[Optional[float], Optional[float]]
-    ) -> Optional[Callable]:
-        r"""Returns a constraint function for the given bounds.
-
-        A constraint function will clip the value to the interval given by the bounds.
-
-        .. note::
-
-            The upper and/or lower bounds can be ``None``, in which case the constraint
-            function will not clip the value.
-
-        Args:
-            bounds: The bounds of the constraint.
-
-        Returns:
-            The constraint function.
-        """
-        return self._apply("constraint_func", (bounds))
-
-    def convolution(
-        self,
-        array: Tensor,
-        filters: Tensor,
-        padding: Optional[str] = None,
-        data_format="NWC",
-    ) -> Tensor:  # TODO: remove strides and data_format?
-        r"""Performs a convolution on array with filters.
-
-        Args:
-            array: The array to convolve.
-            filters: The filters to convolve with.
-            padding: The padding mode.
-            data_format: The data format of the array.
-
-        Returns:
-            The convolved array.
-        """
-        return self._apply("convolution", (array, filters, padding, data_format))
 
     def cos(self, array: Tensor) -> Tensor:
         r"""The cosine of an array.
@@ -528,17 +538,34 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("eigh", (tensor,))
 
-    def einsum(self, string: str, *tensors) -> Tensor:
+    def einsum(
+        self,
+        string: str,
+        *tensors,
+        optimize: bool | str = "greedy",
+        backend: str | None = None,
+    ) -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
         Args:
             string: The string of the Einstein summation convention.
             tensors: The tensors to perform the Einstein summation on.
+            optimize: Optional flag whether to optimize the contraction order.
+                Allowed values are True, False, "greedy", "optimal" or "auto".
+                Note the TF backend does not support False and converts it to "greedy".
+                If None, ``settings.EINSUM_OPTIMIZE`` is used.
+            backend: The name of the backend to use. If ``None``, the set backend is used.
 
         Returns:
             The result of the Einstein summation convention.
         """
-        return self._apply("einsum", (string, *tensors))
+        optimize = optimize or settings.EINSUM_OPTIMIZE
+        return self._apply(
+            "einsum",
+            (string, *tensors),
+            {"optimize": optimize},
+            backend_name=backend,
+        )
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.
@@ -609,7 +636,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("from_backend", (value,))
 
-    def gather(self, array: Tensor, indices: Batch[int], axis: Optional[int] = None) -> Tensor:
+    def gather(self, array: Tensor, indices: Batch[int], axis: int | None = None) -> Tensor:
         r"""The values of the array at the given indices.
 
         Args:
@@ -620,6 +647,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The values of the array at the given indices.
         """
+        array = self.astensor(array)
+        indices = self.astensor(indices, dtype=self.int64)
         return self._apply(
             "gather",
             (
@@ -629,36 +658,118 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ),
         )
 
-    def hermite_renormalized_batch(
-        self, A: Tensor, B: Tensor, C: Tensor, shape: Tuple[int]
+    def hermite_renormalized(
+        self,
+        A: Tensor,
+        b: Tensor,
+        c: Tensor,
+        shape: tuple[int],
+        stable: bool = False,
+        out: Tensor | None = None,
     ) -> Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        series of :math:`exp(c + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape in case of B is a batched vector with a batched diemnsion on the
-        last index.
+        tensor of given shape.
+
+        This method automatically selects the appropriate calculation method based on input dimensions:
+        1. If A.ndim = 2, b.ndim = 1, c is scalar: Uses vanilla strategy (unbatched)
+        2. If A.ndim = 2, b.ndim > 1, c is scalar: Uses vanilla_full_batch strategy with broadcasting
+        3. If A.ndim > 2, b.ndim > 1, c.ndim > 0: Uses vanilla_full_batch strategy (fully batched)
+
+        Args:
+            A: The A matrix. Can be unbatched (shape D×D) or batched (shape B×D×D).
+            b: The b vector. Can be unbatched (shape D) or batched (shape B×D).
+            c: The c scalar. Can be scalar or batched (shape B).
+            shape: The shape of the final tensor (excluding batch dimensions).
+            stable: Whether to use the numerically stable version of the algorithm (also slower).
+            out: If provided, the result will be stored in this tensor.
+
+        Returns:
+            The renormalized Hermite polynomial of given shape preserving the batch dimensions.
+        """
+
+        def check_out_shape(batch_shape):
+            if out is not None and any(
+                d_out < d for d_out, d in zip(out.shape, batch_shape + shape)
+            ):
+                raise ValueError(
+                    f"batch+shape {batch_shape + shape} is too large for out.shape={out.shape}",
+                )
+
+        stable = stable or settings.STABLE_FOCK_CONVERSION
+        if A.ndim > 2 and b.ndim > 1 and c.ndim > 0:
+            batch_shape = A.shape[:-2]
+            check_out_shape(batch_shape)
+            if b.shape[:-1] != batch_shape:
+                raise ValueError(f"b.shape={b.shape} must match batch_shape={batch_shape}")
+            if c.shape[: len(batch_shape)] != batch_shape:
+                raise ValueError(f"c.shape={c.shape} must match batch_shape={batch_shape}")
+            D = int(np.prod(batch_shape))
+            A = self.reshape(A, (D, *A.shape[-2:]))
+            b = self.reshape(b, (D, *b.shape[-1:]))
+            c = self.reshape(c, (D,))
+            result = self._apply(
+                "hermite_renormalized_batched",
+                (A, b, c),
+                {
+                    "shape": tuple(shape),
+                    "stable": stable,
+                    "out": self.reshape(out, (D, *shape)) if out is not None else None,
+                },
+            )
+            return self.reshape(result, batch_shape + tuple(shape))
+        if A.ndim == 2 and b.ndim > 1:  # b-batched case
+            batch_shape = b.shape[:-1]
+            check_out_shape(batch_shape)
+            D = int(np.prod(batch_shape))
+            b = self.reshape(b, (D, *b.shape[-1:]))
+            A_broadcast = self.broadcast_to(A, (D, *A.shape))
+            c_broadcast = self.broadcast_to(c, (D,))
+            result = self._apply(
+                "hermite_renormalized_batched",
+                (A_broadcast, b, c_broadcast),
+                {
+                    "shape": tuple(shape),
+                    "stable": stable,
+                    "out": self.reshape(out, (D, *shape)) if out is not None else None,
+                },
+            )
+            return self.reshape(result, batch_shape + tuple(shape))
+        # Unbatched case
+        check_out_shape(())
+        return self._apply(
+            "hermite_renormalized_unbatched",
+            (A, b, c),
+            {"shape": tuple(shape), "stable": stable, "out": out},
+        )
+
+    def hermite_renormalized_diagonal(
+        self,
+        A: Tensor,
+        b: Tensor,
+        c: Tensor,
+        cutoffs: tuple[int],
+    ) -> Tensor:
+        r"""Renormalized multidimensional Hermite polynomial for calculating the diagonal of the Fock representation.
 
         Args:
             A: The A matrix.
-            B: The batched B vector with its batch dimension on the last index.
-            C: The C scalar.
-            shape: The shape of the final tensor.
+            b: The b vector.
+            c: The c scalar.
+            cutoffs: Upper boundary of photon numbers in each mode.
 
         Returns:
-            The batched Hermite polynomial of given shape.
+            The diagonal elements of the Fock representation (i.e., PNR detection probabilities).
         """
-        return self._apply("hermite_renormalized_batch", (A, B, C, shape))
-
-    def hermite_renormalized_diagonal(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
-    ) -> Tensor:
-        r"""Firsts, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
-        Then, calculates the required renormalized multidimensional Hermite polynomial.
-        """
-        return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
+        return self._apply("hermite_renormalized_diagonal", (A, b, c, cutoffs))
 
     def hermite_renormalized_diagonal_batch(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+        self,
+        A: Tensor,
+        B: Tensor,
+        C: Tensor,
+        cutoffs: tuple[int],
     ) -> Tensor:
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculates the required renormalized multidimensional Hermite polynomial.
@@ -666,12 +777,59 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
 
     def hermite_renormalized_1leftoverMode(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+        self,
+        A: Tensor,
+        b: Tensor,
+        c: Tensor,
+        output_cutoff: int,
+        pnr_cutoffs: tuple[int, ...],
     ) -> Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        r"""Compute the conditional density matrix of mode 0, with all the other modes
+        detected with PNR detectors up to the given photon numbers.
+
+        Args:
+            A: The A matrix.
+            b: The b vector.
+            c: The c scalar.
+            output_cutoff: upper boundary of photon numbers in mode 0
+            pnr_cutoffs: upper boundary of photon numbers in the other modes
+
+        Returns:
+            The conditional density matrix of mode 0. The final shape is
+            ``(output_cutoff + 1, output_cutoff + 1, *pnr_cutoffs + 1)``.
         """
-        return self._apply("hermite_renormalized_1leftoverMode", (A, B, C, cutoffs))
+        return self._apply(
+            "hermite_renormalized_1leftoverMode",
+            (A, b, c, output_cutoff, pnr_cutoffs),
+        )
+
+    def hermite_renormalized_binomial(
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        shape: tuple[int],
+        max_l2: float | None,
+        global_cutoff: int | None,
+    ) -> np.ndarray:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
+        up to a given L2 norm or global cutoff, whichever applies first. The max_l2 value, if
+        not provided, is set to the default value of the AUTOSHAPE_PROBABILITY setting.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            shape: The shape of the final tensor (local cutoffs).
+            max_l2 (float): The maximum squared L2 norm of the tensor.
+            global_cutoff (optional int): The global cutoff.
+
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        return self._apply("hermite_renormalized_binomial", (A, B, C, shape, max_l2, global_cutoff))
 
     def imag(self, array: Tensor) -> Tensor:
         r"""The imaginary part of array.
@@ -695,6 +853,17 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("inv", (tensor,))
 
+    def isnan(self, array: Tensor) -> Tensor:
+        r"""Whether the given array contains any NaN values.
+
+        Args:
+            array: The array to check for NaN values.
+
+        Returns:
+            Whether the given array contains any NaN values.
+        """
+        return self._apply("isnan", (array,))
+
     def is_trainable(self, tensor: Tensor) -> bool:
         r"""Whether the given tensor is trainable.
 
@@ -707,13 +876,14 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("is_trainable", (tensor,))
 
     def lgamma(self, x: Tensor) -> Tensor:
-        r"""The natural logarithm of the gamma function of ``x``.
+        r"""
+        The natural logarithm of the gamma function of ``x``.
 
         Args:
-            x: The array to take the natural logarithm of the gamma function of
+            x: The array to take the natural logarithm of the gamma function of.
 
         Returns:
-            The natural logarithm of the gamma function of ``x``
+            The natural logarithm of the gamma function of ``x``.
         """
         return self._apply("lgamma", (x,))
 
@@ -764,12 +934,24 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("matvec", (a, b))
 
-    def maximum(self, a: Tensor, b: Tensor) -> Tensor:
-        r"""The element-wise maximum of ``a`` and ``b``.
+    def max(self, array: Tensor) -> Tensor:
+        r"""The maximum value of an array.
 
         Args:
-            a: The first array to take the maximum of
-            b: The second array to take the maximum of
+            array: The array to take the maximum value of.
+
+        Returns:
+            The maximum value of the array.
+        """
+        return self._apply("max", (array,))
+
+    def maximum(self, a: Tensor, b: Tensor) -> Tensor:
+        r"""
+        The element-wise maximum of ``a`` and ``b``.
+
+        Args:
+            a: The first array to take the maximum of.
+            b: The second array to take the maximum of.
 
         Returns:
             The element-wise maximum of ``a`` and ``b``
@@ -783,11 +965,12 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         )
 
     def minimum(self, a: Tensor, b: Tensor) -> Tensor:
-        r"""The element-wise minimum of ``a`` and ``b``.
+        r"""
+        The element-wise minimum of ``a`` and ``b``.
 
         Args:
-            a: The first array to take the minimum of
-            b: The second array to take the minimum of
+            a: The first array to take the minimum of.
+            b: The second array to take the minimum of.
 
         Returns:
             The element-wise minimum of ``a`` and ``b``
@@ -800,10 +983,29 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ),
         )
 
+    def moveaxis(self, array: Tensor, old: Tensor, new: Tensor) -> Tensor:
+        r"""
+        Moves the axes of an array to a new position.
+        Args:
+            array: The array to move the axes of.
+            old: The old index position
+            new: The new index position
+        Returns:
+            The updated array
+        """
+        return self._apply(
+            "moveaxis",
+            (
+                array,
+                old,
+                new,
+            ),
+        )
+
     def new_variable(
         self,
         value: Tensor,
-        bounds: Tuple[Optional[float], Optional[float]],
+        bounds: tuple[float | None, float | None],
         name: str,
         dtype=None,
     ) -> Tensor:
@@ -855,6 +1057,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array of ones
         """
         # NOTE : should be float64 by default
+
+        shape = shape if isinstance(shape, int) else tuple(shape)
         return self._apply("ones", (shape, dtype))
 
     def ones_like(self, array: Tensor) -> Tensor:
@@ -883,7 +1087,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     def pad(
         self,
         array: Tensor,
-        paddings: Sequence[Tuple[int, int]],
+        paddings: Sequence[tuple[int, int]],
         mode="CONSTANT",
         constant_values=0,
     ) -> Tensor:
@@ -898,7 +1102,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The padded array
         """
-        return self._apply("pad", (array, paddings, mode, constant_values))
+        return self._apply("pad", (array, tuple(paddings), mode, constant_values))
 
     def pinv(self, matrix: Tensor) -> Tensor:
         r"""The pseudo-inverse of matrix.
@@ -947,6 +1151,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The product of the elements in ``array``.
         """
+        array = self.astensor(array)
         return self._apply("prod", (array, axis))
 
     def real(self, array: Tensor) -> Tensor:
@@ -970,32 +1175,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The reshaped array
         """
+        shape = (shape,) if isinstance(shape, int) else tuple(shape)
         return self._apply("reshape", (array, shape))
-
-    def round(self, array: Tensor, decimals: int) -> Tensor:
-        r"""The array rounded to the nearest integer.
-
-        Args:
-            array: The array to round
-            decimals: number of decimals to round to
-
-        Returns:
-            The array rounded to the nearest integer
-        """
-        return self._apply("round", (array, decimals))
-
-    def set_diag(self, array: Tensor, diag: Tensor, k: int) -> Tensor:
-        r"""The array with the diagonal set to ``diag``.
-
-        Args:
-            array: The array to set the diagonal of
-            diag: The diagonal to set
-            k (int): diagonal to set
-
-        Returns:
-            The array with the diagonal set to ``diag``
-        """
-        return self._apply("set_diag", (array, diag, k))
 
     def sin(self, array: Tensor) -> Tensor:
         r"""The sine of ``array``.
@@ -1031,6 +1212,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("solve", (matrix, rhs))
 
+    def sort(self, array: Tensor, axis: int = -1) -> Tensor:
+        r"""Sort the array along an axis.
+
+        Args:
+            array: The array to sort
+            axis: (optional) The axis to sort along. Defaults to last axis.
+
+        Returns:
+            A sorted version of the array in acending order.
+        """
+        return self._apply("sort", (array, axis))
+
     def sqrt(self, x: Tensor, dtype=None) -> Tensor:
         r"""The square root of ``x``.
 
@@ -1055,21 +1248,48 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The square root of ``x``"""
         return self._apply("sqrtm", (tensor, dtype))
 
-    def sum(self, array: Tensor, axes: Sequence[int] = None):
+    def stack(self, arrays: Sequence[Tensor], axis: int = 0) -> Tensor:
+        r"""Stack arrays in sequence along a new axis.
+
+        Args:
+            arrays: Sequence of tensors to stack
+            axis: The axis along which to stack the arrays
+
+        Returns:
+            The stacked array
+        """
+        return self._apply("stack", (arrays, axis))
+
+    def sum(self, array: Tensor, axis: int | Sequence[int] | None = None):
         r"""The sum of array.
 
         Args:
             array: The array to take the sum of
-            axes (tuple): axes to sum over
+            axis (int | Sequence[int] | None): The axis/axes to sum over
 
         Returns:
             The sum of array
         """
-        if axes is not None:
-            neg = [a for a in axes if a < 0]
-            pos = [a for a in axes if a >= 0]
-            axes = sorted(neg) + sorted(pos)[::-1]
-        return self._apply("sum", (array, axes))
+        array = self.astensor(array)
+        if axis is not None and not isinstance(axis, int):
+            neg = [a for a in axis if a < 0]
+            pos = [a for a in axis if a >= 0]
+            axis = tuple(sorted(neg) + sorted(pos)[::-1])
+        return self._apply("sum", (array, axis))
+
+    def swapaxes(self, array: Tensor, axis1: int, axis2: int) -> Tensor:
+        r"""
+        Swap two axes of an array.
+
+        Args:
+            array: The array to swap axes of.
+            axis1: The first axis to swap.
+            axis2: The second axis to swap.
+
+        Returns:
+            The array with the axes swapped.
+        """
+        return self._apply("swapaxes", (array, axis1, axis2))
 
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         r"""The tensordot product of ``a`` and ``b``.
@@ -1082,7 +1302,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tensordot product of ``a`` and ``b``
         """
-        return self._apply("tensordot", (a, b, axes))
+        return self._apply("tensordot", (a, b, tuple(axes)))
 
     def tile(self, array: Tensor, repeats: Sequence[int]) -> Tensor:
         r"""The tiled array.
@@ -1094,7 +1314,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The tiled array
         """
-        return self._apply("tile", (array, repeats))
+        return self._apply("tile", (array, tuple(repeats)))
 
     def trace(self, array: Tensor, dtype=None) -> Tensor:
         r"""The trace of array.
@@ -1108,7 +1328,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("trace", (array, dtype))
 
-    def transpose(self, a: Tensor, perm: Sequence[int] = None):
+    def transpose(self, a: Tensor, perm: Sequence[int] | None = None):
         r"""The transposed arrays.
 
         Args:
@@ -1118,6 +1338,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The transposed array
         """
+        perm = tuple(perm) if perm is not None else None
         return self._apply("transpose", (a, perm))
 
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
@@ -1147,8 +1368,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self._apply("update_add_tensor", (tensor, indices, values))
 
     def value_and_gradients(
-        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
-    ) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
+        self,
+        cost_fn: Callable,
+        parameters: dict[str, list[Trainable]],
+    ) -> tuple[Tensor, dict[str, list[Tensor]]]:
         r"""The loss and gradients of the given cost function.
 
         Args:
@@ -1179,6 +1402,45 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("zeros", (shape, dtype))
 
+    def conditional(self, cond: Tensor, true_fn: Callable, false_fn: Callable, *args) -> Tensor:
+        r"""Executes ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
+
+        Args:
+            cond: The condition to check
+            true_fn: The function to execute if ``cond`` is ``True``
+            false_fn: The function to execute if ``cond`` is ``False``
+            *args: The arguments to pass to ``true_fn`` and ``false_fn``
+        Returns:
+            The result of ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
+        """
+        return self._apply("conditional", (cond, true_fn, false_fn, *args))
+
+    def error_if(self, array: Tensor, condition: Tensor, msg: str):
+        r"""Raises an error if ``condition`` is ``True``.
+
+        Args:
+            array: The array to check
+            condition: The condition to check; should only use array elements in the condition
+                And must be boolean.
+            msg: The message to raise if ``condition`` is ``True``
+
+        Returns:
+            None
+            Raises an error if at least one element of ``cond`` is True.
+        """
+        return self._apply("error_if", (array, condition, msg))
+
+    def infinity_like(self, array: Tensor) -> Tensor:
+        r"""Returns an array of infinities with the same shape as ``array``.
+
+        Args:
+            array: The array to take the shape of.
+
+        Returns:
+            An array of infinities with the same shape as ``array``.
+        """
+        return self._apply("infinity_like", (array,))
+
     def zeros_like(self, array: Tensor) -> Tensor:
         r"""Returns an array of zeros with the same shape and ``dtype`` as ``array``.
 
@@ -1205,85 +1467,74 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("map_fn", (fn, elements))
 
-    def squeeze(self, tensor: Tensor, axis: Optional[List[int]]) -> Tensor:
-        """Removes dimensions of size 1 from the shape of a tensor.
-
-        Args:
-            tensor (Tensor): the tensor to squeeze
-            axis (Optional[List[int]]): if specified, only squeezes the
-                dimensions listed, defaults to []
-
-        Returns:
-            Tensor: tensor with one or more dimensions of size 1 removed
-        """
-        return self._apply("squeeze", (tensor, axis))
-
-    def cholesky(self, input: Tensor) -> Tensor:
-        """Computes the Cholesky decomposition of square matrices.
-
-        Args:
-            input (Tensor)
-
-        Returns:
-            Tensor: tensor with the same type as input
-        """
-        return self._apply("cholesky", (input,))
-
-    def Categorical(self, probs: Tensor, name: str):
-        """Categorical distribution over integers.
-
-        Args:
-            probs: The unnormalized probabilities of a set of Categorical distributions.
-            name: The name prefixed to operations created by this class.
-
-        Returns:
-            tfp.distributions.Categorical: instance of ``tfp.distributions.Categorical`` class
-        """
-        return self._apply("Categorical", (probs, name))
-
-    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
-        """Multivariate normal distribution on `R^k` and parameterized by a (batch of) length-k loc
-        vector (aka "mu") and a (batch of) k x k scale matrix; covariance = scale @ scale.T
-        where @ denotes matrix-multiplication.
-
-        Args:
-            loc (Tensor): if this is set to None, loc is implicitly 0
-            scale_tril: lower-triangular Tensor with non-zero diagonal elements
-
-        Returns:
-            tfp.distributions.MultivariateNormalTriL: instance of ``tfp.distributions.MultivariateNormalTriL``
-        """
-        return self._apply("MultivariateNormalTriL", (loc, scale_tril))
-
-    def custom_gradient(self, func):
-        r"""
-        A decorator to define a function with a custom gradient.
-        """
-
-        def wrapper(*args, **kwargs):
-            if self.backend_name == "numpy":
-                return func(*args, **kwargs)
-            else:
-                from tensorflow import custom_gradient  # pylint: disable=import-outside-toplevel
-
-                return custom_gradient(func)(*args, **kwargs)
-
-        return wrapper
-
     def DefaultEuclideanOptimizer(self):
         r"""Default optimizer for the Euclidean parameters."""
         return self._apply("DefaultEuclideanOptimizer")
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Methods that build on the basic ops and don't need to be overridden in the backend implementation
+    # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    @property
-    def euclidean_opt(self):
-        r"""The configured Euclidean optimizer."""
-        if not self._euclidean_opt:
-            self._euclidean_opt = self.DefaultEuclideanOptimizer()
-        return self._euclidean_opt
+    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float = 1e-15):
+        r"""
+        Creates a single mode displacement matrix using a numba-based fock lattice strategy.
+
+        Args:
+            x: The displacement magnitude.
+            y: The displacement angle.
+            shape: The shape of the displacement matrix.
+            tol: The tolerance to determine if the displacement is small enough to be approximated by the identity.
+
+        Returns:
+            The matrix representing the displacement gate.
+        """
+        return self._apply("displacement", (x, y), {"shape": shape, "tol": tol})
+
+    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
+        r"""
+        Creates a beamsplitter matrix with given cutoffs using a numba-based fock lattice strategy.
+
+        Args:
+            theta: Transmittivity angle of the beamsplitter.
+            phi: Phase angle of the beamsplitter.
+            shape: Output shape of the two modes.
+            method: Method to compute the beamsplitter ("vanilla", "schwinger" or "stable").
+
+        Returns:
+            The matrix representing the beamsplitter gate.
+
+        Raises:
+            ValueError: If the method is not "vanilla", "schwinger" or "stable".
+        """
+        return self._apply("beamsplitter", (theta, phi), {"shape": shape, "method": method})
+
+    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+        r"""
+        Creates a single mode squeezed state matrix using a numba-based fock lattice strategy.
+
+        Args:
+            r: Squeezing magnitude.
+            phi: Squeezing angle.
+            shape: Output shape of the two modes.
+
+        Returns:
+            The matrix representing the squeezed state.
+        """
+        return self._apply("squeezed", (r, phi, shape))
+
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):  # pragma: no cover
+        r"""
+        Creates a single mode squeezer matrix using a numba-based fock lattice strategy.
+
+        Args:
+            r: Squeezing magnitude.
+            phi: Squeezing angle.
+            shape: Output shape of the two modes.
+
+        Returns:
+            The matrix representing the squeezer.
+        """
+        return self._apply("squeezer", (r, phi, shape))
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
@@ -1300,11 +1551,12 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The adjoint of ``array``
         """
         N = len(array.shape) // 2
-        perm = list(range(N, 2 * N)) + list(range(0, N))
+        perm = list(range(N, 2 * N)) + list(range(N))
         return self.conj(self.transpose(array, perm=perm))
 
     def unitary_to_orthogonal(self, U):
-        r"""Unitary to orthogonal mapping.
+        r"""
+        Unitary to orthogonal mapping.
 
         Args:
             U: The unitary matrix in ``U(n)``
@@ -1317,13 +1569,14 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return self.block([[X, -Y], [Y, X]])
 
     def random_symplectic(self, num_modes: int, max_r: float = 1.0) -> Tensor:
-        r"""A random symplectic matrix in ``Sp(2*num_modes)``.
+        r"""
+        A random symplectic matrix in ``Sp(2*num_modes)``.
 
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
         """
         if num_modes == 1:
-            W = np.exp(1j * settings.rng.uniform(size=(1, 1)))
-            V = np.exp(1j * settings.rng.uniform(size=(1, 1)))
+            W = self.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
+            V = self.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
         else:
             W = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
             V = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
@@ -1335,39 +1588,26 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
     @staticmethod
     def random_orthogonal(N: int) -> Tensor:
-        """A random orthogonal matrix in :math:`O(N)`."""
+        r"""
+        A random orthogonal matrix in :math:`O(N)`.
+        """
         if N == 1:
             return np.array([[1.0]])
         return ortho_group.rvs(dim=N, random_state=settings.rng)
 
     def random_unitary(self, N: int) -> Tensor:
-        """a random unitary matrix in :math:`U(N)`"""
+        r"""
+        A random unitary matrix in :math:`U(N)`.
+        """
         if N == 1:
             return self.exp(1j * settings.rng.uniform(size=(1, 1)))
         return unitary_group.rvs(dim=N, random_state=settings.rng)
 
-    def single_mode_to_multimode_vec(self, vec, num_modes: int):
-        r"""Apply the same 2-vector (i.e. single-mode) to a larger number of modes."""
-        if vec.shape[-1] != 2:
-            raise ValueError("vec must be 2-dimensional (i.e. single-mode)")
-        x, y = vec[..., -2], vec[..., -1]
-        vec = self.concat([self.tile([x], [num_modes]), self.tile([y], [num_modes])], axis=-1)
-        return vec
-
-    def single_mode_to_multimode_mat(self, mat: Tensor, num_modes: int):
-        r"""Apply the same :math:`2\times 2` matrix (i.e. single-mode) to a larger number of modes."""
-        if mat.shape[-2:] != (2, 2):
-            raise ValueError("mat must be a single-mode (2x2) matrix")
-        mat = self.diag(
-            self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)), k=0
-        )  # shape [2,2,N,N]
-        mat = self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
-        return mat
-
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def Xmat(num_modes: int):
-        r"""The matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}.`
+        r"""
+        The matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}.`
 
         Args:
             num_modes (int): positive integer
@@ -1380,90 +1620,34 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return np.block([[O, I], [I, O]])
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
+    def Zmat(num_modes: int):
+        r"""The matrix :math:`Z_n = \begin{bmatrix}I_n & 0\\ 0 & -I_n\end{bmatrix}.`
+
+        Args:
+            num_modes: A positive integer representing the number of modes.
+
+        Returns:
+            The :math:`2N\times 2N` array
+        """
+        I = np.identity(num_modes)
+        O = np.zeros((num_modes, num_modes))
+        return np.block([[I, O], [O, -I]])
+
+    @staticmethod
+    @lru_cache
     def rotmat(num_modes: int):
         "Rotation matrix from quadratures to complex amplitudes."
         I = np.identity(num_modes)
         return np.sqrt(0.5) * np.block([[I, 1j * I], [I, -1j * I]])
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def J(num_modes: int):
         """Symplectic form."""
         I = np.identity(num_modes)
         O = np.zeros_like(I)
         return np.block([[O, I], [-I, O]])
-
-    def add_at_modes(
-        self, old: Tensor, new: Optional[Tensor], modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        """Adds two phase-space tensors (cov matrices, displacement vectors, etc..) on the specified modes."""
-        if new is None:
-            return old
-        shape = getattr(old, "shape", ())
-        N = (shape[-1] if shape != () else 0) // 2
-        indices = modes + [m + N for m in modes]
-        return self.update_add_tensor(
-            old, list(product(*[indices] * len(new.shape))), self.reshape(new, -1)
-        )
-
-    def left_matmul_at_modes(
-        self, a_partial: Tensor, b_full: Tensor, modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        r"""Left matrix multiplication of a partial matrix and a full matrix.
-
-        It assumes that that ``a_partial`` is a matrix operating on M modes and that ``modes`` is a
-        list of ``M`` integers, i.e., it will apply ``a_partial`` on the corresponding ``M`` modes
-        of ``b_full`` from the left.
-
-        Args:
-            a_partial: The :math:`2M\times 2M` array
-            b_full: The :math:`2N\times 2N` array
-            modes: A list of ``M`` modes to perform the multiplication on
-
-        Returns:
-            The :math:`2N\times 2N` array
-        """
-        if a_partial is None:
-            return b_full
-
-        N = b_full.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype="int32")
-        b_rows = self.gather(b_full, indices, axis=0)
-        b_rows = self.matmul(a_partial, b_rows)
-        return self.update_tensor(b_full, indices[:, None], b_rows)
-
-    def right_matmul_at_modes(
-        self, a_full: Tensor, b_partial: Tensor, modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        r"""Right matrix multiplication of a full matrix and a partial matrix.
-
-        It assumes that that ``b_partial`` is a matrix operating on ``M`` modes and that ``modes``
-        is a list of ``M`` integers, i.e., it will apply ``b_partial`` on the corresponding M modes
-        of ``a_full`` from the right.
-
-        Args:
-            a_full: The :math:`2N\times 2N` array
-            b_partial: The :math:`2M\times 2M` array
-            modes: A list of `M` modes to perform the multiplication on
-
-        Returns:
-            The :math:`2N\times 2N` array
-        """
-        return self.transpose(
-            self.left_matmul_at_modes(self.transpose(b_partial), self.transpose(a_full), modes)
-        )
-
-    def matvec_at_modes(
-        self, mat: Optional[Tensor], vec: Tensor, modes: Sequence[int]
-    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        """Matrix-vector multiplication between a phase-space matrix and a vector in the specified modes."""
-        if mat is None:
-            return vec
-        N = vec.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes], dtype="int32")
-        updates = self.matvec(mat, self.gather(vec, indices, axis=0))
-        return self.update_tensor(vec, indices[:, None], updates)
 
     def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
         """Returns all the diagonals of a density matrix."""
@@ -1474,59 +1658,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             return self.real(self.reshape(diag, cutoffs))
 
         return self.reshape(diag, cutoffs)
-
-    def poisson(self, max_k: int, rate: Tensor) -> Tensor:
-        """Poisson distribution up to ``max_k``."""
-        k = self.arange(max_k)
-        rate = self.cast(rate, k.dtype)
-        return self.exp(k * self.log(rate + 1e-9) - rate - self.lgamma(k + 1.0))
-
-    def binomial_conditional_prob(self, success_prob: Tensor, dim_out: int, dim_in: int):
-        """:math:`P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out`."""
-        in_ = self.arange(dim_in)[None, :]
-        out_ = self.arange(dim_out)[:, None]
-        return (
-            self.cast(binom(in_, out_), in_.dtype)
-            * self.pow(success_prob, out_)
-            * self.pow(1.0 - success_prob, self.maximum(in_ - out_, 0.0))
-        )
-
-    def convolve_probs_1d(self, prob: Tensor, other_probs: List[Tensor]) -> Tensor:
-        """Convolution of a joint probability with a list of single-index probabilities."""
-
-        if prob.ndim > 3 or len(other_probs) > 3:
-            raise ValueError("cannot convolve arrays with more than 3 axes")
-        if not all((q.ndim == 1 for q in other_probs)):
-            raise ValueError("other_probs must contain 1d arrays")
-        if not all((len(q) == s for q, s in zip(other_probs, prob.shape))):
-            raise ValueError("The length of the 1d prob vectors must match shape of prob")
-
-        q = other_probs[0]
-        for q_ in other_probs[1:]:
-            q = q[..., None] * q_[(None,) * q.ndim + (slice(None),)]
-
-        return self.convolve_probs(prob, q)
-
-    def convolve_probs(self, prob: Tensor, other: Tensor) -> Tensor:
-        r"""Convolve two probability distributions (up to 3D) with the same shape.
-
-        Note that the output is not guaranteed to be a complete joint probability,
-        as it's computed only up to the dimension of the base probs.
-        """
-        if prob.ndim > 3 or other.ndim > 3:
-            raise ValueError("cannot convolve arrays with more than 3 axes")
-        if not prob.shape == other.shape:
-            raise ValueError("prob and other must have the same shape")
-
-        prob_padded = self.pad(prob, [(s - 1, 0) for s in other.shape])
-        other_reversed = other[(slice(None, None, -1),) * other.ndim]
-        return self.convolution(
-            prob_padded[None, ..., None],
-            other_reversed[..., None, None],
-            data_format="N"
-            + ("HD"[: other.ndim - 1])[::-1]
-            + "WC",  # TODO: rewrite this to be more readable (do we need it?)
-        )[0, ..., 0]
 
     def euclidean_to_symplectic(self, S: Matrix, dS_euclidean: Matrix) -> Matrix:
         r"""Convert the Euclidean gradient to a Riemannian gradient on the

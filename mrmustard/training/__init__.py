@@ -64,5 +64,6 @@ Then, we can see the optimized value of the parameters, for example
 
 """
 
-from .optimizer import Optimizer
-from .callbacks import TensorboardCallback
+from .callbacks import TensorboardCallback as TensorboardCallback
+from .optimizer import Optimizer as Optimizer
+from .optimizer_jax import OptimizerJax as OptimizerJax

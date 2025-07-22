@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-" This module contains binomial strategies "
+"This module contains binomial strategies"
 
-from typing import Optional
+from __future__ import annotations
 
 import numpy as np
 from numba import njit, typed, types
@@ -77,8 +77,8 @@ def binomial_dict(
     A: ComplexMatrix,
     b: ComplexVector,
     c: complex,
-    max_prob: Optional[float] = None,
-    global_cutoff: Optional[int] = None,
+    max_prob: float | None = None,
+    global_cutoff: int | None = None,
 ) -> dict[tuple[int, ...], complex]:
     r"""Factorial speedup strategy (fill ket by weight), python version with numba function/loop.
     Uses a dictionary to store the output.
@@ -125,7 +125,7 @@ def binomial_dict(
     return G
 
 
-@njit
+@njit(cache=True)
 def binomial_numba(
     local_cutoffs: tuple[int, ...],
     A: ComplexMatrix,
@@ -133,7 +133,7 @@ def binomial_numba(
     c: complex,
     FP: dict[tuple[tuple[int, ...], int], list[tuple[int, ...]]],
     max_prob: float = 0.999,
-    global_cutoff: Optional[int] = None,
+    global_cutoff: int | None = None,
 ) -> ComplexTensor:  # pragma: no cover
     r"""Binomial strategy (fill by weight), fully numba version."""
     if global_cutoff is None:
@@ -150,7 +150,7 @@ def binomial_numba(
     for photons in range(1, global_cutoff):
         try:
             indices = FP[(local_cutoffs, photons)]
-        except Exception:  # pylint: disable=broad-except
+        except KeyError:
             indices = paths.binomial_subspace_basis(local_cutoffs, photons)
             FP[(local_cutoffs, photons)] = indices
         G, prob_subspace = steps.binomial_step(G, A, b, indices)

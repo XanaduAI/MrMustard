@@ -14,7 +14,10 @@
 
 """This module contains the classes to describe constant and variable parameters used in Mr Mustard."""
 
-from typing import Callable, Optional, Tuple
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any
 
 from mrmustard.math.backend_manager import BackendManager
 
@@ -42,7 +45,8 @@ def update_symplectic(grads_and_vars, symplectic_lr: float):
         Y = math.euclidean_to_symplectic(S, dS_euclidean)
         YT = math.transpose(Y)
         new_value = math.matmul(
-            S, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
+            S,
+            math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT)),
         )
         math.assign(S, new_value)
 
@@ -93,16 +97,16 @@ class Constant:
     Args:
         value: The value of this constant.
         name: The name of this constant.
+        dtype: The dtype of this constant.
     """
 
-    def __init__(self, value: any, name: str):
+    def __init__(self, value: Any, name: str, dtype: Any = None):
         if math.from_backend(value) and not math.is_trainable(value):
             self._value = value
-        elif type(value) in [list, int, float]:
-            self._value = math.new_constant(value, name)
-        else:
+        elif hasattr(value, "dtype"):
             self._value = math.new_constant(value, name, value.dtype)
-
+        else:
+            self._value = math.new_constant(value, name, dtype)
         self._name = name
 
     @property
@@ -113,11 +117,22 @@ class Constant:
         return self._name
 
     @property
-    def value(self) -> any:
+    def value(self) -> Any:
         r"""
         The value of this constant.
         """
         return self._value
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        ret._value, ret._name = aux_data
+        return ret
+
+    def _tree_flatten(self):  # pragma: no cover
+        children = ()
+        aux_data = (self.value, self.name)
+        return (children, aux_data)
 
     def __mul__(self, value):
         return type(self)(value=value * self.value, name=self.name)
@@ -126,7 +141,6 @@ class Constant:
         return type(self)(value=self.value * value, name=self.name)
 
 
-# pylint: disable=too-many-instance-attributes
 class Variable:
     r"""
     A parameter whose value can change.
@@ -140,33 +154,24 @@ class Variable:
         name: The name of this variable.
         bounds: The numerical bounds of this variable.
         update_fn: The function used to update this variable during training.
+        dtype: The dtype of this variable.
     """
 
     def __init__(
         self,
-        value: any,
+        value: Any,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         update_fn: Callable = update_euclidean,
+        dtype: Any = None,
     ):
-        self._value = self._get_value(value, bounds, name)
+        self._value = self._get_value(value, bounds, name, dtype)
         self._name = name
         self._bounds = bounds
         self._update_fn = update_fn
 
-    def _get_value(self, value, bounds, name):
-        r"""
-        Returns a variable from given ``value``, ``bounds``, and ``name``.
-        """
-        if math.from_backend(value) and math.is_trainable(value):
-            return value
-        elif type(value) in [list, int, float]:
-            return math.new_variable(value, bounds, name)
-        else:
-            return math.new_variable(value, bounds, name, value.dtype)
-
     @property
-    def bounds(self) -> Tuple[Optional[float], Optional[float]]:
+    def bounds(self) -> tuple[float | None, float | None]:
         r"""
         The numerical bounds of this variable.
         """
@@ -175,12 +180,12 @@ class Variable:
     @property
     def name(self) -> str:
         r"""
-        The name of this constant.
+        The name of this variable.
         """
         return self._name
 
     @property
-    def update_fn(self) -> Optional[Callable]:
+    def update_fn(self) -> Callable | None:
         r"""
         The function used to update this variable during training.
         """
@@ -191,7 +196,7 @@ class Variable:
         self._update_fn = value
 
     @property
-    def value(self) -> any:
+    def value(self) -> Any:
         r"""
         The value of this variable.
         """
@@ -201,11 +206,18 @@ class Variable:
     def value(self, value):
         self._value = self._get_value(value, self.bounds, self.name)
 
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        ret._value = children[0]
+        ret._name, ret._bounds, ret._update_fn = aux_data
+        return ret
+
     @staticmethod
     def orthogonal(
-        value: Optional[any],
+        value: Any | None,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         N: int = 1,
     ):
         r"""
@@ -227,9 +239,9 @@ class Variable:
 
     @staticmethod
     def symplectic(
-        value: any,
+        value: Any,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         N: int = 1,
     ):
         r"""
@@ -251,9 +263,9 @@ class Variable:
 
     @staticmethod
     def unitary(
-        value: any,
+        value: Any,
         name: str,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        bounds: tuple[float | None, float | None] = (None, None),
         N: int = 1,
     ):
         r"""
@@ -272,6 +284,21 @@ class Variable:
         """
         value = value or math.random_unitary(N)
         return Variable(value, name, bounds, update_unitary)
+
+    def _get_value(self, value, bounds, name, dtype=None):
+        r"""
+        Returns a variable from given ``value``, ``bounds``, and ``name``.
+        """
+        if math.from_backend(value) and math.is_trainable(value):
+            return value
+        if hasattr(value, "dtype"):
+            return math.new_variable(value, bounds, name, value.dtype)
+        return math.new_variable(value, bounds, name, dtype)
+
+    def _tree_flatten(self):  # pragma: no cover
+        children = (self.value,)
+        aux_data = (self.name, self.bounds, self.update_fn)
+        return (children, aux_data)
 
     def __mul__(self, value):
         return type(self)(

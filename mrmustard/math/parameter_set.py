@@ -14,7 +14,10 @@
 
 """This module contains the classes to describe sets of parameters."""
 
-from typing import Sequence, Union
+from collections.abc import Sequence
+from typing import Any
+
+import numpy as np
 
 from mrmustard.math.backend_manager import BackendManager
 
@@ -22,9 +25,7 @@ from .parameters import Constant, Variable
 
 math = BackendManager()
 
-__all__ = [
-    "ParameterSet",
-]
+__all__ = ["ParameterSet"]
 
 
 class ParameterSet:
@@ -56,18 +57,18 @@ class ParameterSet:
         self._variables: dict[str, Variable] = {}
 
     @property
+    def all_parameters(self) -> dict[str, Constant | Variable]:
+        r"""
+        The constant and variable parameters in this parameter set.
+        """
+        return self.constants | self.variables
+
+    @property
     def constants(self) -> dict[str, Constant]:
         r"""
         The constant parameters in this parameter set.
         """
         return self._constants
-
-    @property
-    def variables(self) -> dict[str, Variable]:
-        r"""
-        The variable parameters in this parameter set.
-        """
-        return self._variables
 
     @property
     def names(self) -> Sequence[str]:
@@ -77,7 +78,26 @@ class ParameterSet:
         """
         return self._names
 
-    def add_parameter(self, parameter: Union[Constant, Variable]) -> None:
+    @property
+    def variables(self) -> dict[str, Variable]:
+        r"""
+        The variable parameters in this parameter set.
+        """
+        return self._variables
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        ret._variables = children[0]
+        ret._names, ret._constants = aux_data
+        for name in ret.names:
+            if name in ret.constants:
+                ret.__dict__[name] = ret.constants[name]
+            elif name in ret.variables:
+                ret.__dict__[name] = ret.variables[name]
+        return ret
+
+    def add_parameter(self, parameter: Constant | Variable) -> None:
         r"""
         Adds a parameter to this parameter set.
 
@@ -114,6 +134,19 @@ class ParameterSet:
             ret[f"{tag}/{k}"] = v
         return ret
 
+    def to_dict(self) -> dict[str, Any]:
+        r"""
+        Returns a dictionary representation of this parameter set such that
+        it is compatible with the signature of built-in circuit components.
+        """
+        ret = {}
+        for name, param in self.all_parameters.items():
+            ret[name] = param.value
+            if isinstance(param, Variable):
+                ret[name + "_trainable"] = True
+                ret[name + "_bounds"] = param.bounds
+        return ret
+
     def to_string(self, decimals: int) -> str:
         r"""
         Returns a string representation of the parameter values, separated by commas and rounded
@@ -129,8 +162,92 @@ class ParameterSet:
         for name in self.names:
             param = self.constants.get(name) or self.variables.get(name)
             if len(param.value.shape) == 0:  # don't show arrays
-                string = str(math.asnumpy(math.round(param.value, decimals)))
+                # conversion to numpy is necessary to ensure consistent string formatting
+                # across backends
+                string = str(np.round(math.asnumpy(param.value), decimals))
             else:
                 string = f"{name}"
             strings.append(string)
         return ", ".join(strings)
+
+    def _tree_flatten(self):  # pragma: no cover
+        children = (self.variables,)
+        aux_data = (self.names, self.constants)
+        return (children, aux_data)
+
+    def __bool__(self) -> bool:
+        r"""
+        ``False`` if this parameter set is empty, ``True`` otherwise.
+        """
+        return bool(self._constants or self._variables)
+
+    def __eq__(self, other: object) -> bool:
+        r"""
+        Returns whether ``other`` is equivalent to this parameter set.
+        """
+        if not isinstance(other, ParameterSet):
+            return False
+        return (
+            self._names == other._names
+            and self._constants == other._constants
+            and self._variables == other._variables
+        )
+
+    def __getitem__(self, items: int | Sequence[int]):
+        r"""
+        Returns a parameter set that contains slices of the parameters in this parameter set.
+
+        In particular:
+            * If a parameter's value is a number, the returned parameter set contains the same
+              parameter.
+            * If a parameter's value is an array, the returned parameter set contains the same
+              parameter with sliced value.
+
+        .. code-block::
+
+            >>> from mrmustard.math.parameter_set import ParameterSet
+            >>> from mrmustard.math.parameters import Constant, Variable
+            >>> import numpy as np
+
+            >>> const1 = Constant(1, "c1")
+            >>> const2 = Constant([2, 3, 4], "c2")
+            >>> var1 = Variable(5, "v1")
+            >>> var2 = Variable([6, 7, 8], "v2")
+
+            >>> ps = ParameterSet()
+            >>> ps.add_parameter(const1)
+            >>> ps.add_parameter(const2)
+            >>> ps.add_parameter(var1)
+            >>> ps.add_parameter(var2)
+
+            >>> assert np.allclose(ps[0].constants["c1"].value, 1)
+            >>> assert np.allclose(ps[0].constants["c2"].value, 2)
+            >>> assert np.allclose(ps[0].variables["v1"].value, 5)
+            >>> assert np.allclose(ps[0].variables["v2"].value, 6)
+
+            >>> assert np.allclose(ps[1, 2].constants["c1"].value, 1)
+            >>> assert np.allclose(ps[1, 2].constants["c2"].value, [3, 4])
+            >>> assert np.allclose(ps[1, 2].variables["v1"].value, 5)
+            >>> assert np.allclose(ps[1, 2].variables["v2"].value, [7, 8])
+        """
+        if isinstance(items, int):
+            items = [items]
+        items = math.astensor(items)
+
+        ret = ParameterSet()
+
+        for name, const in self._constants.items():
+            if const.value.shape != ():
+                val = math.gather(const.value, items)
+                ret.add_parameter(Constant(val, name))
+            else:
+                ret.add_parameter(const)
+
+        for name, var in self._variables.items():
+            if var.value.shape != ():
+                val = math.gather(var.value, items)
+                ret.add_parameter(Variable(val, name, var.bounds, var.update_fn))
+            else:
+                ret.add_parameter(var)
+
+        return ret

@@ -30,7 +30,7 @@ def test_reduction_to_renorm_physicists_polys():
         [
             math.hermite_renormalized(2 * A, 2 * np.array([x0], dtype=complex), 1, (n_max,))
             for x0 in x
-        ]
+        ],
     ).T
     expected = np.array([eval_hermite(i, x) / np.sqrt(factorial(i)) for i in range(len(vals))])
     assert np.allclose(vals, expected)

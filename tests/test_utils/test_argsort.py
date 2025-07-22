@@ -29,14 +29,14 @@ def test_argsort_gen():
     assert argsort_gen(gen_list) == []
 
     # Test with single generator
-    gen_list = [iter(range(0, 3))]
+    gen_list = [iter(range(3))]
     assert argsort_gen(gen_list) == [0]
 
     # Test with generators yielding the same first value
     gen_list = [iter(range(i, i + 3)) for i in range(5)]
-    gen_list.append(iter(range(0, 3)))  # Add another generator with the same first value
+    gen_list.append(iter(range(3)))  # Add another generator with the same first value
     assert argsort_gen(gen_list) == [0, 5, 1, 2, 3, 4]
 
     # Test with generators yielding the same values
-    gen_list = [iter(range(0, 3)) for _ in range(5)]
+    gen_list = [iter(range(3)) for _ in range(5)]
     assert argsort_gen(gen_list) == [0, 1, 2, 3, 4]

@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=redefined-outer-name
-
 """
 This module contains functions for transforming to the Husimi representation.
 """
+
 from mrmustard import math, settings
 
 
@@ -26,10 +25,9 @@ def pq_to_aadag(X):
     R = math.rotmat(N)
     if X.ndim == 2:
         return math.matmul(math.matmul(R, X / settings.HBAR), math.dagger(R))
-    elif X.ndim == 1:
+    if X.ndim == 1:
         return math.matvec(R, X / math.sqrt(settings.HBAR, dtype=X.dtype))
-    else:
-        raise ValueError("Input to complexify must be a matrix or vector")
+    raise ValueError("Input to complexify must be a matrix or vector")
 
 
 def wigner_to_husimi(cov, means):

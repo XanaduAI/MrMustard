@@ -13,10 +13,13 @@
 # limitations under the License.
 
 import os
+from pathlib import Path
+
 import pytest
+from hypothesis import Verbosity
+from hypothesis import settings as hyp_settings
 
 from mrmustard import math
-from hypothesis import Verbosity, settings as hyp_settings
 
 print("pytest.conf -----------------------")
 
@@ -41,7 +44,7 @@ def pytest_addoption(parser):
     ``pytest --backend=tensorflow`` runs all the tests with tensorflow backend. The command
     ``pytest`` defaults to ``pytest --backend=numpy``.
     """
-    parser.addoption("--backend", default="numpy", help="``numpy`` or ``tensorflow``.")
+    parser.addoption("--backend", default="numpy", help="``numpy``, ``tensorflow`` or ``jax``.")
 
 
 @pytest.fixture
@@ -52,6 +55,11 @@ def backend(request):
     return request.config.getoption("--backend")
 
 
+def pytest_ignore_collect(path, config):
+    """Skip test_training when using the numpy backend."""
+    return config.getoption("--backend") == "numpy" and "test_training" in Path(path).parts
+
+
 @pytest.fixture(autouse=True)
 def set_backend(backend):
     r"""
@@ -60,10 +68,24 @@ def set_backend(backend):
     math.change_backend(f"{backend}")
 
 
-def skip_np():
-    if math.backend_name == "numpy":
-        pytest.skip("numpy")
+@pytest.fixture(autouse=True)
+def requires_backend(request, backend):
+    r"""
+    Skips test if backend is not a required backend.
+    If no backend is specified skips test entirely.
+    """
+    if (
+        request.node.get_closest_marker("requires_backend")
+        and backend not in request.node.get_closest_marker("requires_backend").args
+    ):
+        pytest.skip(f"Skipped with this backend: {backend}")
 
 
 def pytest_configure(config):
-    pass  # your code goes here
+    r"""
+    Adds the marker ``requires_backend`` to the pytest config.
+    """
+    config.addinivalue_line(
+        "markers",
+        "requires_backend(backend): skips test if backend is not the required backend",
+    )

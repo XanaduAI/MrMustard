@@ -2,284 +2,208 @@
 ![Logo](https://github.com/XanaduAI/MrMustard/blob/main/mm_dark.png#gh-dark-mode-only)
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
-[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
+[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Numpy%20tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_numpy.yml)
+[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Jax%20tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_jax.yml)
+[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tensorflow%20tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_tensorflow.yml)
 [![Python version](https://img.shields.io/pypi/pyversions/mrmustard.svg?style=popout-square)](https://pypi.org/project/MrMustard/)
 
-Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` by default).
+# Mr Mustard: Your Universal Differentiable Toolkit for Quantum Optics
 
-Mr Mustard supports:
-- Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
-- Exact Fock representation of any Gaussian circuit and any Gaussian state up to an arbitrary cutoff
-- Riemannian optimization on the symplectic group (for Gaussian transformations) and on the unitary group (for interferometers)
-- Adam optimizer for euclidean parameters
-- Single-mode gates (parallelizable):
-    - squeezing, displacement, phase rotation, attenuator, amplifier, additive noise, phase noise
-- Two-mode gates:
-    - beam splitter, Mach-Zehnder interferometer, two-mode squeezing, CX, CZ, CPHASE
-- N-mode gates (with dedicated Riemannian optimization):
-    - Interferometer (unitary), RealInterferometer (orthogonal), Gaussian transformation (symplectic)
-- Single-mode states (parallelizable):
-    - Vacuum, Coherent, SqueezedVacuum, Thermal, Fock
-- Two-mode states:
-    - TMSV (two-mode squeezed vacuum)
-- N-mode states:
-    - Gaussian
-- Photon number moments and entropic measures
-- PNR detectors and Threshold detectors with trainable quantum efficiency and dark counts
-- Homodyne, Heterodyne and Generaldyne measurements
-- Composable circuits
-- Plug-and-play backends (`numpy` as default)
-- An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
+Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` (default), `tensorflow`, `jax`).
 
-# Increased numerical stability using Julia [optional]
+## Installation
 
-Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
-To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
-an installation of [Julia](https://github.com/JuliaLang/juliaup#installation) is required (version 1.9.3 recommended).
+### For Users
 
-* When installing MrMustard via devcontainer, Julia and its required packages are automatically installed.
-
-* When installing MrMustard via `poetry install` or `pip install`, the required Julia packages have to be installed manually as follows:
-
-```
-julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
+```bash
+pip install mrmustard
 ```
 
-* When installing MrMustard via the `MakeFile`, the required Julia packages are automatically installed _only_ if Julia was previously installed by the user.
+### For Developers
 
-# The lab module
-The lab module contains things you'd find in a lab: states, transformations, measurements, circuits. States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters.
+```bash
+git clone https://github.com/XanaduAI/MrMustard.git
+cd MrMustard
+uv sync
+```
 
+> [!WARNING]
+> This project uses `uv` for package management. Make sure to activate the virtual environment with `source .venv/bin/activate` before development.
 
-## 1. States and Gates
-Here are a few examples of states and gates:
+## Quick Start
+
+Make a four-lobed cat state:
+
 ```python
 import numpy as np
-from mrmustard.lab import *
+from mrmustard.lab.states import Coherent, Number
+from mrmustard.lab.transformations import BSgate
 
-vac = Vacuum(num_modes=2)        # 2-mode vacuum state
-coh = Coherent(x=0.1, y=-0.4)    # coh state |alpha> with alpha = 0.1 - 0.4j
-sq  = SqueezedVacuum(r=0.5)      # squeezed vacuum state
-g   = Gaussian(num_modes=2)      # 2-mode Gaussian state with zero means
-fock4 = Fock(4)                  # fock state |4>
+# Create cat states
+cat_horizontal = (Coherent(mode=0, x=2) + Coherent(mode=0, x=-2)).normalize()
+cat_vertical = (Coherent(mode=1, y=2) + Coherent(mode=1, y=-2)).normalize()
 
-D  = Dgate(x=1.0, y=-0.4)         # Displacement by 1.0 along x and -0.4 along y
-S  = Sgate(r=0.5)                 # Squeezer with r=0.5
-R  = Rgate(angle=0.3)             # Phase rotation by 0.3
-A  = Amplifier(gain=2.0)          # noisy amplifier with 200% gain
-L  = Attenuator(0.5)              # pure loss channel with 50% transmissivity
-N  = AdditiveNoise(noise=0.1)     # additive noise with noise level 0.1
+# merge with beamsplitter
+both_modes = cat_vertical >> cat_horizontal >> BSgate(modes=(0, 1), theta=np.pi/4)
 
-BS = BSgate(theta=np.pi/4)          # 50/50 beam splitter
-S2 = S2gate(r=0.5)                  # two-mode squeezer
-MZ = MZgate(phi_a=0.3, phi_b=0.1)   # Mach-Zehnder interferometer
-I  = Interferometer(8)              # 8-mode interferometer
-L  = Attenuator(0.5)                # pure lossy channel with 50% transmissivity
-A  = Amplifier(gain=2.0, nbar=1.0)  # noisy amplifier with 200% gain
+# Wigner function of the marginal
+both_modes[0]
 ```
 
-The `repr` of single-mode states shows the Wigner function:
-<img width="571" alt="Screen Shot 2021-12-06 at 1 31 17 PM" src="https://user-images.githubusercontent.com/8944955/144902008-8d26d59c-8600-4391-9144-ffcc1b2215c2.png">
+<img width="571" alt="Wigner function of the marginal" src="https://github.com/user-attachments/assets/85477eef-abd3-4fe3-a00f-c0a6b1dc0260" />
 
 ```python
-cat_amps = Coherent(2.0).ket([20]) + Coherent(-2.0).ket([20])
-cat_amps = cat_amps / np.linalg.norm(cat_amps)
-cat = State(ket=cat_amps)
-cat
-```
-<img width="538" alt="Screen Shot 2021-12-06 at 8 27 06 PM" src="https://user-images.githubusercontent.com/8944955/144949009-ebf7bbf8-9240-406c-ab99-bf8c36acd3f7.png">
-
-States (even those in Fock representation) are always compatible with gates:
-```python
-cat >> Sgate(0.5)  # squeezed cat
-```
-<img width="479" alt="Screen Shot 2021-12-07 at 2 03 14 PM" src="https://user-images.githubusercontent.com/8944955/145090219-298ca2ab-92e9-4ac2-beab-33ee33770fb2.png">
-
-
-
-## 2. Gates and the right shift operator `>>`
-
-Applying gates to states looks natural, thanks to python's right-shift operator `>>`:
-```python
-displaced_squeezed = Vacuum(1) >> Sgate(r=0.5) >> Dgate(x=1.0)
+# Wigner function of the projected state
+both_modes >> Number(mode=0, n=3).dual
 ```
 
-If you want to apply a gate to specific modes, use the `getitem` format. Here are a few examples:
-```python
-D = Dgate(y=-0.4)
-S = Sgate(r=0.1, phi=0.5)
-state = Vacuum(2) >> D[1] >> S[0]  # displacement on mode 1 and squeezing on mode 0
+<img width="571" alt="Wigner function of the projected state" src="https://github.com/user-attachments/assets/1f4367d2-1dbd-4088-baed-d66e294b554b" />
 
-BS = BSgate(theta=1.1)
-state = Vacuum(3) >> BS[0,2]  # applying a beamsplitter to modes 0 and 2
-state = Vacuum(4) >> S[0,1,2]  # applying the same Sgate in parallel to modes 0, 1 and 2 but not to mode 3
+```python
+# Fock amplitudes of the projected state (exact down to machine precision)
+both_modes.fock_array(shape=(100, 4))[:,3]
 ```
 
-## 3. Circuit
-When chaining just gates with the right-shift `>>` operator, we create a circuit:
-```python
-X8 = Sgate(r=[1.0] * 4) >> Interferometer(4)
-output = Vacuum(4) >> X8
+## Why Mr Mustard?
 
-# lossy X8
-noise = lambda: np.random.uniform(size=4)
-X8_noisy = (Sgate(r=0.9 + 0.1*noise(), phi=0.1*noise())
-                >> Attenuator(0.89 + 0.01*noise())
-                >> Interferometer(4)
-                >> Attenuator(0.95 + 0.01*noise())
-               )
+### 🔄 **Universal Representation Compatibility**
 
-# 2-mode Bloch Messiah decomposition
-bloch_messiah = Sgate(r=[0.1,0.2]) >> BSgate(theta=-0.1, phi=2.1) >> Dgate(x=[0.1, -0.4])
-my_state = Vacuum(2) >> bloch_messiah
-```
+- Initialize any component from any representation: `Ket.from_quadrature(...)`, `Channel.from_bargmann(...)`
+- Convert between representations seamlessly: `my_component.to_fock(...)`, `my_component.to_quadrature(...)`
+- Supported representations: Bargmann, Phase space, Characteristic functions, Quadrature, Fock
 
-## 4. Measurements
-In order to perform a measurement, we use the left-shift operator, e.g. `coh << sq` (think of the left-shift on a state as "closing" the circuit).
-```python
-leftover = Vacuum(4) >> X8 << SqueezedVacuum(r=10.0, phi=np.pi)[2]  # a homodyne measurement of p=0.0 on mode 2
-```
+### ⚡ **Fast & Exact**
 
-Transformations can also be applied in the dual sense by using the left-shift operator `<<`:
-```python
-Attenuator(0.5) << Coherent(0.1, 0.2) == Coherent(0.1, 0.2) >> Amplifier(2.0)
-```
-This has the advantage of modelling lossy detectors without applying the loss channel to the state going into the detector, which can be overall faster e.g. if the state is kept pure by doing so.
+- State-of-the-art algorithms for Fock amplitudes of Gaussian components
+- Exact computation up to arbitrary cutoff
+- Batch processing support
 
-## 5. Detectors
-There are two types of detectors in Mr Mustard. Fock detectors (PNRDetector and ThresholdDetector) and Gaussian detectors (Homodyne, Heterodyne, Generaldyne).
+### 🎯 **Built-in Optimization**
 
-The PNR and Threshold detectors return an array of unnormalized measurement results, meaning that the elements of the array are the density matrices of the leftover systems, conditioned on the outcomes:
-```python
-results = Gaussian(2) << PNRDetector(efficiency = 0.9, modes = [0])
-results[0]  # unnormalized dm of mode 1 conditioned on measuring 0 in mode 0
-results[1]  # unnormalized dm of mode 1 conditioned on measuring 1 in mode 0
-results[2]  # unnormalized dm of mode 1 conditioned on measuring 2 in mode 0
-# etc...
-```
-The trace of the leftover density matrices will yield the success probability. If multiple modes are measured then there is a corresponding number of indices:
-```python
-results = Gaussian(3) << PNRDetector(efficiency = [0.9, 0.8], modes = [0,1])
-results[2,3]  # unnormalized dm of mode 2 conditioned on measuring 2 in mode 0 and 3 in mode 1
-# etc...
-```
-Set a lower `settings.PNR_INTERNAL_CUTOFF` (default 50) to speed-up computations of the PNR output.
+- Differentiable with respect to all parameters
+- Riemannian optimization on symplectic/unitary/orthogonal groups
+- Cost functions can mix different representations
 
-## 6. Comparison operator `==`
-States support the comparison operator:
-```python
->>> bunched = (Coherent(1.0) & Coherent(1.0)) >> BSgate(np.pi/4)
->>> bunched.get_modes(1) == Coherent(np.sqrt(2.0))
-True
-```
-As well as transformations (gates and circuits):
-```python
->>> Dgate(np.sqrt(2)) >> Attenuator(0.5) == Attenuator(0.5) >> Dgate(1.0)
-True
-```
+### 🧩 **Flexible Circuit Construction**
 
-## 7. State operations and properties
-States can be joined using the `&` (and) operator:
-```python
-Coherent(x=1.0, y=1.0) & Coherent(x=2.0, y=2.0)  # A separable two-mode coherent state
+- Contract components in any order
+- Linear superpositions of compatible objects
+- Plug-and-play backends (`numpy`, `tensorflow`, `jax`)
 
-s = SqueezedVacuum(r=1.0)
-s4 = s & s & s & s   # four squeezed states
-```
+## Available Components
 
-Subsystems can be accessed via `get_modes`:
-```python
-joint = Coherent(x=1.0, y=1.0) & Coherent(x=2.0, y=2.0)
-joint.get_modes(0)  # first mode
-joint.get_modes(1)  # second mode
+**Gates & Transformations:**
 
-swapped = joint.get_modes([1,0])
-```
+- **Single-mode**: Squeezing, displacement, phase rotation, attenuator, amplifier, noise
+- **Two-mode**: Beam splitter, Mach-Zehnder, two-mode squeezing, CX, CZ, CPHASE
+- **N-mode**: Interferometer (unitary), RealInterferometer (orthogonal), Ggate (symplectic)
 
-## 8. Fock representation
-The Fock representation of a State is obtained via `.ket(cutoffs)` or `.dm(cutoffs)`. For circuits and gates (transformations in general) it's `.U(cutoffs)` or `.choi(cutoffs)`, if available. The Fock representation is exact and it doesn't break differentiability. This means that one can define cost functions on the Fock representation and backpropagate back to the phase space representation.
+**States:**
+
+- **Single-mode**: Vacuum, Coherent, SqueezedVacuum, DisplacedSqueezed, Thermal, Number, Sauron, QuadratureEigenstate, BargmannEigenstate
+- **Two-mode**: TwoModeSqueezedVacuum,
+- **N-mode**: GDM (Gaussian density matrix), GKet (Gaussian ket)
+
+**Measurements:**
+
+- **Projectors** implemented "for free" as dual pure density matrices.
+- **POVMs** implemented "for free" as dual density matrices.
+- **Detectors** HomodyneSampler, PNRSampler, ThresholdSampler
+
+## Examples
+
+### Circuit Simulation
 
 ```python
-# Fock representation of a coherent state
-Coherent(0.5).ket(cutoffs=[5])   # ket
-Coherent(0.5).dm(cutoffs=[5])    # density matrix
+from mrmustard.lab.states import Vacuum
+from mrmustard.lab.transformations import BSgate, Dgate, Sgate
+from mrmustard.lab.samplers import HomodyneSampler
 
-Dgate(x=1.0).U(cutoffs=[15])  # truncated unitary matrix
-Dgate(x=1.0).choi(cutoffs=[15])  # truncated choi tensor
-```
+# Create and apply a circuit
+input_state = Vacuum(modes=(0, 1))
+output_state = input_state >> BSgate(modes=(0, 1)) >> Sgate(mode=0, r=0.5) >> Dgate(mode=1, x=0.5)
 
-States can be initialized in Fock representation and used as any other state:
-```python
-my_amplitudes = np.array([0.5, 0.25, -0.5, 0.25, 0.25, 0.5, -0.25] + [0.0]*23)  # notice the buffer
-my_state = State(ket=my_amplitudes)
-my_state >> Sgate(r=0.5)  # just works
-```
-<img width="542" alt="Screen Shot 2021-12-06 at 1 44 38 PM" src="https://user-images.githubusercontent.com/8944955/144903799-5b6c1524-4357-4be0-9778-e1f0de6943c1.png">
-
-Alternatively,
-```python
-my_amplitudes = np.array([0.5, 0.25, -0.5, 0.25, 0.25, 0.5, -0.25])  # no buffer
-my_state = State(ket=my_amplitudes)
-my_state._cutoffs = [42]  # force the cutoff
-my_state >> Sgate(r=0.5)  # works too
-```
-
-# The physics module
-The physics module contains a growing number of functions that we can apply to states directly. These are made out of the functions that operate on the _representation_ of the state:
-
-- If the state is in Gaussian representation, then internally the physics functions utilize the [physics.gaussian](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/physics/gaussian.py) module.
-- If the state is in Fock representation, then internally the physics functions utilize the [physics.fock](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/physics/fock.py) module.
-
-
-# The math module
-The math module is the backbone of Mr Mustard. Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or numpy and your code will be plug-and-play too!
-
-Here's an example where the `numpy` backend is used.
-```python
-import mrmustard.math as math
-
-math.cos(0.1)  # numpy
-```
-
-In a different session, we can change the backend to ``tensorflow``.
-```python
-import mrmustard.math as math
-math.change_backend("tensorflow")
-
-math.cos(0.1)  # tensorflow
+# Measure the result
+homodyne = HomodyneSampler()
+samples = homodyne.sample(state=output_state, n_samples=100)
 ```
 
 ### Optimization
-The `mrmustard.training.Optimizer` uses Adam underneath the hood for the optimization of Euclidean parameters, a custom symplectic optimizer for Gaussian gates and states and a unitary/orthogonal optimizer for interferometers.
 
-We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a displaced squeezed state.
+Transform any simulation into an optimization by marking parameters as trainable:
 
 ```python
 from mrmustard import math
-from mrmustard.lab import Dgate, Ggate, Attenuator, Vacuum, Coherent, DisplacedSqueezed
-from mrmustard.physics import fidelity
-from mrmustard.training import Optimizer
+from mrmustard.lab.states import DisplacedSqueezed
+from mrmustard.lab.transformations import Dgate, Ggate
+from mrmustard.training import OptimizerJax
 
-math.change_backend("tensorflow")
+math.change_backend("jax")
 
-D = Dgate(x = 0.1, y = -0.5, x_trainable=True, y_trainable=True)
-L = Attenuator(transmissivity=0.5)
+# Create trainable gates
+D = Dgate(mode=0, x=0.1, y=-0.5, x_trainable=True, y_trainable=True)
+G = Ggate(modes=0, symplectic_trainable=True)
 
-# we write a function that takes no arguments and returns the cost
-def cost_fn_eucl():
-    state_out = Vacuum(1) >> D >> L
-    return 1 - fidelity(state_out, Coherent(0.1, 0.5))
+# Define cost function
+def cost_fn(G, D):
+    state_out = Vacuum(modes=0) >> G >> D
+    target = DisplacedSqueezed(mode=0, r=0.3, phi=1.1, x=0.4, y=-0.2)
+    return 1 - state_out.fidelity(target)
 
-G = Ggate(num_modes=1, symplectic_trainable=True)
-def cost_fn_sympl():
-    state_out = Vacuum(1) >> G >> D >> L
-    return 1 - fidelity(state_out, DisplacedSqueezed(r=0.3, phi=1.1, x=0.4, y=-0.2))
-
-# For illustration, here the Euclidean optimization doesn't include squeezing 
+# Optimize
 opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
-opt.minimize(cost_fn_eucl, by_optimizing=[D])  # using Adam for D
-
-# But the symplectic optimization always does
-opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
-opt.minimize(cost_fn_sympl, by_optimizing=[G,D])  # uses Adam for D and the symplectic opt for G
+(G, D) = opt.minimize(cost_fn, by_optimizing=[G, D])
 ```
+
+### Advanced: Circuit Optimization
+
+```python
+from mrmustard.lab.circuits import Circuit
+from mrmustard.lab.states import Coherent, Number
+from mrmustard.lab.transformations import Sgate
+
+# Optimize contraction path and Fock shapes
+circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Coherent(0, x=1.0).dual])
+circ.optimize(n_init=100, with_BF_heuristic=True, verbose=True)
+```
+
+## Backend Flexibility
+
+Switch between numerical backends seamlessly:
+
+```python
+import mrmustard.math as math
+
+# Default numpy backend
+math.cos(0.1)  # numpy
+
+# Switch to tensorflow
+math.change_backend("tensorflow")
+math.cos(0.1)  # tensorflow
+
+# Switch to jax
+math.change_backend("jax")
+math.cos(0.1)  # jax
+```
+
+## Architecture
+
+### The `lab` Module
+
+Contains components you'd find in a quantum optics lab: states, transformations, measurements, and circuits. States can be used as initial conditions or as measurements (projections).
+
+### The `physics` Module
+
+Contains the core quantum optics functionality, including the `Ansatz` class responsible for handling the numerics of circuit components.
+
+### The `math` Module
+
+The backbone providing plug-and-play backend support. Acts as a drop-in replacement for `numpy`, `tensorflow`, or `jax`.
+
+## Getting Started
+
+1. **Install**: `pip install mrmustard`
+2. **Try the examples** above
+3. **Read the docs**: <https://mrmustard.readthedocs.io/en/stable/>
+
+---

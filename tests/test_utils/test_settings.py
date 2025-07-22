@@ -16,31 +16,10 @@
 Tests for the Settings class.
 """
 
-from mrmustard import math
-from mrmustard.utils.settings import Settings, ImmutableSetting
 import pytest
 
-from ..conftest import skip_np
-
-
-class TestImmutableSettings:
-    """Tests the ImmutableSettings class"""
-
-    def test_init(self):
-        """Tests the default values of the immutable settings"""
-        s = ImmutableSetting("foo", "bar")
-        assert s.value == "foo"
-        assert s.name == "bar"
-
-    def test_setting_becomes_immutable(self):
-        """Tests that immutable settings become immutable"""
-        s = ImmutableSetting(1, "my_name")
-
-        s.value = 2
-        assert s.value == 2
-
-        with pytest.raises(ValueError, match=f"value of `settings.{s.name}`"):
-            s.value = 3
+from mrmustard import math
+from mrmustard.utils.settings import Settings
 
 
 class TestSettings:
@@ -50,72 +29,37 @@ class TestSettings:
         """Test the default values of the settings"""
         settings = Settings()
 
-        assert settings.HBAR == 2.0
-        assert settings.DEBUG is False
-        assert settings.AUTOCUTOFF_PROBABILITY == 0.999  # capture at least 99.9% of the probability
-        assert settings.AUTOCUTOFF_MAX_CUTOFF == 100
-        assert settings.AUTOCUTOFF_MIN_CUTOFF == 1
-        assert settings.CIRCUIT_DECIMALS == 3
-        assert settings.DISCRETIZATION_METHOD == "iterative"
-        assert settings.EQ_TRANSFORMATION_CUTOFF == 3
-        assert settings.EQ_TRANSFORMATION_RTOL_FOCK == 1e-3
-        assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 1e-6
-        assert settings.PNR_INTERNAL_CUTOFF == 50
-        assert settings.HOMODYNE_SQUEEZING == 10.0
-        assert settings.PRECISION_BITS_HERMITE_POLY == 128
+        assert settings.HBAR == 1.0
+        assert settings.AUTOSHAPE_PROBABILITY == 0.99999
+        assert settings.AUTOSHAPE_MAX == 50
+        assert settings.AUTOSHAPE_MIN == 1
+        assert settings.DISCRETIZATION_METHOD == "clenshaw"
+        assert settings.DEFAULT_FOCK_SIZE == 50
+        assert settings.DEFAULT_REPRESENTATION == "Fock"
         assert settings.PROGRESSBAR is True
-        assert settings.DEFAULT_BS_METHOD == "vanilla"  # can be 'vanilla' or 'schwinger'
 
     def test_setters(self):
         settings = Settings()
 
-        ap0 = settings.AUTOCUTOFF_PROBABILITY
-        settings.AUTOCUTOFF_PROBABILITY = 0.1
-        assert settings.AUTOCUTOFF_PROBABILITY == 0.1
-        settings.AUTOCUTOFF_PROBABILITY = ap0
-
-        db0 = settings.DEBUG
-        settings.DEBUG = True
-        assert settings.DEBUG is True
-        settings.DEBUG = db0
-
-        dbsm0 = settings.DEFAULT_BS_METHOD
-        settings.DEFAULT_BS_METHOD = "schwinger"
-        assert settings.DEFAULT_BS_METHOD == "schwinger"
-        settings.DEFAULT_BS_METHOD = dbsm0
-
-        eqtc0 = settings.EQ_TRANSFORMATION_CUTOFF
-        settings.EQ_TRANSFORMATION_CUTOFF = 2
-        assert settings.EQ_TRANSFORMATION_CUTOFF == 2
-        settings.EQ_TRANSFORMATION_CUTOFF = eqtc0
-
-        pnr0 = settings.PNR_INTERNAL_CUTOFF
-        settings.PNR_INTERNAL_CUTOFF = False
-        assert settings.PNR_INTERNAL_CUTOFF is False
-        settings.PNR_INTERNAL_CUTOFF = pnr0
-
-        pb0 = settings.PROGRESSBAR
-        settings.PROGRESSBAR = False
-        assert settings.PROGRESSBAR is False
-        settings.PROGRESSBAR = pb0
+        cw = settings.COMPLEX_WARNING
+        settings.COMPLEX_WARNING = not cw
+        assert (not cw) == settings.COMPLEX_WARNING
+        settings.COMPLEX_WARNING = cw
 
         s0 = settings.SEED
         settings.SEED = None
         assert settings.SEED is not None
         settings.SEED = s0
 
-        assert settings.HBAR == 2.0
-        with pytest.raises(ValueError, match="Cannot change"):
+        assert settings.HBAR == 1.0
+        with pytest.warns(UserWarning, match="Changing HBAR can conflict with prior computations"):
             settings.HBAR = 3
-
-        with pytest.raises(ValueError, match="precision_bits_hermite_poly"):
-            settings.PRECISION_BITS_HERMITE_POLY = 9
 
     def test_settings_seed_randomness_at_init(self):
         """Test that the random seed is set randomly as MM is initialized."""
         settings = Settings()
         seed0 = settings.SEED
-        del Settings.instance
+        del Settings._instance
         settings = Settings()
         seed1 = settings.SEED
         assert seed0 != seed1
@@ -129,9 +73,9 @@ class TestSettings:
         seq1 = [settings.rng.integers(0, 2**31 - 1) for _ in range(10)]
         assert seq0 == seq1
 
+    @pytest.mark.requires_backend("tensorflow")
     def test_complex_warnings(self, caplog):
         """Tests that complex warnings can be correctly activated and deactivated."""
-        skip_np()
 
         settings = Settings()
 
@@ -147,3 +91,19 @@ class TestSettings:
         settings.COMPLEX_WARNING = False
         math.cast(1 + 1j, math.float64)
         assert len(caplog.records) == 1
+
+    def test_cannot_add_new_settings(self):
+        """Test that new settings are rejected (eg. typos)."""
+        settings = Settings()
+        with pytest.raises(AttributeError, match="unknown MrMustard setting: 'HBARR'"):
+            settings.HBARR = 1.0
+
+    def test_context_manager(self):
+        """Test that the context manager works correctly."""
+        settings = Settings()
+
+        with settings(AUTOSHAPE_PROBABILITY=0.1, HBAR=5.0):
+            assert settings.AUTOSHAPE_PROBABILITY == 0.1
+            assert settings.HBAR == 5.0
+        assert settings.AUTOSHAPE_PROBABILITY == 0.99999
+        assert settings.HBAR == 1.0

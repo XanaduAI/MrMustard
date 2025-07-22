@@ -15,7 +15,6 @@
 """This module contains the implementation of the decorator class :class:`Autocast`."""
 
 from functools import wraps
-from typing import List
 
 
 class Autocast:
@@ -23,7 +22,16 @@ class Autocast:
 
     def __init__(self):
         self.dtype_order = ("float16", "float32", "float64", "complex64", "complex128")
-        self.no_cast = ("int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64")
+        self.no_cast = (
+            "int8",
+            "uint8",
+            "int16",
+            "uint16",
+            "int32",
+            "uint32",
+            "int64",
+            "uint64",
+        )
 
     def can_cast(self, arg):
         r"""Returns `True` if the argument can be casted."""
@@ -35,14 +43,13 @@ class Autocast:
             return False
         return self.dtype_order.index(proposed_dtype) > self.dtype_order.index(arg.dtype.name)
 
-    def get_dtypes(self, *args, **kwargs) -> List:
+    def get_dtypes(self, *args, **kwargs) -> list:
         r"""Returns the dtypes of the arguments."""
         args_dtypes = [arg.dtype.name for arg in args if self.can_cast(arg)]
         kwargs_dtypes = [v.dtype.name for v in kwargs.values() if self.can_cast(v)]
         return args_dtypes + kwargs_dtypes
 
-    # pylint: disable=unnecessary-lambda
-    def max_dtype(self, dtypes: List):
+    def max_dtype(self, dtypes: list):
         r"""Returns the dtype with the highest precision."""
         if dtypes == []:
             return None

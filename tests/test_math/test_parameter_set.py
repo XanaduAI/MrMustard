@@ -16,7 +16,8 @@
 Unit tests for the :class:`ParameterSet`.
 """
 
-from mrmustard import math
+import numpy as np
+
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 
@@ -68,6 +69,27 @@ class TestParameterSet:
         variables = ps.tagged_variables("ciao")
         assert variables == {"ciao/var1": var1}
 
+    def test_to_dict(self):
+        r"""
+        Tests the ``to_dict`` method.
+        """
+        const1 = Constant(1.2345, "const1")
+        const2 = Constant(2.3456, "const2")
+        var1 = Variable(3.4567, "var1")
+
+        ps = ParameterSet()
+        ps.add_parameter(const1)
+        ps.add_parameter(const2)
+        ps.add_parameter(var1)
+
+        assert ps.to_dict() == {
+            "const1": const1.value,
+            "const2": const2.value,
+            "var1": var1.value,
+            "var1_trainable": True,
+            "var1_bounds": (None, None),
+        }
+
     def test_to_string(self):
         r"""
         Tests the ``to_string`` method.
@@ -84,3 +106,56 @@ class TestParameterSet:
         assert ps.to_string(1) == "1.2, 2.3, 3.5"
         assert ps.to_string(3) == "1.234, 2.346, 3.457"
         assert ps.to_string(10) == "1.2345, 2.3456, 3.4567"
+
+    def test_eq(self):
+        r"""
+        Tests the ``__eq__`` method.
+        """
+        const1 = Constant(1, "c1")
+        const2 = Constant([2, 3, 4], "c2")
+        var1 = Variable(5, "v1")
+        var2 = Variable([6, 7, 8], "v2")
+
+        ps1 = ParameterSet()
+        ps1.add_parameter(const1)
+        ps1.add_parameter(const2)
+        ps1.add_parameter(var1)
+        ps1.add_parameter(var2)
+
+        assert ps1 != 1.0
+
+        ps2 = ParameterSet()
+        ps2.add_parameter(const1)
+        ps2.add_parameter(const2)
+        ps2.add_parameter(var1)
+        ps2.add_parameter(var2)
+
+        assert ps1 == ps2
+
+        ps3 = ParameterSet()
+        ps3.add_parameter(const1)
+        ps3.add_parameter(var1)
+
+        assert ps1 != ps3
+
+    def test_get_item(self):
+        const1 = Constant(1, "c1")
+        const2 = Constant([2, 3, 4], "c2")
+        var1 = Variable(5, "v1")
+        var2 = Variable([6, 7, 8], "v2")
+
+        ps = ParameterSet()
+        ps.add_parameter(const1)
+        ps.add_parameter(const2)
+        ps.add_parameter(var1)
+        ps.add_parameter(var2)
+
+        assert np.allclose(ps[0].constants["c1"].value, 1)
+        assert np.allclose(ps[0].constants["c2"].value, 2)
+        assert np.allclose(ps[0].variables["v1"].value, 5)
+        assert np.allclose(ps[0].variables["v2"].value, 6)
+
+        assert np.allclose(ps[1, 2].constants["c1"].value, 1)
+        assert np.allclose(ps[1, 2].constants["c2"].value, [3, 4])
+        assert np.allclose(ps[1, 2].variables["v1"].value, 5)
+        assert np.allclose(ps[1, 2].variables["v2"].value, [7, 8])

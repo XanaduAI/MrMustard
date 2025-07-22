@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-" This module contains strategies for calculating the matrix elements of the squeezing gate. "
+"This module contains strategies for calculating the matrix elements of the squeezing gate."
 
 import numpy as np
 from numba import njit
@@ -22,12 +22,15 @@ from mrmustard.utils.typing import ComplexTensor
 
 SQRT = np.sqrt(np.arange(100000))
 
-__all__ = ["squeezer", "squeezer_vjp", "squeezed", "squeezed_vjp"]
+__all__ = ["squeezed", "squeezed_vjp", "squeezer", "squeezer_vjp"]
 
 
-@njit
+@njit(cache=True)
 def squeezer(
-    shape: tuple[int, int], r: float, theta: float, dtype=np.complex128
+    shape: tuple[int, int],
+    r: float,
+    theta: float,
+    dtype=np.complex128,
 ):  # pragma: no cover
     r"""Calculates the matrix elements of the squeezing gate using a recurrence relation.
     (See eq. 50-52 in https://arxiv.org/abs/2004.11002)
@@ -62,7 +65,7 @@ def squeezer(
     return S
 
 
-@njit
+@njit(cache=True)
 def squeezer_vjp(
     G: ComplexTensor,
     dLdG: ComplexTensor,
@@ -113,14 +116,14 @@ def squeezer_vjp(
         -dLdA[0, 0] * exp * d_tanh
         + dLdA[0, 1] * d_sech
         + dLdA[1, 1] * exp_conj * d_tanh
-        - np.conj(dLdC) * 0.5 * tanh  # / np.sqrt(np.cosh(r))
+        - np.conj(dLdC) * 0.5 * tanh,  # / np.sqrt(np.cosh(r))
     )
     dLdphi = 2 * np.real(-dLdA[0, 0] * 1j * exp * tanh - dLdA[1, 1] * 1j * exp_conj * tanh)
 
     return dLdr, dLdphi
 
 
-@njit
+@njit(cache=True)
 def squeezed(cutoff: int, r: float, theta: float, dtype=np.complex128):  # pragma: no cover
     r"""Calculates the matrix elements of the single-mode squeezed state using recurrence relations.
 
@@ -143,7 +146,7 @@ def squeezed(cutoff: int, r: float, theta: float, dtype=np.complex128):  # pragm
     return S
 
 
-@njit
+@njit(cache=True)
 def squeezed_vjp(
     G: ComplexTensor,
     dLdG: ComplexTensor,

@@ -4,64 +4,36 @@ Development guide
 Dependencies
 ------------
 
-Mr Mustard requires the following libraries be installed:
+Mr Mustard requires the following to be installed:
 
-* `Python <http://python.org/>`_ >= 3.9
-
-as well as the following Python packages:
-
-* `NumPy <http://numpy.org/>`_
-* `SciPy <http://scipy.org/>`_
-* `The Walrus <https://the-walrus.readthedocs.io>`_ >= 0.17.0
-* `Tensorflow <https://www.tensorflow.org/>`_ >= 2.4.0
-* `Matplotlib <https://matplotlib.org/>`_
-* `Rich <https://pypi.org/project/rich/>`_
-* `tqdm <https://tqdm.github.io/>`_
-
-If you currently do not have Python 3 installed, we recommend
-`Anaconda for Python 3 <https://www.anaconda.com/download/>`_, a distributed version
-of Python packaged for scientific computation.
+* `Python <http://python.org/>`_ >= 3.10, <3.13
+* `uv <https://github.com/astral-sh/uv>`_ >= 0.7.0
 
 Installation
 ------------
 
-For development purposes, it is recommended to install the Mr Mustard source code
-using development mode:
+For development purposes, it is recommended to install Mr Mustard using ``uv``
 
 .. code-block:: bash
 
     git clone https://github.com/XanaduAI/MrMustard
     cd MrMustard
-    pip install -e .
+    uv sync --all-groups
 
-The ``-e`` flag ensures that edits to the source code will be reflected when
-importing Mr Mustard in Python.
-
-Increased numerical stability using Julia [optional]
-------------------
-Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
-To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
-an installation of `Julia <https://github.com/JuliaLang/juliaup#installation>`_ is required (version 1.9.3 recommended).
-
-* When installing MrMustard via devcontainer, Julia and its required packages are automatically installed.
-
-* When installing MrMustard via ``poetry install`` or ``pip install``, the required Julia packages have to be installed manually as follows:
-
-.. code-block:: console
-
-    julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
-
-* When installing MrMustard via the `MakeFile`, the required Julia packages are automatically installed only if Julia was previously installed by the user.
-
-Development environment
------------------------
-
-Mr Mustard uses a ``pytest`` suite for testing and ``black`` for formatting. These
-dependencies can be installed via ``poetry``:
+The ``--all-groups`` flag ensures that all developmental dependencies are included. Note
+that ``uv`` will install Mr Mustard into a ``.venv`` virtual environment by default.
+Alternatively, ``pip`` is also supported
 
 .. code-block:: bash
 
-    poetry install --with dev
+    git clone https://github.com/XanaduAI/MrMustard
+    cd MrMustard
+    pip install --group dev -e .
+
+The ``-e`` flag ensures that edits to the source code will be reflected when
+importing Mr Mustard in Python and the ``--group dev`` ensures development dependencies
+are also installed (additional flags include ``--group doc`` to build documentation locally
+and ``--group interactive`` to support interactive Jupyter notebooks).
 
 Software tests
 --------------
@@ -77,15 +49,20 @@ can be run by navigating to the source code folder and running
 
     make test
 
+or equivalently
+
+.. code-block:: bash
+
+    uv run pytest
+
 Individual test modules are run by invoking pytest directly from the command line:
 
 .. code-block:: bash
 
-    pytest tests/test_fidelity.py
+    uv run pytest tests/test_lab/test_states/test_ket.py
 
-The ``--backend`` flag allows specifying the backend used when running the tests. To
-use the numpy backend, type ``pytest tests/test_fidelity.py`` or ``pytest tests/test_fidelity.py --backend=numpy``.
-To use the tensorflow backend, run the command ``pytest tests/test_fidelity.py --backend=tensorflow``.
+The ``--backend`` flag allows specifying the backend used when running the tests (by default ``numpy``).
+For example, to use the Jax backend, run the command ``pytest tests/test_lab/test_states/test_ket.py --backend=jax``.
 
 .. note:: **Run options for Mr Mustard tests**
 
@@ -94,7 +71,7 @@ To use the tensorflow backend, run the command ``pytest tests/test_fidelity.py -
 
     .. code-block:: console
 
-        pytest -x
+        uv run pytest -x
 
     For further useful options (e.g. ``-k``, ``-s``, ``--tb=short``, etc.)
     refer to the ``pytest --help`` command line usage description or the
@@ -119,7 +96,7 @@ The coverage of a specific file can also be checked by generating a report:
 
 .. code-block:: console
 
-    pytest tests/test_fidelity.py --cov=mrmustard/location/to/module --cov-report=term-missing
+    uv run pytest tests/test_lab/test_states/test_ket.py --cov=mrmustard/location/to/module --cov-report=term-missing
 
 Here the coverage report will be created relative to the module specified by
 the path passed to the ``--cov=`` option.
@@ -132,7 +109,7 @@ filtering out certain tests:
 
 .. code-block:: console
 
-    pytest tests/test_fidelity.py --cov --cov-report=term-missing -k 'not test_fidelity_coherent_state'
+    uv run pytest tests/test_lab/test_states/test_ket.py --cov --cov-report=term-missing -k 'not test_L2_norm'
 
 Passing the ``--cov`` option without any modules specified will generate a
 coverage report for all modules of Mr Mustard.
@@ -140,31 +117,20 @@ coverage report for all modules of Mr Mustard.
 Format and code style
 ---------------------
 
-Contributions are checked for format alignment in the pipeline. With ``black``
-installed, changes can be formatted locally using:
+Contributions are checked for format alignment and linting in the pipeline.
+This process is typically automated via ``pre-commit``
 
 .. code-block:: bash
 
-    make format
+    pre-commit install
 
-Contributors without ``make`` installed can run ``black`` directly using:
-
-.. code-block:: bash
-
-    black -l 100 mrmustard
-
-Contributions are checked for format alignment in the pipeline. Changes can be
-formatted and linted locally using:
+Manually, we can make use of ``ruff``
 
 .. code-block:: bash
 
-    make lint
+    ruff check
+    ruff format
 
-To run both linting and formatting use
-
-.. code-block:: bash
-
-    make format lint
 
 Documentation
 -------------
@@ -174,7 +140,7 @@ Additional packages are required to build the documentation, as specified in
 
 .. code-block:: bash
 
-    poetry install --with doc
+    uv sync --group doc
 
 from within the top-level directory. To then build the HTML documentation, run
 
@@ -206,21 +172,11 @@ Before submitting a pull request, please make sure the following is done:
 * **Make sure the modified code in the pull request conforms to the PEP8 coding standard.**
 
   Mr Mustard's source code conforms to `PEP8 standards <https://www.python.org/dev/peps/pep-0008/>`_.
-  Before submitting the PR, you can autoformat your code changes using the
-  `Black <https://github.com/psf/black>`_ Python autoformatter, with max-line length set to 120:
+  Before submitting the PR, make sure your code is formatted either through the ``pre-commit`` hook or
 
   .. code-block:: bash
 
-      black -l 100 mrmustard/path/to/modified/file.py
-
-  We check all of our code against `Pylint <https://www.pylint.org/>`_ for errors.
-  To lint modified files, simply ``pip install pylint``, and then from the source code
-  directory, run
-
-  .. code-block:: bash
-
-      pylint mrmustard/path/to/modified/file.py
-
+      make ruff
 
 When ready, submit your fork as a `pull request <https://help.github.com/articles/about-pull-requests>`_
 to the Mr Mustard repository, filling out the pull request template. This template is added
