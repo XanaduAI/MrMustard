@@ -59,7 +59,7 @@ class TestConstant:
         assert const4.name == "const4"
         assert const4.value.dtype == "int64"
 
-    def test_format_bounds_constant(self):
+    def test_format_bounds(self):
         r"""
         Tests the ``_format_bounds`` method with constant parameters.
         """
@@ -68,29 +68,14 @@ class TestConstant:
         bounds_str = format_bounds(const)
         assert bounds_str == "—"
 
-    def test_format_dtype(self):
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64, np.complex128])
+    def test_format_dtype(self, dtype):
         r"""
         Tests the ``_format_dtype`` method.
         """
-        # Test float64
-        const_float64 = Constant(np.float64(1.0), "const_float64")
-        dtype_str = format_dtype(const_float64)
-        assert dtype_str == "float64"
-
-        # Test float32
-        const_float32 = Constant(np.float32(1.0), "const_float32")
-        dtype_str = format_dtype(const_float32)
-        assert dtype_str == "float32"
-
-        # Test complex128
-        const_complex128 = Constant(np.complex128(1 + 2j), "const_complex128")
-        dtype_str = format_dtype(const_complex128)
-        assert dtype_str == "complex128"
-
-        # Test complex64
-        const_complex64 = Constant(np.complex64(1 + 2j), "const_complex64")
-        dtype_str = format_dtype(const_complex64)
-        assert dtype_str == "complex64"
+        const_dtype = Constant(dtype(1.0), f"const_{dtype}")
+        dtype_str = format_dtype(const_dtype)
+        assert dtype_str == dtype.__name__
 
     def test_format_value_arrays(self):
         r"""
@@ -224,7 +209,7 @@ class TestVariable:
         bounds_str = format_bounds(var_negative)
         assert bounds_str == "(-10, -1)"
 
-    def test_format_bounds_variable(self):
+    def test_format_bounds(self):
         r"""
         Tests the ``_format_bounds`` method with variable parameters.
         """
@@ -248,29 +233,14 @@ class TestVariable:
         bounds_str = format_bounds(var_upper)
         assert bounds_str == "(-∞, 10)"
 
-    def test_format_dtype(self):
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64, np.complex128])
+    def test_format_dtype(self, dtype):
         r"""
         Tests the ``_format_dtype`` method.
         """
-        # Test float64
-        const_float64 = Variable(np.float64(1.0), "const_float64")
-        dtype_str = format_dtype(const_float64)
-        assert dtype_str == "float64"
-
-        # Test float32
-        const_float32 = Variable(np.float32(1.0), "const_float32")
-        dtype_str = format_dtype(const_float32)
-        assert dtype_str == "float32"
-
-        # Test complex128
-        const_complex128 = Variable(np.complex128(1 + 2j), "const_complex128")
-        dtype_str = format_dtype(const_complex128)
-        assert dtype_str == "complex128"
-
-        # Test complex64
-        const_complex64 = Variable(np.complex64(1 + 2j), "const_complex64")
-        dtype_str = format_dtype(const_complex64)
-        assert dtype_str == "complex64"
+        var_dtype = Variable(dtype(1.0), f"const_{dtype}")
+        dtype_str = format_dtype(var_dtype)
+        assert dtype_str == dtype.__name__
 
     def test_format_value_arrays(self):
         r"""
