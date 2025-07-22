@@ -130,10 +130,6 @@ Manually, we can make use of either ``make``
 
     make format lint
 
-or by direct calls to ``black`` and ``pylint``
-
-.. code-block:: bash
-
 
 Documentation
 -------------
