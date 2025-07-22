@@ -48,9 +48,6 @@ def format_bounds(param: Constant | Variable) -> str:
         return "—"
 
     bounds = param.bounds
-    if bounds == (None, None):
-        return "(-∞, +∞)"
-
     low = "-∞" if bounds[0] is None else f"{bounds[0]:.3g}"
     high = "+∞" if bounds[1] is None else f"{bounds[1]:.3g}"
     return f"({low}, {high})"
@@ -66,11 +63,10 @@ def format_dtype(param: Constant | Variable) -> str:
     Returns:
         A string representation of the parameter dtype.
     """
-    dtype_str = str(param.value.dtype)
-    common_dtypes = {"float64", "float32", "complex128", "complex64"}
-    for dtype in common_dtypes:
-        if dtype in dtype_str:
-            return dtype
+    try:  # handle tensorflow dtypes
+        dtype_str = param.value.dtype.name
+    except AttributeError:
+        dtype_str = param.value.dtype.__name__
     return dtype_str
 
 

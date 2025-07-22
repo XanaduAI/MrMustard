@@ -209,29 +209,17 @@ class TestVariable:
         bounds_str = format_bounds(var_negative)
         assert bounds_str == "(-10, -1)"
 
-    def test_format_bounds(self):
+    @pytest.mark.parametrize("bounds", [(None, None), (-2.5, 3.7), (0.0, None), (None, 10.0)])
+    def test_format_bounds(self, bounds):
         r"""
         Tests the ``_format_bounds`` method with variable parameters.
         """
-        # Test unbounded variable
-        var_unbounded = Variable(1.0, "var_unbounded")
-        bounds_str = format_bounds(var_unbounded)
-        assert bounds_str == "(-∞, +∞)"
+        var_bounds = Variable(1.0, "var_bounds", bounds=bounds)
+        bounds_str = format_bounds(var_bounds)
 
-        # Test bounded variable
-        var_bounded = Variable(1.0, "var_bounded", bounds=(-2.5, 3.7))
-        bounds_str = format_bounds(var_bounded)
-        assert bounds_str == "(-2.5, 3.7)"
-
-        # Test lower bound only
-        var_lower = Variable(1.0, "var_lower", bounds=(0.0, None))
-        bounds_str = format_bounds(var_lower)
-        assert bounds_str == "(0, +∞)"
-
-        # Test upper bound only
-        var_upper = Variable(1.0, "var_upper", bounds=(None, 10.0))
-        bounds_str = format_bounds(var_upper)
-        assert bounds_str == "(-∞, 10)"
+        low = "-∞" if bounds[0] is None else f"{bounds[0]:.3g}"
+        high = "+∞" if bounds[1] is None else f"{bounds[1]:.3g}"
+        assert bounds_str == f"({low}, {high})"
 
     @pytest.mark.parametrize("dtype", [np.int64, np.float64, np.complex128])
     def test_format_dtype(self, dtype):
