@@ -1,5 +1,5 @@
-![Logo](https://github.com/XanaduAI/MrMustard/blob/main/mm_white.png#gh-light-mode-only)
-![Logo](https://github.com/XanaduAI/MrMustard/blob/main/mm_dark.png#gh-dark-mode-only)
+![Logo](https://raw.githubusercontent.com/XanaduAI/MrMustard/blob/main/mm_white.png#gh-light-mode-only)
+![Logo](https://raw.githubusercontent.com/XanaduAI/MrMustard/blob/main/mm_dark.png#gh-dark-mode-only)
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
 [![Numpy tests](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_numpy.yml/badge.svg?branch=main)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_numpy.yml)
