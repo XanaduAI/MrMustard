@@ -197,7 +197,7 @@ class ParameterSet:
 
     def _format_value(self, param: Constant | Variable) -> tuple[str, str]:
         r"""Format parameter value and shape strings."""
-        value = param.value
+        value = math.asnumpy(param.value)
 
         # Handle arrays
         if hasattr(param.value, "shape") and param.value.shape != ():
@@ -226,9 +226,9 @@ class ParameterSet:
             return value_str, shape_str
 
         # Handle scalars
-        if math.issubdtype(value.dtype, math.int64):
+        if math.issubdtype(value.dtype, np.integer):
             value_str = str(int(value))
-        elif math.iscomplexobj(value) or math.issubdtype(value.dtype, math.complex128):
+        elif math.iscomplexobj(value) or math.issubdtype(value.dtype, np.complexfloating):
             # Format complex numbers with g format for both real and imaginary parts
             real_part = f"{value.real:.6g}"
             imag_part = f"{value.imag:.6g}"

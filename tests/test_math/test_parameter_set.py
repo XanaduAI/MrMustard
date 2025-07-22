@@ -17,7 +17,6 @@ Unit tests for the :class:`ParameterSet`.
 """
 
 import numpy as np
-import pytest
 
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
@@ -160,23 +159,6 @@ class TestParameterSet:
         assert np.allclose(ps[1, 2].constants["c2"].value, [3, 4])
         assert np.allclose(ps[1, 2].variables["v1"].value, 5)
         assert np.allclose(ps[1, 2].variables["v2"].value, [7, 8])
-
-    @pytest.mark.parametrize("value", [1, 3.14159, 1 + 2j, 1 - 2j])
-    def test_format_value_scalar2(self, value):
-        ps = ParameterSet()
-
-        const = Constant(value, "const")
-
-        expected_value_str = str(value).replace("(", "").replace(")", "")
-
-        value_str, shape_str = ps._format_value(const)
-        assert value_str == expected_value_str
-        assert shape_str == "scalar"
-
-        var = Variable(value, "var")
-        value_str, shape_str = ps._format_value(var)
-        assert value_str == expected_value_str
-        assert shape_str == "scalar"
 
     def test_format_value_scalar(self):
         r"""
