@@ -115,7 +115,7 @@ def format_value(param: Constant | Variable) -> tuple[str, str]:
         # Format complex numbers with g format for both real and imaginary parts
         real_part = f"{value.real:.6g}"
         imag_part = f"{value.imag:.6g}"
-        value_str = f"{real_part}+{imag_part}j" if value.imag >= 0 else f"{real_part}-{imag_part}j"
+        value_str = f"{real_part}+{imag_part}j" if value.imag >= 0 else f"{real_part}{imag_part}j"
     else:
         value_str = f"{float(value):.6g}"
 
