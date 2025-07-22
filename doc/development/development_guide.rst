@@ -181,7 +181,7 @@ Before submitting a pull request, please make sure the following is done:
 
   .. code-block:: bash
 
-      make format lint
+      make ruff
 
 When ready, submit your fork as a `pull request <https://help.github.com/articles/about-pull-requests>`_
 to the Mr Mustard repository, filling out the pull request template. This template is added
