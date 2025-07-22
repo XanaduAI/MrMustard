@@ -24,7 +24,7 @@ pip install mrmustard
 ```bash
 git clone https://github.com/XanaduAI/MrMustard.git
 cd MrMustard
-uv pip install -e .
+uv sync
 ```
 
 > [!WARNING]
