@@ -1,6 +1,6 @@
 ## Examples
 
-### State Visualization:
+### State Visualization
 
 ```python
 import numpy as np
