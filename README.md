@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/XanaduAI/MrMustard/main/mm_white.png">
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/XanaduAI/MrMustard/main/mm_white.png">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/XanaduAI/MrMustard/main/mm_white.png">
   <img alt="Logo">
 </picture>
 
