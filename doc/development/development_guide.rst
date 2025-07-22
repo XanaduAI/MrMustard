@@ -128,7 +128,7 @@ Manually, we can make use of either ``make``
 
 .. code-block:: bash
 
-    make format lint
+    make ruff
 
 
 Documentation
