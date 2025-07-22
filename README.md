@@ -135,23 +135,23 @@ Transform any simulation into an optimization by marking parameters as trainable
 from mrmustard import math
 from mrmustard.lab.states import DisplacedSqueezed
 from mrmustard.lab.transformations import Dgate, Ggate
-from mrmustard.training import Optimizer
+from mrmustard.training import OptimizerJax
 
-math.change_backend("tensorflow")
+math.change_backend("jax")
 
 # Create trainable gates
 D = Dgate(mode=0, x=0.1, y=-0.5, x_trainable=True, y_trainable=True)
 G = Ggate(modes=0, symplectic_trainable=True)
 
 # Define cost function
-def cost_fn():
+def cost_fn(G, D):
     state_out = Vacuum(modes=0) >> G >> D
     target = DisplacedSqueezed(mode=0, r=0.3, phi=1.1, x=0.4, y=-0.2)
     return 1 - state_out.fidelity(target)
 
 # Optimize
 opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
-opt.minimize(cost_fn, by_optimizing=[G, D])
+(G, D) = opt.minimize(cost_fn, by_optimizing=[G, D])
 ```
 
 ### Advanced: Circuit Optimization
