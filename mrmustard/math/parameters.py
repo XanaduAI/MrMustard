@@ -65,7 +65,7 @@ def format_dtype(param: Constant | Variable) -> str:
     """
     try:  # handle tensorflow dtypes
         dtype_str = param.value.dtype.name
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         dtype_str = param.value.dtype.__name__
     return dtype_str
 
