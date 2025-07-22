@@ -23,6 +23,9 @@ from mrmustard import math
 from mrmustard.math.parameters import (
     Constant,
     Variable,
+    format_bounds,
+    format_dtype,
+    format_value,
     update_euclidean,
     update_orthogonal,
     update_symplectic,
@@ -55,6 +58,113 @@ class TestConstant:
         assert const4.value == 1
         assert const4.name == "const4"
         assert const4.value.dtype == "int64"
+
+    def test_format_bounds_constant(self):
+        r"""
+        Tests the ``_format_bounds`` method with constant parameters.
+        """
+        # Constants should return "—"
+        const = Constant(1.0, "const")
+        bounds_str = format_bounds(const)
+        assert bounds_str == "—"
+
+    def test_format_dtype(self):
+        r"""
+        Tests the ``_format_dtype`` method.
+        """
+        # Test float64
+        const_float64 = Constant(np.float64(1.0), "const_float64")
+        dtype_str = format_dtype(const_float64)
+        assert dtype_str == "float64"
+
+        # Test float32
+        const_float32 = Constant(np.float32(1.0), "const_float32")
+        dtype_str = format_dtype(const_float32)
+        assert dtype_str == "float32"
+
+        # Test complex128
+        const_complex128 = Constant(np.complex128(1 + 2j), "const_complex128")
+        dtype_str = format_dtype(const_complex128)
+        assert dtype_str == "complex128"
+
+        # Test complex64
+        const_complex64 = Constant(np.complex64(1 + 2j), "const_complex64")
+        dtype_str = format_dtype(const_complex64)
+        assert dtype_str == "complex64"
+
+    def test_format_value_arrays(self):
+        r"""
+        Tests the ``_format_value`` method with array parameters.
+        """
+        # Test small array integer-like (≤3 elements)
+        const_small_int = Constant([1.0, 2.0, 3.0], "const_small_int")
+        value_str, shape_str = format_value(const_small_int)
+        assert value_str == "[1, 2, 3]"
+        assert shape_str == "(3,)"
+
+        # Test small array floats (≤3 elements)
+        const_small_float = Constant([1.2, 3.4, 5.6], "const_small_float")
+        value_str, shape_str = format_value(const_small_float)
+        assert value_str == "[1.2, 3.4, 5.6]"
+        assert shape_str == "(3,)"
+
+        # Test large array integer-like (>3 elements)
+        const_large_int = Constant([1, 2, 3, 4, 5, 6], "const_large_int")
+        value_str, shape_str = format_value(const_large_int)
+        assert "1, 2, 3, ..." in value_str
+        assert shape_str == "(6,)"
+
+        # Test large array floats (>3 elements)
+        const_large_float = Constant([1.2, 3.4, 5.6, 7.8, 9.0, 10.1], "const_large_float")
+        value_str, shape_str = format_value(const_large_float)
+        assert "1.2, 3.4, 5.6, ..." in value_str
+        assert shape_str == "(6,)"
+
+        # Test 2D array (gets flattened for display since it has >3 elements)
+        const_2d = Constant([[1, 2], [3, 4]], "const_2d")
+        value_str, shape_str = format_value(const_2d)
+        assert "1, 2, 3, ..." in value_str  # Flattened array with >3 elements
+        assert shape_str == "(2, 2)"
+
+        # Test small 2D array (≤3 elements when flattened)
+        const_2d_small = Constant([[1, 2]], "const_2d_small")
+        value_str, shape_str = format_value(const_2d_small)
+        assert value_str == "[[1, 2]]"
+        assert shape_str == "(1, 2)"
+
+        # Test empty array
+        const_empty = Constant([], "const_empty")
+        value_str, shape_str = format_value(const_empty)
+        assert value_str == "[]"
+        assert shape_str == "(0,)"
+
+    def test_format_value_scalar(self):
+        r"""
+        Tests the ``_format_value`` method with scalar parameters.
+        """
+        # Test scalar real integer constant
+        const_real_int = Constant(3, "const_real_int")
+        value_str, shape_str = format_value(const_real_int)
+        assert value_str == "3"
+        assert shape_str == "scalar"
+
+        # Test scalar real float constant
+        const_real_float = Constant(3.14159, "const_real_float")
+        value_str, shape_str = format_value(const_real_float)
+        assert value_str == "3.14159"
+        assert shape_str == "scalar"
+
+        # Test scalar complex constant positive imaginary part
+        const_complex_pos_imag = Constant(1 + 2j, "const_complex_pos_imag", dtype=np.complex128)
+        value_str, shape_str = format_value(const_complex_pos_imag)
+        assert value_str == "1+2j"
+        assert shape_str == "scalar"
+
+        # Test scalar complex constant negative imaginary part
+        const_complex_neg_imag = Constant(1 - 2j, "const_complex_neg_imag", dtype=np.complex128)
+        value_str, shape_str = format_value(const_complex_neg_imag)
+        assert value_str == "1-2j"
+        assert shape_str == "scalar"
 
     def test_is_const(self):
         r"""
@@ -99,6 +209,142 @@ class TestVariable:
         assert var4.value == 1
         assert var4.name == "var4"
         assert var4.value.dtype == "int64"
+
+    def test_format_bounds_edge_cases(self):
+        r"""
+        Tests the ``_format_bounds`` method with edge cases.
+        """
+        # Test zero bounds
+        var_zero = Variable(1.0, "var_zero", bounds=(0.0, 0.0))
+        bounds_str = format_bounds(var_zero)
+        assert bounds_str == "(0, 0)"
+
+        # Test negative bounds
+        var_negative = Variable(-1.0, "var_negative", bounds=(-10.0, -1.0))
+        bounds_str = format_bounds(var_negative)
+        assert bounds_str == "(-10, -1)"
+
+    def test_format_bounds_variable(self):
+        r"""
+        Tests the ``_format_bounds`` method with variable parameters.
+        """
+        # Test unbounded variable
+        var_unbounded = Variable(1.0, "var_unbounded")
+        bounds_str = format_bounds(var_unbounded)
+        assert bounds_str == "(-∞, +∞)"
+
+        # Test bounded variable
+        var_bounded = Variable(1.0, "var_bounded", bounds=(-2.5, 3.7))
+        bounds_str = format_bounds(var_bounded)
+        assert bounds_str == "(-2.5, 3.7)"
+
+        # Test lower bound only
+        var_lower = Variable(1.0, "var_lower", bounds=(0.0, None))
+        bounds_str = format_bounds(var_lower)
+        assert bounds_str == "(0, +∞)"
+
+        # Test upper bound only
+        var_upper = Variable(1.0, "var_upper", bounds=(None, 10.0))
+        bounds_str = format_bounds(var_upper)
+        assert bounds_str == "(-∞, 10)"
+
+    def test_format_dtype(self):
+        r"""
+        Tests the ``_format_dtype`` method.
+        """
+        # Test float64
+        const_float64 = Variable(np.float64(1.0), "const_float64")
+        dtype_str = format_dtype(const_float64)
+        assert dtype_str == "float64"
+
+        # Test float32
+        const_float32 = Variable(np.float32(1.0), "const_float32")
+        dtype_str = format_dtype(const_float32)
+        assert dtype_str == "float32"
+
+        # Test complex128
+        const_complex128 = Variable(np.complex128(1 + 2j), "const_complex128")
+        dtype_str = format_dtype(const_complex128)
+        assert dtype_str == "complex128"
+
+        # Test complex64
+        const_complex64 = Variable(np.complex64(1 + 2j), "const_complex64")
+        dtype_str = format_dtype(const_complex64)
+        assert dtype_str == "complex64"
+
+    def test_format_value_arrays(self):
+        r"""
+        Tests the ``_format_value`` method with array parameters.
+        """
+        # Test small array integer-like (≤3 elements)
+        const_small_int = Variable([1.0, 2.0, 3.0], "const_small_int")
+        value_str, shape_str = format_value(const_small_int)
+        assert value_str == "[1, 2, 3]"
+        assert shape_str == "(3,)"
+
+        # Test small array floats (≤3 elements)
+        const_small_float = Variable([1.2, 3.4, 5.6], "const_small_float")
+        value_str, shape_str = format_value(const_small_float)
+        assert value_str == "[1.2, 3.4, 5.6]"
+        assert shape_str == "(3,)"
+
+        # Test large array integer-like (>3 elements)
+        const_large_int = Variable([1, 2, 3, 4, 5, 6], "const_large_int")
+        value_str, shape_str = format_value(const_large_int)
+        assert "1, 2, 3, ..." in value_str
+        assert shape_str == "(6,)"
+
+        # Test large array floats (>3 elements)
+        const_large_float = Variable([1.2, 3.4, 5.6, 7.8, 9.0, 10.1], "const_large_float")
+        value_str, shape_str = format_value(const_large_float)
+        assert "1.2, 3.4, 5.6, ..." in value_str
+        assert shape_str == "(6,)"
+
+        # Test 2D array (gets flattened for display since it has >3 elements)
+        const_2d = Variable([[1, 2], [3, 4]], "const_2d")
+        value_str, shape_str = format_value(const_2d)
+        assert "1, 2, 3, ..." in value_str  # Flattened array with >3 elements
+        assert shape_str == "(2, 2)"
+
+        # Test small 2D array (≤3 elements when flattened)
+        const_2d_small = Variable([[1, 2]], "const_2d_small")
+        value_str, shape_str = format_value(const_2d_small)
+        assert value_str == "[[1, 2]]"
+        assert shape_str == "(1, 2)"
+
+        # Test empty array
+        const_empty = Variable([], "const_empty")
+        value_str, shape_str = format_value(const_empty)
+        assert value_str == "[]"
+        assert shape_str == "(0,)"
+
+    def test_format_value_scalar(self):
+        r"""
+        Tests the ``_format_value`` method with scalar parameters.
+        """
+        # Test scalar real integer constant
+        const_real_int = Variable(3, "const_real_int")
+        value_str, shape_str = format_value(const_real_int)
+        assert value_str == "3"
+        assert shape_str == "scalar"
+
+        # Test scalar real float constant
+        const_real_float = Variable(3.14159, "const_real_float")
+        value_str, shape_str = format_value(const_real_float)
+        assert value_str == "3.14159"
+        assert shape_str == "scalar"
+
+        # Test scalar complex constant positive imaginary part
+        const_complex_pos_imag = Variable(1 + 2j, "const_complex_pos_imag", dtype=np.complex128)
+        value_str, shape_str = format_value(const_complex_pos_imag)
+        assert value_str == "1+2j"
+        assert shape_str == "scalar"
+
+        # Test scalar complex constant negative imaginary part
+        const_complex_neg_imag = Variable(1 - 2j, "const_complex_neg_imag", dtype=np.complex128)
+        value_str, shape_str = format_value(const_complex_neg_imag)
+        assert value_str == "1-2j"
+        assert shape_str == "scalar"
 
     def test_is_variable(self):
         r"""
