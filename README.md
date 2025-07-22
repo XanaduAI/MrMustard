@@ -27,7 +27,8 @@ cd MrMustard
 uv pip install -e .
 ```
 
-*Note: This project uses `uv` for package management. Make sure to activate the virtual environment with `source .venv/bin/activate` before development.*
+> [!WARNING]
+> This project uses `uv` for package management. Make sure to activate the virtual environment with `source .venv/bin/activate` before development.
 
 ## Quick Start
 
