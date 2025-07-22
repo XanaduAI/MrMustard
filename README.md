@@ -1,7 +1,7 @@
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/XanaduAI/MrMustard/main/mm_white.png">
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/XanaduAI/MrMustard/main/mm_dark.png">
-  <img alt="Logo">
+  <img alt="Logo" src="https://raw.githubusercontent.com/XanaduAI/MrMustard/main/mm_white.png">
 </picture>
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
