@@ -134,8 +134,6 @@ or by direct calls to ``black`` and ``pylint``
 
 .. code-block:: bash
 
-    black -l 100 mrmustard
-    pylint mrmustard
 
 Documentation
 -------------
