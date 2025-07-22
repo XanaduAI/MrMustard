@@ -1,6 +1,6 @@
-## Basic API Reference
+## Examples
 
-Make a four-lobed cat state:
+### State Visualization:
 
 ```python
 import numpy as np
@@ -31,8 +31,6 @@ both_modes >> Number(mode=0, n=3).dual
 # Fock amplitudes of the projected state (exact down to machine precision)
 both_modes.fock_array(shape=(100, 4))[:,3]
 ```
-
-## Examples
 
 ### Circuit Simulation
 
