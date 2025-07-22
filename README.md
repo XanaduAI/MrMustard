@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/GiorgosXou/Random-stuff/main/Programming/StackOverflow/Answers/70200610_11465149/w.png">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/GiorgosXou/Random-stuff/main/Programming/StackOverflow/Answers/70200610_11465149/b.png">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/XanaduAI/MrMustard/blob/main/mm_white.png">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/XanaduAI/MrMustard/blob/main/mm_white.png">
   <img alt="Logo">
 </picture>
 
