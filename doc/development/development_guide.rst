@@ -124,11 +124,12 @@ This process is typically automated via `pre-commit`
 
     pre-commit install
 
-Manually, we can make use of either ``make``
+Manually, we can make use of ``ruff``
 
 .. code-block:: bash
 
-    make ruff
+    ruff check
+    ruff format
 
 
 Documentation

@@ -7,7 +7,7 @@
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tensorflow%20tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_tensorflow.yml)
 [![Python version](https://img.shields.io/pypi/pyversions/mrmustard.svg?style=popout-square)](https://pypi.org/project/MrMustard/)
 
-# MrMustard: A differentiable quantum simulator that speaks all representations
+# Mr Mustard: Your Universal Differentiable Toolkit for Quantum Optics
 
 Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` (default), `tensorflow`, `jax`).
 
@@ -68,7 +68,7 @@ both_modes.fock_array(shape=(100, 4))[:,3]
 ### 🔄 **Universal Representation Compatibility**
 
 - Initialize any component from any representation: `Ket.from_quadrature(...)`, `Channel.from_bargmann(...)`
-- Convert between representations seamlessly: `my_component.to_fock(...)`, `my_component.to_phasespace(...)`
+- Convert between representations seamlessly: `my_component.to_fock(...)`, `my_component.to_quadrature(...)`
 - Supported representations: Bargmann, Phase space, Characteristic functions, Quadrature, Fock
 
 ### ⚡ **Fast & Exact**
