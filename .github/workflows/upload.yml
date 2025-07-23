@@ -1,7 +1,8 @@
 name: Upload
-on:
-  release:
-    types: [published]
+on: workflow_dispatch
+
+  # release:
+  #   types: [published]
 
 jobs:
   upload:
