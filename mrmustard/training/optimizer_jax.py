@@ -183,7 +183,7 @@ class OptimizerJax:
         )
 
         labels_pytree = jax.tree_util.tree_map(
-            lambda node: str(node.update_fn.__name__),
+            lambda node: str(node.update_fn),
             by_optimizing,
             is_leaf=lambda n: isinstance(n, Variable),
         )

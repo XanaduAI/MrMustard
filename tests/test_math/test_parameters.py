@@ -26,10 +26,6 @@ from mrmustard.math.parameters import (
     format_bounds,
     format_dtype,
     format_value,
-    update_euclidean,
-    update_orthogonal,
-    update_symplectic,
-    update_unitary,
 )
 
 
@@ -177,18 +173,18 @@ class TestVariable:
         assert var1.value == 1
         assert var1.name == "var1"
         assert var1.bounds == (None, None)
-        assert var1.update_fn == update_euclidean
+        assert var1.update_fn == "update_euclidean"
 
         math_var = math.new_variable(2, (0, 1), "var2")
         var2 = Variable(math_var, "var2")
         assert var2.value == math_var
         assert var2.name == "var2"
-        assert var2.update_fn == update_euclidean
+        assert var2.update_fn == "update_euclidean"
 
-        var3 = Variable(np.array([1, 2, 3]), "var3", (0, 1), update_orthogonal)
+        var3 = Variable(np.array([1, 2, 3]), "var3", (0, 1), "update_orthogonal")
         assert np.allclose(var3.value, np.array([1, 2, 3]))
         assert var3.bounds == (0, 1)
-        assert var3.update_fn == update_orthogonal
+        assert var3.update_fn == "update_orthogonal"
 
         var4 = Variable(1, "var4", dtype="int64")
         assert var4.value == 1
@@ -313,8 +309,8 @@ class TestVariable:
         var.value = 2
         assert var.value == 2
 
-        var.update_fn = update_orthogonal
-        assert var.update_fn == update_orthogonal
+        var.update_fn = "update_orthogonal"
+        assert var.update_fn == "update_orthogonal"
 
         with pytest.raises(AttributeError):
             var.name = "var2"
@@ -327,10 +323,10 @@ class TestVariable:
         Tests the static methods.
         """
         va1 = Variable.symplectic(1, "var1")
-        assert va1.update_fn == update_symplectic
+        assert va1.update_fn == "update_symplectic"
 
         va2 = Variable.orthogonal(1, "va2")
-        assert va2.update_fn == update_orthogonal
+        assert va2.update_fn == "update_orthogonal"
 
         var3 = Variable.unitary(1, "var3")
-        assert var3.update_fn == update_unitary
+        assert var3.update_fn == "update_unitary"

@@ -19,7 +19,6 @@ The class representing a generic gaussian gate.
 from __future__ import annotations
 
 from mrmustard import math
-from mrmustard.math.parameters import update_symplectic
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
@@ -67,7 +66,7 @@ class Ggate(Unitary):
                 value=symplectic,
                 name="symplectic",
                 bounds=(None, None),
-                update_fn=update_symplectic,
+                update_fn="update_symplectic",
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(

@@ -16,7 +16,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import Any
 
 import numpy as np
@@ -239,7 +238,7 @@ class Variable:
         value: The value of this variable.
         name: The name of this variable.
         bounds: The numerical bounds of this variable.
-        update_fn: The function used to update this variable during training.
+        update_fn: The name of the function used to update this variable during training.
         dtype: The dtype of this variable.
     """
 
@@ -248,7 +247,7 @@ class Variable:
         value: Any,
         name: str,
         bounds: tuple[float | None, float | None] = (None, None),
-        update_fn: Callable = update_euclidean,
+        update_fn: str = "update_euclidean",
         dtype: Any = None,
     ):
         self._value = self._get_value(value, bounds, name, dtype)
@@ -271,7 +270,7 @@ class Variable:
         return self._name
 
     @property
-    def update_fn(self) -> Callable | None:
+    def update_fn(self) -> str:
         r"""
         The function used to update this variable during training.
         """
@@ -321,7 +320,7 @@ class Variable:
             A variable with ``update_fn`` for orthogonal optimization.
         """
         value = value or math.random_orthogonal(N)
-        return Variable(value, name, bounds, update_orthogonal)
+        return Variable(value, name, bounds, "update_orthogonal")
 
     @staticmethod
     def symplectic(
@@ -345,7 +344,7 @@ class Variable:
             A variable with ``update_fn`` for simplectic optimization.
         """
         value = value or math.random_symplectic(N)
-        return Variable(value, name, bounds, update_symplectic)
+        return Variable(value, name, bounds, "update_symplectic")
 
     @staticmethod
     def unitary(
@@ -369,7 +368,7 @@ class Variable:
             A variable with ``update_fn`` for unitary optimization.
         """
         value = value or math.random_unitary(N)
-        return Variable(value, name, bounds, update_unitary)
+        return Variable(value, name, bounds, "update_unitary")
 
     def _get_value(self, value, bounds, name, dtype=None):
         r"""
