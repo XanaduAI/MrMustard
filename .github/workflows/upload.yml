@@ -1,14 +1,7 @@
 name: Upload
 on:
-  push:
-    branches:
-      - develop
-      - main
-  pull_request:
-  workflow_call:
-
-  # release:
-  #   types: [published]
+  release:
+    types: [published]
 
 jobs:
   upload:
@@ -43,11 +36,11 @@ jobs:
       - name: Run tests
         run: uv run --no-project pytest tests -p no:warnings --tb=native --backend=tensorflow
 
-      # - name: Publish
-      #   uses: pypa/gh-action-pypi-publish@release/v1
-      #   with:
-      #     user: __token__
-      #     password: ${{ secrets.PIPY_TOKEN }}
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PIPY_TOKEN }}
 
       - name: Install MrMustard from pypi
         run: uv pip install --pre --upgrade mrmustard
