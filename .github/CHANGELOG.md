@@ -2,7 +2,7 @@
 
 ### Breaking changes
 
-* Removed `tensorflow` as a dependency as well as any legacy `tensorflow` code.
+* Removed `tensorflow` as a dependency as well as any legacy `tensorflow` code. Renamed `OptimizerJax` to `Optimizer`.
 [(#633)](https://github.com/XanaduAI/MrMustard/pull/633)
 
 ### Improvements
