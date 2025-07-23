@@ -24,6 +24,7 @@ from typing import Any
 
 import numpy as np
 from jax.errors import TracerArrayConversionError
+from opt_einsum import contract
 from scipy.stats import ortho_group, unitary_group
 
 from ..utils.settings import settings
@@ -551,12 +552,7 @@ class BackendManager:
             The result of the Einstein summation convention.
         """
         optimize = optimize or settings.EINSUM_OPTIMIZE
-        return self._apply(
-            "einsum",
-            (string, *tensors),
-            {"optimize": optimize},
-            backend_name=backend,
-        )
+        return contract(string, *tensors, optimize=optimize, backend=backend)
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.

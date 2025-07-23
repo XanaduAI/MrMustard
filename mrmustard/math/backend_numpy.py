@@ -19,7 +19,6 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 
 import numpy as np
-from opt_einsum import contract
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import loggamma as scipy_loggamma
@@ -147,9 +146,6 @@ class BackendNumpy(BackendBase):
         ret = np.diagonal(array, offset=k, axis1=-2, axis2=-1)
         ret.flags.writeable = True
         return ret
-
-    def einsum(self, string: str, *tensors, optimize: bool | str) -> np.ndarray:
-        return contract(string, *tensors, optimize=optimize, backend="numpy")
 
     def exp(self, array: np.ndarray) -> np.ndarray:
         return np.exp(array)

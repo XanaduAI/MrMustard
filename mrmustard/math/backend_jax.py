@@ -25,7 +25,6 @@ import jax.numpy as jnp
 import jax.scipy as jsp
 import numpy as np
 import optax
-from opt_einsum import contract
 from platformdirs import user_cache_dir
 
 from mrmustard.lab import Circuit, CircuitComponent
@@ -253,9 +252,6 @@ class BackendJax(BackendBase):
     @partial(jax.jit, static_argnames=["k"])
     def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
         return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
-
-    def einsum(self, string: str, *tensors, optimize: bool | str) -> jnp.ndarray:
-        return contract(string, *tensors, optimize=optimize, backend="jax")
 
     @jax.jit
     def exp(self, array: jnp.ndarray) -> jnp.ndarray:
