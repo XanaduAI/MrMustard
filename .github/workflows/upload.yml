@@ -52,7 +52,7 @@ jobs:
       - name: Uninstall MrMustard and reinstall from PyPI
         run: |
           uv pip uninstall mrmustard
-          uv pip install --pre mrmustard
+          uv pip install --no-cache-dir --prerelease=allow mrmustard
 
       - name: Print about
         run: python -c "import mrmustard; print(mrmustard.about())"
