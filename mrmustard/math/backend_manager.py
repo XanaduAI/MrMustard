@@ -881,8 +881,8 @@ class BackendManager:
         Whether the ``arg1`` is a typecode lower/equal in type hierarchy to ``arg2``.
 
         Args:
-            arg1: The first argument.
-            arg2: The second argument.
+            arg1: The object to be tested
+            arg2: The object to be compared against
 
         Returns:
             Whether arg1 is a subdtype of arg2.
