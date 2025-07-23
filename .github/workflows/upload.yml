@@ -21,6 +21,8 @@ jobs:
 
       - name: Build and install Mr Mustard
         run: |
+          uv venv
+          source .venv/bin/activate
           uv build
           uv pip install dist/mrmustard*.whl
           # Move to 'src' to properly test only installed package
@@ -29,19 +31,19 @@ jobs:
           mv mrmustard src
 
       - name: Install only test dependencies
-        run: uv sync --inexact --no-install-project --all-extras
+        run: uv sync --only-dev --inexact --no-install-project
 
       - name: Run tests
         run: uv run --no-project pytest tests -p no:warnings --tb=native --backend=tensorflow
 
-      - name: Publish
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PIPY_TOKEN }}
+      # - name: Publish
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     user: __token__
+      #     password: ${{ secrets.PIPY_TOKEN }}
 
       - name: Install MrMustard from pypi
-        run: uv pip install mrmustard
+        run: uv pip install --pre --upgrade mrmustard
 
       - name: Print about
         run: python -c "import mrmustard; print(mrmustard.about())"
