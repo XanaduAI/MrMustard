@@ -41,7 +41,7 @@ jobs:
         run: uv sync --only-dev --inexact --no-install-project
 
       - name: Run tests
-        run: uv run --no-project pytest tests -p no:warnings --tb=native --backend=jax
+        run: uv run --no-project pytest tests -p no:warnings --tb=native --backend=numpy
 
       # - name: Publish
       #   uses: pypa/gh-action-pypi-publish@release/v1
