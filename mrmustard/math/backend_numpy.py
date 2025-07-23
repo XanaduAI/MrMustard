@@ -231,9 +231,6 @@ class BackendNumpy(BackendBase):
     ):
         return np.array(value, dtype=dtype)
 
-    def new_constant(self, value, name: str, dtype=np.float64):
-        return np.asarray(value, dtype=dtype)
-
     def norm(self, array: np.ndarray) -> np.ndarray:
         return np.linalg.norm(array)
 

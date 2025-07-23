@@ -42,18 +42,13 @@ class TestConstant:
         assert const1.value == 1
         assert const1.name == "const1"
 
-        math_const = math.new_constant(2, "const2")
-        const2 = Constant(math_const, "const2")
-        assert const2.value == math_const
-        assert const2.name == "const2"
+        const2 = Constant(np.array([1, 2, 3]), "const2")
+        assert np.allclose(const2.value, np.array([1, 2, 3]))
 
-        const3 = Constant(np.array([1, 2, 3]), "const3")
-        assert np.allclose(const3.value, np.array([1, 2, 3]))
-
-        const4 = Constant(1, "const4", dtype="int64")
-        assert const4.value == 1
-        assert const4.name == "const4"
-        assert const4.value.dtype == "int64"
+        const3 = Constant(1, "const3", dtype="int64")
+        assert const3.value == 1
+        assert const3.name == "const3"
+        assert const3.value.dtype == "int64"
 
     def test_format_bounds(self):
         r"""

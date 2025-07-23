@@ -1028,19 +1028,6 @@ class BackendManager:
         """
         return self._apply("new_variable", (value, bounds, name, dtype))
 
-    def new_constant(self, value: Tensor, name: str, dtype=None) -> Tensor:
-        r"""Returns a new constant with the given value.
-
-        Args:
-            value: The value of the new constant
-            name (str): name of the new constant
-            dtype (type): dtype of the array
-
-        Returns:
-            The new constant
-        """
-        return self._apply("new_constant", (value, name, dtype))
-
     def norm(self, array: Tensor) -> Tensor:
         r"""The norm of array.
 

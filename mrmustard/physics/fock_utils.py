@@ -260,7 +260,7 @@ def quadrature_distribution(
     """
     cutoff = state.shape[0]
     if x is None:
-        x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+        x = np.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
 
     dims = len(state.shape)
     is_dm = dims == 2

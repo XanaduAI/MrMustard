@@ -528,22 +528,6 @@ class TestBackendManager:
             assert math.allclose(res, arr)
             assert res.dtype == dtype or math.float64
 
-    @pytest.mark.parametrize("t", types)
-    def test_new_constant(self, t):
-        r"""
-        Tests the ``new_constant`` method.
-        """
-        dtype = getattr(math, t, None)
-        arr = np.eye(3)
-        res = math.new_constant(arr, "my_const", dtype)
-
-        if math.backend_name == "numpy":
-            assert math.allclose(res, arr)
-            assert not hasattr(res, "name")
-            assert res.dtype == dtype
-        else:
-            assert math.allclose(math.asnumpy(res), arr)
-
     def test_ones(self):
         r"""
         Tests the ``ones`` method.

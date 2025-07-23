@@ -188,11 +188,6 @@ class BackendJax(BackendBase):
     def outer(self, array1: jnp.ndarray, array2: jnp.ndarray) -> jnp.ndarray:
         return self.tensordot(array1, array2, [[], []])
 
-    @partial(jax.jit, static_argnames=["name", "dtype"])
-    def new_constant(self, value, name: str, dtype=None):
-        dtype = dtype or self.float64
-        return self.astensor(value, dtype)
-
     def tile(self, array: jnp.ndarray, repeats: Sequence[int]) -> jnp.ndarray:
         return jnp.tile(array, repeats)
 
