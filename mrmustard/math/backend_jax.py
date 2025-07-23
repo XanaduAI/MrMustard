@@ -297,9 +297,6 @@ class BackendJax(BackendBase):
     def issubdtype(self, arg1, arg2) -> bool:
         return jnp.issubdtype(arg1, arg2)
 
-    def is_trainable(self, tensor: jnp.ndarray) -> bool:
-        return False
-
     @jax.jit
     def lgamma(self, array: jnp.ndarray) -> jnp.ndarray:
         return jax.lax.lgamma(array)

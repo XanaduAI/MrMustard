@@ -320,7 +320,7 @@ class Variable:
         r"""
         Returns a variable from given ``value``, ``bounds``, and ``name``.
         """
-        if math.from_backend(value) and math.is_trainable(value):
+        if math.from_backend(value):
             return value
         if hasattr(value, "dtype"):
             return math.new_variable(value, bounds, name, value.dtype)

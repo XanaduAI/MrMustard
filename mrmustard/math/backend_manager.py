@@ -867,17 +867,6 @@ class BackendManager:
         """
         return self._apply("issubdtype", (arg1, arg2))
 
-    def is_trainable(self, tensor: Tensor) -> bool:
-        r"""Whether the given tensor is trainable.
-
-        Args:
-            tensor: The tensor to train.
-
-        Returns:
-            Whether the given tensor can be trained.
-        """
-        return self._apply("is_trainable", (tensor,))
-
     def lgamma(self, x: Tensor) -> Tensor:
         r"""
         The natural logarithm of the gamma function of ``x``.

@@ -440,17 +440,6 @@ class TestBackendManager:
         assert math.issubdtype(ints.dtype, np.integer)
         assert not math.issubdtype(ints.dtype, np.floating)
 
-    def test_is_trainable(self):
-        r"""
-        Tests the ``is_trainable`` method.
-        """
-        arr1 = np.array([1, 2])
-        arr2 = jnp.array(arr1)
-
-        assert not math.is_trainable(arr1)
-        if math.backend_name == "jax":
-            assert not math.is_trainable(arr2)
-
     def test_lgamma(self):
         r"""
         Tests the ``lgamma`` method.

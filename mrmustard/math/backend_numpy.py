@@ -184,9 +184,6 @@ class BackendNumpy(BackendBase):
     def issubdtype(self, arg1, arg2) -> bool:
         return np.issubdtype(arg1, arg2)
 
-    def is_trainable(self, tensor: np.ndarray) -> bool:
-        return False
-
     def lgamma(self, x: np.ndarray) -> np.ndarray:
         return scipy_loggamma(x)
 
