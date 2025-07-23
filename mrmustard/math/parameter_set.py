@@ -14,14 +14,17 @@
 
 """This module contains the classes to describe sets of parameters."""
 
+import io
 from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
+from rich.console import Console
+from rich.table import Table
 
 from mrmustard.math.backend_manager import BackendManager
 
-from .parameters import Constant, Variable
+from .parameters import Constant, Variable, format_bounds, format_dtype, format_value
 
 math = BackendManager()
 
@@ -251,3 +254,34 @@ class ParameterSet:
                 ret.add_parameter(var)
 
         return ret
+
+    def __repr__(self) -> str:
+        r"""
+        Returns a rich-formatted string representation of this parameter set.
+        """
+        if not self:
+            return "ParameterSet()"
+
+        table = Table(title=f"ParameterSet ({len(self.names)} parameters)", show_header=True)
+
+        table.add_column("Name", style="#FFB3B3", header_style="#FFB3B3", no_wrap=True)
+        table.add_column("Type", style="#FFCC99", header_style="#FFCC99", width=9)
+        table.add_column("Value", style="#FFFFBA", header_style="#FFFFBA")
+        table.add_column("Dtype", style="#BAFFC9", header_style="#BAFFC9", width=10)
+        table.add_column("Bounds", style="#B3E5FF", header_style="#B3E5FF")
+        table.add_column("Shape", style="#E1BAFF", header_style="#E1BAFF")
+
+        for name in self.names:
+            param = self.all_parameters[name]
+            param_type = "Constant" if isinstance(param, Constant) else "Variable"
+
+            value_str, shape_str = format_value(param)
+            dtype_str = format_dtype(param)
+            bounds_str = format_bounds(param)
+
+            table.add_row(name, param_type, value_str, dtype_str, bounds_str, shape_str)
+
+        with io.StringIO() as string_buffer:
+            console = Console(file=string_buffer, width=100, legacy_windows=False)
+            console.print(table)
+            return string_buffer.getvalue().strip()

@@ -28,7 +28,7 @@ from opt_einsum import contract
 from scipy.stats import ortho_group, unitary_group
 
 from ..utils.settings import settings
-from ..utils.typing import Batch, Matrix, Tensor, Trainable, Vector
+from ..utils.typing import Batch, Matrix, Scalar, Tensor, Trainable, Vector
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
 
@@ -612,6 +612,19 @@ class BackendManager:
         """
         return self._apply("eye_like", (array,))
 
+    def equal(self, a: Tensor, b: Tensor) -> Tensor | Scalar:
+        r"""
+        Returns the element-wise equality of two arrays.
+
+        Args:
+            a: The first array.
+            b: The second array.
+
+        Returns:
+            The element-wise equality of two arrays.
+        """
+        return self._apply("equal", (a, b))
+
     def from_backend(self, value: Any) -> bool:
         r"""Whether the given tensor is a tensor of the concrete backend.
 
@@ -840,6 +853,18 @@ class BackendManager:
         """
         return self._apply("inv", (tensor,))
 
+    def iscomplexobj(self, x: Any) -> bool:
+        r"""
+        Whether the given object is complex.
+
+        Args:
+            x: The object to check.
+
+        Returns:
+            Whether the given array is a complex object.
+        """
+        return self._apply("iscomplexobj", (x,))
+
     def isnan(self, array: Tensor) -> Tensor:
         r"""Whether the given array contains any NaN values.
 
@@ -850,6 +875,19 @@ class BackendManager:
             Whether the given array contains any NaN values.
         """
         return self._apply("isnan", (array,))
+
+    def issubdtype(self, arg1, arg2) -> bool:
+        r"""
+        Whether the ``arg1`` is a typecode lower/equal in type hierarchy to ``arg2``.
+
+        Args:
+            arg1: The object to be tested
+            arg2: The object to be compared against
+
+        Returns:
+            Whether arg1 is a subdtype of arg2.
+        """
+        return self._apply("issubdtype", (arg1, arg2))
 
     def is_trainable(self, tensor: Tensor) -> bool:
         r"""Whether the given tensor is trainable.
@@ -970,13 +1008,28 @@ class BackendManager:
             ),
         )
 
+    def mod(self, a: Tensor, b: Tensor) -> Tensor:
+        r"""
+        Returns the element-wise remainder of division.
+
+        Args:
+            a: The dividend array.
+            b: The divisor array.
+
+        Returns:
+            The element-wise remainder of division.
+        """
+        return self._apply("mod", (a, b))
+
     def moveaxis(self, array: Tensor, old: Tensor, new: Tensor) -> Tensor:
         r"""
         Moves the axes of an array to a new position.
+
         Args:
             array: The array to move the axes of.
             old: The old index position
             new: The new index position
+
         Returns:
             The updated array
         """

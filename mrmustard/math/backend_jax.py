@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from functools import partial
+from typing import Any
 
 import equinox as eqx
 import jax
@@ -273,6 +274,10 @@ class BackendJax(BackendBase):
     def eye_like(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.eye(array.shape[-1], dtype=array.dtype)
 
+    @jax.jit
+    def equal(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return jnp.equal(a, b)
+
     def from_backend(self, value) -> bool:
         return isinstance(value, jnp.ndarray)
 
@@ -288,8 +293,14 @@ class BackendJax(BackendBase):
     def inv(self, tensor: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.inv(tensor)
 
+    def iscomplexobj(self, x: Any) -> bool:
+        return jnp.iscomplexobj(x)
+
     def isnan(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.isnan(array)
+
+    def issubdtype(self, arg1, arg2) -> bool:
+        return jnp.issubdtype(arg1, arg2)
 
     def is_trainable(self, tensor: jnp.ndarray) -> bool:
         return False
@@ -317,6 +328,10 @@ class BackendJax(BackendBase):
     @jax.jit
     def minimum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.minimum(a, b)
+
+    @jax.jit
+    def mod(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return jnp.mod(a, b)
 
     @partial(jax.jit, static_argnames=["old", "new"])
     def moveaxis(
