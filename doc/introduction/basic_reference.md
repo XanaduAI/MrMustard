@@ -97,10 +97,6 @@ import mrmustard.math as math
 # Default numpy backend
 math.cos(0.1)  # numpy
 
-# Switch to tensorflow
-math.change_backend("tensorflow")
-math.cos(0.1)  # tensorflow
-
 # Switch to jax
 math.change_backend("jax")
 math.cos(0.1)  # jax
@@ -118,6 +114,6 @@ Contains the core quantum optics functionality, including the `Ansatz` class res
 
 ### The math Module
 
-The backbone providing plug-and-play backend support. Acts as a drop-in replacement for `numpy`, `tensorflow`, or `jax`.
+The backbone providing plug-and-play backend support. Acts as a drop-in replacement for `numpy` or `jax`.
 
 ---

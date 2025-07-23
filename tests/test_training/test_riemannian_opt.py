@@ -26,21 +26,21 @@ from mrmustard import math, settings
 from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 
 
-@pytest.mark.requires_backend("tensorflow")
+@pytest.mark.requires_backend("jax")
 def is_unitary(M, rtol=1e-05, atol=1e-08):
     """Testing if the matrix M is unitary"""
     M_dagger = np.transpose(M.conj())
     return math.allclose(M @ M_dagger, np.identity(M.shape[-1]), rtol=rtol, atol=atol)
 
 
-@pytest.mark.requires_backend("tensorflow")
+@pytest.mark.requires_backend("jax")
 def is_orthogonal(M, rtol=1e-05, atol=1e-08):
     """Testing if the matrix M is orthogonal"""
     M_T = np.transpose(M)
     return math.allclose(M @ M_T, np.identity(M.shape[-1]), rtol=rtol, atol=atol)
 
 
-@pytest.mark.requires_backend("tensorflow")
+@pytest.mark.requires_backend("jax")
 @given(n=st.integers(2, 4))
 def test_update_symplectic(n):
     """Testing the update of symplectic matrix remains to be symplectic"""
@@ -59,7 +59,7 @@ def test_update_symplectic(n):
         )
 
 
-@pytest.mark.requires_backend("tensorflow")
+@pytest.mark.requires_backend("jax")
 @given(n=st.integers(2, 4))
 def test_update_unitary(n):
     """Testing the update of unitary matrix remains to be unitary"""
@@ -79,7 +79,7 @@ def test_update_unitary(n):
         assert is_orthogonal(sym), "training step does not result in an orthogonal matrix"
 
 
-@pytest.mark.requires_backend("tensorflow")
+@pytest.mark.requires_backend("jax")
 @given(n=st.integers(2, 4))
 def test_update_orthogonal(n):
     """Testing the update of orthogonal matrix remains to be orthogonal"""

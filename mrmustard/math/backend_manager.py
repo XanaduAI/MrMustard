@@ -60,21 +60,12 @@ def lazy_import(module_name: str):
 module_name_np = "mrmustard.math.backend_numpy"
 module_np, loader_np = lazy_import(module_name_np)
 
-# lazy import for tensorflow
-module_name_tf = "mrmustard.math.backend_tensorflow"
-module_tf, loader_tf = lazy_import(module_name_tf)
-
 # lazy import for jax
 module_name_jax = "mrmustard.math.backend_jax"
 module_jax, loader_jax = lazy_import(module_name_jax)
 
 all_modules = {
     "numpy": {"module": module_np, "loader": loader_np, "object": "BackendNumpy"},
-    "tensorflow": {
-        "module": module_tf,
-        "loader": loader_tf,
-        "object": "BackendTensorflow",
-    },
     "jax": {
         "module": module_jax,
         "loader": loader_jax,
@@ -209,8 +200,8 @@ class BackendManager:
         Raises:
             ValueError: If the backend name is not a supported one.
         """
-        if name not in ["numpy", "tensorflow", "jax"]:
-            raise ValueError("Backend must be either ``numpy`` or ``tensorflow`` or ``jax``.")
+        if name not in ["numpy", "jax"]:
+            raise ValueError("Backend must be either ``numpy`` or ``jax``.")
 
         if self.backend_name != name:
             module = all_modules[name]["module"]

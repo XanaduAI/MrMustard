@@ -9,7 +9,7 @@
 
 # Mr Mustard: Your Universal Differentiable Toolkit for Quantum Optics
 
-Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` (default), `tensorflow`, `jax`).
+Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` (default) and `jax`).
 
 ## Installation
 
@@ -88,7 +88,7 @@ both_modes.fock_array(shape=(100, 4))[:,3]
 
 - Contract components in any order
 - Linear superpositions of compatible objects
-- Plug-and-play backends (`numpy`, `tensorflow`, `jax`)
+- Plug-and-play backends (`numpy`, `jax`)
 
 ## Available Components
 
@@ -151,7 +151,7 @@ def cost_fn(G, D):
     return 1 - state_out.fidelity(target)
 
 # Optimize
-opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
+opt = OptimizerJax(symplectic_lr=0.1, euclidean_lr=0.01)
 (G, D) = opt.minimize(cost_fn, by_optimizing=[G, D])
 ```
 
@@ -177,10 +177,6 @@ import mrmustard.math as math
 # Default numpy backend
 math.cos(0.1)  # numpy
 
-# Switch to tensorflow
-math.change_backend("tensorflow")
-math.cos(0.1)  # tensorflow
-
 # Switch to jax
 math.change_backend("jax")
 math.cos(0.1)  # jax
@@ -198,7 +194,7 @@ Contains the core quantum optics functionality, including the `Ansatz` class res
 
 ### The `math` Module
 
-The backbone providing plug-and-play backend support. Acts as a drop-in replacement for `numpy`, `tensorflow`, or `jax`.
+The backbone providing plug-and-play backend support. Acts as a drop-in replacement for `numpy` or `jax`.
 
 ## Getting Started
 

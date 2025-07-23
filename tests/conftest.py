@@ -41,10 +41,10 @@ hyp_settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "dev"))
 def pytest_addoption(parser):
     r"""
     Adds the option to select the backend using the ``--backend`` flag. For example,
-    ``pytest --backend=tensorflow`` runs all the tests with tensorflow backend. The command
+    ``pytest --backend=jax`` runs all the tests with jax backend. The command
     ``pytest`` defaults to ``pytest --backend=numpy``.
     """
-    parser.addoption("--backend", default="numpy", help="``numpy``, ``tensorflow`` or ``jax``.")
+    parser.addoption("--backend", default="numpy", help="``numpy`` or ``jax``.")
 
 
 @pytest.fixture

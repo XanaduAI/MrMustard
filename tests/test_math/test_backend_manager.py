@@ -18,7 +18,6 @@ Unit tests for the :class:`BackendManager`.
 
 import numpy as np
 import pytest
-import tensorflow as tf
 from jax import numpy as jnp
 from jax.errors import TracerArrayConversionError
 from scipy.special import loggamma as scipy_loggamma
@@ -54,7 +53,6 @@ class TestBackendManager:
         Tests the ``get_backend`` method.
         """
         assert math.get_backend("numpy").name == "numpy"
-        assert math.get_backend("tensorflow").name == "tensorflow"
         assert math.get_backend("jax").name == "jax"
 
     def test_einsum(self):
@@ -65,7 +63,7 @@ class TestBackendManager:
         res = math.astensor([[7, 10], [15, 22]])
 
         assert math.allclose(math.einsum("ij,jk->ik", ar, ar), res)
-        assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="tensorflow"), res)
+        assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="jax"), res)
 
     def test_error(self):
         r"""
@@ -180,9 +178,8 @@ class TestBackendManager:
 
         if math.backend_name == "numpy":
             assert math.allclose(res, arr.astype(dtype or np.float64))
-        else:
-            exp = tf.convert_to_tensor(arr, dtype=dtype or tf.float64)
-            exp = exp.numpy()
+        elif math.backend_name == "jax":
+            exp = jnp.array(arr, dtype=dtype or jnp.float64)
             assert math.allclose(res, exp)
 
     @pytest.mark.parametrize("t", types)
@@ -393,14 +390,11 @@ class TestBackendManager:
         assert not math.from_backend(v1)
 
         v2 = np.array(v1)
-        v3 = tf.constant(v1)
-        v4 = jnp.array(v1)
+        v3 = jnp.array(v1)
         if math.backend_name == "numpy":
-            assert math.from_backend(v2) and not math.from_backend(v3) and not math.from_backend(v4)
-        elif math.backend_name == "tensorflow":
-            assert math.from_backend(v3) and not math.from_backend(v2) and not math.from_backend(v4)
+            assert math.from_backend(v2) and not math.from_backend(v3)
         elif math.backend_name == "jax":
-            assert math.from_backend(v4) and not math.from_backend(v2) and not math.from_backend(v3)
+            assert math.from_backend(v3) and not math.from_backend(v2)
 
     def test_gather(self):
         r"""
@@ -448,15 +442,11 @@ class TestBackendManager:
         Tests the ``is_trainable`` method.
         """
         arr1 = np.array([1, 2])
-        arr2 = tf.constant(arr1)
-        arr3 = tf.Variable(arr1)
-        arr4 = jnp.array(arr1)
+        arr2 = jnp.array(arr1)
 
         assert not math.is_trainable(arr1)
-        assert not math.is_trainable(arr2)
-        assert math.is_trainable(arr3) is (math.backend_name == "tensorflow")
         if math.backend_name == "jax":
-            assert not math.is_trainable(arr4)
+            assert not math.is_trainable(arr2)
 
     def test_lgamma(self):
         r"""
@@ -531,10 +521,6 @@ class TestBackendManager:
             assert math.allclose(res, arr)
             assert not hasattr(res, "name")
             assert res.dtype == dtype
-        elif math.backend_name == "tensorflow":
-            assert isinstance(res, tf.Variable)
-            assert math.allclose(math.asnumpy(res), arr)
-            assert res.dtype == dtype or math.float64
         elif math.backend_name == "jax":
             assert isinstance(res, jnp.ndarray)
             assert math.allclose(res, arr)

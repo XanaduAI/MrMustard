@@ -35,4 +35,3 @@ def test_about():
     assert "Numpy version" in out
     assert "Scipy version" in out
     assert "The Walrus version" in out
-    assert "TensorFlow version" in out
