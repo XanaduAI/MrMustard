@@ -313,18 +313,6 @@ class BackendManager:
         """
         return self._apply("asnumpy", (tensor,))
 
-    def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
-        r"""Assigns value to tensor.
-
-        Args:
-            tensor: The tensor to assign to.
-            value: The value to assign.
-
-        Returns:
-            The tensor with value assigned
-        """
-        return self._apply("assign", (tensor, value))
-
     def astensor(self, array: Tensor, dtype=None):
         r"""Converts a numpy array to a tensor.
 

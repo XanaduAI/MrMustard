@@ -133,10 +133,6 @@ class BackendJax(BackendBase):
     def prod(self, x: jnp.ndarray, axis: int | None):
         return jnp.prod(x, axis=axis)
 
-    @jax.jit
-    def assign(self, tensor: jnp.ndarray, value: jnp.ndarray) -> jnp.ndarray:
-        return value
-
     def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.asarray(array, dtype=dtype)
 

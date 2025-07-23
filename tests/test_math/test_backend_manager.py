@@ -157,15 +157,6 @@ class TestBackendManager:
         res = math.asnumpy(arr)
         assert math.allclose(res, np.array(l))
 
-    def test_assign(self):
-        r"""
-        Tests the ``assign`` method.
-        """
-        arr = math.new_variable(np.eye(3), (None, None), "")
-        value = math.astensor(2 * np.eye(3))
-        arr = math.asnumpy(math.assign(arr, value))
-        assert math.allclose(arr, value)
-
     @pytest.mark.parametrize("t", types)
     @pytest.mark.parametrize("l", [l1, l3])
     def test_astensor(self, t, l):
@@ -391,20 +382,6 @@ class TestBackendManager:
         arr3 = math.astensor([1, 2, 4])
         assert math.all(math.equal(arr1, arr2))
         assert not math.all(math.equal(arr1, arr3))
-
-    def test_from_backend(self):
-        r"""
-        Tests the ``expm`` method.
-        """
-        v1 = [1, 2]
-        assert not math.from_backend(v1)
-
-        v2 = np.array(v1)
-        v3 = jnp.array(v1)
-        if math.backend_name == "numpy":
-            assert math.from_backend(v2) and not math.from_backend(v3)
-        elif math.backend_name == "jax":
-            assert math.from_backend(v3) and not math.from_backend(v2)
 
     def test_gather(self):
         r"""

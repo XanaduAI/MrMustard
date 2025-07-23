@@ -81,9 +81,6 @@ class BackendNumpy(BackendBase):
     def asnumpy(self, tensor: np.ndarray) -> np.ndarray:
         return np.asarray(tensor)
 
-    def assign(self, tensor: np.ndarray, value: np.ndarray) -> np.ndarray:
-        return value
-
     def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
         return np.asarray(array, dtype=dtype)
 

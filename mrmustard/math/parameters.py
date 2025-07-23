@@ -117,55 +117,6 @@ def format_value(param: Constant | Variable) -> tuple[str, str]:
     return value_str, "scalar"
 
 
-def update_symplectic(grads_and_vars, symplectic_lr: float):
-    r"""
-    Updates the symplectic parameters using the given symplectic gradients.
-
-    Implemented from:
-        Wang J, Sun H, Fiori S. A Riemannian-steepest-descent approach
-        for optimization on the real symplectic group.
-        Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
-    """
-    for dS_euclidean, S in grads_and_vars:
-        Y = math.euclidean_to_symplectic(S, dS_euclidean)
-        YT = math.transpose(Y)
-        new_value = math.matmul(
-            S,
-            math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT)),
-        )
-        math.assign(S, new_value)
-
-
-def update_orthogonal(grads_and_vars, orthogonal_lr: float):
-    r"""Updates the orthogonal parameters using the given orthogonal gradients.
-
-    Implemented from:
-        Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
-    """
-    for dO_euclidean, O in grads_and_vars:
-        Y = math.euclidean_to_unitary(O, math.real(dO_euclidean))
-        new_value = math.matmul(O, math.expm(-orthogonal_lr * Y))
-        math.assign(O, new_value)
-
-
-def update_unitary(grads_and_vars, unitary_lr: float):
-    r"""Updates the unitary parameters using the given unitary gradients.
-
-    Implemented from:
-        Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
-    """
-    for dU_euclidean, U in grads_and_vars:
-        Y = math.euclidean_to_unitary(U, dU_euclidean)
-        new_value = math.matmul(U, math.expm(-unitary_lr * Y))
-        math.assign(U, new_value)
-
-
-def update_euclidean(grads_and_vars, euclidean_lr: float):
-    """Updates the parameters using the euclidian gradients."""
-    math.euclidean_opt.lr = euclidean_lr
-    math.euclidean_opt.apply_gradients(grads_and_vars)
-
-
 # ~~~~~~~
 # Classes
 # ~~~~~~~
@@ -186,12 +137,7 @@ class Constant:
     """
 
     def __init__(self, value: Any, name: str, dtype: Any = None):
-        if math.from_backend(value) and not math.is_trainable(value):
-            self._value = value
-        elif hasattr(value, "dtype"):
-            self._value = math.new_constant(value, name, value.dtype)
-        else:
-            self._value = math.new_constant(value, name, dtype)
+        self._value = math.astensor(value, dtype=dtype)
         self._name = name
 
     @property
