@@ -50,10 +50,10 @@ import sys
 
 import pytest
 
-from mrmustard.training import optimizer_jax
+from mrmustard.training import optimizer
 from mrmustard.utils.logger import create_logger, default_handler, logging_handler_defined
 
-modules_contain_logging = [optimizer_jax]
+modules_contain_logging = [optimizer]
 
 
 @pytest.fixture(autouse=True)

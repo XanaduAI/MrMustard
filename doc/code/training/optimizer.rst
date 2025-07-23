@@ -1,4 +1,4 @@
-OptimizerJax
+Optimizer
 =========
 
 .. currentmodule:: mrmustard.training.optimizer_jax

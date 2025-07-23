@@ -15,7 +15,7 @@
 """The optimizer module contains all logic for parameter and circuit optimization
 in Mr Mustard.
 
-The :class:`OptimizerJax` uses Adam underneath the hood for Euclidean parameters and
+The :class:`Optimizer` uses Adam underneath the hood for Euclidean parameters and
 a custom Symplectic optimizer for Gaussian gates and states and an Orthogonal
 optimizer for interferometers.
 
@@ -30,7 +30,7 @@ many-photon setting.
 
     from mrmustard import math
     from mrmustard.lab import BSgate, Circuit, S2gate, Vacuum
-    from mrmustard.training import OptimizerJax
+    from mrmustard.training import Optimizer
 
     r = np.arcsinh(1.0)
     s2_0 = S2gate(modes=(0,1), r=r, phi=0.0, phi_trainable=True)
@@ -52,7 +52,7 @@ many-photon setting.
     def cost_fn(circ):
         return math.abs((state_in >> circ).ket(cutoffs=[cutoff] * 4)[i, 1, i + k - 1, k]) ** 2
 
-    opt = OptimizerJax(euclidean_lr=0.01)
+    opt = Optimizer(euclidean_lr=0.01)
     (circ,) =opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
 
 Then, we can see the optimized value of the parameters, for example
@@ -63,4 +63,4 @@ Then, we can see the optimized value of the parameters, for example
 
 """
 
-from .optimizer_jax import OptimizerJax as OptimizerJax
+from .optimizer import Optimizer as Optimizer

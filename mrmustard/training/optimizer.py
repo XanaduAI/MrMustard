@@ -27,7 +27,7 @@ from optax import GradientTransformation, OptState, adamw, multi_transform
 from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.math.parameters import Variable
-from mrmustard.training.parameter_update_jax import (
+from mrmustard.training.parameter_update import (
     update_orthogonal,
     update_symplectic,
     update_unitary,
@@ -35,10 +35,10 @@ from mrmustard.training.parameter_update_jax import (
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
 
-__all__ = ["OptimizerJax"]
+__all__ = ["Optimizer"]
 
 
-class OptimizerJax:
+class Optimizer:
     r"""
     A Jax based optimizer for any parametrized object.
 
@@ -63,7 +63,7 @@ class OptimizerJax:
     ):
         if math.backend_name != "jax":
             raise ValueError(
-                "OptimizerJax only supports the Jax backend. Please set the backend to Jax using `math.change_backend('jax')`.",
+                "Optimizer only supports the Jax backend. Please set the backend to Jax using `math.change_backend('jax')`.",
             )
         self.euclidean_lr = euclidean_lr
         self.symplectic_lr = symplectic_lr

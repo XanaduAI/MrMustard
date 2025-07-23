@@ -139,7 +139,7 @@ Transform any simulation into an optimization by marking parameters as trainable
 from mrmustard import math
 from mrmustard.lab.states import DisplacedSqueezed
 from mrmustard.lab.transformations import Dgate, Ggate
-from mrmustard.training import OptimizerJax
+from mrmustard.training import Optimizer
 
 math.change_backend("jax")
 
@@ -154,7 +154,7 @@ def cost_fn(G, D):
     return 1 - state_out.fidelity(target)
 
 # Optimize
-opt = OptimizerJax(symplectic_lr=0.1, euclidean_lr=0.01)
+opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
 (G, D) = opt.minimize(cost_fn, by_optimizing=[G, D])
 ```
 
