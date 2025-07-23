@@ -25,7 +25,6 @@ import jax
 import jax.numpy as jnp
 import jax.scipy as jsp
 import numpy as np
-import optax
 from platformdirs import user_cache_dir
 
 from mrmustard.lab import Circuit, CircuitComponent
@@ -475,9 +474,6 @@ class BackendJax(BackendBase):
         if dtype is None:
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
-
-    def DefaultEuclideanOptimizer(self):
-        return optax.inject_hyperparams(optax.adamw)
 
     @jax.jit
     def reorder_AB_bargmann(

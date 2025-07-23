@@ -391,10 +391,6 @@ class BackendNumpy(BackendBase):
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    @staticmethod
-    def DefaultEuclideanOptimizer() -> None:
-        return None
-
     def hermite_renormalized_unbatched(
         self,
         A: np.ndarray,

@@ -22,7 +22,7 @@ from collections.abc import Callable, Sequence
 
 import equinox as eqx
 import jax
-from optax import GradientTransformation, OptState, multi_transform
+from optax import GradientTransformation, OptState, adamw, multi_transform
 
 from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
@@ -179,7 +179,7 @@ class OptimizerJax:
         euclidean_optim = (
             euclidean_optim(learning_rate=self.euclidean_lr)
             if euclidean_optim is not None
-            else math.euclidean_opt(learning_rate=self.euclidean_lr)
+            else adamw(learning_rate=self.euclidean_lr)
         )
 
         labels_pytree = jax.tree_util.tree_map(

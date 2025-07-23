@@ -83,9 +83,6 @@ class BackendManager:
     # the backend in use, which is numpy by default
     _backend = BackendNumpy()
 
-    # the configured Euclidean optimizer.
-    _euclidean_opt: type | None = None
-
     def __init__(self) -> None:
         # binding types and decorators of numpy backend
         self._bind()
@@ -157,13 +154,6 @@ class BackendManager:
         The name of the backend in use.
         """
         return self._backend.name
-
-    @property
-    def euclidean_opt(self):
-        r"""The configured Euclidean optimizer."""
-        if not self._euclidean_opt:
-            self._euclidean_opt = self.DefaultEuclideanOptimizer()
-        return self._euclidean_opt
 
     @property
     def BackendError(self):
@@ -1506,10 +1496,6 @@ class BackendManager:
             Tensor: applied ``func`` on ``elements``
         """
         return self._apply("map_fn", (fn, elements))
-
-    def DefaultEuclideanOptimizer(self):
-        r"""Default optimizer for the Euclidean parameters."""
-        return self._apply("DefaultEuclideanOptimizer")
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Fock lattice strategies
