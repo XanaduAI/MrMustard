@@ -196,7 +196,7 @@ class Variable:
         update_fn: str = "update_euclidean",
         dtype: Any = None,
     ):
-        self._value = self._get_value(value, bounds, name, dtype)
+        self._value = math.astensor(value, dtype=dtype)
         self._name = name
         self._bounds = bounds
         self._update_fn = update_fn
@@ -235,7 +235,7 @@ class Variable:
 
     @value.setter
     def value(self, value):
-        self._value = self._get_value(value, self.bounds, self.name)
+        self._value = math.astensor(value)
 
     @classmethod
     def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
@@ -315,16 +315,6 @@ class Variable:
         """
         value = value or math.random_unitary(N)
         return Variable(value, name, bounds, "update_unitary")
-
-    def _get_value(self, value, bounds, name, dtype=None):
-        r"""
-        Returns a variable from given ``value``, ``bounds``, and ``name``.
-        """
-        if math.from_backend(value):
-            return value
-        if hasattr(value, "dtype"):
-            return math.new_variable(value, bounds, name, value.dtype)
-        return math.new_variable(value, bounds, name, dtype)
 
     def _tree_flatten(self):  # pragma: no cover
         children = (self.value,)

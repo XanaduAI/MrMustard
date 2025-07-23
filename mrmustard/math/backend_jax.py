@@ -175,15 +175,6 @@ class BackendJax(BackendBase):
     def pow(self, x: jnp.ndarray, y: float) -> jnp.ndarray:
         return jnp.power(x, y)
 
-    def new_variable(
-        self,
-        value: jnp.ndarray,
-        bounds: tuple[float | None, float | None] | None,
-        name: str,
-        dtype="float64",
-    ):
-        return jnp.array(value, dtype=dtype)
-
     @jax.jit
     def outer(self, array1: jnp.ndarray, array2: jnp.ndarray) -> jnp.ndarray:
         return self.tensordot(array1, array2, [[], []])
@@ -267,9 +258,6 @@ class BackendJax(BackendBase):
     @jax.jit
     def equal(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.equal(a, b)
-
-    def from_backend(self, value) -> bool:
-        return isinstance(value, jnp.ndarray)
 
     @partial(jax.jit, static_argnames=["axis"])
     def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: int = 0) -> jnp.ndarray:

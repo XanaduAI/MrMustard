@@ -510,24 +510,6 @@ class TestBackendManager:
         res = math.asnumpy(math.minimum(arr1, arr2))
         assert math.allclose(res, arr1)
 
-    @pytest.mark.parametrize("t", types)
-    def test_new_variable(self, t):
-        r"""
-        Tests the ``new_variable`` method.
-        """
-        dtype = getattr(math, t, None)
-        arr = np.eye(3)
-        res = math.new_variable(arr, (0, 1), "my_var", dtype)
-
-        if math.backend_name == "numpy":
-            assert math.allclose(res, arr)
-            assert not hasattr(res, "name")
-            assert res.dtype == dtype
-        elif math.backend_name == "jax":
-            assert isinstance(res, jnp.ndarray)
-            assert math.allclose(res, arr)
-            assert res.dtype == dtype or math.float64
-
     def test_ones(self):
         r"""
         Tests the ``ones`` method.

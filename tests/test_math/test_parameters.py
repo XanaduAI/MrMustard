@@ -19,7 +19,6 @@ Unit tests for :class:`Constant` and :class:`Variable`.
 import numpy as np
 import pytest
 
-from mrmustard import math
 from mrmustard.math.parameters import (
     Constant,
     Variable,
@@ -170,21 +169,15 @@ class TestVariable:
         assert var1.bounds == (None, None)
         assert var1.update_fn == "update_euclidean"
 
-        math_var = math.new_variable(2, (0, 1), "var2")
-        var2 = Variable(math_var, "var2")
-        assert var2.value == math_var
-        assert var2.name == "var2"
-        assert var2.update_fn == "update_euclidean"
+        var2 = Variable(np.array([1, 2, 3]), "var2", (0, 1), "update_orthogonal")
+        assert np.allclose(var2.value, np.array([1, 2, 3]))
+        assert var2.bounds == (0, 1)
+        assert var2.update_fn == "update_orthogonal"
 
-        var3 = Variable(np.array([1, 2, 3]), "var3", (0, 1), "update_orthogonal")
-        assert np.allclose(var3.value, np.array([1, 2, 3]))
-        assert var3.bounds == (0, 1)
-        assert var3.update_fn == "update_orthogonal"
-
-        var4 = Variable(1, "var4", dtype="int64")
-        assert var4.value == 1
-        assert var4.name == "var4"
-        assert var4.value.dtype == "int64"
+        var3 = Variable(1, "var3", dtype="int64")
+        assert var3.value == 1
+        assert var3.name == "var3"
+        assert var3.value.dtype == "int64"
 
     def test_format_bounds_edge_cases(self):
         r"""

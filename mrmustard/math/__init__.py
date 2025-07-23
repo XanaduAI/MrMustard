@@ -18,7 +18,6 @@ The point of entry for the backend.
 
 import sys
 
-from .autocast import *
 from .backend_base import *
 from .backend_manager import BackendManager
 from .backend_numpy import *

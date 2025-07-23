@@ -163,9 +163,6 @@ class BackendNumpy(BackendBase):
     def equal(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.equal(a, b)
 
-    def from_backend(self, value) -> bool:
-        return isinstance(value, np.ndarray)
-
     def gather(self, array: np.ndarray, indices: np.ndarray, axis: int = 0) -> np.ndarray:
         return np.take(array, indices, axis=axis)
 
@@ -221,15 +218,6 @@ class BackendNumpy(BackendBase):
         new: int | Sequence[int],
     ) -> np.ndarray:
         return np.moveaxis(array, old, new)
-
-    def new_variable(
-        self,
-        value,
-        bounds: tuple[float | None, float | None] | None,
-        name: str,
-        dtype=np.float64,
-    ):
-        return np.array(value, dtype=dtype)
 
     def norm(self, array: np.ndarray) -> np.ndarray:
         return np.linalg.norm(array)

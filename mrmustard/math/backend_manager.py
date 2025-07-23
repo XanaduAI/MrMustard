@@ -603,17 +603,6 @@ class BackendManager:
         """
         return self._apply("equal", (a, b))
 
-    def from_backend(self, value: Any) -> bool:
-        r"""Whether the given tensor is a tensor of the concrete backend.
-
-        Args:
-            value: A value.
-
-        Returns:
-            Whether given ``value`` is a tensor of the concrete backend.
-        """
-        return self._apply("from_backend", (value,))
-
     def gather(self, array: Tensor, indices: Batch[int], axis: int | None = None) -> Tensor:
         r"""The values of the array at the given indices.
 
@@ -1008,25 +997,6 @@ class BackendManager:
                 new,
             ),
         )
-
-    def new_variable(
-        self,
-        value: Tensor,
-        bounds: tuple[float | None, float | None],
-        name: str,
-        dtype=None,
-    ) -> Tensor:
-        r"""Returns a new variable with the given value and bounds.
-
-        Args:
-            value: The value of the new variable.
-            bounds: The bounds of the new variable.
-            name: The name of the new variable.
-            dtype: dtype of the new variable. If ``None``, casts it to float.
-        Returns:
-            The new variable.
-        """
-        return self._apply("new_variable", (value, bounds, name, dtype))
 
     def norm(self, array: Tensor) -> Tensor:
         r"""The norm of array.
