@@ -32,7 +32,7 @@ jobs:
         run: uv sync --inexact --no-install-project --all-extras
 
       - name: Run tests
-        run: uv run --no-project pytest tests -p no:warnings --tb=native --backend=tensorflow
+        run: uv run --no-project pytest tests -p no:warnings --tb=native --backend=jax
 
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1

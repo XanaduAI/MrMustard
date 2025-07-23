@@ -64,8 +64,15 @@ jobs:
           NUMBA_CPU_FEATURES: ""
         run: |
           set -o pipefail
-          uv run --all-extras pytest tests --backend=jax -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
+          uv run --all-extras pytest tests --backend=jax --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
+          
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: true
 
       - name: configure aws credentials
         if: env.UPLOAD_TIMINGS == 'true'
