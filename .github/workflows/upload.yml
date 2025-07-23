@@ -55,4 +55,4 @@ jobs:
           uv pip install --pre mrmustard
 
       - name: Print about
-        run: uv run python -c "import mrmustard; print(mrmustard.about())"
+        run: python -c "import mrmustard; print(mrmustard.about())"
