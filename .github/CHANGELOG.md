@@ -1,4 +1,13 @@
-# Release 1.0.0a1 (current release)
+# Release 1.0.0a2 (unreleased)
+
+### Improvements
+
+* Added a ``rich`` based repr to ``ParameterSet``.
+[(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
+
+---
+
+# Release 1.0.0a1
 
 ### New features
 
