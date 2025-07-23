@@ -19,6 +19,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+import numpy as np
+
 from mrmustard.math.backend_manager import BackendManager
 
 math = BackendManager()
@@ -30,6 +32,90 @@ __all__ = ["Constant", "Variable"]
 # ~~~~~~~~~
 # Functions
 # ~~~~~~~~~
+
+
+def format_bounds(param: Constant | Variable) -> str:
+    r"""
+    Format parameter bounds string.
+
+    Args:
+        param: The parameter to format.
+
+    Returns:
+        A string representation of the parameter bounds.
+    """
+    if not isinstance(param, Variable):
+        return "—"
+
+    bounds = param.bounds
+    low = "-∞" if bounds[0] is None else f"{bounds[0]:.3g}"
+    high = "+∞" if bounds[1] is None else f"{bounds[1]:.3g}"
+    return f"({low}, {high})"
+
+
+def format_dtype(param: Constant | Variable) -> str:
+    r"""
+    Format parameter dtype string.
+
+    Args:
+        param: The parameter to format.
+
+    Returns:
+        A string representation of the parameter dtype.
+    """
+    try:  # handle tensorflow dtypes
+        dtype_str = param.value.dtype.name
+    except AttributeError:  # pragma: no cover
+        dtype_str = param.value.dtype.__name__
+    return dtype_str
+
+
+def format_value(param: Constant | Variable) -> tuple[str, str]:
+    r"""
+    Format parameter value and shape strings.
+
+    Args:
+        param: The parameter to format.
+
+    Returns:
+        A tuple of strings representing the parameter value and shape.
+    """
+    value = math.asnumpy(param.value)
+
+    # Handle arrays
+    if hasattr(param.value, "shape") and param.value.shape != ():
+        shape_str = str(param.value.shape)
+
+        # Check if values should be formatted as integers
+        is_integer_like = math.issubdtype(value.dtype, np.integer) or math.all(
+            math.equal(math.mod(value, 1), 0),
+        )
+
+        flat = value.flat
+        if len(flat) <= 3:
+            # Small arrays: preserve structure, format integers appropriately
+            value_str = str(value.astype(int).tolist()) if is_integer_like else str(value.tolist())
+        else:
+            # Large arrays: show preview with ellipsis
+            if is_integer_like:
+                preview = [str(int(x)) for x in flat[:3]]
+            else:
+                preview = [f"{x:.3g}" for x in flat[:3]]
+            value_str = f"[{', '.join(preview)}, ...]"
+        return value_str, shape_str
+
+    # Handle scalars
+    if math.issubdtype(value.dtype, np.integer):
+        value_str = str(int(value))
+    elif math.iscomplexobj(value) or math.issubdtype(value.dtype, np.complexfloating):
+        # Format complex numbers with g format for both real and imaginary parts
+        real_part = f"{value.real:.6g}"
+        imag_part = f"{value.imag:.6g}"
+        value_str = f"{real_part}+{imag_part}j" if value.imag >= 0 else f"{real_part}{imag_part}j"
+    else:
+        value_str = f"{float(value):.6g}"
+
+    return value_str, "scalar"
 
 
 def update_symplectic(grads_and_vars, symplectic_lr: float):

@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from typing import Any
 
 import numpy as np
 from opt_einsum import contract
@@ -166,6 +167,9 @@ class BackendNumpy(BackendBase):
     def eye_like(self, array: np.ndarray) -> np.ndarray:
         return np.eye(array.shape[-1], dtype=array.dtype)
 
+    def equal(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return np.equal(a, b)
+
     def from_backend(self, value) -> bool:
         return isinstance(value, np.ndarray)
 
@@ -178,8 +182,14 @@ class BackendNumpy(BackendBase):
     def inv(self, tensor: np.ndarray) -> np.ndarray:
         return np.linalg.inv(tensor)
 
+    def iscomplexobj(self, x: Any) -> bool:
+        return np.iscomplexobj(x)
+
     def isnan(self, array: np.ndarray) -> np.ndarray:
         return np.isnan(array)
+
+    def issubdtype(self, arg1, arg2) -> bool:
+        return np.issubdtype(arg1, arg2)
 
     def is_trainable(self, tensor: np.ndarray) -> bool:
         return False
@@ -210,6 +220,9 @@ class BackendNumpy(BackendBase):
 
     def minimum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.minimum(a, b)
+
+    def mod(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return np.mod(a, b)
 
     def moveaxis(
         self,
