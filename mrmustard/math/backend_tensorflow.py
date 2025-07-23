@@ -182,6 +182,9 @@ class BackendTensorflow(BackendBase):
     def eye_like(self, array: tf.Tensor) -> Tensor:
         return tf.eye(array.shape[-1], dtype=array.dtype)
 
+    def equal(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+        return tf.equal(a, b)
+
     def from_backend(self, value) -> bool:
         return isinstance(value, tf.Tensor | tf.Variable)
 
@@ -253,6 +256,10 @@ class BackendTensorflow(BackendBase):
     @Autocast()
     def minimum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.minimum(a, b)
+
+    @Autocast()
+    def mod(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+        return tf.math.mod(a, b)
 
     def moveaxis(
         self,

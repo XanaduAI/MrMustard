@@ -167,6 +167,9 @@ class BackendNumpy(BackendBase):
     def eye_like(self, array: np.ndarray) -> np.ndarray:
         return np.eye(array.shape[-1], dtype=array.dtype)
 
+    def equal(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return np.equal(a, b)
+
     def from_backend(self, value) -> bool:
         return isinstance(value, np.ndarray)
 
@@ -217,6 +220,9 @@ class BackendNumpy(BackendBase):
 
     def minimum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.minimum(a, b)
+
+    def mod(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return np.mod(a, b)
 
     def moveaxis(
         self,

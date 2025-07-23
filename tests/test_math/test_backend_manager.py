@@ -385,6 +385,16 @@ class TestBackendManager:
         exp = np.eye(3)
         assert math.allclose(res, exp)
 
+    def test_equal(self):
+        r"""
+        Tests the ``equal`` method.
+        """
+        arr1 = math.astensor([1, 2, 3])
+        arr2 = math.astensor([1, 2, 3])
+        arr3 = math.astensor([1, 2, 4])
+        assert math.all(math.equal(arr1, arr2))
+        assert not math.all(math.equal(arr1, arr3))
+
     def test_from_backend(self):
         r"""
         Tests the ``expm`` method.
@@ -495,6 +505,16 @@ class TestBackendManager:
         r = 1.0
         i = 2.0
         assert math.asnumpy(math.make_complex(r, i)) == r + i * 1j
+
+    def test_mod(self):
+        r"""
+        Tests the ``mod`` method.
+        """
+        arr1 = math.astensor([1, 2, 3, 4, 5])
+        arr2 = 2 * math.ones_like(arr1)
+        exp = math.astensor([1, 0, 1, 0, 1])
+        assert math.allclose(math.mod(arr1, arr1), math.zeros_like(arr1))
+        assert math.allclose(math.mod(arr1, arr2), exp)
 
     def test_moveaxis(self):
         r"""

@@ -278,6 +278,10 @@ class BackendJax(BackendBase):
     def eye_like(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.eye(array.shape[-1], dtype=array.dtype)
 
+    @jax.jit
+    def equal(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return jnp.equal(a, b)
+
     def from_backend(self, value) -> bool:
         return isinstance(value, jnp.ndarray)
 
@@ -328,6 +332,10 @@ class BackendJax(BackendBase):
     @jax.jit
     def minimum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.minimum(a, b)
+
+    @jax.jit
+    def mod(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return jnp.mod(a, b)
 
     @partial(jax.jit, static_argnames=["old", "new"])
     def moveaxis(

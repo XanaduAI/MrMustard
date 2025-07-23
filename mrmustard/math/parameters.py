@@ -87,8 +87,8 @@ def format_value(param: Constant | Variable) -> tuple[str, str]:
         shape_str = str(param.value.shape)
 
         # Check if values should be formatted as integers
-        is_integer_like = np.issubdtype(value.dtype, np.integer) or np.all(
-            np.equal(np.mod(value, 1), 0),
+        is_integer_like = math.issubdtype(value.dtype, np.integer) or math.all(
+            math.equal(math.mod(value, 1), 0),
         )
 
         flat = value.flat
