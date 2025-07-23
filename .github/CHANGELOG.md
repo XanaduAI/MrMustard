@@ -1,5 +1,10 @@
 # Release 1.0.0a2 (unreleased)
 
+### Breaking changes
+
+* Removed `tensorflow` as a dependency as well as any legacy `tensorflow` code.
+[(#633)](https://github.com/XanaduAI/MrMustard/pull/633)
+
 ### Improvements
 
 * Added a ``rich`` based repr to ``ParameterSet``.
