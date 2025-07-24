@@ -35,5 +35,6 @@ jobs:
         run: |
           uv run --all-groups pytest --doctest-modules mrmustard/math/parameter_set.py
           uv run --all-groups pytest --doctest-modules mrmustard/physics/ansatz
-          uv run --all-groups pytest --doctest-modules mrmustard/lab
           uv run --all-groups pytest --doctest-modules mrmustard/training
+          uv run --all-groups pytest --doctest-modules mrmustard/lab
+          
