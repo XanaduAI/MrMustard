@@ -407,8 +407,11 @@ class State(CircuitComponent):
         """
         fock_array = self.fock_array(cutoff)
         if not self.wires.ket or not self.wires.bra:
-            return math.reshape(math.abs(fock_array) ** 2, (-1,))
-        return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
+            return math.abs(fock_array) ** 2
+        delta = -self.n_modes - 1
+        for i in range(self.n_modes):
+            fock_array = np.diagonal(fock_array, axis1=delta, axis2=-1 - i)
+        return math.abs(fock_array)
 
     @abstractmethod
     def formal_stellar_decomposition(
