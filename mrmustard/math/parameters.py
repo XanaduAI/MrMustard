@@ -62,11 +62,7 @@ def format_dtype(param: Constant | Variable) -> str:
     Returns:
         A string representation of the parameter dtype.
     """
-    try:  # handle tensorflow dtypes
-        dtype_str = param.value.dtype.name
-    except AttributeError:  # pragma: no cover
-        dtype_str = param.value.dtype.__name__
-    return dtype_str
+    return param.value.dtype.name
 
 
 def format_value(param: Constant | Variable) -> tuple[str, str]:

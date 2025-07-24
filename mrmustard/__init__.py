@@ -55,7 +55,6 @@ def about():
         Numba version:             0.48.0
         Scipy version:             1.7.3
         The Walrus version:        0.17.0
-        TensorFlow version:        2.7.0
         Torch version:             1.10.0+cu102
     """
     import platform

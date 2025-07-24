@@ -7,7 +7,6 @@
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
 [![Numpy tests](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_numpy.yml/badge.svg?branch=main)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_numpy.yml)
 [![Jax tests](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_jax.yml/badge.svg?branch=main)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_jax.yml)
-[![Tensorflow tests](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_tensorflow.yml/badge.svg?branch=main)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_tensorflow.yml)
 [![Python version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FXanaduAI%2FMrMustard%2Fmain%2Fpyproject.toml)](https://pypi.org/project/MrMustard/)
 
 # Mr Mustard: Your Universal Differentiable Toolkit for Quantum Optics
