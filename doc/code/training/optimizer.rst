@@ -1,7 +1,7 @@
 Optimizer
 =========
 
-.. currentmodule:: mrmustard.training.optimizer_jax
+.. currentmodule:: mrmustard.training.optimizer
 
-.. automodapi:: mrmustard.training.optimizer_jax
+.. automodapi:: mrmustard.training.optimizer
     :no-heading:
