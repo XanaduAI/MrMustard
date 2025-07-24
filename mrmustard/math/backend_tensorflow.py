@@ -156,6 +156,11 @@ class BackendTensorflow(BackendBase):
     def det(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.det(matrix)
 
+    def diagonal(
+        self, array: tf.Tensor, offset: int | None, axis1: int | None, axis2: int | None
+    ) -> tf.Tensor:
+        return tf.experimental.numpy.diagonal(array, offset=offset, axis1=axis1, axis2=axis2)
+
     def diag(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag(array, k=k)
 

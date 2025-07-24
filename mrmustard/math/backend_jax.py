@@ -236,6 +236,11 @@ class BackendJax(BackendBase):
     def det(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.det(matrix)
 
+    def diagonal(
+        self, array: jnp.ndarray, offset: int | None, axis1: int | None, axis2: int | None
+    ) -> jnp.ndarray:
+        return jnp.diagonal(array, offset=offset, axis1=axis1, axis2=axis2)
+
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
         if array.ndim in [1, 2]:
             return jnp.diag(array, k=k)

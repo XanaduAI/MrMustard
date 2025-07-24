@@ -128,6 +128,11 @@ class BackendNumpy(BackendBase):
             det = np.linalg.det(matrix)
         return det  # noqa: RET504
 
+    def diagonal(
+        self, array: np.ndarray, offset: int | None, axis1: int | None, axis2: int | None
+    ) -> np.ndarray:
+        return np.diagonal(array, offset=offset, axis1=axis1, axis2=axis2)
+
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
         if array.ndim in (1, 2):
             return np.diag(array, k=k)

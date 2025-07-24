@@ -300,6 +300,20 @@ class TestBackendManager:
         arr = np.array([[1.0, 2.0], [3.0, 4.0]])
         assert math.allclose(math.det(arr), -2.0)
 
+    def test_diagonal(self):
+        r"""
+        Tests the ``diagonal`` method.
+        """
+        d1 = math.ones(shape=(3,), dtype=math.float64)
+        d2 = 2 * math.ones(shape=(2,), dtype=math.float64)
+        d3 = 3 * math.ones(shape=(1,), dtype=math.float64)
+
+        res = math.diag(d1, 0) + math.diag(d2, 1) + math.diag(d3, 2)
+        res = math.asnumpy(res)
+        exp = np.array([[1.0, 2.0, 3.0], [0.0, 1.0, 2.0], [0.0, 0.0, 1.0]])
+
+        assert math.allclose(res, exp)
+
     def test_diag(self):
         r"""
         Tests the ``diag`` method.
