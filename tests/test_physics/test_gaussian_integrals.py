@@ -48,7 +48,7 @@ def test_real_gaussian_integral():
             ],
         ],
     )
-    b = math.cast(math.arange(3), dtype=math.complex128)
+    b = math.arange(3, dtype=math.complex128)
     c = 1.0 + 0j
     res = real_gaussian_integral((A, b, c), idx=[0, 1])
     assert math.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
