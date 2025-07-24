@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 
@@ -189,7 +189,9 @@ class Variable:
         value: Any,
         name: str,
         bounds: tuple[float | None, float | None] = (None, None),
-        update_fn: str = "update_euclidean",
+        update_fn: Literal[
+            "update_euclidean", "update_orthogonal", "update_symplectic", "update_unitary"
+        ] = "update_euclidean",
         dtype: Any = None,
     ):
         self._value = math.astensor(value, dtype=dtype)
@@ -212,7 +214,9 @@ class Variable:
         return self._name
 
     @property
-    def update_fn(self) -> str:
+    def update_fn(
+        self,
+    ) -> Literal["update_euclidean", "update_orthogonal", "update_symplectic", "update_unitary"]:
         r"""
         The function used to update this variable during training.
         """

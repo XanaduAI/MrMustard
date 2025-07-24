@@ -19,7 +19,7 @@ This module contains the utility functions used by the classes in ``mrmustard.la
 from __future__ import annotations
 
 from collections.abc import Generator
-from typing import Any
+from typing import Any, Literal
 
 from mrmustard import math
 from mrmustard.math.parameters import Constant, Variable
@@ -30,7 +30,9 @@ def make_parameter(
     value: Any,
     name: str,
     bounds: tuple[float | None, float | None],
-    update_fn: str = "update_euclidean",
+    update_fn: Literal[
+        "update_euclidean", "update_orthogonal", "update_symplectic", "update_unitary"
+    ] = "update_euclidean",
     dtype: Any = None,
 ):
     r"""
