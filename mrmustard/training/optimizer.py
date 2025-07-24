@@ -121,6 +121,7 @@ class Optimizer:
         Returns:
             The list of elements optimized.
         """
+        self.opt_history = [0]
         if settings.PROGRESSBAR:
             progress_bar = ProgressBar(max_steps)
             with progress_bar:
