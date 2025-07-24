@@ -50,6 +50,7 @@ def hermite_renormalized_unbatched_jax(
             A,
             b,
             c,
+            vmap_method="sequential",
         )
     else:
         G = jax.pure_callback(
@@ -58,6 +59,7 @@ def hermite_renormalized_unbatched_jax(
             A,
             b,
             c,
+            vmap_method="sequential",
         )
     return G
 
