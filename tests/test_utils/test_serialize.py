@@ -17,6 +17,7 @@
 import json
 from dataclasses import dataclass
 
+import jax
 import numpy as np
 import pytest
 
@@ -138,6 +139,14 @@ class TestSerialize:
             match=r"Arrays cannot have the same name as generic data: {'val'}",
         ):
             save(Dummy, arrays={"val": [1]}, val=2)
+
+    @pytest.mark.requires_backend("jax")
+    def test_jax_support(self):
+        """Test that JAX data is supported."""
+        x = math.astensor([1.1, 2.2])
+        loaded = load(save(DummyOneNP, name="myname", arrays={"array": x}))
+        assert isinstance(loaded.array, jax.Array)
+        assert np.array_equal(loaded.array, x)
 
     @pytest.mark.requires_backend("jax")
     def test_backend_change_error(self, monkeypatch):
