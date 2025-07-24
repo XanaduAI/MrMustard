@@ -507,7 +507,8 @@ class BackendManager:
         return self._apply("diagonal", (array, offset, axis1, axis2))
 
     def diag(self, array: Tensor, k: int = 0) -> Tensor:
-        r"""The array made by inserting the given array along the :math:`k`-th diagonal.
+        r"""
+        The array made by inserting the given array along the :math:`k`-th diagonal.
 
         Args:
             array: The array to insert.

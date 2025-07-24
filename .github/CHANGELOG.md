@@ -6,8 +6,13 @@
 [(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
 
 ### Bug fixes
+
+* Fixed a bug in `OptimizerJax` that would make the optimizer think it reached a stable optimum upon repeat calls to `minimize`.
+[(#634)](https://github.com/XanaduAI/MrMustard/pull/634)
+
 * Fixed a bug with ``State.fock_distribution`` where batch dimensions and mult-mode states were not handled correctly.
 [(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
+
 
 ---
 
