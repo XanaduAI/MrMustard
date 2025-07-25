@@ -16,8 +16,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 
@@ -63,11 +62,7 @@ def format_dtype(param: Constant | Variable) -> str:
     Returns:
         A string representation of the parameter dtype.
     """
-    try:  # handle tensorflow dtypes
-        dtype_str = param.value.dtype.name
-    except AttributeError:  # pragma: no cover
-        dtype_str = param.value.dtype.__name__
-    return dtype_str
+    return param.value.dtype.name
 
 
 def format_value(param: Constant | Variable) -> tuple[str, str]:
@@ -118,55 +113,6 @@ def format_value(param: Constant | Variable) -> tuple[str, str]:
     return value_str, "scalar"
 
 
-def update_symplectic(grads_and_vars, symplectic_lr: float):
-    r"""
-    Updates the symplectic parameters using the given symplectic gradients.
-
-    Implemented from:
-        Wang J, Sun H, Fiori S. A Riemannian-steepest-descent approach
-        for optimization on the real symplectic group.
-        Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
-    """
-    for dS_euclidean, S in grads_and_vars:
-        Y = math.euclidean_to_symplectic(S, dS_euclidean)
-        YT = math.transpose(Y)
-        new_value = math.matmul(
-            S,
-            math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT)),
-        )
-        math.assign(S, new_value)
-
-
-def update_orthogonal(grads_and_vars, orthogonal_lr: float):
-    r"""Updates the orthogonal parameters using the given orthogonal gradients.
-
-    Implemented from:
-        Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
-    """
-    for dO_euclidean, O in grads_and_vars:
-        Y = math.euclidean_to_unitary(O, math.real(dO_euclidean))
-        new_value = math.matmul(O, math.expm(-orthogonal_lr * Y))
-        math.assign(O, new_value)
-
-
-def update_unitary(grads_and_vars, unitary_lr: float):
-    r"""Updates the unitary parameters using the given unitary gradients.
-
-    Implemented from:
-        Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
-    """
-    for dU_euclidean, U in grads_and_vars:
-        Y = math.euclidean_to_unitary(U, dU_euclidean)
-        new_value = math.matmul(U, math.expm(-unitary_lr * Y))
-        math.assign(U, new_value)
-
-
-def update_euclidean(grads_and_vars, euclidean_lr: float):
-    """Updates the parameters using the euclidian gradients."""
-    math.euclidean_opt.lr = euclidean_lr
-    math.euclidean_opt.apply_gradients(grads_and_vars)
-
-
 # ~~~~~~~
 # Classes
 # ~~~~~~~
@@ -187,12 +133,7 @@ class Constant:
     """
 
     def __init__(self, value: Any, name: str, dtype: Any = None):
-        if math.from_backend(value) and not math.is_trainable(value):
-            self._value = value
-        elif hasattr(value, "dtype"):
-            self._value = math.new_constant(value, name, value.dtype)
-        else:
-            self._value = math.new_constant(value, name, dtype)
+        self._value = math.astensor(value, dtype=dtype)
         self._name = name
 
     @property
@@ -239,7 +180,7 @@ class Variable:
         value: The value of this variable.
         name: The name of this variable.
         bounds: The numerical bounds of this variable.
-        update_fn: The function used to update this variable during training.
+        update_fn: The name of the function used to update this variable during training.
         dtype: The dtype of this variable.
     """
 
@@ -248,10 +189,12 @@ class Variable:
         value: Any,
         name: str,
         bounds: tuple[float | None, float | None] = (None, None),
-        update_fn: Callable = update_euclidean,
+        update_fn: Literal[
+            "update_euclidean", "update_orthogonal", "update_symplectic", "update_unitary"
+        ] = "update_euclidean",
         dtype: Any = None,
     ):
-        self._value = self._get_value(value, bounds, name, dtype)
+        self._value = math.astensor(value, dtype=dtype)
         self._name = name
         self._bounds = bounds
         self._update_fn = update_fn
@@ -271,7 +214,9 @@ class Variable:
         return self._name
 
     @property
-    def update_fn(self) -> Callable | None:
+    def update_fn(
+        self,
+    ) -> Literal["update_euclidean", "update_orthogonal", "update_symplectic", "update_unitary"]:
         r"""
         The function used to update this variable during training.
         """
@@ -290,7 +235,7 @@ class Variable:
 
     @value.setter
     def value(self, value):
-        self._value = self._get_value(value, self.bounds, self.name)
+        self._value = math.astensor(value)
 
     @classmethod
     def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
@@ -321,7 +266,7 @@ class Variable:
             A variable with ``update_fn`` for orthogonal optimization.
         """
         value = value or math.random_orthogonal(N)
-        return Variable(value, name, bounds, update_orthogonal)
+        return Variable(value, name, bounds, "update_orthogonal")
 
     @staticmethod
     def symplectic(
@@ -345,7 +290,7 @@ class Variable:
             A variable with ``update_fn`` for simplectic optimization.
         """
         value = value or math.random_symplectic(N)
-        return Variable(value, name, bounds, update_symplectic)
+        return Variable(value, name, bounds, "update_symplectic")
 
     @staticmethod
     def unitary(
@@ -369,17 +314,7 @@ class Variable:
             A variable with ``update_fn`` for unitary optimization.
         """
         value = value or math.random_unitary(N)
-        return Variable(value, name, bounds, update_unitary)
-
-    def _get_value(self, value, bounds, name, dtype=None):
-        r"""
-        Returns a variable from given ``value``, ``bounds``, and ``name``.
-        """
-        if math.from_backend(value) and math.is_trainable(value):
-            return value
-        if hasattr(value, "dtype"):
-            return math.new_variable(value, bounds, name, value.dtype)
-        return math.new_variable(value, bounds, name, dtype)
+        return Variable(value, name, bounds, "update_unitary")
 
     def _tree_flatten(self):  # pragma: no cover
         children = (self.value,)

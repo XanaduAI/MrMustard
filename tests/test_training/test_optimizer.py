@@ -40,13 +40,13 @@ from mrmustard.lab import (
 )
 from mrmustard.math.parameters import Variable
 from mrmustard.physics.gaussian import number_means, von_neumann_entropy
-from mrmustard.training import OptimizerJax
+from mrmustard.training import Optimizer
 
 
 @pytest.mark.requires_backend("jax")
-class TestOptimizerJax:
+class TestOptimizer:
     r"""
-    Tests for the ``OptimizerJax`` class.
+    Tests for the ``Optimizer`` class.
     """
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (3, 2)])
@@ -64,7 +64,7 @@ class TestOptimizerJax:
                 norm * math.sum(sq >> num >> bs >> (vac >> num).dual) ** 2,
             )
 
-        opt = OptimizerJax(euclidean_lr=0.05)
+        opt = Optimizer(euclidean_lr=0.05)
         (sq,) = opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
 
         assert math.all(og_r != sq.parameters.r.value)
@@ -77,7 +77,7 @@ class TestOptimizerJax:
         def cost_fn(bsgate):
             return -(math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2)
 
-        opt = OptimizerJax()
+        opt = Optimizer()
         (bsgate,) = opt.minimize(cost_fn, by_optimizing=[bsgate])
 
         assert math.allclose(bsgate.parameters.theta.value, 0.1, atol=0.01)
@@ -95,7 +95,7 @@ class TestOptimizerJax:
 
         # stable_threshold and max_steps are set to whatever gives us optimized parameters
         # that are within the default ATOL=1e-8 of the expected values
-        opt = OptimizerJax(stable_threshold=1e-12)
+        opt = Optimizer(stable_threshold=1e-12)
         (cat_state,) = opt.minimize(cost_fn, by_optimizing=[cat_state], max_steps=6000)
 
         assert math.allclose(cat_state.parameters.x.value, expected_cat.parameters.x.value)
@@ -109,7 +109,7 @@ class TestOptimizerJax:
             state_out = Vacuum(0) >> dgate
             return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
-        opt = OptimizerJax()
+        opt = Optimizer()
         (dgate,) = opt.minimize(cost_fn, by_optimizing=[dgate])
 
         assert math.allclose(dgate.parameters.x.value, 0.1, atol=0.01)
@@ -128,7 +128,7 @@ class TestOptimizerJax:
             norm = 1 / disp.ansatz.batch_size if disp.ansatz.batch_shape else 1
             return -math.real(norm * math.sum(num >> disp >> vac) ** 2)
 
-        opt = OptimizerJax(euclidean_lr=0.05)
+        opt = Optimizer(euclidean_lr=0.05)
         (disp,) = opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
         assert math.all(og_x != disp.parameters.x.value)
         assert math.all(og_y != disp.parameters.y.value)
@@ -156,7 +156,7 @@ class TestOptimizerJax:
         def cost_fn(circ):
             return math.abs(circ.contract().fock_array((cutoff,) * 4)[i, 1, i + k - 1, k]) ** 2
 
-        opt = OptimizerJax(euclidean_lr=0.01)
+        opt = Optimizer(euclidean_lr=0.01)
         (circ,) = opt.minimize(
             cost_fn,
             by_optimizing=[circ],
@@ -225,7 +225,7 @@ class TestOptimizerJax:
             amps = circ.contract().fock_array((3, 3, 3, 3))
             return -(math.abs((amps[1, 1, 2, 0] + amps[1, 1, 0, 2]) / np.sqrt(2)) ** 2)
 
-        opt = OptimizerJax(unitary_lr=0.05)
+        opt = Optimizer(unitary_lr=0.05)
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=200)
         assert math.allclose(-cost_fn(circ), 0.0625, atol=1e-5)
 
@@ -289,7 +289,7 @@ class TestOptimizerJax:
             amps = circ.contract().fock_array((2, 2, 3, 3))
             return -(math.abs((amps[1, 1, 0, 2] + amps[1, 1, 2, 0]) / np.sqrt(2)) ** 2)
 
-        opt = OptimizerJax()
+        opt = Optimizer()
 
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=200)
         assert math.allclose(-cost_fn(circ), 0.0625, atol=1e-5)
@@ -302,7 +302,7 @@ class TestOptimizerJax:
             amps = G.fock_array((2, 2))
             return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
-        opt = OptimizerJax(symplectic_lr=0.5, euclidean_lr=0.01)
+        opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
         (G,) = opt.minimize(cost_fn, by_optimizing=[G], max_steps=500)
         assert math.allclose(-cost_fn(G), 0.25, atol=1e-4)
@@ -324,7 +324,7 @@ class TestOptimizerJax:
             amps = circ.contract().fock_array((2, 2))
             return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
-        opt = OptimizerJax(unitary_lr=0.5, euclidean_lr=0.01)
+        opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
 
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
         assert math.allclose(-cost_fn(circ), 0.25, atol=1e-5)
@@ -354,7 +354,7 @@ class TestOptimizerJax:
             amps = circ.contract().fock_array((2, 2))
             return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
-        opt = OptimizerJax(orthogonal_lr=0.5, euclidean_lr=0.01)
+        opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
 
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
         assert math.allclose(-cost_fn(circ), 0.25, atol=1e-5)
@@ -382,7 +382,7 @@ class TestOptimizerJax:
             amps = circ.contract().fock_array((2, 2))
             return -(math.abs(amps[1, 1]) ** 2) + math.abs(amps[0, 1]) ** 2
 
-        opt = OptimizerJax(euclidean_lr=0.05)
+        opt = Optimizer(euclidean_lr=0.05)
 
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
         assert math.allclose(-cost_fn(circ), 0.25, atol=1e-5)
@@ -415,7 +415,7 @@ class TestOptimizerJax:
             entropy = von_neumann_entropy(cov0)
             return math.abs((num_mean0 - nbar) ** 2 + (entropy - S) ** 2 + (num_mean1 - nbar) ** 2)
 
-        opt = OptimizerJax(symplectic_lr=0.1)
+        opt = Optimizer(symplectic_lr=0.1)
         (G,) = opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
         S = math.asnumpy(G.parameters.symplectic.value)
         cov = S @ S.T
@@ -437,7 +437,7 @@ class TestOptimizerJax:
         def cost_fn(circ):
             return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
 
-        opt = OptimizerJax(euclidean_lr=0.001)
+        opt = Optimizer(euclidean_lr=0.001)
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
         r_var = circ.components[3].parameters.r
         assert math.allclose(math.sinh(r_var.value) ** 2, 1, atol=1e-2)
@@ -451,7 +451,7 @@ class TestOptimizerJax:
             state_out = Vacuum(0) >> sgate
             return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
-        opt = OptimizerJax()
+        opt = Optimizer()
         (sgate,) = opt.minimize(cost_fn, by_optimizing=[sgate])
 
         assert math.allclose(sgate.parameters.r.value, 0.1, atol=0.01)
@@ -475,7 +475,7 @@ class TestOptimizerJax:
         def cost_fn(S):
             return -(math.abs(S.fock_array((n + 1, n + 1))[n, n]) ** 2)
 
-        opt = OptimizerJax(euclidean_lr=0.01)
+        opt = Optimizer(euclidean_lr=0.01)
         (S,) = opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
 
         expected = 1 / (n + 1) * (n / (n + 1)) ** n
@@ -490,7 +490,7 @@ class TestOptimizerJax:
             state_out = Vacuum(0) >> sgate
             return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
-        opt = OptimizerJax()
+        opt = Optimizer()
         (sgate,) = opt.minimize(cost_fn, by_optimizing=[sgate])
 
         assert math.allclose(sgate.parameters.r.value, 0.1, atol=0.01)
@@ -508,7 +508,7 @@ class TestOptimizerJax:
             norm = 1 / squeezing.ansatz.batch_size if squeezing.ansatz.batch_shape else 1
             return -math.real(norm * math.sum(num >> squeezing >> vac) ** 2)
 
-        opt = OptimizerJax(euclidean_lr=0.05)
+        opt = Optimizer(euclidean_lr=0.05)
         (squeezing,) = opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
 
         assert math.all(squeezing.parameters.r.value != og_r)
@@ -535,7 +535,7 @@ class TestOptimizerJax:
         def cost_fn(circ):
             return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
 
-        opt = OptimizerJax(euclidean_lr=0.001)
+        opt = Optimizer(euclidean_lr=0.001)
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
         S_12 = circ.components[3]
         assert math.allclose(math.sinh(S_12.parameters.r.value) ** 2, 1, atol=1e-2)

@@ -25,8 +25,6 @@ import jax
 import jax.numpy as jnp
 import jax.scipy as jsp
 import numpy as np
-import optax
-from opt_einsum import contract
 from platformdirs import user_cache_dir
 
 from mrmustard.lab import Circuit, CircuitComponent
@@ -135,10 +133,6 @@ class BackendJax(BackendBase):
     def prod(self, x: jnp.ndarray, axis: int | None):
         return jnp.prod(x, axis=axis)
 
-    @jax.jit
-    def assign(self, tensor: jnp.ndarray, value: jnp.ndarray) -> jnp.ndarray:
-        return value
-
     def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.asarray(array, dtype=dtype)
 
@@ -181,23 +175,9 @@ class BackendJax(BackendBase):
     def pow(self, x: jnp.ndarray, y: float) -> jnp.ndarray:
         return jnp.power(x, y)
 
-    def new_variable(
-        self,
-        value: jnp.ndarray,
-        bounds: tuple[float | None, float | None] | None,
-        name: str,
-        dtype="float64",
-    ):
-        return jnp.array(value, dtype=dtype)
-
     @jax.jit
     def outer(self, array1: jnp.ndarray, array2: jnp.ndarray) -> jnp.ndarray:
         return self.tensordot(array1, array2, [[], []])
-
-    @partial(jax.jit, static_argnames=["name", "dtype"])
-    def new_constant(self, value, name: str, dtype=None):
-        dtype = dtype or self.float64
-        return self.astensor(value, dtype)
 
     def tile(self, array: jnp.ndarray, repeats: Sequence[int]) -> jnp.ndarray:
         return jnp.tile(array, repeats)
@@ -244,9 +224,6 @@ class BackendJax(BackendBase):
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
         return jnp.diag(array, k=k)
 
-    def einsum(self, string: str, *tensors, optimize: bool | str) -> jnp.ndarray:
-        return contract(string, *tensors, optimize=optimize, backend="jax")
-
     @jax.jit
     def exp(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.exp(array)
@@ -271,9 +248,6 @@ class BackendJax(BackendBase):
     def equal(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.equal(a, b)
 
-    def from_backend(self, value) -> bool:
-        return isinstance(value, jnp.ndarray)
-
     @partial(jax.jit, static_argnames=["axis"])
     def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: int = 0) -> jnp.ndarray:
         return jnp.take(array, indices, axis=axis)
@@ -294,9 +268,6 @@ class BackendJax(BackendBase):
 
     def issubdtype(self, arg1, arg2) -> bool:
         return jnp.issubdtype(arg1, arg2)
-
-    def is_trainable(self, tensor: jnp.ndarray) -> bool:
-        return False
 
     @jax.jit
     def lgamma(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -468,9 +439,6 @@ class BackendJax(BackendBase):
         if dtype is None:
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
-
-    def DefaultEuclideanOptimizer(self):
-        return optax.inject_hyperparams(optax.adamw)
 
     @jax.jit
     def reorder_AB_bargmann(

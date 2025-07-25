@@ -110,7 +110,7 @@ Features
 
 ..
 
-* Plug-and-play backends (``numpy``, ``tensorflow``, ``jax``)
+* Plug-and-play backends (``numpy``, ``jax``)
 
 .. toctree::
    :maxdepth: 1
