@@ -23,16 +23,20 @@ import jax.numpy as jnp
 import numpy as np
 
 from ..lattice import strategies
+from ..lattice.strategies.compactFock.inputValidation import (
+    hermite_multidimensional_diagonal,
+)
 
 __all__ = [
     "hermite_renormalized_batched_jax",
     "hermite_renormalized_binomial_jax",
+    "hermite_renormalized_diagonal_reorderedAB_jax",
     "hermite_renormalized_unbatched_jax",
 ]
 
-# ~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # hermite_renormalized_unbatched
-# ~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 @partial(jax.custom_vjp, nondiff_argnums=(3, 4))
@@ -99,9 +103,9 @@ hermite_renormalized_unbatched_jax.defvjp(
 )
 
 
-# ~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # hermite_renormalized_batched
-# ~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 @partial(jax.custom_vjp, nondiff_argnums=(3, 4))
@@ -167,9 +171,9 @@ hermite_renormalized_batched_jax.defvjp(
 )
 
 
-# ~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # hermite_renormalized_binomial
-# ~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 @partial(jax.custom_vjp, nondiff_argnums=(3, 4, 5))
@@ -234,3 +238,78 @@ hermite_renormalized_binomial_jax.defvjp(
     hermite_renormalized_binomial_jax_fwd,
     hermite_renormalized_binomial_jax_bwd,
 )
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# hermite_renormalized_diagonal_reorderedAB
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# @partial(jax.custom_vjp, nondiff_argnums=(3,))
+@partial(jax.jit, static_argnums=(3,))
+def hermite_renormalized_diagonal_reorderedAB_jax(
+    A: jnp.ndarray,
+    B: jnp.ndarray,
+    C: jnp.ndarray,
+    cutoffs: tuple[int],
+) -> jnp.ndarray:
+    r"""
+    The jax custom gradient for hermite_renormalized_diagonal_reorderedAB.
+    """
+    function = partial(hermite_multidimensional_diagonal, cutoffs=tuple(cutoffs))
+    poly0, poly2, poly1010, poly1001, poly1 = jax.pure_callback(
+        lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C)),
+        jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
+        jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
+        jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
+        jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
+        jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
+        A,
+        B,
+        C,
+    )
+    return poly0
+
+
+def hermite_renormalized_diagonal_reorderedAB_jax_fwd(A, b, c, shape):
+    r"""
+    The jax forward pass for hermite_renormalized_diagonal_reorderedAB.
+    """
+    G = hermite_renormalized_diagonal_reorderedAB_jax(A, b, c, shape)
+    return (G, (G, A, b, c))
+
+
+# def hermite_renormalized_diagonal_reorderedAB_jax_bwd(shape, res, g):
+#     r"""
+#     The jax backward pass for hermite_renormalized_diagonal_reorderedAB.
+#     """
+#     G, A, b, c = res
+#     dpoly_dC, dpoly_dA, dpoly_dB = jax.pure_callback(
+#         lambda G, c, g: grad_hermite_multidimensional_diagonal(np.array(G), np.array(c), np.array(g)),
+#         (
+#             jax.ShapeDtypeStruct(A.shape, jnp.complex128),
+#             jax.ShapeDtypeStruct(b.shape, jnp.complex128),
+#             jax.ShapeDtypeStruct(c.shape, jnp.complex128),
+#         ),
+#         G,
+#         c,
+#         g,
+#     )
+#     ax = tuple(range(g.ndim))
+#     dLdA = self.sum(g[..., None, None] * self.conj(dpoly_dA), axis=ax)
+#     dLdB = self.sum(g[..., None] * self.conj(dpoly_dB), axis=ax)
+#     dLdC = self.sum(g * self.conj(dpoly_dC), axis=ax)
+#     return dLdA, dLdB, dLdC
+
+# def grad(dLdpoly):
+#     dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+#         grad_hermite_multidimensional_diagonal,
+#         [A, B, C.item(), poly0, poly2, poly1010, poly1001, poly1],
+#         [poly0.dtype] * 3,
+#     )
+
+
+# hermite_renormalized_diagonal_reorderedAB_jax.defvjp(
+#     hermite_renormalized_diagonal_reorderedAB_jax_fwd,
+#     hermite_renormalized_diagonal_reorderedAB_jax_bwd,
+# )
