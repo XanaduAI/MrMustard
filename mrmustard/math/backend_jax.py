@@ -242,19 +242,7 @@ class BackendJax(BackendBase):
         return jnp.diagonal(array, offset=offset, axis1=axis1, axis2=axis2)
 
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
-        if array.ndim in [1, 2]:
-            return jnp.diag(array, k=k)
-        # fallback into more complex algorithm
-        original_sh = jnp.asarray(array.shape)
-
-        ravelled_sh = (jnp.prod(original_sh[:-1]), original_sh[-1])
-        array = array.ravel().reshape(*ravelled_sh)
-        ret = jnp.asarray([jnp.diag(line, k) for line in array])
-        inner_shape = (
-            original_sh[-1] + abs(k),
-            original_sh[-1] + abs(k),
-        )
-        return ret.reshape(tuple(original_sh[:-1]) + tuple(inner_shape))
+        return jnp.diag(array, k=k)
 
     def einsum(self, string: str, *tensors, optimize: bool | str) -> jnp.ndarray:
         return contract(string, *tensors, optimize=optimize, backend="jax")

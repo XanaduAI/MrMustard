@@ -134,20 +134,7 @@ class BackendNumpy(BackendBase):
         return np.diagonal(array, offset=offset, axis1=axis1, axis2=axis2)
 
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
-        if array.ndim in (1, 2):
-            return np.diag(array, k=k)
-        # fallback into more complex algorithm
-        original_sh = array.shape
-
-        ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
-        array = array.ravel().reshape(*ravelled_sh)
-
-        ret = np.asarray([np.diag(line, k) for line in array])
-        inner_shape = (
-            original_sh[-1] + abs(k),
-            original_sh[-1] + abs(k),
-        )
-        return ret.reshape(original_sh[:-1] + inner_shape)
+        return np.diag(array, k=k)
 
     def einsum(self, string: str, *tensors, optimize: bool | str) -> np.ndarray:
         return contract(string, *tensors, optimize=optimize, backend="numpy")
