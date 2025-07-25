@@ -522,7 +522,7 @@ class BackendJax(BackendBase):
         C: jnp.ndarray,
         cutoffs: tuple[int],
     ) -> jnp.ndarray:
-        return hermite_renormalized_diagonal_reorderedAB_jax(A, B, C, cutoffs)
+        return hermite_renormalized_diagonal_reorderedAB_jax(A, B, C, cutoffs)[0]
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_batch(
