@@ -7,12 +7,11 @@
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
 [![Numpy tests](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_numpy.yml/badge.svg?branch=main)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_numpy.yml)
 [![Jax tests](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_jax.yml/badge.svg?branch=main)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_jax.yml)
-[![Tensorflow tests](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_tensorflow.yml/badge.svg?branch=main)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_tensorflow.yml)
 [![Python version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FXanaduAI%2FMrMustard%2Fmain%2Fpyproject.toml)](https://pypi.org/project/MrMustard/)
 
 # Mr Mustard: Your Universal Differentiable Toolkit for Quantum Optics
 
-Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` (default), `tensorflow`, `jax`).
+Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` (default) and `jax`).
 
 ## Installation
 
@@ -91,7 +90,7 @@ both_modes.fock_array(shape=(100, 4))[:,3]
 
 - Contract components in any order
 - Linear superpositions of compatible objects
-- Plug-and-play backends (`numpy`, `tensorflow`, `jax`)
+- Plug-and-play backends (`numpy`, `jax`)
 
 ## Available Components
 
@@ -139,7 +138,7 @@ Transform any simulation into an optimization by marking parameters as trainable
 from mrmustard import math
 from mrmustard.lab.states import DisplacedSqueezed
 from mrmustard.lab.transformations import Dgate, Ggate
-from mrmustard.training import OptimizerJax
+from mrmustard.training import Optimizer
 
 math.change_backend("jax")
 
@@ -180,10 +179,6 @@ import mrmustard.math as math
 # Default numpy backend
 math.cos(0.1)  # numpy
 
-# Switch to tensorflow
-math.change_backend("tensorflow")
-math.cos(0.1)  # tensorflow
-
 # Switch to jax
 math.change_backend("jax")
 math.cos(0.1)  # jax
@@ -201,7 +196,7 @@ Contains the core quantum optics functionality, including the `Ansatz` class res
 
 ### The `math` Module
 
-The backbone providing plug-and-play backend support. Acts as a drop-in replacement for `numpy`, `tensorflow`, or `jax`.
+The backbone providing plug-and-play backend support. Acts as a drop-in replacement for `numpy` or `jax`.
 
 ## Getting Started
 

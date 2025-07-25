@@ -60,7 +60,7 @@ def input_validation(A, rtol=1e-05, atol=1e-08):
 
 def hermite_multidimensional_diagonal(A, B, G0, cutoffs, rtol=1e-05, atol=1e-08):
     """
-    Validation of user input for mrmustard.math.backend_tensorflow.hermite_renormalized_diagonal
+    Validation of user input for mrmustard.math.hermite_renormalized_diagonal
     """
     input_validation(A, atol=atol, rtol=rtol)
     if A.shape[0] != B.shape[0]:
@@ -77,7 +77,7 @@ def hermite_multidimensional_diagonal(A, B, G0, cutoffs, rtol=1e-05, atol=1e-08)
 
 def grad_hermite_multidimensional_diagonal(A, B, G0, arr0, arr2, arr1010, arr1001, arr1):
     """
-    Validation of user input for gradients of mrmustard.math.backend_tensorflow.hermite_renormalized_diagonal
+    Validation of user input for gradients of mrmustard.math.hermite_renormalized_diagonal
     """
     if A.shape[0] != B.shape[0]:
         raise ValueError("The matrix A and vector B have incompatible dimensions")
@@ -98,7 +98,7 @@ def grad_hermite_multidimensional_diagonal(A, B, G0, arr0, arr2, arr1010, arr100
 
 def hermite_multidimensional_1leftoverMode(A, B, G0, cutoffs, rtol=1e-05, atol=1e-08):
     """
-    Validation of user input for mrmustard.math.backend_tensorflow.hermite_renormalized_1leftoverMode
+    Validation of user input for mrmustard.math.hermite_renormalized_1leftoverMode
     """
     input_validation(A, atol=atol, rtol=rtol)
     if A.shape[0] != B.shape[0]:
@@ -117,7 +117,7 @@ def hermite_multidimensional_1leftoverMode(A, B, G0, cutoffs, rtol=1e-05, atol=1
 
 def grad_hermite_multidimensional_1leftoverMode(A, B, G0, arr0, arr2, arr1010, arr1001, arr1):
     """
-    Validation of user input for gradients of mrmustard.math.backend_tensorflow.hermite_renormalized_1leftoverMode
+    Validation of user input for gradients of mrmustard.math.hermite_renormalized_1leftoverMode
     """
     if A.shape[0] != B.shape[0]:
         raise ValueError("The matrix A and vector B have incompatible dimensions")
@@ -140,7 +140,7 @@ def grad_hermite_multidimensional_1leftoverMode(A, B, G0, arr0, arr2, arr1010, a
 
 def hermite_multidimensional_diagonal_batch(A, B, G0, cutoffs, rtol=1e-05, atol=1e-08):
     """
-    Validation of user input for mrmustard.math.backend_tensorflow.hermite_renormalized_diagonal_batch
+    Validation of user input for mrmustard.math.hermite_renormalized_diagonal_batch
     """
     input_validation(A, atol=atol, rtol=rtol)
     if len(B.shape) != 2:

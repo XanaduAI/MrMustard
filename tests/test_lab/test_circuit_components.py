@@ -26,7 +26,6 @@ from mrmustard.lab import (
     Attenuator,
     BSgate,
     Channel,
-    Circuit,
     CircuitComponent,
     Coherent,
     Dgate,
@@ -46,7 +45,6 @@ from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.triples import displacement_gate_Abc, identity_Abc
 from mrmustard.physics.wires import Wires
-from mrmustard.training import Optimizer
 
 from ..random import Abc_triple
 
@@ -655,26 +653,3 @@ class TestCircuitComponent:
             match="MyComponent does not seem to have any wires construction method",
         ):
             cc._serialize()
-
-    def test_hermite_renormalized_with_custom_shape(self):
-        """Test hermite_renormalized with a custom non-zero shape"""
-
-        S = SqueezedVacuum(0, r=1.0, phi=0, r_trainable=True, phi_trainable=True)
-
-        # made up, means nothing
-        def cost():
-            ket = S.fock_array(shape=[3])
-            return -math.real(ket[2])
-
-        circuit = Circuit([S])
-
-        opt = Optimizer()
-
-        if math.backend_name == "tensorflow":
-            assert opt.minimize(cost, by_optimizing=[circuit], max_steps=5) is None
-        else:
-            with pytest.raises(
-                NotImplementedError,
-                match="not implemented for backend ``(numpy|jax)``",
-            ):
-                opt.minimize(cost, by_optimizing=[circuit], max_steps=5)

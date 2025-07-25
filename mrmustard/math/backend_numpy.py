@@ -20,7 +20,6 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 import numpy as np
-from opt_einsum import contract
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import loggamma as scipy_loggamma
@@ -81,9 +80,6 @@ class BackendNumpy(BackendBase):
 
     def asnumpy(self, tensor: np.ndarray) -> np.ndarray:
         return np.asarray(tensor)
-
-    def assign(self, tensor: np.ndarray, value: np.ndarray) -> np.ndarray:
-        return value
 
     def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
         return np.asarray(array, dtype=dtype)
@@ -149,9 +145,6 @@ class BackendNumpy(BackendBase):
         ret.flags.writeable = True
         return ret
 
-    def einsum(self, string: str, *tensors, optimize: bool | str) -> np.ndarray:
-        return contract(string, *tensors, optimize=optimize, backend="numpy")
-
     def exp(self, array: np.ndarray) -> np.ndarray:
         return np.exp(array)
 
@@ -170,9 +163,6 @@ class BackendNumpy(BackendBase):
     def equal(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.equal(a, b)
 
-    def from_backend(self, value) -> bool:
-        return isinstance(value, np.ndarray)
-
     def gather(self, array: np.ndarray, indices: np.ndarray, axis: int = 0) -> np.ndarray:
         return np.take(array, indices, axis=axis)
 
@@ -190,9 +180,6 @@ class BackendNumpy(BackendBase):
 
     def issubdtype(self, arg1, arg2) -> bool:
         return np.issubdtype(arg1, arg2)
-
-    def is_trainable(self, tensor: np.ndarray) -> bool:
-        return False
 
     def lgamma(self, x: np.ndarray) -> np.ndarray:
         return scipy_loggamma(x)
@@ -231,18 +218,6 @@ class BackendNumpy(BackendBase):
         new: int | Sequence[int],
     ) -> np.ndarray:
         return np.moveaxis(array, old, new)
-
-    def new_variable(
-        self,
-        value,
-        bounds: tuple[float | None, float | None] | None,
-        name: str,
-        dtype=np.float64,
-    ):
-        return np.array(value, dtype=dtype)
-
-    def new_constant(self, value, name: str, dtype=np.float64):
-        return np.asarray(value, dtype=dtype)
 
     def norm(self, array: np.ndarray) -> np.ndarray:
         return np.linalg.norm(array)
@@ -394,10 +369,6 @@ class BackendNumpy(BackendBase):
         if dtype is None:
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
-
-    @staticmethod
-    def DefaultEuclideanOptimizer() -> None:
-        return None
 
     def hermite_renormalized_unbatched(
         self,

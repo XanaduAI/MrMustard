@@ -19,7 +19,6 @@ The class representing an Interferometer gate.
 from __future__ import annotations
 
 from mrmustard import math
-from mrmustard.math.parameters import update_unitary
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexMatrix
@@ -72,7 +71,7 @@ class Interferometer(Unitary):
             )
         super().__init__(name="Interferometer")
         self.parameters.add_parameter(
-            make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary),
+            make_parameter(unitary_trainable, unitary, "unitary", (None, None), "update_unitary"),
         )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=lambda uni: Unitary.from_symplectic(

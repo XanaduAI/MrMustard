@@ -786,9 +786,7 @@ class PolyExpAnsatz(Ansatz):
         z_batch_idxs = tuple(range(self.batch_dims, self.batch_dims + len(z_batch_shape)))
         z = math.transpose(
             math.broadcast_to(z, self.batch_shape + z.shape),
-            z_batch_idxs
-            + ansatz_batch_idxs
-            + (len(z_batch_idxs + ansatz_batch_idxs),),  # tensorflow
+            z_batch_idxs + ansatz_batch_idxs + (len(z_batch_idxs + ansatz_batch_idxs),),
         )
 
         A = math.broadcast_to(self.A, z_batch_shape + self.A.shape)
@@ -954,9 +952,7 @@ class PolyExpAnsatz(Ansatz):
         z_batch_idxs = tuple(range(self.batch_dims, self.batch_dims + len(z_batch_shape)))
         z = math.transpose(
             math.broadcast_to(z, self.batch_shape + z.shape),
-            z_batch_idxs
-            + ansatz_batch_idxs
-            + (len(z_batch_idxs + ansatz_batch_idxs),),  # tensorflow
+            z_batch_idxs + ansatz_batch_idxs + (len(z_batch_idxs + ansatz_batch_idxs),),
         )
 
         A = math.broadcast_to(self.A, z_batch_shape + self.A.shape)
