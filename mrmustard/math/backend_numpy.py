@@ -149,11 +149,6 @@ class BackendNumpy(BackendBase):
         )
         return ret.reshape(original_sh[:-1] + inner_shape)
 
-    def diag_part(self, array: np.ndarray, k: int) -> np.ndarray:
-        ret = np.diagonal(array, offset=k, axis1=-2, axis2=-1)
-        ret.flags.writeable = True
-        return ret
-
     def einsum(self, string: str, *tensors, optimize: bool | str) -> np.ndarray:
         return contract(string, *tensors, optimize=optimize, backend="numpy")
 

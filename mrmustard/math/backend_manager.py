@@ -529,7 +529,7 @@ class BackendManager:
         Returns:
             The array of the main diagonal of ``array``.
         """
-        return self._apply("diag_part", (array, k))
+        return self.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
     def eigvals(self, tensor: Tensor) -> Tensor:
         r"""The eigenvalues of a tensor.

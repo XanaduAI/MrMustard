@@ -164,9 +164,6 @@ class BackendTensorflow(BackendBase):
     def diag(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag(array, k=k)
 
-    def diag_part(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
-        return tf.linalg.diag_part(array, k=k)
-
     @Autocast()
     def einsum(self, string: str, *tensors, optimize: str | bool) -> tf.Tensor:
         return contract(string, *tensors, optimize=optimize, backend="tensorflow")

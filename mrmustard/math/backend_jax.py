@@ -256,10 +256,6 @@ class BackendJax(BackendBase):
         )
         return ret.reshape(tuple(original_sh[:-1]) + tuple(inner_shape))
 
-    @partial(jax.jit, static_argnames=["k"])
-    def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
-        return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
-
     def einsum(self, string: str, *tensors, optimize: bool | str) -> jnp.ndarray:
         return contract(string, *tensors, optimize=optimize, backend="jax")
 
