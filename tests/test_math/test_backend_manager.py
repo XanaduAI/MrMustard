@@ -18,7 +18,6 @@ Unit tests for the :class:`BackendManager`.
 
 import numpy as np
 import pytest
-import tensorflow as tf
 from jax import numpy as jnp
 from jax.errors import TracerArrayConversionError
 from scipy.special import loggamma as scipy_loggamma
@@ -54,7 +53,6 @@ class TestBackendManager:
         Tests the ``get_backend`` method.
         """
         assert math.get_backend("numpy").name == "numpy"
-        assert math.get_backend("tensorflow").name == "tensorflow"
         assert math.get_backend("jax").name == "jax"
 
     def test_einsum(self):
@@ -65,7 +63,7 @@ class TestBackendManager:
         res = math.astensor([[7, 10], [15, 22]])
 
         assert math.allclose(math.einsum("ij,jk->ik", ar, ar), res)
-        assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="tensorflow"), res)
+        assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="jax"), res)
 
     def test_error(self):
         r"""
@@ -159,15 +157,6 @@ class TestBackendManager:
         res = math.asnumpy(arr)
         assert math.allclose(res, np.array(l))
 
-    def test_assign(self):
-        r"""
-        Tests the ``assign`` method.
-        """
-        arr = math.new_variable(np.eye(3), (None, None), "")
-        value = math.astensor(2 * np.eye(3))
-        arr = math.asnumpy(math.assign(arr, value))
-        assert math.allclose(arr, value)
-
     @pytest.mark.parametrize("t", types)
     @pytest.mark.parametrize("l", [l1, l3])
     def test_astensor(self, t, l):
@@ -180,9 +169,8 @@ class TestBackendManager:
 
         if math.backend_name == "numpy":
             assert math.allclose(res, arr.astype(dtype or np.float64))
-        else:
-            exp = tf.convert_to_tensor(arr, dtype=dtype or tf.float64)
-            exp = exp.numpy()
+        elif math.backend_name == "jax":
+            exp = jnp.array(arr, dtype=dtype or jnp.float64)
             assert math.allclose(res, exp)
 
     @pytest.mark.parametrize("t", types)
@@ -385,22 +373,15 @@ class TestBackendManager:
         exp = np.eye(3)
         assert math.allclose(res, exp)
 
-    def test_from_backend(self):
+    def test_equal(self):
         r"""
-        Tests the ``expm`` method.
+        Tests the ``equal`` method.
         """
-        v1 = [1, 2]
-        assert not math.from_backend(v1)
-
-        v2 = np.array(v1)
-        v3 = tf.constant(v1)
-        v4 = jnp.array(v1)
-        if math.backend_name == "numpy":
-            assert math.from_backend(v2) and not math.from_backend(v3) and not math.from_backend(v4)
-        elif math.backend_name == "tensorflow":
-            assert math.from_backend(v3) and not math.from_backend(v2) and not math.from_backend(v4)
-        elif math.backend_name == "jax":
-            assert math.from_backend(v4) and not math.from_backend(v2) and not math.from_backend(v3)
+        arr1 = math.astensor([1, 2, 3])
+        arr2 = math.astensor([1, 2, 3])
+        arr3 = math.astensor([1, 2, 4])
+        assert math.all(math.equal(arr1, arr2))
+        assert not math.all(math.equal(arr1, arr3))
 
     def test_gather(self):
         r"""
@@ -433,6 +414,14 @@ class TestBackendManager:
         inv = math.inv(arr)
         assert math.allclose(math.asnumpy(arr @ inv), np.eye(2))
 
+    def test_iscomplexobj(self):
+        r"""
+        Tests the ``iscomplexobj`` method.
+        """
+        assert math.iscomplexobj(1 + 2j)
+        assert not math.iscomplexobj(1)
+        assert not math.iscomplexobj(np.array([1, 2, 3]))
+
     def test_isnan(self):
         r"""
         Tests the ``isnan`` method.
@@ -443,20 +432,13 @@ class TestBackendManager:
         arr_nan = np.array([1.0, 2.0, np.nan, 4.0])
         assert math.any(math.isnan(arr_nan))
 
-    def test_is_trainable(self):
+    def test_issubdtype(self):
         r"""
-        Tests the ``is_trainable`` method.
+        Tests the ``issubdtype`` method.
         """
-        arr1 = np.array([1, 2])
-        arr2 = tf.constant(arr1)
-        arr3 = tf.Variable(arr1)
-        arr4 = jnp.array(arr1)
-
-        assert not math.is_trainable(arr1)
-        assert not math.is_trainable(arr2)
-        assert math.is_trainable(arr3) is (math.backend_name == "tensorflow")
-        if math.backend_name == "jax":
-            assert not math.is_trainable(arr4)
+        ints = np.array([1, 2, 3], dtype=np.int32)
+        assert math.issubdtype(ints.dtype, np.integer)
+        assert not math.issubdtype(ints.dtype, np.floating)
 
     def test_lgamma(self):
         r"""
@@ -480,6 +462,16 @@ class TestBackendManager:
         i = 2.0
         assert math.asnumpy(math.make_complex(r, i)) == r + i * 1j
 
+    def test_mod(self):
+        r"""
+        Tests the ``mod`` method.
+        """
+        arr1 = math.astensor([1, 2, 3, 4, 5])
+        arr2 = 2 * math.ones_like(arr1)
+        exp = math.astensor([1, 0, 1, 0, 1])
+        assert math.allclose(math.mod(arr1, arr1), math.zeros_like(arr1))
+        assert math.allclose(math.mod(arr1, arr2), exp)
+
     def test_moveaxis(self):
         r"""
         Tests the ``moveaxis`` method.
@@ -492,6 +484,13 @@ class TestBackendManager:
         arr1_moved1 = math.moveaxis(arr1, 0, 1)
         arr1_moved2 = math.moveaxis(arr1_moved1, 1, 0)
         assert math.allclose(arr1, arr1_moved2)
+
+    def test_max(self):
+        r"""
+        Tests the ``max`` method.
+        """
+        arr = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        assert math.allclose(math.max(arr), 5.0)
 
     def test_maximum(self):
         r"""
@@ -510,44 +509,6 @@ class TestBackendManager:
         arr2 = 2 * np.eye(3)
         res = math.asnumpy(math.minimum(arr1, arr2))
         assert math.allclose(res, arr1)
-
-    @pytest.mark.parametrize("t", types)
-    def test_new_variable(self, t):
-        r"""
-        Tests the ``new_variable`` method.
-        """
-        dtype = getattr(math, t, None)
-        arr = np.eye(3)
-        res = math.new_variable(arr, (0, 1), "my_var", dtype)
-
-        if math.backend_name == "numpy":
-            assert math.allclose(res, arr)
-            assert not hasattr(res, "name")
-            assert res.dtype == dtype
-        elif math.backend_name == "tensorflow":
-            assert isinstance(res, tf.Variable)
-            assert math.allclose(math.asnumpy(res), arr)
-            assert res.dtype == dtype or math.float64
-        elif math.backend_name == "jax":
-            assert isinstance(res, jnp.ndarray)
-            assert math.allclose(res, arr)
-            assert res.dtype == dtype or math.float64
-
-    @pytest.mark.parametrize("t", types)
-    def test_new_constant(self, t):
-        r"""
-        Tests the ``new_constant`` method.
-        """
-        dtype = getattr(math, t, None)
-        arr = np.eye(3)
-        res = math.new_constant(arr, "my_const", dtype)
-
-        if math.backend_name == "numpy":
-            assert math.allclose(res, arr)
-            assert not hasattr(res, "name")
-            assert res.dtype == dtype
-        else:
-            assert math.allclose(math.asnumpy(res), arr)
 
     def test_ones(self):
         r"""

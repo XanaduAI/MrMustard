@@ -21,9 +21,9 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from functools import lru_cache
 
+import jax
 import numpy as np
 from scipy.special import comb, factorial
-from tensorflow.python.framework.errors_impl import InvalidArgumentError
 
 from mrmustard import math, settings
 from mrmustard.math.caching import tensor_int_cache
@@ -34,47 +34,35 @@ from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = None) -> Tensor:
+def fock_state(n: int | Sequence[int], cutoff: int | None = None) -> Tensor:
     r"""
-    The Fock array of a tensor product of one-mode ``Number`` states.
+    The Fock array of a batchable single-mode ``Number`` state.
 
     Args:
-        n: The photon numbers of the number states.
-        cutoffs: The cutoffs of the arrays for the number states. If it is given as
-            an ``int``, it is broadcasted to all the states. If ``None``, it
-            defaults to ``[n1+1, n2+1, ...]``, where ``ni`` is the photon number
-            of the `i`-th mode.
+        n: The photon number of the number state. Can be a single integer or a batch of integers.
+        cutoff: The cutoff of the Fock array. This acts as the core dimension of the returned array.
+            If ``None``, it defaults to ``math.max(n)+1``.
 
     Returns:
-        The Fock array of a tensor product of one-mode ``Number`` states.
+        The Fock array of a batchable single-mode ``Number`` state.
 
     Raises:
-        ValueError: If the number of cutoffs does not match the number of photon numbers.
         ValueError: If the photon numbers are larger than the corresponding cutoffs.
     """
-    # TODO: using math.atleast gives a traced array when using the jax backend and jit compiling
-    # this is a workaround to avoid the traced array
-    n = np.array(n, ndmin=1)
+    n = math.astensor(n, dtype=math.int64)
+    if cutoff is None:
+        cutoff = int(math.max(n) + 1)
 
-    if cutoffs is None:
-        cutoffs = list(n)
-    elif isinstance(cutoffs, int):
-        cutoffs = [cutoffs] * len(n)
+    def check_photon_numbers(n, cutoff):
+        if math.any(n >= cutoff):
+            raise ValueError("Photon numbers cannot be larger than the corresponding cutoff.")
+
+    if math.backend_name == "jax":  # pragma: no cover
+        jax.debug.callback(check_photon_numbers, n, cutoff)
     else:
-        cutoffs = np.array(cutoffs, ndmin=1)
+        check_photon_numbers(n, cutoff)
 
-    if len(cutoffs) != len(n):
-        msg = f"Expected ``len(cutoffs)={len(n)}`` but found ``{len(cutoffs)}``."
-        raise ValueError(msg)
-
-    shape = tuple(c + 1 for c in cutoffs)
-    array = math.zeros(shape, dtype=math.complex64)
-    try:
-        array = math.update_tensor(array, tuple(n), 1)
-    except (IndexError, InvalidArgumentError) as e:
-        msg = "Photon numbers cannot be larger than the corresponding cutoffs."
-        raise ValueError(msg) from e
-    return array
+    return math.eye(cutoff)[n]
 
 
 def fidelity(dm_a, dm_b) -> Scalar:
@@ -272,7 +260,7 @@ def quadrature_distribution(
     """
     cutoff = state.shape[0]
     if x is None:
-        x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+        x = np.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
 
     dims = len(state.shape)
     is_dm = dims == 2

@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import numbers
 from collections.abc import Sequence
-from functools import cached_property
 from inspect import signature
 from pydoc import locate
 from typing import Any
@@ -33,6 +32,7 @@ from numpy.typing import ArrayLike
 from mrmustard import math, settings
 from mrmustard import widgets as mmwidgets
 from mrmustard.math.parameter_set import ParameterSet
+from mrmustard.math.parameters import Variable
 from mrmustard.physics.ansatz import Ansatz, ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.fock_utils import oscillator_eigenstate
 from mrmustard.physics.triples import identity_Abc
@@ -74,6 +74,11 @@ class CircuitComponent:
         self._name = name
         self._parameters = ParameterSet()
         self._wires = wires or Wires(set(), set(), set(), set())
+
+        if isinstance(ansatz, ArrayAnsatz):
+            for w in self.wires.quantum:
+                w.repr = ReprEnum.FOCK
+                w.fock_cutoff = ansatz.core_shape[w.index]
 
     @property
     def adjoint(self) -> CircuitComponent:
@@ -129,24 +134,24 @@ class CircuitComponent:
             ret.parameters.add_parameter(param)
         return ret
 
-    @cached_property
-    def manual_shape(self) -> list[int | None]:
+    @property
+    def manual_shape(self) -> tuple[int | None]:
         r"""
         The shape of this Component in the Fock representation. If not manually set,
-        it is a list of M ``None``s where M is the number of wires of the component.
-        The manual_shape is a list and therefore it is mutable. In fact, it can evolve
-        over time as we learn more about the component or its neighbours. For
+        it is a tuple of M ``None``s where M is the number of wires of the component. For
         each wire, the entry is either an integer or ``None``. If it is an integer, it
-        is the dimension of the corresponding Fock space. If it is ``None``, it means
+        is the cutoff of the corresponding Fock space. If it is ``None``, it means
         the best shape is not known yet. ``None``s automatically become integers when
         ``auto_shape`` is called, but the integers already set are not changed.
         The order of the elements in the shape is intended the same order as the wires
-        in the `.wires` attribute.
+        in the `.sorted_wires` attribute.
         """
-        try:  # to read it from array ansatz
-            return list(self.ansatz.array.shape[self.ansatz.batch_dims :])
-        except AttributeError:  # bargmann
-            return [None] * len(self.wires)
+        return tuple(w.fock_cutoff for w in self.wires.quantum.sorted_wires)
+
+    @manual_shape.setter
+    def manual_shape(self, shape: tuple[int | None]):
+        for w, s in zip(self.wires.quantum.sorted_wires, shape):
+            w.fock_cutoff = s
 
     @property
     def modes(self) -> list[int]:
@@ -315,113 +320,11 @@ class CircuitComponent:
             ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
             ansatz = locate(ansatz_cls).from_dict(data)
             return cls._from_attributes(ansatz, Wires(*tuple(set(m) for m in wires)), name=name)
-
+        if "modes" in data:
+            data["modes"] = tuple(data["modes"])
+        elif "mode" in data:
+            data["mode"] = tuple(data["mode"])
         return cls(**data)
-
-    def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
-        r"""
-        Returns a circuit component with the quadrature representation of this component
-        in terms of A,b,c.
-
-        Args:
-            phi (float): The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            A circuit component with the given quadrature representation.
-        """
-        from .circuit_components_utils.b_to_q import BtoQ  # noqa: PLC0415
-
-        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
-        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
-        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
-        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
-
-        object_to_convert = self
-        if isinstance(self.ansatz, ArrayAnsatz):
-            object_to_convert = self.to_bargmann()
-
-        return BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
-            BtoQ_ob,
-        )
-
-    def quadrature_triple(
-        self,
-        phi: float = 0.0,
-    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        r"""
-        The quadrature representation triple A,b,c of this circuit component.
-
-        Args:
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            A,b,c triple of the quadrature representation
-        """
-        return self.to_quadrature(phi=phi).ansatz.triple
-
-    def quadrature(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
-        r"""
-        The (discretized) quadrature basis representation of the circuit component.
-        This method considers the same basis in all the wires. For more fine-grained control,
-        use the BtoQ transformation or a combination of transformations.
-
-        Args:
-            quad: discretized quadrature points to evaluate over in the
-                quadrature representation. One vector of points per wire.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
-        Returns:
-            A circuit component with the given quadrature representation.
-        """
-        if isinstance(self.ansatz, ArrayAnsatz):
-            conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
-            dims = self.ansatz.core_dims
-
-            if len(quad) != dims:
-                raise ValueError(
-                    f"The fock array has dimension {dims} whereas ``quad`` has {len(quad)}.",
-                )
-            # construct quadrature basis vectors
-            shapes = self.ansatz.core_shape
-            quad_basis_vecs = []
-            for dim in range(dims):
-                q_to_n = oscillator_eigenstate(quad[dim], shapes[dim])
-                if not math.allclose(phi, 0.0):
-                    theta = -math.arange(shapes[dim]) * phi
-                    Ur = math.make_complex(math.cos(theta), math.sin(theta))
-                    q_to_n = math.einsum("n,nq->nq", Ur, q_to_n)
-                if conjugates[dim]:
-                    q_to_n = math.conj(q_to_n)
-                quad_basis_vecs += [math.cast(q_to_n, "complex128")]
-
-            # Convert each dimension to quadrature
-            fock_string = "".join([chr(97 + self.n_modes + dim) for dim in range(dims)])
-            q_string = "".join(
-                [
-                    f"{fock_string[idx]}{chr(97 + wire.mode)},"
-                    for idx, wire in enumerate(self.wires)
-                ],
-            )[:-1]
-            out_string = "".join([chr(97 + mode) for mode in self.modes])
-            ret = math.einsum(
-                "..." + fock_string + "," + q_string + "->" + out_string + "...",
-                self.ansatz.array,
-                *quad_basis_vecs,
-                optimize=True,
-            )
-        else:
-            batch_str = (
-                "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1]
-                + "->"
-                + "".join([chr(97 + mode) for mode in self.modes])
-            )
-            ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
-        batch_shape = (
-            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
-        )
-        batch_dims = len(batch_shape)
-        size = int(math.prod(ret.shape[:-batch_dims] if batch_shape else ret.shape))
-        return math.reshape(ret, (size, *batch_shape))
 
     @classmethod
     def _from_attributes(
@@ -457,6 +360,21 @@ class CircuitComponent:
             if tp.__name__ in types:
                 return tp(ansatz=ansatz, wires=wires, name=name)
         return CircuitComponent(ansatz, wires, name)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        ret._parameters, ret._ansatz = children
+        ret._wires, ret._name = aux_data
+
+        # make sure the ansatz parameters match the parameter set
+        for param_name, param in ret.ansatz._kwargs.items():
+            if isinstance(param, Variable):
+                ret.ansatz._kwargs[param_name] = ret.parameters.all_parameters[param.name]
+            else:  # need this to build pytree of labels
+                ret.ansatz._kwargs[param_name] = param
+
+        return ret
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
@@ -519,7 +437,7 @@ class CircuitComponent:
             >>> from mrmustard.lab import Coherent, Attenuator
             >>> coh = Coherent(0, 1.0)
             >>> att = Attenuator(0, 0.5)
-            >>> assert (coh @ att).wires.input.bra  # the input bra is still uncontracted
+            >>> assert coh.contract(att).wires.input.bra  # the input bra is still uncontracted
         """
         if isinstance(other, numbers.Number | np.ndarray):
             return self * other
@@ -529,8 +447,15 @@ class CircuitComponent:
                 self_rep = self.to_bargmann()
                 other_rep = other.to_bargmann()
             else:
-                self_rep = self.to_fock()
-                other_rep = other.to_fock()
+                self_shape = list(self.auto_shape())
+                other_shape = list(other.auto_shape())
+                contracted_idxs = self.wires.contracted_indices(other.wires)
+                for idx1, idx2 in zip(*contracted_idxs):
+                    max_shape = max(self_shape[idx1], other_shape[idx2])
+                    self_shape[idx1] = max_shape
+                    other_shape[idx2] = max_shape
+                self_rep = self.to_fock(tuple(self_shape))
+                other_rep = other.to_fock(tuple(other_shape))
         else:
             self_rep = self
             other_rep = other
@@ -645,6 +570,85 @@ class CircuitComponent:
             ),
         )
 
+    def quadrature(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
+        r"""
+        The (discretized) quadrature basis representation of the circuit component.
+        This method considers the same basis in all the wires. For more fine-grained control,
+        use the BtoQ transformation or a combination of transformations.
+
+        Args:
+            quad: discretized quadrature points to evaluate over in the
+                quadrature representation. One vector of points per wire.
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A circuit component with the given quadrature representation.
+        """
+        if isinstance(self.ansatz, ArrayAnsatz):
+            conjugates = [i not in self.wires.ket.indices for i in range(len(self.wires.indices))]
+            dims = self.ansatz.core_dims
+
+            if len(quad) != dims:
+                raise ValueError(
+                    f"The fock array has dimension {dims} whereas ``quad`` has {len(quad)}.",
+                )
+            # construct quadrature basis vectors
+            shapes = self.ansatz.core_shape
+            quad_basis_vecs = []
+            for dim in range(dims):
+                q_to_n = oscillator_eigenstate(quad[dim], shapes[dim])
+                if not math.allclose(phi, 0.0):
+                    theta = -math.arange(shapes[dim]) * phi
+                    Ur = math.make_complex(math.cos(theta), math.sin(theta))
+                    q_to_n = math.einsum("n,nq->nq", Ur, q_to_n)
+                if conjugates[dim]:
+                    q_to_n = math.conj(q_to_n)
+                quad_basis_vecs += [math.cast(q_to_n, "complex128")]
+
+            # Convert each dimension to quadrature
+            fock_string = "".join([chr(97 + self.n_modes + dim) for dim in range(dims)])
+            q_string = "".join(
+                [
+                    f"{fock_string[idx]}{chr(97 + wire.mode)},"
+                    for idx, wire in enumerate(self.wires)
+                ],
+            )[:-1]
+            out_string = "".join([chr(97 + mode) for mode in self.modes])
+            ret = math.einsum(
+                "..." + fock_string + "," + q_string + "->" + out_string + "...",
+                self.ansatz.array,
+                *quad_basis_vecs,
+                optimize=True,
+            )
+        else:
+            batch_str = (
+                "".join([chr(97 + wire.mode) + "," for wire in self.wires])[:-1]
+                + "->"
+                + "".join([chr(97 + mode) for mode in self.modes])
+            )
+            ret = self.to_quadrature(phi=phi).ansatz.eval(*quad, batch_string=batch_str)
+        batch_shape = (
+            self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
+        )
+        batch_dims = len(batch_shape)
+        size = int(math.prod(ret.shape[:-batch_dims] if batch_shape else ret.shape))
+        return math.reshape(ret, (size, *batch_shape))
+
+    def quadrature_triple(
+        self,
+        phi: float = 0.0,
+    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
+        r"""
+        The quadrature representation triple A,b,c of this circuit component.
+
+        Args:
+            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A,b,c triple of the quadrature representation
+        """
+        return self.to_quadrature(phi=phi).ansatz.triple
+
     def to_bargmann(self) -> CircuitComponent:
         r"""
         Returns a new ``CircuitComponent`` in the ``Bargmann`` representation.
@@ -678,18 +682,11 @@ class CircuitComponent:
         cls = type(self)
         params = signature(cls).parameters
         if "mode" in params or "modes" in params:
-            ret = (
-                self.__class__(self.modes[0], **self.parameters.to_dict())
-                if "mode" in params
-                else self.__class__(self.modes, **self.parameters.to_dict())
-            )
+            ret = self.__class__(self.modes, **self.parameters.to_dict())
             ret._ansatz = ansatz
             ret._wires = wires
         else:
             ret = self._from_attributes(ansatz, wires, self.name)
-
-        if "manual_shape" in ret.__dict__:
-            del ret.manual_shape
         return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
@@ -725,25 +722,45 @@ class CircuitComponent:
         except AttributeError:
             fock._original_abc_data = None
         wires = self.wires.copy()
-        for w in wires.quantum_wires:
+        for w in wires.quantum:
             w.repr = ReprEnum.FOCK
+            w.fock_cutoff = fock.core_shape[w.index]
 
         cls = type(self)
         params = signature(cls).parameters
         if "mode" in params or "modes" in params:
-            ret = (
-                self.__class__(self.modes[0], **self.parameters.to_dict())
-                if "mode" in params
-                else self.__class__(self.modes, **self.parameters.to_dict())
-            )
+            ret = self.__class__(self.modes, **self.parameters.to_dict())
             ret._ansatz = fock
             ret._wires = wires
         else:
             ret = self._from_attributes(fock, wires, self.name)
-
-        if "manual_shape" in ret.__dict__:
-            del ret.manual_shape
         return ret
+
+    def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
+        r"""
+        Returns a circuit component with the quadrature representation of this component
+        in terms of A,b,c.
+
+        Args:
+            phi (float): The quadrature angle. ``phi=0`` corresponds to the x quadrature,
+                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+        Returns:
+            A circuit component with the given quadrature representation.
+        """
+        from .circuit_components_utils.b_to_q import BtoQ  # noqa: PLC0415
+
+        BtoQ_ob = BtoQ(self.wires.output.bra.modes, phi).adjoint
+        BtoQ_ib = BtoQ(self.wires.input.bra.modes, phi).adjoint.dual
+        BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
+        BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
+
+        object_to_convert = self
+        if isinstance(self.ansatz, ArrayAnsatz):
+            object_to_convert = self.to_bargmann()
+
+        return BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
+            BtoQ_ob,
+        )
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
         r"""
@@ -790,7 +807,7 @@ class CircuitComponent:
         if "modes" in params:
             serializable["modes"] = tuple(self.wires.modes)
         elif "mode" in params:
-            serializable["mode"] = next(iter(self.wires.modes))
+            serializable["mode"] = tuple(self.wires.modes)
         else:
             raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
 
@@ -802,15 +819,56 @@ class CircuitComponent:
 
         return serializable, {}
 
+    def _tree_flatten(self):  # pragma: no cover
+        children = (self.parameters, self.ansatz)
+        aux_data = (self.wires, self.name)
+        return (children, aux_data)
+
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Implements the addition between circuit components.
         """
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
+
+        if (
+            isinstance(self.ansatz, PolyExpAnsatz)
+            and self.ansatz._fn is not None
+            and self.ansatz._fn == other.ansatz._fn
+        ):
+            new_params = {}
+            for name in self.ansatz._kwargs:
+                self_param = getattr(self.parameters, name)
+                other_param = getattr(other.parameters, name)
+                if (self_type := type(self_param)) is not (other_type := type(other_param)):
+                    raise ValueError(
+                        f"Parameter '{name}' is a {self_type.__name__} for one component and a {other_type.__name__} for the other."
+                    )
+                if (self.ansatz.batch_dims - self.ansatz._lin_sup) > 0 or (
+                    other.ansatz.batch_dims - other.ansatz._lin_sup
+                ) > 0:
+                    raise ValueError("Cannot add batched components.")
+                if isinstance(self_param, Variable):
+                    if self_param.bounds != other_param.bounds:
+                        raise ValueError(
+                            f"Parameter '{name}' has bounds {self_param.bounds} and {other_param.bounds} for the two components."
+                        )
+                    new_params[name + "_trainable"] = True
+                    new_params[name + "_bounds"] = self_param.bounds
+                self_val = math.atleast_nd(self_param.value, 1)
+                other_val = math.atleast_nd(other_param.value, 1)
+                new_params[name] = math.concat((self_val, other_val), axis=0)
+            ret = self.__class__(self.modes, **new_params)
+            ret.ansatz._lin_sup = True
+            return ret
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
-        return self._from_attributes(ansatz, self.wires, name)
+        ret = self._from_attributes(ansatz, self.wires, name)
+        ret.manual_shape = tuple(
+            max(a, b) if a is not None and b is not None else a or b
+            for a, b in zip(self.manual_shape, other.manual_shape)
+        )
+        return ret
 
     def __eq__(self, other) -> bool:
         r"""

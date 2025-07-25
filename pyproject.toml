@@ -4,18 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mrmustard"
-version = "1.0.0-dev"
+version = "1.0.0a1"
 description = "Differentiable quantum Gaussian circuits"
 authors = [
     {name= "Xanadu", email= "filippo@xanadu.ai"},
 ]
-license = {text = "Apache License 2.0"}
+license = "Apache-2.0"
 readme = "README.md"
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
     "Natural Language :: English",
     "Operating System :: POSIX",
     "Operating System :: MacOS :: MacOS X",
@@ -47,11 +46,6 @@ dependencies = [
     "rich >=13.9.0, <14",
     "scipy >=1.8.0, <2",
     "semantic-version >=2.10.0, <3",
-    "tensorflow >=2.15.0, <2.19.0",
-    "tensorflow-intel>=2.15.0, <3; sys_platform == 'win32'",
-    "tensorflow-io-gcs-filesystem <0.32.0; (sys_platform == 'win32' and python_version < '3.12')",
-    "tensorflow-io-gcs-filesystem >= 0.23.1; (sys_platform != 'win32' and python_version < '3.12')",
-    "tensorflow-probability[tf] >=0.22.0,<1.0",
     "thewalrus >=0.19.0,<1",
 ]
 
@@ -83,7 +77,6 @@ interactive = [
 source = ["mrmustard"]
 omit = [
     "mrmustard/math/backend_jax.py",
-    "mrmustard/math/backend_tensorflow.py",
     "mrmustard/math/backend_numpy.py",
     "mrmustard/math/jax_vjps/*",
 ]

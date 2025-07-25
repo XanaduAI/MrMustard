@@ -24,10 +24,11 @@ from typing import Any
 
 import numpy as np
 from jax.errors import TracerArrayConversionError
+from opt_einsum import contract
 from scipy.stats import ortho_group, unitary_group
 
 from ..utils.settings import settings
-from ..utils.typing import Batch, Matrix, Tensor, Trainable, Vector
+from ..utils.typing import Batch, Matrix, Scalar, Tensor, Trainable, Vector
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
 
@@ -60,21 +61,12 @@ def lazy_import(module_name: str):
 module_name_np = "mrmustard.math.backend_numpy"
 module_np, loader_np = lazy_import(module_name_np)
 
-# lazy import for tensorflow
-module_name_tf = "mrmustard.math.backend_tensorflow"
-module_tf, loader_tf = lazy_import(module_name_tf)
-
 # lazy import for jax
 module_name_jax = "mrmustard.math.backend_jax"
 module_jax, loader_jax = lazy_import(module_name_jax)
 
 all_modules = {
     "numpy": {"module": module_np, "loader": loader_np, "object": "BackendNumpy"},
-    "tensorflow": {
-        "module": module_tf,
-        "loader": loader_tf,
-        "object": "BackendTensorflow",
-    },
     "jax": {
         "module": module_jax,
         "loader": loader_jax,
@@ -90,9 +82,6 @@ class BackendManager:
 
     # the backend in use, which is numpy by default
     _backend = BackendNumpy()
-
-    # the configured Euclidean optimizer.
-    _euclidean_opt: type | None = None
 
     def __init__(self) -> None:
         # binding types and decorators of numpy backend
@@ -167,13 +156,6 @@ class BackendManager:
         return self._backend.name
 
     @property
-    def euclidean_opt(self):
-        r"""The configured Euclidean optimizer."""
-        if not self._euclidean_opt:
-            self._euclidean_opt = self.DefaultEuclideanOptimizer()
-        return self._euclidean_opt
-
-    @property
     def BackendError(self):
         r"""
         The error class for backend specific errors.
@@ -209,8 +191,8 @@ class BackendManager:
         Raises:
             ValueError: If the backend name is not a supported one.
         """
-        if name not in ["numpy", "tensorflow", "jax"]:
-            raise ValueError("Backend must be either ``numpy`` or ``tensorflow`` or ``jax``.")
+        if name not in ["numpy", "jax"]:
+            raise ValueError("Backend must be either ``numpy`` or ``jax``.")
 
         if self.backend_name != name:
             module = all_modules[name]["module"]
@@ -330,18 +312,6 @@ class BackendManager:
             The corresponidng numpy array.
         """
         return self._apply("asnumpy", (tensor,))
-
-    def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
-        r"""Assigns value to tensor.
-
-        Args:
-            tensor: The tensor to assign to.
-            value: The value to assign.
-
-        Returns:
-            The tensor with value assigned
-        """
-        return self._apply("assign", (tensor, value))
 
     def astensor(self, array: Tensor, dtype=None):
         r"""Converts a numpy array to a tensor.
@@ -560,12 +530,7 @@ class BackendManager:
             The result of the Einstein summation convention.
         """
         optimize = optimize or settings.EINSUM_OPTIMIZE
-        return self._apply(
-            "einsum",
-            (string, *tensors),
-            {"optimize": optimize},
-            backend_name=backend,
-        )
+        return contract(string, *tensors, optimize=optimize, backend=backend)
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.
@@ -625,16 +590,18 @@ class BackendManager:
         """
         return self._apply("eye_like", (array,))
 
-    def from_backend(self, value: Any) -> bool:
-        r"""Whether the given tensor is a tensor of the concrete backend.
+    def equal(self, a: Tensor, b: Tensor) -> Tensor | Scalar:
+        r"""
+        Returns the element-wise equality of two arrays.
 
         Args:
-            value: A value.
+            a: The first array.
+            b: The second array.
 
         Returns:
-            Whether given ``value`` is a tensor of the concrete backend.
+            The element-wise equality of two arrays.
         """
-        return self._apply("from_backend", (value,))
+        return self._apply("equal", (a, b))
 
     def gather(self, array: Tensor, indices: Batch[int], axis: int | None = None) -> Tensor:
         r"""The values of the array at the given indices.
@@ -853,6 +820,18 @@ class BackendManager:
         """
         return self._apply("inv", (tensor,))
 
+    def iscomplexobj(self, x: Any) -> bool:
+        r"""
+        Whether the given object is complex.
+
+        Args:
+            x: The object to check.
+
+        Returns:
+            Whether the given array is a complex object.
+        """
+        return self._apply("iscomplexobj", (x,))
+
     def isnan(self, array: Tensor) -> Tensor:
         r"""Whether the given array contains any NaN values.
 
@@ -864,16 +843,18 @@ class BackendManager:
         """
         return self._apply("isnan", (array,))
 
-    def is_trainable(self, tensor: Tensor) -> bool:
-        r"""Whether the given tensor is trainable.
+    def issubdtype(self, arg1, arg2) -> bool:
+        r"""
+        Whether the ``arg1`` is a typecode lower/equal in type hierarchy to ``arg2``.
 
         Args:
-            tensor: The tensor to train.
+            arg1: The object to be tested
+            arg2: The object to be compared against
 
         Returns:
-            Whether the given tensor can be trained.
+            Whether arg1 is a subdtype of arg2.
         """
-        return self._apply("is_trainable", (tensor,))
+        return self._apply("issubdtype", (arg1, arg2))
 
     def lgamma(self, x: Tensor) -> Tensor:
         r"""
@@ -934,6 +915,17 @@ class BackendManager:
         """
         return self._apply("matvec", (a, b))
 
+    def max(self, array: Tensor) -> Tensor:
+        r"""The maximum value of an array.
+
+        Args:
+            array: The array to take the maximum value of.
+
+        Returns:
+            The maximum value of the array.
+        """
+        return self._apply("max", (array,))
+
     def maximum(self, a: Tensor, b: Tensor) -> Tensor:
         r"""
         The element-wise maximum of ``a`` and ``b``.
@@ -972,13 +964,28 @@ class BackendManager:
             ),
         )
 
+    def mod(self, a: Tensor, b: Tensor) -> Tensor:
+        r"""
+        Returns the element-wise remainder of division.
+
+        Args:
+            a: The dividend array.
+            b: The divisor array.
+
+        Returns:
+            The element-wise remainder of division.
+        """
+        return self._apply("mod", (a, b))
+
     def moveaxis(self, array: Tensor, old: Tensor, new: Tensor) -> Tensor:
         r"""
         Moves the axes of an array to a new position.
+
         Args:
             array: The array to move the axes of.
             old: The old index position
             new: The new index position
+
         Returns:
             The updated array
         """
@@ -990,38 +997,6 @@ class BackendManager:
                 new,
             ),
         )
-
-    def new_variable(
-        self,
-        value: Tensor,
-        bounds: tuple[float | None, float | None],
-        name: str,
-        dtype=None,
-    ) -> Tensor:
-        r"""Returns a new variable with the given value and bounds.
-
-        Args:
-            value: The value of the new variable.
-            bounds: The bounds of the new variable.
-            name: The name of the new variable.
-            dtype: dtype of the new variable. If ``None``, casts it to float.
-        Returns:
-            The new variable.
-        """
-        return self._apply("new_variable", (value, bounds, name, dtype))
-
-    def new_constant(self, value: Tensor, name: str, dtype=None) -> Tensor:
-        r"""Returns a new constant with the given value.
-
-        Args:
-            value: The value of the new constant
-            name (str): name of the new constant
-            dtype (type): dtype of the array
-
-        Returns:
-            The new constant
-        """
-        return self._apply("new_constant", (value, name, dtype))
 
     def norm(self, array: Tensor) -> Tensor:
         r"""The norm of array.
@@ -1455,10 +1430,6 @@ class BackendManager:
             Tensor: applied ``func`` on ``elements``
         """
         return self._apply("map_fn", (fn, elements))
-
-    def DefaultEuclideanOptimizer(self):
-        r"""Default optimizer for the Euclidean parameters."""
-        return self._apply("DefaultEuclideanOptimizer")
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Fock lattice strategies

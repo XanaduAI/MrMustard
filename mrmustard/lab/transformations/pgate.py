@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 
@@ -54,11 +55,12 @@ class Pgate(Unitary):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         shearing: float | Sequence[float] = 0.0,
         shearing_trainable: bool = False,
         shearing_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Pgate")
         self.parameters.add_parameter(
             make_parameter(
@@ -66,6 +68,7 @@ class Pgate(Unitary):
                 value=shearing,
                 name="shearing",
                 bounds=shearing_bounds,
+                dtype=math.float64,
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(
@@ -75,4 +78,4 @@ class Pgate(Unitary):
             ).bargmann_triple(),
             shearing=self.parameters.shearing,
         )
-        self._wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
+        self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))

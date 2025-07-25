@@ -18,8 +18,11 @@ The class representing an operation that changes Bargmann into phase space.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from mrmustard.physics import triples
 from mrmustard.physics.wires import Wires
+from mrmustard.utils.typing import ComplexTensor
 
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
@@ -91,12 +94,14 @@ class BtoChar(Map):
             modes_in_ket=set(modes),
             modes_out_ket=set(modes),
         )
-        for w in self.wires.output.wires:
+        for w in self.wires.output.sorted_wires:
             w.repr = ReprEnum.CHARACTERISTIC
-            w.repr_params_func = lambda: self.parameters.s
 
     def inverse(self):
         ret = BtoChar(self.modes, self.parameters.s)
         ret._ansatz = super().inverse().ansatz
         ret._wires = ret.wires.dual
         return ret
+
+    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
+        raise NotImplementedError(f"{self.__class__.__name__} does not have a Fock representation.")

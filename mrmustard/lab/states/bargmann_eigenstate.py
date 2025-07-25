@@ -62,25 +62,25 @@ class BargmannEigenstate(Ket):
 
     def __init__(
         self,
-        mode: int,
-        alpha: complex | Sequence[complex] = 0.0,
+        mode: int | tuple[int],
+        alpha: complex | Sequence[complex] = 0.0j,
         alpha_trainable: bool = False,
-        alpha_bounds: tuple[float | None, float | None] = (0, None),
+        alpha_bounds: tuple[complex | None, complex | None] = (None, None),
     ):
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="BargmannEigenstate")
 
         self.parameters.add_parameter(
-            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128),
-        )
-        self._representation = self.from_ansatz(
-            modes=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=triples.bargmann_eigenstate_Abc,
-                alpha=self.parameters.alpha,
+            make_parameter(
+                is_trainable=alpha_trainable,
+                value=alpha,
+                name="alpha",
+                bounds=alpha_bounds,
+                dtype=math.complex128,
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.bargmann_eigenstate_Abc,
             alpha=self.parameters.alpha,
         )
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))

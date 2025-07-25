@@ -56,9 +56,10 @@ class ArrayAnsatz(Ansatz):
     def __init__(self, array: Batch[Tensor] | None, batch_dims: int = 0):
         super().__init__()
         self._array = array
-        self._batch_dims = batch_dims
-        self._batch_shape = tuple(self._array.shape[:batch_dims]) if array is not None else ()
         self._original_abc_data = None
+        self._batch_dims = batch_dims
+        if array is not None:
+            self._batch_shape = tuple(self._array.shape[:batch_dims])
 
     @property
     def array(self) -> Batch[Tensor]:
@@ -79,6 +80,8 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def batch_shape(self) -> tuple[int, ...]:
+        if self._array is None:
+            self._generate_ansatz()
         return self._batch_shape
 
     @property
@@ -137,6 +140,20 @@ class ArrayAnsatz(Ansatz):
         ret = cls(None, batch_dims=batch_dims)
         ret._fn = fn
         ret._kwargs = kwargs
+        return ret
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        (ret._kwargs,) = children
+        (
+            ret._batch_shape,
+            ret._lin_sup,
+            ret._fn,
+            ret._array,
+            ret._original_abc_data,
+            ret._batch_dims,
+        ) = aux_data
         return ret
 
     def contract(
@@ -321,6 +338,11 @@ class ArrayAnsatz(Ansatz):
         and parameter types.
         """
         return self._array is None or Variable in {type(param) for param in self._kwargs.values()}
+
+    def _tree_flatten(self):  # pragma: no cover
+        children, aux_data = super()._tree_flatten()
+        aux_data += (self._array, self._original_abc_data, self._batch_dims)
+        return (children, aux_data)
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         r"""

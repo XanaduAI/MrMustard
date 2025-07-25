@@ -48,7 +48,7 @@ def test_real_gaussian_integral():
             ],
         ],
     )
-    b = math.cast(math.arange(3), dtype=math.complex128)  # tensorflow does not support complex
+    b = math.arange(3, dtype=math.complex128)
     c = 1.0 + 0j
     res = real_gaussian_integral((A, b, c), idx=[0, 1])
     assert math.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
@@ -74,7 +74,7 @@ def test_real_gaussian_integral():
             [-0.01297994 + 0.26050244j, 0.05696707 - 0.2351408j],
         ],
     )
-    b2 = math.cast(math.arange(2), dtype=math.complex128)  # tensorflow does not support complex
+    b2 = math.cast(math.arange(2), dtype=math.complex128)
     c2 = 1.0 + 0j
     res3 = real_gaussian_integral((A2, b2, c2), idx=[0, 1])
     assert math.allclose(res3[0], math.astensor([]))

@@ -87,6 +87,7 @@ class Coherent(Ket):
         alpha_trainable: bool = False,
         alpha_bounds: tuple[float | None, float | None] = (0, None),
     ):
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Coherent")
         self.parameters.add_parameter(
             make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128),
@@ -96,4 +97,4 @@ class Coherent(Ket):
             fn=triples.coherent_state_Abc,
             alpha=self.parameters.alpha,
         )
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))

@@ -30,7 +30,7 @@ from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.utils import outer_product_batch_str
-from mrmustard.physics.wires import ReprEnum, Wires
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
 
 from ..circuit_components import CircuitComponent
@@ -133,14 +133,11 @@ class DM(State):
         if not isinstance(modes, set) and sorted(modes) != list(modes):
             raise ValueError(f"Modes must be sorted. got {modes}")
         modes = set(modes)
-        if ansatz and ansatz.num_vars != 2 * len(modes):
+        if ansatz and ansatz.core_dims != 2 * len(modes):
             raise ValueError(
-                f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.num_vars}.",
+                f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.core_dims}.",
             )
         wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
-        if isinstance(ansatz, ArrayAnsatz):
-            for w in wires:
-                w.repr = ReprEnum.FOCK
         return DM(ansatz, wires, name=name)
 
     @classmethod

@@ -17,9 +17,9 @@
 import json
 from dataclasses import dataclass
 
+import jax
 import numpy as np
 import pytest
-import tensorflow as tf
 
 from mrmustard import __version__, math, settings
 from mrmustard.lab import (
@@ -140,24 +140,24 @@ class TestSerialize:
         ):
             save(Dummy, arrays={"val": [1]}, val=2)
 
-    @pytest.mark.requires_backend("tensorflow")
-    def test_tensorflow_support(self):
-        """Test that TensorFlow data is supported."""
+    @pytest.mark.requires_backend("jax")
+    def test_jax_support(self):
+        """Test that JAX data is supported."""
         x = math.astensor([1.1, 2.2])
         loaded = load(save(DummyOneNP, name="myname", arrays={"array": x}))
-        assert tf.is_tensor(loaded.array)
+        assert isinstance(loaded.array, jax.Array)
         assert np.array_equal(loaded.array, x)
 
-    @pytest.mark.requires_backend("tensorflow")
+    @pytest.mark.requires_backend("jax")
     def test_backend_change_error(self, monkeypatch):
         """Test that data must be deserialized with the same backend."""
         x = math.astensor([1.1, 2.2])
         path = save(DummyOneNP, name="myname", arrays={"array": x})
-        # can be thought of as restarting python and not changing to tensorflow
+        # can be thought of as restarting python and not changing to jax
         monkeypatch.setattr("mrmustard.math._backend._name", "numpy")
         with pytest.raises(
             TypeError,
-            match="Data serialized with tensorflow backend, cannot deserialize to the currently active numpy backend",
+            match="Data serialized with jax backend, cannot deserialize to the currently active numpy backend",
         ):
             load(path)
         assert sorted(settings.CACHE_DIR.glob("*")) == [path]

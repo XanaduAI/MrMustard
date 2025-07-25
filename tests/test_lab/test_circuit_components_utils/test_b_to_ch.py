@@ -32,12 +32,6 @@ class TestBtoChar:
     modes = [(0,), (1, 2), (7, 9)]
     s = [0, -1, 1]
 
-    @pytest.mark.parametrize("modes,s", zip(modes, s))
-    def test_init(self, modes, s):
-        dsmap = BtoChar(modes, s)
-        assert dsmap.name == "BtoChar"
-        assert dsmap.modes == modes
-
     def test_adjoint(self):
         btochar = BtoChar(0, 0)
         adjoint_btochar = btochar.adjoint
@@ -48,37 +42,7 @@ class TestBtoChar:
         assert adjoint_btochar.wires == btochar.wires.adjoint
         assert adjoint_btochar.parameters.s == btochar.parameters.s
 
-    def test_dual(self):
-        btochar = BtoChar(0, 0)
-        dual_btochar = btochar.dual
-
-        ok = btochar.wires.ket.output.indices
-        ik = btochar.wires.ket.input.indices
-        ib = btochar.wires.bra.input.indices
-        ob = btochar.wires.bra.output.indices
-        assert dual_btochar.ansatz == btochar.ansatz.reorder(ib + ob + ik + ok).conj
-        assert dual_btochar.wires == btochar.wires.dual
-        assert dual_btochar.parameters.s == btochar.parameters.s
-
-    def test_inverse(self):
-        btochar = BtoChar(0, 0)
-        inv_btochar = btochar.inverse()
-        assert (btochar >> inv_btochar).ansatz == (Identity(0).contract(Identity(0).adjoint)).ansatz
-
-    def test_representation(self):
-        ansatz = BtoChar(modes=0, s=0).ansatz
-        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
-        assert math.allclose(ansatz.A, A_correct)
-        assert math.allclose(ansatz.b, b_correct)
-        assert math.allclose(ansatz.c, c_correct)
-
-        ansatz2 = BtoChar(modes=(5, 10), s=1).ansatz
-        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=1, n_modes=2)
-        assert math.allclose(ansatz2.A, A_correct)
-        assert math.allclose(ansatz2.b, b_correct)
-        assert math.allclose(ansatz2.c, c_correct)
-
-    def testBtoChar_contraction_with_state(self):
+    def test_BtoChar_contraction_with_state(self):
         # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
         state_cov = np.array([[0.32210229, -0.99732956], [-0.99732956, 6.1926484]])
         state_means = np.array([0.4, 0.6])
@@ -136,3 +100,44 @@ class TestBtoChar:
 
         psi = Ket.random([0])
         assert math.allclose((psi >> BtoChar(0, 1)).ansatz(0, 0), 1.0)
+
+    def test_dual(self):
+        btochar = BtoChar(0, 0)
+        dual_btochar = btochar.dual
+
+        ok = btochar.wires.ket.output.indices
+        ik = btochar.wires.ket.input.indices
+        ib = btochar.wires.bra.input.indices
+        ob = btochar.wires.bra.output.indices
+        assert dual_btochar.ansatz == btochar.ansatz.reorder(ib + ob + ik + ok).conj
+        assert dual_btochar.wires == btochar.wires.dual
+        assert dual_btochar.parameters.s == btochar.parameters.s
+
+    def test_fock_array(self):
+        btochar = BtoChar(0, 0)
+        with pytest.raises(NotImplementedError):
+            btochar.fock_array()
+
+    @pytest.mark.parametrize("modes,s", zip(modes, s))
+    def test_init(self, modes, s):
+        dsmap = BtoChar(modes, s)
+        assert dsmap.name == "BtoChar"
+        assert dsmap.modes == modes
+
+    def test_inverse(self):
+        btochar = BtoChar(0, 0)
+        inv_btochar = btochar.inverse()
+        assert (btochar >> inv_btochar).ansatz == (Identity(0).contract(Identity(0).adjoint)).ansatz
+
+    def test_representation(self):
+        ansatz = BtoChar(modes=0, s=0).ansatz
+        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
+        assert math.allclose(ansatz.A, A_correct)
+        assert math.allclose(ansatz.b, b_correct)
+        assert math.allclose(ansatz.c, c_correct)
+
+        ansatz2 = BtoChar(modes=(5, 10), s=1).ansatz
+        A_correct, b_correct, c_correct = displacement_map_s_parametrized_Abc(s=1, n_modes=2)
+        assert math.allclose(ansatz2.A, A_correct)
+        assert math.allclose(ansatz2.b, b_correct)
+        assert math.allclose(ansatz2.c, c_correct)

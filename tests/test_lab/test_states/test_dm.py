@@ -62,15 +62,15 @@ class TestDM:
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
     def test_manual_shape(self):
-        dm = Coherent(0, 1).dm()
-        assert dm.manual_shape == [None, None]
-        dm.manual_shape[0] = 19
-        assert dm.manual_shape == [19, None]
+        dm = Coherent(0, x=1).dm()
+        assert dm.manual_shape == (None, None)
+        dm.manual_shape = (19, None)
+        assert dm.manual_shape == (19, None)
 
     def test_auto_shape(self):
         dm = Coherent(0, 1).dm()
         assert dm.auto_shape() == (8, 8)
-        dm.manual_shape[0] = 1
+        dm.manual_shape = (1, 8)
         assert dm.auto_shape() == (1, 8)
 
         dm = Coherent(0, 1).dm() >> Number(1, 10).dual

@@ -26,11 +26,11 @@ from mrmustard.lab import (
     Attenuator,
     BSgate,
     Channel,
-    Circuit,
     CircuitComponent,
     Coherent,
     Dgate,
     DisplacedSqueezed,
+    Interferometer,
     Ket,
     Map,
     Number,
@@ -45,7 +45,6 @@ from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.triples import displacement_gate_Abc, identity_Abc
 from mrmustard.physics.wires import Wires
-from mrmustard.training import Optimizer
 
 from ..random import Abc_triple
 
@@ -68,7 +67,7 @@ class TestCircuitComponent:
         assert cc.modes == (1, 8)
         assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
         assert cc.ansatz == ansatz
-        assert cc.manual_shape == [None] * 4
+        assert cc.manual_shape == (None,) * 4
 
     def test_missing_name(self):
         cc = CircuitComponent(
@@ -191,13 +190,14 @@ class TestCircuitComponent:
         assert d_fock.ansatz == ArrayAnsatz(
             math.hermite_renormalized(*displacement_gate_Abc(0.1 + 0.1j), shape=(4, 6)),
         )
-        for w in d_fock.wires.wires:
+        for w in d_fock.wires.quantum:
             assert w.repr == ReprEnum.FOCK
+            assert w.fock_cutoff == d_fock.ansatz.core_shape[w.index]
 
         d_fock_barg = d_fock.to_bargmann()
         assert d_fock.ansatz._original_abc_data == d.ansatz.triple
         assert d_fock_barg == d
-        for w in d_fock_barg.wires.wires:
+        for w in d_fock_barg.wires.quantum:
             assert w.repr == ReprEnum.BARGMANN
 
     def test_to_fock_bargmann_poly_exp(self):
@@ -223,7 +223,33 @@ class TestCircuitComponent:
         d2 = Dgate(1, alpha=0.2 + 0.2j)
 
         d12 = d1 + d2
+
+        assert isinstance(d12, Dgate)
+        assert isinstance(d12.parameters.x, Variable)
+        assert d12.parameters.x.bounds == (0, 1)
+        assert math.allclose(d12.parameters.x.value, [0.1, 0.2])
+        assert math.allclose(d12.parameters.y.value, [0.1, 0.2])
+        assert d12.ansatz._lin_sup is True
         assert d12.ansatz == d1.ansatz + d2.ansatz
+
+    def test_add_error(self):
+        d1 = Dgate(1, x=0.1, y=0.1)
+        d2 = Dgate(2, x=0.2, y=0.2)
+        d3 = Dgate(1, x=0.1, y=0.1, x_trainable=True)
+        d4 = Dgate(1, x=0.1, y=0.1, x_trainable=True, x_bounds=(0, 1))
+        d_batched = Dgate(1, x=[0.1, 0.2])
+
+        with pytest.raises(ValueError, match="different wires"):
+            d1 + d2
+
+        with pytest.raises(ValueError, match="Parameter 'x' is a"):
+            d1 + d3
+
+        with pytest.raises(ValueError, match="batched"):
+            d1 + d_batched
+
+        with pytest.raises(ValueError, match="Parameter 'x' has bounds"):
+            d3 + d4
 
     def test_sub(self):
         s1 = DisplacedSqueezed(1, alpha=1.0 + 0.5j, r=0.1)
@@ -498,6 +524,15 @@ class TestCircuitComponent:
         assert repr(c1) == "CircuitComponent(modes=(0, 1, 2), name=CC012)"
         assert repr(c2) == "CircuitComponent(modes=(0, 1, 2), name=my_component)"
 
+    def test_to_fock_shape_lookahead(self):
+        r = settings.rng.uniform(-0.5, 0.5, 3)
+        interf = Interferometer([0, 1])
+        gaussian_part = SqueezedVacuum(0, r[0]) >> SqueezedVacuum(1, r[1]) >> interf
+        gauss_auto_shape = gaussian_part.auto_shape()
+        fock_explicit_shape = gaussian_part.to_fock((gauss_auto_shape[0], 7)) >> Number(1, 6).dual
+        fock_lookahead_shape = gaussian_part >> Number(1, 6).dual
+        assert fock_lookahead_shape == fock_explicit_shape
+
     def test_to_fock_keeps_bargmann(self):
         "tests that to_fock doesn't lose the bargmann representation"
         coh = Coherent(0, alpha=1.0)
@@ -516,6 +551,10 @@ class TestCircuitComponent:
         ket = SqueezedVacuum(0, 0.4, 0.5) >> Dgate(0, 0.3, 0.2)
         back = Ket.from_quadrature((0,), ket.quadrature_triple())
         assert ket == back
+
+        ket_fock = Number(0, n=1)
+        back2 = Ket.from_quadrature((0,), ket_fock.quadrature_triple())
+        assert ket_fock.to_bargmann() == back2
 
     def test_quadrature_channel(self):
         C = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3 + 0.2j) >> Attenuator(0, 0.9)
@@ -613,26 +652,3 @@ class TestCircuitComponent:
             match="MyComponent does not seem to have any wires construction method",
         ):
             cc._serialize()
-
-    def test_hermite_renormalized_with_custom_shape(self):
-        """Test hermite_renormalized with a custom non-zero shape"""
-
-        S = SqueezedVacuum(0, r=1.0, phi=0, r_trainable=True, phi_trainable=True)
-
-        # made up, means nothing
-        def cost():
-            ket = S.fock_array(shape=[3])
-            return -math.real(ket[2])
-
-        circuit = Circuit([S])
-
-        opt = Optimizer()
-
-        if math.backend_name == "tensorflow":
-            assert opt.minimize(cost, by_optimizing=[circuit], max_steps=5) is None
-        else:
-            with pytest.raises(
-                NotImplementedError,
-                match="not implemented for backend ``(numpy|jax)``",
-            ):
-                opt.minimize(cost, by_optimizing=[circuit], max_steps=5)

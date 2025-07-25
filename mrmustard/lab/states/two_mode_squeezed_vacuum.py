@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
@@ -68,10 +69,18 @@ class TwoModeSqueezedVacuum(Ket):
     ):
         super().__init__(name="TwoModeSqueezedVacuum")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
+            make_parameter(
+                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
+            ),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
+            make_parameter(
+                is_trainable=phi_trainable,
+                value=phi,
+                name="phi",
+                bounds=phi_bounds,
+                dtype=math.float64,
+            ),
         )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.two_mode_squeezed_vacuum_state_Abc,

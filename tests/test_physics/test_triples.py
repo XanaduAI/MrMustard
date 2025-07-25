@@ -31,11 +31,6 @@ class TestTriples:
         if math.backend_name == "jax":
             error = ValueError
             match = "Incompatible shapes for broadcasting"
-        elif math.backend_name == "tensorflow":
-            from tensorflow.errors import InvalidArgumentError  # noqa: PLC0415
-
-            error = InvalidArgumentError
-            match = "Incompatible shape"
         else:
             error = ValueError
             match = "shape mismatch"
@@ -406,11 +401,7 @@ class TestTriples:
                 math.astensor([[0, 1 - eta, math.sqrt(eta), 0]]),
             ],
         )
-        assert math.allclose(
-            A,
-            A_by_hand,
-            atol=1e-7,
-        )  # TODO: remove atol when tensorflow is removed
+        assert math.allclose(A, A_by_hand)
         assert math.allclose(b, math.zeros((4,)))
         assert b.shape == (4,)
         assert math.allclose(c, 1.0)
@@ -436,11 +427,7 @@ class TestTriples:
             )[None, :, :]
         )
 
-        assert math.allclose(
-            A,
-            A_by_hand,
-            atol=1e-7,
-        )  # TODO: remove atol when tensorflow is removed
+        assert math.allclose(A, A_by_hand)
         assert math.allclose(b, math.zeros((2, 4)))
         assert math.allclose(c, math.astensor([1.0, 1.0], dtype=math.complex128))
         assert c.shape == (2,)

@@ -63,7 +63,7 @@ class DisplacedSqueezed(Ket):
     def __init__(
         self,
         mode: int,
-        alpha: complex | Sequence[complex] = 0.0,
+        alpha: complex | Sequence[complex] = 0.0j,
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
         alpha_trainable: bool = False,
@@ -73,6 +73,7 @@ class DisplacedSqueezed(Ket):
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="DisplacedSqueezed")
         self.parameters.add_parameter(
             make_parameter(
@@ -84,10 +85,18 @@ class DisplacedSqueezed(Ket):
             ),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
+            make_parameter(
+                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
+            ),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
+            make_parameter(
+                is_trainable=phi_trainable,
+                value=phi,
+                name="phi",
+                bounds=phi_bounds,
+                dtype=math.float64,
+            ),
         )
 
         self._ansatz = PolyExpAnsatz.from_function(
@@ -96,4 +105,4 @@ class DisplacedSqueezed(Ket):
             r=self.parameters.r,
             phi=self.parameters.phi,
         )
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))

@@ -18,24 +18,33 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from functools import partial
+from typing import Any
 
 import equinox as eqx
 import jax
 import jax.numpy as jnp
 import jax.scipy as jsp
 import numpy as np
-import optax
-from opt_einsum import contract
 from platformdirs import user_cache_dir
 
+from mrmustard.lab import Circuit, CircuitComponent
+from mrmustard.physics.ansatz import Ansatz
+
 from .backend_base import BackendBase
-from .jax_vjps import beamsplitter_jax, displacement_jax, hermite_renormalized_unbatched_jax
+from .jax_vjps import (
+    beamsplitter_jax,
+    displacement_jax,
+    hermite_renormalized_batched_jax,
+    hermite_renormalized_unbatched_jax,
+)
 from .lattice import strategies
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
+from .parameter_set import ParameterSet
+from .parameters import Constant, Variable
 
 jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_compilation_cache_dir", f"{user_cache_dir('mrmustard')}/jax_cache")
@@ -44,8 +53,26 @@ jax.config.update("jax_persistent_cache_min_compile_time_secs", 0)
 jax.config.update("jax_persistent_cache_enable_xla_caches", "xla_gpu_per_fusion_autotune_cache_dir")
 
 
+# ~~~~~~~
+# Helpers
+# ~~~~~~~
+
+
+def get_all_subclasses(cls):
+    r"""
+    Returns all subclasses of a given class.
+    """
+    all_subclasses = []
+    for subclass in cls.__subclasses__():
+        all_subclasses.append(subclass)
+        all_subclasses.extend(get_all_subclasses(subclass))
+    return all_subclasses
+
+
 class BackendJax(BackendBase):
-    """A JAX backend implementation."""
+    r"""
+    A JAX backend implementation.
+    """
 
     int32 = jnp.int32
     int64 = jnp.int64
@@ -106,10 +133,6 @@ class BackendJax(BackendBase):
     def prod(self, x: jnp.ndarray, axis: int | None):
         return jnp.prod(x, axis=axis)
 
-    @jax.jit
-    def assign(self, tensor: jnp.ndarray, value: jnp.ndarray) -> jnp.ndarray:
-        return value
-
     def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
         return jnp.asarray(array, dtype=dtype)
 
@@ -152,23 +175,9 @@ class BackendJax(BackendBase):
     def pow(self, x: jnp.ndarray, y: float) -> jnp.ndarray:
         return jnp.power(x, y)
 
-    def new_variable(
-        self,
-        value: jnp.ndarray,
-        bounds: tuple[float | None, float | None] | None,
-        name: str,
-        dtype="float64",
-    ):
-        return jnp.array(value, dtype=dtype)
-
     @jax.jit
     def outer(self, array1: jnp.ndarray, array2: jnp.ndarray) -> jnp.ndarray:
         return self.tensordot(array1, array2, [[], []])
-
-    @partial(jax.jit, static_argnames=["name", "dtype"])
-    def new_constant(self, value, name: str, dtype=None):
-        dtype = dtype or self.float64
-        return self.astensor(value, dtype)
 
     def tile(self, array: jnp.ndarray, repeats: Sequence[int]) -> jnp.ndarray:
         return jnp.tile(array, repeats)
@@ -226,9 +235,6 @@ class BackendJax(BackendBase):
     def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
         return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
-    def einsum(self, string: str, *tensors, optimize: bool | str) -> jnp.ndarray:
-        return contract(string, *tensors, optimize=optimize, backend="jax")
-
     @jax.jit
     def exp(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.exp(array)
@@ -249,8 +255,9 @@ class BackendJax(BackendBase):
     def eye_like(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.eye(array.shape[-1], dtype=array.dtype)
 
-    def from_backend(self, value) -> bool:
-        return isinstance(value, jnp.ndarray)
+    @jax.jit
+    def equal(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return jnp.equal(a, b)
 
     @partial(jax.jit, static_argnames=["axis"])
     def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: int = 0) -> jnp.ndarray:
@@ -264,11 +271,14 @@ class BackendJax(BackendBase):
     def inv(self, tensor: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.inv(tensor)
 
+    def iscomplexobj(self, x: Any) -> bool:
+        return jnp.iscomplexobj(x)
+
     def isnan(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.isnan(array)
 
-    def is_trainable(self, tensor: jnp.ndarray) -> bool:
-        return False
+    def issubdtype(self, arg1, arg2) -> bool:
+        return jnp.issubdtype(arg1, arg2)
 
     @jax.jit
     def lgamma(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -283,12 +293,20 @@ class BackendJax(BackendBase):
         return jnp.linalg.multi_dot(matrices)
 
     @jax.jit
+    def max(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.max(array)
+
+    @jax.jit
     def maximum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.maximum(a, b)
 
     @jax.jit
     def minimum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
         return jnp.minimum(a, b)
+
+    @jax.jit
+    def mod(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+        return jnp.mod(a, b)
 
     @partial(jax.jit, static_argnames=["old", "new"])
     def moveaxis(
@@ -402,6 +420,9 @@ class BackendJax(BackendBase):
     def zeros_like(self, array: jnp.ndarray, dtype: str = "complex128") -> jnp.ndarray:
         return jnp.zeros_like(array, dtype=dtype)
 
+    def xlogy(self, x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+        return jax.scipy.special.xlogy(x, y)
+
     @staticmethod
     @jax.jit
     def eigh(tensor: jnp.ndarray) -> tuple:
@@ -429,10 +450,6 @@ class BackendJax(BackendBase):
         if dtype is None:
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
-
-    # Special functions for optimization
-    def DefaultEuclideanOptimizer(self):
-        return optax.inject_hyperparams(optax.adamw)
 
     @jax.jit
     def reorder_AB_bargmann(
@@ -472,24 +489,9 @@ class BackendJax(BackendBase):
         stable: bool = False,
         out: jnp.ndarray | None = None,
     ) -> jnp.ndarray:
-        batch_size = A.shape[0]
-        output_shape = (batch_size, *shape)
         if out is not None:
-            raise ValueError("'out' keyword is not supported in the JAX backend")
-        return jax.pure_callback(
-            lambda A, b, c: strategies.vanilla_batch_numba(
-                shape,
-                np.asarray(A),
-                np.asarray(b),
-                np.asarray(c),
-                stable,
-                None,
-            ),
-            jax.ShapeDtypeStruct(output_shape, jnp.complex128),
-            A,
-            b,
-            c,
-        )
+            raise ValueError("The 'out' keyword is not supported in the JAX backend.")
+        return hermite_renormalized_batched_jax(A, b, c, shape, stable)
 
     @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal(
@@ -679,6 +681,23 @@ class BackendJax(BackendBase):
         return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
 
 
-# defining the pytree node for the JaxBackend.
-# This allows to skip specifying `self` in static_argnames.
+# defining custom pytree nodes
+for cls in get_all_subclasses(Ansatz):
+    jax.tree_util.register_pytree_node(cls, cls._tree_flatten, cls._tree_unflatten)
 jax.tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
+jax.tree_util.register_pytree_node(Circuit, Circuit._tree_flatten, Circuit._tree_unflatten)
+jax.tree_util.register_pytree_node(
+    CircuitComponent,
+    CircuitComponent._tree_flatten,
+    CircuitComponent._tree_unflatten,
+)
+# register all subclasses of CircuitComponent
+for cls in get_all_subclasses(CircuitComponent):
+    jax.tree_util.register_pytree_node(cls, cls._tree_flatten, cls._tree_unflatten)
+jax.tree_util.register_pytree_node(Constant, Constant._tree_flatten, Constant._tree_unflatten)
+jax.tree_util.register_pytree_node(
+    ParameterSet,
+    ParameterSet._tree_flatten,
+    ParameterSet._tree_unflatten,
+)
+jax.tree_util.register_pytree_node(Variable, Variable._tree_flatten, Variable._tree_unflatten)

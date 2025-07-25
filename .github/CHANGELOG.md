@@ -1,91 +1,79 @@
-# Current develop
-
-### New features
-* Added a new Abc triple for mapping the quadrature representation into Bargmann representation.
-  [(#368)](https://github.com/XanaduAI/MrMustard/pull/368)
-
-* Added `sort` function to math backends.
-
-* Added the `serialize` module to save MrMustard objects to file.
-  [(#451)](https://github.com/XanaduAI/MrMustard/pull/451)
-
-* Added `isort` to run before black upon `make format` to sort Python imports.
-  [(#506)](https://github.com/XanaduAI/MrMustard/pull/506)
+# Release 1.0.0a2 (unreleased)
 
 ### Breaking changes
-* Remove julia code and dependencies. PRECISION_BITS_HERMITE_POLY setting removed.
+
+* Removed `tensorflow` as a dependency as well as any legacy `tensorflow` code. Renamed `OptimizerJax` to `Optimizer`.
+[(#633)](https://github.com/XanaduAI/MrMustard/pull/633)
 
 ### Improvements
-* Switch from the `julia` Python package to `juliacall` for easier installation and usage.
-  [(#394)](https://github.com/XanaduAI/MrMustard/pull/394)
 
-* Save pytest timings to an S3 bucket for regression analysis. Also add a script to help
-  visualize the timing results quickly.
-  [(#404)](https://github.com/XanaduAI/MrMustard/pull/404)
-  [(#421)](https://github.com/XanaduAI/MrMustard/pull/421)
-
-* Replace IPython `_repr_html_` `mako`-based implementations
-  with `ipywidgets` and improve the aesthetics.
-  [(#425)](https://github.com/XanaduAI/MrMustard/pull/425)
-  [(#450)](https://github.com/XanaduAI/MrMustard/pull/450)
-
-* Loosen the upper-bound on `thewalrus` and upgrade it.
-  [(#454)](https://github.com/XanaduAI/MrMustard/pull/454)
-
-* Update major version of `rich` dependency to version 13.
-  [(#512)](https://github.com/XanaduAI/MrMustard/pull/512)
-
-* Cast tuples to tensors before initializing the `PolyExpAnsatz` class.
-  [(#545)](https://github.com/XanaduAI/MrMustard/pull/545)
-
-* Updated CI to allow for manual running of test timings before merging to develop.
-  [(#612)](https://github.com/XanaduAI/MrMustard/pull/612)
-
-* Changed np.array -> np.asarray to reduce memory overhead.
-  [(#600)](https://github.com/XanaduAI/MrMustard/pull/600)
+* Added a ``rich`` based repr to ``ParameterSet``.
+[(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
 
 ### Bug fixes
-* Fix the bug in the order of indices of the triples for DsMap CircuitComponent.
-  [(#385)](https://github.com/XanaduAI/MrMustard/pull/385)
 
-* Ensure all symplectic eigenvalues are returned by the `symplectic_eigenvals` function.
-
-* Ensured support for TensorFlow 2.16+, which would be chosen when installing with `pip`.
-  [(#406)](https://github.com/XanaduAI/MrMustard/pull/406)
-
-* Fix object visualizations in VS Code Notebooks by using the built-in display tools.
-  [(#425)](https://github.com/XanaduAI/MrMustard/pull/425)
-
-* Fix the TensorFlow issue with the expected number of gradients  in `custom_gradient`.
-  [(#506)](https://github.com/XanaduAI/MrMustard/pull/506)
-
-* Use the default repr when in interactive IPython.
-  [(#531)](https://github.com/XanaduAI/MrMustard/pull/531)
-
-* Increments the version to 1.0.0-dev.
-  [(#553)](https://github.com/XanaduAI/MrMustard/pull/553)
-
-
-### Documentation
-
-### Tests
-
-### Contributors
-[Samuele Ferracin](https://github.com/SamFerracin)
-[Yuan Yao](https://github.com/sylviemonet)
-[Filippo Miatto](https://github.com/ziofil)
-[Austin Lund](https://github.com/aplund)
-[Kasper Nielsen](https://github.com/kaspernielsen96)
-[Matthew Silverman](https://github.com/timmysilv)
-[Ali Asadi](https://github.com/maliasadi)
-[Hitarth Choubisa](https://github.com/hitarth64)
-[Garett Brown](https://github.com/zyrxvo)
+* Fixed a bug in `OptimizerJax` that would make the optimizer think it reached a stable optimum upon repeat calls to `minimize`.
+[(#634)](https://github.com/XanaduAI/MrMustard/pull/634)
 
 ---
 
-# Release 0.7.3 (current release)
+# Release 1.0.0a1
 
 ### New features
+
+* Introducing the new ``lab`` module. A more expressive and performant API for simulating quantum optical circuits. New features include:
+  * Universial interoperability of all representations including ``Bargmann``, ``Fock``, ``Quadrature`` and ``Phase Space``.
+  * Batching functionality allowing for parallelization of computations.
+  * Support for delayed contractions enabling optimizations over the path of contraction and choice of representation.
+[(#579)](https://github.com/XanaduAI/MrMustard/pull/579)
+
+* Add the new ``jax`` backend. ``Jax`` is a Python library that supports array-oriented numerical computations, automatic differentation and JIT compilation.
+[(#546)](https://github.com/XanaduAI/MrMustard/pull/546)
+
+* New ``OptimizerJax`` class for handling optimizations of parameters via the ``jax`` backend.
+[(#594)](https://github.com/XanaduAI/MrMustard/pull/594)
+
+### Breaking changes
+
+* Removed ``julia``, ``tqdm``, ``ray`` and ``scikit-optimize`` as dependencies.
+[(#541)](https://github.com/XanaduAI/MrMustard/pull/541)
+[(#585)](https://github.com/XanaduAI/MrMustard/pull/585)
+
+* Support for ``numpy 2+``.
+[(#554)](https://github.com/XanaduAI/MrMustard/pull/554)
+
+* Replaced ``poetry`` as the prefered installation method with ``uv``.
+[(#542)](https://github.com/XanaduAI/MrMustard/pull/542)
+
+* Dropped Python 3.9 support.
+[(#562)](https://github.com/XanaduAI/MrMustard/pull/562)
+
+* New ``lab`` API.
+[(#579)](https://github.com/XanaduAI/MrMustard/pull/579)
+
+### Documentation
+
+* Updated documentation to reflect the new API.
+
+### Contributors
+
+[Ali Asadi](https://github.com/maliasadi),
+[Anthony Chytros](https://github.com/apchytr),
+[Hitarth Choubisa](https://github.com/hitarth64),
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Austin Lund](https://github.com/aplund),
+[Filippo Miatto](https://github.com/ziofil),
+[Arsalan Motamedi](https://github.com/arsalan-motamedi),
+[Kasper Nielsen](https://github.com/kaspernielsen96),
+[Matthew Silverman](https://github.com/timmysilv),
+[Yuan Yao](https://github.com/sylviemonet)
+
+---
+
+# Release 0.7.3
+
+### New features
+
 * Added a function ``to_fock`` to map different representations into Fock representation.
   [(#355)](https://github.com/XanaduAI/MrMustard/pull/355)
 
@@ -106,16 +94,17 @@
 ### Tests
 
 ### Contributors
+
 [Samuele Ferracin](https://github.com/SamFerracin),
 [Yuan Yao](https://github.com/sylviemonet)
 [Filippo Miatto](https://github.com/ziofil)
-
 
 ---
 
 # Release 0.7.1
 
 ### New features
+
 * Added functions to generate the ``(A, b, c)`` triples for the Fock-Bargmann representation of
   several states and gates. [(#338)](https://github.com/XanaduAI/MrMustard/pull/338)
 
@@ -126,6 +115,7 @@
 ### Improvements
 
 ### Bug fixes
+
 * Fixing a bug in `_transform_gaussian` in transformation.py that modifies the input state's cov and means.
 [(#349)](https://github.com/XanaduAI/MrMustard/pull/349)
 * Fixing a bug in `general_dyne` in physics/gaussian.py that returns the wrong probability and outcomes with given projection.
@@ -136,16 +126,17 @@
 ### Tests
 
 ### Contributors
+
 [Samuele Ferracin](https://github.com/SamFerracin),
 [Yuan Yao](https://github.com/sylviemonet)
 [Filippo Miatto](https://github.com/ziofil)
-
 
 ---
 
 # Release 0.7.0
 
 ### New features
+
 * Added a new interface for backends, as well as a `numpy` backend (which is now default). Users can run
   all the functions in the `utils`, `math`, `physics`, and `lab` with both backends, while `training`
   requires using `tensorflow`. The `numpy` backend provides significant improvements both in import
@@ -167,6 +158,7 @@
   [(#296)](https://github.com/XanaduAI/MrMustard/pull/296)
 
 ### Breaking changes
+
 * Removed circular dependencies by:
   * Removing `graphics.py`--moved `ProgressBar` to `training` and `mikkel_plot` to `lab`.
   * Moving `circuit_drawer` and `wigner` to `physics`.
@@ -241,16 +233,17 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 ### Documentation
 
 ### Tests
+
 * Added tests for calculating Fock amplitudes with a higher precision than `complex128`.
 
 ### Contributors
+
 [Eli Bourassa](https://github.com/elib20),
 [Robbe De Prins](https://github.com/rdprins),
 [Samuele Ferracin](https://github.com/SamFerracin),
 [Jan Provaznik](https://github.com/jan-provaznik),
 [Yuan Yao](https://github.com/sylviemonet)
 [Filippo Miatto](https://github.com/ziofil)
-
 
 ---
 
@@ -262,10 +255,11 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   [(#300)](https://github.com/XanaduAI/MrMustard/pull/300)
 
 ### Contributors
+
 [Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
 
-
 ---
+
 # Release 0.6.0
 
 ### New features
@@ -317,12 +311,12 @@ We run Julia code via PyJulia (where Numba was used before) to keep the code fas
 ### Documentation
 
 ### Contributors
+
 [Filippo Miatto](https://github.com/ziofil),
 [Yuan Yao](https://github.com/sylviemonet),
 [Robbe De Prins](https://github.com/rdprins),
 [Samuele Ferracin](https://github.com/SamFerracin)
 [Zeyue Niu](https://github.com/zeyueN)
-
 
 ---
 
@@ -431,10 +425,10 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 ### Documentation
 
 ### Contributors
+
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN),
 [Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
 [Richard A. Wolf](https://github.com/ryk-wolf)
-
 
 ---
 
@@ -461,6 +455,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 ### Documentation
 
 ### Contributors
+
 [Filippo Miatto](https://github.com/ziofil), [Sebastian Duque Mesa](https://github.com/sduquemesa)
 
 ---
@@ -698,7 +693,6 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 * Fixes a bug in the cutoffs of the choi operator.
   [(#216)](https://github.com/XanaduAI/MrMustard/pull/216)
 
-
 ### Documentation
 
 ### Contributors
@@ -708,17 +702,18 @@ This release contains contributions from (in alphabetical order):
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN),
 [Yuan Yao](https://github.com/sylviemonet)
 
-
 ---
 
 # Release 0.3.0
 
 ### New features
+
 * Can switch progress bar on and off (default is on) from the settings via
   `settings.PROGRESSBAR = True/False`.
   [(#128)](https://github.com/XanaduAI/MrMustard/issues/128)
 
 * States in Gaussian and Fock representation now can be concatenated.
+
   ```python
   from mrmustard.lab.states import Gaussian, Fock
   from mrmustard.lab.gates import Attenuator
@@ -735,10 +730,12 @@ This release contains contributions from (in alphabetical order):
 
   mixed_state.dm()
   ```
+
   [(#130)](https://github.com/XanaduAI/MrMustard/pull/130)
 
 * Parameter passthrough allows one to use custom variables and/or functions as parameters.
   For example we can use parameters of other gates:
+
   ```python
   from mrmustard.lab.gates import Sgate, BSgate
 
@@ -748,7 +745,9 @@ This release contains contributions from (in alphabetical order):
 
   circ = S0 >> S1 >> BS
   ```
+
   Another possibility is with functions:
+
   ```python
 
   def my_r(x):
@@ -764,6 +763,7 @@ This release contains contributions from (in alphabetical order):
 
   opt.Optimize(cost_fn, by_optimizing=[x])
   ```
+
   [(#131)](https://github.com/XanaduAI/MrMustard/pull/131)
 
 * Adds the new trainable gate `RealInterferometer`: an interferometer that doesn't mix
@@ -771,16 +771,19 @@ This release contains contributions from (in alphabetical order):
   [(#132)](https://github.com/XanaduAI/MrMustard/pull/132)
 
 * Now marginals can be iterated over:
+
   ```python
   for mode in state:
     print(mode.purity)
   ```
+
   [(#140)](https://github.com/XanaduAI/MrMustard/pull/140)
 
 ### Breaking changes
 
 * The Parametrized and Training classes have been refactored: now trainable tensors are wrapped
   in an instance of the `Parameter` class. To define a set of parameters do
+
   ```python
   from mrmustard.training import Parametrized
 
@@ -789,8 +792,10 @@ This release contains contributions from (in alphabetical order):
       angle=0.1, angle_trainable=True, angle_bounds=(-0.1,0.1)
   )
   ```
+
   which will automatically define the properties `magnitude` and `angle` on the `params` object.
   To access the backend tensor defining the values of such parameters use the `value` property
+
   ```python
   params.angle.value
   params.angle.bounds
@@ -799,6 +804,7 @@ This release contains contributions from (in alphabetical order):
   ```
 
   Gates will automatically be an instance of the `Parametrized` class, for example
+
   ```python
   from mrmustard.lab import BSgate
 
@@ -809,6 +815,7 @@ This release contains contributions from (in alphabetical order):
   bs.theta.bounds
   bs.phi.value
   ```
+
   [(#133)](https://github.com/XanaduAI/MrMustard/pull/133),
   patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144)
   and [(#158)](https://github.com/XanaduAI/MrMustard/pull/158).
@@ -863,7 +870,6 @@ This release contains contributions from (in alphabetical order):
 
 [Mikhail Andrenkov](https://github.com/Mandrenkov), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
 
-
 ---
 
 # Release 0.2.0
@@ -913,7 +919,6 @@ This release contains contributions from (in alphabetical order):
 [Sebastián Duque](https://github.com/sduquemesa), [Theodor Isacsson](https://github.com/thisac/),
 [Filippo Miatto](https://github.com/ziofil)
 
-
 ---
 
 # Release 0.1.1
@@ -962,7 +967,6 @@ This release contains contributions from (in alphabetical order):
 This release contains contributions from (in alphabetical order):
 
 [Sebastián Duque](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
-
 
 ---
 

@@ -18,7 +18,6 @@ Tests for the Settings class.
 
 import pytest
 
-from mrmustard import math
 from mrmustard.utils.settings import Settings
 
 
@@ -40,11 +39,6 @@ class TestSettings:
 
     def test_setters(self):
         settings = Settings()
-
-        cw = settings.COMPLEX_WARNING
-        settings.COMPLEX_WARNING = not cw
-        assert (not cw) == settings.COMPLEX_WARNING
-        settings.COMPLEX_WARNING = cw
 
         s0 = settings.SEED
         settings.SEED = None
@@ -72,25 +66,6 @@ class TestSettings:
         settings.SEED = 42
         seq1 = [settings.rng.integers(0, 2**31 - 1) for _ in range(10)]
         assert seq0 == seq1
-
-    @pytest.mark.requires_backend("tensorflow")
-    def test_complex_warnings(self, caplog):
-        """Tests that complex warnings can be correctly activated and deactivated."""
-
-        settings = Settings()
-
-        assert settings.COMPLEX_WARNING is False
-        math.cast(1 + 1j, math.float64)
-        assert len(caplog.records) == 0
-
-        settings.COMPLEX_WARNING = True
-        math.cast(1 + 1j, math.float64)
-        assert len(caplog.records) == 1
-        assert "You are casting an input of type complex128" in caplog.records[0].msg
-
-        settings.COMPLEX_WARNING = False
-        math.cast(1 + 1j, math.float64)
-        assert len(caplog.records) == 1
 
     def test_cannot_add_new_settings(self):
         """Test that new settings are rejected (eg. typos)."""

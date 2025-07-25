@@ -21,7 +21,6 @@ import os
 from rich import print as rprint
 
 from ._version import __version__
-from .utils.filters import add_complex_warning_filter
 from .utils.settings import *
 
 
@@ -56,7 +55,6 @@ def about():
         Numba version:             0.48.0
         Scipy version:             1.7.3
         The Walrus version:        0.17.0
-        TensorFlow version:        2.7.0
         Torch version:             1.10.0+cu102
     """
     import platform
@@ -65,7 +63,6 @@ def about():
     import numba
     import numpy
     import scipy
-    import tensorflow
     import thewalrus
 
     # a QuTiP-style infobox
@@ -80,8 +77,3 @@ def about():
     rprint(f"Numba version:             {numba.__version__}")
     rprint(f"Scipy version:             {scipy.__version__}")
     rprint(f"The Walrus version:        {thewalrus.__version__}")
-    rprint(f"TensorFlow version:        {tensorflow.__version__}")
-
-
-# filter tensorflow cast warnings
-add_complex_warning_filter()
