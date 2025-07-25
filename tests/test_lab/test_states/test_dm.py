@@ -469,12 +469,19 @@ class TestDM:
         with pytest.raises(ValueError, match="Expected an operator defined on"):
             dm.expectation(op3)
 
+    @pytest.mark.parametrize("n_modes", [1, 2, 3])
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
-    def test_fock_distribution(self, batch_shape):
+    def test_fock_distribution(self, n_modes, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
+        cutoff = 10
         state = Coherent(0, x=x, y=y)
-        assert math.allclose(state.fock_distribution(10), state.dm().fock_distribution(10))
+        for i in range(n_modes - 1):
+            state >>= Coherent(i + 1, x=x, y=y)
+        fock_dist = state.fock_distribution(cutoff)
+        fock_dist_dm = state.dm().fock_distribution(cutoff)
+        assert math.allclose(fock_dist, fock_dist_dm)
+        assert fock_dist.shape == batch_shape * n_modes + (cutoff**n_modes,)
 
     def test_rshift(self):
         ket = Coherent(0, 1) >> Coherent(1, 1)
