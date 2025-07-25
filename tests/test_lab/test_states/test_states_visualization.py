@@ -70,7 +70,7 @@ class TestVisualization:
 
     def test_visualize_dm(self):
         st = Coherent(0, 1j) + Coherent(0, -1j)
-        st.manual_shape[0] = 20
+        st.manual_shape = (20,)
         fig = st.visualize_dm(20, return_fig=True)
         data = fig.to_dict()
 

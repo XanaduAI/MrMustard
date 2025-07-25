@@ -73,7 +73,7 @@ class TestKet:
         assert state.wires == Wires(modes_out_ket=set(modes))
 
     def test_manual_shape(self):
-        ket = Coherent(0, x=1)
+        ket = Coherent(0, alpha=1)
         assert ket.manual_shape == (None,)
         ket.manual_shape = (19,)
         assert ket.manual_shape == (19,)

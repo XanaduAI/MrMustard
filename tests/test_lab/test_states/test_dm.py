@@ -62,7 +62,7 @@ class TestDM:
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
     def test_manual_shape(self):
-        dm = Coherent(0, x=1).dm()
+        dm = Coherent(0, alpha=1).dm()
         assert dm.manual_shape == (None, None)
         dm.manual_shape = (19, None)
         assert dm.manual_shape == (19, None)
