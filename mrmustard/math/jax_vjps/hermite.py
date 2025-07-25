@@ -24,7 +24,11 @@ import numpy as np
 
 from ..lattice import strategies
 
-__all__ = ["hermite_renormalized_batched_jax", "hermite_renormalized_unbatched_jax"]
+__all__ = [
+    "hermite_renormalized_batched_jax",
+    "hermite_renormalized_binomial_jax",
+    "hermite_renormalized_unbatched_jax",
+]
 
 # ~~~~~~~~~~~~~~~~~
 # hermite_renormalized_unbatched
@@ -160,4 +164,73 @@ def hermite_renormalized_batched_jax_bwd(shape, stable, res, g):
 hermite_renormalized_batched_jax.defvjp(
     hermite_renormalized_batched_jax_fwd,
     hermite_renormalized_batched_jax_bwd,
+)
+
+
+# ~~~~~~~~~~~~~~~~~
+# hermite_renormalized_binomial
+# ~~~~~~~~~~~~~~~~~
+
+
+@partial(jax.custom_vjp, nondiff_argnums=(3, 4, 5))
+@partial(jax.jit, static_argnums=(3, 4, 5))
+def hermite_renormalized_binomial_jax(
+    A: jnp.ndarray,
+    B: jnp.ndarray,
+    C: jnp.ndarray,
+    shape: tuple[int],
+    max_l2: float | None,
+    global_cutoff: int | None,
+) -> jnp.ndarray:
+    r"""
+    The jax custom gradient for hermite_renormalized_binomial.
+    """
+    function = partial(strategies.binomial, tuple(shape))
+    return jax.pure_callback(
+        lambda A, B, C, max_l2, global_cutoff: function(
+            np.asarray(A),
+            np.asarray(B),
+            np.asarray(C),
+            max_l2,
+            global_cutoff,
+        )[0],
+        jax.ShapeDtypeStruct(shape, jnp.complex128),
+        A,
+        B,
+        C,
+        max_l2,
+        global_cutoff,
+    )
+
+
+def hermite_renormalized_binomial_jax_fwd(A, b, c, shape, max_l2, global_cutoff):
+    r"""
+    The jax forward pass for hermite_renormalized_binomial.
+    """
+    G = hermite_renormalized_binomial_jax(A, b, c, shape, max_l2, global_cutoff)
+    return (G, (G, A, b, c))
+
+
+def hermite_renormalized_binomial_jax_bwd(shape, max_l2, global_cutoff, res, g):
+    r"""
+    The jax backward pass for hermite_renormalized_binomial.
+    """
+    G, A, b, c = res
+    dLdA, dLdB, dLdC = jax.pure_callback(
+        lambda G, c, g: strategies.vanilla_vjp(np.array(G), np.array(c), np.array(g)),
+        (
+            jax.ShapeDtypeStruct(A.shape, jnp.complex128),
+            jax.ShapeDtypeStruct(b.shape, jnp.complex128),
+            jax.ShapeDtypeStruct(c.shape, jnp.complex128),
+        ),
+        G,
+        c,
+        g,
+    )
+    return dLdA, dLdB, dLdC
+
+
+hermite_renormalized_binomial_jax.defvjp(
+    hermite_renormalized_binomial_jax_fwd,
+    hermite_renormalized_binomial_jax_bwd,
 )

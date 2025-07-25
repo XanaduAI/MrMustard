@@ -35,6 +35,7 @@ from .jax_vjps import (
     beamsplitter_jax,
     displacement_jax,
     hermite_renormalized_batched_jax,
+    hermite_renormalized_binomial_jax,
     hermite_renormalized_unbatched_jax,
 )
 from .lattice import strategies
@@ -479,7 +480,6 @@ class BackendJax(BackendBase):
             raise ValueError("The 'out' keyword is not supported in the JAX backend.")
         return hermite_renormalized_unbatched_jax(A, b, c, shape, stable)
 
-    @partial(jax.jit, static_argnames=["shape", "stable"])
     def hermite_renormalized_batched(
         self,
         A: jnp.ndarray,
@@ -580,7 +580,6 @@ class BackendJax(BackendBase):
             C,
         )
 
-    @partial(jax.jit, static_argnames=["shape", "max_l2", "global_cutoff"])
     def hermite_renormalized_binomial(
         self,
         A: jnp.ndarray,
@@ -607,22 +606,7 @@ class BackendJax(BackendBase):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        function = partial(strategies.binomial, tuple(shape))
-        return jax.pure_callback(
-            lambda A, B, C, max_l2, global_cutoff: function(
-                np.asarray(A),
-                np.asarray(B),
-                np.asarray(C),
-                max_l2,
-                global_cutoff,
-            )[0],
-            jax.ShapeDtypeStruct(shape, jnp.complex128),
-            A,
-            B,
-            C,
-            max_l2,
-            global_cutoff,
-        )
+        return hermite_renormalized_binomial_jax(A, B, C, shape, max_l2, global_cutoff)
 
     @partial(jax.jit, static_argnames=["output_cutoff", "pnr_cutoffs"])
     def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
