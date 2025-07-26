@@ -226,7 +226,7 @@ class TestCircuitComponent:
 
         assert isinstance(d12, Dgate)
         assert isinstance(d12.parameters.alpha, Constant)
-        assert math.allclose(d12.parameters.alpha.value, [0.1+0.1j, 0.2+0.2j])
+        assert math.allclose(d12.parameters.alpha.value, [0.1 + 0.1j, 0.2 + 0.2j])
         assert d12.ansatz._lin_sup is True
         assert d12.ansatz == d1.ansatz + d2.ansatz
 
