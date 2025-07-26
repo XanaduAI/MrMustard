@@ -104,7 +104,7 @@ def update_unitary(unitary_lr: float):
 
     def update_fn(grads, state, params):
         def update_single(dU_euclidean, U):
-            Y = math.euclidean_to_unitary(U, math.conj(dU_euclidean))
+            Y = math.euclidean_to_unitary(U, dU_euclidean)
             new_value = math.matmul(U, math.expm(-unitary_lr * Y))
             return new_value - U
 

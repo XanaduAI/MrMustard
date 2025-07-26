@@ -58,9 +58,10 @@ class TestCircuitComponent:
     @pytest.mark.parametrize("y", [0.4, [0.5, 0.6]])
     def test_init(self, x, y):
         name = "my_component"
-        ansatz = PolyExpAnsatz(*displacement_gate_Abc(x, y))
-        wires = Wires(set(), set(), {1, 8}, {1, 8})
-        cc = CircuitComponent(ansatz=ansatz, wires=wires, name=name)
+        x = math.astensor(x, dtype=math.complex128)
+        y = math.astensor(y, dtype=math.complex128)
+        ansatz = PolyExpAnsatz(*displacement_gate_Abc(x + 1j * y))
+        cc = CircuitComponent(ansatz, Wires(set(), set(), {1, 8}, {1, 8}), name=name)
 
         assert cc.name == name
         assert cc.modes == (1, 8)
@@ -69,18 +70,19 @@ class TestCircuitComponent:
         assert cc.manual_shape == (None,) * 4
 
     def test_missing_name(self):
-        ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2))
-        wires = Wires(set(), set(), {1, 8}, {1, 8})
-        cc = CircuitComponent(ansatz=ansatz, wires=wires)
+        cc = CircuitComponent(
+            PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.2j)),
+            Wires(set(), set(), {1, 8}, {1, 8}),
+        )
         cc._name = None
         assert cc.name == "CC18"
 
     def test_from_bargmann(self):
-        cc = CircuitComponent.from_bargmann(displacement_gate_Abc(0.1, 0.2), {}, {}, {0}, {0})
-        assert cc.ansatz == PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.2))
+        cc = CircuitComponent.from_bargmann(displacement_gate_Abc(0.1 + 0.2j), {}, {}, {0}, {0})
+        assert cc.ansatz == PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.2j))
 
     def test_from_attributes(self):
-        cc = Dgate(1, x=0.1, y=0.2)
+        cc = Dgate(1, alpha=0.1 + 0.2j)
 
         cc1 = Dgate._from_attributes(cc.ansatz, cc.wires, cc.name)
         cc2 = Unitary._from_attributes(cc.ansatz, cc.wires, cc.name)
@@ -95,13 +97,13 @@ class TestCircuitComponent:
         assert isinstance(cc3, CircuitComponent) and not isinstance(cc3, Unitary)
 
     def test_from_to_quadrature(self):
-        c = Dgate(0, x=0.1, y=0.2) >> Sgate(0, r=1.0, phi=0.1)
+        c = Dgate(0, alpha=0.1 + 0.2j) >> Sgate(0, r=1.0, phi=0.1)
         cc = CircuitComponent(ansatz=c.ansatz, wires=c.wires, name=c.name)
         ccc = CircuitComponent.from_quadrature((), (), (0,), (0,), cc.quadrature_triple())
         assert cc == ccc
 
     def test_adjoint(self):
-        d1 = Dgate(1, x=0.1, y=0.2)
+        d1 = Dgate(1, alpha=0.1 + 0.2j)
         d1_adj = d1.adjoint
 
         assert isinstance(d1_adj, CircuitComponent)
@@ -118,7 +120,7 @@ class TestCircuitComponent:
         assert d1_adj_adj.ansatz == d1.ansatz
 
     def test_dual(self):
-        d1 = Dgate(1, x=0.1, y=0.2)
+        d1 = Dgate(1, alpha=0.1 + 0.2j)
         d1_dual = d1.dual
         vac = Vacuum(1)
 
@@ -137,7 +139,7 @@ class TestCircuitComponent:
         assert d1_dual_dual.ansatz == d1.ansatz
 
     def test_light_copy(self):
-        ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.1))
+        ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.1j))
         wires = Wires(set(), set(), {1}, {1})
         d1 = CircuitComponent(ansatz=ansatz, wires=wires)
         d1_cp = d1._light_copy()
@@ -150,12 +152,10 @@ class TestCircuitComponent:
         assert Vacuum([1, 2]).on([3, 4]).modes == (3, 4)
         assert Number(3, n=4).on(9).modes == (9,)
 
-        d89 = DisplacedSqueezed(8, x=1, y=3, r_trainable=True)
+        d89 = DisplacedSqueezed(8, alpha=1 + 3j, r_trainable=True)
         d67 = d89.on(6)
-        assert isinstance(d67.parameters.x, Constant)
-        assert math.allclose(d89.parameters.x.value, d67.parameters.x.value)
-        assert isinstance(d67.parameters.y, Constant)
-        assert math.allclose(d89.parameters.y.value, d67.parameters.y.value)
+        assert isinstance(d67.parameters.alpha, Constant)
+        assert math.allclose(d89.parameters.alpha.value, d67.parameters.alpha.value)
         assert isinstance(d67.parameters.r, Variable)
         assert math.allclose(d89.parameters.r.value, d67.parameters.r.value)
         assert bool(d67.parameters) is True
@@ -182,13 +182,13 @@ class TestCircuitComponent:
         assert math.allclose(num_barg.ansatz.c, num_f.ansatz.array)
 
     def test_to_fock_bargmann_Dgate(self):
-        d = Dgate(1, x=0.1, y=0.1)
+        d = Dgate(1, alpha=0.1 + 0.1j)
         d_barg = d.to_bargmann()
         assert d is d_barg
 
         d_fock = d.to_fock(shape=(4, 6))
         assert d_fock.ansatz == ArrayAnsatz(
-            math.hermite_renormalized(*displacement_gate_Abc(x=0.1, y=0.1), shape=(4, 6)),
+            math.hermite_renormalized(*displacement_gate_Abc(0.1 + 0.1j), shape=(4, 6)),
         )
         for w in d_fock.wires.quantum:
             assert w.repr == ReprEnum.FOCK
@@ -219,77 +219,67 @@ class TestCircuitComponent:
         assert math.allclose(barg_cc.ansatz.c, fock_cc.ansatz.data)
 
     def test_add(self):
-        cc1 = CircuitComponent.from_bargmann(Abc_triple(1), modes_out_ket=(0,))
-        cc2 = CircuitComponent.from_bargmann(Abc_triple(1), modes_out_ket=(0,))
-
-        cc12 = cc1 + cc2
-
-        assert isinstance(cc12, CircuitComponent)
-        assert cc12.ansatz == cc1.ansatz + cc2.ansatz
-        assert cc12.ansatz._lin_sup is True
-
-    def test_add_built_in(self):
-        d1 = Dgate(1, x=0.1, y=0.1, x_trainable=True, x_bounds=(0, 1))
-        d2 = Dgate(1, x=0.2, y=0.2, x_trainable=True, x_bounds=(0, 1))
+        d1 = Dgate(1, alpha=0.1 + 0.1j)
+        d2 = Dgate(1, alpha=0.2 + 0.2j)
 
         d12 = d1 + d2
 
         assert isinstance(d12, Dgate)
-        assert isinstance(d12.parameters.x, Variable)
-        assert d12.parameters.x.bounds == (0, 1)
-        assert math.allclose(d12.parameters.x.value, [0.1, 0.2])
-        assert math.allclose(d12.parameters.y.value, [0.1, 0.2])
+        assert isinstance(d12.parameters.alpha, Constant)
+        assert math.allclose(d12.parameters.alpha.value, [0.1 + 0.1j, 0.2 + 0.2j])
         assert d12.ansatz._lin_sup is True
         assert d12.ansatz == d1.ansatz + d2.ansatz
 
     def test_add_error(self):
-        d1 = Dgate(1, x=0.1, y=0.1)
-        d2 = Dgate(2, x=0.2, y=0.2)
-        d3 = Dgate(1, x=0.1, y=0.1, x_trainable=True)
-        d4 = Dgate(1, x=0.1, y=0.1, x_trainable=True, x_bounds=(0, 1))
-        d_batched = Dgate(1, x=[0.1, 0.2])
+        d1 = Dgate(1, alpha=0.1 + 0.1j)
+        d2 = Dgate(2, alpha=0.2 + 0.2j)
+        d3 = Dgate(1, alpha=0.1 + 0.1j, alpha_trainable=True)
+        d4 = Dgate(1, alpha=0.1 + 0.1j, alpha_trainable=True, alpha_bounds=(0, 1))
+        d_batched = Dgate(1, alpha=[0.1, 0.2])
 
         with pytest.raises(ValueError, match="different wires"):
             d1 + d2
 
-        with pytest.raises(ValueError, match="Parameter 'x' is a"):
+        with pytest.raises(ValueError, match="Parameter 'alpha' is a"):
             d1 + d3
 
         with pytest.raises(ValueError, match="batched"):
             d1 + d_batched
 
-        with pytest.raises(ValueError, match="Parameter 'x' has bounds"):
+        with pytest.raises(ValueError, match="Parameter 'alpha' has bounds"):
             d3 + d4
 
     def test_sub(self):
-        s1 = DisplacedSqueezed(1, x=1.0, y=0.5, r=0.1)
-        s2 = DisplacedSqueezed(1, x=0.5, y=0.2, r=0.2)
+        s1 = DisplacedSqueezed(1, alpha=1.0 + 0.5j, r=0.1)
+        s2 = DisplacedSqueezed(1, alpha=0.5 + 0.2j, r=0.2)
         s12 = s1 - s2
         assert s12.ansatz == s1.ansatz - s2.ansatz
 
     def test_mul(self):
-        d1 = Dgate(1, x=0.1, y=0.1)
+        d1 = Dgate(1, alpha=0.1 + 0.1j)
 
         assert (d1 * 3).ansatz == d1.ansatz * 3
         assert (3 * d1).ansatz == d1.ansatz * 3
         assert isinstance(d1 * 3, Unitary)
 
     def test_truediv(self):
-        d1 = Dgate(1, x=0.1, y=0.1)
+        d1 = Dgate(1, alpha=0.1 + 0.1j)
 
         assert (d1 / 3).ansatz == d1.ansatz / 3
         assert isinstance(d1 / 3, Unitary)
 
     def test_eq(self):
-        d1 = Dgate(1, x=0.1, y=0.1)
-        d2 = Dgate(2, x=0.1, y=0.1)
+        d1 = Dgate(1, alpha=0.1 + 0.1j)
+        d2 = Dgate(2, alpha=0.1 + 0.1j)
 
         assert d1 == d1._light_copy()
         assert d1 != d2
 
     def test_contract(self):
         vac012 = Vacuum((0, 1, 2))
-        d012 = Dgate(0, x=0.1, y=0.1) >> Dgate(1, x=0.1, y=0.1) >> Dgate(2, x=0.1, y=0.1)
+        d012 = (
+            Dgate(0, alpha=0.1 + 0.1j) >> Dgate(1, alpha=0.1 + 0.1j) >> Dgate(2, alpha=0.1 + 0.1j)
+        )
         a0 = Attenuator(0, 0.8)
         a1 = Attenuator(1, 0.8)
         a2 = Attenuator(2, 0.7)
@@ -321,8 +311,8 @@ class TestCircuitComponent:
         alpha = 1.5 + 0.7888 * 1j
         beta = -0.1555 + 1j * 2.1
 
-        d1 = Dgate(0, x=alpha.real, y=alpha.imag)
-        d2 = Dgate(0, x=beta.real, y=beta.imag)
+        d1 = Dgate(0, alpha)
+        d2 = Dgate(0, beta)
 
         result1 = d2.contract(d1)
         correct_c = np.exp(-0.5 * (abs(alpha + beta) ** 2)) * np.exp(
@@ -331,10 +321,10 @@ class TestCircuitComponent:
 
         assert math.allclose(result1.ansatz.c, correct_c)
 
-    def test_contract_is_associative(self):
-        d0 = Dgate(0, x=0.1, y=0.1)
-        d1 = Dgate(1, x=0.1, y=0.1)
-        d2 = Dgate(2, x=0.1, y=0.1)
+    def test_matmul_is_associative(self):
+        d0 = Dgate(0, alpha=0.1 + 0.1j)
+        d1 = Dgate(1, alpha=0.1 + 0.1j)
+        d2 = Dgate(2, alpha=0.1 + 0.1j)
         a0 = Attenuator(0, transmissivity=0.8)
         a1 = Attenuator(1, transmissivity=0.8)
         a2 = Attenuator(2, transmissivity=0.7)
@@ -348,16 +338,16 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
-    def test_contract_scalar(self):
-        d0 = Dgate(0, x=0.1, y=0.1)
+    def test_matmul_scalar(self):
+        d0 = Dgate(0, alpha=0.1 + 0.1j)
         result = d0.contract(0.8)
         assert math.allclose(result.ansatz.A, d0.ansatz.A)
         assert math.allclose(result.ansatz.b, d0.ansatz.b)
         assert math.allclose(result.ansatz.c, 0.8 * d0.ansatz.c)
 
     def test_contract_diff_representations(self):
-        coh0 = Coherent(0, x=0.1, y=0.1)
-        coh1 = Coherent(1, x=0.2, y=0.2).to_fock()
+        coh0 = Coherent(0, alpha=0.1 + 0.1j)
+        coh1 = Coherent(1, alpha=0.2 + 0.2j).to_fock()
 
         with settings(DEFAULT_REPRESENTATION="Bargmann"):
             result1 = coh0.contract(coh1)
@@ -369,9 +359,9 @@ class TestCircuitComponent:
 
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum((0, 1, 2))
-        d0 = Dgate(0, x=0.1, y=0.1)
-        d1 = Dgate(1, x=0.1, y=0.1)
-        d2 = Dgate(2, x=0.1, y=0.1)
+        d0 = Dgate(0, alpha=0.1 + 0.1j)
+        d1 = Dgate(1, alpha=0.1 + 0.1j)
+        d2 = Dgate(2, alpha=0.1 + 0.1j)
         a0 = Attenuator(0, transmissivity=0.8)
         a1 = Attenuator(1, transmissivity=0.8)
         a2 = Attenuator(2, transmissivity=0.7)
@@ -397,9 +387,9 @@ class TestCircuitComponent:
 
     def test_rshift_all_fock(self):
         vac012 = Vacuum((0, 1, 2))
-        d0 = Dgate(0, x=0.1, y=0.1)
-        d1 = Dgate(1, x=0.1, y=0.1)
-        d2 = Dgate(2, x=0.1, y=0.1)
+        d0 = Dgate(0, alpha=0.1 + 0.1j)
+        d1 = Dgate(1, alpha=0.1 + 0.1j)
+        d2 = Dgate(2, alpha=0.1 + 0.1j)
         a0 = Attenuator(0, transmissivity=0.8)
         a1 = Attenuator(1, transmissivity=0.8)
         a2 = Attenuator(2, transmissivity=0.7)
@@ -422,8 +412,8 @@ class TestCircuitComponent:
     def test_rshift_bargmann_and_fock(self, shape):
         with settings(AUTOSHAPE_MAX=shape):
             vac12 = Vacuum((1, 2))
-            d1 = Dgate(1, x=0.4, y=0.1)
-            d2 = Dgate(2, x=0.1, y=0.5)
+            d1 = Dgate(1, alpha=0.4 + 0.1j)
+            d2 = Dgate(2, alpha=0.1 + 0.5j)
             a1 = Attenuator(1, transmissivity=0.9)
             n1 = Number(1, n=1).dual
             n2 = Number(2, n=1).dual
@@ -448,7 +438,7 @@ class TestCircuitComponent:
 
     def test_rshift_error(self):
         vac012 = Vacuum((0, 1, 2))
-        d0 = Dgate(0, x=0.1, y=0.1)
+        d0 = Dgate(0, alpha=0.1 + 0.1j)
         d0._wires = Wires()
 
         with pytest.raises(ValueError, match="not clear"):
@@ -456,9 +446,9 @@ class TestCircuitComponent:
 
     def test_rshift_is_associative(self):
         vac012 = Vacuum((0, 1, 2))
-        d0 = Dgate(0, x=0.1, y=0.1)
-        d1 = Dgate(1, x=0.1, y=0.1)
-        d2 = Dgate(2, x=0.1, y=0.1)
+        d0 = Dgate(0, alpha=0.1 + 0.1j)
+        d1 = Dgate(1, alpha=0.1 + 0.1j)
+        d2 = Dgate(2, alpha=0.1 + 0.1j)
         a0 = Attenuator(0, transmissivity=0.8)
         a1 = Attenuator(1, transmissivity=0.8)
         a2 = Attenuator(2, transmissivity=0.7)
@@ -507,7 +497,7 @@ class TestCircuitComponent:
         assert mm_state == mm_state_dm
 
     def test_rshift_scalar(self):
-        d0 = Dgate(0, x=0.1, y=0.1)
+        d0 = Dgate(0, alpha=0.1 + 0.1j)
         result = 0.8 >> d0
         assert math.allclose(result, 0.8 * d0.ansatz.c)
 
@@ -536,13 +526,13 @@ class TestCircuitComponent:
 
     def test_to_fock_keeps_bargmann(self):
         "tests that to_fock doesn't lose the bargmann representation"
-        coh = Coherent(0, x=1.0)
+        coh = Coherent(0, alpha=1.0)
         coh.to_fock(20)
-        assert coh.bargmann_triple() == Coherent(0, x=1.0).bargmann_triple()
+        assert coh.bargmann_triple() == Coherent(0, alpha=1.0).bargmann_triple()
 
     def test_fock_component_no_bargmann(self):
         "tests that a fock component doesn't have a bargmann representation by default"
-        coh = Coherent(0, x=1.0)
+        coh = Coherent(0, alpha=1.0)
         CC = Ket.from_fock((0,), coh.fock_array(20))
         with pytest.raises(AttributeError):
             CC.bargmann_triple()
@@ -558,28 +548,28 @@ class TestCircuitComponent:
         assert ket_fock.to_bargmann() == back2
 
     def test_quadrature_channel(self):
-        C = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2) >> Attenuator(0, 0.9)
+        C = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3 + 0.2j) >> Attenuator(0, 0.9)
         back = Channel.from_quadrature((0,), (0,), C.quadrature_triple())
         assert back == C
 
     def test_quadrature_dm(self):
         "tests that transforming to quadrature and back gives the same density matrix"
-        dm = SqueezedVacuum(0, 0.4, 0.5) >> Dgate(0, 0.3, 0.2) >> Attenuator(0, 0.9)
+        dm = SqueezedVacuum(0, 0.4, 0.5) >> Dgate(0, 0.3 + 0.2j) >> Attenuator(0, 0.9)
         back = DM.from_quadrature((0,), dm.quadrature_triple())
         assert dm == back
 
     def test_quadrature_map(self):
-        C = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2) >> Attenuator(0, 0.9)
+        C = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3 + 0.2j) >> Attenuator(0, 0.9)
         back = Map.from_quadrature((0,), (0,), C.quadrature_triple())
         assert back == C
 
     def test_quadrature_operation(self):
-        U = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2)
+        U = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3 + 0.2j)
         back = Operation.from_quadrature((0,), (0,), U.quadrature_triple())
         assert back == U
 
     def test_quadrature_unitary(self):
-        U = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3, 0.2)
+        U = Sgate(0, 0.5, 0.4) >> Dgate(0, 0.3 + 0.2j)
         back = Unitary.from_quadrature((0,), (0,), U.quadrature_triple())
         assert back == U
 
@@ -587,7 +577,7 @@ class TestCircuitComponent:
     @patch("mrmustard.lab.circuit_components.display")
     def test_ipython_repr(self, mock_display, is_fock, widget_cls):
         """Test the IPython repr function."""
-        dgate = Dgate(1, x=0.1, y=0.1)
+        dgate = Dgate(1, alpha=0.1 + 0.1j)
         if is_fock:
             dgate = dgate.to_fock()
         dgate._ipython_display_()
@@ -600,7 +590,7 @@ class TestCircuitComponent:
     @patch("mrmustard.lab.circuit_components.display")
     def test_ipython_repr_invalid_obj(self, mock_display):
         """Test the IPython repr function."""
-        dgate = (Dgate(1, x=0.1, y=0.1) >> Dgate(2, x=0.1, y=0.1)).to_fock()
+        dgate = (Dgate(1, alpha=0.1 + 0.1j) >> Dgate(2, alpha=0.1 + 0.1j)).to_fock()
         dgate._ipython_display_()
         [box] = mock_display.call_args.args
         assert isinstance(box, VBox)
@@ -611,7 +601,7 @@ class TestCircuitComponent:
     @patch("mrmustard.widgets.IN_INTERACTIVE_SHELL", True)
     def test_ipython_repr_interactive(self, capsys):
         """Test the IPython repr function."""
-        dgate = (Dgate(1, x=0.1, y=0.1) >> Dgate(2, x=0.1, y=0.1)).to_fock()
+        dgate = (Dgate(1, alpha=0.1 + 0.1j) >> Dgate(2, alpha=0.1 + 0.1j)).to_fock()
         dgate._ipython_display_()
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(dgate)
@@ -619,7 +609,7 @@ class TestCircuitComponent:
     def test_serialize_default_behaviour(self):
         """Test the default serializer."""
         name = "my_component"
-        ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4))
+        ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.4j))
         cc = CircuitComponent(ansatz, Wires(set(), set(), {1, 8}, {1, 8}), name=name)
         kwargs, arrays = cc._serialize()
         assert kwargs == {
@@ -647,7 +637,7 @@ class TestCircuitComponent:
                     name="my_component",
                 )
 
-        cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1, 0.4)), [0, 1])
+        cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.4j)), [0, 1])
         with pytest.raises(
             TypeError,
             match="MyComponent does not seem to have any wires construction method",

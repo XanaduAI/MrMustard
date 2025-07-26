@@ -37,12 +37,9 @@ class Coherent(Ket):
 
     Args:
         mode: The mode of the coherent state.
-        x: The `x` displacement of the coherent state.
-        y: The `y` displacement of the coherent state.
-        x_trainable: Whether the `x` displacement is trainable.
-        y_trainable: Whether the `y` displacement is trainable.
-        x_bounds: The bounds of the `x` displacement.
-        y_bounds: The bounds of the `y` displacement.
+        alpha: The `alpha` displacement of the coherent state.
+        alpha_trainable: Whether the `alpha` displacement is trainable.
+        alpha_bounds: The bounds on the absolute value of `alpha` displacement.
 
     Returns:
         A ``Ket`` object representing a coherent state.
@@ -51,8 +48,8 @@ class Coherent(Ket):
 
         >>> from mrmustard.lab import Coherent, Vacuum, Dgate
 
-        >>> state = Coherent(mode=0, x=0.3, y=0.2)
-        >>> assert state == Vacuum(0) >> Dgate(0, x=0.3, y=0.2)
+        >>> state = Coherent(mode=0, alpha=0.3 + 0.2j)
+        >>> assert state == Vacuum(0) >> Dgate(0, alpha=0.3 + 0.2j)
 
     .. details::
 
@@ -70,36 +67,34 @@ class Coherent(Ket):
         Note that vector of means in phase space for a coherent state with parameters ``x,y`` is
         ``np.sqrt(2)*x, np.sqrt(2)*y`` (with units ``settings.HBAR=1``).
 
+
+
+    .. code-block::
+
+        >>> from mrmustard.lab import Coherent, Vacuum, Dgate
+
+        >>> state = Coherent(mode=0, alpha=0.3 + 0.2j)
+        >>> assert state == Vacuum(0) >> Dgate(0, alpha=0.3 + 0.2j)
+
     """
 
     short_name = "Coh"
 
     def __init__(
         self,
-        mode: int | tuple[int],
-        x: float | Sequence[float] = 0.0,
-        y: float | Sequence[float] = 0.0,
-        x_trainable: bool = False,
-        y_trainable: bool = False,
-        x_bounds: tuple[float | None, float | None] = (None, None),
-        y_bounds: tuple[float | None, float | None] = (None, None),
+        mode: int,
+        alpha: complex | Sequence[complex] = 0.0,
+        alpha_trainable: bool = False,
+        alpha_bounds: tuple[float | None, float | None] = (0, None),
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Coherent")
         self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=math.float64
-            ),
-        )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=y_trainable, value=y, name="y", bounds=y_bounds, dtype=math.float64
-            ),
+            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128),
         )
 
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.coherent_state_Abc,
-            x=self.parameters.x,
-            y=self.parameters.y,
+            alpha=self.parameters.alpha,
         )
         self._wires = Wires(modes_out_ket=set(mode))

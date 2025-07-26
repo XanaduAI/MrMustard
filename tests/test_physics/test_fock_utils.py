@@ -97,7 +97,7 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
 def test_coherent_state(alpha):
     """Test that coherent states have the correct photon number statistics"""
     cutoff = 10
-    amps = Coherent(0, alpha.real, alpha.imag).fock_array([cutoff])
+    amps = Coherent(0, alpha).fock_array([cutoff])
     expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array(
         [alpha**n / np.sqrt(factorial(n)) for n in range(cutoff)],
     )
