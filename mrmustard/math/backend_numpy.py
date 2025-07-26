@@ -30,7 +30,6 @@ from .backend_base import BackendBase
 from .lattice import strategies
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
-    hermite_multidimensional_diagonal_batch,
 )
 
 np.set_printoptions(legacy="1.25")
@@ -510,9 +509,7 @@ class BackendNumpy(BackendBase):
         Returns:
             The renormalized Hermite polynomial from different B values.
         """
-        poly0, _, _, _, _ = hermite_multidimensional_diagonal_batch(A, B, C, cutoffs)
-
-        return poly0
+        return hermite_multidimensional_diagonal(A, B, C, cutoffs)[0]
 
     def hermite_renormalized_1leftoverMode(
         self,

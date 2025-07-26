@@ -39,7 +39,7 @@ from .jax_vjps import (
     hermite_renormalized_binomial_jax,
     hermite_renormalized_diagonal_reorderedAB_batch_jax,
     hermite_renormalized_diagonal_reorderedAB_jax,
-    hermite_renormalized_unbatched_jax,
+    hermite_renormalized_jax,
 )
 from .lattice import strategies
 from .parameter_set import ParameterSet
@@ -480,7 +480,7 @@ class BackendJax(BackendBase):
     ) -> jnp.ndarray:
         if out is not None:
             raise ValueError("The 'out' keyword is not supported in the JAX backend.")
-        return hermite_renormalized_unbatched_jax(A, b, c, shape, stable)
+        return hermite_renormalized_jax(A, b, c, shape, stable)
 
     def hermite_renormalized_batched(
         self,
