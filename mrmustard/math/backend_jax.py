@@ -516,7 +516,15 @@ class BackendJax(BackendBase):
         A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
         return hermite_renormalized_diagonal_jax(A, B, C, cutoffs)[0]
 
-    def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs, reorderedAB):
+    def hermite_renormalized_1leftoverMode(
+        self,
+        A: jnp.ndarray,
+        B: jnp.ndarray,
+        C: jnp.ndarray,
+        output_cutoff: int,
+        pnr_cutoffs: tuple[int, ...],
+        reorderedAB: bool,
+    ) -> jnp.ndarray:
         A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
         cutoffs = (output_cutoff + 1, *tuple(p + 1 for p in pnr_cutoffs))
         return hermite_renormalized_1leftoverMode_jax(A, B, C, cutoffs)[0]
