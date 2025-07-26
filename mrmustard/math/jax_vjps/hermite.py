@@ -278,15 +278,15 @@ def hermite_renormalized_diagonal_jax(
     )
 
 
-def hermite_renormalized_diagonal_jax_fwd(A, b, c, shape):
+def hermite_renormalized_diagonal_jax_fwd(A, b, c, cutoffs):
     r"""
     The jax forward pass for hermite_renormalized_diagonal.
     """
-    primal_output = hermite_renormalized_diagonal_jax(A, b, c, shape)
+    primal_output = hermite_renormalized_diagonal_jax(A, b, c, cutoffs)
     return (primal_output, (*primal_output, A, b, c))
 
 
-def hermite_renormalized_diagonal_jax_bwd(shape, res, g):
+def hermite_renormalized_diagonal_jax_bwd(cutoffs, res, g):
     r"""
     The jax backward pass for hermite_renormalized_diagonal.
     """
@@ -337,17 +337,19 @@ hermite_renormalized_diagonal_jax.defvjp(
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@partial(jax.custom_vjp, nondiff_argnums=(3,))
-@partial(jax.jit, static_argnums=(3,))
+@partial(jax.custom_vjp, nondiff_argnums=(3, 4))
+@partial(jax.jit, static_argnums=(3, 4))
 def hermite_renormalized_1leftoverMode_jax(
     A: jnp.ndarray,
     B: jnp.ndarray,
     C: jnp.ndarray,
-    cutoffs: tuple[int],
+    output_cutoff: int,
+    pnr_cutoffs: tuple[int, ...],
 ) -> jnp.ndarray:
     r"""
     The jax custom gradient for hermite_renormalized_1leftoverMode.
     """
+    cutoffs = (output_cutoff + 1, *tuple(p + 1 for p in pnr_cutoffs))
     M = len(cutoffs)
     cutoff_leftoverMode = cutoffs[0]
     cutoffs_tail = tuple(cutoffs[1:])
@@ -380,15 +382,15 @@ def hermite_renormalized_1leftoverMode_jax(
     )
 
 
-def hermite_renormalized_1leftoverMode_jax_fwd(A, b, c, shape):
+def hermite_renormalized_1leftoverMode_jax_fwd(A, b, c, output_cutoff, pnr_cutoffs):
     r"""
     The jax forward pass for hermite_renormalized_reorderedAB.
     """
-    primal_output = hermite_renormalized_1leftoverMode_jax(A, b, c, shape)
+    primal_output = hermite_renormalized_1leftoverMode_jax(A, b, c, output_cutoff, pnr_cutoffs)
     return (primal_output, (*primal_output, A, b, c))
 
 
-def hermite_renormalized_1leftoverMode_jax_bwd(shape, res, g):
+def hermite_renormalized_1leftoverMode_jax_bwd(output_cutoff, pnr_cutoffs, res, g):
     r"""
     The jax backward pass for hermite_renormalized_1leftoverMode.
     """

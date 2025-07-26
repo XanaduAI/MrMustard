@@ -39,8 +39,9 @@ from .jax_vjps import (
     hermite_renormalized_binomial_jax,
     hermite_renormalized_diagonal_jax,
     hermite_renormalized_jax,
+    squeezed_jax,
+    squeezer_jax,
 )
-from .lattice import strategies
 from .parameter_set import ParameterSet
 from .parameters import Constant, Variable
 
@@ -526,8 +527,7 @@ class BackendJax(BackendBase):
         reorderedAB: bool,
     ) -> jnp.ndarray:
         A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
-        cutoffs = (output_cutoff + 1, *tuple(p + 1 for p in pnr_cutoffs))
-        return hermite_renormalized_1leftoverMode_jax(A, B, C, cutoffs)[0]
+        return hermite_renormalized_1leftoverMode_jax(A, B, C, output_cutoff, pnr_cutoffs)[0]
 
     # ~~~~~~~~~~~~~~~~~~~~~~~
     # Fock lattice strategies
@@ -540,14 +540,10 @@ class BackendJax(BackendBase):
         return beamsplitter_jax(theta, phi, shape, method)
 
     def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
-        # TODO: implement vjps
-        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
-        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+        return squeezed_jax(r, phi, shape)
 
     def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
-        # TODO: implement vjps
-        sq_ket = strategies.squeezer(shape, self.asnumpy(r), self.asnumpy(phi))
-        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+        return squeezer_jax(r, phi, shape)
 
 
 # defining custom pytree nodes
