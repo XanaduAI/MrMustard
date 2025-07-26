@@ -258,15 +258,20 @@ def hermite_renormalized_diagonal_reorderedAB_jax(
     The jax custom gradient for hermite_renormalized_diagonal_reorderedAB.
     """
     M = len(cutoffs)
-    ret = jax.pure_callback(
+    if B.ndim == 1:
+        shape = (1, 1, 1) if M == 1 else (M, M - 1, *cutoffs)
+    elif B.ndim == 2:
+        batch_length = B.shape[1]
+        shape = (1, 1, 1, batch_length) if M == 1 else (M, M - 1, *cutoffs, batch_length)
+    return jax.pure_callback(
         lambda A, B, C, cutoffs: hermite_multidimensional_diagonal(
             np.array(A), np.array(B), np.array(C), np.array(cutoffs)
         ),
         (
             jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
             jax.ShapeDtypeStruct((M, *cutoffs), jnp.complex128),
-            jax.ShapeDtypeStruct((M, M, M), jnp.complex128),
-            jax.ShapeDtypeStruct((M, M, M), jnp.complex128),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
             jax.ShapeDtypeStruct((2 * M, *cutoffs), jnp.complex128),
         ),
         A,
@@ -274,8 +279,6 @@ def hermite_renormalized_diagonal_reorderedAB_jax(
         C,
         cutoffs,
     )
-    print(ret[0].shape, ret[1].shape, ret[2].shape, ret[3].shape, ret[4].shape)
-    return ret
 
 
 def hermite_renormalized_diagonal_reorderedAB_jax_fwd(A, b, c, shape):
@@ -316,7 +319,7 @@ def hermite_renormalized_diagonal_reorderedAB_jax_bwd(shape, res, g):
         poly1001,
         poly1,
     )
-    dLdpoly = jnp.array([0.0 + 0.0j, 0.0 + 0.0j, -1.0 + 0.0j])
+    dLdpoly = g[0]
     ax = tuple(range(dLdpoly.ndim))
     dLdA = jnp.sum(dLdpoly[..., None, None] * dpoly_dA, axis=ax)
     dLdB = jnp.sum(dLdpoly[..., None] * dpoly_dB, axis=ax)
