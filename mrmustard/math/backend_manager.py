@@ -718,7 +718,10 @@ class BackendManager:
         c: Tensor,
         cutoffs: tuple[int],
     ) -> Tensor:
-        r"""Renormalized multidimensional Hermite polynomial for calculating the diagonal of the Fock representation.
+        r"""
+        Renormalized multidimensional Hermite polynomial for calculating the diagonal of the Fock representation.
+
+        Note: This function supports batching of different B's.
 
         Args:
             A: The A matrix.
@@ -730,18 +733,6 @@ class BackendManager:
             The diagonal elements of the Fock representation (i.e., PNR detection probabilities).
         """
         return self._apply("hermite_renormalized_diagonal", (A, b, c, cutoffs))
-
-    def hermite_renormalized_diagonal_batch(
-        self,
-        A: Tensor,
-        B: Tensor,
-        C: Tensor,
-        cutoffs: tuple[int],
-    ) -> Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
-        Then, calculates the required renormalized multidimensional Hermite polynomial.
-        Same as hermite_renormalized_diagonal but works for a batch of different B's."""
-        return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
 
     def hermite_renormalized_1leftoverMode(
         self,

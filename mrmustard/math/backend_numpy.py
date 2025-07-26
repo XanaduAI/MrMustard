@@ -476,39 +476,6 @@ class BackendNumpy(BackendBase):
         Returns:
             The renormalized Hermite polynomial.
         """
-        poly0, _, _, _, _ = hermite_multidimensional_diagonal(A, B, C, cutoffs)
-
-        return poly0
-
-    def hermite_renormalized_diagonal_batch(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        cutoffs: tuple[int],
-    ) -> np.ndarray:
-        r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
-
-    def hermite_renormalized_diagonal_reorderedAB_batch(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        cutoffs: tuple[int],
-    ) -> np.ndarray:
-        r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
-
-        Args:
-            A: The A matrix.
-            B: The B vectors.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial from different B values.
-        """
         return hermite_multidimensional_diagonal(A, B, C, cutoffs)[0]
 
     def hermite_renormalized_1leftoverMode(
