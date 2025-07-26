@@ -65,7 +65,7 @@ def test_compactFock_1leftover():
     assert np.allclose(expected, G_leftover)
 
 
-@pytest.mark.requires_backend("jax")  # TODO: implement gradient of hermite_renormalized_diagonal
+@pytest.mark.requires_backend("jax")
 def test_compactFock_diagonal_gradients():
     r"""
     Test getting Fock amplitudes and gradients if all modes
@@ -93,7 +93,7 @@ def test_compactFock_diagonal_gradients():
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
 
 
-@pytest.mark.requires_backend()  # TODO: implement gradient of hermite_renormalized_1leftoverMode
+@pytest.mark.requires_backend()
 def test_compactFock_1leftover_gradients():
     r"""
     Test getting Fock amplitudes and if all but the first

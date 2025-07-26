@@ -25,12 +25,16 @@ import numpy as np
 from ..lattice import strategies
 from ..lattice.strategies.compactFock.inputValidation import (
     grad_hermite_multidimensional_diagonal,
+    hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
+    hermite_multidimensional_diagonal_batch,
 )
 
 __all__ = [
+    "hermite_renormalized_1leftoverMode_reorderedAB_jax",
     "hermite_renormalized_batched_jax",
     "hermite_renormalized_binomial_jax",
+    "hermite_renormalized_diagonal_reorderedAB_batch_jax",
     "hermite_renormalized_diagonal_reorderedAB_jax",
     "hermite_renormalized_unbatched_jax",
 ]
@@ -331,3 +335,91 @@ hermite_renormalized_diagonal_reorderedAB_jax.defvjp(
     hermite_renormalized_diagonal_reorderedAB_jax_fwd,
     hermite_renormalized_diagonal_reorderedAB_jax_bwd,
 )
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# hermite_renormalized_diagonal_reorderedAB_batch
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# @partial(jax.custom_vjp, nondiff_argnums=(3,))
+@partial(jax.jit, static_argnums=(3,))
+def hermite_renormalized_diagonal_reorderedAB_batch_jax(
+    A: jnp.ndarray,
+    B: jnp.ndarray,
+    C: jnp.ndarray,
+    cutoffs: tuple[int],
+) -> jnp.ndarray:
+    r"""
+    The jax custom gradient for hermite_renormalized_diagonal_reorderedAB_batch.
+    """
+    function = partial(hermite_multidimensional_diagonal_batch, cutoffs=tuple(cutoffs))
+    return jax.pure_callback(
+        lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
+        jax.ShapeDtypeStruct((*cutoffs, B.shape[1]), jnp.complex128),
+        A,
+        B,
+        C,
+    )
+
+
+def hermite_renormalized_diagonal_reorderedAB_batch_jax_fwd(A, b, c, shape):
+    r"""
+    The jax forward pass for hermite_renormalized_diagonal_reorderedAB_batch.
+    """
+
+
+def hermite_renormalized_diagonal_reorderedAB_batch_jax_bwd(shape, res, g):
+    r"""
+    The jax backward pass for hermite_renormalized_diagonal_reorderedAB_batch.
+    """
+
+
+# hermite_renormalized_diagonal_reorderedAB_batch_jax.defvjp(
+#     hermite_renormalized_diagonal_reorderedAB_batch_jax_fwd,
+#     hermite_renormalized_diagonal_reorderedAB_batch_jax_bwd,
+# )
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# hermite_renormalized_1leftoverMode_reorderedAB
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# @partial(jax.custom_vjp, nondiff_argnums=(3,))
+@partial(jax.jit, static_argnums=(3,))
+def hermite_renormalized_1leftoverMode_reorderedAB_jax(
+    A: jnp.ndarray,
+    B: jnp.ndarray,
+    C: jnp.ndarray,
+    cutoffs: tuple[int],
+) -> jnp.ndarray:
+    r"""
+    The jax custom gradient for hermite_renormalized_1leftoverMode_reorderedAB.
+    """
+    function = partial(hermite_multidimensional_1leftoverMode, cutoffs=cutoffs)
+    return jax.pure_callback(
+        lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
+        jax.ShapeDtypeStruct((cutoffs[0], *cutoffs), jnp.complex128),
+        A,
+        B,
+        C,
+    )
+
+
+def hermite_renormalized_1leftoverMode_reorderedAB_jax_fwd(A, b, c, shape):
+    r"""
+    The jax forward pass for hermite_renormalized_1leftoverMode_reorderedAB.
+    """
+
+
+def hermite_renormalized_1leftoverMode_reorderedAB_jaxbwd(shape, res, g):
+    r"""
+    The jax backward pass for hermite_renormalized_1leftoverMode_reorderedAB.
+    """
+
+
+# hermite_renormalized_1leftoverMode_reorderedAB_jax.defvjp(
+#     hermite_renormalized_1leftoverMode_reorderedAB_jax_fwd,
+#     hermite_renormalized_1leftoverMode_reorderedAB_jaxbwd,
+# )

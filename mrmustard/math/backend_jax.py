@@ -34,16 +34,14 @@ from .backend_base import BackendBase
 from .jax_vjps import (
     beamsplitter_jax,
     displacement_jax,
+    hermite_renormalized_1leftoverMode_reorderedAB_jax,
     hermite_renormalized_batched_jax,
     hermite_renormalized_binomial_jax,
+    hermite_renormalized_diagonal_reorderedAB_batch_jax,
     hermite_renormalized_diagonal_reorderedAB_jax,
     hermite_renormalized_unbatched_jax,
 )
 from .lattice import strategies
-from .lattice.strategies.compactFock.inputValidation import (
-    hermite_multidimensional_1leftoverMode,
-    hermite_multidimensional_diagonal_batch,
-)
 from .parameter_set import ParameterSet
 from .parameters import Constant, Variable
 
@@ -467,6 +465,10 @@ class BackendJax(BackendBase):
         B = self.gather(B, ordering, axis=0)
         return A, B
 
+    # ~~~~~~~~~~~~~~~~~~~~
+    # hermite_renormalized
+    # ~~~~~~~~~~~~~~~~~~~~
+
     def hermite_renormalized_unbatched(
         self,
         A: jnp.ndarray,
@@ -523,7 +525,6 @@ class BackendJax(BackendBase):
     ) -> jnp.ndarray:
         return hermite_renormalized_diagonal_reorderedAB_jax(A, B, C, cutoffs)[0]
 
-    @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_batch(
         self,
         A: jnp.ndarray,
@@ -534,7 +535,6 @@ class BackendJax(BackendBase):
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
 
-    @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal_reorderedAB_batch(
         self,
         A: jnp.ndarray,
@@ -542,22 +542,13 @@ class BackendJax(BackendBase):
         C: jnp.ndarray,
         cutoffs: tuple[int],
     ) -> jnp.ndarray:
-        function = partial(hermite_multidimensional_diagonal_batch, cutoffs=tuple(cutoffs))
-        return jax.pure_callback(
-            lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
-            jax.ShapeDtypeStruct((*cutoffs, B.shape[1]), jnp.complex128),
-            A,
-            B,
-            C,
-        )
+        return hermite_renormalized_diagonal_reorderedAB_batch_jax(A, B, C, cutoffs)
 
-    @partial(jax.jit, static_argnames=["output_cutoff", "pnr_cutoffs"])
     def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
         A, B = self.reorder_AB_bargmann(A, B)
         cutoffs = (output_cutoff + 1, *tuple(p + 1 for p in pnr_cutoffs))
         return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
 
-    @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_1leftoverMode_reorderedAB(
         self,
         A: jnp.ndarray,
@@ -565,31 +556,11 @@ class BackendJax(BackendBase):
         C: jnp.ndarray,
         cutoffs: tuple[int],
     ) -> jnp.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
-        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+        return hermite_renormalized_1leftoverMode_reorderedAB_jax(A, B, C, cutoffs)
 
-        Calculates all possible Fock representations of mode 0,
-        where all other modes are PNR detected.
-        This is done by applying the recursion relation in a selective manner.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial.
-        """
-        function = partial(hermite_multidimensional_1leftoverMode, cutoffs=cutoffs)
-        return jax.pure_callback(
-            lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
-            jax.ShapeDtypeStruct((cutoffs[0], *cutoffs), jnp.complex128),
-            A,
-            B,
-            C,
-        )
+    # ~~~~~~~~~~~~~~~~~~~~~~~
+    # Fock lattice strategies
+    # ~~~~~~~~~~~~~~~~~~~~~~~
 
     def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):
         return displacement_jax(x, y, shape, tol)
