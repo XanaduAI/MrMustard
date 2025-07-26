@@ -231,10 +231,10 @@ class TestCircuitComponent:
         assert d12.ansatz == d1.ansatz + d2.ansatz
 
     def test_add_error(self):
-        d1 = Dgate(1, alpha=0.1+0.1j)
-        d2 = Dgate(2, alpha=0.2+0.2j)
-        d3 = Dgate(1, alpha=0.1+0.1j, alpha_trainable=True)
-        d4 = Dgate(1, alpha=0.1+0.1j, alpha_trainable=True, alpha_bounds=(0, 1))
+        d1 = Dgate(1, alpha=0.1 + 0.1j)
+        d2 = Dgate(2, alpha=0.2 + 0.2j)
+        d3 = Dgate(1, alpha=0.1 + 0.1j, alpha_trainable=True)
+        d4 = Dgate(1, alpha=0.1 + 0.1j, alpha_trainable=True, alpha_bounds=(0, 1))
         d_batched = Dgate(1, alpha=[0.1, 0.2])
 
         with pytest.raises(ValueError, match="different wires"):
