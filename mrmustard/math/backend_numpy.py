@@ -369,6 +369,20 @@ class BackendNumpy(BackendBase):
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
+    def reorder_AB_bargmann(self, A: np.ndarray, B: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
+        while in mrmustard.physics.bargmann_utils the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
+        """
+        ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
+        A = self.gather(A, ordering, axis=1)
+        A = self.gather(A, ordering)
+        B = self.gather(B, ordering, axis=0)
+        return A, B
+
+    # ~~~~~~~~~~~~~~~~~~~~
+    # hermite_renormalized
+    # ~~~~~~~~~~~~~~~~~~~~
+
     def hermite_renormalized(
         self,
         A: np.ndarray,
@@ -428,16 +442,6 @@ class BackendNumpy(BackendBase):
             global_cutoff=global_cutoff or sum(shape) - len(shape) + 1,
         )[0]
 
-    def reorder_AB_bargmann(self, A: np.ndarray, B: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
-        while in mrmustard.physics.bargmann_utils the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
-        """
-        ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
-        A = self.gather(A, ordering, axis=1)
-        A = self.gather(A, ordering)
-        B = self.gather(B, ordering, axis=0)
-        return A, B
-
     def hermite_renormalized_diagonal(
         self,
         A: np.ndarray,
@@ -463,6 +467,10 @@ class BackendNumpy(BackendBase):
         return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
             (-2, -1, *tuple(range(len(pnr_cutoffs)))),
         )
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~
+    # Fock lattice strategies
+    # ~~~~~~~~~~~~~~~~~~~~~~~
 
     def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):
         alpha = self.asnumpy(x) + 1j * self.asnumpy(y)
