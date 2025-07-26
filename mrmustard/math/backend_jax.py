@@ -34,7 +34,7 @@ from .backend_base import BackendBase
 from .jax_vjps import (
     beamsplitter_jax,
     displacement_jax,
-    hermite_renormalized_1leftoverMode_reorderedAB_jax,
+    hermite_renormalized_1leftoverMode_jax,
     hermite_renormalized_batched_jax,
     hermite_renormalized_binomial_jax,
     hermite_renormalized_diagonal_jax,
@@ -516,19 +516,10 @@ class BackendJax(BackendBase):
         A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
         return hermite_renormalized_diagonal_jax(A, B, C, cutoffs)[0]
 
-    def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
-        A, B = self.reorder_AB_bargmann(A, B)
+    def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs, reorderedAB):
+        A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
         cutoffs = (output_cutoff + 1, *tuple(p + 1 for p in pnr_cutoffs))
-        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
-
-    def hermite_renormalized_1leftoverMode_reorderedAB(
-        self,
-        A: jnp.ndarray,
-        B: jnp.ndarray,
-        C: jnp.ndarray,
-        cutoffs: tuple[int],
-    ) -> jnp.ndarray:
-        return hermite_renormalized_1leftoverMode_reorderedAB_jax(A, B, C, cutoffs)[0]
+        return hermite_renormalized_1leftoverMode_jax(A, B, C, cutoffs)[0]
 
     # ~~~~~~~~~~~~~~~~~~~~~~~
     # Fock lattice strategies

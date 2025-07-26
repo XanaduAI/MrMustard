@@ -419,16 +419,14 @@ class BackendNumpy(BackendBase):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        G, _ = strategies.binomial(
+        return strategies.binomial(
             tuple(shape),
             A,
             B,
             C,
             max_l2=max_l2 or settings.AUTOSHAPE_PROBABILITY,
             global_cutoff=global_cutoff or sum(shape) - len(shape) + 1,
-        )
-
-        return G
+        )[0]
 
     def reorder_AB_bargmann(self, A: np.ndarray, B: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
@@ -459,7 +457,9 @@ class BackendNumpy(BackendBase):
         output_cutoff: int,
         pnr_cutoffs: tuple[int, ...],
         stable: bool = False,
+        reorderedAB: bool = True,
     ) -> np.ndarray:
+        # why is this different from the jax version?
         return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
             (-2, -1, *tuple(range(len(pnr_cutoffs)))),
         )

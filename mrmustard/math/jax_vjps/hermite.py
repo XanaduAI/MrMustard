@@ -31,7 +31,7 @@ from ..lattice.strategies.compactFock.inputValidation import (
 )
 
 __all__ = [
-    "hermite_renormalized_1leftoverMode_reorderedAB_jax",
+    "hermite_renormalized_1leftoverMode_jax",
     "hermite_renormalized_batched_jax",
     "hermite_renormalized_binomial_jax",
     "hermite_renormalized_diagonal_jax",
@@ -332,21 +332,21 @@ hermite_renormalized_diagonal_jax.defvjp(
 )
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# hermite_renormalized_1leftoverMode_reorderedAB
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# hermite_renormalized_1leftoverMode
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 @partial(jax.custom_vjp, nondiff_argnums=(3,))
 @partial(jax.jit, static_argnums=(3,))
-def hermite_renormalized_1leftoverMode_reorderedAB_jax(
+def hermite_renormalized_1leftoverMode_jax(
     A: jnp.ndarray,
     B: jnp.ndarray,
     C: jnp.ndarray,
     cutoffs: tuple[int],
 ) -> jnp.ndarray:
     r"""
-    The jax custom gradient for hermite_renormalized_1leftoverMode_reorderedAB.
+    The jax custom gradient for hermite_renormalized_1leftoverMode.
     """
     M = len(cutoffs)
     cutoff_leftoverMode = cutoffs[0]
@@ -380,17 +380,17 @@ def hermite_renormalized_1leftoverMode_reorderedAB_jax(
     )
 
 
-def hermite_renormalized_1leftoverMode_reorderedAB_jax_fwd(A, b, c, shape):
+def hermite_renormalized_1leftoverMode_jax_fwd(A, b, c, shape):
     r"""
-    The jax forward pass for hermite_renormalized_1leftoverMode_reorderedAB.
+    The jax forward pass for hermite_renormalized_reorderedAB.
     """
-    primal_output = hermite_renormalized_1leftoverMode_reorderedAB_jax(A, b, c, shape)
+    primal_output = hermite_renormalized_1leftoverMode_jax(A, b, c, shape)
     return (primal_output, (*primal_output, A, b, c))
 
 
-def hermite_renormalized_1leftoverMode_reorderedAB_jax_bwd(shape, res, g):
+def hermite_renormalized_1leftoverMode_jax_bwd(shape, res, g):
     r"""
-    The jax backward pass for hermite_renormalized_1leftoverMode_reorderedAB.
+    The jax backward pass for hermite_renormalized_1leftoverMode.
     """
     poly0, poly2, poly1010, poly1001, poly1, A, b, c = res
     dpoly_dC, dpoly_dA, dpoly_dB = jax.pure_callback(
@@ -433,7 +433,7 @@ def hermite_renormalized_1leftoverMode_reorderedAB_jax_bwd(shape, res, g):
     return dLdA, dLdB, dLdC
 
 
-hermite_renormalized_1leftoverMode_reorderedAB_jax.defvjp(
-    hermite_renormalized_1leftoverMode_reorderedAB_jax_fwd,
-    hermite_renormalized_1leftoverMode_reorderedAB_jax_bwd,
+hermite_renormalized_1leftoverMode_jax.defvjp(
+    hermite_renormalized_1leftoverMode_jax_fwd,
+    hermite_renormalized_1leftoverMode_jax_bwd,
 )

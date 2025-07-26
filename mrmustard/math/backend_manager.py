@@ -748,6 +748,7 @@ class BackendManager:
         c: Tensor,
         output_cutoff: int,
         pnr_cutoffs: tuple[int, ...],
+        reorderedAB: bool = True,
     ) -> Tensor:
         r"""Compute the conditional density matrix of mode 0, with all the other modes
         detected with PNR detectors up to the given photon numbers.
@@ -758,6 +759,7 @@ class BackendManager:
             c: The c scalar.
             output_cutoff: upper boundary of photon numbers in mode 0
             pnr_cutoffs: upper boundary of photon numbers in the other modes
+            reorderedAB: Whether to reorder A and B parameters match conventions in mrmustard.math.numba.compactFock~.
 
         Returns:
             The conditional density matrix of mode 0. The final shape is
@@ -765,7 +767,7 @@ class BackendManager:
         """
         return self._apply(
             "hermite_renormalized_1leftoverMode",
-            (A, b, c, output_cutoff, pnr_cutoffs),
+            (A, b, c, output_cutoff, pnr_cutoffs, reorderedAB),
         )
 
     def hermite_renormalized_binomial(
