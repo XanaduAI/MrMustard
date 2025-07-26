@@ -538,7 +538,7 @@ class TestOptimizer:
         assert math.allclose(math.sinh(S_12.parameters.r.value) ** 2, 1, atol=1e-2)
 
     def test_complex_dgate_optimization_fock(self):
-        alphas = [0.2 + 0.4j, 0.1 - 0.2j]
+        alphas = [0.2 + 0.4j, -0.1 - 0.2j, 0.1j, 0.4]
         for alpha in alphas:
             dgate = Dgate(0, alpha=alpha, alpha_trainable=True)
             target_state = Coherent(0, alpha=alpha).fock_array((80,))
@@ -552,7 +552,7 @@ class TestOptimizer:
             assert math.allclose(dgate.parameters.alpha.value, alpha, atol=0.01)
 
     def test_complex_dgate_optimization_bargmann(self):
-        alphas = [0.2 + 0.4j, 0.1 - 0.2j]
+        alphas = [0.2 + 0.4j, -0.1 - 0.2j, 0.1j, 0.4]
         for alpha in alphas:
             dgate = Dgate(0, alpha_trainable=True)
             target_state = Coherent(0, alpha=alpha)
