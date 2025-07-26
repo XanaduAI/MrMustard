@@ -34,7 +34,6 @@ __all__ = [
     "hermite_renormalized_1leftoverMode_reorderedAB_jax",
     "hermite_renormalized_batched_jax",
     "hermite_renormalized_binomial_jax",
-    "hermite_renormalized_diagonal_reorderedAB_batch_jax",
     "hermite_renormalized_diagonal_reorderedAB_jax",
     "hermite_renormalized_jax",
 ]
@@ -350,33 +349,6 @@ hermite_renormalized_diagonal_reorderedAB_jax.defvjp(
     hermite_renormalized_diagonal_reorderedAB_jax_fwd,
     hermite_renormalized_diagonal_reorderedAB_jax_bwd,
 )
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# hermite_renormalized_diagonal_reorderedAB_batch
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-# TODO: update grad_hermite_multidimensional_diagonal to handle batch dimensions and merge
-# with hermite_renormalized_diagonal_reorderedAB_jax
-@partial(jax.jit, static_argnums=(3,))
-def hermite_renormalized_diagonal_reorderedAB_batch_jax(
-    A: jnp.ndarray,
-    B: jnp.ndarray,
-    C: jnp.ndarray,
-    cutoffs: tuple[int],
-) -> jnp.ndarray:
-    r"""
-    The jax custom gradient for hermite_renormalized_diagonal_reorderedAB_batch.
-    """
-    function = partial(hermite_multidimensional_diagonal, cutoffs=tuple(cutoffs))
-    return jax.pure_callback(
-        lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
-        jax.ShapeDtypeStruct((*cutoffs, B.shape[1]), jnp.complex128),
-        A,
-        B,
-        C,
-    )
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
