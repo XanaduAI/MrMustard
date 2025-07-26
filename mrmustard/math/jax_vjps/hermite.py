@@ -259,7 +259,7 @@ def hermite_renormalized_diagonal_reorderedAB_jax(
     """
     M = len(cutoffs)
     function = partial(hermite_multidimensional_diagonal, cutoffs=tuple(cutoffs))
-    poly0, poly2, poly1010, poly1001, poly1 = jax.pure_callback(
+    return jax.pure_callback(
         lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C)),
         (
             jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
@@ -272,24 +272,14 @@ def hermite_renormalized_diagonal_reorderedAB_jax(
         B,
         C,
     )
-    return poly0, poly2, poly1010, poly1001, poly1
 
 
 def hermite_renormalized_diagonal_reorderedAB_jax_fwd(A, b, c, shape):
     r"""
     The jax forward pass for hermite_renormalized_diagonal_reorderedAB.
     """
-    poly0, poly2, poly1010, poly1001, poly1 = hermite_renormalized_diagonal_reorderedAB_jax(
-        A, b, c, shape
-    )
-    return (
-        poly0,
-        poly2,
-        poly1010,
-        poly1001,
-        poly1,
-        (poly0, poly2, poly1010, poly1001, poly1, A, b, c),
-    )
+    primal_output = hermite_renormalized_diagonal_reorderedAB_jax(A, b, c, shape)
+    return (primal_output, (*primal_output, A, b, c))
 
 
 def hermite_renormalized_diagonal_reorderedAB_jax_bwd(shape, res, g):
@@ -322,10 +312,11 @@ def hermite_renormalized_diagonal_reorderedAB_jax_bwd(shape, res, g):
         poly1001,
         poly1,
     )
-    ax = tuple(range(g.ndim))
-    dLdA = jnp.sum(g[..., None, None] * jnp.conj(dpoly_dA), axis=ax)
-    dLdB = jnp.sum(g[..., None] * jnp.conj(dpoly_dB), axis=ax)
-    dLdC = jnp.sum(g * jnp.conj(dpoly_dC), axis=ax)
+    dLdpoly = g[0]
+    ax = tuple(range(dLdpoly.ndim))
+    dLdA = jnp.sum(dLdpoly[..., None, None] * jnp.conj(dpoly_dA), axis=ax)
+    dLdB = jnp.sum(dLdpoly[..., None] * jnp.conj(dpoly_dB), axis=ax)
+    dLdC = jnp.sum(dLdpoly * jnp.conj(dpoly_dC), axis=ax)
     return dLdA, dLdB, dLdC
 
 

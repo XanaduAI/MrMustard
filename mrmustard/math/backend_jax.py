@@ -504,7 +504,6 @@ class BackendJax(BackendBase):
     ) -> jnp.ndarray:
         return hermite_renormalized_binomial_jax(A, B, C, shape, max_l2, global_cutoff)
 
-    @partial(jax.jit, static_argnames=["cutoffs"])
     def hermite_renormalized_diagonal(
         self,
         A: jnp.ndarray,
