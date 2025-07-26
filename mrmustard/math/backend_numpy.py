@@ -369,7 +369,7 @@ class BackendNumpy(BackendBase):
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    def hermite_renormalized_unbatched(
+    def hermite_renormalized(
         self,
         A: np.ndarray,
         b: np.ndarray,

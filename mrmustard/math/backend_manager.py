@@ -706,7 +706,7 @@ class BackendManager:
         # Unbatched case
         check_out_shape(())
         return self._apply(
-            "hermite_renormalized_unbatched",
+            "hermite_renormalized",
             (A, b, c),
             {"shape": tuple(shape), "stable": stable, "out": out},
         )

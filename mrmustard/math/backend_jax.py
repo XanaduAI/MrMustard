@@ -468,7 +468,7 @@ class BackendJax(BackendBase):
     # hermite_renormalized
     # ~~~~~~~~~~~~~~~~~~~~
 
-    def hermite_renormalized_unbatched(
+    def hermite_renormalized(
         self,
         A: jnp.ndarray,
         b: jnp.ndarray,

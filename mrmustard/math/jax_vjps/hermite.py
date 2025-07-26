@@ -38,9 +38,9 @@ __all__ = [
     "hermite_renormalized_jax",
 ]
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# hermite_renormalized_unbatched
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~
+# hermite_renormalized
+# ~~~~~~~~~~~~~~~~~~~~
 
 
 @partial(jax.custom_vjp, nondiff_argnums=(3, 4))
@@ -53,7 +53,7 @@ def hermite_renormalized_jax(
     stable: bool,
 ) -> jnp.ndarray:
     r"""
-    The jax custom gradient for hermite_renormalized_unbatched.
+    The jax custom gradient for hermite_renormalized.
     """
     if stable:
         G = jax.pure_callback(
@@ -76,7 +76,7 @@ def hermite_renormalized_jax(
 
 def hermite_renormalized_jax_fwd(A, b, c, shape, stable):
     r"""
-    The jax forward pass for hermite_renormalized_unbatched.
+    The jax forward pass for hermite_renormalized.
     """
     G = hermite_renormalized_jax(A, b, c, shape, stable)
     return (G, (G, A, b, c))
@@ -84,7 +84,7 @@ def hermite_renormalized_jax_fwd(A, b, c, shape, stable):
 
 def hermite_renormalized_jax_bwd(shape, stable, res, g):
     r"""
-    The jax backward pass for hermite_renormalized_unbatched.
+    The jax backward pass for hermite_renormalized.
     """
     G, A, b, c = res
     dLdA, dLdB, dLdC = jax.pure_callback(
@@ -141,7 +141,7 @@ def hermite_renormalized_batched_jax(
 
 def hermite_renormalized_batched_jax_fwd(A, b, c, shape, stable):
     r"""
-    The jax forward pass for hermite_renormalized_unbatched.
+    The jax forward pass for hermite_renormalized_batched.
     """
     G = hermite_renormalized_batched_jax(A, b, c, shape, stable)
     return (G, (G, A, b, c))
@@ -149,7 +149,7 @@ def hermite_renormalized_batched_jax_fwd(A, b, c, shape, stable):
 
 def hermite_renormalized_batched_jax_bwd(shape, stable, res, g):
     r"""
-    The jax backward pass for hermite_renormalized_unbatched.
+    The jax backward pass for hermite_renormalized_batched.
     """
     G, A, b, c = res
     dLdA, dLdB, dLdC = jax.pure_callback(
