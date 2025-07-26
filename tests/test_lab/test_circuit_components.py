@@ -235,18 +235,18 @@ class TestCircuitComponent:
         d2 = Dgate(2, alpha=0.2+0.2j)
         d3 = Dgate(1, alpha=0.1+0.1j, alpha_trainable=True)
         d4 = Dgate(1, alpha=0.1+0.1j, alpha_trainable=True, alpha_bounds=(0, 1))
-        d_batched = Dgate(1, x=[0.1, 0.2])
+        d_batched = Dgate(1, alpha=[0.1, 0.2])
 
         with pytest.raises(ValueError, match="different wires"):
             d1 + d2
 
-        with pytest.raises(ValueError, match="Parameter 'x' is a"):
+        with pytest.raises(ValueError, match="Parameter 'alpha' is a"):
             d1 + d3
 
         with pytest.raises(ValueError, match="batched"):
             d1 + d_batched
 
-        with pytest.raises(ValueError, match="Parameter 'x' has bounds"):
+        with pytest.raises(ValueError, match="Parameter 'alpha' has bounds"):
             d3 + d4
 
     def test_sub(self):
