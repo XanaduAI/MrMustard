@@ -545,7 +545,7 @@ class TestOptimizer:
         
             def cost_fn(dgate):
                 state_out = dgate.fock_array((80,1))[:,0]
-                return 1-math.abs(math.sum(math.conj(state_out) * target_state)) ** 2
+                return 1-math.abs(math.sum(math.conj(state_out) * target_state)) ** 2  # noqa: B023
             
             opt = Optimizer(euclidean_lr=0.01)
             (dgate,) = opt.minimize(cost_fn, by_optimizing=[dgate], max_steps=200)
@@ -559,7 +559,7 @@ class TestOptimizer:
         
             def cost_fn(dgate):
                 state_out = Vacuum(0) >> dgate
-                return 1-math.real(state_out.expectation(target_state))
+                return 1-math.real(state_out.expectation(target_state))  # noqa: B023
             
             opt = Optimizer(euclidean_lr=0.05)
             (dgate,) = opt.minimize(cost_fn, by_optimizing=[dgate], max_steps=200)
