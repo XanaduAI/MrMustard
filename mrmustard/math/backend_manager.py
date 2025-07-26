@@ -717,22 +717,29 @@ class BackendManager:
         b: Tensor,
         c: Tensor,
         cutoffs: tuple[int],
+        reorderedAB: bool = True,
     ) -> Tensor:
         r"""
-        Renormalized multidimensional Hermite polynomial for calculating the diagonal of the Fock representation.
+        Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
+        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+
+        Calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
+        by applying the recursion relation in a selective manner.
 
         Note: This function supports batching of different B's.
 
         Args:
             A: The A matrix.
-            b: The b vector.
-            c: The c scalar.
-            cutoffs: Upper boundary of photon numbers in each mode.
+            B: The B vector.
+            C: The C scalar.
+            cutoffs: upper boundary of photon numbers in each mode
+            reorderedAB: Whether to reorder A and B parameters match conventions in mrmustard.math.numba.compactFock~.
 
         Returns:
-            The diagonal elements of the Fock representation (i.e., PNR detection probabilities).
+            The renormalized Hermite polynomial.
         """
-        return self._apply("hermite_renormalized_diagonal", (A, b, c, cutoffs))
+        return self._apply("hermite_renormalized_diagonal", (A, b, c, cutoffs, reorderedAB))
 
     def hermite_renormalized_1leftoverMode(
         self,

@@ -37,7 +37,7 @@ from .jax_vjps import (
     hermite_renormalized_1leftoverMode_reorderedAB_jax,
     hermite_renormalized_batched_jax,
     hermite_renormalized_binomial_jax,
-    hermite_renormalized_diagonal_reorderedAB_jax,
+    hermite_renormalized_diagonal_jax,
     hermite_renormalized_jax,
 )
 from .lattice import strategies
@@ -511,18 +511,10 @@ class BackendJax(BackendBase):
         B: jnp.ndarray,
         C: jnp.ndarray,
         cutoffs: tuple[int],
+        reorderedAB: bool,
     ) -> jnp.ndarray:
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
-
-    def hermite_renormalized_diagonal_reorderedAB(
-        self,
-        A: jnp.ndarray,
-        B: jnp.ndarray,
-        C: jnp.ndarray,
-        cutoffs: tuple[int],
-    ) -> jnp.ndarray:
-        return hermite_renormalized_diagonal_reorderedAB_jax(A, B, C, cutoffs)[0]
+        A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
+        return hermite_renormalized_diagonal_jax(A, B, C, cutoffs)[0]
 
     def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
         A, B = self.reorder_AB_bargmann(A, B)

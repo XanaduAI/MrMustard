@@ -446,36 +446,9 @@ class BackendNumpy(BackendBase):
         B: np.ndarray,
         C: np.ndarray,
         cutoffs: tuple[int],
+        reorderedAB: bool,
     ) -> np.ndarray:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
-
-    def hermite_renormalized_diagonal_reorderedAB(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        cutoffs: tuple[int],
-    ) -> np.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
-        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
-
-        Calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
-        by applying the recursion relation in a selective manner.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial.
-        """
+        A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
         return hermite_multidimensional_diagonal(A, B, C, cutoffs)[0]
 
     def hermite_renormalized_1leftoverMode(

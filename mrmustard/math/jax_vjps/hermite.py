@@ -34,7 +34,7 @@ __all__ = [
     "hermite_renormalized_1leftoverMode_reorderedAB_jax",
     "hermite_renormalized_batched_jax",
     "hermite_renormalized_binomial_jax",
-    "hermite_renormalized_diagonal_reorderedAB_jax",
+    "hermite_renormalized_diagonal_jax",
     "hermite_renormalized_jax",
 ]
 
@@ -241,73 +241,54 @@ hermite_renormalized_binomial_jax.defvjp(
 )
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# hermite_renormalized_diagonal_reorderedAB
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# hermite_renormalized_diagonal
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@partial(jax.custom_vjp, nondiff_argnums=(3,))  # noqa: RET503
+@partial(jax.custom_vjp, nondiff_argnums=(3,))
 @partial(jax.jit, static_argnums=(3,))
-def hermite_renormalized_diagonal_reorderedAB_jax(
+def hermite_renormalized_diagonal_jax(
     A: jnp.ndarray,
     B: jnp.ndarray,
     C: jnp.ndarray,
     cutoffs: tuple[int],
 ) -> jnp.ndarray:
     r"""
-    The jax custom gradient for hermite_renormalized_diagonal_reorderedAB.
+    The jax custom gradient for hermite_renormalized_diagonal.
     """
     M = len(cutoffs)
-    if B.ndim == 1:
-        shape = (1, 1, 1) if M == 1 else (M, M - 1, *cutoffs)
-        return jax.pure_callback(
-            lambda A, B, C, cutoffs: hermite_multidimensional_diagonal(
-                np.array(A), np.array(B), np.array(C), np.array(cutoffs)
-            ),
-            (
-                jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
-                jax.ShapeDtypeStruct((M, *cutoffs), jnp.complex128),
-                jax.ShapeDtypeStruct(shape, jnp.complex128),
-                jax.ShapeDtypeStruct(shape, jnp.complex128),
-                jax.ShapeDtypeStruct((2 * M, *cutoffs), jnp.complex128),
-            ),
-            A,
-            B,
-            C,
-            cutoffs,
-        )
-    elif B.ndim == 2:  # noqa: RET505
-        batch_length = B.shape[1]
-        shape = (1, 1, 1, batch_length) if M == 1 else (M, M - 1, *cutoffs, batch_length)
-        return jax.pure_callback(
-            lambda A, B, C, cutoffs: hermite_multidimensional_diagonal(
-                np.array(A), np.array(B), np.array(C), np.array(cutoffs)
-            ),
-            (
-                jax.ShapeDtypeStruct((*cutoffs, batch_length), jnp.complex128),
-                jax.ShapeDtypeStruct((M, *cutoffs, batch_length), jnp.complex128),
-                jax.ShapeDtypeStruct(shape, jnp.complex128),
-                jax.ShapeDtypeStruct(shape, jnp.complex128),
-                jax.ShapeDtypeStruct((2 * M, *cutoffs, batch_length), jnp.complex128),
-            ),
-            A,
-            B,
-            C,
-            cutoffs,
-        )
+    batch_shape = B.shape[-1:] if B.ndim == 2 else ()
+    shape = (1, 1, 1, *batch_shape) if M == 1 else (M, M - 1, *cutoffs, *batch_shape)
+    return jax.pure_callback(
+        lambda A, B, C, cutoffs: hermite_multidimensional_diagonal(
+            np.array(A), np.array(B), np.array(C), np.array(cutoffs)
+        ),
+        (
+            jax.ShapeDtypeStruct((*cutoffs, *batch_shape), jnp.complex128),
+            jax.ShapeDtypeStruct((M, *cutoffs, *batch_shape), jnp.complex128),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            jax.ShapeDtypeStruct((2 * M, *cutoffs, *batch_shape), jnp.complex128),
+        ),
+        A,
+        B,
+        C,
+        cutoffs,
+    )
 
 
-def hermite_renormalized_diagonal_reorderedAB_jax_fwd(A, b, c, shape):
+def hermite_renormalized_diagonal_jax_fwd(A, b, c, shape):
     r"""
-    The jax forward pass for hermite_renormalized_diagonal_reorderedAB.
+    The jax forward pass for hermite_renormalized_diagonal.
     """
-    primal_output = hermite_renormalized_diagonal_reorderedAB_jax(A, b, c, shape)
+    primal_output = hermite_renormalized_diagonal_jax(A, b, c, shape)
     return (primal_output, (*primal_output, A, b, c))
 
 
-def hermite_renormalized_diagonal_reorderedAB_jax_bwd(shape, res, g):
+def hermite_renormalized_diagonal_jax_bwd(shape, res, g):
     r"""
-    The jax backward pass for hermite_renormalized_diagonal_reorderedAB.
+    The jax backward pass for hermite_renormalized_diagonal.
     """
     poly0, poly2, poly1010, poly1001, poly1, A, b, c = res
     if b.ndim > 1:
@@ -345,9 +326,9 @@ def hermite_renormalized_diagonal_reorderedAB_jax_bwd(shape, res, g):
     return dLdA, dLdB, dLdC
 
 
-hermite_renormalized_diagonal_reorderedAB_jax.defvjp(
-    hermite_renormalized_diagonal_reorderedAB_jax_fwd,
-    hermite_renormalized_diagonal_reorderedAB_jax_bwd,
+hermite_renormalized_diagonal_jax.defvjp(
+    hermite_renormalized_diagonal_jax_fwd,
+    hermite_renormalized_diagonal_jax_bwd,
 )
 
 
