@@ -24,6 +24,7 @@ import numpy as np
 
 from ..lattice import strategies
 from ..lattice.strategies.compactFock.inputValidation import (
+    grad_hermite_multidimensional_1leftoverMode,
     grad_hermite_multidimensional_diagonal,
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
@@ -386,7 +387,7 @@ def hermite_renormalized_diagonal_reorderedAB_batch_jax_bwd(shape, res, g):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-# @partial(jax.custom_vjp, nondiff_argnums=(3,))
+@partial(jax.custom_vjp, nondiff_argnums=(3,))
 @partial(jax.jit, static_argnums=(3,))
 def hermite_renormalized_1leftoverMode_reorderedAB_jax(
     A: jnp.ndarray,
@@ -397,13 +398,35 @@ def hermite_renormalized_1leftoverMode_reorderedAB_jax(
     r"""
     The jax custom gradient for hermite_renormalized_1leftoverMode_reorderedAB.
     """
-    function = partial(hermite_multidimensional_1leftoverMode, cutoffs=cutoffs)
+    M = len(cutoffs)
+    cutoff_leftoverMode = cutoffs[0]
+    cutoffs_tail = tuple(cutoffs[1:])
+    if M == 2:
+        shape = (1, 1, 1, 1, 1)
+    else:
+        shape = (cutoff_leftoverMode, cutoff_leftoverMode, M - 1, M - 2, *cutoffs_tail)
     return jax.pure_callback(
-        lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
-        jax.ShapeDtypeStruct((cutoffs[0], *cutoffs), jnp.complex128),
+        lambda A, B, C, cutoffs: hermite_multidimensional_1leftoverMode(
+            np.array(A), np.array(B), np.array(C), np.array(cutoffs)
+        ),
+        (
+            jax.ShapeDtypeStruct(
+                (cutoff_leftoverMode, cutoff_leftoverMode, *cutoffs_tail), jnp.complex128
+            ),
+            jax.ShapeDtypeStruct(
+                (cutoff_leftoverMode, cutoff_leftoverMode, M - 1, *cutoffs_tail), jnp.complex128
+            ),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            jax.ShapeDtypeStruct(shape, jnp.complex128),
+            jax.ShapeDtypeStruct(
+                (cutoff_leftoverMode, cutoff_leftoverMode, 2 * (M - 1), *cutoffs_tail),
+                jnp.complex128,
+            ),
+        ),
         A,
         B,
         C,
+        cutoffs,
     )
 
 
@@ -411,15 +434,56 @@ def hermite_renormalized_1leftoverMode_reorderedAB_jax_fwd(A, b, c, shape):
     r"""
     The jax forward pass for hermite_renormalized_1leftoverMode_reorderedAB.
     """
+    primal_output = hermite_renormalized_1leftoverMode_reorderedAB_jax(A, b, c, shape)
+    return (primal_output, (*primal_output, A, b, c))
 
 
-def hermite_renormalized_1leftoverMode_reorderedAB_jaxbwd(shape, res, g):
+def hermite_renormalized_1leftoverMode_reorderedAB_jax_bwd(shape, res, g):
     r"""
     The jax backward pass for hermite_renormalized_1leftoverMode_reorderedAB.
     """
+    poly0, poly2, poly1010, poly1001, poly1, A, b, c = res
+    dpoly_dC, dpoly_dA, dpoly_dB = jax.pure_callback(
+        lambda A,
+        B,
+        C,
+        arr0,
+        arr2,
+        arr1010,
+        arr1001,
+        arr1: grad_hermite_multidimensional_1leftoverMode(
+            np.array(A),
+            np.array(B),
+            np.array(C),
+            np.array(arr0),
+            np.array(arr2),
+            np.array(arr1010),
+            np.array(arr1001),
+            np.array(arr1),
+        ),
+        (
+            jax.ShapeDtypeStruct(poly0.shape + c.shape, jnp.complex128),
+            jax.ShapeDtypeStruct(poly0.shape + A.shape, jnp.complex128),
+            jax.ShapeDtypeStruct(poly0.shape + b.shape, jnp.complex128),
+        ),
+        A,
+        b,
+        c,
+        poly0,
+        poly2,
+        poly1010,
+        poly1001,
+        poly1,
+    )
+    dLdpoly = g[0]
+    ax = tuple(range(dLdpoly.ndim))
+    dLdA = jnp.sum(dLdpoly[..., None, None] * dpoly_dA, axis=ax)
+    dLdB = jnp.sum(dLdpoly[..., None] * dpoly_dB, axis=ax)
+    dLdC = jnp.sum(dLdpoly * dpoly_dC, axis=ax)
+    return dLdA, dLdB, dLdC
 
 
-# hermite_renormalized_1leftoverMode_reorderedAB_jax.defvjp(
-#     hermite_renormalized_1leftoverMode_reorderedAB_jax_fwd,
-#     hermite_renormalized_1leftoverMode_reorderedAB_jaxbwd,
-# )
+hermite_renormalized_1leftoverMode_reorderedAB_jax.defvjp(
+    hermite_renormalized_1leftoverMode_reorderedAB_jax_fwd,
+    hermite_renormalized_1leftoverMode_reorderedAB_jax_bwd,
+)

@@ -556,7 +556,7 @@ class BackendJax(BackendBase):
         C: jnp.ndarray,
         cutoffs: tuple[int],
     ) -> jnp.ndarray:
-        return hermite_renormalized_1leftoverMode_reorderedAB_jax(A, B, C, cutoffs)
+        return hermite_renormalized_1leftoverMode_reorderedAB_jax(A, B, C, cutoffs)[0]
 
     # ~~~~~~~~~~~~~~~~~~~~~~~
     # Fock lattice strategies
