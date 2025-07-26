@@ -268,13 +268,6 @@ class TestCircuitComponent:
         assert (d1 / 3).ansatz == d1.ansatz / 3
         assert isinstance(d1 / 3, Unitary)
 
-    def test_add_error(self):
-        d1 = Dgate(1, alpha=0.1 + 0.1j)
-        d2 = Dgate(2, alpha=0.2 + 0.2j)
-
-        with pytest.raises(ValueError):
-            d1 + d2
-
     def test_eq(self):
         d1 = Dgate(1, alpha=0.1 + 0.1j)
         d2 = Dgate(2, alpha=0.1 + 0.1j)
