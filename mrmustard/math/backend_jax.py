@@ -539,7 +539,7 @@ class BackendJax(BackendBase):
     def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
         return beamsplitter_jax(theta, phi, shape, method)
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+    def squeezed(self, r: float, phi: float, shape: tuple[int]):
         return squeezed_jax(r, phi, shape)
 
     def squeezer(self, r: float, phi: float, shape: tuple[int, int]):

@@ -473,8 +473,8 @@ class BackendNumpy(BackendBase):
             bs_unitary = strategies.stable_beamsplitter(shape, t, s)
         return self.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
-        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
+    def squeezed(self, r: float, phi: float, shape: tuple[int]):
+        sq_ket = strategies.squeezed(shape[0], self.asnumpy(r), self.asnumpy(phi))
         return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
 
     def squeezer(self, r: float, phi: float, shape: tuple[int, int]):

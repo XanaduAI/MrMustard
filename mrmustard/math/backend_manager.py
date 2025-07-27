@@ -1468,14 +1468,14 @@ class BackendManager:
         """
         return self._apply("beamsplitter", (theta, phi), {"shape": shape, "method": method})
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+    def squeezed(self, r: float, phi: float, shape: tuple[int]):
         r"""
         Creates a single mode squeezed state matrix using a numba-based fock lattice strategy.
 
         Args:
             r: Squeezing magnitude.
             phi: Squeezing angle.
-            shape: Output shape of the two modes.
+            shape: Output shape of the mode.
 
         Returns:
             The matrix representing the squeezed state.

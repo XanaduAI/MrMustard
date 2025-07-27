@@ -190,12 +190,12 @@ displacement_jax.defvjp(displacement_jax_fwd, displacement_jax_bwd)
 
 @partial(jax.custom_vjp, nondiff_argnums=(2,))
 @partial(jax.jit, static_argnums=(2,))
-def squeezed_jax(r: float, phi: float, shape: tuple[int, int]) -> jnp.ndarray:
+def squeezed_jax(r: float, phi: float, shape: tuple[int]) -> jnp.ndarray:
     r"""
     The jax custom gradient for the squeezed state.
     """
     return jax.pure_callback(
-        lambda shape, r, phi: strategies.squeezed(shape, np.asarray(r), np.asarray(phi)),
+        lambda shape, r, phi: strategies.squeezed(shape[0], np.asarray(r), np.asarray(phi)),
         jax.ShapeDtypeStruct(shape, jnp.complex128),
         shape,
         r,
