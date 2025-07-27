@@ -93,7 +93,7 @@ def test_compactFock_diagonal_gradients():
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
 
 
-@pytest.mark.requires_backend()  # TODO: fix
+@pytest.mark.requires_backend()  # TODO: investigate the JAX tracer error here with normalize
 def test_compactFock_1leftover_gradients():
     r"""
     Test getting Fock amplitudes and if all but the first
@@ -113,7 +113,7 @@ def test_compactFock_1leftover_gradients():
             output_cutoff=2,
             pnr_cutoffs=(n2 + 1,),
         )
-        conditional_state = DM.from_fock((0,), marginal[..., n2]).to_bargmann().normalize()
+        conditional_state = DM.from_fock((0,), marginal[..., n2]).normalize()
         return -gaussian.fidelity(
             *conditional_state.phase_space(0)[:2],
             *SqueezedVacuum(0, r=1).phase_space(0)[:2],
