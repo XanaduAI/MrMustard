@@ -36,6 +36,25 @@ class TestSgate:
         assert gate.name == "Sgate"
         assert gate.modes == (modes,)
 
+    def test_fock_representation(self):
+        shape = (5, 5)
+        sgate = Sgate(0, r=1, phi=2)
+        sgate_fock = sgate.fock_array(shape)
+
+        herm_renom = math.hermite_renormalized(*sgate.ansatz.triple, shape=shape)
+        assert math.allclose(sgate_fock, herm_renom)
+
+        sgate_batch = Sgate(0, r=[1, 1, 1], phi=[2, 2, 2])
+        sgate_batch_fock = sgate_batch.fock_array(shape)
+        herm_renom_batch = math.hermite_renormalized(*sgate_batch.ansatz.triple, shape=shape)
+        assert math.allclose(sgate_batch_fock, herm_renom_batch)
+
+    def test_to_fock_lin_sup(self):
+        bsgate = (Sgate(0, 2, 3) + Sgate(0, -2, -3)).to_fock(5)
+        assert bsgate.ansatz.batch_dims == 0
+        assert bsgate.ansatz.batch_shape == ()
+        assert bsgate.ansatz.array.shape == (5, 5)
+
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_representation(self, batch_shape):
         r = math.broadcast_to(0.1, batch_shape)
