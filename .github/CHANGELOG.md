@@ -10,7 +10,7 @@
 * Added a ``rich`` based repr to ``ParameterSet``.
 [(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
 
-* Added vjps to the JAX backend.
+* Added vjps to the JAX backend. Added ``numba`` based Fock lattice strategies to `SqueezedVacuum` and `Sgate`.
 [(#636)](https://github.com/XanaduAI/MrMustard/pull/636)
 
 ### Bug fixes
