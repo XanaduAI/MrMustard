@@ -127,7 +127,7 @@ class Sgate(Unitary):
             shape = (shape,) * self.ansatz.core_dims
         if shape is None:
             shape = tuple(self.auto_shape())
-
+        shape = tuple(shape)
         if self.ansatz.batch_shape:
             rs, phi = math.broadcast_arrays(
                 self.parameters.r.value,

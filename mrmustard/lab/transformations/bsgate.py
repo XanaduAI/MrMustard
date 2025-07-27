@@ -133,6 +133,7 @@ class BSgate(Unitary):
             shape = (shape,) * self.ansatz.core_dims
         if shape is None:
             shape = tuple(self.auto_shape())
+        shape = tuple(shape)
         if len(shape) != 4:
             raise ValueError(f"Expected Fock shape of length {4}, got length {len(shape)}")
 
