@@ -49,7 +49,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-jax = [
+jax_backend = [
     "equinox>=0.11.10",
     "jax>=0.5.1,<0.6.0",
     "optax>=0.2.4,<0.3",
@@ -57,8 +57,10 @@ jax = [
 
 [dependency-groups]
 dev = [
+    "equinox>=0.11.10",
     "hypothesis==6.31.6",
-    "jax",
+    "jax>=0.5.1,<0.6.0",
+    "optax>=0.2.4,<0.3",    
     "pre-commit==3.7.1",
     "pytest-cov==3.0.0",
     "pytest==8.0",
