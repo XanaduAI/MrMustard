@@ -114,15 +114,17 @@ class Dgate(Unitary):
         Returns:
             array: The Fock representation of this component.
         """
+        shape = shape or self.auto_shape()
         if isinstance(shape, int):
-            shape = (shape,) * self.ansatz.num_vars
-        auto_shape = self.auto_shape()
-        shape = shape or auto_shape
+            shape = (shape,) * self.ansatz.core_dims
         shape = tuple(shape)
-        if len(shape) != len(auto_shape):
-            raise ValueError(
-                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}",
-            )
+        num_vars = (
+            self.ansatz.num_CV_vars
+            if isinstance(self.ansatz, PolyExpAnsatz)
+            else self.ansatz.num_vars
+        )
+        if len(shape) != num_vars:
+            raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
         if self.ansatz.batch_shape:
             x, y = math.broadcast_arrays(self.parameters.x.value, self.parameters.y.value)
             x = math.reshape(x, (-1,))

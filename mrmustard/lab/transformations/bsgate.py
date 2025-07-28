@@ -129,14 +129,17 @@ class BSgate(Unitary):
         Returns:
             array: The Fock representation of this component.
         """
+        shape = shape or self.auto_shape()
         if isinstance(shape, int):
             shape = (shape,) * self.ansatz.core_dims
-        if shape is None:
-            shape = tuple(self.auto_shape())
         shape = tuple(shape)
-        if len(shape) != 4:
-            raise ValueError(f"Expected Fock shape of length {4}, got length {len(shape)}")
-
+        num_vars = (
+            self.ansatz.num_CV_vars
+            if isinstance(self.ansatz, PolyExpAnsatz)
+            else self.ansatz.num_vars
+        )
+        if len(shape) != num_vars:
+            raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
         if self.ansatz.batch_shape:
             theta, phi = math.broadcast_arrays(
                 self.parameters.theta.value,

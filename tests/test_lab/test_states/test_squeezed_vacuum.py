@@ -45,6 +45,9 @@ class TestSqueezedVacuum:
         herm_renom = math.hermite_renormalized(*sq_vac.ansatz.triple, shape=shape)
         assert math.allclose(sq_vac_fock, herm_renom)
 
+        with pytest.raises(ValueError):
+            sq_vac.fock_array((5, 5, 5))
+
         sq_vac_batch = SqueezedVacuum(0, r=[1, 1, 1], phi=[2, 2, 2])
         sq_vac_batch_fock = sq_vac_batch.fock_array(shape)
         herm_renom_batch = math.hermite_renormalized(*sq_vac_batch.ansatz.triple, shape=shape)
