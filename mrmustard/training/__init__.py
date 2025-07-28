@@ -20,4 +20,4 @@ Euclidean parameters and a custom Symplectic optimizer for Gaussian gates and
 states and an Orthogonal optimizer for interferometers.
 """
 
-# from .optimizer import Optimizer as Optimizer
+from .optimizer import Optimizer as Optimizer
