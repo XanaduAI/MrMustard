@@ -122,6 +122,9 @@ class BackendJax(BackendBase):
     def asnumpy(self, tensor: jnp.ndarray) -> np.ndarray:
         return np.array(tensor)
 
+    def BackendError(self):
+        return jax.errors.TracerArrayConversionError
+
     @partial(jax.jit, static_argnames=["shape"])
     def broadcast_to(self, array: jnp.ndarray, shape: tuple[int]) -> jnp.ndarray:
         return jnp.broadcast_to(array, shape)
