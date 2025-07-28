@@ -10,7 +10,7 @@
 * Added a ``rich`` based repr to ``ParameterSet``.
 [(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
 
-* Made `JAX` and optional dependency.
+* Made `JAX` an optional dependency.
 [(#637)](https://github.com/XanaduAI/MrMustard/pull/637)
 
 ### Bug fixes
