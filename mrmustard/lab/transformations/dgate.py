@@ -111,20 +111,14 @@ class Dgate(Unitary):
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it defaults to
                 ``settings.DEFAULT_FOCK_SIZE``.
+
         Returns:
             array: The Fock representation of this component.
+
+        Raises:
+            ValueError: If the shape is not valid for the component.
         """
-        shape = shape or self.auto_shape()
-        if isinstance(shape, int):
-            shape = (shape,) * self.ansatz.core_dims
-        shape = tuple(shape)
-        num_vars = (
-            self.ansatz.num_CV_vars
-            if isinstance(self.ansatz, PolyExpAnsatz)
-            else self.ansatz.num_vars
-        )
-        if len(shape) != num_vars:
-            raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
+        shape = self._check_fock_shape(shape)
         if self.ansatz.batch_shape:
             x, y = math.broadcast_arrays(self.parameters.x.value, self.parameters.y.value)
             x = math.reshape(x, (-1,))

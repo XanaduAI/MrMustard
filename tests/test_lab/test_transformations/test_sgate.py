@@ -44,7 +44,7 @@ class TestSgate:
         herm_renom = math.hermite_renormalized(*sgate.ansatz.triple, shape=shape)
         assert math.allclose(sgate_fock, herm_renom)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Expected Fock shape"):
             sgate.fock_array((5, 5, 5))
 
         sgate_batch = Sgate(0, r=[1, 1, 1], phi=[2, 2, 2])

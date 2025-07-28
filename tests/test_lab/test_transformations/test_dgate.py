@@ -47,6 +47,9 @@ class TestDgate:
         assert math.all((state.to_fock() >> dgate).probability < 1)
         assert math.all(math.abs(dgate.fock_array(150)) < 1)
 
+        with pytest.raises(ValueError, match="Expected Fock shape"):
+            dgate.fock_array((5, 5, 5))
+
     def test_to_fock_lin_sup(self):
         dgate = (Dgate(0, 0.1) + Dgate(0, -0.1)).to_fock(150)
         assert dgate.ansatz.batch_dims == 0

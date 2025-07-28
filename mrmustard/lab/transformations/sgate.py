@@ -123,17 +123,7 @@ class Sgate(Unitary):
         self,
         shape: int | Sequence[int] | None = None,
     ) -> ComplexTensor:
-        shape = shape or self.auto_shape()
-        if isinstance(shape, int):
-            shape = (shape,) * self.ansatz.core_dims
-        shape = tuple(shape)
-        num_vars = (
-            self.ansatz.num_CV_vars
-            if isinstance(self.ansatz, PolyExpAnsatz)
-            else self.ansatz.num_vars
-        )
-        if len(shape) != num_vars:
-            raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
+        shape = self._check_fock_shape(shape)
         if self.ansatz.batch_shape:
             rs, phi = math.broadcast_arrays(
                 self.parameters.r.value,
