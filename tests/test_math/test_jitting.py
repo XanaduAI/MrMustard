@@ -21,6 +21,9 @@ import pytest
 from mrmustard import math
 from mrmustard.lab import Attenuator, BSgate, SqueezedVacuum
 
+jax = pytest.importorskip("jax")
+jnp = pytest.importorskip("jax.numpy")
+
 
 @pytest.mark.requires_backend("jax")
 class TestJitting:
@@ -30,8 +33,6 @@ class TestJitting:
 
     def test_jit_complete_circuit(self):
         r"""Tests if entire circuit with component definitions can be jitted."""
-        import jax  # noqa: PLC0415
-        import jax.numpy as jnp  # noqa: PLC0415
 
         def evaluate_circuit(params):
             r"""
@@ -99,9 +100,6 @@ class TestJitting:
 
     def test_jit_circuit_with_parameters(self):
         r"""Tests if circuit with pre-defined elements can be jitted."""
-        import jax  # noqa: PLC0415
-        import jax.numpy as jnp  # noqa: PLC0415
-
         initial_state = SqueezedVacuum(mode=0, r=0.5, phi=0.5, r_trainable=True, phi_trainable=True)
         BS_01 = BSgate(modes=(0, 1), theta=0.5, phi=0.5, theta_trainable=True, phi_trainable=True)
         BS_12 = BSgate(modes=(1, 2), theta=0.5, phi=0.5, theta_trainable=True, phi_trainable=True)

@@ -28,7 +28,7 @@ from .parameters import *
 
 try:  # noqa: SIM105
     from .jax_vjps import *
-except ImportError:
+except ImportError:  # pragma: no cover
     pass
 
 sys.modules[__name__] = BackendManager()
