@@ -16,7 +16,6 @@ r"""
 The point of entry for the backend.
 """
 
-import contextlib
 import sys
 
 from .backend_base import *
@@ -27,7 +26,9 @@ from .lattice import *
 from .parameter_set import *
 from .parameters import *
 
-with contextlib.suppress(ImportError):
+try:  # noqa: SIM105
     from .jax_vjps import *
+except ImportError:
+    pass
 
 sys.modules[__name__] = BackendManager()
