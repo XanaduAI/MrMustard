@@ -16,10 +16,10 @@
 Unit tests for the :class:`BackendManager`.
 """
 
+import contextlib
+
 import numpy as np
 import pytest
-from jax import numpy as jnp
-from jax.errors import TracerArrayConversionError
 from scipy.special import loggamma as scipy_loggamma
 
 from mrmustard import math, settings
@@ -42,10 +42,13 @@ class TestBackendManager:
 
     types = ["None", "int32", "float32", "float64", "complex128"]
 
+    @pytest.mark.requires_backend("jax")
     def test_backend_error(self):
         r"""
         Tests the ``BackendError`` property.
         """
+        from jax.errors import TracerArrayConversionError  # noqa: PLC0415
+
         assert math.BackendError is TracerArrayConversionError
 
     def test_get_backend(self):
@@ -53,7 +56,8 @@ class TestBackendManager:
         Tests the ``get_backend`` method.
         """
         assert math.get_backend("numpy").name == "numpy"
-        assert math.get_backend("jax").name == "jax"
+        with contextlib.suppress(ModuleNotFoundError):
+            assert math.get_backend("jax").name == "jax"
 
     def test_einsum(self):
         r"""
@@ -63,7 +67,8 @@ class TestBackendManager:
         res = math.astensor([[7, 10], [15, 22]])
 
         assert math.allclose(math.einsum("ij,jk->ik", ar, ar), res)
-        assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="jax"), res)
+        with contextlib.suppress(ModuleNotFoundError):
+            assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="jax"), res)
 
     def test_error(self):
         r"""
@@ -170,6 +175,8 @@ class TestBackendManager:
         if math.backend_name == "numpy":
             assert math.allclose(res, arr.astype(dtype or np.float64))
         elif math.backend_name == "jax":
+            import jax.numpy as jnp  # noqa: PLC0415
+
             exp = jnp.array(arr, dtype=dtype or jnp.float64)
             assert math.allclose(res, exp)
 

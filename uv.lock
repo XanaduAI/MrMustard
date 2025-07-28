@@ -1084,7 +1084,6 @@ name = "mrmustard"
 version = "1.0.0a1"
 source = { editable = "." }
 dependencies = [
-    { name = "equinox" },
     { name = "grpcio" },
     { name = "importlib-resources" },
     { name = "ipython" },
@@ -1094,13 +1093,19 @@ dependencies = [
     { name = "networkx" },
     { name = "numba" },
     { name = "numpy" },
-    { name = "optax" },
+    { name = "opt-einsum" },
     { name = "platformdirs" },
     { name = "plotly" },
     { name = "rich" },
     { name = "scipy" },
     { name = "semantic-version" },
     { name = "thewalrus" },
+]
+
+[package.optional-dependencies]
+jax = [
+    { name = "equinox" },
+    { name = "optax" },
 ]
 
 [package.dev-dependencies]
@@ -1129,7 +1134,7 @@ interactive = [
 
 [package.metadata]
 requires-dist = [
-    { name = "equinox", specifier = ">=0.11.10" },
+    { name = "equinox", marker = "extra == 'jax'", specifier = ">=0.11.10" },
     { name = "grpcio", specifier = "==1.60.0" },
     { name = "importlib-resources", specifier = ">=6.5.2,<7" },
     { name = "ipython", specifier = ">=8.18.1" },
@@ -1139,7 +1144,8 @@ requires-dist = [
     { name = "networkx", specifier = ">=3.1,<4" },
     { name = "numba", specifier = ">=0.59,<1" },
     { name = "numpy", specifier = ">=2.0.0,<3" },
-    { name = "optax", specifier = ">=0.2.4,<0.3" },
+    { name = "opt-einsum", specifier = ">=3.4.0,<4" },
+    { name = "optax", marker = "extra == 'jax'", specifier = ">=0.2.4,<0.3" },
     { name = "platformdirs", specifier = ">=2.2.0" },
     { name = "plotly", specifier = ">=5.20.0,<6" },
     { name = "rich", specifier = ">=13.9.0,<14" },

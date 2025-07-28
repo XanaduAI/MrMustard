@@ -17,7 +17,6 @@
 import json
 from dataclasses import dataclass
 
-import jax
 import numpy as np
 import pytest
 
@@ -143,6 +142,8 @@ class TestSerialize:
     @pytest.mark.requires_backend("jax")
     def test_jax_support(self):
         """Test that JAX data is supported."""
+        import jax  # noqa: PLC0415
+
         x = math.astensor([1.1, 2.2])
         loaded = load(save(DummyOneNP, name="myname", arrays={"array": x}))
         assert isinstance(loaded.array, jax.Array)

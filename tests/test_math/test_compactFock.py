@@ -9,7 +9,6 @@ from mrmustard import math
 from mrmustard.lab import DM, Ggate, SqueezedVacuum, Vacuum
 from mrmustard.lab.transformations.attenuator import Attenuator
 from mrmustard.physics import gaussian
-from mrmustard.training import Optimizer
 
 
 def test_compactFock_diagonal():
@@ -71,6 +70,8 @@ def test_compactFock_diagonal_gradients():
     Test getting Fock amplitudes and gradients if all modes
     are detected (math.hermite_renormalized_diagonal).
     """
+    from mrmustard.training import Optimizer  # noqa: PLC0415
+
     G = Ggate(0, symplectic_trainable=True)
     Att = Attenuator(0, 0.9)
 
@@ -99,6 +100,8 @@ def test_compactFock_1leftover_gradients():
     Test getting Fock amplitudes and if all but the first
     mode are detected (math.hermite_renormalized_1leftoverMode).
     """
+    from mrmustard.training import Optimizer  # noqa: PLC0415
+
     G = Ggate((0, 1), symplectic_trainable=True)
     Att = Attenuator(0, 0.9)
 

@@ -30,7 +30,6 @@ classifiers = [
 ]
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "equinox>=0.11.10",
     "grpcio == 1.60.0",
     "importlib-resources>=6.5.2,<7",
     "ipython >=8.18.1",
@@ -40,13 +39,19 @@ dependencies = [
     "networkx >=3.1, <4",
     "numba >=0.59, <1",
     "numpy >=2.0.0, <3",
-    "optax>=0.2.4,<0.3",
+    "opt_einsum>=3.4.0,<4",
     "platformdirs >=2.2.0",
     "plotly >=5.20.0, <6",
     "rich >=13.9.0, <14",
     "scipy >=1.8.0, <2",
     "semantic-version >=2.10.0, <3",
     "thewalrus >=0.19.0,<1",
+]
+
+[project.optional-dependencies]
+jax = [
+    "equinox>=0.11.10",
+    "optax>=0.2.4,<0.3",
 ]
 
 [dependency-groups]

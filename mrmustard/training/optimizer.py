@@ -35,8 +35,6 @@ from mrmustard.training.parameter_update import (
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
 
-__all__ = ["Optimizer"]
-
 
 class Optimizer:
     r"""
