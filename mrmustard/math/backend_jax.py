@@ -20,10 +20,6 @@ from collections.abc import Callable, Sequence
 from functools import partial
 from typing import Any
 
-import equinox as eqx
-import jax
-import jax.numpy as jnp
-import jax.scipy as jsp
 import numpy as np
 from platformdirs import user_cache_dir
 
@@ -31,12 +27,6 @@ from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.physics.ansatz import Ansatz
 
 from .backend_base import BackendBase
-from .jax_vjps import (
-    beamsplitter_jax,
-    displacement_jax,
-    hermite_renormalized_batched_jax,
-    hermite_renormalized_unbatched_jax,
-)
 from .lattice import strategies
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
@@ -45,6 +35,23 @@ from .lattice.strategies.compactFock.inputValidation import (
 )
 from .parameter_set import ParameterSet
 from .parameters import Constant, Variable
+
+try:
+    import equinox as eqx
+    import jax
+    import jax.numpy as jnp
+    import jax.scipy as jsp
+
+    from .jax_vjps import (
+        beamsplitter_jax,
+        displacement_jax,
+        hermite_renormalized_batched_jax,
+        hermite_renormalized_unbatched_jax,
+    )
+except ImportError:
+    raise ImportError(
+        "The JAX backend requires the `jax_backend` group. Please install it using `uv pip install -g jax_backend`."
+    ) from None
 
 jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_compilation_cache_dir", f"{user_cache_dir('mrmustard')}/jax_cache")
