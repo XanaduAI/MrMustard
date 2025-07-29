@@ -88,6 +88,7 @@ class BackendNumpy(BackendBase):
         return np.array(array, ndmin=n, dtype=dtype)
 
     def BackendError(self):
+        # no numpy backend specific errors
         raise NotImplementedError
 
     def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
