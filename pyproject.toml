@@ -57,10 +57,7 @@ jax_backend = [
 
 [dependency-groups]
 dev = [
-    "equinox>=0.11.10",
-    "hypothesis==6.31.6",
-    "jax>=0.5.1,<0.6.0",
-    "optax>=0.2.4,<0.3",    
+    "hypothesis==6.31.6",   
     "pre-commit==3.7.1",
     "pytest-cov==3.0.0",
     "pytest==8.0",
@@ -80,6 +77,11 @@ doc = [
 interactive = [
     "ipykernel >=6.21.2, <7.0.0",
     "ipywidgets >=8.0.4, <9.0.0"
+]
+jax_backend = [
+    "equinox>=0.11.10",
+    "jax>=0.5.1,<0.6.0",
+    "optax>=0.2.4,<0.3",
 ]
 
 [tool.coverage.run]
@@ -179,3 +181,6 @@ filterwarnings = "ignore::DeprecationWarning"
 
 [tool.setuptools.packages.find]
 where = ["."]
+
+[tool.uv]
+default-groups = ["dev", "jax_backend"]

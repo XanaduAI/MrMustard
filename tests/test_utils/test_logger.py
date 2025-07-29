@@ -50,14 +50,10 @@ import sys
 
 import pytest
 
+from mrmustard.training import optimizer
 from mrmustard.utils.logger import create_logger, default_handler, logging_handler_defined
 
-try:
-    from mrmustard.training import optimizer
-
-    modules_contain_logging = [optimizer]
-except ImportError:
-    modules_contain_logging = []
+modules_contain_logging = [optimizer]
 
 
 @pytest.fixture(autouse=True)

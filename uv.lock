@@ -1111,10 +1111,7 @@ jax-backend = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "equinox" },
     { name = "hypothesis" },
-    { name = "jax" },
-    { name = "optax" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -1134,6 +1131,11 @@ doc = [
 interactive = [
     { name = "ipykernel" },
     { name = "ipywidgets" },
+]
+jax-backend = [
+    { name = "equinox" },
+    { name = "jax" },
+    { name = "optax" },
 ]
 
 [package.metadata]
@@ -1161,10 +1163,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "equinox", specifier = ">=0.11.10" },
     { name = "hypothesis", specifier = "==6.31.6" },
-    { name = "jax", specifier = ">=0.5.1,<0.6.0" },
-    { name = "optax", specifier = ">=0.2.4,<0.3" },
     { name = "pre-commit", specifier = "==3.7.1" },
     { name = "pytest", specifier = "==8.0" },
     { name = "pytest-cov", specifier = "==3.0.0" },
@@ -1184,6 +1183,11 @@ doc = [
 interactive = [
     { name = "ipykernel", specifier = ">=6.21.2,<7.0.0" },
     { name = "ipywidgets", specifier = ">=8.0.4,<9.0.0" },
+]
+jax-backend = [
+    { name = "equinox", specifier = ">=0.11.10" },
+    { name = "jax", specifier = ">=0.5.1,<0.6.0" },
+    { name = "optax", specifier = ">=0.2.4,<0.3" },
 ]
 
 [[package]]
