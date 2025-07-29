@@ -16,8 +16,6 @@
 Unit tests for the :class:`BackendManager`.
 """
 
-import contextlib
-
 import numpy as np
 import pytest
 from scipy.special import loggamma as scipy_loggamma
@@ -56,15 +54,32 @@ class TestBackendManager:
         """
         assert math.BackendError is TracerArrayConversionError
 
-    def test_get_backend(self):
+    @pytest.mark.requires_backend("jax")
+    def test_get_backend_jax(self):
         r"""
-        Tests the ``get_backend`` method.
+        Tests the ``get_backend`` method for the jax backend.
+        """
+        assert math.get_backend("jax").name == "jax"
+
+    @pytest.mark.requires_backend("numpy")
+    def test_get_backend_numpy(self):
+        r"""
+        Tests the ``get_backend`` method for the numpy backend.
         """
         assert math.get_backend("numpy").name == "numpy"
-        with contextlib.suppress(ImportError):
-            assert math.get_backend("jax").name == "jax"
 
-    def test_einsum(self):
+    @pytest.mark.requires_backend("jax")
+    def test_einsum_jax(self):
+        r"""
+        Tests the ``einsum`` method for the jax backend.
+        """
+        ar = math.astensor([[1, 2], [3, 4]])
+        res = math.astensor([[7, 10], [15, 22]])
+
+        assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="jax"), res)
+
+    @pytest.mark.requires_backend("numpy")
+    def test_einsum_numpy(self):
         r"""
         Tests the ``einsum`` method.
         """
@@ -72,8 +87,6 @@ class TestBackendManager:
         res = math.astensor([[7, 10], [15, 22]])
 
         assert math.allclose(math.einsum("ij,jk->ik", ar, ar), res)
-        with contextlib.suppress(ModuleNotFoundError):
-            assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="jax"), res)
 
     def test_error(self):
         r"""
