@@ -24,6 +24,13 @@ from scipy.special import loggamma as scipy_loggamma
 
 from mrmustard import math, settings
 
+try:
+    import jax.numpy as jnp
+    from jax.errors import TracerArrayConversionError
+except ImportError:
+    jnp = None
+    TracerArrayConversionError = None
+
 
 class TestBackendManager:
     r"""
@@ -47,8 +54,6 @@ class TestBackendManager:
         r"""
         Tests the ``BackendError`` property.
         """
-        from jax.errors import TracerArrayConversionError  # noqa: PLC0415
-
         assert math.BackendError is TracerArrayConversionError
 
     def test_get_backend(self):
@@ -175,8 +180,6 @@ class TestBackendManager:
         if math.backend_name == "numpy":
             assert math.allclose(res, arr.astype(dtype or np.float64))
         elif math.backend_name == "jax":
-            import jax.numpy as jnp  # noqa: PLC0415
-
             exp = jnp.array(arr, dtype=dtype or jnp.float64)
             assert math.allclose(res, exp)
 

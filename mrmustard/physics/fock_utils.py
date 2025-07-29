@@ -28,6 +28,11 @@ from mrmustard import math, settings
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
 
+try:
+    from equinox import EquinoxRuntimeError
+except ImportError:
+    EquinoxRuntimeError = None
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -52,16 +57,14 @@ def fock_state(n: int | Sequence[int], cutoff: int | None = None) -> Tensor:
     if cutoff is None:
         cutoff = int(math.max(n) + 1)
 
-    def check_photon_numbers(n, cutoff):
-        if math.any(n >= cutoff):
-            raise ValueError("Photon numbers cannot be larger than the corresponding cutoff.")
-
-    if math.backend_name == "jax":  # pragma: no cover
-        import jax  # noqa: PLC0415
-
-        jax.debug.callback(check_photon_numbers, n, cutoff)
-    else:
-        check_photon_numbers(n, cutoff)
+    try:
+        math.error_if(
+            n,
+            math.any(n >= cutoff),
+            "Photon numbers cannot be larger than the corresponding cutoff.",
+        )
+    except EquinoxRuntimeError as e:
+        raise ValueError(e) from e
 
     return math.eye(cutoff)[n]
 
