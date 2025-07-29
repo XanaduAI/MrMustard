@@ -731,8 +731,8 @@ class BackendManager:
 
         Args:
             A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
+            b: The b vector.
+            c: The c scalar.
             cutoffs: upper boundary of photon numbers in each mode
             reorderedAB: Whether to reorder A and B parameters match conventions in mrmustard.math.numba.compactFock~.
 
