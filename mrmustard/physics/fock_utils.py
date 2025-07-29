@@ -30,7 +30,7 @@ from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
 
 try:
     import jax
-except ImportError:
+except ImportError:  # pragma: no cover
     jax = None
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
