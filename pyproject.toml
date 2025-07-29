@@ -57,7 +57,7 @@ jax_backend = [
 
 [dependency-groups]
 dev = [
-    "hypothesis==6.31.6",   
+    "hypothesis==6.31.6",
     "pre-commit==3.7.1",
     "pytest-cov==3.0.0",
     "pytest==8.0",
