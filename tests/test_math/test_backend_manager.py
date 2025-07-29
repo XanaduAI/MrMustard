@@ -61,7 +61,7 @@ class TestBackendManager:
         Tests the ``get_backend`` method.
         """
         assert math.get_backend("numpy").name == "numpy"
-        with contextlib.suppress(ModuleNotFoundError):
+        with contextlib.suppress(ImportError):
             assert math.get_backend("jax").name == "jax"
 
     def test_einsum(self):
