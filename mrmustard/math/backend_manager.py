@@ -23,7 +23,6 @@ from functools import lru_cache
 from typing import Any
 
 import numpy as np
-from jax.errors import TracerArrayConversionError
 from opt_einsum import contract
 from scipy.stats import ortho_group, unitary_group
 
@@ -163,7 +162,7 @@ class BackendManager:
         Note that currently this only applies to the case where
         ``auto_shape`` is jitted  via the ``jax`` backend.
         """
-        return TracerArrayConversionError
+        return self._apply("BackendError")
 
     def change_backend(self, name: str) -> None:
         r"""

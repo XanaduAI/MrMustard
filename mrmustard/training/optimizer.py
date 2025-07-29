@@ -20,22 +20,27 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 
-import equinox as eqx
-import jax
-from optax import GradientTransformation, OptState, adamw, multi_transform
-
 from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.math.parameters import Variable
-from mrmustard.training.parameter_update import (
-    update_orthogonal,
-    update_symplectic,
-    update_unitary,
-)
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
 
-__all__ = ["Optimizer"]
+try:
+    import equinox as eqx
+    import jax
+    from optax import GradientTransformation, OptState, adamw, multi_transform
+
+    from mrmustard.training.parameter_update import (
+        update_orthogonal,
+        update_symplectic,
+        update_unitary,
+    )
+
+except ImportError:
+    raise ImportError(
+        "Optimizer only supports the Jax backend. Please install the `jax_backend` group using `uv pip install -g jax_backend` and set the backend to Jax using `math.change_backend('jax')`."
+    ) from None
 
 
 class Optimizer:

@@ -21,13 +21,17 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from functools import lru_cache
 
-import jax
 import numpy as np
 from scipy.special import comb, factorial
 
 from mrmustard import math, settings
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
+
+try:
+    import jax
+except ImportError:  # pragma: no cover
+    jax = None
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
