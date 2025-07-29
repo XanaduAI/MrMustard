@@ -10,6 +10,9 @@
 * Added a ``rich`` based repr to ``ParameterSet``.
 [(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
 
+* Made `JAX` an optional `jax_backend` dependency.
+[(#637)](https://github.com/XanaduAI/MrMustard/pull/637)
+
 ### Bug fixes
 
 * Fixed a bug in `OptimizerJax` that would make the optimizer think it reached a stable optimum upon repeat calls to `minimize`.

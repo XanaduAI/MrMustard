@@ -17,7 +17,6 @@
 import json
 from dataclasses import dataclass
 
-import jax
 import numpy as np
 import pytest
 
@@ -46,6 +45,11 @@ from mrmustard.lab import (
     Vacuum,
 )
 from mrmustard.utils.serialize import load, save
+
+try:
+    import jax
+except ImportError:
+    jax = None
 
 
 class Deserialize:
