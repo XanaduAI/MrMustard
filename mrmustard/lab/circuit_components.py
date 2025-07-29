@@ -759,7 +759,7 @@ class CircuitComponent:
         If the shape is not given, it defaults to the ``auto_shape`` of the component.
 
         Args:
-            shape: The FOck shape of the returned representation. If ``shape`` is given as an ``int``,
+            shape: The Fock shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is generated via ``auto_shape``.
         Returns:
             The shape of the Fock representation of this component.
