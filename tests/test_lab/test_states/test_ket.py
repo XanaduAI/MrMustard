@@ -79,7 +79,7 @@ class TestKet:
         assert ket.manual_shape == (19,)
 
     def test_auto_shape(self):
-        ket = Coherent(0, 1)
+        ket = Coherent(0, alpha=1)
         assert ket.auto_shape() == (8,)
 
         ket.manual_shape = (19,)
