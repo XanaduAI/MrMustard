@@ -22,7 +22,7 @@ from collections.abc import Iterable, Sequence
 from functools import lru_cache
 
 import numpy as np
-from scipy.special import comb, factorial
+from scipy.special import comb, eval_hermite, factorial, gammaln
 
 from mrmustard import math, settings
 from mrmustard.math.caching import tensor_int_cache
@@ -243,38 +243,38 @@ def quadrature_basis(
     return math.einsum(fock_string + "," + q_string + "->" + "a", fock_array, *quad_basis_vecs)
 
 
-def quadrature_distribution(
-    state: Tensor,
-    quadrature_angle: float = 0.0,
-    x: Vector | None = None,
-):
-    r"""
-    Given the ket or density matrix of a single-mode state, it generates the probability
-    density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]` where ``\rho`` is the
-    density matrix of the state and ``|x_\phi>`` the quadrature eigenvector with angle ``\phi``
-    equal to ``quadrature_angle``.
+# def quadrature_distribution(
+#     state: Tensor,
+#     quadrature_angle: float = 0.0,
+#     x: Vector | None = None,
+# ):
+#     r"""
+#     Given the ket or density matrix of a single-mode state, it generates the probability
+#     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]` where ``\rho`` is the
+#     density matrix of the state and ``|x_\phi>`` the quadrature eigenvector with angle ``\phi``
+#     equal to ``quadrature_angle``.
 
-    Args:
-        state: A single mode state ket or density matrix.
-        quadrature_angle: The angle of the quadrature basis vector.
-        x: The points at which the quadrature distribution is evaluated.
+#     Args:
+#         state: A single mode state ket or density matrix.
+#         quadrature_angle: The angle of the quadrature basis vector.
+#         x: The points at which the quadrature distribution is evaluated.
 
-    Returns:
-        The coordinates at which the pdf is evaluated and the probability distribution.
-    """
-    cutoff = state.shape[0]
-    if x is None:
-        x = np.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
+#     Returns:
+#         The coordinates at which the pdf is evaluated and the probability distribution.
+#     """
+#     cutoff = state.shape[0]
+#     if x is None:
+#         x = np.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
 
-    dims = len(state.shape)
-    is_dm = dims == 2
+#     dims = len(state.shape)
+#     is_dm = dims == 2
 
-    quad = math.transpose(math.astensor([x] * dims))
-    conjugates = [True, False] if is_dm else [False]
-    quad_basis = quadrature_basis(state, quad, conjugates, quadrature_angle)
-    pdf = quad_basis if is_dm else math.abs(quad_basis) ** 2
+#     quad = math.transpose(math.astensor([x] * dims))
+#     conjugates = [True, False] if is_dm else [False]
+#     quad_basis = quadrature_basis(state, quad, conjugates, quadrature_angle)
+#     pdf = quad_basis if is_dm else math.abs(quad_basis) ** 2
 
-    return x, math.real(pdf)
+#     return x, math.real(pdf)
 
 
 def c_ps_matrix(m, n, alpha):
@@ -306,6 +306,49 @@ def gamma_matrix(c):
                 col = m * c.shape[0] + n
                 Gamma[row, col] = value / factor
     return Gamma
+
+
+def oscillator_eigenstate_new(n, q):
+    r"""Less broken quadrature eigenstate wavefunction <n|q>"""
+    hbar = settings.HBAR
+    x = q / np.sqrt(hbar)
+    norm_const = (np.pi * hbar) ** (-0.25)
+    log_prefactor_x = -(x**2 / 2)
+    log_prefactor_n = -(n * math.log(2) + gammaln(n + 1)) / 2
+    with np.errstate(divide="ignore"):
+        # eval_hermite can return 0.0
+        log_hermite = np.emath.log(eval_hermite(n, x))
+    return norm_const * np.exp(log_prefactor_n + log_prefactor_x + log_hermite)
+
+
+def quadrature_distribution(fock_basis_state, quadrature_angle=0, p_axis=None):
+    fock_basis_state = math.astensor(fock_basis_state)
+
+    if fock_basis_state.ndim < 2:
+        raise ValueError("The input states must be density matrices.")
+    if fock_basis_state.shape[-1] != fock_basis_state.shape[-2]:
+        raise ValueError("The input states must be density matrices.")
+
+    cutoff = fock_basis_state.shape[-1]
+    quadrature_angle = math.astensor(quadrature_angle)
+    if p_axis is None:
+        p_axis = np.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
+    p_axis = math.astensor(p_axis)
+
+    n_fock = math.arange(cutoff)
+    q_to_n = oscillator_eigenstate_new(n_fock, p_axis[..., None])
+    phases = np.exp(1j * quadrature_angle[..., None] * n_fock)
+    val = np.einsum(
+        "...n, n, ...mn, m, ...m -> ...",
+        np.conj(q_to_n),
+        np.conj(phases),
+        fock_basis_state,
+        phases,
+        q_to_n,
+    )
+    if not math.all(np.isclose(math.imag(val), 0.0)):
+        raise ValueError
+    return p_axis, math.real(val)
 
 
 def c_in_PS(c):
