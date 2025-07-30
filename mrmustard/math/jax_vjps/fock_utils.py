@@ -155,7 +155,7 @@ def displacement_jax_bwd(
     shape: tuple[int, ...],
     tol,
     res: tuple[jnp.ndarray, complex],
-    dL_dD: jnp.ndarray,  # upstream gradient dL/dD (not dL/dDconj!)
+    dL_dD: jnp.ndarray,
 ) -> tuple[jnp.ndarray]:
     r"""
     The jax backward pass for the displacement gate.

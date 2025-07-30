@@ -113,7 +113,7 @@ class Dgate(Unitary):
                 f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}",
             )
         if self.ansatz.batch_shape:
-            alpha = math.astensor(self.parameters.alpha.value)
+            alpha = self.parameters.alpha.value
             alpha = math.reshape(alpha, (-1,))
             ret = math.astensor([math.displacement(alpha_i, shape=shape) for alpha_i in alpha])
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
