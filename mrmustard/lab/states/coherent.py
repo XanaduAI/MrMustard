@@ -85,7 +85,7 @@ class Coherent(Ket):
         mode: int,
         alpha: complex | Sequence[complex] = 0.0,
         alpha_trainable: bool = False,
-        alpha_bounds: tuple[float | None, float | None] = (0, None),
+        alpha_bounds: tuple[complex | None, complex | None] = (0, None),
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Coherent")

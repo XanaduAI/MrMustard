@@ -69,7 +69,7 @@ class DisplacedSqueezed(Ket):
         alpha_trainable: bool = False,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        alpha_bounds: tuple[float | None, float | None] = (0, None),
+        alpha_bounds: tuple[complex | None, complex | None] = (0, None),
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
