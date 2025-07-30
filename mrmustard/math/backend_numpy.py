@@ -87,6 +87,10 @@ class BackendNumpy(BackendBase):
     def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
         return np.array(array, ndmin=n, dtype=dtype)
 
+    def BackendError(self):
+        # no numpy backend specific errors
+        raise NotImplementedError
+
     def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
         return np.broadcast_to(array, shape)
 
