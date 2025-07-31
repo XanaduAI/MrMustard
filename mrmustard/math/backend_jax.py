@@ -663,8 +663,8 @@ class BackendJax(BackendBase):
             C,
         )
 
-    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):
-        return displacement_jax(x, y, shape, tol)
+    def displacement(self, alpha: complex, shape: tuple[int, int], tol: float):
+        return displacement_jax(alpha, shape, tol)
 
     def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
         return beamsplitter_jax(theta, phi, shape, method)

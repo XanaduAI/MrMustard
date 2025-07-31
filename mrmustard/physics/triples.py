@@ -101,28 +101,24 @@ def bargmann_eigenstate_Abc(
 
 
 def coherent_state_Abc(
-    x: float | Sequence[float],
-    y: float | Sequence[float] = 0,
+    alpha: complex | Sequence[complex],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a pure coherent state.
 
     Args:
-        x: The real part of the displacement, in units of :math:`\sqrt{\hbar}`.
-        y: The imaginary part of the displacement, in units of :math:`\sqrt{\hbar}`.
+        alpha: The complex displacement.
 
     Returns:
         The ``(A, b, c)`` triple of the pure coherent state.
     """
-    x, y = math.broadcast_arrays(
-        math.astensor(x, dtype=math.complex128),
-        math.astensor(y, dtype=math.complex128),
-    )
-    batch_shape = x.shape
+    alpha = math.astensor(alpha, dtype=math.complex128)
+
+    batch_shape = alpha.shape
 
     A = math.broadcast_to(_vacuum_A_matrix(1), (*batch_shape, 1, 1))
-    b = math.reshape(x + 1j * y, (*batch_shape, 1))
-    c = math.cast(math.exp(-0.5 * (x**2 + y**2)), math.complex128)
+    b = math.reshape(alpha, (*batch_shape, 1))
+    c = math.cast(math.exp(-0.5 * (math.abs(alpha) ** 2)), math.complex128)
 
     return A, b, c
 
@@ -155,8 +151,7 @@ def squeezed_vacuum_state_Abc(
 
 
 def displaced_squeezed_vacuum_state_Abc(
-    x: float | Sequence[float],
-    y: float | Sequence[float] = 0,
+    alpha: complex | Sequence[complex] = 0,
     r: float | Sequence[float] = 0,
     phi: float | Sequence[float] = 0,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
@@ -164,21 +159,23 @@ def displaced_squeezed_vacuum_state_Abc(
     The ``(A, b, c)`` triple of a displaced squeezed vacuum state.
 
     Args:
+        alpha: The complex displacement.
         r: The squeezing magnitudes.
         phi: The squeezing angles.
-        x: The real parts of the displacements, in units of :math:`\sqrt{\hbar}`.
-        y: The imaginary parts of the displacements, in units of :math:`\sqrt{\hbar}`.
 
     Returns:
         The ``(A, b, c)`` triple of the squeezed vacuum state.
     """
-    x, y, r, phi = math.broadcast_arrays(
-        math.astensor(x, dtype=math.complex128),
-        math.astensor(y, dtype=math.complex128),
+    alpha, r, phi = math.broadcast_arrays(
+        math.astensor(alpha, dtype=math.complex128),
         math.astensor(r, dtype=math.complex128),
         math.astensor(phi, dtype=math.complex128),
     )
-    batch_shape = x.shape
+    batch_shape = alpha.shape
+
+    # Extract real and imaginary parts
+    x = math.real(alpha)
+    y = math.imag(alpha)
 
     A = math.reshape(-math.sinh(r) / math.cosh(r) * math.exp(1j * phi), (*batch_shape, 1, 1))
     b = math.reshape(
@@ -425,8 +422,7 @@ def rotation_gate_Abc(
 
 
 def displacement_gate_Abc(
-    x: float | Sequence[float],
-    y: float | Sequence[float] = 0,
+    alpha: complex | Sequence[complex],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     The ``(A, b, c)`` triple of a tensor product of a displacement gate.
@@ -438,16 +434,14 @@ def displacement_gate_Abc(
     Returns:
         The ``(A, b, c)`` triple of the displacement gate.
     """
-    x, y = math.broadcast_arrays(
-        math.astensor(x, dtype=math.complex128),
-        math.astensor(y, dtype=math.complex128),
-    )
-    batch_shape = x.shape
+    alpha = math.astensor(alpha, dtype=math.complex128)
+
+    batch_shape = alpha.shape
     batch_dim = len(batch_shape)
 
     A = math.broadcast_to(_X_matrix_for_unitary(1), (*batch_shape, 2, 2))
-    b = math.stack([x + 1j * y, -x + 1j * y], batch_dim)
-    c = math.cast(math.exp(-(x**2 + y**2) / 2), math.complex128)
+    b = math.stack([alpha, -math.conj(alpha)], batch_dim)
+    c = math.cast(math.exp(-(math.abs(alpha) ** 2) / 2), math.complex128)
 
     return A, b, c
 
@@ -959,8 +953,7 @@ def XY_to_channel_Abc(
 
     if X.shape != Y.shape:
         raise ValueError(
-            "The dimension of X and Y matrices are not the same."
-            f"X.shape = {X.shape}, Y.shape = {Y.shape}",
+            f"The dimension of X and Y matrices are not the same.X.shape = {X.shape}, Y.shape = {Y.shape}",
         )
     batch_shape = X.shape[:-2]
     Im = math.broadcast_to(math.eye(2 * m, dtype=math.complex128), (*batch_shape, 2 * m, 2 * m))

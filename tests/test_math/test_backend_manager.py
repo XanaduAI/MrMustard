@@ -677,9 +677,9 @@ class TestBackendManager:
         Tests the ``displacement`` method.
         """
         cutoff = 5
-        alpha = 0.3 + 0.5 * 1j
-        # This data is obtained by using qutip
-        # np.array(displace(40,alpha).data.todense())[0:5,0:5]
+        alpha = 0.3 + 0.5j
+        # This data is obtained by using qutip 5.2.0
+        # np.array(displace(40,alpha).full())[0:5,0:5]
         expected = np.array(
             [
                 [
@@ -719,9 +719,9 @@ class TestBackendManager:
                 ],
             ],
         )
-        D = math.displacement(math.real(alpha), math.imag(alpha), (cutoff, cutoff))
+        D = math.displacement(alpha, (cutoff, cutoff))
         assert math.allclose(math.asnumpy(D), expected, atol=1e-5, rtol=0)
-        D_identity = math.displacement(0, 0, (cutoff, cutoff))
+        D_identity = math.displacement(0, (cutoff, cutoff))
         assert math.allclose(math.asnumpy(D_identity), np.eye(cutoff), atol=1e-5, rtol=0)
 
     def test_beamsplitter(self):

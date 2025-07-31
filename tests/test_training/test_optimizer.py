@@ -86,8 +86,10 @@ class TestOptimizer:
     def test_cat_state_optimization(self):
         # Note: we need to intitialize the cat state with a non-zero value. This is because
         # the gradients are zero when x is zero.
-        cat_state = Coherent(0, x=0.1, x_trainable=True) + Coherent(0, x=-0.1, x_trainable=True)
-        expected_cat = Coherent(0, x=np.sqrt(np.pi)) + Coherent(0, x=-np.sqrt(np.pi))
+        cat_state = Coherent(0, alpha=0.1, alpha_trainable=True) + Coherent(
+            0, alpha=-0.1, alpha_trainable=True
+        )
+        expected_cat = Coherent(0, alpha=np.sqrt(np.pi)) + Coherent(0, alpha=-np.sqrt(np.pi))
 
         def cost_fn(cat_state):
             cat_state = cat_state.normalize()
@@ -98,29 +100,55 @@ class TestOptimizer:
         opt = Optimizer(stable_threshold=1e-12)
         (cat_state,) = opt.minimize(cost_fn, by_optimizing=[cat_state], max_steps=6000)
 
-        assert math.allclose(cat_state.parameters.x.value, expected_cat.parameters.x.value)
+        assert math.allclose(cat_state.parameters.alpha.value, expected_cat.parameters.alpha.value)
+
+    @pytest.mark.parametrize("alpha", [0.2 + 0.4j, -0.1 - 0.2j, 0.1j, 0.4])
+    def test_complex_dgate_optimization_bargmann(self, alpha):
+        dgate = Dgate(0, alpha_trainable=True)
+
+        def cost_fn(dgate):
+            target_state = Coherent(0, alpha=alpha)
+            state_out = Vacuum(0) >> dgate
+            return 1 - math.real(state_out.expectation(target_state))
+
+        opt = Optimizer(euclidean_lr=0.05)
+        (dgate,) = opt.minimize(cost_fn, by_optimizing=[dgate], max_steps=200)
+        assert math.allclose(dgate.parameters.alpha.value, alpha, atol=0.01)
+
+    @pytest.mark.parametrize("alpha", [0.2 + 0.4j, -0.1 - 0.2j, 0.1j, 0.4])
+    def test_complex_dgate_optimization_fock(self, alpha):
+        dgate = Dgate(0, alpha=alpha, alpha_trainable=True)
+
+        def cost_fn(dgate):
+            target_state = Coherent(0, alpha=alpha)
+            state_out = dgate.fock_array((80, 1))[:, 0]
+            return (
+                1 - math.abs(math.sum(math.conj(state_out) * target_state.fock_array((80,)))) ** 2
+            )
+
+        opt = Optimizer(euclidean_lr=0.01)
+        (dgate,) = opt.minimize(cost_fn, by_optimizing=[dgate], max_steps=200)
+        assert math.allclose(dgate.parameters.alpha.value, alpha, atol=0.01)
 
     def test_dgate_optimization(self):
         """Test that Dgate is optimized correctly."""
-        dgate = Dgate(0, x_trainable=True, y_trainable=True)
-        target_state = DisplacedSqueezed(0, r=0.0, x=0.1, y=0.2).fock_array((40,))
+        dgate = Dgate(0, alpha_trainable=True)
+        target_state = DisplacedSqueezed(0, r=0.0, alpha=0.1 + 0.2j)
 
         def cost_fn(dgate):
             state_out = Vacuum(0) >> dgate
-            return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
+            return -math.real(state_out.expectation(target_state))
 
         opt = Optimizer()
         (dgate,) = opt.minimize(cost_fn, by_optimizing=[dgate])
 
-        assert math.allclose(dgate.parameters.x.value, 0.1, atol=0.01)
-        assert math.allclose(dgate.parameters.y.value, 0.2, atol=0.01)
+        assert math.allclose(dgate.parameters.alpha.value, 0.1 + 0.2j, atol=0.01)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (3, 2)])
     def test_displacement_grad_from_fock(self, batch_shape):
         """Test that the gradient of a displacement gate is computed from the fock representation."""
-        disp = Dgate(0, x=math.ones(batch_shape), y=0.5, x_trainable=True, y_trainable=True)
-        og_x = math.asnumpy(disp.parameters.x.value)
-        og_y = math.asnumpy(disp.parameters.y.value)
+        disp = Dgate(0, alpha=math.ones(batch_shape) + 0.5, alpha_trainable=True)
+        og_alpha = math.asnumpy(disp.parameters.alpha.value)
         num = Number(0, 2)
         vac = Vacuum(0).dual
 
@@ -130,8 +158,7 @@ class TestOptimizer:
 
         opt = Optimizer(euclidean_lr=0.05)
         (disp,) = opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
-        assert math.all(og_x != disp.parameters.x.value)
-        assert math.all(og_y != disp.parameters.y.value)
+        assert math.all(og_alpha != disp.parameters.alpha.value)
 
     @given(i=st.integers(1, 5), k=st.integers(1, 5))
     def test_hong_ou_mandel_optimizer(self, i, k):

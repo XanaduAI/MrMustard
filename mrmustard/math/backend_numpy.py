@@ -518,13 +518,12 @@ class BackendNumpy(BackendBase):
             (-2, -1, *tuple(range(len(pnr_cutoffs)))),
         )
 
-    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):
-        alpha = self.asnumpy(x) + 1j * self.asnumpy(y)
-        if np.sqrt(x * x + y * y) > tol:
-            gate = strategies.displacement(tuple(shape), alpha)
+    def displacement(self, alpha: complex, shape: tuple[int, int], tol: float):
+        if self.abs(alpha) > tol:
+            gate = strategies.displacement(tuple(shape), complex(alpha))
         else:
-            gate = self.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
-        return self.astensor(gate, dtype=gate.dtype.name)
+            gate = self.eye(max(shape), dtype=self.complex128)[: shape[0], : shape[1]]
+        return self.astensor(gate, dtype=self.complex128)
 
     def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
         t, s = self.asnumpy(theta), self.asnumpy(phi)
