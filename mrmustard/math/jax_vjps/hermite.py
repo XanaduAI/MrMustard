@@ -357,6 +357,7 @@ def hermite_renormalized_1leftoverMode_jax(
         shape = (1, 1, 1, 1, 1)
     else:
         shape = (cutoff_leftoverMode, cutoff_leftoverMode, M - 1, M - 2, *cutoffs_tail)
+    # TODO: add vjp for fast_diagonal and make use of it in 95226
     return jax.pure_callback(
         lambda A, B, C, cutoffs: hermite_multidimensional_1leftoverMode(
             np.array(A), np.array(B), np.array(C), np.array(cutoffs)

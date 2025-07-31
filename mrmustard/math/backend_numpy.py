@@ -450,7 +450,6 @@ class BackendNumpy(BackendBase):
         stable: bool = False,
         reorderedAB: bool = True,
     ) -> np.ndarray:
-        # why is this different from the jax version?
         return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
             (-2, -1, *tuple(range(len(pnr_cutoffs)))),
         )

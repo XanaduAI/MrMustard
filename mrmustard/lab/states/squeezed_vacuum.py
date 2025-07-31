@@ -103,15 +103,14 @@ class SqueezedVacuum(Ket):
             rs = math.reshape(rs, (-1,))
             phi = math.reshape(phi, (-1,))
             ret = math.astensor(
-                [math.squeezed(-r, p, shape=shape) for r, p in zip(rs, phi)],
+                [math.squeezed(r, p, shape=shape) for r, p in zip(rs, phi)],
             )
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
             if self.ansatz._lin_sup:
                 ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
-            # TODO: difference of r in strategies.squeezed
             ret = math.squeezed(
-                -self.parameters.r.value,
+                self.parameters.r.value,
                 self.parameters.phi.value,
                 shape=shape,
             )

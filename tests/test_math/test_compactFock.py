@@ -97,7 +97,7 @@ def test_compactFock_diagonal_gradients():
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
 
 
-@pytest.mark.requires_backend()  # TODO: [sc-96431]
+@pytest.mark.requires_backend()  # TODO: investigate and solve in 96431
 def test_compactFock_1leftover_gradients():
     r"""
     Test getting Fock amplitudes and if all but the first
