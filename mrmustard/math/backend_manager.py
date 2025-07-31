@@ -23,7 +23,6 @@ from functools import lru_cache
 from typing import Any
 
 import numpy as np
-from jax.errors import TracerArrayConversionError
 from opt_einsum import contract
 from scipy.stats import ortho_group, unitary_group
 
@@ -163,7 +162,7 @@ class BackendManager:
         Note that currently this only applies to the case where
         ``auto_shape`` is jitted  via the ``jax`` backend.
         """
-        return TracerArrayConversionError
+        return self._apply("BackendError")
 
     def change_backend(self, name: str) -> None:
         r"""
@@ -1435,20 +1434,19 @@ class BackendManager:
     # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float = 1e-15):
+    def displacement(self, alpha: complex, shape: tuple[int, int], tol: float = 1e-15):
         r"""
         Creates a single mode displacement matrix using a numba-based fock lattice strategy.
 
         Args:
-            x: The displacement magnitude.
-            y: The displacement angle.
+            alpha: The displacement.
             shape: The shape of the displacement matrix.
             tol: The tolerance to determine if the displacement is small enough to be approximated by the identity.
 
         Returns:
             The matrix representing the displacement gate.
         """
-        return self._apply("displacement", (x, y), {"shape": shape, "tol": tol})
+        return self._apply("displacement", (alpha, shape, tol))
 
     def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
         r"""

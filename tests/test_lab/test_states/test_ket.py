@@ -73,20 +73,20 @@ class TestKet:
         assert state.wires == Wires(modes_out_ket=set(modes))
 
     def test_manual_shape(self):
-        ket = Coherent(0, x=1)
+        ket = Coherent(0, alpha=1)
         assert ket.manual_shape == (None,)
         ket.manual_shape = (19,)
         assert ket.manual_shape == (19,)
 
     def test_auto_shape(self):
-        ket = Coherent(0, x=1)
+        ket = Coherent(0, alpha=1)
         assert ket.auto_shape() == (8,)
 
         ket.manual_shape = (19,)
         assert ket.auto_shape() == (19,)
         assert ket.auto_shape(respect_manual_shape=False) == (8,)
 
-        ket = Coherent(0, x=1) >> Number(1, 10).dual
+        ket = Coherent(0, 1) >> Number(1, 10).dual
         assert ket.auto_shape() == (8, 11)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
@@ -95,9 +95,9 @@ class TestKet:
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
 
-        state_in = Coherent(modes, x, y)
+        state_in = Coherent(modes, x + 1j * y)
         A, b, c = state_in.bargmann_triple()
-        A_expected, b_expected, c_expected = coherent_state_Abc(x, y)
+        A_expected, b_expected, c_expected = coherent_state_Abc(x + 1j * y)
 
         assert math.allclose(A, A_expected)
         assert math.allclose(b, b_expected)
@@ -120,7 +120,7 @@ class TestKet:
     def test_normalize(self, coeff, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x, y)
+        state = Coherent(0, x + 1j * y)
         state = coeff * state
         normalized = state.normalize()
         assert math.allclose(normalized.probability, 1.0)
@@ -130,7 +130,7 @@ class TestKet:
 
     @pytest.mark.parametrize("coeff", [0.5, 0.3])
     def test_normalize_lin_sup(self, coeff):
-        state = Coherent(0, 1, 1) + Coherent(0, -1, -1)
+        state = Coherent(0, 1 + 1j) + Coherent(0, -1 - 1j)
         state = coeff * state
         normalized = state.normalize()
         assert math.allclose(normalized.probability, 1.0)
@@ -182,7 +182,7 @@ class TestKet:
     def test_to_from_fock(self, modes, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state_in = Coherent(modes, x=x, y=y)
+        state_in = Coherent(modes, x + 1j * y)
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock_array(5)
 
@@ -200,7 +200,7 @@ class TestKet:
     def test_phase_space(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x=x, y=y)
+        state = Coherent(0, x + 1j * y)
         cov, means, coeff = state.phase_space(s=0)
         assert cov.shape[:-2] == state.ansatz.batch_shape
         assert means.shape[:-1] == state.ansatz.batch_shape
@@ -223,7 +223,7 @@ class TestKet:
 
     def test_to_from_phase_space(self):
         modes = (0,)
-        state = Coherent(0, x=1, y=2)
+        state = Coherent(0, 1 + 2j)
         cov, means, coeff = state.phase_space(s=0)
         state2 = Ket.from_phase_space(modes, (cov, means, coeff))
         assert state == state2
@@ -244,11 +244,11 @@ class TestKet:
     def test_L2_norm(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x=x, y=y)
+        state = Coherent(0, x + 1j * y)
         assert math.allclose(state.L2_norm, 1)
 
     def test_L2_norm_lin_sup(self):
-        state = Coherent(mode=0, x=0.1) + Coherent(mode=0, x=0.2)
+        state = Coherent(mode=0, alpha=0.1) + Coherent(mode=0, alpha=0.2)
         L2_norm = state.L2_norm
         assert L2_norm.shape == ()
         assert math.allclose(L2_norm, 3.99002496)
@@ -266,14 +266,14 @@ class TestKet:
     def test_probability(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x=x, y=y) / 3
+        state = Coherent(0, x + 1j * y) / 3
         probability = state.probability
         assert probability.shape == state.ansatz.batch_shape
         assert math.allclose(probability, 1 / 9)
         assert math.allclose(state.to_fock(20).probability, 1 / 9)
 
     def test_probability_lin_sup(self):
-        state = Coherent(0, x=1) / 2**0.5 + Coherent(0, x=-1) / 2**0.5
+        state = Coherent(0, 1) / 2**0.5 + Coherent(0, -1) / 2**0.5
         probability = state.probability
         assert probability.shape == ()
         assert math.allclose(probability, 1.13533528)
@@ -294,7 +294,7 @@ class TestKet:
     def test_purity(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x=x, y=y)
+        state = Coherent(0, x + 1j * y)
         purity = state.purity
         assert purity.shape == state.ansatz.batch_shape
         assert math.allclose(purity, 1)
@@ -303,7 +303,7 @@ class TestKet:
         assert math.allclose(Ket.from_ansatz((0,), None).purity, 1)
 
     def test_purity_lin_sup(self):
-        state = Coherent(0, x=1) + Coherent(0, x=-1)
+        state = Coherent(0, 1) + Coherent(0, -1)
         purity = state.purity
         assert purity.shape == ()
         assert math.allclose(purity, 1)
@@ -323,7 +323,7 @@ class TestKet:
     def test_dm(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        ket = Coherent(0, x=x, y=y)
+        ket = Coherent(0, x + 1j * y)
         dm = ket.dm()
 
         assert dm.ansatz.batch_shape == ket.ansatz.batch_shape
@@ -332,7 +332,7 @@ class TestKet:
         assert dm.wires == (ket.contract(ket.adjoint, "zip")).wires
 
     def test_dm_lin_sup(self):
-        state = Coherent(0, x=1) + Coherent(0, x=-1)
+        state = Coherent(0, 1) + Coherent(0, -1)
         dm = state.dm()
         assert dm.ansatz.batch_shape == (4,)
         assert dm.name == state.name
@@ -341,7 +341,7 @@ class TestKet:
     @pytest.mark.parametrize("phi", [0, 0.3, np.pi / 4, np.pi / 2])
     def test_quadrature_single_mode_ket(self, phi):
         x, y = 1, 2
-        state = Coherent(mode=0, x=x, y=y)
+        state = Coherent(mode=0, alpha=x + 1j * y)
         q = np.linspace(-10, 10, 100)
         psi_phi = coherent_state_quad(q, x, y, phi)
         assert math.allclose(state.quadrature(q, phi=phi), psi_phi)
@@ -354,7 +354,7 @@ class TestKet:
 
     def test_quadrature_multimode_ket(self):
         x, y = 1, 2
-        state = Coherent(0, x=x, y=y) >> Coherent(1, x=x, y=y)
+        state = Coherent(0, x + 1j * y) >> Coherent(1, x + 1j * y)
         q = np.linspace(-10, 10, 100)
         psi_q = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
         assert math.allclose(state.quadrature(q, q), psi_q)
@@ -364,7 +364,7 @@ class TestKet:
 
     def test_quadrature_multivariable_ket(self):
         x, y = 1, 2
-        state = Coherent(0, x=x, y=y) >> Coherent(1, x=x, y=y)
+        state = Coherent(0, x + 1j * y) >> Coherent(1, x + 1j * y)
         q1 = np.linspace(-10, 10, 100)
         q2 = np.linspace(-10, 10, 100)
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
@@ -375,8 +375,8 @@ class TestKet:
 
     def test_quadrature_batch(self):
         x1, y1, x2, y2 = 1, 2, -1, -2
-        A1, b1, c1 = coherent_state_Abc(x1, y1)
-        A2, b2, c2 = coherent_state_Abc(x2, y2)
+        A1, b1, c1 = coherent_state_Abc(x1 + 1j * y1)
+        A2, b2, c2 = coherent_state_Abc(x2 + 1j * y2)
         A, b, c = math.astensor([A1, A2]), math.astensor([b1, b2]), math.astensor([c1, c2])
         state = Ket.from_bargmann((0,), (A, b, c))
         q = np.linspace(-10, 10, 100)
@@ -392,8 +392,8 @@ class TestKet:
         alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
         alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
 
-        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
-        coh_1 = Coherent(1, x=math.real(alpha_1), y=math.imag(alpha_1))
+        coh_0 = Coherent(0, alpha=alpha_0)
+        coh_1 = Coherent(1, alpha=alpha_1)
         # TODO: clean this up once we have a better way to create batched multimode states
         ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
         ket = ket.to_fock(40) if fock else ket
@@ -432,8 +432,8 @@ class TestKet:
         beta_0 = 0.1
         beta_1 = 0.2
 
-        u0 = Dgate(0, x=beta_0)
-        u1 = Dgate(1, x=beta_1)
+        u0 = Dgate(0, alpha=beta_0)
+        u1 = Dgate(1, alpha=beta_1)
         u01 = u0 >> u1
 
         exp_u0 = ket.expectation(u0)
@@ -465,11 +465,11 @@ class TestKet:
     @pytest.mark.parametrize("batch_shape_2", [(7,), (4, 5, 7)])
     def test_expectation_diff_batch_shapes(self, batch_shape, batch_shape_2):
         alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
-        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
+        coh_0 = Coherent(0, alpha=alpha_0)
 
         # ket operator
         alpha_1 = math.broadcast_to(0.3 + 0.2j, batch_shape_2)
-        coh_1 = Coherent(0, x=math.real(alpha_1), y=math.imag(alpha_1))
+        coh_1 = Coherent(0, alpha=alpha_1)
         exp_coh_1 = coh_0.expectation(coh_1)
         assert exp_coh_1.shape == batch_shape + batch_shape_2
 
@@ -480,25 +480,25 @@ class TestKet:
 
         # u operator
         beta_0 = math.broadcast_to(0.3, batch_shape_2)
-        u0 = Dgate(0, x=beta_0)
+        u0 = Dgate(0, alpha=beta_0)
         exp_u0 = coh_0.expectation(u0)
         assert exp_u0.shape == batch_shape + batch_shape_2
 
     def test_expectation_lin_sup(self):
-        cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
+        cat = (Coherent(0, alpha=1 + 2j) + Coherent(0, alpha=-1 + 2j)).normalize()
         assert math.allclose(cat.expectation(cat, mode="zip"), 1.0)
         assert math.allclose(cat.expectation(cat.dm(), mode="zip"), 1.0)
         assert math.allclose(
-            cat.expectation(Dgate(0, x=[0.1, 0.2, 0.3])),
+            cat.expectation(Dgate(0, alpha=[0.1, 0.2, 0.3])),
             [
-                cat.expectation(Dgate(0, x=0.1)),
-                cat.expectation(Dgate(0, x=0.2)),
-                cat.expectation(Dgate(0, x=0.3)),
+                cat.expectation(Dgate(0, alpha=0.1)),
+                cat.expectation(Dgate(0, alpha=0.2)),
+                cat.expectation(Dgate(0, alpha=0.3)),
             ],
         )
 
     def test_expectation_error(self):
-        ket = Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)
+        ket = Coherent(0, 1 + 2j) >> Coherent(1, 1 + 3j)
 
         op1 = Attenuator(0)
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
@@ -539,15 +539,15 @@ class TestKet:
     @pytest.mark.parametrize("x", [(0, 1, 2), ([0, 0], [1, 1], [2, 2])])
     def test_get_item(self, m, x):
         x3, x30, x98 = x
-        ket = Vacuum((3, 30, 98)) >> Dgate(3, x=x3) >> Dgate(30, x=x30) >> Dgate(98, x=x98)
+        ket = Vacuum((3, 30, 98)) >> Dgate(3, x3) >> Dgate(30, x30) >> Dgate(98, x98)
         dm = ket.dm()
         assert ket[m] == dm[m]
 
     def test_contract_zip(self):
-        coh = Coherent(0, x=[1.0, -1.0])
-        displacements = Dgate(0, x=[1.0, -1.0])
+        coh = Coherent(0, [1.0, -1.0])
+        displacements = Dgate(0, [1.0, -1.0])
         better_cat = coh.contract(displacements, mode="zip")
-        assert better_cat == Coherent(0, x=[2.0, -2.0])
+        assert better_cat == Coherent(0, [2.0, -2.0])
 
     @pytest.mark.parametrize("max_sq", [1, 2, 3])
     def test_random_states(self, max_sq):
@@ -586,7 +586,7 @@ class TestKet:
 
     def test_is_physical(self):
         assert Ket.random((0, 1)).is_physical
-        assert Coherent(0, x=[1, 1, 1]).is_physical
+        assert Coherent(0, [1, 1, 1]).is_physical
 
     def test_physical_stellar_decomposition(self):
         r"""

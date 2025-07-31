@@ -56,7 +56,7 @@ jobs:
           NUMBA_CPU_FEATURES: ""
         run: |
           set -o pipefail
-          uv run --all-extras pytest tests --backend=numpy -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
+          uv run --no-group jax_backend pytest tests --backend=numpy -p no:warnings --tb=native ${{ env.UPLOAD_TIMINGS == 'true' && '--durations=0 -vv ' || '' }}| tee durations.txt
           set +o pipefail
 
       - name: configure aws credentials

@@ -17,7 +17,6 @@
 import json
 from dataclasses import dataclass
 
-import jax
 import numpy as np
 import pytest
 
@@ -46,6 +45,11 @@ from mrmustard.lab import (
     Vacuum,
 )
 from mrmustard.utils.serialize import load, save
+
+try:
+    import jax
+except ImportError:
+    jax = None
 
 
 class Deserialize:
@@ -173,10 +177,10 @@ class TestSerialize:
         """Test that all circuit components are serializable."""
         circ = Circuit(
             [
-                Coherent(0, x=1.0),
+                Coherent(0, 1.0),
                 Dgate(0, 0.1),
                 BSgate((1, 2), theta=0.1, theta_trainable=True, theta_bounds=(-0.5, 0.5)),
-                Dgate(0, x=1.1, y=2.2),
+                Dgate(0, 1.1 + 2.2j),
                 Identity((1, 2)),
                 Rgate(1, theta=0.1),
                 S2gate((0, 1), 1, 1),
@@ -188,8 +192,8 @@ class TestSerialize:
                 BtoChar(0, s=1),
                 TraceOut((0, 1)),
                 Thermal(0, nbar=3),
-                Coherent(0, x=0.3, y=0.2, y_trainable=True, y_bounds=(-0.5, 0.5)).dual,
-                DisplacedSqueezed(0, 1, 2, 3, 4, x_bounds=(-1.5, 1.5), x_trainable=True),
+                Coherent(0, 0.3 + 0.2j, alpha_trainable=True, alpha_bounds=(0, 0.5)).dual,
+                DisplacedSqueezed(0, 1 + 2j, 3, 4, alpha_trainable=True, alpha_bounds=(-1.5, 1.5)),
                 Number(1, n=20),
                 QuadratureEigenstate(2, x=1, phi=0, phi_trainable=True, phi_bounds=(-1, 1)).dual,
                 SqueezedVacuum(3, r=0.4, phi=0.2),

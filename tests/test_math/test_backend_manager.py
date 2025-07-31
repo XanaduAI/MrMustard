@@ -18,11 +18,16 @@ Unit tests for the :class:`BackendManager`.
 
 import numpy as np
 import pytest
-from jax import numpy as jnp
-from jax.errors import TracerArrayConversionError
 from scipy.special import loggamma as scipy_loggamma
 
 from mrmustard import math, settings
+
+try:
+    import jax.numpy as jnp
+    from jax.errors import TracerArrayConversionError
+except ImportError:
+    jnp = None
+    TracerArrayConversionError = None
 
 
 class TestBackendManager:
@@ -42,20 +47,39 @@ class TestBackendManager:
 
     types = ["None", "int32", "float32", "float64", "complex128"]
 
+    @pytest.mark.requires_backend("jax")
     def test_backend_error(self):
         r"""
         Tests the ``BackendError`` property.
         """
         assert math.BackendError is TracerArrayConversionError
 
-    def test_get_backend(self):
+    @pytest.mark.requires_backend("jax")
+    def test_get_backend_jax(self):
         r"""
-        Tests the ``get_backend`` method.
+        Tests the ``get_backend`` method for the jax backend.
         """
-        assert math.get_backend("numpy").name == "numpy"
         assert math.get_backend("jax").name == "jax"
 
-    def test_einsum(self):
+    @pytest.mark.requires_backend("numpy")
+    def test_get_backend_numpy(self):
+        r"""
+        Tests the ``get_backend`` method for the numpy backend.
+        """
+        assert math.get_backend("numpy").name == "numpy"
+
+    @pytest.mark.requires_backend("jax")
+    def test_einsum_jax(self):
+        r"""
+        Tests the ``einsum`` method for the jax backend.
+        """
+        ar = math.astensor([[1, 2], [3, 4]])
+        res = math.astensor([[7, 10], [15, 22]])
+
+        assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="jax"), res)
+
+    @pytest.mark.requires_backend("numpy")
+    def test_einsum_numpy(self):
         r"""
         Tests the ``einsum`` method.
         """
@@ -63,7 +87,6 @@ class TestBackendManager:
         res = math.astensor([[7, 10], [15, 22]])
 
         assert math.allclose(math.einsum("ij,jk->ik", ar, ar), res)
-        assert math.allclose(math.einsum("ij,jk->ik", ar, ar, backend="jax"), res)
 
     def test_error(self):
         r"""
@@ -640,9 +663,9 @@ class TestBackendManager:
         Tests the ``displacement`` method.
         """
         cutoff = 5
-        alpha = 0.3 + 0.5 * 1j
-        # This data is obtained by using qutip
-        # np.array(displace(40,alpha).data.todense())[0:5,0:5]
+        alpha = 0.3 + 0.5j
+        # This data is obtained by using qutip 5.2.0
+        # np.array(displace(40,alpha).full())[0:5,0:5]
         expected = np.array(
             [
                 [
@@ -682,9 +705,9 @@ class TestBackendManager:
                 ],
             ],
         )
-        D = math.displacement(math.real(alpha), math.imag(alpha), (cutoff, cutoff))
+        D = math.displacement(alpha, (cutoff, cutoff))
         assert math.allclose(math.asnumpy(D), expected, atol=1e-5, rtol=0)
-        D_identity = math.displacement(0, 0, (cutoff, cutoff))
+        D_identity = math.displacement(0, (cutoff, cutoff))
         assert math.allclose(math.asnumpy(D_identity), np.eye(cutoff), atol=1e-5, rtol=0)
 
     def test_beamsplitter(self):

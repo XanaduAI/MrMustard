@@ -20,22 +20,27 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 
-import equinox as eqx
-import jax
-from optax import GradientTransformation, OptState, adamw, multi_transform
-
 from mrmustard import math, settings
 from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.math.parameters import Variable
-from mrmustard.training.parameter_update import (
-    update_orthogonal,
-    update_symplectic,
-    update_unitary,
-)
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
 
-__all__ = ["Optimizer"]
+try:
+    import equinox as eqx
+    import jax
+    from optax import GradientTransformation, OptState, adamw, multi_transform
+
+    from mrmustard.training.parameter_update import (
+        update_orthogonal,
+        update_symplectic,
+        update_unitary,
+    )
+
+except ImportError:
+    raise ImportError(
+        "Optimizer only supports the Jax backend. Please install the `jax_backend` group using `uv pip install -g jax_backend` and set the backend to Jax using `math.change_backend('jax')`."
+    ) from None
 
 
 class Optimizer:
@@ -96,7 +101,8 @@ class Optimizer:
         loss_value, grads = jax.value_and_grad(cost_fn, argnums=tuple(range(len(by_optimizing))))(
             *by_optimizing,
         )
-        updates, opt_state = optim.update(grads, opt_state, by_optimizing)
+        conj_grads = jax.tree_util.tree_map(lambda x: jax.numpy.conj(x), grads)
+        updates, opt_state = optim.update(conj_grads, opt_state, by_optimizing)
         by_optimizing = eqx.apply_updates(by_optimizing, updates)
         return by_optimizing, opt_state, loss_value
 

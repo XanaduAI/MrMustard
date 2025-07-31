@@ -20,10 +20,6 @@ from collections.abc import Callable, Sequence
 from functools import partial
 from typing import Any
 
-import equinox as eqx
-import jax
-import jax.numpy as jnp
-import jax.scipy as jsp
 import numpy as np
 from platformdirs import user_cache_dir
 
@@ -31,19 +27,30 @@ from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.physics.ansatz import Ansatz
 
 from .backend_base import BackendBase
-from .jax_vjps import (
-    beamsplitter_jax,
-    displacement_jax,
-    hermite_renormalized_1leftoverMode_jax,
-    hermite_renormalized_batched_jax,
-    hermite_renormalized_binomial_jax,
-    hermite_renormalized_diagonal_jax,
-    hermite_renormalized_jax,
-    squeezed_jax,
-    squeezer_jax,
-)
 from .parameter_set import ParameterSet
 from .parameters import Constant, Variable
+
+try:
+    import equinox as eqx
+    import jax
+    import jax.numpy as jnp
+    import jax.scipy as jsp
+
+    from .jax_vjps import (
+        beamsplitter_jax,
+        displacement_jax,
+        hermite_renormalized_1leftoverMode_jax,
+        hermite_renormalized_batched_jax,
+        hermite_renormalized_binomial_jax,
+        hermite_renormalized_diagonal_jax,
+        hermite_renormalized_jax,
+        squeezed_jax,
+        squeezer_jax,
+    )
+except ImportError:
+    raise ImportError(
+        "The JAX backend requires the `jax_backend` group. Please install it using `uv pip install -g jax_backend`."
+    ) from None
 
 jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_compilation_cache_dir", f"{user_cache_dir('mrmustard')}/jax_cache")
@@ -120,6 +127,9 @@ class BackendJax(BackendBase):
 
     def asnumpy(self, tensor: jnp.ndarray) -> np.ndarray:
         return np.array(tensor)
+
+    def BackendError(self):
+        return jax.errors.TracerArrayConversionError
 
     @partial(jax.jit, static_argnames=["shape"])
     def broadcast_to(self, array: jnp.ndarray, shape: tuple[int]) -> jnp.ndarray:
@@ -533,8 +543,8 @@ class BackendJax(BackendBase):
     # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~
 
-    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):
-        return displacement_jax(x, y, shape, tol)
+    def displacement(self, alpha: complex, shape: tuple[int, int], tol: float):
+        return displacement_jax(alpha, shape, tol)
 
     def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
         return beamsplitter_jax(theta, phi, shape, method)

@@ -122,7 +122,7 @@ class TestBtoQ:
         axis_angle = rng.random()
         quad = rng.random()
 
-        state = Coherent(0, x, y)
+        state = Coherent(0, x + 1j * y)
         wavefunction = (state >> BtoQ((0,), axis_angle)).ansatz
 
         assert np.allclose(wavefunction(quad), wavefunction_coh(x + 1j * y, quad, axis_angle))

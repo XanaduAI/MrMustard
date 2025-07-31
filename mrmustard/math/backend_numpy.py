@@ -86,6 +86,10 @@ class BackendNumpy(BackendBase):
     def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
         return np.array(array, ndmin=n, dtype=dtype)
 
+    def BackendError(self):
+        # no numpy backend specific errors
+        raise NotImplementedError
+
     def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
         return np.broadcast_to(array, shape)
 
@@ -455,13 +459,12 @@ class BackendNumpy(BackendBase):
     # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~
 
-    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):
-        alpha = self.asnumpy(x) + 1j * self.asnumpy(y)
-        if np.sqrt(x * x + y * y) > tol:
-            gate = strategies.displacement(tuple(shape), alpha)
+    def displacement(self, alpha: complex, shape: tuple[int, int], tol: float):
+        if self.abs(alpha) > tol:
+            gate = strategies.displacement(tuple(shape), complex(alpha))
         else:
-            gate = self.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
-        return self.astensor(gate, dtype=gate.dtype.name)
+            gate = self.eye(max(shape), dtype=self.complex128)[: shape[0], : shape[1]]
+        return self.astensor(gate, dtype=self.complex128)
 
     def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
         t, s = self.asnumpy(theta), self.asnumpy(phi)

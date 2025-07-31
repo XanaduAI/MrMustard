@@ -110,74 +110,67 @@ beamsplitter_jax.defvjp(beamsplitter_jax_fwd, beamsplitter_jax_bwd)
 # ~~~~~~~~~~~~~~~~~
 
 
-@partial(jax.custom_vjp, nondiff_argnums=(2, 3))
-@partial(jax.jit, static_argnums=(2, 3))
-def displacement_jax(x: float, y: float, shape: tuple[int, ...], tol: float) -> jnp.ndarray:
+@partial(jax.custom_vjp, nondiff_argnums=(1, 2))
+@partial(jax.jit, static_argnums=(1, 2))
+def displacement_jax(alpha: complex, shape: tuple[int, ...], tol: float) -> jnp.ndarray:
     r"""
     The jax custom gradient for the displacement gate.
     """
 
-    def true_branch(shape, x, y):
+    def true_branch(shape, alpha):
         return jax.pure_callback(
-            lambda x, y: strategies.displacement(
+            lambda alpha: strategies.displacement(
                 cutoffs=shape,
-                alpha=np.asarray(x) + 1j * np.asarray(y),
+                alpha=complex(alpha),
                 dtype=np.complex128,
             ),
             jax.ShapeDtypeStruct(shape, jnp.complex128),
-            x,
-            y,
+            alpha,
         )
 
     def false_branch(shape, *_):
         return jnp.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
     return jax.lax.cond(
-        jnp.sqrt(x * x + y * y) > tol,
+        jnp.abs(alpha) > tol,
         partial(true_branch, shape),
         partial(false_branch, shape),
-        x,
-        y,
+        alpha,
     )
 
 
 def displacement_jax_fwd(
-    x: float,
-    y: float,
+    alpha: complex,
     shape: tuple[int, ...],
     tol: float,
-) -> tuple[jnp.ndarray, tuple[jnp.ndarray, float, float]]:
+) -> tuple[jnp.ndarray, tuple[jnp.ndarray, complex]]:
     r"""
     The jax forward pass for the displacement gate.
     """
-    gate = displacement_jax(x, y, shape, tol)
-    return gate, (gate, x, y)
+    gate = displacement_jax(alpha, shape, tol)
+    return gate, (gate, alpha)
 
 
 def displacement_jax_bwd(
     shape: tuple[int, ...],
     tol,
-    res: tuple[jnp.ndarray, float, float],
-    g: jnp.ndarray,
-) -> tuple[jnp.ndarray, jnp.ndarray]:
+    res: tuple[jnp.ndarray, complex],
+    dL_dD: jnp.ndarray,
+) -> tuple[jnp.ndarray]:
     r"""
     The jax backward pass for the displacement gate.
     """
-    gate, x, y = res
+    gate, alpha = res
     dD_da, dD_dac = jax.pure_callback(
-        lambda gate, x, y: strategies.jacobian_displacement(
+        lambda gate, alpha: strategies.jacobian_displacement(
             np.asarray(gate),
-            np.asarray(x) + 1j * np.asarray(y),
+            np.asarray(alpha),
         ),
         (jax.ShapeDtypeStruct(shape, jnp.complex128), jax.ShapeDtypeStruct(shape, jnp.complex128)),
         gate,
-        x,
-        y,
+        alpha,
     )
-    dL_dac = jnp.sum(jnp.conj(g) * dD_dac + g * jnp.conj(dD_da))
-    dLdx = 2 * jnp.real(dL_dac)
-    dLdy = 2 * jnp.imag(dL_dac)
-    return dLdx, dLdy
+    return (jnp.sum(dL_dD * dD_da) + jnp.conj(jnp.sum(dL_dD * dD_dac)),)
 
 
 displacement_jax.defvjp(displacement_jax_fwd, displacement_jax_bwd)
