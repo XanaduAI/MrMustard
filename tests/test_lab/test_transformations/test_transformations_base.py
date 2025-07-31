@@ -115,7 +115,7 @@ class TestUnitary:
     def test_inverse_unitary(self, batch_shape):
         r = math.broadcast_to(0.1, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
-        u = Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip")
+        u = Sgate(0, r, phi).contract(Dgate(0, r + 1j * phi), "zip")
         gate = Unitary(u.ansatz, u.wires, u.name)
         gate_inv = gate.inverse()
         gate_inv_inv = gate_inv.inverse()
@@ -191,9 +191,13 @@ class TestChannel:
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_inverse_channel(self, batch_shape):
-        r = math.broadcast_to(0.1, batch_shape)
+        r = math.broadcast_to(0.1 + 0.2j, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
-        g = Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip").contract(Attenuator(0, 0.5), "zip")
+        g = (
+            Sgate(0, r, phi)
+            .contract(Dgate(0, r + 1j * phi), "zip")
+            .contract(Attenuator(0, 0.5), "zip")
+        )
         gate = Channel(g.ansatz, g.wires, g.name)
         should_be_identity = gate >> gate.inverse()
         assert should_be_identity.ansatz == Attenuator(0, 1.0).ansatz
