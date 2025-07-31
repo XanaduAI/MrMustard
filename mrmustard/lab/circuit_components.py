@@ -768,17 +768,19 @@ class CircuitComponent:
             The shape of the Fock representation of this component.
 
         Raises:
-            ValueError: If the shape is not valid for the component.
+            ValueError: If the shape either contains 0 or is not the correct length.
         """
-        shape = shape or self.auto_shape()
+        shape = shape if shape is not None else self.auto_shape()
         num_vars = (
             self.ansatz.num_CV_vars
             if isinstance(self.ansatz, PolyExpAnsatz)
             else self.ansatz.num_vars
         )
-        if isinstance(shape, int):
+        if isinstance(shape, int | math.int64):
             shape = (shape,) * num_vars
         shape = tuple(shape)
+        if 0 in shape:
+            raise ValueError(f"Expected a non-zero Fock shape, got {shape}.")
         if len(shape) != num_vars:
             raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
         return shape
