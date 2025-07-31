@@ -14,8 +14,6 @@
 
 """Tests for the Optimizer class"""
 
-from functools import partial
-
 import numpy as np
 import pytest
 from hypothesis import given
@@ -103,6 +101,34 @@ class TestOptimizer:
         (cat_state,) = opt.minimize(cost_fn, by_optimizing=[cat_state], max_steps=6000)
 
         assert math.allclose(cat_state.parameters.alpha.value, expected_cat.parameters.alpha.value)
+
+    @pytest.mark.parametrize("alpha", [0.2 + 0.4j, -0.1 - 0.2j, 0.1j, 0.4])
+    def test_complex_dgate_optimization_bargmann(self, alpha):
+        dgate = Dgate(0, alpha_trainable=True)
+
+        def cost_fn(dgate):
+            target_state = Coherent(0, alpha=alpha)
+            state_out = Vacuum(0) >> dgate
+            return 1 - math.real(state_out.expectation(target_state))
+
+        opt = Optimizer(euclidean_lr=0.05)
+        (dgate,) = opt.minimize(cost_fn, by_optimizing=[dgate], max_steps=200)
+        assert math.allclose(dgate.parameters.alpha.value, alpha, atol=0.01)
+
+    @pytest.mark.parametrize("alpha", [0.2 + 0.4j, -0.1 - 0.2j, 0.1j, 0.4])
+    def test_complex_dgate_optimization_fock(self, alpha):
+        dgate = Dgate(0, alpha=alpha, alpha_trainable=True)
+
+        def cost_fn(dgate):
+            target_state = Coherent(0, alpha=alpha)
+            state_out = dgate.fock_array((80, 1))[:, 0]
+            return (
+                1 - math.abs(math.sum(math.conj(state_out) * target_state.fock_array((80,)))) ** 2
+            )
+
+        opt = Optimizer(euclidean_lr=0.01)
+        (dgate,) = opt.minimize(cost_fn, by_optimizing=[dgate], max_steps=200)
+        assert math.allclose(dgate.parameters.alpha.value, alpha, atol=0.01)
 
     def test_dgate_optimization(self):
         """Test that Dgate is optimized correctly."""
@@ -540,35 +566,3 @@ class TestOptimizer:
         (circ,) = opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
         S_12 = circ.components[3]
         assert math.allclose(math.sinh(S_12.parameters.r.value) ** 2, 1, atol=1e-2)
-
-    @pytest.mark.parametrize("alpha", [0.2 + 0.4j, -0.1 - 0.2j, 0.1j, 0.4])
-    def test_complex_dgate_optimization_fock(self, alpha):
-        dgate = Dgate(0, alpha=alpha, alpha_trainable=True)
-        target_state = Coherent(0, alpha=alpha)
-
-        def cost_fn(dgate, target_state):
-            state_out = dgate.fock_array((80, 1))[:, 0]
-            return (
-                1 - math.abs(math.sum(math.conj(state_out) * target_state.fock_array((80,)))) ** 2
-            )
-
-        opt = Optimizer(euclidean_lr=0.01)
-        (dgate,) = opt.minimize(
-            partial(cost_fn, target_state=target_state), by_optimizing=[dgate], max_steps=200
-        )
-        assert math.allclose(dgate.parameters.alpha.value, alpha, atol=0.01)
-
-    @pytest.mark.parametrize("alpha", [0.2 + 0.4j, -0.1 - 0.2j, 0.1j, 0.4])
-    def test_complex_dgate_optimization_bargmann(self, alpha):
-        dgate = Dgate(0, alpha_trainable=True)
-        target_state = Coherent(0, alpha=alpha)
-
-        def cost_fn(dgate, target_state):
-            state_out = Vacuum(0) >> dgate
-            return 1 - math.real(state_out.expectation(target_state))
-
-        opt = Optimizer(euclidean_lr=0.05)
-        (dgate,) = opt.minimize(
-            partial(cost_fn, target_state=target_state), by_optimizing=[dgate], max_steps=200
-        )
-        assert math.allclose(dgate.parameters.alpha.value, alpha, atol=0.01)
