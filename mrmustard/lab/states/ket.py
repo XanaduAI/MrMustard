@@ -174,13 +174,14 @@ class Ket(State):
         )
 
     @classmethod
-    def random(cls, modes: Collection[int], max_r: float = 1.0) -> Ket:
+    def random(cls, modes: Collection[int], max_r: float = 1.0, seed: int | None = None) -> Ket:
         r"""
         Generates a random zero displacement state.
 
         Args:
             modes: The modes of the state.
             max_r: Maximum squeezing parameter over which we make random choices.
+            seed: The random seed. If ``None``, the global seed is used.
 
         Returns:
             A ``Ket`` object.
@@ -196,9 +197,11 @@ class Ket(State):
             >>> from mrmustard.lab import Ket
             >>> assert isinstance(Ket.random([0,1]), Ket)
         """
+        if not modes:
+            raise ValueError("Cannot create a random state with no modes.")
 
         m = len(modes)
-        S = math.random_symplectic(m, max_r)
+        S = math.random_symplectic(m, max_r, seed=seed)
         transformation = (
             1
             / math.sqrt(complex(2))
