@@ -388,6 +388,9 @@ class DM(State):
         Returns:
             array: The Fock representation of this component.
 
+        Raises:
+            ValueError: If the shape is not valid for the component.
+
         Note:
             The ``standard_order`` boolean argument lets one choose the standard convention for the
             index ordering of the density matrix. For a single mode, if ``standard_order=True`` the

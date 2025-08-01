@@ -357,6 +357,13 @@ class TestCircuitComponent:
             result2 = coh0.contract(coh1)
             assert isinstance(result2.ansatz, ArrayAnsatz)
 
+    def test_to_fock_shape_error(self):
+        state = Coherent(0, alpha=0.1 + 0.1j)
+        with pytest.raises(ValueError, match="non-zero"):
+            state.to_fock(shape=(0, 1))
+        with pytest.raises(ValueError, match="Fock shape of"):
+            state.to_fock(shape=(1, 1, 1, 1))
+
     def test_rshift_all_bargmann(self):
         vac012 = Vacuum((0, 1, 2))
         d0 = Dgate(0, alpha=0.1 + 0.1j)

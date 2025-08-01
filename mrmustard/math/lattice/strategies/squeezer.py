@@ -137,7 +137,7 @@ def squeezed(cutoff: int, r: float, theta: float, dtype=np.complex128):  # pragm
         array (ComplexMatrix): matrix representing the squeezing gate.
     """
     S = np.zeros(cutoff, dtype=dtype)
-    eitheta_tanhr = np.exp(1j * theta) * np.tanh(r)
+    eitheta_tanhr = np.exp(1j * theta) * -np.tanh(r)
     S[0] = np.sqrt(1.0 / np.cosh(r))
 
     for m in range(2, cutoff, 2):

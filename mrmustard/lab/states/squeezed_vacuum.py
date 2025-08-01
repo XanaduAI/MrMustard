@@ -24,6 +24,7 @@ from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
+from mrmustard.utils.typing import ComplexTensor
 
 from ..utils import make_parameter
 from .ket import Ket
@@ -88,3 +89,29 @@ class SqueezedVacuum(Ket):
             phi=self.parameters.phi,
         )
         self._wires = Wires(modes_out_ket=set(mode))
+
+    def fock_array(
+        self,
+        shape: int | Sequence[int] | None = None,
+    ) -> ComplexTensor:
+        shape = self._check_fock_shape(shape)
+        if self.ansatz.batch_shape:
+            rs, phi = math.broadcast_arrays(
+                self.parameters.r.value,
+                self.parameters.phi.value,
+            )
+            rs = math.reshape(rs, (-1,))
+            phi = math.reshape(phi, (-1,))
+            ret = math.astensor(
+                [math.squeezed(r, p, shape=shape) for r, p in zip(rs, phi)],
+            )
+            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
+            if self.ansatz._lin_sup:
+                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
+        else:
+            ret = math.squeezed(
+                self.parameters.r.value,
+                self.parameters.phi.value,
+                shape=shape,
+            )
+        return ret

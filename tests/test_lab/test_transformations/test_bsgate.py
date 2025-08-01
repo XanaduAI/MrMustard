@@ -84,7 +84,7 @@ class TestBSgate:
         gate_fock2 = gate.fock_array((5, 5, 5, 5), method="schwinger")  # tuple shape
         assert math.allclose(gate_fock, gate_fock2)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Expected Fock shape"):
             gate.fock_array((5, 5, 5))  # wrong shape
 
         bs_with_batch = BSgate((0, 1), math.astensor([[1, 2]]), math.astensor([[3], [4], [5]]))
