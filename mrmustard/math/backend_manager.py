@@ -705,7 +705,7 @@ class BackendManager:
         # Unbatched case
         check_out_shape(())
         return self._apply(
-            "hermite_renormalized_unbatched",
+            "hermite_renormalized",
             (A, b, c),
             {"shape": tuple(shape), "stable": stable, "out": out},
         )
@@ -716,31 +716,29 @@ class BackendManager:
         b: Tensor,
         c: Tensor,
         cutoffs: tuple[int],
+        reorderedAB: bool = True,
     ) -> Tensor:
-        r"""Renormalized multidimensional Hermite polynomial for calculating the diagonal of the Fock representation.
+        r"""
+        Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
+        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+
+        Calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
+        by applying the recursion relation in a selective manner.
+
+        Note: This function supports batching of different B's.
 
         Args:
             A: The A matrix.
             b: The b vector.
             c: The c scalar.
-            cutoffs: Upper boundary of photon numbers in each mode.
+            cutoffs: upper boundary of photon numbers in each mode
+            reorderedAB: Whether to reorder A and B parameters match conventions in mrmustard.math.numba.compactFock~.
 
         Returns:
-            The diagonal elements of the Fock representation (i.e., PNR detection probabilities).
+            The renormalized Hermite polynomial.
         """
-        return self._apply("hermite_renormalized_diagonal", (A, b, c, cutoffs))
-
-    def hermite_renormalized_diagonal_batch(
-        self,
-        A: Tensor,
-        B: Tensor,
-        C: Tensor,
-        cutoffs: tuple[int],
-    ) -> Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
-        Then, calculates the required renormalized multidimensional Hermite polynomial.
-        Same as hermite_renormalized_diagonal but works for a batch of different B's."""
-        return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
+        return self._apply("hermite_renormalized_diagonal", (A, b, c, cutoffs, reorderedAB))
 
     def hermite_renormalized_1leftoverMode(
         self,
@@ -749,6 +747,7 @@ class BackendManager:
         c: Tensor,
         output_cutoff: int,
         pnr_cutoffs: tuple[int, ...],
+        reorderedAB: bool = True,
     ) -> Tensor:
         r"""Compute the conditional density matrix of mode 0, with all the other modes
         detected with PNR detectors up to the given photon numbers.
@@ -759,6 +758,7 @@ class BackendManager:
             c: The c scalar.
             output_cutoff: upper boundary of photon numbers in mode 0
             pnr_cutoffs: upper boundary of photon numbers in the other modes
+            reorderedAB: Whether to reorder A and B parameters match conventions in mrmustard.math.numba.compactFock~.
 
         Returns:
             The conditional density matrix of mode 0. The final shape is
@@ -766,7 +766,7 @@ class BackendManager:
         """
         return self._apply(
             "hermite_renormalized_1leftoverMode",
-            (A, b, c, output_cutoff, pnr_cutoffs),
+            (A, b, c, output_cutoff, pnr_cutoffs, reorderedAB),
         )
 
     def hermite_renormalized_binomial(
@@ -1466,14 +1466,14 @@ class BackendManager:
         """
         return self._apply("beamsplitter", (theta, phi), {"shape": shape, "method": method})
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
+    def squeezed(self, r: float, phi: float, shape: tuple[int]):
         r"""
         Creates a single mode squeezed state matrix using a numba-based fock lattice strategy.
 
         Args:
             r: Squeezing magnitude.
             phi: Squeezing angle.
-            shape: Output shape of the two modes.
+            shape: Output shape of the mode.
 
         Returns:
             The matrix representing the squeezed state.

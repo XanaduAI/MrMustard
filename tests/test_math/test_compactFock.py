@@ -69,7 +69,7 @@ def test_compactFock_1leftover():
     assert np.allclose(expected, G_leftover)
 
 
-@pytest.mark.requires_backend()  # TODO: implement gradient of hermite_renormalized_diagonal
+@pytest.mark.requires_backend("jax")
 def test_compactFock_diagonal_gradients():
     r"""
     Test getting Fock amplitudes and gradients if all modes
@@ -86,7 +86,7 @@ def test_compactFock_diagonal_gradients():
             math.conj(-A),
             math.conj(B),
             math.conj(G0),
-            cutoffs=[n1 + 1],
+            cutoffs=(n1 + 1,),
         )
         p = probs[n1]
         return -math.real(p)
@@ -97,7 +97,7 @@ def test_compactFock_diagonal_gradients():
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
 
 
-@pytest.mark.requires_backend()  # TODO: implement gradient of hermite_renormalized_1leftoverMode
+@pytest.mark.requires_backend()  # TODO: investigate and solve in 96431
 def test_compactFock_1leftover_gradients():
     r"""
     Test getting Fock amplitudes and if all but the first
@@ -108,16 +108,16 @@ def test_compactFock_1leftover_gradients():
 
     def cost_fn(G):
         n2 = 2  # number of detected photons
-        state_opt = Vacuum([0, 1]) >> G >> Att
+        state_opt = Vacuum((0, 1)) >> G >> Att
         A, B, G0 = state_opt.bargmann_triple()
         marginal = math.hermite_renormalized_1leftoverMode(
             math.conj(-A),
             math.conj(B),
             math.conj(G0),
             output_cutoff=2,
-            pnr_cutoffs=[n2 + 1],
+            pnr_cutoffs=(n2 + 1,),
         )
-        conditional_state = DM.from_fock([0], marginal[..., n2]).normalize()
+        conditional_state = DM.from_fock((0,), marginal[..., n2]).normalize()
         return -gaussian.fidelity(
             *conditional_state.phase_space(0)[:2],
             *SqueezedVacuum(0, r=1).phase_space(0)[:2],

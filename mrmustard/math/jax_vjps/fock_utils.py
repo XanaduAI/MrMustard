@@ -26,7 +26,7 @@ import numpy as np
 
 from mrmustard.math.lattice import strategies
 
-__all__ = ["beamsplitter_jax", "displacement_jax"]
+__all__ = ["beamsplitter_jax", "displacement_jax", "squeezed_jax", "squeezer_jax"]
 
 # ~~~~~~~~~~~~~~~~~
 # beamsplitter
@@ -174,3 +174,107 @@ def displacement_jax_bwd(
 
 
 displacement_jax.defvjp(displacement_jax_fwd, displacement_jax_bwd)
+
+
+# ~~~~~~~~
+# squeezed
+# ~~~~~~~~
+
+
+@partial(jax.custom_vjp, nondiff_argnums=(2,))
+@partial(jax.jit, static_argnums=(2,))
+def squeezed_jax(r: float, phi: float, shape: tuple[int]) -> jnp.ndarray:
+    r"""
+    The jax custom gradient for the squeezed state.
+    """
+    return jax.pure_callback(
+        lambda shape, r, phi: strategies.squeezed(int(shape[0]), np.asarray(r), np.asarray(phi)),
+        jax.ShapeDtypeStruct(shape, jnp.complex128),
+        shape,
+        r,
+        phi,
+    )
+
+
+def squeezed_jax_fwd(r, phi, shape):
+    r"""
+    The jax forward pass for the squeezed state.
+    """
+    primal_output = squeezed_jax(r, phi, shape)
+    return (primal_output, (primal_output, r, phi))
+
+
+def squeezed_jax_bwd(shape, res, g):
+    r"""
+    The jax backward pass for the squeezed state.
+    """
+    sq_state, r, phi = res
+    return jax.pure_callback(
+        lambda sq_state, g, r, phi: strategies.squeezed_vjp(
+            np.asarray(sq_state),
+            np.asarray(g),
+            np.asarray(r),
+            np.asarray(phi),
+        ),
+        (jax.ShapeDtypeStruct((), jnp.float64), jax.ShapeDtypeStruct((), jnp.float64)),
+        sq_state,
+        g,
+        r,
+        phi,
+    )
+
+
+squeezed_jax.defvjp(squeezed_jax_fwd, squeezed_jax_bwd)
+
+
+# ~~~~~~~~
+# squeezer
+# ~~~~~~~~
+
+
+@partial(jax.custom_vjp, nondiff_argnums=(2,))
+@partial(jax.jit, static_argnums=(2,))
+def squeezer_jax(r: float, phi: float, shape: tuple[int, int]) -> jnp.ndarray:
+    r"""
+    The jax custom gradient for the squeezer gate.
+    """
+    return jax.pure_callback(
+        lambda shape, r, phi: strategies.squeezer(
+            tuple(int(s) for s in shape), np.asarray(r), np.asarray(phi)
+        ),
+        jax.ShapeDtypeStruct(shape, jnp.complex128),
+        shape,
+        r,
+        phi,
+    )
+
+
+def squeezer_jax_fwd(r, phi, shape):
+    r"""
+    The jax forward pass for the squeezer gate.
+    """
+    primal_output = squeezer_jax(r, phi, shape)
+    return (primal_output, (primal_output, r, phi))
+
+
+def squeezer_jax_bwd(shape, res, g):
+    r"""
+    The jax backward pass for the squeezer gate.
+    """
+    squeezer, r, phi = res
+    return jax.pure_callback(
+        lambda squeezer, g, r, phi: strategies.squeezer_vjp(
+            np.asarray(squeezer),
+            np.asarray(g),
+            np.asarray(r),
+            np.asarray(phi),
+        ),
+        (jax.ShapeDtypeStruct((), jnp.float64), jax.ShapeDtypeStruct((), jnp.float64)),
+        squeezer,
+        g,
+        r,
+        phi,
+    )
+
+
+squeezer_jax.defvjp(squeezer_jax_fwd, squeezer_jax_bwd)

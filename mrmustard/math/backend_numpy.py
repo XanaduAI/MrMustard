@@ -30,7 +30,6 @@ from .backend_base import BackendBase
 from .lattice import strategies
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
-    hermite_multidimensional_diagonal_batch,
 )
 
 np.set_printoptions(legacy="1.25")
@@ -374,7 +373,21 @@ class BackendNumpy(BackendBase):
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    def hermite_renormalized_unbatched(
+    def reorder_AB_bargmann(self, A: np.ndarray, B: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
+        while in mrmustard.physics.bargmann_utils the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
+        """
+        ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
+        A = self.gather(A, ordering, axis=1)
+        A = self.gather(A, ordering)
+        B = self.gather(B, ordering, axis=0)
+        return A, B
+
+    # ~~~~~~~~~~~~~~~~~~~~
+    # hermite_renormalized
+    # ~~~~~~~~~~~~~~~~~~~~
+
+    def hermite_renormalized(
         self,
         A: np.ndarray,
         b: np.ndarray,
@@ -407,43 +420,14 @@ class BackendNumpy(BackendBase):
         max_l2: float | None,
         global_cutoff: int | None,
     ) -> np.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
-        up to a given L2 norm or global cutoff, whichever applies first. The max_l2 value, if
-        not provided, is set to the default value of the AUTOSHAPE_PROBABILITY setting.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            shape: The shape of the final tensor (local cutoffs).
-            max_l2 (float): The maximum squared L2 norm of the tensor.
-            global_cutoff (optional int): The global cutoff.
-
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-        G, _ = strategies.binomial(
+        return strategies.binomial(
             tuple(shape),
             A,
             B,
             C,
             max_l2=max_l2 or settings.AUTOSHAPE_PROBABILITY,
             global_cutoff=global_cutoff or sum(shape) - len(shape) + 1,
-        )
-
-        return G
-
-    def reorder_AB_bargmann(self, A: np.ndarray, B: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
-        while in mrmustard.physics.bargmann_utils the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
-        """
-        ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
-        A = self.gather(A, ordering, axis=1)
-        A = self.gather(A, ordering)
-        B = self.gather(B, ordering, axis=0)
-        return A, B
+        )[0]
 
     def hermite_renormalized_diagonal(
         self,
@@ -451,72 +435,10 @@ class BackendNumpy(BackendBase):
         B: np.ndarray,
         C: np.ndarray,
         cutoffs: tuple[int],
+        reorderedAB: bool,
     ) -> np.ndarray:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
-
-    def hermite_renormalized_diagonal_reorderedAB(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        cutoffs: tuple[int],
-    ) -> np.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
-        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
-
-        Calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
-        by applying the recursion relation in a selective manner.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial.
-        """
-        poly0, _, _, _, _ = hermite_multidimensional_diagonal(A, B, C, cutoffs)
-
-        return poly0
-
-    def hermite_renormalized_diagonal_batch(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        cutoffs: tuple[int],
-    ) -> np.ndarray:
-        r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
-
-    def hermite_renormalized_diagonal_reorderedAB_batch(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        cutoffs: tuple[int],
-    ) -> np.ndarray:
-        r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
-
-        Args:
-            A: The A matrix.
-            B: The B vectors.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial from different B values.
-        """
-        poly0, _, _, _, _ = hermite_multidimensional_diagonal_batch(A, B, C, cutoffs)
-
-        return poly0
+        A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
+        return hermite_multidimensional_diagonal(A, B, C, cutoffs)[0]
 
     def hermite_renormalized_1leftoverMode(
         self,
@@ -526,10 +448,15 @@ class BackendNumpy(BackendBase):
         output_cutoff: int,
         pnr_cutoffs: tuple[int, ...],
         stable: bool = False,
+        reorderedAB: bool = True,
     ) -> np.ndarray:
         return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
             (-2, -1, *tuple(range(len(pnr_cutoffs)))),
         )
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~
+    # Fock lattice strategies
+    # ~~~~~~~~~~~~~~~~~~~~~~~
 
     def displacement(self, alpha: complex, shape: tuple[int, int], tol: float):
         if self.abs(alpha) > tol:
@@ -548,8 +475,8 @@ class BackendNumpy(BackendBase):
             bs_unitary = strategies.stable_beamsplitter(shape, t, s)
         return self.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
-        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
+    def squeezed(self, r: float, phi: float, shape: tuple[int]):
+        sq_ket = strategies.squeezed(shape[0], self.asnumpy(r), self.asnumpy(phi))
         return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
 
     def squeezer(self, r: float, phi: float, shape: tuple[int, int]):

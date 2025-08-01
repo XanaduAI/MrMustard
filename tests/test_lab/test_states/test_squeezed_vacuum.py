@@ -37,6 +37,37 @@ class TestSqueezedVacuum:
         assert state.name == "SqueezedVacuum"
         assert state.modes == (modes,)
 
+    def test_fock_representation(self):
+        shape = (5,)
+        sq_vac = SqueezedVacuum(0, r=1, phi=2)
+        sq_vac_fock = sq_vac.fock_array(shape)
+
+        herm_renom = math.hermite_renormalized(*sq_vac.ansatz.triple, shape=shape)
+        assert math.allclose(sq_vac_fock, herm_renom)
+
+        with pytest.raises(ValueError, match="Expected Fock shape"):
+            sq_vac.fock_array((5, 5, 5))
+
+        sq_vac_batch = SqueezedVacuum(0, r=[1, 1, 1], phi=[2, 2, 2])
+        sq_vac_batch_fock = sq_vac_batch.fock_array(shape)
+        herm_renom_batch = math.hermite_renormalized(*sq_vac_batch.ansatz.triple, shape=shape)
+        assert math.allclose(sq_vac_batch_fock, herm_renom_batch)
+
+    def test_to_fock_lin_sup(self):
+        bsgate = (SqueezedVacuum(0, 2, 3) + SqueezedVacuum(0, -2, -3)).to_fock(5)
+        assert bsgate.ansatz.batch_dims == 0
+        assert bsgate.ansatz.batch_shape == ()
+        assert bsgate.ansatz.array.shape == (5,)
+
+    @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    def test_representation(self, modes, r, phi, batch_shape):
+        r = math.broadcast_to(r, batch_shape)
+        phi = math.broadcast_to(phi, batch_shape)
+        rep = SqueezedVacuum(modes, r, phi).ansatz
+        exp = (Vacuum(modes) >> Sgate(modes, r, phi)).ansatz
+        assert rep == exp
+
     def test_trainable_parameters(self):
         state1 = SqueezedVacuum(0, 1, 1)
         state2 = SqueezedVacuum(0, 1, 1, r_trainable=True, r_bounds=(-2, 2))
@@ -50,12 +81,3 @@ class TestSqueezedVacuum:
 
         state3.parameters.phi.value = 2
         assert state3.parameters.phi.value == 2
-
-    @pytest.mark.parametrize("modes,r,phi", zip(modes, r, phi))
-    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
-    def test_representation(self, modes, r, phi, batch_shape):
-        r = math.broadcast_to(r, batch_shape)
-        phi = math.broadcast_to(phi, batch_shape)
-        rep = SqueezedVacuum(modes, r, phi).ansatz
-        exp = (Vacuum(modes) >> Sgate(modes, r, phi)).ansatz
-        assert rep == exp

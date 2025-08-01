@@ -126,16 +126,14 @@ class BSgate(Unitary):
                 - ``"vanilla"``: standard recurrence relation (not numerically stable, but slightly faster than the stable one).
                 - ``"schwinger"``: Use the Schwinger representation to compute the Fock array.
                 - ``"stable"``: Use the stable implementation of the beamsplitter. (default)
+
         Returns:
             array: The Fock representation of this component.
-        """
-        if isinstance(shape, int):
-            shape = (shape,) * self.ansatz.core_dims
-        if shape is None:
-            shape = tuple(self.auto_shape())
-        if len(shape) != 4:
-            raise ValueError(f"Expected Fock shape of length {4}, got length {len(shape)}")
 
+        Raises:
+            ValueError: If the shape is not valid for the component.
+        """
+        shape = self._check_fock_shape(shape)
         if self.ansatz.batch_shape:
             theta, phi = math.broadcast_arrays(
                 self.parameters.theta.value,
