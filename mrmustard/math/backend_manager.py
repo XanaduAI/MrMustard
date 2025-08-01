@@ -1526,19 +1526,25 @@ class BackendManager:
         Y = self.imag(U)
         return self.block([[X, -Y], [Y, X]])
 
-    def random_symplectic(self, num_modes: int, max_r: float = 1.0) -> Tensor:
+    def random_symplectic(self, num_modes: int, max_r: float = 1.0, seed: int | None = None) -> Tensor:
         r"""
         A random symplectic matrix in ``Sp(2*num_modes)``.
 
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
+
+        Args:
+            num_modes (int): The number of modes.
+            max_r (float): The maximum squeezing value.
+            seed (int | None): The random seed. If ``None``, the global seed is used.
         """
+        rng = np.random.default_rng(seed) if seed is not None else settings.rng
         if num_modes == 1:
-            W = self.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
-            V = self.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
+            W = self.exp(1j * 2 * np.pi * rng.uniform(size=(1, 1)))
+            V = self.exp(1j * 2 * np.pi * rng.uniform(size=(1, 1)))
         else:
-            W = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
-            V = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
-        r = settings.rng.uniform(low=0.0, high=max_r, size=num_modes)
+            W = unitary_group.rvs(dim=num_modes, random_state=rng)
+            V = unitary_group.rvs(dim=num_modes, random_state=rng)
+        r = rng.uniform(low=0.0, high=max_r, size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
         dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0), k=0)

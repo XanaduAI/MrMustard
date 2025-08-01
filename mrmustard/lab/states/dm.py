@@ -190,7 +190,9 @@ class DM(State):
         )
 
     @classmethod
-    def random(cls, modes: Collection[int], m: int | None = None, max_r: float = 1.0) -> DM:
+    def random(
+        cls, modes: Collection[int], m: int | None = None, max_r: float = 1.0, seed: int | None = None
+    ) -> DM:
         r"""
         Returns a random ``DM`` with zero displacement.
 
@@ -198,14 +200,18 @@ class DM(State):
             modes: The modes of the ``DM``.
             m: The number modes to be considered for tracing out from a random pure state (Ket)
                 if not specified, m is considered to be len(modes)
+            max_r: Maximum squeezing parameter over which we make random choices.
+            seed: The random seed. If ``None``, the global seed is used.
         """
+        if not modes:
+            raise ValueError("Cannot create a random state with no modes.")
         if m is None:
             m = len(modes)
         max_idx = max(modes)
         ancilla = list(range(max_idx + 1, max_idx + m + 1))
         full_modes = list(modes) + ancilla
         m = len(full_modes)
-        S = math.random_symplectic(m, max_r)
+        S = math.random_symplectic(m, max_r, seed=seed)
         I = math.eye(m, dtype=math.complex128)
         transformation = math.block([[I, I], [-1j * I, 1j * I]]) / np.sqrt(2)
         S = math.conj(math.transpose(transformation)) @ S @ transformation

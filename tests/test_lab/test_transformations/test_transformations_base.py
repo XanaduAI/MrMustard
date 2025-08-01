@@ -128,6 +128,31 @@ class TestUnitary:
         u = Unitary.random(modes)
         assert (u >> u.dual) == Identity(modes)
 
+    def test_random_seed(self):
+        # same seed should produce same unitary
+        assert Unitary.random(modes=[0, 1], seed=42) == Unitary.random(modes=[0, 1], seed=42)
+        # different seeds should produce different unitaries
+        assert Unitary.random(modes=[0, 1], seed=42) != Unitary.random(modes=[0, 1], seed=43)
+
+        # local seed should not affect global seed
+        settings.SEED = 42
+        u_from_global_1 = Unitary.random(modes=[0, 1])
+        u_from_global_2 = Unitary.random(modes=[0, 1])
+
+        settings.SEED = 42
+        u_from_global_1_redux = Unitary.random(modes=[0, 1])
+        # this call should not affect the global RNG
+        _ = Unitary.random(modes=[0, 1], seed=123)
+        u_from_global_2_redux = Unitary.random(modes=[0, 1])
+
+        assert u_from_global_1 == u_from_global_1_redux
+        assert u_from_global_2 == u_from_global_2_redux
+
+        # no modes should raise error
+        with pytest.raises(ValueError, match="Cannot create a random unitary with no modes."):
+            Unitary.random(modes=[])
+
+
 
 class TestMap:
     r"""
@@ -205,6 +230,31 @@ class TestChannel:
     def test_random(self):
         modes = (1, 2, 6)
         assert math.allclose((Vacuum(modes) >> Channel.random(modes)).probability, 1)
+
+    def test_random_seed(self):
+        # same seed should produce same channel
+        assert Channel.random(modes=[0, 1], seed=42) == Channel.random(modes=[0, 1], seed=42)
+        # different seeds should produce different channels
+        assert Channel.random(modes=[0, 1], seed=42) != Channel.random(modes=[0, 1], seed=43)
+
+        # local seed should not affect global seed
+        settings.SEED = 42
+        ch_from_global_1 = Channel.random(modes=[0, 1])
+        ch_from_global_2 = Channel.random(modes=[0, 1])
+
+        settings.SEED = 42
+        ch_from_global_1_redux = Channel.random(modes=[0, 1])
+        # this call should not affect the global RNG
+        _ = Channel.random(modes=[0, 1], seed=123)
+        ch_from_global_2_redux = Channel.random(modes=[0, 1])
+
+        assert ch_from_global_1 == ch_from_global_1_redux
+        assert ch_from_global_2 == ch_from_global_2_redux
+
+        # no modes should raise error
+        with pytest.raises(ValueError, match="Cannot create a random channel with no modes."):
+            Channel.random(modes=[])
+
 
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (0, 1, 2)])
     def test_is_CP(self, modes):

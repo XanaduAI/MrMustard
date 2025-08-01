@@ -275,13 +275,14 @@ class Unitary(Operation):
         return Unitary.from_bargmann(modes, modes, (A, b, c))
 
     @classmethod
-    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Unitary:
+    def random(cls, modes: Sequence[int], max_r: float = 1.0, seed: int | None = None) -> Unitary:
         r"""
         Returns a random unitary.
 
         Args:
             modes: The modes of the unitary.
             max_r: The maximum squeezing parameter.
+            seed: The random seed. If ``None``, the global seed is used.
 
         .. code-block::
 
@@ -290,8 +291,10 @@ class Unitary(Operation):
             >>> U = Unitary.random((0, 1, 2), max_r=1.2)
             >>> assert U.modes == (0,1,2)
         """
+        if not modes:
+            raise ValueError("Cannot create a random unitary with no modes.")
         m = len(modes)
-        S = math.random_symplectic(m, max_r)
+        S = math.random_symplectic(m, max_r, seed=seed)
         return Unitary.from_symplectic(modes, S)
 
     def inverse(self) -> Unitary:
@@ -540,13 +543,14 @@ class Channel(Map):
         return Channel.from_bargmann(modes_out, modes_in, XY_to_channel_Abc(X, Y, d))
 
     @classmethod
-    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
+    def random(cls, modes: Sequence[int], max_r: float = 1.0, seed: int | None = None) -> Channel:
         r"""
         A random channel without displacement.
 
         Args:
             modes: The modes of the channel.
             max_r: The maximum squeezing parameter.
+            seed: The random seed. If ``None``, the global seed is used.
 
         .. code-block::
 
@@ -555,10 +559,12 @@ class Channel(Map):
             >>> channel = Channel.random((0, 1, 2), max_r=1.2)
             >>> assert channel.modes == (0, 1, 2)
         """
+        if not modes:
+            raise ValueError("Cannot create a random channel with no modes.")
         from mrmustard.lab.states import Vacuum  # noqa: PLC0415
 
         m = len(modes)
-        U = Unitary.random(range(3 * m), max_r)
+        U = Unitary.random(range(3 * m), max_r, seed=seed)
         u_psi = Vacuum(range(2 * m)) >> U
         ansatz = u_psi.ansatz
         kraus = ansatz.conj.contract(
