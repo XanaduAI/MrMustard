@@ -124,42 +124,22 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     return math.exp(-(x**2 / 2)) * math.transpose(prefactor * hermite_polys)
 
 
-# @tensor_int_cache
-def oscillator_eigenstate_new(n: Vector, q: Vector) -> Tensor:
-    r"""
-    Harmonic oscillator eigenstate wavefunction `\psi_n(q) = <n|q>`.
+@tensor_int_cache
+def oscillator_eigenstate_new(q: Vector, n: Vector) -> Tensor:
+    r""" """
+    n = math.astensor(n)
+    q = math.astensor(q)
+    q = q[..., None]
 
-    Args:
-        n: a vector containing the number of photons
-        q: a vector containing the q points at which the function is evaluated (units of \sqrt{\hbar})
-
-    Returns:
-        Tensor: a tensor of size ``len(q)*cutoff``. Each entry with index ``[i, j]`` represents the eigenstate evaluated
-            with number of photons ``i`` evaluated at position ``q[j]``, i.e., `\psi_i(q_j)`.
-
-    .. details::
-
-        .. admonition:: Definition
-            :class: defn
-
-                The q-quadrature eigenstates are defined as
-
-                .. math::
-
-                    \psi_n(x) = 1/sqrt[2^n n!](\frac{\omega}{\pi \hbar})^{1/4}
-                        \exp{-\frac{\omega}{2\hbar} x^2} H_n(\sqrt{\frac{\omega}{\pi}} x)
-
-                where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial.
-    """
     hbar = settings.HBAR
-    x = q / np.sqrt(hbar)
+    x = q / math.sqrt(hbar)
     norm_const = (np.pi * hbar) ** (-0.25)
     log_prefactor_x = -(x**2 / 2)
     log_prefactor_n = -(n * math.log(2) + gammaln(n + 1)) / 2
     with np.errstate(divide="ignore"):
         # eval_hermite can return 0.0
         log_hermite = np.emath.log(eval_hermite(n, x))
-    return norm_const * np.exp(log_prefactor_n + log_prefactor_x + log_hermite)
+    return norm_const * math.exp(log_prefactor_n + log_prefactor_x + log_hermite)
 
 
 @lru_cache
@@ -318,20 +298,7 @@ def quadrature_distribution_old(
 def quadrature_distribution(
     fock_basis_state: Tensor, quadrature_angle: float = 0, p_axis: Vector | None = None
 ):
-    r"""
-    Given the ket or density matrix of a single-mode state, it generates the probability
-    density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]` where ``\rho`` is the
-    density matrix of the state and ``|x_\phi>`` the quadrature eigenvector with angle ``\phi``
-    equal to ``quadrature_angle``.
-
-    Args:
-        state: A single mode state ket or density matrix.
-        quadrature_angle: The angle of the quadrature basis vector.
-        p_axis: The points at which the quadrature distribution is evaluated.
-
-    Returns:
-        The coordinates at which the pdf is evaluated and the probability distribution.
-    """
+    r""" """
     fock_basis_state = math.astensor(fock_basis_state)
     quadrature_angle = math.astensor(quadrature_angle)
     if fock_basis_state.ndim < 2:
@@ -345,11 +312,11 @@ def quadrature_distribution(
         p_axis = math.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
     p_axis = math.astensor(p_axis)
 
-    n_fock = math.arange(cutoff)
-    q_to_n = oscillator_eigenstate_new(n_fock, p_axis[..., None])
+    n_fock = tuple(math.arange(cutoff))
+    q_to_n = oscillator_eigenstate_new(p_axis, n_fock)
     phases = math.exp(1j * quadrature_angle[..., None] * n_fock)
     val = math.einsum(
-        "...n,n,...mn,m,...m ->...",
+        "...n,n,...mn,m,...m->...",
         math.conj(q_to_n),
         math.conj(phases),
         fock_basis_state,
