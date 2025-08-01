@@ -27,6 +27,9 @@
 * Fixed a bug in `Optimizer` where complex gradients were the conjugate of the expected.
 [(#617)](https://github.com/XanaduAI/MrMustard/pull/617)
 
+* Fixed a bug with ``State.fock_distribution`` where batch dimensions and mult-mode states were not handled correctly.
+[(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
+
 ---
 
 # Release 1.0.0a1
