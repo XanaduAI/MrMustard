@@ -534,7 +534,6 @@ class TestDM:
         with pytest.raises(ValueError, match="Cannot create a random state with no modes."):
             DM.random(modes=[])
 
-
     def test_is_positive(self):
         assert (Ket.random((2, 9)) >> Attenuator(2) >> Attenuator(9)).is_positive
         assert (

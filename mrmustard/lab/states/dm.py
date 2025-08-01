@@ -191,7 +191,11 @@ class DM(State):
 
     @classmethod
     def random(
-        cls, modes: Collection[int], m: int | None = None, max_r: float = 1.0, seed: int | None = None
+        cls,
+        modes: Collection[int],
+        m: int | None = None,
+        max_r: float = 1.0,
+        seed: int | None = None,
     ) -> DM:
         r"""
         Returns a random ``DM`` with zero displacement.

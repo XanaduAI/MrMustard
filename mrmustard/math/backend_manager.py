@@ -1526,7 +1526,9 @@ class BackendManager:
         Y = self.imag(U)
         return self.block([[X, -Y], [Y, X]])
 
-    def random_symplectic(self, num_modes: int, max_r: float = 1.0, seed: int | None = None) -> Tensor:
+    def random_symplectic(
+        self, num_modes: int, max_r: float = 1.0, seed: int | None = None
+    ) -> Tensor:
         r"""
         A random symplectic matrix in ``Sp(2*num_modes)``.
 

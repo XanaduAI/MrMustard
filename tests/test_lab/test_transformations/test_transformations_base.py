@@ -153,7 +153,6 @@ class TestUnitary:
             Unitary.random(modes=[])
 
 
-
 class TestMap:
     r"""
     Tests the Map class.
@@ -254,7 +253,6 @@ class TestChannel:
         # no modes should raise error
         with pytest.raises(ValueError, match="Cannot create a random channel with no modes."):
             Channel.random(modes=[])
-
 
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (0, 1, 2)])
     def test_is_CP(self, modes):
