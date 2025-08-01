@@ -13,11 +13,14 @@
 * Added a ``rich`` based repr to ``ParameterSet``.
 [(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
 
+* Added vjps to the JAX backend. Added ``numba`` based Fock lattice strategies to `SqueezedVacuum` and `Sgate`.
+[(#636)](https://github.com/XanaduAI/MrMustard/pull/636)
+
 * Made `JAX` an optional `jax_backend` dependency.
 [(#637)](https://github.com/XanaduAI/MrMustard/pull/637)
 
-* Added vjps to the JAX backend. Added ``numba`` based Fock lattice strategies to `SqueezedVacuum` and `Sgate`.
-[(#636)](https://github.com/XanaduAI/MrMustard/pull/636)
+* Added a `seed` keyword for `DM.random`, `Ket.random`, `Channel.random` and `Unitary.random`
+[(#638)](https://github.com/XanaduAI/MrMustard/pull/638)
 
 ### Bug fixes
 
