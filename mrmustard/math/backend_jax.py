@@ -27,12 +27,6 @@ from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.physics.ansatz import Ansatz
 
 from .backend_base import BackendBase
-from .lattice import strategies
-from .lattice.strategies.compactFock.inputValidation import (
-    hermite_multidimensional_1leftoverMode,
-    hermite_multidimensional_diagonal,
-    hermite_multidimensional_diagonal_batch,
-)
 from .parameter_set import ParameterSet
 from .parameters import Constant, Variable
 
@@ -45,8 +39,13 @@ try:
     from .jax_vjps import (
         beamsplitter_jax,
         displacement_jax,
+        hermite_renormalized_1leftoverMode_jax,
         hermite_renormalized_batched_jax,
-        hermite_renormalized_unbatched_jax,
+        hermite_renormalized_binomial_jax,
+        hermite_renormalized_diagonal_jax,
+        hermite_renormalized_jax,
+        squeezed_jax,
+        squeezer_jax,
     )
 except ImportError:
     raise ImportError(
@@ -465,7 +464,11 @@ class BackendJax(BackendBase):
         B = self.gather(B, ordering, axis=0)
         return A, B
 
-    def hermite_renormalized_unbatched(
+    # ~~~~~~~~~~~~~~~~~~~~
+    # hermite_renormalized
+    # ~~~~~~~~~~~~~~~~~~~~
+
+    def hermite_renormalized(
         self,
         A: jnp.ndarray,
         b: jnp.ndarray,
@@ -476,9 +479,8 @@ class BackendJax(BackendBase):
     ) -> jnp.ndarray:
         if out is not None:
             raise ValueError("The 'out' keyword is not supported in the JAX backend.")
-        return hermite_renormalized_unbatched_jax(A, b, c, shape, stable)
+        return hermite_renormalized_jax(A, b, c, shape, stable)
 
-    @partial(jax.jit, static_argnames=["shape", "stable"])
     def hermite_renormalized_batched(
         self,
         A: jnp.ndarray,
@@ -492,94 +494,6 @@ class BackendJax(BackendBase):
             raise ValueError("The 'out' keyword is not supported in the JAX backend.")
         return hermite_renormalized_batched_jax(A, b, c, shape, stable)
 
-    @partial(jax.jit, static_argnames=["cutoffs"])
-    def hermite_renormalized_diagonal(
-        self,
-        A: jnp.ndarray,
-        B: jnp.ndarray,
-        C: jnp.ndarray,
-        cutoffs: tuple[int],
-    ) -> jnp.ndarray:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
-
-    @partial(jax.jit, static_argnames=["cutoffs"])
-    def hermite_renormalized_diagonal_reorderedAB(
-        self,
-        A: jnp.ndarray,
-        B: jnp.ndarray,
-        C: jnp.ndarray,
-        cutoffs: tuple[int],
-    ) -> jnp.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
-        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
-
-        Calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
-        by applying the recursion relation in a selective manner.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial.
-        """
-        function = partial(hermite_multidimensional_diagonal, cutoffs=tuple(cutoffs))
-        return jax.pure_callback(
-            lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
-            jax.ShapeDtypeStruct(cutoffs, jnp.complex128),
-            A,
-            B,
-            C,
-        )
-
-    @partial(jax.jit, static_argnames=["cutoffs"])
-    def hermite_renormalized_diagonal_batch(
-        self,
-        A: jnp.ndarray,
-        B: jnp.ndarray,
-        C: jnp.ndarray,
-        cutoffs: tuple[int],
-    ) -> jnp.ndarray:
-        r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
-
-    @partial(jax.jit, static_argnames=["cutoffs"])
-    def hermite_renormalized_diagonal_reorderedAB_batch(
-        self,
-        A: jnp.ndarray,
-        B: jnp.ndarray,
-        C: jnp.ndarray,
-        cutoffs: tuple[int],
-    ) -> jnp.ndarray:
-        r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
-
-        Args:
-            A: The A matrix.
-            B: The B vectors.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial from different B values.
-        """
-        function = partial(hermite_multidimensional_diagonal_batch, cutoffs=tuple(cutoffs))
-        return jax.pure_callback(
-            lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
-            jax.ShapeDtypeStruct((*cutoffs, B.shape[1]), jnp.complex128),
-            A,
-            B,
-            C,
-        )
-
-    @partial(jax.jit, static_argnames=["shape", "max_l2", "global_cutoff"])
     def hermite_renormalized_binomial(
         self,
         A: jnp.ndarray,
@@ -589,79 +503,34 @@ class BackendJax(BackendBase):
         max_l2: float | None,
         global_cutoff: int | None,
     ) -> jnp.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
-        up to a given L2 norm or global cutoff, whichever applies first. The max_l2 value, if
-        not provided, is set to the default value of the AUTOSHAPE_PROBABILITY setting.
+        return hermite_renormalized_binomial_jax(A, B, C, shape, max_l2, global_cutoff)
 
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            shape: The shape of the final tensor (local cutoffs).
-            max_l2 (float): The maximum squared L2 norm of the tensor.
-            global_cutoff (optional int): The global cutoff.
-
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-        function = partial(strategies.binomial, tuple(shape))
-        return jax.pure_callback(
-            lambda A, B, C, max_l2, global_cutoff: function(
-                np.asarray(A),
-                np.asarray(B),
-                np.asarray(C),
-                max_l2,
-                global_cutoff,
-            )[0],
-            jax.ShapeDtypeStruct(shape, jnp.complex128),
-            A,
-            B,
-            C,
-            max_l2,
-            global_cutoff,
-        )
-
-    @partial(jax.jit, static_argnames=["output_cutoff", "pnr_cutoffs"])
-    def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs):
-        A, B = self.reorder_AB_bargmann(A, B)
-        cutoffs = (output_cutoff + 1, *tuple(p + 1 for p in pnr_cutoffs))
-        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
-
-    @partial(jax.jit, static_argnames=["cutoffs"])
-    def hermite_renormalized_1leftoverMode_reorderedAB(
+    def hermite_renormalized_diagonal(
         self,
         A: jnp.ndarray,
         B: jnp.ndarray,
         C: jnp.ndarray,
         cutoffs: tuple[int],
+        reorderedAB: bool,
     ) -> jnp.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
-        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+        A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
+        return hermite_renormalized_diagonal_jax(A, B, C, cutoffs)[0]
 
-        Calculates all possible Fock representations of mode 0,
-        where all other modes are PNR detected.
-        This is done by applying the recursion relation in a selective manner.
+    def hermite_renormalized_1leftoverMode(
+        self,
+        A: jnp.ndarray,
+        B: jnp.ndarray,
+        C: jnp.ndarray,
+        output_cutoff: int,
+        pnr_cutoffs: tuple[int, ...],
+        reorderedAB: bool,
+    ) -> jnp.ndarray:
+        A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
+        return hermite_renormalized_1leftoverMode_jax(A, B, C, output_cutoff, pnr_cutoffs)[0]
 
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial.
-        """
-        function = partial(hermite_multidimensional_1leftoverMode, cutoffs=cutoffs)
-        return jax.pure_callback(
-            lambda A, B, C: function(np.asarray(A), np.asarray(B), np.asarray(C))[0],
-            jax.ShapeDtypeStruct((cutoffs[0], *cutoffs), jnp.complex128),
-            A,
-            B,
-            C,
-        )
+    # ~~~~~~~~~~~~~~~~~~~~~~~
+    # Fock lattice strategies
+    # ~~~~~~~~~~~~~~~~~~~~~~~
 
     def displacement(self, alpha: complex, shape: tuple[int, int], tol: float):
         return displacement_jax(alpha, shape, tol)
@@ -669,15 +538,11 @@ class BackendJax(BackendBase):
     def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
         return beamsplitter_jax(theta, phi, shape, method)
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
-        # TODO: implement vjps
-        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
-        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+    def squeezed(self, r: float, phi: float, shape: tuple[int]):
+        return squeezed_jax(r, phi, shape)
 
     def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
-        # TODO: implement vjps
-        sq_ket = strategies.squeezer(shape, self.asnumpy(r), self.asnumpy(phi))
-        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+        return squeezer_jax(r, phi, shape)
 
 
 # defining custom pytree nodes

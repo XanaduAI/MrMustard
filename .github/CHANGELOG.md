@@ -5,6 +5,9 @@
 * Removed `tensorflow` as a dependency as well as any legacy `tensorflow` code. Renamed `OptimizerJax` to `Optimizer`.
 [(#633)](https://github.com/XanaduAI/MrMustard/pull/633)
 
+* Changed the API of `Coherent`, `DisplacedSqueezed`, `Dgate` from real `x`, `y` parameters to a complex `alpha`.
+[(#617)](https://github.com/XanaduAI/MrMustard/pull/617)
+
 ### Improvements
 
 * Added a ``rich`` based repr to ``ParameterSet``.
@@ -13,14 +16,19 @@
 * Made `JAX` an optional `jax_backend` dependency.
 [(#637)](https://github.com/XanaduAI/MrMustard/pull/637)
 
+* Added vjps to the JAX backend. Added ``numba`` based Fock lattice strategies to `SqueezedVacuum` and `Sgate`.
+[(#636)](https://github.com/XanaduAI/MrMustard/pull/636)
+
 ### Bug fixes
 
 * Fixed a bug in `OptimizerJax` that would make the optimizer think it reached a stable optimum upon repeat calls to `minimize`.
 [(#634)](https://github.com/XanaduAI/MrMustard/pull/634)
 
+* Fixed a bug in `Optimizer` where complex gradients were the conjugate of the expected.
+[(#617)](https://github.com/XanaduAI/MrMustard/pull/617)
+
 * Fixed a bug with ``State.fock_distribution`` where batch dimensions and mult-mode states were not handled correctly.
 [(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
-
 
 ---
 

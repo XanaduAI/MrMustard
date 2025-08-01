@@ -495,20 +495,14 @@ class CircuitComponent:
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is generated via ``auto_shape``.
+
         Returns:
             array: The Fock representation of this component.
+
+        Raises:
+            ValueError: If the shape is not valid for the component.
         """
-        shape = shape or self.auto_shape()
-        num_vars = (
-            self.ansatz.num_CV_vars
-            if isinstance(self.ansatz, PolyExpAnsatz)
-            else self.ansatz.num_vars
-        )
-        if isinstance(shape, int):
-            shape = (shape,) * num_vars
-        shape = tuple(shape)
-        if len(shape) != num_vars:
-            raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
+        shape = self._check_fock_shape(shape)
         try:
             A, b, c = self.ansatz.triple
             G = math.hermite_renormalized(
@@ -761,6 +755,35 @@ class CircuitComponent:
         return BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
             BtoQ_ob,
         )
+
+    def _check_fock_shape(self, shape: int | Sequence[int] | None = None) -> tuple[int, ...]:
+        r"""
+        Checks that the given shape is valid for the component and returns the final Fock shape.
+        If the shape is not given, it defaults to the ``auto_shape`` of the component.
+
+        Args:
+            shape: The Fock shape of the returned representation. If ``shape`` is given as an ``int``,
+                it is broadcasted to all the dimensions. If not given, it is generated via ``auto_shape``.
+        Returns:
+            The shape of the Fock representation of this component.
+
+        Raises:
+            ValueError: If the shape either contains 0 or is not the correct length.
+        """
+        shape = shape if shape is not None else self.auto_shape()
+        num_vars = (
+            self.ansatz.num_CV_vars
+            if isinstance(self.ansatz, PolyExpAnsatz)
+            else self.ansatz.num_vars
+        )
+        if isinstance(shape, int | math.int64):
+            shape = (shape,) * num_vars
+        shape = tuple(shape)
+        if 0 in shape:
+            raise ValueError(f"Expected a non-zero Fock shape, got {shape}.")
+        if len(shape) != num_vars:
+            raise ValueError(f"Expected Fock shape of length {num_vars}, got {len(shape)}")
+        return shape
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
         r"""
