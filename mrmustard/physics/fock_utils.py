@@ -125,7 +125,32 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
 
 
 # @tensor_int_cache
-def oscillator_eigenstate_new(q, n):
+def oscillator_eigenstate_new(n: Vector, q: Vector) -> Tensor:
+    r"""
+    Harmonic oscillator eigenstate wavefunction `\psi_n(q) = <n|q>`.
+
+    Args:
+        n: a vector containing the number of photons
+        q: a vector containing the q points at which the function is evaluated (units of \sqrt{\hbar})
+
+    Returns:
+        Tensor: a tensor of size ``len(q)*cutoff``. Each entry with index ``[i, j]`` represents the eigenstate evaluated
+            with number of photons ``i`` evaluated at position ``q[j]``, i.e., `\psi_i(q_j)`.
+
+    .. details::
+
+        .. admonition:: Definition
+            :class: defn
+
+                The q-quadrature eigenstates are defined as
+
+                .. math::
+
+                    \psi_n(x) = 1/sqrt[2^n n!](\frac{\omega}{\pi \hbar})^{1/4}
+                        \exp{-\frac{\omega}{2\hbar} x^2} H_n(\sqrt{\frac{\omega}{\pi}} x)
+
+                where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial.
+    """
     hbar = settings.HBAR
     x = q / np.sqrt(hbar)
     norm_const = (np.pi * hbar) ** (-0.25)
@@ -256,67 +281,83 @@ def quadrature_basis(
     return math.einsum(fock_string + "," + q_string + "->" + "a", fock_array, *quad_basis_vecs)
 
 
-# def quadrature_distribution(
-#     state: Tensor,
-#     quadrature_angle: float = 0.0,
-#     x: Vector | None = None,
-# ):
-#     r"""
-#     Given the ket or density matrix of a single-mode state, it generates the probability
-#     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]` where ``\rho`` is the
-#     density matrix of the state and ``|x_\phi>`` the quadrature eigenvector with angle ``\phi``
-#     equal to ``quadrature_angle``.
+def quadrature_distribution_old(
+    state: Tensor,
+    quadrature_angle: float = 0.0,
+    x: Vector | None = None,
+):
+    r"""
+    Given the ket or density matrix of a single-mode state, it generates the probability
+    density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]` where ``\rho`` is the
+    density matrix of the state and ``|x_\phi>`` the quadrature eigenvector with angle ``\phi``
+    equal to ``quadrature_angle``.
 
-#     Args:
-#         state: A single mode state ket or density matrix.
-#         quadrature_angle: The angle of the quadrature basis vector.
-#         x: The points at which the quadrature distribution is evaluated.
+    Args:
+        state: A single mode state ket or density matrix.
+        quadrature_angle: The angle of the quadrature basis vector.
+        x: The points at which the quadrature distribution is evaluated.
 
-#     Returns:
-#         The coordinates at which the pdf is evaluated and the probability distribution.
-#     """
-#     cutoff = state.shape[0]
-#     if x is None:
-#         x = np.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
+    Returns:
+        The coordinates at which the pdf is evaluated and the probability distribution.
+    """
+    cutoff = state.shape[0]
+    if x is None:
+        x = np.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
 
-#     dims = len(state.shape)
-#     is_dm = dims == 2
+    dims = len(state.shape)
+    is_dm = dims == 2
 
-#     quad = math.transpose(math.astensor([x] * dims))
-#     conjugates = [True, False] if is_dm else [False]
-#     quad_basis = quadrature_basis(state, quad, conjugates, quadrature_angle)
-#     pdf = quad_basis if is_dm else math.abs(quad_basis) ** 2
+    quad = math.transpose(math.astensor([x] * dims))
+    conjugates = [True, False] if is_dm else [False]
+    quad_basis = quadrature_basis(state, quad, conjugates, quadrature_angle)
+    pdf = quad_basis if is_dm else math.abs(quad_basis) ** 2
 
-#     return x, math.real(pdf)
+    return x, math.real(pdf)
 
 
-def quadrature_distribution(fock_basis_state, quadrature_angle=0, p_axis=None):
+def quadrature_distribution(
+    fock_basis_state: Tensor, quadrature_angle: float = 0, p_axis: Vector | None = None
+):
+    r"""
+    Given the ket or density matrix of a single-mode state, it generates the probability
+    density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]` where ``\rho`` is the
+    density matrix of the state and ``|x_\phi>`` the quadrature eigenvector with angle ``\phi``
+    equal to ``quadrature_angle``.
+
+    Args:
+        state: A single mode state ket or density matrix.
+        quadrature_angle: The angle of the quadrature basis vector.
+        p_axis: The points at which the quadrature distribution is evaluated.
+
+    Returns:
+        The coordinates at which the pdf is evaluated and the probability distribution.
+    """
     fock_basis_state = math.astensor(fock_basis_state)
-
+    quadrature_angle = math.astensor(quadrature_angle)
     if fock_basis_state.ndim < 2:
         raise ValueError("The input states must be density matrices.")
     if fock_basis_state.shape[-1] != fock_basis_state.shape[-2]:
         raise ValueError("The input states must be density matrices.")
 
     cutoff = fock_basis_state.shape[-1]
-    quadrature_angle = math.astensor(quadrature_angle)
+
     if p_axis is None:
-        p_axis = np.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
+        p_axis = math.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
     p_axis = math.astensor(p_axis)
 
-    n_fock = tuple(math.arange(cutoff))
-    q_to_n = oscillator_eigenstate(p_axis[..., None], n_fock)
-    phases = np.exp(1j * quadrature_angle[..., None] * n_fock)
-    val = np.einsum(
-        "...n, n, ...mn, m, ...m -> ...",
-        np.conj(q_to_n),
-        np.conj(phases),
+    n_fock = math.arange(cutoff)
+    q_to_n = oscillator_eigenstate_new(n_fock, p_axis[..., None])
+    phases = math.exp(1j * quadrature_angle[..., None] * n_fock)
+    val = math.einsum(
+        "...n,n,...mn,m,...m ->...",
+        math.conj(q_to_n),
+        math.conj(phases),
         fock_basis_state,
         phases,
         q_to_n,
     )
-    if not math.all(np.isclose(math.imag(val), 0.0)):
-        raise ValueError
+    if not math.all(math.allclose(math.imag(val), 0.0)):
+        raise ValueError("Imaginary part of the quadrature distribution is not zero.")
     return p_axis, math.real(val)
 
 
