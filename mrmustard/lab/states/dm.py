@@ -306,6 +306,9 @@ class DM(State):
         elif op_type is OperatorType.DM_LIKE:
             result = self.contract(operator.dual, mode=mode) >> TraceOut(leftover_modes)
         else:
+            # custom shape handling from contract
+            # since input and output wires are contracted
+            # to do the trace out
             if (
                 type(self.ansatz) is not type(operator.ansatz)
                 and settings.DEFAULT_REPRESENTATION == "Fock"
