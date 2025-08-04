@@ -711,7 +711,7 @@ class CircuitComponent:
         batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
         fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
         try:
-            if self.ansatz.num_derived_vars == 0:
+            if self.ansatz.num_derived_vars == 0 and not self.ansatz._lin_sup:
                 fock._original_abc_data = self.ansatz.triple
         except AttributeError:
             fock._original_abc_data = None
