@@ -482,15 +482,17 @@ class TestDM:
     @pytest.mark.parametrize("n_modes", [1, 2, 3])
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_fock_distribution(self, n_modes, batch_shape):
-        alpha = math.broadcast_to(1 + 0.1j, batch_shape)
         cutoff = 10
-        state = Coherent(0, alpha=alpha)
-        for i in range(n_modes - 1):
-            state >>= Coherent(i + 1, alpha=alpha)
+        state = Ket.random(tuple(range(n_modes)))
+        A, b, c = state.ansatz.triple
+        A_batch = math.broadcast_to(A, batch_shape + A.shape)
+        b_batch = math.broadcast_to(b, batch_shape + b.shape)
+        c_batch = math.broadcast_to(c, batch_shape + c.shape)
+        state = Ket.from_bargmann(state.modes, (A_batch, b_batch, c_batch))
         fock_dist = state.fock_distribution(cutoff)
         fock_dist_dm = state.dm().fock_distribution(cutoff)
         assert math.allclose(fock_dist, fock_dist_dm)
-        assert fock_dist.shape == batch_shape * n_modes + (cutoff**n_modes,)
+        assert fock_dist.shape == (*batch_shape, cutoff**n_modes)
 
     def test_rshift(self):
         ket = Coherent(0, 1) >> Coherent(1, 1)

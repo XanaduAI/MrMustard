@@ -19,6 +19,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Sequence
 from enum import Enum
+from itertools import product
 
 import numpy as np
 import plotly.graph_objects as go
@@ -405,13 +406,12 @@ class State(CircuitComponent):
             The Fock distribution.
         """
         batch_shape = self.ansatz.batch_shape
+        batch_dim = self.ansatz.batch_dims
         fock_array = self.fock_array(cutoff)
         if not self.wires.ket or not self.wires.bra:
             return math.reshape(math.abs(fock_array) ** 2, (*batch_shape, -1))
-        axis1 = -self.n_modes - 1
-        for i in range(self.n_modes):
-            fock_array = math.diagonal(fock_array, axis1=axis1, axis2=-(1 + i))
-        return math.reshape(math.abs(fock_array), (*batch_shape, -1))
+        indices_list = [(...,) + ns * 2 for ns in product(list(range(cutoff)), repeat=self.n_modes)]
+        return math.stack([fock_array[indices] for indices in indices_list], axis=batch_dim)
 
     @abstractmethod
     def formal_stellar_decomposition(
