@@ -313,14 +313,15 @@ class DM(State):
                 type(self.ansatz) is not type(operator.ansatz)
                 and settings.DEFAULT_REPRESENTATION == "Fock"
             ):
-                self_shapes = list(self.auto_shape())
-                other_shapes = list(operator.auto_shape())
-                for idx, (self_shape, other_shape) in enumerate(zip(self_shapes, other_shapes)):
-                    max_shape = max(self_shape, other_shape)
-                    self_shapes[idx] = max_shape
-                    other_shapes[idx] = max_shape
-                self_rep = self.to_fock(tuple(self_shapes))
-                other_rep = operator.to_fock(tuple(other_shapes))
+                self_shape = list(self.auto_shape())
+                other_shape = list(operator.auto_shape())
+                for m in self.modes:
+                    for idx1, idx2 in zip(self.wires[m].indices, operator.wires[m].indices):
+                        max_shape = max(self_shape[idx1], other_shape[idx2])
+                        self_shape[idx1] = max_shape
+                        other_shape[idx2] = max_shape
+                self_rep = self.to_fock(tuple(self_shape))
+                other_rep = operator.to_fock(tuple(other_shape))
             else:
                 self_rep = self
                 other_rep = operator
