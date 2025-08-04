@@ -306,22 +306,17 @@ class DM(State):
         elif op_type is OperatorType.DM_LIKE:
             result = self.contract(operator.dual, mode=mode) >> TraceOut(leftover_modes)
         else:
-            if type(self.ansatz) is not type(operator.ansatz):
-                if settings.DEFAULT_REPRESENTATION == "Bargmann":
-                    self_rep = self.to_bargmann()
-                    other_rep = operator.to_bargmann()
-                else:
-                    # custom shape handling from contract
-                    # since input and output wires are contracted
-                    # to do the trace out
-                    self_shapes = list(self.auto_shape())
-                    other_shapes = list(operator.auto_shape())
-                    for idx, (self_shape, other_shape) in enumerate(zip(self_shapes, other_shapes)):
-                        max_shape = max(self_shape, other_shape)
-                        self_shapes[idx] = max_shape
-                        other_shapes[idx] = max_shape
-                    self_rep = self.to_fock(tuple(self_shapes))
-                    other_rep = operator.to_fock(tuple(other_shapes))
+            if type(self.ansatz) is not type(operator.ansatz) and (
+                isinstance(self.ansatz, ArrayAnsatz) or isinstance(operator.ansatz, ArrayAnsatz)
+            ):
+                self_shapes = list(self.auto_shape())
+                other_shapes = list(operator.auto_shape())
+                for idx, (self_shape, other_shape) in enumerate(zip(self_shapes, other_shapes)):
+                    max_shape = max(self_shape, other_shape)
+                    self_shapes[idx] = max_shape
+                    other_shapes[idx] = max_shape
+                self_rep = self.to_fock(tuple(self_shapes))
+                other_rep = operator.to_fock(tuple(other_shapes))
             else:
                 self_rep = self
                 other_rep = operator
