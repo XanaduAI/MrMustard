@@ -315,7 +315,9 @@ class DM(State):
             ):
                 self_shape = list(self.auto_shape())
                 other_shape = list(operator.auto_shape())
-                for m in self.modes:
+                # want to make sure that only the operator modes use shape lookahead
+                # for efficiency
+                for m in operator.modes:
                     for idx1, idx2 in zip(self.wires[m].indices, operator.wires[m].indices):
                         max_shape = max(self_shape[idx1], other_shape[idx2])
                         self_shape[idx1] = max_shape
