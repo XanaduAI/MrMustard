@@ -306,8 +306,9 @@ class DM(State):
         elif op_type is OperatorType.DM_LIKE:
             result = self.contract(operator.dual, mode=mode) >> TraceOut(leftover_modes)
         else:
-            if type(self.ansatz) is not type(operator.ansatz) and (
-                isinstance(self.ansatz, ArrayAnsatz) or isinstance(operator.ansatz, ArrayAnsatz)
+            if (
+                type(self.ansatz) is not type(operator.ansatz)
+                and settings.DEFAULT_REPRESENTATION == "Fock"
             ):
                 self_shapes = list(self.auto_shape())
                 other_shapes = list(operator.auto_shape())
