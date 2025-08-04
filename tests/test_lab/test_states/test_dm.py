@@ -440,6 +440,16 @@ class TestDM:
         exp_u0 = dm.expectation(u0)
         assert exp_u0.shape == batch_shape + batch_shape_2
 
+    def test_expectation_shape_handling(self):
+        cutoff = 150
+        fock_dm = DM.random((0,), max_r=2).to_fock(cutoff)
+        dgate = Dgate(0, alpha=0.769j)
+        expectation_default = math.abs(fock_dm.expectation(dgate))
+        expectation_fock = math.abs(fock_dm.expectation(dgate.to_fock(cutoff)))
+        expectation_bargmann = math.abs(fock_dm.to_bargmann().expectation(dgate))
+        assert math.allclose(expectation_default, expectation_fock)
+        assert math.allclose(expectation_default, expectation_bargmann)
+
     def test_expectation_lin_sup(self):
         cat = (Coherent(0, alpha=1 + 2j) + Coherent(0, alpha=-1 + 2j)).normalize()
         cat_dm = cat.dm()
