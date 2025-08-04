@@ -27,6 +27,9 @@
 * Fixed a bug in `Optimizer` where complex gradients were the conjugate of the expected.
 [(#617)](https://github.com/XanaduAI/MrMustard/pull/617)
 
+* Fixed a bug in `DM.expectation` where the Fock shape lookahead wasn't setting certain wires correctly.
+[(#639)](https://github.com/XanaduAI/MrMustard/pull/639)
+
 ---
 
 # Release 1.0.0a1
