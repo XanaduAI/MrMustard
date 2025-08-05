@@ -19,6 +19,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Sequence
 from enum import Enum
+from itertools import product
 
 import numpy as np
 import plotly.graph_objects as go
@@ -30,6 +31,7 @@ from mrmustard.math.lattice.autoshape import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import bargmann_Abc_to_phasespace_cov_means
 from mrmustard.physics.fock_utils import quadrature_distribution
+from mrmustard.physics.gaussian import von_neumann_entropy
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector, RealVector
 
@@ -110,6 +112,32 @@ class State(CircuitComponent):
         return math.allclose(self.purity, 1.0)
 
     @property
+    def is_separable(self):
+        r"""
+        Check if a multi-mode quantum state is separable based on the von Neumann entropy.
+
+        Returns:
+            Whether the state is separable.
+
+        Raises:
+            NotImplementedError: If the state is a linear superposition.
+        """
+        if self.ansatz._lin_sup:
+            raise NotImplementedError("Separation of linear superpositions is not implemented.")
+        if self.n_modes == 1:
+            return True
+        rho = self.dm()
+        cov_full, _, _ = rho.phase_space(s=0)
+        S_total = von_neumann_entropy(cov_full)
+        entropy_diff = -S_total
+        for mode in self.modes:
+            rho_reduced = rho[mode]
+            cov_reduced, _, _ = rho_reduced.phase_space(s=0)
+            entropy = von_neumann_entropy(cov_reduced)
+            entropy_diff += entropy
+        return math.allclose(entropy_diff, 0)
+
+    @property
     def L2_norm(self) -> float:
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
@@ -143,6 +171,27 @@ class State(CircuitComponent):
         r"""
         The purity of this state.
         """
+
+    @property
+    def wigner(self):
+        r"""
+        Returns the Wigner function of this state in phase space as an ``Ansatz``.
+
+        .. code-block::
+
+            >>> import numpy as np
+            >>> from mrmustard.lab import Ket
+
+            >>> state = Ket.random([0])
+            >>> x = np.linspace(-5, 5, 100)
+
+            >>> assert np.all(state.wigner(x,0).real >= 0)
+        """
+        if isinstance(self.ansatz, PolyExpAnsatz):
+            return (self >> BtoPS(self.modes, s=0)).ansatz.PS
+        raise ValueError(
+            "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first.",
+        )
 
     @classmethod
     def from_bargmann(
@@ -404,10 +453,18 @@ class State(CircuitComponent):
         Returns:
             The Fock distribution.
         """
+        batch_shape = self.ansatz.batch_shape
+        batch_dim = self.ansatz.batch_dims
         fock_array = self.fock_array(cutoff)
         if not self.wires.ket or not self.wires.bra:
-            return math.reshape(math.abs(fock_array) ** 2, (-1,))
-        return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
+            return math.reshape(math.abs(fock_array) ** 2, (*batch_shape, -1))
+        n_modes = self.n_modes
+        if self.is_separable:
+            for i in range(n_modes):
+                fock_array = math.diagonal(fock_array, axis1=-n_modes - 1, axis2=-(1 + i))
+            return math.reshape(math.abs(fock_array), (*batch_shape, -1))
+        indices_list = [(...,) + ns * 2 for ns in product(list(range(cutoff)), repeat=n_modes)]
+        return math.stack([fock_array[indices] for indices in indices_list], axis=batch_dim)
 
     @abstractmethod
     def formal_stellar_decomposition(
@@ -761,24 +818,3 @@ class State(CircuitComponent):
             return fig
         display(fig)
         return None
-
-    @property
-    def wigner(self):
-        r"""
-        Returns the Wigner function of this state in phase space as an ``Ansatz``.
-
-        .. code-block::
-
-            >>> import numpy as np
-            >>> from mrmustard.lab import Ket
-
-            >>> state = Ket.random([0])
-            >>> x = np.linspace(-5, 5, 100)
-
-            >>> assert np.all(state.wigner(x,0).real >= 0)
-        """
-        if isinstance(self.ansatz, PolyExpAnsatz):
-            return (self >> BtoPS(self.modes, s=0)).ansatz.PS
-        raise ValueError(
-            "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first.",
-        )
