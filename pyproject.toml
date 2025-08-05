@@ -182,4 +182,5 @@ filterwarnings = "ignore::DeprecationWarning"
 where = ["."]
 
 [tool.uv]
+required-version = "0.5.29"
 default-groups = ["dev", "jax_backend"]
