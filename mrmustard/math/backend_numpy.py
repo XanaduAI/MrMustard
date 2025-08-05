@@ -181,9 +181,13 @@ class BackendNumpy(BackendBase):
         return real + 1j * imag
 
     def matmul(self, *matrices: np.ndarray) -> np.ndarray:
-        mat = matrices[0]
-        for matrix in matrices[1:]:
-            mat = np.matmul(mat, matrix)
+        use_matmul = self.any(matrix.ndim > 2 for matrix in matrices)
+        if use_matmul:
+            mat = matrices[0]
+            for matrix in matrices[1:]:
+                mat = np.matmul(mat, matrix)
+        else:
+            mat = np.linalg.multi_dot(matrices)
         return mat
 
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
