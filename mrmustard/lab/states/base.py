@@ -452,12 +452,12 @@ class State(CircuitComponent):
         fock_array = self.fock_array(cutoff)
         if not self.wires.ket or not self.wires.bra:
             return math.reshape(math.abs(fock_array) ** 2, (*batch_shape, -1))
+        n_modes = self.n_modes
         if self.is_separable:
-            axis1 = -self.n_modes - 1
-            for i in range(self.n_modes):
-                fock_array = math.diagonal(fock_array, axis1=axis1, axis2=-(1 + i))
+            for i in range(n_modes):
+                fock_array = math.diagonal(fock_array, axis1=-n_modes - 1, axis2=-(1 + i))
             return math.reshape(math.abs(fock_array), (*batch_shape, -1))
-        indices_list = [(...,) + ns * 2 for ns in product(list(range(cutoff)), repeat=self.n_modes)]
+        indices_list = [(...,) + ns * 2 for ns in product(list(range(cutoff)), repeat=n_modes)]
         return math.stack([fock_array[indices] for indices in indices_list], axis=batch_dim)
 
     @abstractmethod
