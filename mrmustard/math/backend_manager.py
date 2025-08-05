@@ -1651,5 +1651,5 @@ class BackendManager:
         Returns:
             Matrix: unitary gradient tensor
         """
-        Z = self.matmul(self.conj(self.transpose(U)), dU_euclidean)
-        return 0.5 * (Z - self.conj(self.transpose(Z)))
+        Z = self.matmul(self.conj(self.swapaxes(U, -1, -2)), dU_euclidean)
+        return 0.5 * (Z - self.conj(self.swapaxes(Z, -1, -2)))
