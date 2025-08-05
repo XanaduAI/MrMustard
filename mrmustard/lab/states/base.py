@@ -36,7 +36,7 @@ from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector, RealVector
 
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoChar, BtoPS, BtoQ, TraceOut
+from ..circuit_components_utils import BtoChar, BtoPS, BtoQ
 from ..transformations import Transformation
 
 __all__ = ["State"]
@@ -118,7 +118,12 @@ class State(CircuitComponent):
 
         Returns:
             Whether the state is separable.
+
+        Raises:
+            NotImplementedError: If the state is a linear superposition.
         """
+        if self.ansatz._lin_sup:
+            raise NotImplementedError("Separation of linear superpositions is not implemented.")
         if self.n_modes == 1:
             return True
         rho = self.dm()
@@ -126,10 +131,11 @@ class State(CircuitComponent):
         S_total = von_neumann_entropy(cov_full)
         entropy_diff = -S_total
         for mode in self.modes:
-            rho_reduced = rho >> TraceOut(mode)
+            rho_reduced = rho[mode]
             cov_reduced, _, _ = rho_reduced.phase_space(s=0)
-            entropy_diff += von_neumann_entropy(cov_reduced)
-        return entropy_diff <= settings.ATOL
+            entropy = von_neumann_entropy(cov_reduced)
+            entropy_diff += entropy
+        return math.allclose(entropy_diff, 0)
 
     @property
     def L2_norm(self) -> float:

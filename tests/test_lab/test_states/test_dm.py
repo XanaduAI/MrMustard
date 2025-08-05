@@ -20,6 +20,7 @@ import pytest
 from mrmustard import math, settings
 from mrmustard.lab import (
     DM,
+    GDM,
     Attenuator,
     CircuitComponent,
     Coherent,
@@ -60,6 +61,16 @@ class TestDM:
         assert name if name else state.name in ("DM0", "DM01", "DM2319")
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
+
+    def test_is_separable(self):
+        entangled_state = GDM([0, 1, 2], beta=1)
+        assert not entangled_state.is_separable
+
+        separable_state = GDM(0, beta=1) >> GDM(1, beta=1) >> GDM(2, beta=1)
+        assert separable_state.is_separable
+
+        entangled_state = GDM(0, beta=1) >> GDM((1, 2), beta=1)
+        assert not entangled_state.is_separable
 
     def test_manual_shape(self):
         dm = Coherent(0, alpha=1).dm()
