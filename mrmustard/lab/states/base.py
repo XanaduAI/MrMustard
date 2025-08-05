@@ -31,11 +31,12 @@ from mrmustard.math.lattice.autoshape import autoshape_numba
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import bargmann_Abc_to_phasespace_cov_means
 from mrmustard.physics.fock_utils import quadrature_distribution
+from mrmustard.physics.gaussian import von_neumann_entropy
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector, RealVector
 
 from ..circuit_components import CircuitComponent
-from ..circuit_components_utils import BtoChar, BtoPS, BtoQ
+from ..circuit_components_utils import BtoChar, BtoPS, BtoQ, TraceOut
 from ..transformations import Transformation
 
 __all__ = ["State"]
@@ -111,6 +112,26 @@ class State(CircuitComponent):
         return math.allclose(self.purity, 1.0)
 
     @property
+    def is_separable(self):
+        r"""
+        Check if a multi-mode quantum state is separable based on the von Neumann entropy.
+
+        Returns:
+            Whether the state is separable.
+        """
+        if self.n_modes == 1:
+            return True
+        rho = self.dm()
+        cov_full, _, _ = rho.phase_space(s=0)
+        S_total = von_neumann_entropy(cov_full)
+        entropy_diff = -S_total
+        for mode in self.modes:
+            rho_reduced = rho >> TraceOut(mode)
+            cov_reduced, _, _ = rho_reduced.phase_space(s=0)
+            entropy_diff += von_neumann_entropy(cov_reduced)
+        return entropy_diff <= settings.ATOL
+
+    @property
     def L2_norm(self) -> float:
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
@@ -144,6 +165,27 @@ class State(CircuitComponent):
         r"""
         The purity of this state.
         """
+
+    @property
+    def wigner(self):
+        r"""
+        Returns the Wigner function of this state in phase space as an ``Ansatz``.
+
+        .. code-block::
+
+            >>> import numpy as np
+            >>> from mrmustard.lab import Ket
+
+            >>> state = Ket.random([0])
+            >>> x = np.linspace(-5, 5, 100)
+
+            >>> assert np.all(state.wigner(x,0).real >= 0)
+        """
+        if isinstance(self.ansatz, PolyExpAnsatz):
+            return (self >> BtoPS(self.modes, s=0)).ansatz.PS
+        raise ValueError(
+            "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first.",
+        )
 
     @classmethod
     def from_bargmann(
@@ -410,6 +452,11 @@ class State(CircuitComponent):
         fock_array = self.fock_array(cutoff)
         if not self.wires.ket or not self.wires.bra:
             return math.reshape(math.abs(fock_array) ** 2, (*batch_shape, -1))
+        if self.is_separable:
+            axis1 = -self.n_modes - 1
+            for i in range(self.n_modes):
+                fock_array = math.diagonal(fock_array, axis1=axis1, axis2=-(1 + i))
+            return math.reshape(math.abs(fock_array), (*batch_shape, -1))
         indices_list = [(...,) + ns * 2 for ns in product(list(range(cutoff)), repeat=self.n_modes)]
         return math.stack([fock_array[indices] for indices in indices_list], axis=batch_dim)
 
@@ -765,24 +812,3 @@ class State(CircuitComponent):
             return fig
         display(fig)
         return None
-
-    @property
-    def wigner(self):
-        r"""
-        Returns the Wigner function of this state in phase space as an ``Ansatz``.
-
-        .. code-block::
-
-            >>> import numpy as np
-            >>> from mrmustard.lab import Ket
-
-            >>> state = Ket.random([0])
-            >>> x = np.linspace(-5, 5, 100)
-
-            >>> assert np.all(state.wigner(x,0).real >= 0)
-        """
-        if isinstance(self.ansatz, PolyExpAnsatz):
-            return (self >> BtoPS(self.modes, s=0)).ansatz.PS
-        raise ValueError(
-            "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first.",
-        )

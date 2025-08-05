@@ -494,6 +494,15 @@ class TestDM:
         assert math.allclose(fock_dist, fock_dist_dm)
         assert fock_dist.shape == (*batch_shape, cutoff**n_modes)
 
+        alpha = math.broadcast_to(1 + 0.1j, batch_shape)
+        state_separable = Coherent(0, alpha=alpha)
+        for i in range(n_modes - 1):
+            state_separable >>= Coherent(i + 1, alpha=alpha)
+        fock_dist_separable = state_separable.fock_distribution(cutoff)
+        fock_dist_dm_separable = state_separable.dm().fock_distribution(cutoff)
+        assert math.allclose(fock_dist_separable, fock_dist_dm_separable)
+        assert fock_dist_separable.shape == (*(batch_shape * n_modes), cutoff**n_modes)
+
     def test_rshift(self):
         ket = Coherent(0, 1) >> Coherent(1, 1)
         unitary = Dgate(0, 1)

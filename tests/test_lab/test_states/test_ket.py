@@ -32,6 +32,7 @@ from mrmustard.lab import (
     Ket,
     Number,
     QuadratureEigenstate,
+    S2gate,
     SqueezedVacuum,
     Vacuum,
 )
@@ -71,6 +72,14 @@ class TestKet:
         assert name if name else state.name in ("Ket0", "Ket01", "Ket2319")
         assert state.modes == modes
         assert state.wires == Wires(modes_out_ket=set(modes))
+
+    def is_separable(self):
+        seperable = Coherent(0, alpha=1)
+        assert seperable.is_separable
+        seperable_multimode = Coherent(0, alpha=1) >> Coherent(1, alpha=1)
+        assert seperable_multimode.is_separable
+        entangled_state = Vacuum([0, 1]) >> S2gate((0, 1), r=0.5)
+        assert not entangled_state.is_separable
 
     def test_manual_shape(self):
         ket = Coherent(0, alpha=1)
