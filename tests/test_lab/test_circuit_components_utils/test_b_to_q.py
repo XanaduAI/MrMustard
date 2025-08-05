@@ -21,6 +21,7 @@ from mrmustard import math, settings
 from mrmustard.lab import BtoQ, Coherent, Identity
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
+    complex_gaussian_integral_2,
     join_Abc,
     join_Abc_real,
     real_gaussian_integral,
@@ -49,12 +50,15 @@ class TestBtoQ:
         modes = (0, 1)
         BtoQ_CC1 = BtoQ(modes, 0.0)
         step1A, step1b, step1c = BtoQ_CC1.bargmann_triple()
-        Ainter, binter, cinter = complex_gaussian_integral_1(
-            join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
-            idx_z=[0, 1],
-            idx_zconj=[4, 5],
+
+        Ainter, binter, cinter = complex_gaussian_integral_2(
+            (A0, b0, c0),
+            (step1A, step1b, step1c),
+            [0, 1],
+            [2, 3],
             measure=-1,
         )
+
         QtoBMap_CC2 = BtoQ(modes, 0.0).dual
         step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple()
 
