@@ -23,12 +23,12 @@ from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_2,
     join_Abc,
     join_Abc_real,
-    real_gaussian_integral,
 )
+from mrmustard.physics.gaussian_integrals_numba import real_gaussian_integral_numba
 
 
-def test_real_gaussian_integral():
-    """Tests the ``real_gaussian_integral`` method with a hard-coded A matric from a Gaussian(3) state."""
+def test_real_gaussian_integral_numba():
+    """Tests the ``real_gaussian_integral_numba`` method with a hard-coded A matric from a Gaussian(3) state."""
     A = math.astensor(
         [
             [
@@ -50,7 +50,7 @@ def test_real_gaussian_integral():
     )
     b = math.arange(3, dtype=math.complex128)
     c = math.astensor(1.0 + 0j)
-    res = real_gaussian_integral(A, b, c, idx=(0, 1))
+    res = real_gaussian_integral_numba(A, b, c, idx=(0, 1))
     assert math.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
     assert math.allclose(
         res[1],
@@ -63,7 +63,7 @@ def test_real_gaussian_integral():
         / math.sqrt(math.det(A[:2, :2]))
         * math.exp(-0.5 * math.sum(b[:2] * math.matvec(math.inv(A[:2, :2]), b[:2]))),
     )
-    res2 = real_gaussian_integral(A, b, c, idx=())
+    res2 = real_gaussian_integral_numba(A, b, c, idx=())
     assert math.allclose(res2[0], A)
     assert math.allclose(res2[1], b)
     assert math.allclose(res2[2], c)
@@ -76,7 +76,7 @@ def test_real_gaussian_integral():
     )
     b2 = math.cast(math.arange(2), dtype=math.complex128)
     c2 = math.astensor(1.0 + 0j)
-    res3 = real_gaussian_integral(A2, b2, c2, idx=(0, 1))
+    res3 = real_gaussian_integral_numba(A2, b2, c2, idx=(0, 1))
     assert math.allclose(res3[0], math.astensor([]))
     assert math.allclose(res3[1], math.astensor([]))
     assert math.allclose(

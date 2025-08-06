@@ -22,8 +22,8 @@ from mrmustard.lab import BtoQ, Coherent, Identity
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_2,
     join_Abc_real,
-    real_gaussian_integral,
 )
+from mrmustard.physics.gaussian_integrals_numba import real_gaussian_integral_numba
 
 
 class TestBtoQ:
@@ -67,7 +67,7 @@ class TestBtoQ:
             [2, 3],
         )
 
-        Af, bf, cf = real_gaussian_integral(new_A, new_b, new_c, idx=(0, 1))
+        Af, bf, cf = real_gaussian_integral_numba(new_A, new_b, new_c, idx=(0, 1))
 
         assert math.allclose(A0, Af)
         assert math.allclose(b0, bf)
@@ -96,7 +96,7 @@ class TestBtoQ:
             [0],
             [1],
         )
-        Af, bf, cf = real_gaussian_integral(new_A, new_b, new_c, idx=(0,))
+        Af, bf, cf = real_gaussian_integral_numba(new_A, new_b, new_c, idx=(0,))
 
         assert math.allclose(A0, Af)
         assert math.allclose(b0, bf)
