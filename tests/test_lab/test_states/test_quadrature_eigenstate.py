@@ -14,8 +14,6 @@
 
 """Tests for the ``QuadratureEigenstate`` class."""
 
-# pylint: disable=unspecified-encoding, missing-function-docstring, expression-not-assigned, pointless-statement
-
 import numpy as np
 import pytest
 
@@ -81,12 +79,12 @@ class TestQuadratureEigenstate:
         assert state3.parameters.phi.value == 2
 
     def test_with_coherent(self):
-        val0 = Coherent(0, 0, 0) >> QuadratureEigenstate(0, 0, 0).dual
-        val1 = Coherent(0, 1, 0) >> QuadratureEigenstate(0, np.sqrt(2 * settings.HBAR), 0).dual
+        val0 = Coherent(0, 0) >> QuadratureEigenstate(0, 0, 0).dual
+        val1 = Coherent(0, 1) >> QuadratureEigenstate(0, np.sqrt(2 * settings.HBAR), 0).dual
         assert math.allclose(val0, val1)
 
     def test_wires(self):
         """Test that the wires are correct."""
         state = QuadratureEigenstate(0, 0, 0)
-        for w in state.representation.wires:
+        for w in state.wires:
             assert w.repr == ReprEnum.QUADRATURE

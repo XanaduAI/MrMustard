@@ -22,7 +22,6 @@ from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
 
-# pylint: disable = missing-function-docstring, import-outside-toplevel
 class TestTriples:
     r"""
     Tests the Bargmann triples.
@@ -32,27 +31,15 @@ class TestTriples:
         if math.backend_name == "jax":
             error = ValueError
             match = "Incompatible shapes for broadcasting"
-        elif math.backend_name == "tensorflow":
-
-            from tensorflow.errors import InvalidArgumentError
-
-            error = InvalidArgumentError
-            match = "Incompatible shape"
         else:
             error = ValueError
             match = "shape mismatch"
 
         with pytest.raises(error, match=match):
-            triples.coherent_state_Abc([1, 2], [3, 4, 5])
-
-        with pytest.raises(error, match=match):
-            triples.coherent_state_Abc([1, 2], [3, 4, 5])
-
-        with pytest.raises(error, match=match):
             triples.squeezed_vacuum_state_Abc([1, 2], [3, 4, 5])
 
         with pytest.raises(error, match=match):
-            triples.displaced_squeezed_vacuum_state_Abc([1, 2], [3, 4, 5], 6, 7)
+            triples.displaced_squeezed_vacuum_state_Abc([1, 2], [3, 4, 5], 6)
 
     @pytest.mark.parametrize("n_modes", [1, 3])
     def test_vacuum_state_Abc(self, n_modes):
@@ -63,12 +50,12 @@ class TestTriples:
         assert math.allclose(c, 1.0)
 
     def test_coherent_state_Abc(self):
-        A1, b1, c1 = triples.coherent_state_Abc(0.1, 0.2)
+        A1, b1, c1 = triples.coherent_state_Abc(0.1 + 0.2j)
         assert math.allclose(A1, math.zeros((1, 1)))
         assert math.allclose(b1, [0.1 + 0.2j])
         assert math.allclose(c1, 0.97530991)
 
-        A2, b2, c2 = triples.coherent_state_Abc(0.1, [0.2, 0.3])
+        A2, b2, c2 = triples.coherent_state_Abc([0.1 + 0.2j, 0.1 + 0.3j])
         assert math.allclose(A2, math.zeros((2, 1, 1)))
         assert math.allclose(b2, [[0.1 + 0.2j], [0.1 + 0.3j]])
         assert math.allclose(c2, [0.97530991 + 0.0j, 0.95122942 + 0.0j])
@@ -95,12 +82,12 @@ class TestTriples:
         assert math.allclose(c3, 0.9975072676192522)
 
     def test_displaced_squeezed_vacuum_state_Abc(self):
-        A1, b1, c1 = triples.displaced_squeezed_vacuum_state_Abc(0.1, 0.2, 0.3, 0.4)
+        A1, b1, c1 = triples.displaced_squeezed_vacuum_state_Abc(0.1 + 0.2j, 0.3, 0.4)
         assert math.allclose(A1, [[-0.26831668 - 0.11344247j]])
         assert math.allclose(b1, [0.14952016 + 0.15768091j])
         assert math.allclose(c1, 0.95557745 + 0.00675411j)
 
-        A2, b2, c2 = triples.displaced_squeezed_vacuum_state_Abc(0.1, 0.2, 0.3, [0.4, 0.5])
+        A2, b2, c2 = triples.displaced_squeezed_vacuum_state_Abc(0.1 + 0.2j, 0.3, [0.4, 0.5])
         assert math.allclose(A2, [[[-0.26831668 - 0.11344247j]], [[-0.25565087 - 0.13966271j]]])
         assert math.allclose(b2, [[0.14952016 + 0.15768091j], [0.15349763 + 0.1628361j]])
         assert math.allclose(c2, [0.95557745 + 0.00675411j, 0.95489408 + 0.00688296j])
@@ -142,12 +129,12 @@ class TestTriples:
         assert math.allclose(c2, math.ones(2))
 
     def test_displacement_gate_Abc(self):
-        A1, b1, c1 = triples.displacement_gate_Abc(0.1, 0.1)
+        A1, b1, c1 = triples.displacement_gate_Abc(0.1 + 0.1j)
         assert math.allclose(A1, [[0, 1], [1, 0]])
         assert math.allclose(b1, [0.1 + 0.1j, -0.1 + 0.1j])
         assert math.allclose(c1, 0.990049833749168)
 
-        A2, b2, c2 = triples.displacement_gate_Abc([0.1, 0.2], 0.1)
+        A2, b2, c2 = triples.displacement_gate_Abc([0.1 + 0.1j, 0.2 + 0.1j])
         assert math.allclose(
             A2,
             [
@@ -158,7 +145,7 @@ class TestTriples:
         assert math.allclose(b2, [[0.1 + 0.1j, -0.1 + 0.1j], [0.2 + 0.1j, -0.2 + 0.1j]])
         assert math.allclose(c2, [0.99004983 + 0.0j, 0.97530991 + 0.0j])
 
-        A3, b3, c3 = triples.displacement_gate_Abc(x=[0.1, 0.2])
+        A3, b3, c3 = triples.displacement_gate_Abc(alpha=[0.1, 0.2])
         assert math.allclose(
             A3,
             [
@@ -218,7 +205,7 @@ class TestTriples:
             [-0.0978434 + 0.01983384j, 0.99500417, 0, 0],
         ]
         assert math.allclose(A1, A_exp)
-        assert math.allclose(b1, math.zeros((4)))
+        assert math.allclose(b1, math.zeros(4))
         assert math.allclose(c1, 1)
 
         A2, b2, c2 = triples.beamsplitter_gate_Abc(0.1, [0.2, 0.2])
@@ -249,7 +236,7 @@ class TestTriples:
             [-9.98334166e-02, 9.95004165e-01, 0, 0],
         ]
         assert math.allclose(A3, A_exp)
-        assert math.allclose(b3, math.zeros((4)))
+        assert math.allclose(b3, math.zeros(4))
         assert math.allclose(c3, 1)
 
     def test_identity_Abc(self):
@@ -267,7 +254,7 @@ class TestTriples:
         A1, b1, c1 = triples.attenuator_Abc(0.1)
         e = 0.31622777
         assert math.allclose(A1, [[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]])
-        assert math.allclose(b1, math.zeros((4)))
+        assert math.allclose(b1, math.zeros(4))
         assert math.allclose(c1, 1.0)
 
         A2, b2, c2 = triples.attenuator_Abc([0.1, 1])
@@ -289,7 +276,7 @@ class TestTriples:
 
     def test_attenuator_Abc_error(self):
         if math.backend_name == "jax":
-            import equinox as eqx
+            import equinox as eqx  # noqa: PLC0415
 
             with pytest.raises(eqx.EquinoxRuntimeError, match="greater than `1`"):
                 triples.attenuator_Abc(2)
@@ -336,7 +323,7 @@ class TestTriples:
 
     def test_amplifier_Abc_error(self):
         if math.backend_name == "jax":
-            import equinox as eqx
+            import equinox as eqx  # noqa: PLC0415
 
             with pytest.raises(eqx.EquinoxRuntimeError, match="smaller than"):
                 triples.amplifier_Abc(0.1)
@@ -382,7 +369,6 @@ class TestTriples:
         assert B.contract(B, [0, 1, 2], [3, 4, 2], [0, 1, 3, 4]) == Att
 
     def test_gaussian_random_noise_Abc(self):
-
         A, b, c = triples.gaussian_random_noise_Abc(np.eye(2))
         A_by_hand = math.astensor(
             [
@@ -390,7 +376,7 @@ class TestTriples:
                 [0.5, 0.0, 0.0, 0.5],
                 [0.5, 0.0, 0.0, 0.5],
                 [0.0, 0.5, 0.5, 0.0],
-            ]
+            ],
         )
         b_by_hand = math.zeros(4)
         c_by_hand = 0.5
@@ -400,9 +386,8 @@ class TestTriples:
         assert math.allclose(c, c_by_hand)
 
     def test_XY_to_channel_Abc(self):
-
         # Creating an attenuator object and testing its Abc triple
-        eta = np.random.random()
+        eta = settings.rng.random()
         X = math.sqrt(eta) * math.eye(2)
         Y = settings.HBAR / 2 * (1 - eta) * math.eye(2)
 
@@ -416,8 +401,33 @@ class TestTriples:
                 math.astensor([[0, 1 - eta, math.sqrt(eta), 0]]),
             ],
         )
-        assert math.allclose(
-            A, A_by_hand, atol=1e-7
-        )  # TODO: remove atol when tensorflow is removed
-        assert math.allclose(b, math.zeros((4, 1)))
+        assert math.allclose(A, A_by_hand)
+        assert math.allclose(b, math.zeros((4,)))
+        assert b.shape == (4,)
         assert math.allclose(c, 1.0)
+
+    def test_XY_to_channel_Abc_batched(self):
+        eta = settings.rng.random(2)[:, None, None]
+        X = math.sqrt(eta) * math.eye(2)[None, :, :]
+        # Now X has shape (2, 2, 2)
+        Y = settings.HBAR / 2 * (1 - eta) * math.eye(2)[None, :, :]
+
+        A, b, c = triples.XY_to_channel_Abc(X, Y)
+
+        A_by_hand = (
+            math.sqrt(eta)
+            * math.astensor(
+                [[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]],
+                dtype=math.complex128,
+            )[None, :, :]
+            + (1 - eta)
+            * math.astensor(
+                [[0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 0, 0], [0, 1, 0, 0]],
+                dtype=math.complex128,
+            )[None, :, :]
+        )
+
+        assert math.allclose(A, A_by_hand)
+        assert math.allclose(b, math.zeros((2, 4)))
+        assert math.allclose(c, math.astensor([1.0, 1.0], dtype=math.complex128))
+        assert c.shape == (2,)

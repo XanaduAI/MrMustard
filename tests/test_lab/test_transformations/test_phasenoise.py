@@ -14,8 +14,6 @@
 
 """Tests for the ``PhaseNoise`` class."""
 
-# pylint: disable=missing-function-docstring, expression-not-assigned
-
 import pytest
 
 from mrmustard import math
@@ -52,11 +50,13 @@ class TestPhaseNoise:
         psi_2 = Coherent(0, 2)
         after_noise_array = (psi_2 >> PhaseNoise(0, 10)).fock_array(10)
         assert math.allclose(
-            math.diag_part(after_noise_array), math.diag_part(psi_2.dm().fock_array(10))
+            math.diag_part(after_noise_array),
+            math.diag_part(psi_2.dm().fock_array(10)),
         )  # the diagonal entries must remain unchanged
         mask = ~math.eye(after_noise_array.shape[0], dtype=bool)
         assert math.allclose(
-            after_noise_array[mask], math.zeros_like(after_noise_array[mask])
+            after_noise_array[mask],
+            math.zeros_like(after_noise_array[mask]),
         )  # the off-diagonal entries must vanish
 
     @pytest.mark.parametrize("sigma", [0.2, 0.5, 0.7])

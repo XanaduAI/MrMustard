@@ -14,8 +14,6 @@
 
 """Tests for the ``Amplifier`` class."""
 
-# pylint: disable=missing-function-docstring, expression-not-assigned
-
 import pytest
 
 from mrmustard import math
@@ -45,7 +43,8 @@ class TestAmplifier:
         g1 = 0.95346258
         g2 = 0.09090909
         assert math.allclose(
-            rep1.A, [[[0, g1, g2, 0], [g1, 0, 0, 0], [g2, 0, 0, g1], [0, 0, g1, 0]]]
+            rep1.A,
+            [[[0, g1, g2, 0], [g1, 0, 0, 0], [g2, 0, 0, g1], [0, 0, g1, 0]]],
         )
         assert math.allclose(rep1.b, math.zeros((1, 4)))
         assert math.allclose(rep1.c, 0.90909090)
@@ -82,7 +81,7 @@ class TestAmplifier:
     def test_circuit_identity(self):
         amp_channel = Amplifier(mode=0, gain=2)
         att_channel = Attenuator(mode=0, transmissivity=0.5)
-        input_state = Coherent(mode=0, x=0.5, y=0.7)
+        input_state = Coherent(mode=0, alpha=0.5 + 0.7j)
 
         assert math.allclose(
             (input_state >> amp_channel).ansatz.A,
@@ -102,5 +101,5 @@ class TestAmplifier:
             return Attenuator(mode=0, transmissivity=transmissivity)
 
         assert Amp((n + 1) / n) >> Att(n / (n + 1)) == Att((n + 1) / (n + 2)) >> Amp(
-            (n + 2) / (n + 1)
+            (n + 2) / (n + 1),
         )

@@ -22,8 +22,14 @@ from mrmustard.utils.typing import ComplexTensor
 SQRT = np.sqrt(np.arange(100000))
 
 
-@njit
-def vanilla_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+@njit(cache=True)
+def vanilla_numba(
+    shape: tuple[int, ...],
+    A,
+    b,
+    c,
+    out: ComplexTensor | None = None,
+) -> ComplexTensor:  # pragma: no cover
     r"""Vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     This implementation works on flattened tensors and reshapes the tensor before returning.
 
@@ -49,6 +55,7 @@ def vanilla_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
         A (np.ndarray): A matrix of the Bargmann representation
         b (np.ndarray): b vector of the Bargmann representation
         c (complex): vacuum amplitude
+        out (np.ndarray): if provided, the result will be stored in this tensor.
 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
@@ -63,7 +70,7 @@ def vanilla_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
         strides[i - 1] = strides[i] * shape_arr[i]
 
     # init flat output tensor
-    G = np.zeros(np.prod(shape_arr), dtype=np.complex128)
+    G = out.ravel() if out is not None else np.zeros(np.prod(shape_arr), dtype=np.complex128)
 
     # initialize the n-dim index
     nd_index = np.ndindex(shape)
@@ -78,11 +85,13 @@ def vanilla_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     for flat_index in range(1, strides[0]):
         index = next(nd_index)
 
+        i = 0
         # calculate (flat) pivot
-        for i, s in enumerate(strides):
+        for s in strides:
             pivot = flat_index - s
             if pivot >= 0:  # if pivot not outside array
                 break
+            i += 1
 
         # contribution from pivot
         value_at_index = b[i] * G[pivot]
@@ -115,8 +124,14 @@ def vanilla_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     return G.reshape(shape)
 
 
-@njit
-def stable_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+@njit(cache=True)
+def stable_numba(
+    shape: tuple[int, ...],
+    A,
+    b,
+    c,
+    out: ComplexTensor | None = None,
+) -> ComplexTensor:  # pragma: no cover
     r"""Stable version of the vanilla algorithm for calculating the fock representation of a Gaussian tensor.
     This implementation works on flattened tensors and reshapes the tensor before returning.
 
@@ -141,6 +156,7 @@ def stable_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: n
         A (np.ndarray): A matrix of the Bargmann representation
         b (np.ndarray): b vector of the Bargmann representation
         c (complex): vacuum amplitude
+        out (np.ndarray): if provided, the result will be stored in this tensor.
 
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
@@ -154,7 +170,7 @@ def stable_numba(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: n
         strides[i - 1] = strides[i] * shape[i]
 
     # initialize flat output tensor
-    G = np.zeros(np.prod(shape_arr), dtype=np.complex128)
+    G = out.ravel() if out is not None else np.zeros(np.prod(shape_arr), dtype=np.complex128)
 
     # initialize flat index and n-dim iterator
     flat_index = 0

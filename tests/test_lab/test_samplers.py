@@ -14,8 +14,6 @@
 
 """Tests for the sampler."""
 
-# pylint: disable=missing-function-docstring
-
 import numpy as np
 import pytest
 
@@ -41,7 +39,7 @@ class TestPNRSampler:
         vac_prob = [1.0] + [0.0] * 99
         assert math.allclose(sampler.probabilities(Vacuum((0, 1))), vac_prob)
 
-        coh_state = Coherent(0, x=0.5) >> Coherent(1, x=1)
+        coh_state = Coherent(0, alpha=0.5) >> Coherent(1, alpha=1)
         exp_probs = [
             (coh_state >> Number(0, n0).dual >> Number(1, n1).dual) ** 2
             for n0 in range(10)
@@ -58,7 +56,7 @@ class TestPNRSampler:
         assert not np.any(sampler.sample(Vacuum((0, 1))))
         assert not np.any(sampler.sample_prob_dist(Vacuum((0, 1)))[0])
 
-        state = Coherent(0, x=0.1)
+        state = Coherent(0, alpha=0.1)
         samples = sampler.sample(state, n_samples)
 
         count = np.zeros_like(sampler.meas_outcomes)
@@ -89,7 +87,7 @@ class TestHomodyneSampler:
     def test_probabilties(self):
         sampler = HomodyneSampler()
 
-        state = Coherent(0, x=0.1)
+        state = Coherent(0, alpha=0.1)
 
         exp_probs = (
             state.quadrature_distribution(math.astensor(sampler.meas_outcomes)) * sampler._step
@@ -104,6 +102,15 @@ class TestHomodyneSampler:
         )
         assert math.allclose(sampler2.probabilities(state), exp_probs)
 
+    def test_probabilities_cat(self):
+        state = (Coherent(mode=0, alpha=2) + Coherent(mode=0, alpha=-2)).normalize()
+        sampler = HomodyneSampler(phi=0, bounds=(-10, 10), num=1000)
+        exp_probs = (
+            state.quadrature_distribution(math.astensor(sampler.meas_outcomes), phi=sampler._phi)
+            * sampler._step
+        )
+        assert math.allclose(sampler.probabilities(state), exp_probs)
+
     def test_sample_mean_coherent(self):
         r"""
         Porting test from strawberry fields:
@@ -115,9 +122,7 @@ class TestHomodyneSampler:
         alpha = 1.0 + 1.0j
         tol = settings.ATOL
 
-        state = Coherent(0, x=math.real(alpha), y=math.imag(alpha)) >> Coherent(
-            1, x=math.real(alpha), y=math.imag(alpha)
-        )
+        state = Coherent(0, alpha) >> Coherent(1, alpha)
         sampler = HomodyneSampler()
 
         meas_result = sampler.sample(state, N_MEAS)

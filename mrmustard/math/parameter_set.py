@@ -14,12 +14,17 @@
 
 """This module contains the classes to describe sets of parameters."""
 
-from typing import Any, Sequence
+import io
+from collections.abc import Sequence
+from typing import Any
+
 import numpy as np
+from rich.console import Console
+from rich.table import Table
 
 from mrmustard.math.backend_manager import BackendManager
 
-from .parameters import Constant, Variable
+from .parameters import Constant, Variable, format_bounds, format_dtype, format_value
 
 math = BackendManager()
 
@@ -55,25 +60,18 @@ class ParameterSet:
         self._variables: dict[str, Variable] = {}
 
     @property
-    def constants(self) -> dict[str, Constant]:
-        r"""
-        The constant parameters in this parameter set.
-        """
-        return self._constants
-
-    @property
-    def variables(self) -> dict[str, Variable]:
-        r"""
-        The variable parameters in this parameter set.
-        """
-        return self._variables
-
-    @property
     def all_parameters(self) -> dict[str, Constant | Variable]:
         r"""
         The constant and variable parameters in this parameter set.
         """
         return self.constants | self.variables
+
+    @property
+    def constants(self) -> dict[str, Constant]:
+        r"""
+        The constant parameters in this parameter set.
+        """
+        return self._constants
 
     @property
     def names(self) -> Sequence[str]:
@@ -82,6 +80,25 @@ class ParameterSet:
         were added.
         """
         return self._names
+
+    @property
+    def variables(self) -> dict[str, Variable]:
+        r"""
+        The variable parameters in this parameter set.
+        """
+        return self._variables
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        ret._variables = children[0]
+        ret._names, ret._constants = aux_data
+        for name in ret.names:
+            if name in ret.constants:
+                ret.__dict__[name] = ret.constants[name]
+            elif name in ret.variables:
+                ret.__dict__[name] = ret.variables[name]
+        return ret
 
     def add_parameter(self, parameter: Constant | Variable) -> None:
         r"""
@@ -156,6 +173,29 @@ class ParameterSet:
             strings.append(string)
         return ", ".join(strings)
 
+    def _tree_flatten(self):  # pragma: no cover
+        children = (self.variables,)
+        aux_data = (self.names, self.constants)
+        return (children, aux_data)
+
+    def __bool__(self) -> bool:
+        r"""
+        ``False`` if this parameter set is empty, ``True`` otherwise.
+        """
+        return bool(self._constants or self._variables)
+
+    def __eq__(self, other: object) -> bool:
+        r"""
+        Returns whether ``other`` is equivalent to this parameter set.
+        """
+        if not isinstance(other, ParameterSet):
+            return False
+        return (
+            self._names == other._names
+            and self._constants == other._constants
+            and self._variables == other._variables
+        )
+
     def __getitem__(self, items: int | Sequence[int]):
         r"""
         Returns a parameter set that contains slices of the parameters in this parameter set.
@@ -194,7 +234,7 @@ class ParameterSet:
             >>> assert np.allclose(ps[1, 2].variables["v2"].value, [7, 8])
         """
         if isinstance(items, int):
-            items = list([items])
+            items = [items]
         items = math.astensor(items)
 
         ret = ParameterSet()
@@ -215,22 +255,33 @@ class ParameterSet:
 
         return ret
 
-    def __bool__(self) -> bool:
+    def __repr__(self) -> str:
         r"""
-        ``False`` if this parameter set is empty, ``True`` otherwise.
+        Returns a rich-formatted string representation of this parameter set.
         """
-        if self._constants or self._variables:
-            return True
-        return False
+        if not self:
+            return "ParameterSet()"
 
-    def __eq__(self, other: Any) -> bool:
-        r"""
-        Returns whether ``other`` is equivalent to this parameter set.
-        """
-        if not isinstance(other, ParameterSet):
-            return False
-        return (
-            self._names == other._names
-            and self._constants == other._constants
-            and self._variables == other._variables
-        )
+        table = Table(title=f"ParameterSet ({len(self.names)} parameters)", show_header=True)
+
+        table.add_column("Name", style="#FFB3B3", header_style="#FFB3B3", no_wrap=True)
+        table.add_column("Type", style="#FFCC99", header_style="#FFCC99", width=9)
+        table.add_column("Value", style="#FFFFBA", header_style="#FFFFBA")
+        table.add_column("Dtype", style="#BAFFC9", header_style="#BAFFC9", width=10)
+        table.add_column("Bounds", style="#B3E5FF", header_style="#B3E5FF")
+        table.add_column("Shape", style="#E1BAFF", header_style="#E1BAFF")
+
+        for name in self.names:
+            param = self.all_parameters[name]
+            param_type = "Constant" if isinstance(param, Constant) else "Variable"
+
+            value_str, shape_str = format_value(param)
+            dtype_str = format_dtype(param)
+            bounds_str = format_bounds(param)
+
+            table.add_row(name, param_type, value_str, dtype_str, bounds_str, shape_str)
+
+        with io.StringIO() as string_buffer:
+            console = Console(file=string_buffer, width=100, legacy_windows=False)
+            console.print(table)
+            return string_buffer.getvalue().strip()

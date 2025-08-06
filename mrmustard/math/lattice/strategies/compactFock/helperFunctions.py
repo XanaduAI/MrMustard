@@ -3,15 +3,15 @@ This module contains helper functions that are used in
 diagonal_amps.py, diagonal_grad.py, singleLeftoverMode_amps.py and singleLeftoverMode_grad.py
 """
 
-import numpy as np
-from numba import njit, int64
-from numba.typed import Dict
 import numba
+import numpy as np
+from numba import int64, njit
+from numba.typed import Dict
 
 SQRT = np.sqrt(np.arange(1000))  # saving the time to recompute square roots
 
 
-@njit
+@njit(cache=True)
 def repeat_twice(params):
     """
     This function is equivalent to np.repeat(params,2), but runs faster.
@@ -27,7 +27,7 @@ def repeat_twice(params):
     return pivot
 
 
-@njit
+@njit(cache=True)
 def construct_dict_params(cutoffs, tuple_type, list_type):
     """
     Args:

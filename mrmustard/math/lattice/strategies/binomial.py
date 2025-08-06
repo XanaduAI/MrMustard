@@ -125,7 +125,7 @@ def binomial_dict(
     return G
 
 
-@njit
+@njit(cache=True)
 def binomial_numba(
     local_cutoffs: tuple[int, ...],
     A: ComplexMatrix,
@@ -150,7 +150,7 @@ def binomial_numba(
     for photons in range(1, global_cutoff):
         try:
             indices = FP[(local_cutoffs, photons)]
-        except Exception:  # pylint: disable=broad-except
+        except KeyError:
             indices = paths.binomial_subspace_basis(local_cutoffs, photons)
             FP[(local_cutoffs, photons)] = indices
         G, prob_subspace = steps.binomial_step(G, A, b, indices)

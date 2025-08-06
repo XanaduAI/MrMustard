@@ -14,11 +14,11 @@
 
 """A module containing classes and methods for progress bars."""
 
-from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
+from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
+
 from mrmustard import settings
 
 
-# pylint: disable=disallowed-name
 class ProgressBar:
     "A spiffy loading bar to display the progress during an optimization."
 

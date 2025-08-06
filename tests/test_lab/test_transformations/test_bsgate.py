@@ -14,8 +14,6 @@
 
 """Tests for the ``BSgate`` class."""
 
-# pylint: disable=missing-function-docstring, expression-not-assigned
-
 import pytest
 
 from mrmustard import math
@@ -86,8 +84,14 @@ class TestBSgate:
         gate_fock2 = gate.fock_array((5, 5, 5, 5), method="schwinger")  # tuple shape
         assert math.allclose(gate_fock, gate_fock2)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Expected Fock shape"):
             gate.fock_array((5, 5, 5))  # wrong shape
 
         bs_with_batch = BSgate((0, 1), math.astensor([[1, 2]]), math.astensor([[3], [4], [5]]))
         assert bs_with_batch.fock_array(5, method="stable").shape == (3, 2, 5, 5, 5, 5)
+
+    def test_to_fock_lin_sup(self):
+        bsgate = (BSgate((0, 1), 2, 3) + BSgate((0, 1), -2, -3)).to_fock(5)
+        assert bsgate.ansatz.batch_dims == 0
+        assert bsgate.ansatz.batch_shape == ()
+        assert bsgate.ansatz.array.shape == (5, 5, 5, 5)

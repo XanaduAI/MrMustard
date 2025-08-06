@@ -7,17 +7,11 @@ Loosely based on https://github.com/astropy/astropy/pull/347
 import os
 import warnings
 
-
 __licence__ = "BSD (3 clause)"
 
 
 def get_github_url(app, view, path):
-    return "https://github.com/{project}/{view}/{branch}/{path}".format(
-        project=app.config.edit_on_github_project,
-        view=view,
-        branch=app.config.edit_on_github_branch,
-        path=path,
-    )
+    return f"https://github.com/{app.config.edit_on_github_project}/{view}/{app.config.edit_on_github_branch}/{path}"
 
 
 def html_page_context(app, pagename, templatename, context, doctree):
@@ -25,7 +19,7 @@ def html_page_context(app, pagename, templatename, context, doctree):
         return
 
     if not app.config.edit_on_github_project:
-        warnings.warn("edit_on_github_project not specified")
+        warnings.warn("edit_on_github_project not specified", stacklevel=1)
         return
 
     if not doctree:

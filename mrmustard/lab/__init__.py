@@ -13,11 +13,12 @@
 # limitations under the License.
 
 r"""
-The lab module in development.
+The lab module.
 """
 
 from .circuit_components import *
 from .circuit_components_utils import *
 from .circuits import *
+from .samplers import *
 from .states import *
 from .transformations import *

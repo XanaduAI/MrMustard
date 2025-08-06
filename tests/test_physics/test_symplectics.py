@@ -18,17 +18,7 @@ from hypothesis import strategies as st
 from thewalrus.symplectic import beam_splitter, expand, rotation, squeezing, two_mode_squeezing
 
 from mrmustard import settings
-from mrmustard.lab import (
-    Amplifier,
-    Attenuator,
-    BSgate,
-    Dgate,
-    MZgate,
-    Pgate,
-    Rgate,
-    S2gate,
-    Sgate,
-)
+from mrmustard.lab import Amplifier, Attenuator, BSgate, Dgate, MZgate, Pgate, Rgate, S2gate, Sgate
 from mrmustard.lab.states import Thermal, TwoModeSqueezedVacuum, Vacuum
 
 
@@ -91,7 +81,9 @@ def test_BSgate(theta, phi):
         / settings.HBAR
     )
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+        two_mode_squeezing(2 * r_choi, 0.0),
+        [1, 3],
+        4,
     )
     S_expanded = expand(beam_splitter(theta, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
@@ -106,7 +98,9 @@ def test_S2gate(r, phi):
     bell = TwoModeSqueezedVacuum((0, 2), r=r_choi) >> TwoModeSqueezedVacuum((1, 3), r=r_choi)
     cov = (bell >> S2).phase_space(0)[0] * 2 / settings.HBAR
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+        two_mode_squeezing(2 * r_choi, 0.0),
+        [1, 3],
+        4,
     )
     S_expanded = expand(two_mode_squeezing(r, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
@@ -122,7 +116,9 @@ def test_MZgate_external_tms(phi_ex, phi_in):
     cov = (bell >> MZ).phase_space(0)[0] * 2 / settings.HBAR
 
     bell = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+        two_mode_squeezing(2 * r_choi, 0.0),
+        [1, 3],
+        4,
     )
 
     ex_expanded = expand(rotation(phi_ex), [0], 4)
@@ -144,7 +140,9 @@ def test_MZgate_internal_tms(phi_a, phi_b):
     MZ = MZgate((0, 1), phi_a=phi_a, phi_b=phi_b, internal=True)
     cov = (bell >> MZ).phase_space(0)[0] * 2 / settings.HBAR
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+        two_mode_squeezing(2 * r_choi, 0.0),
+        [1, 3],
+        4,
     )
     BS = beam_splitter(np.pi / 4, np.pi / 2)
     S_expanded = expand(BS, [0, 1], 4)
@@ -162,14 +160,19 @@ def test_MZgate_internal_tms(phi_a, phi_b):
 @given(g=st.floats(1, 3), x=st.floats(-2, 2), y=st.floats(-2, 2))
 def test_amplifier_on_coherent_is_thermal_coherent(g, x, y):
     """Tests that amplifying a coherent state is equivalent to preparing a thermal state displaced state"""
-    assert Vacuum(0) >> Dgate(0, x, y) >> Amplifier(0, g) == Thermal(0, g - 1) >> Dgate(
-        0, np.sqrt(g) * x, np.sqrt(g) * y
+    assert Vacuum(0) >> Dgate(0, x + 1j * y) >> Amplifier(0, g) == Thermal(0, g - 1) >> Dgate(
+        0,
+        np.sqrt(g) * x + 1j * np.sqrt(g) * y,
     )
 
 
 @given(eta=st.floats(0.1, 0.9), x=st.floats(-2, 2), y=st.floats(-2, 2))
 def test_amplifier_attenuator_on_coherent_coherent(eta, x, y):
     """Tests that amplifying and the attenuating a coherent state is equivalent to preparing a thermal state displaced state"""
-    assert Vacuum(0) >> Dgate(0, x, y) >> Amplifier(0, 1 / eta) >> Attenuator(0, eta) == Thermal(
-        0, ((1 / eta) - 1) * eta
-    ) >> Dgate(0, x, y)
+    assert Vacuum(0) >> Dgate(0, x + 1j * y) >> Amplifier(0, 1 / eta) >> Attenuator(
+        0,
+        eta,
+    ) == Thermal(
+        0,
+        ((1 / eta) - 1) * eta,
+    ) >> Dgate(0, x + 1j * y)

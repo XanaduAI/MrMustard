@@ -45,17 +45,19 @@ the Flask web application framework:
 https://github.com/pallets/flask/blob/master/tests/test_logging.py
 """
 
-# pylint: disable=no-self-use
-
 import logging
 import sys
 
 import pytest
 
-from mrmustard.training import optimizer
 from mrmustard.utils.logger import create_logger, default_handler, logging_handler_defined
 
-modules_contain_logging = [optimizer]
+try:
+    from mrmustard.training import optimizer
+
+    modules_contain_logging = [optimizer]
+except ImportError:
+    modules_contain_logging = []
 
 
 @pytest.fixture(autouse=True)

@@ -15,22 +15,18 @@
 """A module containing global settings."""
 
 from __future__ import annotations
-from pathlib import Path
+
 import warnings
+from pathlib import Path
+from typing import Literal
 
-from rich import print
-import rich.table
 import numpy as np
-
-from mrmustard.utils.filters import (
-    add_complex_warning_filter,
-    remove_complex_warning_filter,
-)
+import rich.table
+from rich import print as rprint
 
 __all__ = ["settings"]
 
 
-# pylint: disable=too-many-instance-attributes
 class Settings:
     r"""
     A class containing various settings that are used by Mr Mustard throughout a session.
@@ -58,15 +54,14 @@ class Settings:
 
     def __new__(cls):  # singleton
         if not hasattr(cls, "_instance"):
-            cls._instance = super(Settings, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self):
         self._hbar: float = 1.0
-        self._seed: int = np.random.randint(0, 2**31 - 1)
+        self._seed: int = np.random.randint(0, 2**31 - 1)  # noqa: NPY002
         self.rng = np.random.default_rng(self._seed)
         self._precision_bits_hermite_poly: int = 128
-        self._complex_warning: bool = False
         self._cache_dir = Path(__file__).parents[2].absolute() / ".serialize_cache"
 
         self.AUTOSHAPE_PROBABILITY: float = 0.99999
@@ -84,11 +79,21 @@ class Settings:
         self.DEFAULT_FOCK_SIZE: int = 50
         r"""The default size for the Fock representation. Default is ``50``."""
 
-        self.DISCRETIZATION_METHOD: str = "clenshaw"
+        self.DEFAULT_REPRESENTATION: Literal["Bargmann", "Fock"] = "Fock"
+        r"""The representation to use when contracting two circuit components in different representations. Can be ``Fock`` or ``Bargmann``. Default is ``Fock``."""
+
+        self.DISCRETIZATION_METHOD: Literal["clenshaw", "iterative"] = "clenshaw"
         r"""The method used to discretize the Wigner function. Can be ``clenshaw`` (better, default) or ``iterative`` (worse, faster). Default is ``clenshaw``."""
 
         self.DRAW_CIRCUIT_PARAMS: bool = True
         r"""Whether or not to draw the parameters of a circuit. Default is ``True``."""
+
+        self.EINSUM_OPTIMIZE: bool | Literal["greedy", "optimal", "auto"] = "greedy"
+        r"""Whether to optimize the contraction order when using the Einstein summation convention.
+        Allowed values are True, False, "greedy", "optimal" or "auto".
+        Note the TF backend does not support False and converts it to "greedy".
+        Default is ``"greedy"``.
+        """
 
         self.PROGRESSBAR: bool = True
         r"""Whether or not to display the progress bar when performing training. Default is ``True``."""
@@ -112,19 +117,6 @@ class Settings:
         self._cache_dir.mkdir(exist_ok=True, parents=True)
 
     @property
-    def COMPLEX_WARNING(self) -> bool:
-        r"""Whether tensorflow's ``ComplexWarning`` should be raised when a complex is cast to a float. Default is ``False``."""
-        return self._complex_warning
-
-    @COMPLEX_WARNING.setter
-    def COMPLEX_WARNING(self, value: bool):
-        self._complex_warning = value
-        if value:
-            remove_complex_warning_filter()
-        else:
-            add_complex_warning_filter()
-
-    @property
     def HBAR(self) -> float:
         r"""
         The value of the Planck constant. Default is ``1``.
@@ -133,14 +125,14 @@ class Settings:
 
     @HBAR.setter
     def HBAR(self, value: float):
-        warnings.warn("Changing HBAR can conflict with prior computations.")
+        warnings.warn("Changing HBAR can conflict with prior computations.", stacklevel=1)
         self._hbar = value
 
     @property
     def SEED(self) -> int:
         r"""Returns the seed value if set, otherwise returns a random seed."""
         if self._seed is None:
-            self._seed = np.random.randint(0, 2**31 - 1)
+            self._seed = np.random.randint(0, 2**31 - 1)  # noqa: NPY002
             self.rng = np.random.default_rng(self._seed)
         return self._seed
 
@@ -181,11 +173,11 @@ class Settings:
         for key, val in self.__dict__.items():
             if key in not_displayed or key.startswith("_"):
                 continue
-            key = key.upper()
+            key = key.upper()  # noqa: PLW2901
             value = str(val)
             table.add_row(key, value)
 
-        print(table)
+        rprint(table)
         return ""
 
     def __setattr__(self, name, value):

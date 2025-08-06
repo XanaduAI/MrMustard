@@ -14,9 +14,6 @@
 
 """Tests for the ``Interferometer`` class."""
 
-# pylint: disable=missing-function-docstring, expression-not-assigned
-
-
 from mrmustard import math
 from mrmustard.lab.transformations import Identity, Interferometer
 

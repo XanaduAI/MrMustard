@@ -19,7 +19,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import pytest
-import tensorflow as tf
 
 from mrmustard import __version__, math, settings
 from mrmustard.lab import (
@@ -46,6 +45,11 @@ from mrmustard.lab import (
     Vacuum,
 )
 from mrmustard.utils.serialize import load, save
+
+try:
+    import jax
+except ImportError:
+    jax = None
 
 
 class Deserialize:
@@ -140,24 +144,24 @@ class TestSerialize:
         ):
             save(Dummy, arrays={"val": [1]}, val=2)
 
-    @pytest.mark.requires_backend("tensorflow")
-    def test_tensorflow_support(self):
-        """Test that TensorFlow data is supported."""
+    @pytest.mark.requires_backend("jax")
+    def test_jax_support(self):
+        """Test that JAX data is supported."""
         x = math.astensor([1.1, 2.2])
         loaded = load(save(DummyOneNP, name="myname", arrays={"array": x}))
-        assert tf.is_tensor(loaded.array)
+        assert isinstance(loaded.array, jax.Array)
         assert np.array_equal(loaded.array, x)
 
-    @pytest.mark.requires_backend("tensorflow")
+    @pytest.mark.requires_backend("jax")
     def test_backend_change_error(self, monkeypatch):
         """Test that data must be deserialized with the same backend."""
         x = math.astensor([1.1, 2.2])
         path = save(DummyOneNP, name="myname", arrays={"array": x})
-        # can be thought of as restarting python and not changing to tensorflow
+        # can be thought of as restarting python and not changing to jax
         monkeypatch.setattr("mrmustard.math._backend._name", "numpy")
         with pytest.raises(
             TypeError,
-            match="Data serialized with tensorflow backend, cannot deserialize to the currently active numpy backend",
+            match="Data serialized with jax backend, cannot deserialize to the currently active numpy backend",
         ):
             load(path)
         assert sorted(settings.CACHE_DIR.glob("*")) == [path]
@@ -173,10 +177,10 @@ class TestSerialize:
         """Test that all circuit components are serializable."""
         circ = Circuit(
             [
-                Coherent(0, x=1.0),
+                Coherent(0, 1.0),
                 Dgate(0, 0.1),
                 BSgate((1, 2), theta=0.1, theta_trainable=True, theta_bounds=(-0.5, 0.5)),
-                Dgate(0, x=1.1, y=2.2),
+                Dgate(0, 1.1 + 2.2j),
                 Identity((1, 2)),
                 Rgate(1, theta=0.1),
                 S2gate((0, 1), 1, 1),
@@ -188,8 +192,8 @@ class TestSerialize:
                 BtoChar(0, s=1),
                 TraceOut((0, 1)),
                 Thermal(0, nbar=3),
-                Coherent(0, x=0.3, y=0.2, y_trainable=True, y_bounds=(-0.5, 0.5)).dual,
-                DisplacedSqueezed(0, 1, 2, 3, 4, x_bounds=(-1.5, 1.5), x_trainable=True),
+                Coherent(0, 0.3 + 0.2j, alpha_trainable=True, alpha_bounds=(0, 0.5)).dual,
+                DisplacedSqueezed(0, 1 + 2j, 3, 4, alpha_trainable=True, alpha_bounds=(-1.5, 1.5)),
                 Number(1, n=20),
                 QuadratureEigenstate(2, x=1, phi=0, phi_trainable=True, phi_bounds=(-1, 1)).dual,
                 SqueezedVacuum(3, r=0.4, phi=0.2),

@@ -1,0 +1,18 @@
+name: Test Backends
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  numpy:
+    name: Run Numpy Tests
+    uses: ./.github/workflows/tests_numpy.yml
+    secrets: inherit
+
+  jax:
+    name: Run JAX Tests
+    uses: ./.github/workflows/tests_jax.yml
+    secrets: inherit

@@ -18,10 +18,12 @@ The class repesenting a vacuum state.
 
 from __future__ import annotations
 
-from typing import Collection
+from collections.abc import Collection
 
-from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics import triples
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
+
 from .ket import Ket
 
 __all__ = ["Vacuum"]
@@ -35,7 +37,7 @@ class Vacuum(Ket):
         modes: A tuple of modes.
 
 
-    .. code-block ::
+    .. code-block::
 
         >>> from mrmustard.lab import Vacuum
 
@@ -61,15 +63,23 @@ class Vacuum(Ket):
         self,
         modes: int | tuple[int, ...],
     ) -> None:
-        super().__init__(name="Vac")
         modes = (modes,) if isinstance(modes, int) else modes
-        self._representation = self.from_ansatz(
-            modes=modes,
-            ansatz=PolyExpAnsatz.from_function(fn=triples.vacuum_state_Abc, n_modes=len(modes)),
-        ).representation
+        A, b, c = triples.vacuum_state_Abc(len(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket=set(modes))
+        super().__init__(ansatz, wires, name="Vac")
 
-        for i in range(len(modes)):
-            self.manual_shape[i] = 1
+        self.manual_shape = (1,) * len(modes)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        (modes,) = aux_data
+        return cls(modes)
+
+    def _tree_flatten(self):  # pragma: no cover
+        children = ()
+        aux_data = (self.modes,)
+        return (children, aux_data)
 
     def __getitem__(self, idx: int | Collection[int]) -> Vacuum:
         idx = (idx,) if isinstance(idx, int) else idx

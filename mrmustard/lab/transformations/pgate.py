@@ -17,12 +17,16 @@ The class representing a quadratic phase gate.
 """
 
 from __future__ import annotations
-from typing import Sequence
-from mrmustard.physics.ansatz import PolyExpAnsatz
 
-from .base import Unitary
-from ..utils import make_parameter
+from collections.abc import Sequence
+
+from mrmustard import math
+from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.physics.wires import Wires
+
 from ...physics import symplectics
+from ..utils import make_parameter
+from .base import Unitary
 
 __all__ = ["Pgate"]
 
@@ -37,10 +41,13 @@ class Pgate(Unitary):
         shearing_trainable: Whether ``shearing`` is trainable.
         shearing_bounds: The bounds for ``shearing``.
 
-    .. details:: The quadratic phase gate is defined as
+    .. details::
+        The quadratic phase gate is defined as
+
         .. math::
 
             P = \exp(i s q^2 / 2 \hbar)
+
     Reference: https://strawberryfields.ai/photonics/conventions/gates.html
     """
 
@@ -48,22 +55,27 @@ class Pgate(Unitary):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         shearing: float | Sequence[float] = 0.0,
         shearing_trainable: bool = False,
         shearing_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Pgate")
         self.parameters.add_parameter(
-            make_parameter(shearing_trainable, shearing, "shearing", shearing_bounds)
-        )
-        self._representation = self.from_ansatz(
-            modes_in=(mode,),
-            modes_out=(mode,),
-            ansatz=PolyExpAnsatz.from_function(
-                fn=lambda shearing: Unitary.from_symplectic(
-                    (mode,), symplectics.pgate_symplectic(1, shearing)
-                ).bargmann_triple(),
-                shearing=self.parameters.shearing,
+            make_parameter(
+                is_trainable=shearing_trainable,
+                value=shearing,
+                name="shearing",
+                bounds=shearing_bounds,
+                dtype=math.float64,
             ),
-        ).representation
+        )
+        self._ansatz = PolyExpAnsatz.from_function(
+            fn=lambda shearing: Unitary.from_symplectic(
+                (mode,),
+                symplectics.pgate_symplectic(1, shearing),
+            ).bargmann_triple(),
+            shearing=self.parameters.shearing,
+        )
+        self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))
