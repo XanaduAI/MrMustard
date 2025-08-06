@@ -45,9 +45,9 @@ dependencies = [
 
 [project.optional-dependencies]
 jax_backend = [
-    "equinox>=0.11.10",
-    "jax>=0.5.1,<0.6.0",
-    "optax>=0.2.4,<0.3",
+    "equinox>=0.11.10,<1",
+    "jax>=0.5.1,<1",
+    "optax>=0.2.4,<1",
 ]
 
 [dependency-groups]
@@ -74,9 +74,9 @@ interactive = [
     "ipykernel >=6.21.2, <7.0.0",
 ]
 jax_backend = [
-    "equinox==0.13.0",
-    "jax==0.5.3",
-    "optax==0.2.5",
+    "equinox>=0.11.10,<1",
+    "jax>=0.5.1,<1",
+    "optax>=0.2.4,<1",
 ]
 
 [tool.coverage.run]
