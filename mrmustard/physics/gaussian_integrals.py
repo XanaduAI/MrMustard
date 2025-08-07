@@ -285,9 +285,6 @@ def join_Abc(
     c1_broadcasted = math.broadcast_to(c1_reshaped, c1_broadcast_shape, dtype=math.complex128)
     c2_broadcasted = math.broadcast_to(c2_reshaped, c2_broadcast_shape, dtype=math.complex128)
 
-    # Already ported to numba
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
     c1_flat_shape = (*output_batch_shape, int(np.prod(poly_shape1)))
     c2_flat_shape = (*output_batch_shape, int(np.prod(poly_shape2)))
     c1_flat = math.reshape(c1_broadcasted, c1_flat_shape)

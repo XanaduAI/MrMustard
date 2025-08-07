@@ -86,6 +86,37 @@ def join_Abc_numba(
     Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     batch_string: str | None = None,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
+    r"""
+    Joins two ``(A,b,c)`` triples into a single ``(A,b,c)``.
+
+    It supports arbitrary batch dimensions using an einsum-like string notation.
+    For example:
+    - "i,j->ij" is like a "kron" mode (Kronecker product of batch dimensions)
+    - "i,i->i" is like a "zip" mode (parallel processing of same-sized batches)
+    - "i,j->ij", "ij,ik->ijk", "i,->i" are all valid batch dimension specifications
+
+    The string only refers to the batch dimensions. The core (non-batch) dimensions are handled
+    as follows: the A matrices and b vectors are joined, and the shape of c is the
+    concatenation of the shapes of c1 and c2 (batch excluded).
+
+    Input parameters are expected to have arbitrary batch dimensions, e.g. ``A1.shape = (batch1, n1, n1)``,
+    ``b1.shape = (batch1, n1)``, ``c1.shape = (batch1, *d1)``.
+    The number of non-batch dimensions in ``ci`` (i.e. ``len(di)``) corresponds to the number
+    of rows and columns of ``Ai`` and ``bi`` that are kept last (derived variables).
+    For instance, if ``d1 = (4, 3)`` and ``d2=(7,)``, then the last 2 rows and columns of
+    ``A1`` and ``b1`` and the last 1 row and column of ``A2`` and ``b2`` are kept last in the
+    joined ``A`` and ``b``.
+
+    Arguments:
+        Abc1: The first ``(A,b,c)`` triple
+        Abc2: The second ``(A,b,c)`` triple
+        batch_string: An (optional) einsum-like string in the format "in1,in2->out" that specifies
+            how batch dimensions should be handled. If ``None``, defaults to a kronecker product i.e.
+            "i,j->ij".
+
+    Returns:
+        The joined ``(A,b,c)`` triple
+    """
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
 
