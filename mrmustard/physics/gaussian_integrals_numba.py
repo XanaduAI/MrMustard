@@ -19,6 +19,7 @@ This module contains gaussian integral functions and related helper functions.
 import numpy as np
 from numba import njit
 
+from mrmustard.physics.utils import outer_product_batch_str, verify_batch_triple
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 
@@ -88,19 +89,20 @@ def join_Abc_numba(
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
 
+    verify_batch_triple(A1, b1, c1)
+    verify_batch_triple(A2, b2, c2)
+
+    batch1, batch2 = A1.shape[:-2], A2.shape[:-2]
+
+    if batch_string is None:
+        batch_string = outer_product_batch_str(len(batch1), len(batch2))
+
     A1 = np.array(A1, dtype=np.complex128)
     A2 = np.array(A2, dtype=np.complex128)
     b1 = np.array(b1, dtype=np.complex128)
     b2 = np.array(b2, dtype=np.complex128)
     c1 = np.array(c1, dtype=np.complex128)
     c2 = np.array(c2, dtype=np.complex128)
-
-    # broadcasting to be done here
-    batch1, batch2 = A1.shape[:-2], A2.shape[:-2]
-
-    if batch1 or batch2:
-        raise NotImplementedError("Batching not implemented for numba version")
-
     return _join_Abc_numba((A1, b1, c1), (A2, b2, c2))
 
 
