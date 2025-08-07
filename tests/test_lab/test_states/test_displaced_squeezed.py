@@ -62,3 +62,10 @@ class TestDisplacedSqueezed:
             Vacuum(modes) >> Sgate(modes, r, phi).contract(Dgate(modes, alpha), "zip")
         ).ansatz  # TODO: revisit rshift
         assert rep == exp
+
+    @pytest.mark.parametrize("alpha", [10 + 10j, 18 + 18j, 25 + 25j])
+    @pytest.mark.parametrize("r", [0, 1, 2, 3])
+    def test_probability(self, alpha, r):
+        """Tests that highly displaced squeezed states are properly normalized."""
+        state = DisplacedSqueezed(mode=0, alpha=alpha, r=r)
+        assert math.allclose(state.probability, 1)

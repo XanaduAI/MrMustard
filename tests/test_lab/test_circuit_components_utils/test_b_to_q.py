@@ -50,7 +50,7 @@ class TestBtoQ:
         BtoQ_CC1 = BtoQ(modes, 0.0)
         step1A, step1b, step1c = BtoQ_CC1.bargmann_triple()
         Ainter, binter, cinter = complex_gaussian_integral_1(
-            join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
+            join_Abc((A0, b0, c0), (step1A, step1b, step1c), return_log_c=True),
             idx_z=[0, 1],
             idx_zconj=[4, 5],
             measure=-1,
@@ -79,7 +79,7 @@ class TestBtoQ:
         BtoQ_CC1 = BtoQ(modes, 0.0)
         step1A, step1b, step1c = BtoQ_CC1.bargmann_triple()
         Ainter, binter, cinter = complex_gaussian_integral_1(
-            join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
+            join_Abc((A0, b0, c0), (step1A, step1b, step1c), return_log_c=True),
             idx_z=[
                 0,
             ],

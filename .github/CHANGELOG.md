@@ -30,6 +30,9 @@
 * Fixed a bug in `DM.expectation` where the Fock shape lookahead wasn't setting certain wires correctly.
 [(#639)](https://github.com/XanaduAI/MrMustard/pull/639)
 
+* Fixed bug in Gaussian integrals where small/large c values were not multiplying correctly.
+[(#641)](https://github.com/XanaduAI/MrMustard/pull/641)
+
 ---
 
 # Release 1.0.0a1
