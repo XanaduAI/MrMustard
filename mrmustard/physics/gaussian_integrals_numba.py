@@ -89,6 +89,7 @@ def join_Abc_numba(
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
 
+    # TODO: numbafy broadcasting
     verify_batch_triple(A1, b1, c1)
     verify_batch_triple(A2, b2, c2)
 
