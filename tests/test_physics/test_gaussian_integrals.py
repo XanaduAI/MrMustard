@@ -15,6 +15,7 @@
 """Tests for real and comple gaussian integral functions and related helper functions."""
 
 import numpy as np
+import pytest
 
 from mrmustard import math, settings
 from mrmustard.physics import triples
@@ -106,7 +107,8 @@ def test_join_Abc_real():
     assert math.allclose(joined_Abc1[2], math.outer(c1, c2))
 
 
-def test_join_Abc_nonbatched():
+@pytest.mark.parametrize("return_log_c", [True, False])
+def test_join_Abc_nonbatched(return_log_c):
     """Tests the ``join_Abc`` method for non-batched inputs."""
     A1 = math.astensor([[1, 2], [3, 4]])
     b1 = math.astensor([5, 6])
@@ -116,17 +118,21 @@ def test_join_Abc_nonbatched():
     b2 = math.astensor([12, 13])
     c2 = math.astensor(10)
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=None)
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=None, return_log_c=return_log_c)
 
     assert math.allclose(
         A,
         math.astensor([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 8, 9], [0, 0, 10, 11]]),
     )
     assert math.allclose(b, math.astensor([5, 6, 12, 13]))
-    assert math.allclose(c, 70)
+    if return_log_c:
+        assert math.allclose(c, math.log(math.cast(70, "complex128")))
+    else:
+        assert math.allclose(c, 70)
 
 
-def test_join_Abc_batched_zip():
+@pytest.mark.parametrize("return_log_c", [True, False])
+def test_join_Abc_batched_zip(return_log_c):
     """Tests the ``join_Abc`` method for batched inputs in zip mode (and with polynomial c)."""
     A1 = math.astensor([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
     b1 = math.astensor([[5, 6], [7, 8]])
@@ -136,7 +142,7 @@ def test_join_Abc_batched_zip():
     b2 = math.astensor([[12, 13], [14, 15]])
     c2 = math.astensor([10, 100])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
+    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i", return_log_c=return_log_c)
 
     assert math.allclose(
         A,
@@ -148,10 +154,14 @@ def test_join_Abc_batched_zip():
         ),
     )
     assert math.allclose(b, math.astensor([[5, 6, 12, 13], [7, 8, 14, 15]]))
-    assert math.allclose(c, math.astensor([70, 800]))
+    if return_log_c:
+        assert math.allclose(c, math.log(math.cast(math.astensor([70, 800]), "complex128")))
+    else:
+        assert math.allclose(c, math.astensor([70, 800]))
 
 
-def test_join_Abc_batched_kron():
+@pytest.mark.parametrize("return_log_c", [True, False])
+def test_join_Abc_batched_kron(return_log_c):
     """Tests the ``join_Abc`` method for batched inputs in kron mode (and with polynomial c)."""
     A1 = math.astensor([[[1, 2], [3, 4]]])
     b1 = math.astensor([[5, 6]])
@@ -161,7 +171,9 @@ def test_join_Abc_batched_kron():
     b2 = math.astensor([[12, 13], [14, 15]])
     c2 = math.astensor([10, 100])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,j->ij")
+    A, b, c = join_Abc(
+        (A1, b1, c1), (A2, b2, c2), batch_string="i,j->ij", return_log_c=return_log_c
+    )
 
     assert math.allclose(
         A,
@@ -173,7 +185,10 @@ def test_join_Abc_batched_kron():
         ),
     )
     assert math.allclose(b, math.astensor([[5, 6, 12, 13], [5, 6, 14, 15]]))
-    assert math.allclose(c, math.astensor([70, 700]))
+    if return_log_c:
+        assert math.allclose(c, math.log(math.cast(math.astensor([70, 700]), "complex128")))
+    else:
+        assert math.allclose(c, math.astensor([70, 700]))
 
 
 def test_complex_gaussian_integral_2_not_batched():
@@ -209,7 +224,7 @@ def test_complex_gaussian_integral_1_not_batched():
     A, b, c = triples.thermal_state_Abc(nbar=0.5)
     Ar, br, cr = triples.vacuum_state_Abc(0)
 
-    res = complex_gaussian_integral_1((A, b, c), [0], [1])
+    res = complex_gaussian_integral_1((A, b, math.log(math.cast(c, "complex128"))), [0], [1])
     assert math.allclose(res[0], Ar)
     assert math.allclose(res[1], br)
     assert math.allclose(res[2], cr)
@@ -220,7 +235,7 @@ def test_complex_gaussian_integral_1_not_batched():
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
 
-    res = complex_gaussian_integral_1((A, b, c), [0, 1], [2, 3])
+    res = complex_gaussian_integral_1((A, b, math.log(math.cast(c, "complex128"))), [0, 1], [2, 3])
     assert math.allclose(res[0], A3)
     assert math.allclose(res[1], b3)
     assert math.allclose(res[2], c3)
@@ -237,7 +252,7 @@ def test_complex_gaussian_integral_1_batched():
     c1 = math.astensor([c1, c1, c1])
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
-    res1 = complex_gaussian_integral_1((A, b, c), [0], [2])
+    res1 = complex_gaussian_integral_1((A, b, math.log(math.cast(c, "complex128"))), [0], [2])
     assert math.allclose(res1[0], A3)
     assert math.allclose(res1[1], b3)
     assert math.allclose(res1[2], c3)
@@ -260,7 +275,7 @@ def test_complex_gaussian_integral_1_multidim_batched():
     c1 = math.astensor([[c1, c1, c1], [c1, c1, c1]])
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="ij,ij->ij")
-    res1 = complex_gaussian_integral_1((A, b, c), [0], [2])
+    res1 = complex_gaussian_integral_1((A, b, math.log(math.cast(c, "complex128"))), [0], [2])
     assert math.allclose(res1[0], A3)
     assert math.allclose(res1[1], b3)
     assert math.allclose(res1[2], c3)
@@ -272,7 +287,7 @@ def test_gaussian_integral_poly_batched():
     A = settings.rng.random((4, 4, 4))
     b = settings.rng.random((4, 4))
     c = settings.rng.random((4, 2, 2))
-    res = complex_gaussian_integral_1((A, b, c), [0], [1])
+    res = complex_gaussian_integral_1((A, b, math.log(math.cast(c, "complex128"))), [0], [1])
     assert res[0].shape == (4, 2, 2)
     assert res[1].shape == (4, 2)
     assert res[2].shape == (4, 2, 2)

@@ -407,7 +407,9 @@ class TestPolyExpAnsatz:
     def test_trace(self):
         triple = Abc_triple(4)
         bargmann = PolyExpAnsatz(*triple).trace([0], [2])
-        A, b, c = complex_gaussian_integral_1(triple, [0], [2])
+        A, b, c = complex_gaussian_integral_1(
+            (triple[0], triple[1], math.log(math.cast(triple[2], "complex128"))), [0], [2]
+        )
 
         assert math.allclose(bargmann.A, A)
         assert math.allclose(bargmann.b, b)
