@@ -147,3 +147,12 @@ def test_vanilla_stable():
         )
         sgate = Sgate(0, r=4.0, phi=2.0).fock_array([1000, 1000])
         assert np.max(np.abs(sgate)) < 1
+
+
+def test_batched_displacement():
+    """Tests the batched displacement against multiple calls to displacement"""
+    alphas = np.array([0.1 + 0.2j, 1.0 + 1.0j, 2.0 + 2.0j])
+    D_batched = displacement((5, 5), alphas)
+    for i in range(len(alphas)):
+        D_single = displacement((5, 5), alphas[i])
+        assert np.allclose(D_batched[i, :, :], D_single)
