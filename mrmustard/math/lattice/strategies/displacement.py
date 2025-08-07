@@ -23,16 +23,18 @@ __all__ = ["displacement", "grad_displacement", "jacobian_displacement", "laguer
 @njit(cache=True)
 def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
     r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
-    Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
+    Supports batched alpha values.
 
     Args:
         cutoffs (tuple[int, int]): Fock ladder output-input cutoffs
-        alpha (complex): displacement magnitude and angle
+        alpha (complex or array-like): displacement magnitude and angle, can be batched
         dtype (data type): Specifies the data type used for the calculation
 
     Returns:
-        array[complex]: matrix representing the displacement operation.
+        array[complex]: matrix (or batch of matrices) representing the displacement operation.
     """
+    alpha = np.asarray(alpha, dtype=dtype)
+    batch_shape = alpha.shape
     r = np.abs(alpha)
     phi = np.angle(alpha)
     N, M = cutoffs
@@ -41,7 +43,7 @@ def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
         N, M = M, N
         flipped = True
 
-    D = np.zeros((N, M), dtype=dtype)
+    D = np.zeros((*batch_shape, N, M), dtype=dtype)
     rng = np.arange(max(*cutoffs))
     rng[0] = 1
     log_k_fac = np.cumsum(np.log(rng))
@@ -52,16 +54,18 @@ def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
             n = n_minus_m + m
             sign = 2 * (not (flipped and n > m and n_minus_m % 2)) - 1
             conj = 2 * (not (flipped and n > m)) - 1
-            D[n, m] = sign * np.exp(
+            D[..., n, m] = sign * np.exp(
                 +0.5 * (log_k_fac[m] - log_k_fac[n])
                 + n_minus_m * np.log(r)
                 - (r**2.0) / 2.0
                 + conj * 1j * phi * n_minus_m
-                + logL[m],
+                + logL[..., m],
             )
             if n < M:
-                D[m, n] = (-1.0) ** n_minus_m * np.conj(D[n, m])
-    return D if not flipped else np.transpose(D)
+                D[..., m, n] = (-1.0) ** n_minus_m * np.conj(D[..., n, m])
+    if flipped:
+        return np.swapaxes(D, -2, -1)
+    return D
 
 
 @njit(cache=True)
@@ -69,15 +73,27 @@ def laguerre(x, N, alpha, dtype=np.complex128):  # pragma: no cover
     r"""Returns the N first generalized Laguerre polynomials evaluated at x.
 
     Args:
-        x (float): point at which to evaluate the polynomials
+        x (float or array): points at which to evaluate the polynomials (can be batched)
         N (int): maximum Laguerre polynomial to calculate
-        alpha (float): continuous parameter for the generalized Laguerre polynomials
+        alpha (float or array): continuous parameter for the generalized Laguerre polynomials (can be batched)
     """
-    L = np.zeros(N, dtype=dtype)
-    L[0] = 1.0
+    x = np.asarray(x)
+    alpha = np.asarray(alpha)
+    # Broadcast x and alpha to a common shape
+    batch_shape = np.broadcast_shapes(x.shape, alpha.shape)
+    x = np.broadcast_to(x, batch_shape)
+    alpha = np.broadcast_to(alpha, batch_shape)
+    # Output shape: batch_shape + (N,)
+    L = np.zeros((*batch_shape, N), dtype=dtype)
+    L[..., 0] = 1.0
     if N > 1:
         for m in range(N - 1):
-            L[m + 1] = ((2 * m + 1 + alpha - x) * L[m] - (m + alpha) * L[m - 1]) / (m + 1)
+            if m == 0:
+                L[..., 1] = (1 + alpha - x) * L[..., 0]
+            else:
+                L[..., m + 1] = (
+                    (2 * m + 1 + alpha - x) * L[..., m] - (m + alpha) * L[..., m - 1]
+                ) / (m + 1)
     return L
 
 
