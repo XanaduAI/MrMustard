@@ -112,14 +112,17 @@ def _join_Abc_numba(
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
 
+    output_batch_shape = ()
+    batch1, batch2 = A1.shape[:-2], A2.shape[:-2]
+
     core1 = A1.shape[-1]
     core2 = A2.shape[-1]
 
     poly_shape1 = c1.shape[0:]
     poly_shape2 = c2.shape[0:]
 
-    c1_flat_shape = (int(np.prod(np.array(poly_shape1))),)
-    c2_flat_shape = (int(np.prod(np.array(poly_shape2))),)
+    c1_flat_shape = (*batch1, int(np.prod(np.array(poly_shape1))))
+    c2_flat_shape = (*batch2, int(np.prod(np.array(poly_shape2))))
     c1_flat = np.reshape(c1, c1_flat_shape)
     c2_flat = np.reshape(c2, c2_flat_shape)
 
@@ -129,32 +132,32 @@ def _join_Abc_numba(
     n2 = core2 - m2
 
     # Create a joint A1 and A2 array
-    joint_A = np.zeros((core1 + core2, core1 + core2), dtype=np.complex128)
-    joint_A[:core1, :core1] = A1
-    joint_A[core1:, core1:] = A2
+    joint_A = np.zeros((*output_batch_shape, core1 + core2, core1 + core2), dtype=np.complex128)
+    joint_A[..., :core1, :core1] = A1
+    joint_A[..., core1:, core1:] = A2
 
     # Reorder the rows to group core and derived variables
-    rows_A = np.empty((core1 + core2, core1 + core2), dtype=np.complex128)
-    rows_A[:n1, :] = joint_A[:n1, :]
-    rows_A[n1 : (n1 + n2), :] = joint_A[core1 : core1 + n2, :]
-    rows_A[(n1 + n2) : (n1 + n2 + m1), :] = joint_A[n1:core1, :]
-    rows_A[(n1 + n2 + m1) : (n1 + n2 + m1 + m2), :] = joint_A[core1 + n2 :, :]
+    rows_A = np.empty((*output_batch_shape, core1 + core2, core1 + core2), dtype=np.complex128)
+    rows_A[..., :n1, :] = joint_A[..., :n1, :]
+    rows_A[..., n1 : (n1 + n2), :] = joint_A[..., core1 : core1 + n2, :]
+    rows_A[..., (n1 + n2) : (n1 + n2 + m1), :] = joint_A[..., n1:core1, :]
+    rows_A[..., (n1 + n2 + m1) : (n1 + n2 + m1 + m2), :] = joint_A[..., core1 + n2 :, :]
 
     # Reorder the columns to group core and derived variables
-    A = np.empty((core1 + core2, core1 + core2), dtype=np.complex128)
-    A[:, :n1] = rows_A[:, :n1]
-    A[:, n1 : (n1 + n2)] = rows_A[:, core1 : core1 + n2]
-    A[:, (n1 + n2) : (n1 + n2 + m1)] = rows_A[:, n1:core1]
-    A[:, (n1 + n2 + m1) : (n1 + n2 + m1 + m2)] = rows_A[:, core1 + n2 :]
+    A = np.empty((*output_batch_shape, core1 + core2, core1 + core2), dtype=np.complex128)
+    A[..., :, :n1] = rows_A[..., :, :n1]
+    A[..., :, n1 : (n1 + n2)] = rows_A[..., :, core1 : core1 + n2]
+    A[..., :, (n1 + n2) : (n1 + n2 + m1)] = rows_A[..., :, n1:core1]
+    A[..., :, (n1 + n2 + m1) : (n1 + n2 + m1 + m2)] = rows_A[..., :, core1 + n2 :]
 
-    b = np.empty((core1 + core2,), dtype=np.complex128)
-    b[:n1] = b1[:n1]
-    b[n1 : (n1 + n2)] = b2[:n2]
-    b[(n1 + n2) : (n1 + n2 + m1)] = b1[n1:]
-    b[(n1 + n2 + m1) : (n1 + n2 + m1 + m2)] = b2[n2:]
+    b = np.empty((*output_batch_shape, core1 + core2), dtype=np.complex128)
+    b[..., :n1] = b1[..., :n1]
+    b[..., n1 : (n1 + n2)] = b2[..., :n2]
+    b[..., (n1 + n2) : (n1 + n2 + m1)] = b1[..., n1:]
+    b[..., (n1 + n2 + m1) : (n1 + n2 + m1 + m2)] = b2[..., n2:]
 
     c1_expanded = np.expand_dims(c1_flat, axis=-1)
     c2_expanded = np.expand_dims(c2_flat, axis=-2)
     c = c1_expanded * c2_expanded
-    c = np.reshape(c, poly_shape1 + poly_shape2)
+    c = np.reshape(c, (*output_batch_shape, *poly_shape1, *poly_shape2))
     return A, b, c
