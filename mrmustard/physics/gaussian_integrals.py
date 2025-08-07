@@ -21,6 +21,7 @@ from collections.abc import Sequence
 import numpy as np
 
 from mrmustard import math
+from mrmustard.physics.gaussian_integrals_numba import join_Abc_numba
 from mrmustard.physics.utils import outer_product_batch_str, verify_batch_triple
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
@@ -538,7 +539,16 @@ def complex_gaussian_integral_2(
     Returns:
         The ``(A,b,c)`` triple which parametrizes the result of the integral with batch dimension preserved (if any).
     """
-    A, b, c = join_Abc(Abc1, Abc2, batch_string=batch_string)
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+
+    batch1, batch2 = A1.shape[:-2], A2.shape[:-2]
+    batch_dim1, batch_dim2 = len(batch1), len(batch2)
+
+    if batch_dim1 == 0 and batch_dim2 == 0:
+        A, b, c = join_Abc_numba((A1, b1, c1), (A2, b2, c2))
+    else:
+        A, b, c = join_Abc(Abc1, Abc2, batch_string=batch_string)
 
     # offset idx2 to account for the core variables of the first triple
     A1, _, c1 = Abc1
