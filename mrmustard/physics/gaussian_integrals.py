@@ -285,13 +285,13 @@ def join_Abc(
     c1_broadcasted = math.broadcast_to(c1_reshaped, c1_broadcast_shape, dtype=math.complex128)
     c2_broadcasted = math.broadcast_to(c2_reshaped, c2_broadcast_shape, dtype=math.complex128)
 
-    # Step 0: Flatten the non-batch dimensions of c1 and c2
+    # Already ported to numba
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     c1_flat_shape = (*output_batch_shape, int(np.prod(poly_shape1)))
     c2_flat_shape = (*output_batch_shape, int(np.prod(poly_shape2)))
     c1_flat = math.reshape(c1_broadcasted, c1_flat_shape)
     c2_flat = math.reshape(c2_broadcasted, c2_flat_shape)
-
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     # Step 3: Join A1 and A2
     A1Z = math.concat(
@@ -544,13 +544,7 @@ def complex_gaussian_integral_2(
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
 
-    batch1, batch2 = A1.shape[:-2], A2.shape[:-2]
-    batch_dim1, batch_dim2 = len(batch1), len(batch2)
-
-    if batch_dim1 == 0 and batch_dim2 == 0:
-        A, b, c = join_Abc_numba((A1, b1, c1), (A2, b2, c2))
-    else:
-        A, b, c = join_Abc(Abc1, Abc2, batch_string=batch_string)
+    A, b, c = join_Abc_numba((A1, b1, c1), (A2, b2, c2), batch_string=batch_string)
 
     # offset idx2 to account for the core variables of the first triple
     A1, _, c1 = Abc1

@@ -93,40 +93,113 @@ def join_Abc_numba(
     verify_batch_triple(A2, b2, c2)
 
     batch1, batch2 = A1.shape[:-2], A2.shape[:-2]
+    batch_dim1, batch_dim2 = len(batch1), len(batch2)
 
     if batch_string is None:
         batch_string = outer_product_batch_str(len(batch1), len(batch2))
 
-    A1 = np.array(A1, dtype=np.complex128)
-    A2 = np.array(A2, dtype=np.complex128)
-    b1 = np.array(b1, dtype=np.complex128)
-    b2 = np.array(b2, dtype=np.complex128)
-    c1 = np.array(c1, dtype=np.complex128)
-    c2 = np.array(c2, dtype=np.complex128)
-    return _join_Abc_numba((A1, b1, c1), (A2, b2, c2))
+    input_str, output_str = batch_string.split("->")
+    input_parts = input_str.split(",")
+    in1, in2 = input_parts
+
+    nA1, mA1 = A1.shape[-2:]
+    nA2, mA2 = A2.shape[-2:]
+    nb1 = b1.shape[-1]
+    nb2 = b2.shape[-1]
+
+    poly_shape1 = c1.shape[batch_dim1:]
+    poly_shape2 = c2.shape[batch_dim2:]
+
+    # Step 1 & 2: Determine broadcast shape based on batch_string and broadcast tensors
+    broadcast_dims = dict(zip(in1, batch1))
+    for dim, batch in zip(in2, batch2):
+        if dim in broadcast_dims and broadcast_dims[dim] != batch:
+            raise ValueError(f"Dimension mismatch for {dim}: {broadcast_dims[dim]} != {batch}")
+        broadcast_dims[dim] = batch
+
+    output_shape = []
+    for dim in output_str:
+        if dim not in broadcast_dims:
+            raise ValueError(f"Output dimension {dim} not found in inputs")
+        output_shape.append(broadcast_dims[dim])
+
+    # Create broadcast shapes
+    broadcast_shape1 = []
+    broadcast_shape2 = []
+
+    for dim in output_str:
+        if dim in in1:
+            idx = in1.index(dim)
+            broadcast_shape1.append(batch1[idx])
+        else:
+            broadcast_shape1.append(1)
+
+        if dim in in2:
+            idx = in2.index(dim)
+            broadcast_shape2.append(batch2[idx])
+        else:
+            broadcast_shape2.append(1)
+
+    # Broadcast A, b, c to the output batch shape
+    A1_new_shape = (*tuple(broadcast_shape1), nA1, mA1)
+    A2_new_shape = (*tuple(broadcast_shape2), nA2, mA2)
+    b1_new_shape = (*tuple(broadcast_shape1), nb1)
+    b2_new_shape = (*tuple(broadcast_shape2), nb2)
+    c1_new_shape = (*tuple(broadcast_shape1), *poly_shape1)
+    c2_new_shape = (*tuple(broadcast_shape2), *poly_shape2)
+
+    # Reshape to add broadcasting dimensions
+    A1_reshaped = np.reshape(A1, A1_new_shape)
+    A2_reshaped = np.reshape(A2, A2_new_shape)
+    b1_reshaped = np.reshape(b1, b1_new_shape)
+    b2_reshaped = np.reshape(b2, b2_new_shape)
+    c1_reshaped = np.reshape(c1, c1_new_shape)
+    c2_reshaped = np.reshape(c2, c2_new_shape)
+
+    # Create full output shape for broadcasting
+    output_batch_shape = tuple(output_shape)
+    A1_broadcast_shape = (*output_batch_shape, nA1, mA1)
+    A2_broadcast_shape = (*output_batch_shape, nA2, mA2)
+    b1_broadcast_shape = (*output_batch_shape, nb1)
+    b2_broadcast_shape = (*output_batch_shape, nb2)
+    c1_broadcast_shape = (*output_batch_shape, *poly_shape1)
+    c2_broadcast_shape = (*output_batch_shape, *poly_shape2)
+
+    # Step 2: Broadcast tensors to the output shape
+    A1_broadcasted = np.broadcast_to(A1_reshaped, A1_broadcast_shape)
+    A2_broadcasted = np.broadcast_to(A2_reshaped, A2_broadcast_shape)
+    b1_broadcasted = np.broadcast_to(b1_reshaped, b1_broadcast_shape)
+    b2_broadcasted = np.broadcast_to(b2_reshaped, b2_broadcast_shape)
+    c1_broadcasted = np.broadcast_to(c1_reshaped, c1_broadcast_shape)
+    c2_broadcasted = np.broadcast_to(c2_reshaped, c2_broadcast_shape)
+
+    return _join_Abc_numba(
+        (A1_broadcasted, b1_broadcasted, c1_broadcasted),
+        (A2_broadcasted, b2_broadcasted, c2_broadcasted),
+        output_batch_shape,
+    )
 
 
 @njit(cache=True)
 def _join_Abc_numba(
     Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    output_batch_shape: tuple[int, ...],
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
 
-    output_batch_shape = ()
-    batch1, batch2 = A1.shape[:-2], A2.shape[:-2]
-
     core1 = A1.shape[-1]
     core2 = A2.shape[-1]
 
-    poly_shape1 = c1.shape[0:]
-    poly_shape2 = c2.shape[0:]
+    batch_dim = len(output_batch_shape)
+    poly_shape1 = c1.shape[batch_dim:]
+    poly_shape2 = c2.shape[batch_dim:]
 
-    c1_flat_shape = (*batch1, int(np.prod(np.array(poly_shape1))))
-    c2_flat_shape = (*batch2, int(np.prod(np.array(poly_shape2))))
-    c1_flat = np.reshape(c1, c1_flat_shape)
-    c2_flat = np.reshape(c2, c2_flat_shape)
+    c1_flat_shape = (*output_batch_shape, int(np.prod(np.array(poly_shape1))))
+    c2_flat_shape = (*output_batch_shape, int(np.prod(np.array(poly_shape2))))
+    c1_flat = np.reshape(np.ascontiguousarray(c1), c1_flat_shape)
+    c2_flat = np.reshape(np.ascontiguousarray(c2), c2_flat_shape)
 
     m1 = len(poly_shape1)
     m2 = len(poly_shape2)
