@@ -36,7 +36,7 @@ def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
     alpha = np.asarray(alpha, dtype=dtype)
     batch_shape = alpha.shape
     r = np.abs(alpha)
-    phi = np.angle(alpha)
+    phi = np.log(alpha / r) / 1j
     N, M = cutoffs
     flipped = False
     if N < M:
