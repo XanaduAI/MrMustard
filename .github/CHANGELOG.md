@@ -46,10 +46,12 @@
 * Added `out` keyword to `hermite_renormalized`.
 [(#595)](https://github.com/XanaduAI/MrMustard/pull/595)
 
-* Added `backend` argument to `math.einsum` and improvements to `mm_einsum`, including `optimize` support.
+* Added `backend` argument to `math.einsum`, including `optimize` support.
 [(#611)](https://github.com/XanaduAI/MrMustard/pull/611)
-[(#571)](https://github.com/XanaduAI/MrMustard/pull/571)
 [(#598)](https://github.com/XanaduAI/MrMustard/pull/598)
+
+* Introduced `mm_einsum` function to contract ansatze in a fully manual call.
+[(#571)](https://github.com/XanaduAI/MrMustard/pull/571)
 
 * Reduced memory overhead by replacing `np.array` with `np.asarray` where appropriate.
 [(#600)](https://github.com/XanaduAI/MrMustard/pull/600)
