@@ -268,3 +268,99 @@ def _join_Abc_numba(
     c = c1_expanded * c2_expanded
     c = np.reshape(c, (*output_batch_shape, *poly_shape1, *poly_shape2))
     return A, b, c
+
+
+def complex_gaussian_integral_1_numba(
+    Abc: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    idx_z: tuple[int, ...],
+    idx_zconj: tuple[int, ...],
+    measure: float = -1,
+):
+    A, b, c = Abc
+    A = np.array(A, dtype=np.complex128)
+    b = np.array(b, dtype=np.complex128)
+    c = np.array(c, dtype=np.complex128)
+
+    batch_shape = A.shape[:-2]
+    batch_dim = len(A.shape[:-2])
+    num_derived_vars = len(c.shape[batch_dim:])
+    return _complex_gaussian_integral_1_numba(
+        (A, b, c), tuple(idx_z), tuple(idx_zconj), measure, batch_shape, num_derived_vars
+    )
+
+
+@njit
+def _complex_gaussian_integral_1_numba(
+    Abc,
+    idx_z,
+    idx_zconj,
+    measure: float = -1,
+    batch_shape: tuple[int, ...] = (),
+    num_derived_vars: int = 0,
+):
+    if len(idx_z) != len(idx_zconj):
+        raise ValueError(
+            f"idx1 and idx2 must have the same length, got {len(idx_z)} and {len(idx_zconj)}",
+        )
+
+    A, b, c = Abc
+
+    n_plus_N = A.shape[-1]
+    if b.shape[-1] != n_plus_N:
+        raise ValueError(f"A and b must have compatible shapes, got {A.shape} and {b.shape}")
+    n = n_plus_N - num_derived_vars  # number of z variables
+    m = len(idx_z)  # number of pairs to integrate over
+    idx_z = np.array(idx_z, dtype=np.int64)
+    idx_zconj = np.array(idx_zconj, dtype=np.int64)
+    idx = np.append(idx_z, idx_zconj)
+    if np.any(np.array([i >= n for i in idx], dtype=np.bool)):
+        raise ValueError(
+            f"Indices must be less than {n}, got {[i for i in idx_z if i >= n]} and {[i for i in idx_zconj if i >= n]}.",
+        )
+
+    if len(idx) == 0:
+        return A, b
+        return A, b, c
+
+    not_idx = np.array([i for i in range(n_plus_N) if i not in idx], dtype=np.int64)
+    eye = np.eye(m, dtype=np.complex128)
+
+    Z = np.zeros((m, m), dtype=np.complex128)
+    X = np.zeros((2 * m, 2 * m), dtype=np.complex128)
+    X[:m, :m] = Z
+    X[m:, m:] = Z
+    X[:m, m:] = eye
+    X[m:, :m] = eye
+    M = A[..., :, idx][..., idx, :] + X * measure
+
+    bM = b[..., idx]
+
+    D = A[..., idx][..., not_idx, :]
+    R = A[..., :, not_idx][..., not_idx, :]
+    bR = b[..., not_idx]
+
+    # TODO: does not work batched
+    det_M = np.linalg.det(M)
+    det_nonzero = np.abs(det_M) > 1e-12
+
+    if not det_nonzero:
+        return np.full_like(R, np.inf), np.full_like(bR, np.inf)
+        # return np.full_like(R, np.inf), np.full_like(bR, np.inf), np.full_like(c, np.inf)
+
+    # TODO: does not work batched
+    inv_M = np.linalg.inv(M)
+    # TODO: does not work batched
+    M_bM = np.ascontiguousarray(np.linalg.solve(M, bM))
+
+    D_swapped = np.ascontiguousarray(np.swapaxes(D, -2, -1))
+
+    A_post = R - (D @ inv_M) @ D_swapped
+    b_post = bR - (D @ M_bM[..., None])[..., 0]
+
+    # c_factor = np.sqrt((-1+0j) ** m / det_M) * np.exp(-0.5 * np.sum(bM * M_bM, axis=-1))
+    # c_reshaped = np.reshape(c_factor, (*batch_shape,  *((1,) * N)))
+    # c_reshaped = c_factor
+    # c_post = np.array(c * c_reshaped, dtype=np.complex128)
+    # return A_post, b_post, c_post
+
+    return A_post, b_post
