@@ -115,10 +115,7 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     # Renormalized physicist hermite polys: Hn / sqrt(n!)
     R = -np.array([[2 + 0j]])  # to get the physicist polys
 
-    def f_hermite_polys(xi):  # pragma: no cover
-        return math.hermite_renormalized(R, math.astensor([2 * xi]), 1 + 0j, (cutoff,))
-
-    hermite_polys = math.map_fn(f_hermite_polys, x)
+    hermite_polys = math.hermite_renormalized(R, 2 * x[..., None], 1 + 0j, (cutoff,))
 
     # (real) wavefunction
     return math.exp(-(x**2 / 2)) * math.transpose(prefactor * hermite_polys)

@@ -19,6 +19,9 @@
 * Added vjps to the JAX backend. Added ``numba`` based Fock lattice strategies to `SqueezedVacuum` and `Sgate`.
 [(#636)](https://github.com/XanaduAI/MrMustard/pull/636)
 
+* Added support for Python 3.13.
+[(#640)](https://github.com/XanaduAI/MrMustard/pull/640)
+
 ### Bug fixes
 
 * Fixed a bug in `OptimizerJax` that would make the optimizer think it reached a stable optimum upon repeat calls to `minimize`.

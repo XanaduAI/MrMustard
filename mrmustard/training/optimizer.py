@@ -101,7 +101,7 @@ class Optimizer:
         loss_value, grads = jax.value_and_grad(cost_fn, argnums=tuple(range(len(by_optimizing))))(
             *by_optimizing,
         )
-        conj_grads = jax.tree_util.tree_map(lambda x: jax.numpy.conj(x), grads)
+        conj_grads = jax.tree.map(lambda x: jax.numpy.conj(x), grads)
         updates, opt_state = optim.update(conj_grads, opt_state, by_optimizing)
         by_optimizing = eqx.apply_updates(by_optimizing, updates)
         return by_optimizing, opt_state, loss_value

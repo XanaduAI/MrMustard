@@ -13,7 +13,7 @@ jobs:
       uses: astral-sh/setup-uv@v5
       with:
         version: "0.5.29"
-        python-version: "3.12"
+        python-version: "3.13"
 
     - name: Run pre-commit
       run: uv run --frozen --only-dev pre-commit run --all-files
