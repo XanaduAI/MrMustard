@@ -299,7 +299,10 @@ class BackendJax(BackendBase):
 
     @jax.jit
     def matmul(self, *matrices: jnp.ndarray) -> jnp.ndarray:
-        return jnp.linalg.multi_dot(matrices)
+        result = matrices[0]
+        for m in matrices[1:]:
+            result = jnp.matmul(result, m)
+        return result
 
     @jax.jit
     def max(self, array: jnp.ndarray) -> jnp.ndarray:
