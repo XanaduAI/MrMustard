@@ -319,7 +319,6 @@ def _complex_gaussian_integral_1_numba(
         )
 
     if len(idx) == 0:
-        return A, b
         return A, b, c
 
     not_idx = np.array([i for i in range(n_plus_N) if i not in idx], dtype=np.int64)
@@ -344,23 +343,22 @@ def _complex_gaussian_integral_1_numba(
     det_nonzero = np.abs(det_M) > 1e-12
 
     if not det_nonzero:
-        return np.full_like(R, np.inf), np.full_like(bR, np.inf)
-        # return np.full_like(R, np.inf), np.full_like(bR, np.inf), np.full_like(c, np.inf)
+        return np.full_like(R, np.inf), np.full_like(bR, np.inf), np.full_like(c, np.inf)
 
     # TODO: does not work batched
     inv_M = np.linalg.inv(M)
     # TODO: does not work batched
-    M_bM = np.ascontiguousarray(np.linalg.solve(M, bM))
+    M_bM = np.linalg.solve(M, bM)
 
     D_swapped = np.ascontiguousarray(np.swapaxes(D, -2, -1))
 
     A_post = R - (D @ inv_M) @ D_swapped
-    b_post = bR - (D @ M_bM[..., None])[..., 0]
+    b_post = bR - (D @ np.ascontiguousarray(M_bM[..., None]))[..., 0]
 
-    # c_factor = np.sqrt((-1+0j) ** m / det_M) * np.exp(-0.5 * np.sum(bM * M_bM, axis=-1))
-    # c_reshaped = np.reshape(c_factor, (*batch_shape,  *((1,) * N)))
-    # c_reshaped = c_factor
-    # c_post = np.array(c * c_reshaped, dtype=np.complex128)
-    # return A_post, b_post, c_post
+    c_factor = np.sqrt((-1 + 0j) ** m / det_M) * np.exp(-0.5 * np.sum(bM * M_bM, axis=-1))
+    # c_reshaped = np.reshape(c_factor, batch_shape + (1,) * num_derived_vars)
+    c_reshaped = c_factor
+    c_post = c * c_reshaped
+    c_post = np.array(c_post, dtype=np.complex128)
 
-    return A_post, b_post
+    return A_post, b_post, c_post
