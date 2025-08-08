@@ -282,10 +282,8 @@ def complex_gaussian_integral_1_numba(
     c = np.array(c, dtype=np.complex128)
 
     batch_shape = A.shape[:-2]
-    batch_dim = len(A.shape[:-2])
-    num_derived_vars = len(c.shape[batch_dim:])
     return _complex_gaussian_integral_1_numba(
-        (A, b, c), tuple(idx_z), tuple(idx_zconj), measure, batch_shape, num_derived_vars
+        (A, b, c), tuple(idx_z), tuple(idx_zconj), measure, batch_shape
     )
 
 
@@ -296,7 +294,6 @@ def _complex_gaussian_integral_1_numba(
     idx_zconj,
     measure: float = -1,
     batch_shape: tuple[int, ...] = (),
-    num_derived_vars: int = 0,
 ):
     if len(idx_z) != len(idx_zconj):
         raise ValueError(
@@ -304,10 +301,12 @@ def _complex_gaussian_integral_1_numba(
         )
 
     A, b, c = Abc
-
     n_plus_N = A.shape[-1]
     if b.shape[-1] != n_plus_N:
         raise ValueError(f"A and b must have compatible shapes, got {A.shape} and {b.shape}")
+    batch_dim = len(batch_shape)
+    poly_shape = c.shape[batch_dim:]
+    num_derived_vars = len(poly_shape)
     n = n_plus_N - num_derived_vars  # number of z variables
     m = len(idx_z)  # number of pairs to integrate over
     idx_z = np.array(idx_z, dtype=np.int64)
@@ -355,10 +354,14 @@ def _complex_gaussian_integral_1_numba(
     A_post = R - (D @ inv_M) @ D_swapped
     b_post = bR - (D @ np.ascontiguousarray(M_bM[..., None]))[..., 0]
 
-    c_factor = np.sqrt((-1 + 0j) ** m / det_M) * np.exp(-0.5 * np.sum(bM * M_bM, axis=-1))
-    # c_reshaped = np.reshape(c_factor, batch_shape + (1,) * num_derived_vars)
-    c_reshaped = c_factor
-    c_post = c * c_reshaped
-    c_post = np.array(c_post, dtype=np.complex128)
+    # TODO: cleanup c flattening for this and join_Abc
+    c_flat_shape = (*batch_shape, int(np.prod(np.array(poly_shape))))
+    c_flat = np.reshape(c, c_flat_shape)
+    c_factor = np.array(
+        np.sqrt((-1 + 0j) ** m / det_M) * np.exp(-0.5 * np.sum(bM * M_bM, axis=-1)),
+        dtype=np.complex128,
+    )[..., None]
+    c_post = c_flat * c_factor
+    c_post = np.reshape(c_post, (*batch_shape, *poly_shape))
 
     return A_post, b_post, c_post
