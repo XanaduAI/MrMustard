@@ -21,7 +21,10 @@ from collections.abc import Sequence
 import numpy as np
 
 from mrmustard import math
-from mrmustard.physics.gaussian_integrals_numba import join_Abc_numba
+from mrmustard.physics.gaussian_integrals_numba import (
+    complex_gaussian_integral_1_numba,
+    join_Abc_numba,
+)
 from mrmustard.physics.utils import outer_product_batch_str, verify_batch_triple
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
@@ -372,9 +375,11 @@ def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
 
     c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * math.exp(
         -0.5 * math.sum(bM * M_bM, axis=-1),
-    )
-    c_reshaped = math.reshape(c_factor, batch_shape + (1,) * (len(c.shape[batch_dim:])))
-    c_post = c * c_reshaped
+    )  # batch_shape
+    c_reshaped = math.reshape(
+        c_factor, batch_shape + (1,) * (len(c.shape[batch_dim:]))
+    )  # batch_shape + (1,) * num_derived_vars
+    c_post = c * c_reshaped  # c.shape
 
     A_post = R - math.einsum("...ij,...jk,...lk->...il", D, inv_M, D)
     b_post = bR - math.einsum("...ij,...j->...i", D, M_bM)
@@ -471,7 +476,6 @@ def complex_gaussian_integral_1(
     idx = math.astensor(idx, dtype=math.int64)
     eye = math.eye(m, dtype=A.dtype)
 
-    eye = math.eye(m, dtype=A.dtype)
     Z = math.zeros((m, m), dtype=A.dtype)
     X = math.block([[Z, eye], [eye, Z]])
     M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
@@ -550,4 +554,9 @@ def complex_gaussian_integral_2(
     core_1 = A1.shape[-1] - derived_1
     idx2 = tuple(i + core_1 for i in idx2)
 
-    return complex_gaussian_integral_1((A, b, c), idx1, idx2, measure)
+    if A.shape[:-2] == ():
+        A_ret, b_ret, c_ret = complex_gaussian_integral_1_numba((A, b, c), idx1, idx2, measure)
+    else:
+        A_ret, b_ret, c_ret = complex_gaussian_integral_1((A, b, c), idx1, idx2, measure)
+
+    return A_ret, b_ret, c_ret
