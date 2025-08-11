@@ -73,3 +73,9 @@ class TestCoherent:
 
     def test_vacuum_shape(self):
         assert Coherent(0, 0.0).auto_shape() == (1,)
+
+    @pytest.mark.parametrize("alpha", [10 + 10j, 18 + 18j, 25 + 25j])
+    def test_probability(self, alpha):
+        """Tests that highly displaced states are properly normalized."""
+        state = Coherent(mode=0, alpha=alpha)
+        assert math.allclose(state.probability, 1)
