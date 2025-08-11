@@ -19,6 +19,12 @@
 * Added vjps to the JAX backend. Added ``numba`` based Fock lattice strategies to `SqueezedVacuum` and `Sgate`.
 [(#636)](https://github.com/XanaduAI/MrMustard/pull/636)
 
+* Added the `is_separable` property to `State`.
+[(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
+
+* Added support for Python 3.13.
+[(#640)](https://github.com/XanaduAI/MrMustard/pull/640)
+
 ### Bug fixes
 
 * Fixed a bug in `OptimizerJax` that would make the optimizer think it reached a stable optimum upon repeat calls to `minimize`.
@@ -29,6 +35,9 @@
 
 * Fixed a bug in `DM.expectation` where the Fock shape lookahead wasn't setting certain wires correctly.
 [(#639)](https://github.com/XanaduAI/MrMustard/pull/639)
+
+* Fixed a bug with `State.fock_distribution` where batch dimensions and mult-mode states were not handled correctly.
+[(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
 
 * Fixed bug in Gaussian integrals where small/large c values were not multiplying correctly.
 [(#641)](https://github.com/XanaduAI/MrMustard/pull/641)
