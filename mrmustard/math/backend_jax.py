@@ -224,24 +224,13 @@ class BackendJax(BackendBase):
     def det(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.det(matrix)
 
+    def diagonal(
+        self, array: jnp.ndarray, offset: int | None, axis1: int | None, axis2: int | None
+    ) -> jnp.ndarray:
+        return jnp.diagonal(array, offset=offset, axis1=axis1, axis2=axis2)
+
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
-        if array.ndim in [1, 2]:
-            return jnp.diag(array, k=k)
-        # fallback into more complex algorithm
-        original_sh = jnp.asarray(array.shape)
-
-        ravelled_sh = (jnp.prod(original_sh[:-1]), original_sh[-1])
-        array = array.ravel().reshape(*ravelled_sh)
-        ret = jnp.asarray([jnp.diag(line, k) for line in array])
-        inner_shape = (
-            original_sh[-1] + abs(k),
-            original_sh[-1] + abs(k),
-        )
-        return ret.reshape(tuple(original_sh[:-1]) + tuple(inner_shape))
-
-    @partial(jax.jit, static_argnames=["k"])
-    def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
-        return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
+        return jnp.diag(array, k=k)
 
     @jax.jit
     def exp(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -298,7 +287,13 @@ class BackendJax(BackendBase):
 
     @jax.jit
     def matmul(self, *matrices: jnp.ndarray) -> jnp.ndarray:
-        return jnp.linalg.multi_dot(matrices)
+        try:
+            return jnp.linalg.multi_dot(matrices)
+        except ValueError:
+            mat = matrices[0]
+            for matrix in matrices[1:]:
+                mat = jnp.matmul(mat, matrix)
+            return mat
 
     @jax.jit
     def max(self, array: jnp.ndarray) -> jnp.ndarray:
