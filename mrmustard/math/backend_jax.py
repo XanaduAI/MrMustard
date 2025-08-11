@@ -177,7 +177,6 @@ class BackendJax(BackendBase):
     def clip(self, array: jnp.ndarray, a_min: float, a_max: float) -> jnp.ndarray:
         return jnp.clip(array, a_min, a_max)
 
-    @jax.jit
     def conj(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.conj(array)
 
