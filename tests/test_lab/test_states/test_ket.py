@@ -28,6 +28,7 @@ from mrmustard.lab import (
     Coherent,
     Dgate,
     Ggate,
+    GKet,
     Identity,
     Ket,
     Number,
@@ -71,6 +72,22 @@ class TestKet:
         assert name if name else state.name in ("Ket0", "Ket01", "Ket2319")
         assert state.modes == modes
         assert state.wires == Wires(modes_out_ket=set(modes))
+
+    def test_is_separable(self):
+        separable = Coherent(0, alpha=1)
+        assert separable.is_separable
+
+        separable_multimode = Coherent(0, alpha=1) >> Coherent(1, alpha=1) >> Coherent(2, alpha=1)
+        assert separable_multimode.is_separable
+
+        entangled_state = GKet([0, 1, 2])
+        assert not entangled_state.is_separable
+
+        entangled_state = Coherent(0, alpha=1) >> GKet([1, 2])
+        assert not entangled_state.is_separable
+
+        with pytest.raises(NotImplementedError):
+            (Coherent(0, alpha=1) + Coherent(0, alpha=1)).is_separable  # noqa: B018
 
     def test_manual_shape(self):
         ket = Coherent(0, alpha=1)

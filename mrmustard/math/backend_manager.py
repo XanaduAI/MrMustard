@@ -460,8 +460,24 @@ class BackendManager:
         """
         return self._apply("det", (matrix,))
 
+    def diagonal(self, array: Tensor, offset: int = 0, axis1: int = 0, axis2: int = 0) -> Tensor:
+        r"""
+        Return specified diagonals of array.
+
+        Args:
+            array: The array to take the diagonal of.
+            offset: The offset of the diagonal.
+            axis1: The first axis to take the diagonal of.
+            axis2: The second axis to take the diagonal of.
+
+        Returns:
+            The diagonal of ``array``.
+        """
+        return self._apply("diagonal", (array, offset, axis1, axis2))
+
     def diag(self, array: Tensor, k: int = 0) -> Tensor:
-        r"""The array made by inserting the given array along the :math:`k`-th diagonal.
+        r"""
+        The array made by inserting the given array along the :math:`k`-th diagonal.
 
         Args:
             array: The array to insert.
@@ -482,7 +498,7 @@ class BackendManager:
         Returns:
             The array of the main diagonal of ``array``.
         """
-        return self._apply("diag_part", (array, k))
+        return self.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
     def eigvals(self, tensor: Tensor) -> Tensor:
         r"""The eigenvalues of a tensor.
@@ -1659,5 +1675,5 @@ class BackendManager:
         Returns:
             Matrix: unitary gradient tensor
         """
-        Z = self.matmul(self.conj(self.transpose(U)), dU_euclidean)
-        return 0.5 * (Z - self.conj(self.transpose(Z)))
+        Z = self.matmul(self.conj(self.swapaxes(U, -1, -2)), dU_euclidean)
+        return 0.5 * (Z - self.conj(self.swapaxes(Z, -1, -2)))

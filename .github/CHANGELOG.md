@@ -22,6 +22,12 @@
 * Added a `seed` keyword for `DM.random`, `Ket.random`, `Channel.random` and `Unitary.random`
 [(#638)](https://github.com/XanaduAI/MrMustard/pull/638)
 
+* Added the `is_separable` property to `State`.
+[(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
+
+* Added support for Python 3.13.
+[(#640)](https://github.com/XanaduAI/MrMustard/pull/640)
+
 ### Bug fixes
 
 * Fixed a bug in `OptimizerJax` that would make the optimizer think it reached a stable optimum upon repeat calls to `minimize`.
@@ -29,6 +35,12 @@
 
 * Fixed a bug in `Optimizer` where complex gradients were the conjugate of the expected.
 [(#617)](https://github.com/XanaduAI/MrMustard/pull/617)
+
+* Fixed a bug in `DM.expectation` where the Fock shape lookahead wasn't setting certain wires correctly.
+[(#639)](https://github.com/XanaduAI/MrMustard/pull/639)
+
+* Fixed a bug with `State.fock_distribution` where batch dimensions and mult-mode states were not handled correctly.
+[(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
 
 ---
 
