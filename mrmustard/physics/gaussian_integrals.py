@@ -160,6 +160,7 @@ def join_Abc(
     Abc1: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     Abc2: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
     batch_string: str | None = None,
+    return_log_c: bool = False,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
     Joins two ``(A,b,c)`` triples into a single ``(A,b,c)``.
@@ -338,15 +339,18 @@ def join_Abc(
     # Step 5 & 6: Compute outer product of the last dimensions of c1 and c2
     c1_expanded = c1_broadcasted[..., :, None]
     c2_expanded = c2_broadcasted[..., None, :]
-    c = c1_expanded * c2_expanded
+    log_c = math.log(math.cast(c1_expanded, "complex128")) + math.log(
+        math.cast(c2_expanded, "complex128")
+    )
     # Reshape c to the desired output shape
     c_shape = output_batch_shape + poly_shape1 + poly_shape2
-    c = math.reshape(c, c_shape)
+    log_c = math.reshape(log_c, c_shape)
+    if return_log_c:
+        return A, b, log_c
+    return A, b, math.exp(log_c)
 
-    return A, b, c
 
-
-def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
+def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, log_c, D, R, bR):
     r"""
     True branch of the complex gaussian_integral_1 function.
     Executed if the matrix M is invertible.
@@ -356,7 +360,7 @@ def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
         M: the matrix of the quadratic form
         bM: the vector of the linear term
         det_M: the determinant of M
-        c: the coefficient of the exponential
+        log_c: the coefficient of the exponential. Note that this is the logarithm of c.
         D: the matrix of the linear term
         R: the matrix of the quadratic form
         bR: the vector of the linear term
@@ -370,11 +374,11 @@ def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
     inv_M = math.inv(M)
     M_bM = math.solve(M, bM)
 
-    c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * math.exp(
-        -0.5 * math.sum(bM * M_bM, axis=-1),
+    log_c_factor = math.log(math.sqrt(math.cast((-1) ** m / det_M, "complex128"))) + (
+        -0.5 * math.sum(bM * M_bM, axis=-1)
     )
-    c_reshaped = math.reshape(c_factor, batch_shape + (1,) * (len(c.shape[batch_dim:])))
-    c_post = c * c_reshaped
+    log_c_reshaped = math.reshape(log_c_factor, batch_shape + (1,) * (len(log_c.shape[batch_dim:])))
+    c_post = math.exp(log_c + log_c_reshaped)
 
     A_post = R - math.einsum("...ij,...jk,...lk->...il", D, inv_M, D)
     b_post = bR - math.einsum("...ij,...j->...i", D, M_bM)
@@ -385,7 +389,7 @@ def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
     )
 
 
-def false_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
+def false_branch_complex_gaussian_integral_1(m, M, bM, det_M, log_c, D, R, bR):
     r"""
     False branch of the complex gaussian_integral_1 function.
     Exectued if the matrix M is singular.
@@ -395,7 +399,7 @@ def false_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
         M: the matrix of the quadratic form
         bM: the vector of the linear term
         det_M: the determinant of M
-        c: the coefficient of the exponential
+        log_c: the coefficient of the exponential. Note that this is the logarithm of c.
         D: the matrix of the linear term
         R: the matrix of the quadratic form
         bR: the vector of the linear term
@@ -403,11 +407,11 @@ def false_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
     Returns:
         The post-integration parameters
     """
-    return math.infinity_like(R), math.infinity_like(bR), math.infinity_like(c)
+    return math.infinity_like(R), math.infinity_like(bR), math.infinity_like(log_c)
 
 
 def complex_gaussian_integral_1(
-    Abc: tuple,
+    Ablogc: tuple,
     idx_z: Sequence[int],
     idx_zconj: Sequence[int],
     measure: float = -1,
@@ -431,7 +435,7 @@ def complex_gaussian_integral_1(
     :math:`dmu(z) = \textrm{exp}(s * |z|^2) \frac{d^{2m}z}{\pi^m} = \frac{1}{\pi^m}\textrm{exp}(s * |z|^2) d\textrm{Re}(z) d\textrm{Im}(z)`
 
     Arguments:
-        A,b,c: the ``(A,b,c)`` triple that defines :math:`F(z,\beta)`
+        Ablogc: the ``(A,b,log_c)`` triple that defines :math:`F(z,\beta)`. Note log_c is the logarithm of c.
         idx_z: the tuple of indices indicating which :math:`z` variables to integrate over
         idx_zconj: the tuple of indices indicating which :math:`z^*` variables to integrate over
         measure: the exponent of the measure (default is -1: Bargmann measure)
@@ -447,14 +451,14 @@ def complex_gaussian_integral_1(
             f"idx1 and idx2 must have the same length, got {len(idx_z)} and {len(idx_zconj)}",
         )
 
-    A, b, c = Abc
+    A, b, log_c = Ablogc
 
-    verify_batch_triple(A, b, c)
+    verify_batch_triple(A, b, log_c)
     batch_dim = len(A.shape[:-2])
     n_plus_N = A.shape[-1]
     if b.shape[-1] != n_plus_N:
         raise ValueError(f"A and b must have compatible shapes, got {A.shape} and {b.shape}")
-    N = len(c.shape[batch_dim:])  # number of derived variables
+    N = len(log_c.shape[batch_dim:])  # number of derived variables
     n = n_plus_N - N  # number of z variables
     m = len(idx_z)  # number of pairs to integrate over
     idx = tuple(idx_z) + tuple(idx_zconj)
@@ -464,7 +468,7 @@ def complex_gaussian_integral_1(
         )
 
     if len(idx) == 0:
-        return A, b, c
+        return A, b, math.exp(log_c)
 
     not_idx = math.astensor([i for i in range(n_plus_N) if i not in idx], dtype=math.int64)
     # order matters here; idx should be made a tensor after doing all the list comprehensions and boolean operations.
@@ -492,7 +496,7 @@ def complex_gaussian_integral_1(
         M,
         bM,
         det_M,
-        c,
+        log_c,
         D,
         R,
         bR,
@@ -538,7 +542,7 @@ def complex_gaussian_integral_2(
     Returns:
         The ``(A,b,c)`` triple which parametrizes the result of the integral with batch dimension preserved (if any).
     """
-    A, b, c = join_Abc(Abc1, Abc2, batch_string=batch_string)
+    A, b, log_c = join_Abc(Abc1, Abc2, batch_string=batch_string, return_log_c=True)
 
     # offset idx2 to account for the core variables of the first triple
     A1, _, c1 = Abc1
@@ -547,4 +551,4 @@ def complex_gaussian_integral_2(
     core_1 = A1.shape[-1] - derived_1
     idx2 = tuple(i + core_1 for i in idx2)
 
-    return complex_gaussian_integral_1((A, b, c), idx1, idx2, measure)
+    return complex_gaussian_integral_1((A, b, log_c), idx1, idx2, measure)

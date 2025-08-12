@@ -42,6 +42,9 @@
 * Fixed a bug with `State.fock_distribution` where batch dimensions and mult-mode states were not handled correctly.
 [(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
 
+* Fixed bug in Gaussian integrals where small/large c values were not multiplying correctly.
+[(#641)](https://github.com/XanaduAI/MrMustard/pull/641)
+
 ---
 
 # Release 1.0.0a1

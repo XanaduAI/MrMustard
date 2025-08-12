@@ -607,7 +607,11 @@ class PolyExpAnsatz(Ansatz):
             raise ValueError(
                 f"All indices must be between 0 and {self.num_CV_vars - 1}. Got {idx_z} and {idx_zconj}.",
             )
-        A, b, c = complex_gaussian_integral_1(self.triple, idx_z, idx_zconj, measure=measure)
+        A_in, b_in, c_in = self.triple
+        log_c_in = math.log(math.cast(c_in, "complex128"))
+        A, b, c = complex_gaussian_integral_1(
+            (A_in, b_in, log_c_in), idx_z, idx_zconj, measure=measure
+        )
         return PolyExpAnsatz(A, b, c, lin_sup=self._lin_sup)
 
     def _combine_exp_and_poly(
