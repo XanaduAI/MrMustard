@@ -576,6 +576,30 @@ class TestKet:
             math.zeros((2, 2)),
         )  # checks if the A matrix is symmetric
 
+    def test_random_seed(self):
+        # same seed should produce same state
+        assert Ket.random(modes=[0, 1], seed=42) == Ket.random(modes=[0, 1], seed=42)
+        # different seeds should produce different states
+        assert Ket.random(modes=[0, 1], seed=42) != Ket.random(modes=[0, 1], seed=43)
+
+        # local seed should not affect global seed
+        settings.SEED = 42
+        ket_from_global_1 = Ket.random(modes=[0, 1])
+        ket_from_global_2 = Ket.random(modes=[0, 1])
+
+        settings.SEED = 42
+        ket_from_global_1_redux = Ket.random(modes=[0, 1])
+        # this call should not affect the global RNG
+        _ = Ket.random(modes=[0, 1], seed=123)
+        ket_from_global_2_redux = Ket.random(modes=[0, 1])
+
+        assert ket_from_global_1 == ket_from_global_1_redux
+        assert ket_from_global_2 == ket_from_global_2_redux
+
+        # no modes should raise error
+        with pytest.raises(ValueError, match="Cannot create a random state with no modes."):
+            Ket.random(modes=[])
+
     def test_ipython_repr(self):
         """
         Test the widgets.state function.

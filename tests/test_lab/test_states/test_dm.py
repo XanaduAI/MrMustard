@@ -548,6 +548,30 @@ class TestDM:
         assert np.all(np.linalg.eigvals(Gamma) < 1)
         assert np.all(np.linalg.eigvals(Temp) < 1)
 
+    def test_random_seed(self):
+        # same seed should produce same state
+        assert DM.random(modes=[0, 1], seed=42) == DM.random(modes=[0, 1], seed=42)
+        # different seeds should produce different states
+        assert DM.random(modes=[0, 1], seed=42) != DM.random(modes=[0, 1], seed=43)
+
+        # local seed should not affect global seed
+        settings.SEED = 42
+        dm_from_global_1 = DM.random(modes=[0, 1])
+        dm_from_global_2 = DM.random(modes=[0, 1])
+
+        settings.SEED = 42
+        dm_from_global_1_redux = DM.random(modes=[0, 1])
+        # this call should not affect the global RNG
+        _ = DM.random(modes=[0, 1], seed=123)
+        dm_from_global_2_redux = DM.random(modes=[0, 1])
+
+        assert dm_from_global_1 == dm_from_global_1_redux
+        assert dm_from_global_2 == dm_from_global_2_redux
+
+        # no modes should raise error
+        with pytest.raises(ValueError, match="Cannot create a random state with no modes."):
+            DM.random(modes=[])
+
     def test_is_positive(self):
         assert (Ket.random((2, 9)) >> Attenuator(2) >> Attenuator(9)).is_positive
         assert (
