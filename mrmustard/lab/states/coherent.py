@@ -82,11 +82,10 @@ class Coherent(Ket):
         mode: int,
         alpha: complex | Sequence[complex] = 0.0,
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         self.alpha = alpha
         
         A, b, c = triples.coherent_state_Abc(alpha=alpha)
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_out_ket=set(mode))
+        wires = Wires(modes_out_ket={mode})
         
         super().__init__(ansatz=ansatz, wires=wires, name="Coherent")

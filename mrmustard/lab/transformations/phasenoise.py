@@ -60,15 +60,16 @@ class PhaseNoise(Channel):
         phase_stdev: float = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="PhaseNoise")
-        self.parameters.add_parameter(phase_stdev, "phase_stdev")
-        self._ansatz = None
-        self._wires = Wires(
+        self.phase_stdev = phase_stdev
+        
+        wires = Wires(
             modes_in_bra=set(mode),
             modes_out_bra=set(mode),
             modes_in_ket=set(mode),
             modes_out_ket=set(mode),
         )
+        
+        super().__init__(ansatz=None, wires=wires, name="PhaseNoise")
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""

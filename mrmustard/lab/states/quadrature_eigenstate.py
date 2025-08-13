@@ -62,17 +62,17 @@ class QuadratureEigenstate(Ket):
         phi: float | Sequence[float] = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="QuadratureEigenstate")
-
-        self.parameters.add_parameter(x, "x")
-        self.parameters.add_parameter(phi, "phi")
+        self.x = x
+        self.phi = phi
 
         A, b, c = triples.quadrature_eigenstates_Abc(
-            x=self.parameters.x.value,
-            phi=self.parameters.phi.value,
+            x=x,
+            phi=phi,
         )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_out_ket=set(mode))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket=set(mode))
+
+        super().__init__(ansatz=ansatz, wires=wires, name="QuadratureEigenstate")
 
         for w in self.wires.sorted_wires:
             w.repr = ReprEnum.QUADRATURE

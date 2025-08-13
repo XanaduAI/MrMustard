@@ -83,15 +83,15 @@ class GaussRandNoise(Channel):
             "The input Y matrix has negative eigen-values.",
         )
 
-        super().__init__(name="GRN~")
-        self.parameters.add_parameter(Y, "Y")
-        A, b, c = triples.gaussian_random_noise_Abc(
-            Y=self.parameters.Y.value,
-        )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(
+        self.Y = Y
+        
+        A, b, c = triples.gaussian_random_noise_Abc(Y=Y)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(
             modes_in_bra=set(modes),
             modes_out_bra=set(modes),
             modes_in_ket=set(modes),
             modes_out_ket=set(modes),
         )
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="GRN~")

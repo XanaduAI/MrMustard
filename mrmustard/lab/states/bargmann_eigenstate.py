@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
@@ -39,13 +38,13 @@ class BargmannEigenstate(Ket):
         alpha: The displacement of the state (i.e., the eigen-value).
 
     Notes:
-        The only difference with ``Coherent(modes, alphas)`` is in its `c` parameter (and hence, does not have unit norm).
+        The only difference with ``Coherent(mode, alpha)`` is in its `c` parameter (and hence, does not have unit norm).
 
     .. code-block::
 
         >>> from mrmustard.lab import BargmannEigenstate
 
-        >>> state = BargmannEigenstate(1, 0.1 + 0.5j)
+        >>> state = BargmannEigenstate(mode=1, alpha=0.1 + 0.5j)
         >>> assert state.modes == (1,)
 
     .. details::
@@ -61,15 +60,12 @@ class BargmannEigenstate(Ket):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         alpha: complex | Sequence[complex] = 0.0j,
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="BargmannEigenstate")
-
-        self.parameters.add_parameter(alpha, "alpha")
-        A, b, c = triples.bargmann_eigenstate_Abc(
-            alpha=self.parameters.alpha.value,
-        )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_out_ket=set(mode))
+        self.alpha = alpha
+        A, b, c = triples.bargmann_eigenstate_Abc(alpha=alpha)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket={mode})
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="BargmannEigenstate")

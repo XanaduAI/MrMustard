@@ -82,14 +82,15 @@ class Attenuator(Channel):
         transmissivity: float | Sequence[float] = 1.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Att~")
-        self.parameters.add_parameter(transmissivity, "transmissivity")
+        self.transmissivity = transmissivity
 
-        A, b, c = triples.attenuator_Abc(eta=self.parameters.transmissivity.value)
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(
+        A, b, c = triples.attenuator_Abc(eta=transmissivity)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(
             modes_in_bra=set(mode),
             modes_out_bra=set(mode),
             modes_in_ket=set(mode),
             modes_out_ket=set(mode),
         )
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="Att~")

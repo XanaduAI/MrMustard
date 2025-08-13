@@ -56,10 +56,10 @@ class Rgate(Unitary):
         theta: float | Sequence[float] = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Rgate")
-        self.parameters.add_parameter(theta, "theta")
-        A, b, c = triples.rotation_gate_Abc(
-            theta=self.parameters.theta.value,
-        )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))
+        self.theta = theta
+        
+        A, b, c = triples.rotation_gate_Abc(theta=theta)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="Rgate")

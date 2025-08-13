@@ -64,16 +64,18 @@ class CZgate(Unitary):
         modes: tuple[int, int],
         s: float | Sequence[float] = 0.0,
     ):
-        super().__init__(name="CZgate")
-        self.parameters.add_parameter(s, "s")
+        self.s = s
+        
         A, b, c = Unitary.from_symplectic(
             modes,
-            symplectics.czgate_symplectic(self.parameters.s.value),
+            symplectics.czgate_symplectic(s),
         ).bargmann_triple()
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(
             modes_in_bra=set(),
             modes_out_bra=set(),
             modes_in_ket=set(modes),
             modes_out_ket=set(modes),
         )
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="CZgate")

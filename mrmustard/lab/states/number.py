@@ -25,7 +25,6 @@ from mrmustard.physics.ansatz import ArrayAnsatz
 from mrmustard.physics.fock_utils import fock_state
 from mrmustard.physics.wires import ReprEnum, Wires
 
-from ..utils import make_parameter
 from .ket import Ket
 
 __all__ = ["Number"]
@@ -69,23 +68,23 @@ class Number(Ket):
         cutoff: int | None = None,
     ) -> None:
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="N")
-        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=math.int64))
-        cutoff = int(math.max(self.parameters.n.value) + 1) if cutoff is None else cutoff
-        self.parameters.add_parameter(
-            make_parameter(False, cutoff, "cutoff", (None, None), dtype=math.int64),
-        )
-        batch_dims = len(self.parameters.n.value.shape)
-        self._ansatz = ArrayAnsatz.from_function(
-            fock_state,
-            n=self.parameters.n.value,
-            cutoff=int(self.parameters.cutoff.value),
-            batch_dims=batch_dims,
-        )
-        self._wires = Wires(modes_out_ket=set(mode))
-        self.short_name = str(int(self.parameters.n.value)) if batch_dims == 0 else "N_batched"
-        self.manual_shape = (int(self.parameters.cutoff.value),)
+        n_tensor = math.astensor(n, dtype=math.int64)
+        cutoff = int(math.max(n_tensor) + 1) if cutoff is None else cutoff
+        cutoff_tensor = math.astensor(cutoff, dtype=math.int64)
+        
+        self.n = n_tensor
+        self.cutoff = cutoff_tensor
+        
+        batch_dims = len(n_tensor.shape)
+        array = fock_state(n=n_tensor, cutoff=cutoff)
+        ansatz = ArrayAnsatz(array, batch_dims=batch_dims)
+        wires = Wires(modes_out_ket=set(mode))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="N")
+        
+        self.short_name = str(int(n_tensor)) if batch_dims == 0 else "N_batched"
+        self.manual_shape = (int(cutoff),)
 
         for w in self.wires.output:
             w.repr = ReprEnum.FOCK
-            w.fock_cutoff = int(self.parameters.cutoff.value)
+            w.fock_cutoff = int(cutoff)
