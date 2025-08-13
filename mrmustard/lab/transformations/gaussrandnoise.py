@@ -69,7 +69,7 @@ class GaussRandNoise(Channel):
         modes: int | tuple[int, ...],
         Y: RealMatrix,
     ):
-        modes = (modes,) if isinstance(modes, int) else modes
+        modes = (modes,) if isinstance(modes, int) else tuple(modes)
         if Y.shape[-1] // 2 != len(modes):
             raise ValueError(
                 f"The number of modes {len(modes)} does not match the dimension of the "
@@ -80,7 +80,7 @@ class GaussRandNoise(Channel):
         math.error_if(
             Y_eigenvectors_real,
             Y_eigenvectors_real < -settings.ATOL,
-            "The input Y matrix has negative eigen-values.",
+            "The input Y matrix has negative eigenvalues.",
         )
 
         self.Y = Y

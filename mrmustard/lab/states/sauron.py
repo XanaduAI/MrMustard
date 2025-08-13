@@ -56,8 +56,7 @@ class Sauron(Ket):
         >>> assert psi.modes == (0,)
     """
 
-    def __init__(self, mode: int | tuple[int], n: int, epsilon: float = 0.1):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
+    def __init__(self, mode: int, n: int, epsilon: float = 0.1):
         self.n = math.astensor(n, dtype=math.int64)
         self.epsilon = math.astensor(epsilon, dtype=math.float64)
 
@@ -66,7 +65,7 @@ class Sauron(Ket):
             epsilon=self.epsilon,
         )
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_out_ket=set(mode))
+        wires = Wires(modes_out_ket={mode})
         
         super().__init__(ansatz=ansatz, wires=wires, name=f"Sauron-{n}")
         self.ansatz._lin_sup = True

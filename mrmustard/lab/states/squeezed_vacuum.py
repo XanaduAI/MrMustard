@@ -53,11 +53,10 @@ class SqueezedVacuum(Ket):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         self.r = r
         self.phi = phi
 
@@ -66,7 +65,7 @@ class SqueezedVacuum(Ket):
             phi=phi,
         )
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_out_ket=set(mode))
+        wires = Wires(modes_out_ket={mode})
         
         super().__init__(ansatz=ansatz, wires=wires, name="SqueezedVacuum")
 

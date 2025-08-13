@@ -78,6 +78,6 @@ class S2gate(Unitary):
             phi=phi,
         )
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        wires = Wires(modes_out_ket=set(modes), modes_in_ket=set(modes))
         
         super().__init__(ansatz=ansatz, wires=wires, name="S2gate")

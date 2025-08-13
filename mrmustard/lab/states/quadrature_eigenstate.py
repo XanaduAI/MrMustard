@@ -22,7 +22,6 @@ from collections.abc import Sequence
 
 import numpy as np
 
-from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import ReprEnum, Wires
@@ -57,11 +56,10 @@ class QuadratureEigenstate(Ket):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         x: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         self.x = x
         self.phi = phi
 
@@ -70,7 +68,7 @@ class QuadratureEigenstate(Ket):
             phi=phi,
         )
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_out_ket=set(mode))
+        wires = Wires(modes_out_ket={mode})
 
         super().__init__(ansatz=ansatz, wires=wires, name="QuadratureEigenstate")
 

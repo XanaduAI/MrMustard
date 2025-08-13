@@ -54,7 +54,7 @@ class RealInterferometer(Unitary):
         modes: int | tuple[int, ...],
         orthogonal: RealMatrix | None = None,
     ):
-        modes = (modes,) if isinstance(modes, int) else modes
+        modes = (modes,) if isinstance(modes, int) else tuple(modes)
         num_modes = len(modes)
         if orthogonal is not None and orthogonal.shape[-1] != num_modes:
             raise ValueError(
@@ -70,6 +70,6 @@ class RealInterferometer(Unitary):
             symplectics.realinterferometer_symplectic(orthogonal),
         ).bargmann_triple()
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        wires = Wires(modes_out_ket=set(modes), modes_in_ket=set(modes))
         
         super().__init__(ansatz=ansatz, wires=wires, name="RealInterferometer")

@@ -60,7 +60,7 @@ class Interferometer(Unitary):
         modes: int | tuple[int, ...],
         unitary: ComplexMatrix | None = None,
     ):
-        modes = (modes,) if isinstance(modes, int) else modes
+        modes = (modes,) if isinstance(modes, int) else tuple(modes)
         num_modes = len(modes)
         unitary = unitary if unitary is not None else math.random_unitary(num_modes)
         if unitary.shape[-1] != num_modes:
@@ -75,6 +75,6 @@ class Interferometer(Unitary):
             symplectics.interferometer_symplectic(unitary),
         ).bargmann_triple()
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        wires = Wires(modes_out_ket=set(modes), modes_in_ket=set(modes))
         
         super().__init__(ansatz=ansatz, wires=wires, name="Interferometer")

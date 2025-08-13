@@ -78,25 +78,16 @@ class Sgate(Unitary):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         self.r = r
         self.phi = phi
         
-        A, b, c = triples.squeezing_gate_Abc(
-            r=r,
-            phi=phi,
-        )
+        A, b, c = triples.squeezing_gate_Abc(r=r, phi=phi)
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(
-            modes_in_bra=set(),
-            modes_out_bra=set(),
-            modes_in_ket=set(mode),
-            modes_out_ket=set(mode),
-        )
+        wires = Wires(modes_out_ket={mode}, modes_in_ket={mode})
         
         super().__init__(ansatz=ansatz, wires=wires, name="Sgate")
 

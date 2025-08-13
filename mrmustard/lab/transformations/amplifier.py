@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics.wires import Wires
 
 from ...physics import triples
@@ -78,19 +77,18 @@ class Amplifier(Channel):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         gain: float | Sequence[float] = 1.0,
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         self.gain = gain
         
         A, b, c = triples.amplifier_Abc(g=gain)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(
-            modes_in_bra=set(mode),
-            modes_out_bra=set(mode),
-            modes_in_ket=set(mode),
-            modes_out_ket=set(mode),
+            modes_in_bra={mode},
+            modes_out_bra={mode},
+            modes_in_ket={mode},
+            modes_out_ket={mode},
         )
         
         super().__init__(ansatz=ansatz, wires=wires, name="Amp~")

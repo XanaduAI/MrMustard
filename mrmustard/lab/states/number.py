@@ -63,11 +63,10 @@ class Number(Ket):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         n: int | Sequence[int],
         cutoff: int | None = None,
     ) -> None:
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         n_tensor = math.astensor(n, dtype=math.int64)
         cutoff = int(math.max(n_tensor) + 1) if cutoff is None else cutoff
         cutoff_tensor = math.astensor(cutoff, dtype=math.int64)
@@ -78,7 +77,7 @@ class Number(Ket):
         batch_dims = len(n_tensor.shape)
         array = fock_state(n=n_tensor, cutoff=cutoff)
         ansatz = ArrayAnsatz(array, batch_dims=batch_dims)
-        wires = Wires(modes_out_ket=set(mode))
+        wires = Wires(modes_out_ket={mode})
         
         super().__init__(ansatz=ansatz, wires=wires, name="N")
         

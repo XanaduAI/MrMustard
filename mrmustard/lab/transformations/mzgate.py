@@ -71,7 +71,7 @@ class MZgate(Unitary):
         A, b, c = Unitary.from_symplectic(
             modes,
             symplectics.mzgate_symplectic(phi_a, phi_b, internal),
-        ).bargmann_triple()
+        ).bargmann_triple()  # TODO: add mzgate to physics.triples
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
         

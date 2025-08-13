@@ -69,7 +69,7 @@ class CZgate(Unitary):
         A, b, c = Unitary.from_symplectic(
             modes,
             symplectics.czgate_symplectic(s),
-        ).bargmann_triple()
+        ).bargmann_triple()  # TODO: add czgate to physics.triples
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(
             modes_in_bra=set(),

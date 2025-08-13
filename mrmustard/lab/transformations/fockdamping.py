@@ -67,14 +67,13 @@ class FockDamping(Operation):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         damping: float | Sequence[float] = 0.0,
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         self.damping = damping
         
         A, b, c = triples.fock_damping_Abc(beta=damping)
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))
+        wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
         
         super().__init__(ansatz=ansatz, wires=wires, name="FockDamping")

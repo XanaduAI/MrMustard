@@ -53,17 +53,16 @@ class Pgate(Unitary):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         shearing: float | Sequence[float] = 0.0,
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         self.shearing = shearing
         
         A, b, c = Unitary.from_symplectic(
             (mode,),
             symplectics.pgate_symplectic(1, shearing),
-        ).bargmann_triple()
+        ).bargmann_triple()  # TODO: add pgate to physics.triples
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))
+        wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
         
         super().__init__(ansatz=ansatz, wires=wires, name="Pgate")

@@ -56,17 +56,16 @@ class PhaseNoise(Channel):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         phase_stdev: float = 0.0,
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         self.phase_stdev = phase_stdev
         
         wires = Wires(
-            modes_in_bra=set(mode),
-            modes_out_bra=set(mode),
-            modes_in_ket=set(mode),
-            modes_out_ket=set(mode),
+            modes_in_bra={mode},
+            modes_out_bra={mode},
+            modes_in_ket={mode},
+            modes_out_ket={mode},
         )
         
         super().__init__(ansatz=None, wires=wires, name="PhaseNoise")

@@ -52,14 +52,13 @@ class Rgate(Unitary):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         theta: float | Sequence[float] = 0.0,
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         self.theta = theta
         
         A, b, c = triples.rotation_gate_Abc(theta=theta)
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))
+        wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
         
         super().__init__(ansatz=ansatz, wires=wires, name="Rgate")

@@ -77,7 +77,6 @@ class GKet(Ket):
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         
         self.symplectic = symplectic
-        
         A, b, c = triples.gket_state_Abc(symplectic=symplectic)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket=set(modes))
@@ -94,7 +93,7 @@ class GKet(Ket):
         Returns:
             A new GKet with the modes indexed by `idx`.
         """
-        idx = (idx,) if isinstance(idx, int) else idx
+        idx = (idx,) if isinstance(idx, int) else tuple(idx)
         if not set(idx).issubset(self.modes):
             raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
         trace_out_modes = tuple(mode for mode in self.modes if mode not in idx)
@@ -144,7 +143,7 @@ class GDM(DM):
         self,
         modes: int | tuple[int, ...],
         beta: float | Sequence[float],
-        symplectic: RealMatrix = None,
+        symplectic: RealMatrix | Sequence[RealMatrix] = None,
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))

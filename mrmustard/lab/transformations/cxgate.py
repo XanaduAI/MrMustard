@@ -71,8 +71,6 @@ class CXgate(Unitary):
         ).bargmann_triple()
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(
-            modes_in_bra=set(),
-            modes_out_bra=set(),
             modes_in_ket=set(modes),
             modes_out_ket=set(modes),
         )

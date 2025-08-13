@@ -53,14 +53,13 @@ class Thermal(DM):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         nbar: int | Sequence[int] = 0,
     ) -> None:
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         self.nbar = nbar
         
         A, b, c = triples.thermal_state_Abc(nbar=nbar)
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_out_bra=set(mode), modes_out_ket=set(mode))
+        wires = Wires(modes_out_bra={mode}, modes_out_ket={mode})
         
         super().__init__(ansatz=ansatz, wires=wires, name="Thermal")

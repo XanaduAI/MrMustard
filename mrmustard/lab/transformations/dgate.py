@@ -76,12 +76,11 @@ class Dgate(Unitary):
         mode: int,
         alpha: complex | Sequence[complex] = 0.0j,
     ) -> None:
-        mode = (mode,) if not isinstance(mode, tuple) else mode
         self.alpha = alpha
         
         A, b, c = triples.displacement_gate_Abc(alpha=alpha)
         ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(set(), set(), set(mode), set(mode))
+        wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
         
         super().__init__(ansatz=ansatz, wires=wires, name="Dgate")
 
