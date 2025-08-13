@@ -40,22 +40,22 @@ jobs:
           echo "CPU_FLAGS=$(lscpu | grep 'Flags' | cut -d':' -f 2 | sha256sum | head -c 8)" >> "$GITHUB_OUTPUT"
           echo "filename=durations_$(date +%s)_$(git rev-parse --short HEAD).txt" >> "$GITHUB_OUTPUT"
 
-      - name: Numba compilation cache
-        uses: actions/cache@v4
-        with:
-          path: ./.numba_cache
-          key: numba-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-jax-${{ github.sha }}
-          restore-keys: |
-            numba-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-jax-
-            numba-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-
+      # - name: Numba compilation cache
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ./.numba_cache
+      #     key: numba-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-jax-${{ github.sha }}
+      #     restore-keys: |
+      #       numba-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-jax-
+      #       numba-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-
 
-      - name: JAX compilation cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/mrmustard/jax_cache/
-          key: jax-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-${{ github.sha }}
-          restore-keys: |
-            jax-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-
+      # - name: JAX compilation cache
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.cache/mrmustard/jax_cache/
+      #     key: jax-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-${{ github.sha }}
+      #     restore-keys: |
+      #       jax-cache-${{ matrix.python-version }}-${{ steps.dynamic_env.outputs.MODEL_NAME }}-${{ steps.dynamic_env.outputs.CPU_FLAGS }}-
 
       - name: Run tests
         env:
