@@ -108,13 +108,4 @@ class Dgate(Unitary):
             ValueError: If the shape is not valid for the component.
         """
         shape = self._check_fock_shape(shape)
-        if self.ansatz.batch_shape:
-            alpha = self.parameters.alpha.value
-            alpha = math.reshape(alpha, (-1,))
-            ret = math.astensor([math.displacement(alpha_i, shape=shape) for alpha_i in alpha])
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.displacement(self.parameters.alpha.value, shape=shape)
-        return ret
+        return math.displacement(self.parameters.alpha.value, shape=shape)
