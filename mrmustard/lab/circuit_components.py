@@ -505,6 +505,7 @@ class CircuitComponent:
         shape = self._check_fock_shape(shape)
         try:
             A, b, c = self.ansatz.triple
+            # TODO: make hermite_renormalized work with num_derived_vars > 0 in sc-97587
             if self.ansatz.num_derived_vars == 0:
                 ret = math.hermite_renormalized(
                     A,
