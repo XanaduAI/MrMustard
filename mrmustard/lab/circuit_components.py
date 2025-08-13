@@ -21,13 +21,9 @@ from __future__ import annotations
 import numbers
 from collections.abc import Sequence
 
-from pydoc import locate
-from typing import Any
-
 import ipywidgets as widgets
 import numpy as np
 from IPython.display import display
-from numpy.typing import ArrayLike
 
 from mrmustard import math, settings
 from mrmustard import widgets as mmwidgets
@@ -283,27 +279,6 @@ class CircuitComponent:
         QQQQ = CircuitComponent(PolyExpAnsatz(*triple), wires)
         BBBB = QtoB_ib.contract(QtoB_ik.contract(QQQQ).contract(QtoB_ok)).contract(QtoB_ob)
         return cls._from_attributes(BBBB.ansatz, wires, name)
-
-    @classmethod
-    def _deserialize(cls, data: dict) -> CircuitComponent:
-        r"""
-        Deserialization when within a circuit.
-
-        Args:
-            data: The data to deserialize.
-
-        Returns:
-            A circuit component with the given serialized data.
-        """
-        if "ansatz_cls" in data:
-            ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
-            ansatz = locate(ansatz_cls).from_dict(data)
-            return cls._from_attributes(ansatz, Wires(*tuple(set(m) for m in wires)), name=name)
-        if "modes" in data:
-            data["modes"] = tuple(data["modes"])
-        elif "mode" in data:
-            data["mode"] = tuple(data["mode"])
-        return cls(**data)
 
     @classmethod
     def _from_attributes(
@@ -760,36 +735,6 @@ class CircuitComponent:
         if len(result.wires) > 0:
             return result
         return result.ansatz.scalar
-
-    def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
-        """
-        Inner serialization to be used by Circuit.serialize().
-
-        The first dict must be JSON-serializable, and the second dict must contain
-        the (non-JSON-serializable) array-like data to be collected separately.
-
-        Returns:
-            A tuple containing the serialized data and the array-like data.
-        """
-        cls = type(self)
-        serializable = {"class": f"{cls.__module__}.{cls.__qualname__}"}
-        params = signature(cls).parameters
-        if "name" in params:  # assume abstract type, serialize the representation
-            ansatz_cls = type(self.ansatz)
-            serializable["name"] = self.name
-            serializable["wires"] = tuple(tuple(a) for a in self.wires.args)
-            serializable["ansatz_cls"] = f"{ansatz_cls.__module__}.{ansatz_cls.__qualname__}"
-            return serializable, self.ansatz.to_dict()
-
-        # handle modes parameter
-        if "modes" in params:
-            serializable["modes"] = tuple(self.wires.modes)
-        elif "mode" in params:
-            serializable["mode"] = tuple(self.wires.modes)
-        else:
-            raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
-
-        return serializable, {}
 
     def _tree_flatten(self):  # pragma: no cover
         children = (self.ansatz,)

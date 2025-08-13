@@ -73,12 +73,4 @@ class TestRgate:
         assert math.allclose(rep3.b, math.zeros((2,)))
         assert math.allclose(rep3.c, 1.0 + 0.0j)
 
-    def test_trainable_parameters(self):
-        gate1 = Rgate(0, 1)
-        gate2 = Rgate(0, 1, True, (-2, 2))
 
-        with pytest.raises(AttributeError):
-            gate1.parameters.theta.value = 3
-
-        gate2.parameters.theta.value = 2
-        assert gate2.parameters.theta.value == 2

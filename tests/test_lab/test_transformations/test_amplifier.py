@@ -49,15 +49,7 @@ class TestAmplifier:
         assert math.allclose(rep1.b, math.zeros((1, 4)))
         assert math.allclose(rep1.c, 0.90909090)
 
-    def test_trainable_parameters(self):
-        gate1 = Amplifier(0, 1.2)
-        gate2 = Amplifier(0, 1.1, gain_trainable=True, gain_bounds=(1.0, 1.5))
 
-        with pytest.raises(AttributeError):
-            gate1.parameters.gain.value = 1.7
-
-        gate2.parameters.gain.value = 1.5
-        assert gate2.parameters.gain.value == 1.5
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_operation(self, batch_shape):

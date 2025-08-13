@@ -239,7 +239,7 @@ class ArrayAnsatz(Ansatz):
 
         if any(s > t for s, t in zip(shape, self.core_shape)):
             warn(
-                "The fock array is being padded with zeros. Is this really necessary?",
+                "A fock array is being padded with zeros. Is this really necessary?",
                 stacklevel=1,
             )
             padded = math.pad(

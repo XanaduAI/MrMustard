@@ -53,19 +53,7 @@ class TestS2gate:
         assert math.allclose(rep1.b, math.zeros((4,)))
         assert math.allclose(rep1.c, 1 / math.cosh(0.1))
 
-    def test_trainable_parameters(self):
-        gate1 = S2gate((0, 1), 1, 1)
-        gate2 = S2gate((0, 1), 1, 1, r_trainable=True, r_bounds=(0, 2))
-        gate3 = S2gate((0, 1), 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
 
-        with pytest.raises(AttributeError):
-            gate1.parameters.r.value = 3
-
-        gate2.parameters.r.value = 2
-        assert gate2.parameters.r.value == 2
-
-        gate3.parameters.phi.value = 2
-        assert gate3.parameters.phi.value == 2
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_operation(self, batch_shape):

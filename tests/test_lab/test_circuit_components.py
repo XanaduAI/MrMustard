@@ -109,14 +109,11 @@ class TestCircuitComponent:
         assert isinstance(d1_adj, CircuitComponent)
         assert d1_adj.name == d1.name
         assert d1_adj.wires == d1.wires.adjoint
-        assert d1_adj.parameters == d1.parameters
         assert d1_adj.ansatz == d1.ansatz.conj  # this holds for the Dgate but not in general
 
         d1_adj_adj = d1_adj.adjoint
         assert isinstance(d1_adj_adj, CircuitComponent)
         assert d1_adj_adj.wires == d1.wires
-        assert d1_adj_adj.parameters == d1_adj.parameters
-        assert d1_adj_adj.parameters == d1.parameters
         assert d1_adj_adj.ansatz == d1.ansatz
 
     def test_dual(self):
@@ -127,14 +124,11 @@ class TestCircuitComponent:
         assert isinstance(d1_dual, CircuitComponent)
         assert d1_dual.name == d1.name
         assert d1_dual.wires == d1.wires.dual
-        assert d1_dual.parameters == d1.parameters
         assert (vac >> d1 >> d1_dual).ansatz == vac.ansatz
         assert (vac >> d1_dual >> d1).ansatz == vac.ansatz
 
         d1_dual_dual = d1_dual.dual
         assert isinstance(d1_dual_dual, CircuitComponent)
-        assert d1_dual_dual.parameters == d1_dual.parameters
-        assert d1_dual_dual.parameters == d1.parameters
         assert d1_dual_dual.wires == d1.wires
         assert d1_dual_dual.ansatz == d1.ansatz
 
@@ -144,7 +138,6 @@ class TestCircuitComponent:
         d1 = CircuitComponent(ansatz=ansatz, wires=wires)
         d1_cp = d1._light_copy()
 
-        assert d1_cp.parameters is d1.parameters
         assert d1_cp.ansatz is d1.ansatz
         assert d1_cp.wires is not d1.wires
 
@@ -152,13 +145,8 @@ class TestCircuitComponent:
         assert Vacuum([1, 2]).on([3, 4]).modes == (3, 4)
         assert Number(3, n=4).on(9).modes == (9,)
 
-        d89 = DisplacedSqueezed(8, alpha=1 + 3j, r_trainable=True)
+        d89 = DisplacedSqueezed(8, alpha=1 + 3j, r=0.1)
         d67 = d89.on(6)
-        assert isinstance(d67.parameters.alpha, Constant)
-        assert math.allclose(d89.parameters.alpha.value, d67.parameters.alpha.value)
-        assert isinstance(d67.parameters.r, Variable)
-        assert math.allclose(d89.parameters.r.value, d67.parameters.r.value)
-        assert bool(d67.parameters) is True
         assert d67.ansatz is d89.ansatz
 
     def test_on_error(self):
@@ -225,29 +213,16 @@ class TestCircuitComponent:
         d12 = d1 + d2
 
         assert isinstance(d12, Dgate)
-        assert isinstance(d12.parameters.alpha, Constant)
-        assert math.allclose(d12.parameters.alpha.value, [0.1 + 0.1j, 0.2 + 0.2j])
         assert d12.ansatz._lin_sup is True
         assert d12.ansatz == d1.ansatz + d2.ansatz
 
     def test_add_error(self):
         d1 = Dgate(1, alpha=0.1 + 0.1j)
         d2 = Dgate(2, alpha=0.2 + 0.2j)
-        d3 = Dgate(1, alpha=0.1 + 0.1j, alpha_trainable=True)
-        d4 = Dgate(1, alpha=0.1 + 0.1j, alpha_trainable=True, alpha_bounds=(0, 1))
-        d_batched = Dgate(1, alpha=[0.1, 0.2])
 
         with pytest.raises(ValueError, match="different wires"):
             d1 + d2
 
-        with pytest.raises(ValueError, match="Parameter 'alpha' is a"):
-            d1 + d3
-
-        with pytest.raises(ValueError, match="batched"):
-            d1 + d_batched
-
-        with pytest.raises(ValueError, match="Parameter 'alpha' has bounds"):
-            d3 + d4
 
     def test_sub(self):
         s1 = DisplacedSqueezed(1, alpha=1.0 + 0.5j, r=0.1)
@@ -524,7 +499,8 @@ class TestCircuitComponent:
 
     def test_to_fock_shape_lookahead(self):
         r = settings.rng.uniform(-0.5, 0.5, 3)
-        interf = Interferometer([0, 1])
+        unitary = math.random_unitary(2)
+        interf = Interferometer([0, 1], unitary=unitary)
         gaussian_part = SqueezedVacuum(0, r[0]) >> SqueezedVacuum(1, r[1]) >> interf
         gauss_auto_shape = gaussian_part.auto_shape()
         fock_explicit_shape = gaussian_part.to_fock((gauss_auto_shape[0], 7)) >> Number(1, 6).dual
@@ -546,7 +522,7 @@ class TestCircuitComponent:
 
     def test_quadrature_ket(self):
         "tests that transforming to quadrature and back gives the same ket"
-        ket = SqueezedVacuum(0, 0.4, 0.5) >> Dgate(0, 0.3, 0.2)
+        ket = SqueezedVacuum(0, 0.4, 0.5) >> Dgate(0, 0.3 + 0.2j)
         back = Ket.from_quadrature((0,), ket.quadrature_triple())
         assert ket == back
 
@@ -613,40 +589,4 @@ class TestCircuitComponent:
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(dgate)
 
-    def test_serialize_default_behaviour(self):
-        """Test the default serializer."""
-        name = "my_component"
-        ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.4j))
-        cc = CircuitComponent(ansatz, Wires(set(), set(), {1, 8}, {1, 8}), name=name)
-        kwargs, arrays = cc._serialize()
-        assert kwargs == {
-            "class": f"{CircuitComponent.__module__}.CircuitComponent",
-            "wires": tuple(tuple(w) for w in cc.wires.args),
-            "ansatz_cls": f"{PolyExpAnsatz.__module__}.PolyExpAnsatz",
-            "name": name,
-        }
-        assert arrays == {
-            "A": ansatz.A,
-            "b": ansatz.b,
-            "c": ansatz.c,
-        }
 
-    def test_serialize_fail_when_no_modes_input(self):
-        """Test that the serializer fails if no modes or name+wires are present."""
-
-        class MyComponent(CircuitComponent):
-            """A dummy class without a valid modes kwarg."""
-
-            def __init__(self, ansatz, custom_modes):
-                super().__init__(
-                    ansatz,
-                    Wires(*tuple(set(m) for m in [custom_modes] * 4)),
-                    name="my_component",
-                )
-
-        cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.4j)), [0, 1])
-        with pytest.raises(
-            TypeError,
-            match="MyComponent does not seem to have any wires construction method",
-        ):
-            cc._serialize()

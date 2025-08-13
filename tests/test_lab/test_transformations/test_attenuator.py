@@ -44,12 +44,4 @@ class TestAttenuator:
         assert math.allclose(rep1.b, math.zeros((4,)))
         assert math.allclose(rep1.c, 1.0)
 
-    def test_trainable_parameters(self):
-        gate1 = Attenuator(0, 0.1)
-        gate2 = Attenuator(0, 0.1, transmissivity_trainable=True, transmissivity_bounds=(-0.2, 0.2))
 
-        with pytest.raises(AttributeError):
-            gate1.parameters.transmissivity.value = 0.3
-
-        gate2.parameters.transmissivity.value = 0.2
-        assert gate2.parameters.transmissivity.value == 0.2

@@ -29,7 +29,6 @@ from mrmustard.lab import (
     SqueezedVacuum,
     Vacuum,
 )
-from mrmustard.utils.serialize import load
 
 
 class TestCircuit:
@@ -238,39 +237,4 @@ class TestCircuit:
         circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Dgate(0, 1.0)])
         assert circ.contract() == Number(0, n=15) >> Sgate(0, r=1.0) >> Dgate(0, 1.0)
 
-    def test_serialize_makes_zip(self, tmpdir):
-        """Test that serialize makes a JSON and a zip."""
-        settings.CACHE_DIR = tmpdir
-        circ = Circuit([Coherent(0, alpha=1.0), Dgate(0, 0.1)])
-        path = circ.serialize()
-        assert list(path.parent.glob("*")) == [path]
-        assert path.suffix == ".zip"
 
-        assert load(path) == circ
-        assert list(path.parent.glob("*")) == [path]
-
-    def test_serialize_custom_name(self, tmpdir):
-        """Test that circuits can be serialized with custom names."""
-        settings.CACHE_DIR = tmpdir
-        circ = Circuit([Coherent(0, alpha=1.0), Dgate(0, 0.1)])
-        path = circ.serialize(filestem="custom_name")
-        assert path.name == "custom_name.zip"
-
-    def test_path_is_loaded(self, tmpdir):
-        """Test that circuit paths are saved if already evaluated."""
-        settings.CACHE_DIR = tmpdir
-        vac = Vacuum(0)
-        S0 = Sgate(0)
-        s0 = SqueezedVacuum(1)
-        bs01 = BSgate((0, 1))
-        c0 = Coherent(0).dual
-        c1 = Coherent(1).dual
-
-        circ = Circuit([vac, S0, s0, bs01, c0, c1])
-        base_path = circ.path
-        assert load(circ.serialize()).path == base_path
-
-        circ.optimize()
-        opt_path = circ.path
-        assert opt_path != base_path
-        assert load(circ.serialize()).path == opt_path

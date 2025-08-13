@@ -64,19 +64,7 @@ class TestBSgate:
         assert math.allclose(rep2.b, math.zeros((4,)))
         assert math.allclose(rep2.c, 1)
 
-    def test_trainable_parameters(self):
-        gate1 = BSgate((0, 1), 1, 1)
-        gate2 = BSgate((0, 1), 1, 1, theta_trainable=True, theta_bounds=(-2, 2))
-        gate3 = BSgate((0, 1), 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
 
-        with pytest.raises(AttributeError):
-            gate1.parameters.theta.value = 3
-
-        gate2.parameters.theta.value = 2
-        assert gate2.parameters.theta.value == 2
-
-        gate3.parameters.phi.value = 2
-        assert gate3.parameters.phi.value == 2
 
     def test_fock_representation(self):
         gate = BSgate((0, 1), 2, 3)

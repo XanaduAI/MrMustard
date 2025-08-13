@@ -71,17 +71,4 @@ class TestDgate:
         assert math.allclose(rep2.b, [0.1 + 0.2j, -0.1 + 0.2j])
         assert math.allclose(rep2.c, 0.97530991 + 0.0j)
 
-    def test_trainable_parameters(self):
-        gate1 = Dgate(0, 1 + 1j)
-        gate2 = Dgate(0, 1 + 1j, alpha_trainable=True, alpha_bounds=(0, 2))
-        gate3 = Dgate(0, 1 + 2j, alpha_trainable=True, alpha_bounds=(0, 2))
 
-        with pytest.raises(AttributeError):
-            gate1.parameters.alpha.value = 3
-
-        gate2.parameters.alpha.value = 2
-        assert gate2.parameters.alpha.value == 2
-
-        gate_fock = gate3.to_fock()
-        assert isinstance(gate_fock.ansatz, ArrayAnsatz)
-        assert gate_fock.parameters.alpha.value == 1 + 2j
