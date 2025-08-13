@@ -23,7 +23,7 @@ from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
+
 from .base import Unitary
 
 __all__ = ["Ggate"]
@@ -36,7 +36,6 @@ class Ggate(Unitary):
     Args:
         modes: The modes this gate is applied to.
         symplectic: The symplectic matrix of the gate in the XXPP ordering.
-        symplectic_trainable: Whether ``symplectic`` is trainable.
 
     .. code-block::
 
@@ -54,25 +53,14 @@ class Ggate(Unitary):
         self,
         modes: int | tuple[int, ...],
         symplectic: RealMatrix | None = None,
-        symplectic_trainable: bool = False,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
         super().__init__(name="Ggate")
 
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=symplectic_trainable,
-                value=symplectic,
-                name="symplectic",
-                bounds=(None, None),
-                update_fn="update_symplectic",
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
-            s=self.parameters.symplectic,
-        )
+        self.parameters.add_parameter(symplectic, "symplectic")
+        A, b, c = Unitary.from_symplectic(modes, self.parameters.symplectic.value).bargmann_triple()
+        self._ansatz = PolyExpAnsatz(A, b, c)
         self._wires = Wires(
             modes_in_bra=set(),
             modes_out_bra=set(),

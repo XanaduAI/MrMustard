@@ -25,7 +25,7 @@ from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 
 from ...physics import symplectics
-from ..utils import make_parameter
+
 from .base import Unitary
 
 __all__ = ["CXgate"]
@@ -38,8 +38,6 @@ class CXgate(Unitary):
     Args:
         modes: The pair of modes of the controlled-X gate.
         s: The control parameter.
-        s_trainable: Whether ``s`` is trainable.
-        s_bounds: The bounds for ``s``.
 
     .. code-block::
 
@@ -64,23 +62,15 @@ class CXgate(Unitary):
         self,
         modes: tuple[int, int],
         s: float | Sequence[float] = 0.0,
-        s_trainable: bool = False,
-        s_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="CXgate")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=s_trainable, value=s, name="s", bounds=s_bounds, dtype=math.float64
-            ),
-        )
+        self.parameters.add_parameter(s, "s")
 
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=lambda s: Unitary.from_symplectic(
-                modes,
-                symplectics.cxgate_symplectic(s),
-            ).bargmann_triple(),
-            s=self.parameters.s,
-        )
+        A, b, c = Unitary.from_symplectic(
+            modes,
+            symplectics.cxgate_symplectic(self.parameters.s.value),
+        ).bargmann_triple()
+        self._ansatz = PolyExpAnsatz(A, b, c)
         self._wires = Wires(
             modes_in_bra=set(),
             modes_out_bra=set(),

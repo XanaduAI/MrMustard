@@ -26,7 +26,7 @@ from mrmustard.utils.typing import ComplexTensor
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import Wires
-from ..utils import make_parameter
+
 from .base import Unitary
 
 __all__ = ["BSgate"]
@@ -40,10 +40,6 @@ class BSgate(Unitary):
         modes: The pair of modes of the beam splitter gate.
         theta: The transmissivity angle.
         phi: The phase angle.
-        theta_trainable: Whether ``theta`` is a trainable variable.
-        phi_trainable: Whether ``phi`` is a trainable variable.
-        theta_bounds: The bounds for ``theta``.
-        phi_bounds: The bounds for ``phi``.
 
         .. code-block::
 
@@ -91,23 +87,15 @@ class BSgate(Unitary):
         modes: tuple[int, int],
         theta: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
-        theta_trainable: bool = False,
-        phi_trainable: bool = False,
-        theta_bounds: tuple[float | None, float | None] = (None, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="BSgate")
-        self.parameters.add_parameter(
-            make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=math.float64)
+        self.parameters.add_parameter(theta, "theta")
+        self.parameters.add_parameter(phi, "phi")
+        A, b, c = triples.beamsplitter_gate_Abc(
+            theta=self.parameters.theta.value,
+            phi=self.parameters.phi.value,
         )
-        self.parameters.add_parameter(
-            make_parameter(phi_trainable, phi, "phi", phi_bounds, dtype=math.float64)
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.beamsplitter_gate_Abc,
-            theta=self.parameters.theta,
-            phi=self.parameters.phi,
-        )
+        self._ansatz = PolyExpAnsatz(A, b, c)
         self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
 
     def fock_array(

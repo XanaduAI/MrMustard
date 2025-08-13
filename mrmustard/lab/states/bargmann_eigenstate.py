@@ -25,7 +25,6 @@ from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 
-from ..utils import make_parameter
 from .ket import Ket
 
 __all__ = ["BargmannEigenstate"]
@@ -36,7 +35,7 @@ class BargmannEigenstate(Ket):
     The `N`-mode Bargmann eigenstate.
 
     Args:
-        modes: A list of modes.
+        mode: The mode of the Bargmann eigenstate.
         alpha: The displacement of the state (i.e., the eigen-value).
 
     Notes:
@@ -64,23 +63,13 @@ class BargmannEigenstate(Ket):
         self,
         mode: int | tuple[int],
         alpha: complex | Sequence[complex] = 0.0j,
-        alpha_trainable: bool = False,
-        alpha_bounds: tuple[complex | None, complex | None] = (None, None),
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="BargmannEigenstate")
 
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=alpha_trainable,
-                value=alpha,
-                name="alpha",
-                bounds=alpha_bounds,
-                dtype=math.complex128,
-            ),
+        self.parameters.add_parameter(alpha, "alpha")
+        A, b, c = triples.bargmann_eigenstate_Abc(
+            alpha=self.parameters.alpha.value,
         )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.bargmann_eigenstate_Abc,
-            alpha=self.parameters.alpha,
-        )
+        self._ansatz = PolyExpAnsatz(A, b, c)
         self._wires = Wires(modes_out_ket=set(mode))

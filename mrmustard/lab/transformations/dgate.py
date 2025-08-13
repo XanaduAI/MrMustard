@@ -26,7 +26,6 @@ from mrmustard.utils.typing import ComplexTensor
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import Wires
-from ..utils import make_parameter
 from .base import Unitary
 
 __all__ = ["Dgate"]
@@ -40,8 +39,6 @@ class Dgate(Unitary):
     Args:
         mode: The mode this gate is applied to.
         alpha: The displacement in the complex phase space.
-        alpha_trainable: Whether ``alpha`` is a trainable variable.
-        alpha_bounds: The bounds for the absolute value of ``alpha``.
 
     .. code-block::
 
@@ -78,18 +75,14 @@ class Dgate(Unitary):
         self,
         mode: int,
         alpha: complex | Sequence[complex] = 0.0j,
-        alpha_trainable: bool = False,
-        alpha_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
         mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Dgate")
-        self.parameters.add_parameter(
-            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128),
+        self.parameters.add_parameter(alpha, "alpha")
+        A, b, c = triples.displacement_gate_Abc(
+            alpha=self.parameters.alpha.value,
         )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.displacement_gate_Abc,
-            alpha=self.parameters.alpha,
-        )
+        self._ansatz = PolyExpAnsatz(A, b, c)
         self._wires = Wires(set(), set(), set(mode), set(mode))
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:

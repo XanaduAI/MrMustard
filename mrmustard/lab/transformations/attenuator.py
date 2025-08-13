@@ -25,7 +25,7 @@ from mrmustard.physics.wires import Wires
 
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
+
 from .base import Channel
 
 __all__ = ["Attenuator"]
@@ -39,8 +39,6 @@ class Attenuator(Channel):
     Args:
         mode: The mode this gate is applied to.
         transmissivity: The transmissivity.
-        transmissivity_trainable: Whether ``transmissivity`` is trainable.
-        transmissivity_bounds: The bounds for ``transmissivity``.
 
     .. code-block::
 
@@ -82,25 +80,13 @@ class Attenuator(Channel):
         self,
         mode: int | tuple[int],
         transmissivity: float | Sequence[float] = 1.0,
-        transmissivity_trainable: bool = False,
-        transmissivity_bounds: tuple[float | None, float | None] = (0.0, 1.0),
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Att~")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=transmissivity_trainable,
-                value=transmissivity,
-                name="transmissivity",
-                bounds=transmissivity_bounds,
-                dtype=math.float64,
-            ),
-        )
+        self.parameters.add_parameter(transmissivity, "transmissivity")
 
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.attenuator_Abc,
-            eta=self.parameters.transmissivity,
-        )
+        A, b, c = triples.attenuator_Abc(eta=self.parameters.transmissivity.value)
+        self._ansatz = PolyExpAnsatz(A, b, c)
         self._wires = Wires(
             modes_in_bra=set(mode),
             modes_out_bra=set(mode),

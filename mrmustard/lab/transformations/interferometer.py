@@ -24,7 +24,7 @@ from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexMatrix
 
 from ...physics import symplectics
-from ..utils import make_parameter
+
 from .base import Unitary
 
 __all__ = ["Interferometer"]
@@ -39,7 +39,6 @@ class Interferometer(Unitary):
     Args:
         modes: The modes this gate is applied to.
         unitary: A unitary matrix. For N modes it must have shape `(N,N)`. If ``None``, a random unitary is generated.
-        unitary_trainable: Whether ``unitary`` is trainable.
 
     Raises:
         ValueError: If the size of the unitary does not match the number of modes.
@@ -60,7 +59,6 @@ class Interferometer(Unitary):
         self,
         modes: int | tuple[int, ...],
         unitary: ComplexMatrix | None = None,
-        unitary_trainable: bool = False,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
         num_modes = len(modes)
@@ -70,14 +68,10 @@ class Interferometer(Unitary):
                 f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}",
             )
         super().__init__(name="Interferometer")
-        self.parameters.add_parameter(
-            make_parameter(unitary_trainable, unitary, "unitary", (None, None), "update_unitary"),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=lambda uni: Unitary.from_symplectic(
-                modes,
-                symplectics.interferometer_symplectic(uni),
-            ).bargmann_triple(),
-            uni=self.parameters.unitary,
-        )
+        self.parameters.add_parameter(unitary, "unitary")
+        A, b, c = Unitary.from_symplectic(
+            modes,
+            symplectics.interferometer_symplectic(self.parameters.unitary.value),
+        ).bargmann_triple()
+        self._ansatz = PolyExpAnsatz(A, b, c)
         self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))

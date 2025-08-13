@@ -26,7 +26,6 @@ from mrmustard.utils.typing import ComplexTensor
 
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
 from .base import Unitary
 
 __all__ = ["Sgate"]
@@ -41,10 +40,6 @@ class Sgate(Unitary):
         mode: The mode this gate is applied to.
         r: The squeezing magnitude.
         phi: The squeezing angle.
-        r_trainable: Whether ``r`` is trainable.
-        phi_trainable: Whether ``phi`` is trainable.
-        r_bounds: The bounds for ``r``.
-        phi_bounds: The bounds for ``phi``.
 
     .. code-block::
 
@@ -86,32 +81,16 @@ class Sgate(Unitary):
         mode: int | tuple[int],
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
-        r_trainable: bool = False,
-        phi_trainable: bool = False,
-        r_bounds: tuple[float | None, float | None] = (0.0, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="Sgate")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
-            ),
+        self.parameters.add_parameter(r, "r")
+        self.parameters.add_parameter(phi, "phi")
+        A, b, c = triples.squeezing_gate_Abc(
+            r=self.parameters.r.value,
+            phi=self.parameters.phi.value,
         )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_trainable,
-                value=phi,
-                name="phi",
-                bounds=phi_bounds,
-                dtype=math.float64,
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.squeezing_gate_Abc,
-            r=self.parameters.r,
-            phi=self.parameters.phi,
-        )
+        self._ansatz = PolyExpAnsatz(A, b, c)
         self._wires = Wires(
             modes_in_bra=set(),
             modes_out_bra=set(),

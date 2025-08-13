@@ -25,7 +25,7 @@ from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.wires import Wires
 
-from ..utils import make_parameter
+
 from .base import Channel
 
 __all__ = ["PhaseNoise"]
@@ -41,8 +41,6 @@ class PhaseNoise(Channel):
     Args:
         mode: The mode the channel is applied to.
         phase_stdev: The standard deviation of the random phase noise.
-        phase_stdev_trainable: Whether ``phase_stdev`` is trainable.
-        phase_stdev_bounds: The bounds for ``phase_stdev``.
 
     .. code-block::
 
@@ -60,20 +58,10 @@ class PhaseNoise(Channel):
         self,
         mode: int | tuple[int],
         phase_stdev: float = 0.0,
-        phase_stdev_trainable: bool = False,
-        phase_stdev_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="PhaseNoise")
-        self.parameters.add_parameter(
-            make_parameter(
-                phase_stdev_trainable,
-                phase_stdev,
-                "phase_stdev",
-                phase_stdev_bounds,
-                dtype=math.float64,
-            ),
-        )
+        self.parameters.add_parameter(phase_stdev, "phase_stdev")
         self._ansatz = None
         self._wires = Wires(
             modes_in_bra=set(mode),

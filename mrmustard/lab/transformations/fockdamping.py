@@ -25,7 +25,7 @@ from mrmustard.physics.wires import Wires
 
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
+
 from .base import Operation
 
 __all__ = ["FockDamping"]
@@ -39,8 +39,6 @@ class FockDamping(Operation):
     Args:
         mode: The mode this gate is applied to.
         damping: The damping parameter.
-        damping_trainable: Whether ``damping`` is trainable.
-        damping_bounds: The bounds for ``damping``.
 
     .. code-block::
 
@@ -71,23 +69,12 @@ class FockDamping(Operation):
         self,
         mode: int | tuple[int],
         damping: float | Sequence[float] = 0.0,
-        damping_trainable: bool = False,
-        damping_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="FockDamping")
-        self.parameters.add_parameter(
-            make_parameter(
-                damping_trainable,
-                damping,
-                "damping",
-                damping_bounds,
-                None,
-                dtype=math.float64,
-            ),
+        self.parameters.add_parameter(damping, "damping")
+        A, b, c = triples.fock_damping_Abc(
+            beta=self.parameters.damping.value,
         )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.fock_damping_Abc,
-            beta=self.parameters.damping,
-        )
+        self._ansatz = PolyExpAnsatz(A, b, c)
         self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))

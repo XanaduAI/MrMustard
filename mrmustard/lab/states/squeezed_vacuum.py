@@ -26,7 +26,6 @@ from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexTensor
 
-from ..utils import make_parameter
 from .ket import Ket
 
 __all__ = ["SqueezedVacuum"]
@@ -41,10 +40,6 @@ class SqueezedVacuum(Ket):
         mode: The mode of the squeezed vacuum state.
         r: The squeezing magnitude.
         phi: The squeezing angle.
-        r_trainable: Whether `r` is trainable.
-        phi_trainable: Whether `phi` is trainable.
-        r_bounds: The bounds of `r`.
-        phi_bounds: The bounds of `phi`.
 
     .. code-block::
 
@@ -61,33 +56,17 @@ class SqueezedVacuum(Ket):
         mode: int | tuple[int],
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
-        r_trainable: bool = False,
-        phi_trainable: bool = False,
-        r_bounds: tuple[float | None, float | None] = (None, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="SqueezedVacuum")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
-            ),
-        )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_trainable,
-                value=phi,
-                name="phi",
-                bounds=phi_bounds,
-                dtype=math.float64,
-            ),
-        )
+        self.parameters.add_parameter(r, "r")
+        self.parameters.add_parameter(phi, "phi")
 
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.squeezed_vacuum_state_Abc,
-            r=self.parameters.r,
-            phi=self.parameters.phi,
+        A, b, c = triples.squeezed_vacuum_state_Abc(
+            r=self.parameters.r.value,
+            phi=self.parameters.phi.value,
         )
+        self._ansatz = PolyExpAnsatz(A, b, c)
         self._wires = Wires(modes_out_ket=set(mode))
 
     def fock_array(
