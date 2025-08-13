@@ -27,7 +27,6 @@ from mrmustard.utils.typing import ComplexTensor
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
 from ..transformations.base import Map
-from ..utils import make_parameter
 
 __all__ = ["BtoChar"]
 
@@ -80,25 +79,27 @@ class BtoChar(Map):
         modes: int | tuple[int, ...],
         s: float,
     ):
-        modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="BtoChar")
-        self.parameters.add_parameter(make_parameter(False, s, "s", (None, None)))
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.displacement_map_s_parametrized_Abc,
-            s=self.parameters.s,
+        modes = (modes,) if isinstance(modes, int) else tuple(modes)
+        self._s = s
+
+        A, b, c = triples.displacement_map_s_parametrized_Abc(
+            s=s,
             n_modes=len(modes),
         )
-        self._wires = Wires(
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(
             modes_in_bra=set(modes),
             modes_out_bra=set(modes),
             modes_in_ket=set(modes),
             modes_out_ket=set(modes),
         )
-        for w in self.wires.output.sorted_wires:
+        for w in wires.output.sorted_wires:
             w.repr = ReprEnum.CHARACTERISTIC
 
+        super().__init__(ansatz=ansatz, wires=wires, name="BtoChar")
+
     def inverse(self):
-        ret = BtoChar(self.modes, self.parameters.s)
+        ret = BtoChar(self.modes, self._s)
         ret._ansatz = super().inverse().ansatz
         ret._wires = ret.wires.dual
         return ret
