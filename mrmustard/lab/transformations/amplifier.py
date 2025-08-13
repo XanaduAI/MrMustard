@@ -80,8 +80,6 @@ class Amplifier(Channel):
         mode: int,
         gain: float | Sequence[float] = 1.0,
     ):
-        self.gain = gain
-        
         A, b, c = triples.amplifier_Abc(g=gain)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(

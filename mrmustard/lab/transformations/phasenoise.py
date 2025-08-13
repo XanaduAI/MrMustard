@@ -59,7 +59,8 @@ class PhaseNoise(Channel):
         mode: int,
         phase_stdev: float = 0.0,
     ):
-        self.phase_stdev = phase_stdev
+        # Store parameter privately for custom method
+        self._phase_stdev = phase_stdev
         
         wires = Wires(
             modes_in_bra={mode},
@@ -89,7 +90,7 @@ class PhaseNoise(Channel):
             phase_factors = math.exp(
                 -0.5
                 * (mode_indices[mode] - mode_indices[other.n_modes + mode]) ** 2
-                * self.parameters.phase_stdev.value**2,
+                * self._phase_stdev**2,
             )
             array *= phase_factors
         return CircuitComponent._from_attributes(

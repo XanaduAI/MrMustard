@@ -82,8 +82,6 @@ class Coherent(Ket):
         mode: int,
         alpha: complex | Sequence[complex] = 0.0,
     ):
-        self.alpha = alpha
-        
         A, b, c = triples.coherent_state_Abc(alpha=alpha)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket={mode})

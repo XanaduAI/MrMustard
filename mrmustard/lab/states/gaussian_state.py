@@ -42,8 +42,8 @@ class GKet(Ket):
     Args:
         modes: the modes over which the state is defined.
         symplectic: the symplectic representation of the unitary that acts on
-        vacuum to produce the desired state. If `None`, a random symplectic matrix
-        is chosen.
+        vacuum to produce the desired state. Use ``math.random_symplectic(len(modes))``
+        to generate a random symplectic matrix if needed.
 
     Returns:
         A ``Ket``.
@@ -71,12 +71,11 @@ class GKet(Ket):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        symplectic: RealMatrix = None,
+        symplectic: RealMatrix,
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
+
         
-        self.symplectic = symplectic
         A, b, c = triples.gket_state_Abc(symplectic=symplectic)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket=set(modes))
@@ -111,8 +110,8 @@ class GDM(DM):
         float is provided for a multi-mode state, the same temperature is considered
         across all modes.
         symplectic: The symplectic representation of the unitary that acts on a
-        vacuum to produce the desired state. If `None`, a random symplectic matrix
-        is chosen.
+        vacuum to produce the desired state. Use ``math.random_symplectic(len(modes))``
+        to generate a random symplectic matrix if needed.
 
     Returns:
         A ``DM``.
@@ -143,14 +142,10 @@ class GDM(DM):
         self,
         modes: int | tuple[int, ...],
         beta: float | Sequence[float],
-        symplectic: RealMatrix | Sequence[RealMatrix] = None,
+        symplectic: RealMatrix | Sequence[RealMatrix],
     ) -> None:
-        modes = (modes,) if isinstance(modes, int) else modes
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
+        modes = (modes,) if isinstance(modes, int) else tuple(modes)
         (betas,) = list(reshape_params(len(modes), betas=beta))
-        
-        self.beta = betas
-        self.symplectic = symplectic
         
         A, b, c = triples.gdm_state_Abc(
             betas=betas,

@@ -57,8 +57,9 @@ class SqueezedVacuum(Ket):
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        self.r = r
-        self.phi = phi
+        # Store parameters privately for fock_array method
+        self._r = r
+        self._phi = phi
 
         A, b, c = triples.squeezed_vacuum_state_Abc(
             r=r,
@@ -76,8 +77,8 @@ class SqueezedVacuum(Ket):
         shape = self._check_fock_shape(shape)
         if self.ansatz.batch_shape:
             rs, phi = math.broadcast_arrays(
-                self.r,
-                self.phi,
+                self._r,
+                self._phi,
             )
             rs = math.reshape(rs, (-1,))
             phi = math.reshape(phi, (-1,))
@@ -89,8 +90,8 @@ class SqueezedVacuum(Ket):
                 ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
             ret = math.squeezed(
-                self.r,
-                self.phi,
+                self._r,
+                self._phi,
                 shape=shape,
             )
         return ret

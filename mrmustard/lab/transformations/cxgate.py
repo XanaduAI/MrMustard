@@ -63,8 +63,6 @@ class CXgate(Unitary):
         modes: tuple[int, int],
         s: float | Sequence[float] = 0.0,
     ):
-        self.s = s
-
         A, b, c = Unitary.from_symplectic(
             modes,
             symplectics.cxgate_symplectic(s),

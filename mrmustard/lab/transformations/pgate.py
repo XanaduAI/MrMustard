@@ -56,8 +56,6 @@ class Pgate(Unitary):
         mode: int,
         shearing: float | Sequence[float] = 0.0,
     ):
-        self.shearing = shearing
-        
         A, b, c = Unitary.from_symplectic(
             (mode,),
             symplectics.pgate_symplectic(1, shearing),

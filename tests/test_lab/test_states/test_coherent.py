@@ -36,15 +36,16 @@ class TestCoherent:
         assert state.modes == (modes,)
         assert state.ansatz.batch_shape == batch_shape
 
-    def test_trainable_parameters(self):
-        state1 = Coherent(0, 1 + 1j)
-        state2 = Coherent(0, 1 + 1j, alpha_trainable=True, alpha_bounds=(0, 2))
-
-        with pytest.raises(AttributeError):
-            state1.parameters.alpha.value = 3
-
-        state2.parameters.alpha.value = 2
-        assert state2.parameters.alpha.value == 2
+    def test_stateless_construction(self):
+        # Test that Coherent is now stateless - parameters only used for construction
+        state = Coherent(0, 1 + 1j)
+        
+        # Should not have any parameter storage
+        assert not hasattr(state, 'alpha')
+        
+        # But ansatz should be correctly constructed
+        assert state.name == "Coherent"
+        assert state.modes == (0,)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_representation(self, batch_shape):

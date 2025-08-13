@@ -64,10 +64,6 @@ class MZgate(Unitary):
         phi_b: float | Sequence[float] = 0.0,
         internal: bool = False,
     ):
-        self.phi_a = phi_a
-        self.phi_b = phi_b
-        self.internal = internal
-
         A, b, c = Unitary.from_symplectic(
             modes,
             symplectics.mzgate_symplectic(phi_a, phi_b, internal),

@@ -167,11 +167,9 @@ class Ket(State):
                 p < 1.0 - atol_purity,
                 f"Cannot initialize a Ket: purity is {p:.5f} (must be at least 1.0-{atol_purity}).",
             )
-        return Ket.from_ansatz(
-            modes,
-            coeff * PolyExpAnsatz.from_function(fn=wigner_to_bargmann_psi, cov=cov, means=means),
-            name,
-        )
+        A, b, c = wigner_to_bargmann_psi(cov=cov, means=means)
+        ansatz = PolyExpAnsatz(A, b, c)
+        return Ket.from_ansatz(modes, coeff * ansatz, name)
 
     @classmethod
     def random(cls, modes: Collection[int], max_r: float = 1.0, seed: int | None = None) -> Ket:

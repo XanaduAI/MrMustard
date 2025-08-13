@@ -81,8 +81,6 @@ class Attenuator(Channel):
         mode: int,
         transmissivity: float | Sequence[float] = 1.0,
     ):
-        self.transmissivity = transmissivity
-
         A, b, c = triples.attenuator_Abc(eta=transmissivity)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(

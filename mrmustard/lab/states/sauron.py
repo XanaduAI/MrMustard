@@ -57,12 +57,12 @@ class Sauron(Ket):
     """
 
     def __init__(self, mode: int, n: int, epsilon: float = 0.1):
-        self.n = math.astensor(n, dtype=math.int64)
-        self.epsilon = math.astensor(epsilon, dtype=math.float64)
+        n_tensor = math.astensor(n, dtype=math.int64)
+        epsilon_tensor = math.astensor(epsilon, dtype=math.float64)
 
         A, b, c = triples.sauron_state_Abc(
-            n=self.n,
-            epsilon=self.epsilon,
+            n=n_tensor,
+            epsilon=epsilon_tensor,
         )
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket={mode})

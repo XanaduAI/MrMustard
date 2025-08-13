@@ -70,8 +70,6 @@ class FockDamping(Operation):
         mode: int,
         damping: float | Sequence[float] = 0.0,
     ):
-        self.damping = damping
-        
         A, b, c = triples.fock_damping_Abc(beta=damping)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})

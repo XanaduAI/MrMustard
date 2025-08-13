@@ -38,7 +38,8 @@ class Interferometer(Unitary):
 
     Args:
         modes: The modes this gate is applied to.
-        unitary: A unitary matrix. For N modes it must have shape `(N,N)`. If ``None``, a random unitary is generated.
+        unitary: A unitary matrix. For N modes it must have shape `(N,N)`.
+        Use ``math.random_unitary(len(modes))`` to generate a random unitary matrix if needed.
 
     Raises:
         ValueError: If the size of the unitary does not match the number of modes.
@@ -58,17 +59,14 @@ class Interferometer(Unitary):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        unitary: ComplexMatrix | None = None,
+        unitary: ComplexMatrix,
     ):
         modes = (modes,) if isinstance(modes, int) else tuple(modes)
         num_modes = len(modes)
-        unitary = unitary if unitary is not None else math.random_unitary(num_modes)
         if unitary.shape[-1] != num_modes:
             raise ValueError(
-                f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}",
+                f"The size of the unitary must match the number of modes: {unitary.shape[-1]} ≠ {num_modes}",
             )
-        
-        self.unitary = unitary
         
         A, b, c = Unitary.from_symplectic(
             modes,

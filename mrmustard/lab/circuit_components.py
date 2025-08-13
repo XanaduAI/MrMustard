@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import numbers
 from collections.abc import Sequence
-from inspect import signature
+
 from pydoc import locate
 from typing import Any
 
@@ -125,8 +125,6 @@ class CircuitComponent:
         ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
         ret = CircuitComponent(ansatz, self.wires.dual, name=self.name)
         ret.short_name = self.short_name
-        for param in self.parameters.all_parameters.values():
-            ret.parameters.add_parameter(param)
         return ret
 
     @property
@@ -646,15 +644,7 @@ class CircuitComponent:
         for w in wires.quantum:
             w.repr = ReprEnum.BARGMANN
 
-        cls = type(self)
-        params = signature(cls).parameters
-        if "mode" in params or "modes" in params:
-            ret = self.__class__(self.modes, **self.parameters.to_dict())
-            ret._ansatz = ansatz
-            ret._wires = wires
-        else:
-            ret = self._from_attributes(ansatz, wires, self.name)
-        return ret
+        return self._from_attributes(ansatz, wires, self.name)
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
         r"""
@@ -693,15 +683,7 @@ class CircuitComponent:
             w.repr = ReprEnum.FOCK
             w.fock_cutoff = fock.core_shape[w.index]
 
-        cls = type(self)
-        params = signature(cls).parameters
-        if "mode" in params or "modes" in params:
-            ret = self.__class__(self.modes, **self.parameters.to_dict())
-            ret._ansatz = fock
-            ret._wires = wires
-        else:
-            ret = self._from_attributes(fock, wires, self.name)
-        return ret
+        return self._from_attributes(fock, wires, self.name)
 
     def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
         r"""

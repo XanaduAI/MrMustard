@@ -36,6 +36,7 @@ class Ggate(Unitary):
     Args:
         modes: The modes this gate is applied to.
         symplectic: The symplectic matrix of the gate in the XXPP ordering.
+        Use ``math.random_symplectic(len(modes))`` to generate a random symplectic matrix if needed.
 
     .. code-block::
 
@@ -52,12 +53,9 @@ class Ggate(Unitary):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        symplectic: RealMatrix | None = None,
+        symplectic: RealMatrix,
     ):
         modes = (modes,) if isinstance(modes, int) else tuple(modes)
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
-        
-        self.symplectic = symplectic
         
         A, b, c = Unitary.from_symplectic(modes, symplectic).bargmann_triple()  # TODO: add ggate to physics.triples
         ansatz = PolyExpAnsatz(A, b, c)

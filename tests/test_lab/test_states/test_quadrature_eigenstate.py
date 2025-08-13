@@ -49,8 +49,8 @@ class TestQuadratureEigenstate:
         assert state.name == "QuadratureEigenstate"
         assert state.modes == (modes,)
         assert state.L2_norm == np.inf
-        assert math.allclose(state.parameters.x.value, x)
-        assert math.allclose(state.parameters.phi.value, phi)
+        assert math.allclose(state.x, x)
+        assert math.allclose(state.phi, phi)
 
     @pytest.mark.parametrize("hbar", hbar)
     def test_probability_hbar(self, hbar):
@@ -64,19 +64,19 @@ class TestQuadratureEigenstate:
         assert math.allclose(b1, b2)
         assert math.allclose(c1, c2)
 
-    def test_trainable_parameters(self):
-        state1 = QuadratureEigenstate(0, 1, 1)
-        state2 = QuadratureEigenstate(0, 1, 1, x_trainable=True, x_bounds=(0, 2))
-        state3 = QuadratureEigenstate(0, 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
-
-        with pytest.raises(AttributeError):
-            state1.parameters.x.value = 3
-
-        state2.parameters.x.value = 2
-        assert state2.parameters.x.value == 2
-
-        state3.parameters.phi.value = 2
-        assert state3.parameters.phi.value == 2
+    def test_parameter_storage(self):
+        state = QuadratureEigenstate(0, 2.5, 1.2)
+        
+        # Test that x and phi are stored directly as attributes
+        assert state.x == 2.5
+        assert state.phi == 1.2
+        
+        # Test with batch parameters
+        batch_x = [1.0, 2.0, 3.0]
+        batch_phi = [0.1, 0.2, 0.3]
+        batch_state = QuadratureEigenstate(0, batch_x, batch_phi)
+        assert math.allclose(batch_state.x, batch_x)
+        assert math.allclose(batch_state.phi, batch_phi)
 
     def test_with_coherent(self):
         val0 = Coherent(0, 0) >> QuadratureEigenstate(0, 0, 0).dual

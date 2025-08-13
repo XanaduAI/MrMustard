@@ -68,16 +68,20 @@ class TestSqueezedVacuum:
         exp = (Vacuum(modes) >> Sgate(modes, r, phi)).ansatz
         assert rep == exp
 
-    def test_trainable_parameters(self):
-        state1 = SqueezedVacuum(0, 1, 1)
-        state2 = SqueezedVacuum(0, 1, 1, r_trainable=True, r_bounds=(-2, 2))
-        state3 = SqueezedVacuum(0, 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
-
-        with pytest.raises(AttributeError):
-            state1.parameters.r.value = 3
-
-        state2.parameters.r.value = 2
-        assert state2.parameters.r.value == 2
-
-        state3.parameters.phi.value = 2
-        assert state3.parameters.phi.value == 2
+    def test_private_parameter_storage(self):
+        # Test that SqueezedVacuum stores parameters privately for fock_array method
+        state = SqueezedVacuum(0, 1.5, 2.3)
+        
+        # Should not have public parameter access
+        assert not hasattr(state, 'r')
+        assert not hasattr(state, 'phi')
+        
+        # But should have private storage for custom methods
+        assert hasattr(state, '_r')
+        assert hasattr(state, '_phi')
+        assert state._r == 1.5
+        assert state._phi == 2.3
+        
+        # Test that fock_array method still works with private storage
+        fock = state.fock_array(5)
+        assert fock.shape == (5,)

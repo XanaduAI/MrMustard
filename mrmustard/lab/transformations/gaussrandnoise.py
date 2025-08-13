@@ -83,8 +83,6 @@ class GaussRandNoise(Channel):
             "The input Y matrix has negative eigenvalues.",
         )
 
-        self.Y = Y
-        
         A, b, c = triples.gaussian_random_noise_Abc(Y=Y)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(

@@ -69,10 +69,6 @@ class Number(Ket):
     ) -> None:
         n_tensor = math.astensor(n, dtype=math.int64)
         cutoff = int(math.max(n_tensor) + 1) if cutoff is None else cutoff
-        cutoff_tensor = math.astensor(cutoff, dtype=math.int64)
-        
-        self.n = n_tensor
-        self.cutoff = cutoff_tensor
         
         batch_dims = len(n_tensor.shape)
         array = fock_state(n=n_tensor, cutoff=cutoff)

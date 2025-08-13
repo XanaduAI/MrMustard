@@ -37,7 +37,8 @@ class RealInterferometer(Unitary):
 
     Args:
         modes: The modes this gate is applied to.
-        orthogonal: A real unitary (orthogonal) matrix.  For N modes it must have shape `(N,N)`. If ``None``, a random orthogonal is generated.
+        orthogonal: A real unitary (orthogonal) matrix.  For N modes it must have shape `(N,N)`.
+        Use ``math.random_orthogonal(len(modes))`` to generate a random orthogonal matrix if needed.
 
     .. code-block::
 
@@ -52,7 +53,7 @@ class RealInterferometer(Unitary):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        orthogonal: RealMatrix | None = None,
+        orthogonal: RealMatrix,
     ):
         modes = (modes,) if isinstance(modes, int) else tuple(modes)
         num_modes = len(modes)
@@ -61,10 +62,7 @@ class RealInterferometer(Unitary):
                 f"The size of the orthogonal matrix must match the number of modes: {orthogonal.shape[-1]} =/= {num_modes}",
             )
 
-        orthogonal = orthogonal if orthogonal is not None else math.random_orthogonal(num_modes)
 
-        self.orthogonal = orthogonal
-        
         A, b, c = Unitary.from_symplectic(
             modes,
             symplectics.realinterferometer_symplectic(orthogonal),

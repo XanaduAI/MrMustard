@@ -60,9 +60,6 @@ class QuadratureEigenstate(Ket):
         x: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        self.x = x
-        self.phi = phi
-
         A, b, c = triples.quadrature_eigenstates_Abc(
             x=x,
             phi=phi,

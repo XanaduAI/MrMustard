@@ -82,8 +82,9 @@ class Sgate(Unitary):
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        self.r = r
-        self.phi = phi
+        # Store parameters privately for fock_array method
+        self._r = r
+        self._phi = phi
         
         A, b, c = triples.squeezing_gate_Abc(r=r, phi=phi)
         ansatz = PolyExpAnsatz(A, b, c)
@@ -98,8 +99,8 @@ class Sgate(Unitary):
         shape = self._check_fock_shape(shape)
         if self.ansatz.batch_shape:
             rs, phi = math.broadcast_arrays(
-                self.r,
-                self.phi,
+                self._r,
+                self._phi,
             )
             rs = math.reshape(rs, (-1,))
             phi = math.reshape(phi, (-1,))
@@ -111,8 +112,8 @@ class Sgate(Unitary):
                 ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
             ret = math.squeezer(
-                self.r,
-                self.phi,
+                self._r,
+                self._phi,
                 shape=shape,
             )
         return ret

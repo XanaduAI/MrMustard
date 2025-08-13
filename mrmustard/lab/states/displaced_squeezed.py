@@ -60,10 +60,6 @@ class DisplacedSqueezed(Ket):
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        self.alpha = alpha
-        self.r = r
-        self.phi = phi
-
         A, b, c = triples.displaced_squeezed_vacuum_state_Abc(
             alpha=alpha,
             r=r,

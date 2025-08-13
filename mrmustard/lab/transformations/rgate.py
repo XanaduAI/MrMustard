@@ -55,8 +55,6 @@ class Rgate(Unitary):
         mode: int,
         theta: float | Sequence[float] = 0.0,
     ):
-        self.theta = theta
-        
         A, b, c = triples.rotation_gate_Abc(theta=theta)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})

@@ -63,7 +63,6 @@ class BargmannEigenstate(Ket):
         mode: int,
         alpha: complex | Sequence[complex] = 0.0j,
     ):
-        self.alpha = alpha
         A, b, c = triples.bargmann_eigenstate_Abc(alpha=alpha)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket={mode})

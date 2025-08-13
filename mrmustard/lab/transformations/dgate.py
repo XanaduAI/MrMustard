@@ -76,7 +76,8 @@ class Dgate(Unitary):
         mode: int,
         alpha: complex | Sequence[complex] = 0.0j,
     ) -> None:
-        self.alpha = alpha
+        # Store parameter privately for fock_array method
+        self._alpha = alpha
         
         A, b, c = triples.displacement_gate_Abc(alpha=alpha)
         ansatz = PolyExpAnsatz(A, b, c)
@@ -101,12 +102,12 @@ class Dgate(Unitary):
         """
         shape = self._check_fock_shape(shape)
         if self.ansatz.batch_shape:
-            alpha = self.alpha
+            alpha = self._alpha
             alpha = math.reshape(alpha, (-1,))
             ret = math.astensor([math.displacement(alpha_i, shape=shape) for alpha_i in alpha])
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
             if self.ansatz._lin_sup:
                 ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
-            ret = math.displacement(self.alpha, shape=shape)
+            ret = math.displacement(self._alpha, shape=shape)
         return ret

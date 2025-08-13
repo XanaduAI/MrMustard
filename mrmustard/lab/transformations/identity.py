@@ -67,7 +67,7 @@ class Identity(Unitary):
         modes: int | tuple[int, ...],
     ):
         modes = (modes,) if isinstance(modes, int) else tuple(modes)
-        super().__init__(name="Identity")
-
-        self._ansatz = PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes))
-        self._wires = Wires(modes_out_ket=set(modes), modes_in_ket=set(modes))
+        A, b, c = triples.identity_Abc(n_modes=len(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket=set(modes), modes_in_ket=set(modes))
+        super().__init__(ansatz=ansatz, wires=wires, name="Identity")

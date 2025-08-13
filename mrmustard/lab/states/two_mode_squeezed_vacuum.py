@@ -58,9 +58,6 @@ class TwoModeSqueezedVacuum(Ket):
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        self.r = r
-        self.phi = phi
-        
         A, b, c = triples.two_mode_squeezed_vacuum_state_Abc(
             r=r,
             phi=phi,

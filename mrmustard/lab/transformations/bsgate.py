@@ -88,8 +88,9 @@ class BSgate(Unitary):
         theta: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        self.theta = theta
-        self.phi = phi
+        # Store parameters privately for fock_array method
+        self._theta = theta
+        self._phi = phi
         
         A, b, c = triples.beamsplitter_gate_Abc(
             theta=theta,
@@ -126,8 +127,8 @@ class BSgate(Unitary):
         shape = self._check_fock_shape(shape)
         if self.ansatz.batch_shape:
             theta, phi = math.broadcast_arrays(
-                self.theta,
-                self.phi,
+                self._theta,
+                self._phi,
             )
             theta = math.reshape(theta, (-1,))
             phi = math.reshape(phi, (-1,))
@@ -139,8 +140,8 @@ class BSgate(Unitary):
                 ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
             ret = math.beamsplitter(
-                self.theta,
-                self.phi,
+                self._theta,
+                self._phi,
                 shape=shape,
                 method=method,
             )

@@ -56,8 +56,6 @@ class Thermal(DM):
         mode: int,
         nbar: int | Sequence[int] = 0,
     ) -> None:
-        self.nbar = nbar
-        
         A, b, c = triples.thermal_state_Abc(nbar=nbar)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_bra={mode}, modes_out_ket={mode})
