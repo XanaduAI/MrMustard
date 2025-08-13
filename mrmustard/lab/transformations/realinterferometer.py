@@ -63,11 +63,13 @@ class RealInterferometer(Unitary):
 
         orthogonal = orthogonal if orthogonal is not None else math.random_orthogonal(num_modes)
 
-        super().__init__(name="RealInterferometer")
-        self.parameters.add_parameter(orthogonal, "orthogonal")
+        self.orthogonal = orthogonal
+        
         A, b, c = Unitary.from_symplectic(
             modes,
-            symplectics.realinterferometer_symplectic(self.parameters.orthogonal.value),
+            symplectics.realinterferometer_symplectic(orthogonal),
         ).bargmann_triple()
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="RealInterferometer")

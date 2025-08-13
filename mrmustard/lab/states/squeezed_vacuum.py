@@ -58,16 +58,17 @@ class SqueezedVacuum(Ket):
         phi: float | Sequence[float] = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="SqueezedVacuum")
-        self.parameters.add_parameter(r, "r")
-        self.parameters.add_parameter(phi, "phi")
+        self.r = r
+        self.phi = phi
 
         A, b, c = triples.squeezed_vacuum_state_Abc(
-            r=self.parameters.r.value,
-            phi=self.parameters.phi.value,
+            r=r,
+            phi=phi,
         )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_out_ket=set(mode))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket=set(mode))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="SqueezedVacuum")
 
     def fock_array(
         self,
@@ -76,8 +77,8 @@ class SqueezedVacuum(Ket):
         shape = self._check_fock_shape(shape)
         if self.ansatz.batch_shape:
             rs, phi = math.broadcast_arrays(
-                self.parameters.r.value,
-                self.parameters.phi.value,
+                self.r,
+                self.phi,
             )
             rs = math.reshape(rs, (-1,))
             phi = math.reshape(phi, (-1,))
@@ -89,8 +90,8 @@ class SqueezedVacuum(Ket):
                 ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
             ret = math.squeezed(
-                self.parameters.r.value,
-                self.parameters.phi.value,
+                self.r,
+                self.phi,
                 shape=shape,
             )
         return ret

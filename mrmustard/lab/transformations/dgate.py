@@ -77,13 +77,13 @@ class Dgate(Unitary):
         alpha: complex | Sequence[complex] = 0.0j,
     ) -> None:
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Dgate")
-        self.parameters.add_parameter(alpha, "alpha")
-        A, b, c = triples.displacement_gate_Abc(
-            alpha=self.parameters.alpha.value,
-        )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(set(), set(), set(mode), set(mode))
+        self.alpha = alpha
+        
+        A, b, c = triples.displacement_gate_Abc(alpha=alpha)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(set(), set(), set(mode), set(mode))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="Dgate")
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
@@ -102,12 +102,12 @@ class Dgate(Unitary):
         """
         shape = self._check_fock_shape(shape)
         if self.ansatz.batch_shape:
-            alpha = self.parameters.alpha.value
+            alpha = self.alpha
             alpha = math.reshape(alpha, (-1,))
             ret = math.astensor([math.displacement(alpha_i, shape=shape) for alpha_i in alpha])
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
             if self.ansatz._lin_sup:
                 ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
-            ret = math.displacement(self.parameters.alpha.value, shape=shape)
+            ret = math.displacement(self.alpha, shape=shape)
         return ret

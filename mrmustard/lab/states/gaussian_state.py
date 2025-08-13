@@ -74,14 +74,15 @@ class GKet(Ket):
         symplectic: RealMatrix = None,
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="GKet")
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
-        self.parameters.add_parameter(symplectic, "symplectic")
-        A, b, c = triples.gket_state_Abc(
-            symplectic=self.parameters.symplectic.value,
-        )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_out_ket=set(modes))
+        
+        self.symplectic = symplectic
+        
+        A, b, c = triples.gket_state_Abc(symplectic=symplectic)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket=set(modes))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="GKet")
 
     def __getitem__(self, idx: int | Sequence[int]) -> GKet:
         r"""
@@ -146,17 +147,20 @@ class GDM(DM):
         symplectic: RealMatrix = None,
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="GDM")
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
         (betas,) = list(reshape_params(len(modes), betas=beta))
-        self.parameters.add_parameter(symplectic, "symplectic")
-        self.parameters.add_parameter(betas, "beta")
+        
+        self.beta = betas
+        self.symplectic = symplectic
+        
         A, b, c = triples.gdm_state_Abc(
-            betas=self.parameters.beta.value,
-            symplectic=self.parameters.symplectic.value,
+            betas=betas,
+            symplectic=symplectic,
         )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="GDM")
 
     def __getitem__(self, idx: int | Sequence[int]) -> GDM:
         r"""

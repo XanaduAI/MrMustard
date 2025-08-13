@@ -61,15 +61,16 @@ class DisplacedSqueezed(Ket):
         phi: float | Sequence[float] = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="DisplacedSqueezed")
-        self.parameters.add_parameter(alpha, "alpha")
-        self.parameters.add_parameter(r, "r")
-        self.parameters.add_parameter(phi, "phi")
+        self.alpha = alpha
+        self.r = r
+        self.phi = phi
 
         A, b, c = triples.displaced_squeezed_vacuum_state_Abc(
-            alpha=self.parameters.alpha.value,
-            r=self.parameters.r.value,
-            phi=self.parameters.phi.value,
+            alpha=alpha,
+            r=r,
+            phi=phi,
         )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_out_ket=set(mode))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket=set(mode))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="DisplacedSqueezed")

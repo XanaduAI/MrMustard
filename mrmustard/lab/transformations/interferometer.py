@@ -67,11 +67,14 @@ class Interferometer(Unitary):
             raise ValueError(
                 f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}",
             )
-        super().__init__(name="Interferometer")
-        self.parameters.add_parameter(unitary, "unitary")
+        
+        self.unitary = unitary
+        
         A, b, c = Unitary.from_symplectic(
             modes,
-            symplectics.interferometer_symplectic(self.parameters.unitary.value),
+            symplectics.interferometer_symplectic(unitary),
         ).bargmann_triple()
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="Interferometer")

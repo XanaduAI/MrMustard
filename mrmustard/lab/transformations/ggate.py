@@ -55,19 +55,19 @@ class Ggate(Unitary):
         symplectic: RealMatrix | None = None,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="Ggate")
-
         symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
-        self.parameters.add_parameter(symplectic, "symplectic")
-        A, b, c = Unitary.from_symplectic(modes, self.parameters.symplectic.value).bargmann_triple()
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(
+        
+        self.symplectic = symplectic
+        
+        A, b, c = Unitary.from_symplectic(modes, symplectic).bargmann_triple()
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(
             modes_in_bra=set(),
             modes_out_bra=set(),
             modes_in_ket=set(modes),
             modes_out_ket=set(modes),
         )
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="Ggate")
 
-    @property
-    def symplectic(self):
-        return self.parameters.symplectic.value
+

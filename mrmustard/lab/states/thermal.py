@@ -57,10 +57,10 @@ class Thermal(DM):
         nbar: int | Sequence[int] = 0,
     ) -> None:
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Thermal")
-        self.parameters.add_parameter(nbar, "nbar")
-        A, b, c = triples.thermal_state_Abc(
-            nbar=self.parameters.nbar.value,
-        )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_out_bra=set(mode), modes_out_ket=set(mode))
+        self.nbar = nbar
+        
+        A, b, c = triples.thermal_state_Abc(nbar=nbar)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_bra=set(mode), modes_out_ket=set(mode))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="Thermal")

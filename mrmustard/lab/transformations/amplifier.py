@@ -82,13 +82,15 @@ class Amplifier(Channel):
         gain: float | Sequence[float] = 1.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Amp~")
-        self.parameters.add_parameter(gain, "gain")
-        A, b, c = triples.amplifier_Abc(g=self.parameters.gain.value)
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(
+        self.gain = gain
+        
+        A, b, c = triples.amplifier_Abc(g=gain)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(
             modes_in_bra=set(mode),
             modes_out_bra=set(mode),
             modes_in_ket=set(mode),
             modes_out_ket=set(mode),
         )
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="Amp~")

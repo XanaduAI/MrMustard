@@ -83,20 +83,22 @@ class Sgate(Unitary):
         phi: float | Sequence[float] = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Sgate")
-        self.parameters.add_parameter(r, "r")
-        self.parameters.add_parameter(phi, "phi")
+        self.r = r
+        self.phi = phi
+        
         A, b, c = triples.squeezing_gate_Abc(
-            r=self.parameters.r.value,
-            phi=self.parameters.phi.value,
+            r=r,
+            phi=phi,
         )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(
             modes_in_bra=set(),
             modes_out_bra=set(),
             modes_in_ket=set(mode),
             modes_out_ket=set(mode),
         )
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="Sgate")
 
     def fock_array(
         self,
@@ -105,8 +107,8 @@ class Sgate(Unitary):
         shape = self._check_fock_shape(shape)
         if self.ansatz.batch_shape:
             rs, phi = math.broadcast_arrays(
-                self.parameters.r.value,
-                self.parameters.phi.value,
+                self.r,
+                self.phi,
             )
             rs = math.reshape(rs, (-1,))
             phi = math.reshape(phi, (-1,))
@@ -118,8 +120,8 @@ class Sgate(Unitary):
                 ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
             ret = math.squeezer(
-                self.parameters.r.value,
-                self.parameters.phi.value,
+                self.r,
+                self.phi,
                 shape=shape,
             )
         return ret

@@ -64,13 +64,15 @@ class MZgate(Unitary):
         phi_b: float | Sequence[float] = 0.0,
         internal: bool = False,
     ):
-        super().__init__(name="MZgate")
-        self.parameters.add_parameter(phi_a, "phi_a")
-        self.parameters.add_parameter(phi_b, "phi_b")
+        self.phi_a = phi_a
+        self.phi_b = phi_b
+        self.internal = internal
 
         A, b, c = Unitary.from_symplectic(
             modes,
-            symplectics.mzgate_symplectic(self.parameters.phi_a.value, self.parameters.phi_b.value, internal),
+            symplectics.mzgate_symplectic(phi_a, phi_b, internal),
         ).bargmann_triple()
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="MZgate")

@@ -58,12 +58,14 @@ class TwoModeSqueezedVacuum(Ket):
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        super().__init__(name="TwoModeSqueezedVacuum")
-        self.parameters.add_parameter(r, "r")
-        self.parameters.add_parameter(phi, "phi")
+        self.r = r
+        self.phi = phi
+        
         A, b, c = triples.two_mode_squeezed_vacuum_state_Abc(
-            r=self.parameters.r.value,
-            phi=self.parameters.phi.value,
+            r=r,
+            phi=phi,
         )
-        self._ansatz = PolyExpAnsatz(A, b, c)
-        self._wires = Wires(modes_out_ket=set(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket=set(modes))
+        
+        super().__init__(ansatz=ansatz, wires=wires, name="TwoModeSqueezedVacuum")

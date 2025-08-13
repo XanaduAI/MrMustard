@@ -31,8 +31,6 @@ from numpy.typing import ArrayLike
 
 from mrmustard import math, settings
 from mrmustard import widgets as mmwidgets
-from mrmustard.math.parameter_set import ParameterSet
-from mrmustard.math.parameters import Variable
 from mrmustard.physics.ansatz import Ansatz, ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.fock_utils import oscillator_eigenstate
 from mrmustard.physics.triples import identity_Abc
@@ -72,7 +70,6 @@ class CircuitComponent:
     ) -> None:
         self._ansatz = ansatz
         self._name = name
-        self._parameters = ParameterSet()
         self._wires = wires or Wires(set(), set(), set(), set())
 
         if isinstance(ansatz, ArrayAnsatz):
@@ -98,8 +95,6 @@ class CircuitComponent:
         ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
         ret = CircuitComponent(ansatz, self.wires.adjoint, name=self.name)
         ret.short_name = self.short_name
-        for param in self.parameters.all_parameters.values():
-            ret.parameters.add_parameter(param)
         return ret
 
     @property
@@ -197,20 +192,6 @@ class CircuitComponent:
             >>> assert ket.n_modes == 2
         """
         return len(self.modes)
-
-    @property
-    def parameters(self) -> ParameterSet:
-        r"""
-        The set of parameters of this component.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import Coherent
-
-            >>> coh = Coherent(mode=0, alpha=1.0)
-            >>> assert coh.parameters.alpha.value == 1.0
-        """
-        return self._parameters
 
     @property
     def wires(self) -> Wires:
@@ -364,16 +345,8 @@ class CircuitComponent:
     @classmethod
     def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
         ret = cls.__new__(cls)
-        ret._parameters, ret._ansatz = children
+        ret._ansatz = children[0]
         ret._wires, ret._name = aux_data
-
-        # make sure the ansatz parameters match the parameter set
-        for param_name, param in ret.ansatz._kwargs.items():
-            if isinstance(param, Variable):
-                ret.ansatz._kwargs[param_name] = ret.parameters.all_parameters[param.name]
-            else:  # need this to build pytree of labels
-                ret.ansatz._kwargs[param_name] = param
-
         return ret
 
     def auto_shape(self, **_) -> tuple[int, ...]:
@@ -834,16 +807,10 @@ class CircuitComponent:
         else:
             raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
 
-        if self.parameters:
-            for k, v in self.parameters.variables.items():
-                serializable[f"{k}_bounds"] = v.bounds
-                serializable[f"{k}_trainable"] = True
-            return serializable, {k: v.value for k, v in self.parameters.all_parameters.items()}
-
         return serializable, {}
 
     def _tree_flatten(self):  # pragma: no cover
-        children = (self.parameters, self.ansatz)
+        children = (self.ansatz,)
         aux_data = (self.wires, self.name)
         return (children, aux_data)
 
@@ -853,37 +820,6 @@ class CircuitComponent:
         """
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
-
-        if (
-            isinstance(self.ansatz, PolyExpAnsatz)
-            and self.ansatz._fn is not None
-            and self.ansatz._fn == other.ansatz._fn
-        ):
-            new_params = {}
-            for name in self.ansatz._kwargs:
-                self_param = getattr(self.parameters, name)
-                other_param = getattr(other.parameters, name)
-                if (self_type := type(self_param)) is not (other_type := type(other_param)):
-                    raise ValueError(
-                        f"Parameter '{name}' is a {self_type.__name__} for one component and a {other_type.__name__} for the other."
-                    )
-                if (self.ansatz.batch_dims - self.ansatz._lin_sup) > 0 or (
-                    other.ansatz.batch_dims - other.ansatz._lin_sup
-                ) > 0:
-                    raise ValueError("Cannot add batched components.")
-                if isinstance(self_param, Variable):
-                    if self_param.bounds != other_param.bounds:
-                        raise ValueError(
-                            f"Parameter '{name}' has bounds {self_param.bounds} and {other_param.bounds} for the two components."
-                        )
-                    new_params[name + "_trainable"] = True
-                    new_params[name + "_bounds"] = self_param.bounds
-                self_val = math.atleast_nd(self_param.value, 1)
-                other_val = math.atleast_nd(other_param.value, 1)
-                new_params[name] = math.concat((self_val, other_val), axis=0)
-            ret = self.__class__(self.modes, **new_params)
-            ret.ansatz._lin_sup = True
-            return ret
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
         ret = self._from_attributes(ansatz, self.wires, name)
