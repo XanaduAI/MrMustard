@@ -19,15 +19,13 @@ This module contains the PolyExp ansatz.
 from __future__ import annotations
 
 import itertools
-from collections.abc import Callable, Sequence
-from typing import Any
+from collections.abc import Sequence
 
 import numpy as np
 from IPython.display import display
 from numpy.typing import ArrayLike
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.parameters import Variable
 from mrmustard.physics.fock_utils import c_in_PS
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
@@ -106,9 +104,9 @@ class PolyExpAnsatz(Ansatz):
 
     def __init__(
         self,
-        A: ComplexMatrix | Batch[ComplexMatrix] | None,
-        b: ComplexVector | Batch[ComplexVector] | None,
-        c: ComplexTensor | Batch[ComplexTensor] | None,
+        A: ComplexMatrix | Batch[ComplexMatrix],
+        b: ComplexVector | Batch[ComplexVector],
+        c: ComplexTensor | Batch[ComplexTensor],
         name: str = "",
         lin_sup: bool = False,
     ):
@@ -117,30 +115,14 @@ class PolyExpAnsatz(Ansatz):
         self._simplified = False
         self._lin_sup = lin_sup
 
-        self._A = math.astensor(A) if A is not None else None
-        self._b = math.astensor(b) if b is not None else None
-        self._c = math.astensor(c) if c is not None else None
+        self.A = math.astensor(A)
+        self.b = math.astensor(b)
+        self.c = math.astensor(c)
 
-        verify_batch_triple(self._A, self._b, self._c)
+        verify_batch_triple(self.A, self.b, self.c)
+        self._batch_shape = tuple(self.A.shape[:-2])
 
-        if A is not None:
-            self._batch_shape = tuple(self._A.shape[:-2])
 
-    @property
-    def A(self) -> Batch[ComplexMatrix]:
-        r"""
-        The batch of quadratic coefficient :math:`A^{(i)}`.
-        """
-        self._generate_ansatz()
-        return self._A
-
-    @property
-    def b(self) -> Batch[ComplexVector]:
-        r"""
-        The batch of linear coefficients :math:`b^{(i)}`.
-        """
-        self._generate_ansatz()
-        return self._b
 
     @property
     def batch_dims(self) -> tuple[int, ...]:
@@ -148,21 +130,11 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def batch_shape(self) -> tuple[int, ...]:
-        if self._A is None:
-            self._generate_ansatz()
         return self._batch_shape
 
     @property
     def batch_size(self) -> int:
         return math.prod(self.batch_shape) if self.batch_shape else 0
-
-    @property
-    def c(self) -> Batch[ComplexTensor]:
-        r"""
-        The batch of polynomial coefficients :math:`c^{(i)}_{k}`.
-        """
-        self._generate_ansatz()
-        return self._c
 
     @property
     def conj(self):
@@ -276,28 +248,19 @@ class PolyExpAnsatz(Ansatz):
         r"""Creates an ansatz from a dictionary. For deserialization purposes."""
         return cls(**data)
 
-    @classmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> PolyExpAnsatz:
-        r"""
-        Creates an ansatz given a function and its kwargs. This ansatz is lazily instantiated,
-        i.e. the function is not called until the A,b,c attributes are accessed (even internally).
-        """
-        ansatz = cls(None, None, None, None)
-        ansatz._fn = fn
-        ansatz._kwargs = kwargs
-        return ansatz
+
 
     @classmethod
     def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
         ret = cls.__new__(cls)
-        (ret._kwargs,) = children
+        (kwargs_unused,) = children  # no longer using _kwargs
         (
             ret._batch_shape,
             ret._lin_sup,
-            ret._fn,
-            ret._A,
-            ret._b,
-            ret._c,
+            _,  # removed _fn
+            ret.A,
+            ret.b,
+            ret.c,
             ret._simplified,
             ret.name,
         ) = aux_data
@@ -687,24 +650,7 @@ class PolyExpAnsatz(Ansatz):
                 c = math.update_add_tensor(c, [d0r], [c[dr]])
         return (A, b, c), to_keep
 
-    def _generate_ansatz(self):
-        r"""
-        This method computes and sets the (A, b, c) triple given a function and its kwargs.
-        """
-        if self._should_regenerate():
-            params = {}
-            for name, param in self._kwargs.items():
-                try:
-                    params[name] = param.value
-                except AttributeError:
-                    params[name] = param
 
-            A, b, c = self._fn(**params)
-            self._A = math.astensor(A)
-            self._b = math.astensor(b)
-            self._c = math.astensor(c)
-            verify_batch_triple(self._A, self._b, self._c)
-            self._batch_shape = tuple(self._A.shape[:-2])
 
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL:
@@ -816,17 +762,11 @@ class PolyExpAnsatz(Ansatz):
             lin_sup=self._lin_sup,
         )
 
-    def _should_regenerate(self):
-        return (
-            self._A is None
-            or self._b is None
-            or self._c is None
-            or Variable in {type(param) for param in self._kwargs.values()}
-        )
+
 
     def _tree_flatten(self):  # pragma: no cover
         children, aux_data = super()._tree_flatten()
-        aux_data += (self._A, self._b, self._c, self._simplified, self.name)
+        aux_data += (self.A, self.b, self.c, self._simplified, self.name)
         return (children, aux_data)
 
     def __add__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
@@ -996,8 +936,6 @@ class PolyExpAnsatz(Ansatz):
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the PolyExpAnsatz object."""
-        self._generate_ansatz()  # Ensure parameters are generated if needed
-
         # Create a descriptive name
         display_name = f'"{self.name}"' if self.name else "unnamed"
 
@@ -1016,14 +954,6 @@ class PolyExpAnsatz(Ansatz):
         # Add information about simplification status
         if self._simplified:
             repr_str.append("  Status: simplified")
-
-        # Add information about function generation if applicable
-        if self._fn is not None:
-            fn_name = getattr(self._fn, "__name__", str(self._fn))
-            repr_str.append(f"  Generated from: {fn_name}")
-            if self._kwargs:
-                param_str = ", ".join(f"{k}={v}" for k, v in self._kwargs.items())
-                repr_str.append(f"  Parameters: {param_str}")
 
         return "\n".join(repr_str)
 
