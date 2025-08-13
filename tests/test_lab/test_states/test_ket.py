@@ -28,6 +28,7 @@ from mrmustard.lab import (
     Coherent,
     Dgate,
     Ggate,
+    GKet,
     Identity,
     Ket,
     Number,
@@ -71,6 +72,22 @@ class TestKet:
         assert name if name else state.name in ("Ket0", "Ket01", "Ket2319")
         assert state.modes == modes
         assert state.wires == Wires(modes_out_ket=set(modes))
+
+    def test_is_separable(self):
+        separable = Coherent(0, alpha=1)
+        assert separable.is_separable
+
+        separable_multimode = Coherent(0, alpha=1) >> Coherent(1, alpha=1) >> Coherent(2, alpha=1)
+        assert separable_multimode.is_separable
+
+        entangled_state = GKet([0, 1, 2])
+        assert not entangled_state.is_separable
+
+        entangled_state = Coherent(0, alpha=1) >> GKet([1, 2])
+        assert not entangled_state.is_separable
+
+        with pytest.raises(NotImplementedError):
+            (Coherent(0, alpha=1) + Coherent(0, alpha=1)).is_separable  # noqa: B018
 
     def test_manual_shape(self):
         ket = Coherent(0, alpha=1)
@@ -558,6 +575,30 @@ class TestKet:
             A - math.transpose(A),
             math.zeros((2, 2)),
         )  # checks if the A matrix is symmetric
+
+    def test_random_seed(self):
+        # same seed should produce same state
+        assert Ket.random(modes=[0, 1], seed=42) == Ket.random(modes=[0, 1], seed=42)
+        # different seeds should produce different states
+        assert Ket.random(modes=[0, 1], seed=42) != Ket.random(modes=[0, 1], seed=43)
+
+        # local seed should not affect global seed
+        settings.SEED = 42
+        ket_from_global_1 = Ket.random(modes=[0, 1])
+        ket_from_global_2 = Ket.random(modes=[0, 1])
+
+        settings.SEED = 42
+        ket_from_global_1_redux = Ket.random(modes=[0, 1])
+        # this call should not affect the global RNG
+        _ = Ket.random(modes=[0, 1], seed=123)
+        ket_from_global_2_redux = Ket.random(modes=[0, 1])
+
+        assert ket_from_global_1 == ket_from_global_1_redux
+        assert ket_from_global_2 == ket_from_global_2_redux
+
+        # no modes should raise error
+        with pytest.raises(ValueError, match="Cannot create a random state with no modes."):
+            Ket.random(modes=[])
 
     def test_ipython_repr(self):
         """
