@@ -71,17 +71,19 @@ class TestOptimizer:
 
     def test_bsgate_optimization(self):
         """Test that BSgate is optimized correctly."""
-        bsgate = BSgate((0, 1), 0.05, 0.1, theta_trainable=True, phi_trainable=True)
+        theta_var = Variable(0.05, "theta")
+        phi_var = Variable(0.1, "phi")
         target_gate = BSgate((0, 1), 0.1, 0.2).fock_array(40)
 
-        def cost_fn(bsgate):
+        def cost_fn(theta, phi):
+            bsgate = BSgate((0, 1), theta=theta, phi=phi)
             return -(math.abs(math.sum(math.conj(bsgate.fock_array(40)) * target_gate)) ** 2)
 
         opt = Optimizer()
-        (bsgate,) = opt.minimize(cost_fn, by_optimizing=[bsgate])
+        (theta_var, phi_var) = opt.minimize(cost_fn, by_optimizing=[theta_var, phi_var])
 
-        assert math.allclose(bsgate.parameters.theta.value, 0.1, atol=0.01)
-        assert math.allclose(bsgate.parameters.phi.value, 0.2, atol=0.01)
+        assert math.allclose(theta_var.value, 0.1, atol=0.01)
+        assert math.allclose(phi_var.value, 0.2, atol=0.01)
 
     def test_cat_state_optimization(self):
         # Note: we need to intitialize the cat state with a non-zero value. This is because
@@ -132,17 +134,18 @@ class TestOptimizer:
 
     def test_dgate_optimization(self):
         """Test that Dgate is optimized correctly."""
-        dgate = Dgate(0, alpha_trainable=True)
+        alpha_var = Variable(0.0 + 0.0j, "alpha")
         target_state = DisplacedSqueezed(0, r=0.0, alpha=0.1 + 0.2j)
 
-        def cost_fn(dgate):
+        def cost_fn(alpha):
+            dgate = Dgate(0, alpha=alpha)
             state_out = Vacuum(0) >> dgate
             return -math.real(state_out.expectation(target_state))
 
         opt = Optimizer()
-        (dgate,) = opt.minimize(cost_fn, by_optimizing=[dgate])
+        (alpha_var,) = opt.minimize(cost_fn, by_optimizing=[alpha_var])
 
-        assert math.allclose(dgate.parameters.alpha.value, 0.1 + 0.2j, atol=0.01)
+        assert math.allclose(alpha_var.value, 0.1 + 0.2j, atol=0.01)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (3, 2)])
     def test_displacement_grad_from_fock(self, batch_shape):
@@ -471,24 +474,27 @@ class TestOptimizer:
 
     def test_reuse_optimizer(self):
         """Test that the same optimizer instance can be reused."""
-        sgate = Sgate(0, r=0.2, phi=0.1, r_trainable=True, phi_trainable=True)
+        r_var = Variable(0.2, "r")
+        phi_var = Variable(0.1, "phi")
         target_state = SqueezedVacuum(0, r=0.1, phi=0.2).fock_array((40,))
 
-        def cost_fn(sgate):
+        def cost_fn(r, phi):
+            sgate = Sgate(0, r=r, phi=phi)
             state_out = Vacuum(0) >> sgate
             return -(math.abs(math.sum(math.conj(state_out.fock_array((40,))) * target_state)) ** 2)
 
         opt = Optimizer()
-        (sgate,) = opt.minimize(cost_fn, by_optimizing=[sgate])
+        (r_var, phi_var) = opt.minimize(cost_fn, by_optimizing=[r_var, phi_var])
 
-        assert math.allclose(sgate.parameters.r.value, 0.1, atol=0.01)
-        assert math.allclose(sgate.parameters.phi.value, 0.2, atol=0.01)
+        assert math.allclose(r_var.value, 0.1, atol=0.01)
+        assert math.allclose(phi_var.value, 0.2, atol=0.01)
 
-        sgate_reused = Sgate(0, r=0.2, phi=0.1, r_trainable=True, phi_trainable=True)
-        (sgate_reused,) = opt.minimize(cost_fn, by_optimizing=[sgate_reused])
+        r_var_reused = Variable(0.2, "r")
+        phi_var_reused = Variable(0.1, "phi")
+        (r_var_reused, phi_var_reused) = opt.minimize(cost_fn, by_optimizing=[r_var_reused, phi_var_reused])
 
-        assert math.allclose(sgate_reused.parameters.r.value, sgate.parameters.r.value)
-        assert math.allclose(sgate_reused.parameters.phi.value, sgate.parameters.phi.value)
+        assert math.allclose(r_var_reused.value, r_var.value)
+        assert math.allclose(phi_var_reused.value, phi_var.value)
 
     @given(n=st.integers(0, 3))
     def test_S2gate_coincidence_prob(self, n):
