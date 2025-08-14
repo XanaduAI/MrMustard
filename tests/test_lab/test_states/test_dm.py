@@ -63,13 +63,19 @@ class TestDM:
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
     def test_is_separable(self):
-        entangled_state = GDM([0, 1, 2], beta=1)
+        symplectic = math.random_symplectic(3)
+        entangled_state = GDM([0, 1, 2], beta=1, symplectic=symplectic)
         assert not entangled_state.is_separable
 
-        separable_state = GDM(0, beta=1) >> GDM(1, beta=1) >> GDM(2, beta=1)
+        sym1 = math.random_symplectic(1)
+        sym2 = math.random_symplectic(1)
+        sym3 = math.random_symplectic(1)
+        separable_state = GDM(0, beta=1, symplectic=sym1) >> GDM(1, beta=1, symplectic=sym2) >> GDM(2, beta=1, symplectic=sym3)
         assert separable_state.is_separable
 
-        entangled_state = GDM(0, beta=1) >> GDM((1, 2), beta=1)
+        sym_single = math.random_symplectic(1)
+        sym_double = math.random_symplectic(2)
+        entangled_state = GDM(0, beta=1, symplectic=sym_single) >> GDM((1, 2), beta=1, symplectic=sym_double)
         assert not entangled_state.is_separable
 
     def test_manual_shape(self):

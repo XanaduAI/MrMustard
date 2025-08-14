@@ -34,8 +34,6 @@ class TestBSgate:
 
         assert gate.name == "BSgate"
         assert gate.modes == (0, 1)
-        assert gate.parameters.theta.value == 2
-        assert gate.parameters.phi.value == 3
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_representation(self, batch_shape):

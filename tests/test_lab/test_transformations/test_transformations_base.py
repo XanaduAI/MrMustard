@@ -121,7 +121,7 @@ class TestUnitary:
         gate_inv_inv = gate_inv.inverse()
         assert gate_inv_inv == gate
         should_be_identity = gate >> gate_inv
-        assert should_be_identity.ansatz == Dgate(0, 0.0, 0.0).ansatz
+        assert should_be_identity.ansatz == Identity(0).ansatz
 
     def test_random(self):
         modes = (1, 3, 20)

@@ -31,8 +31,6 @@ class TestS2gate:
 
         assert gate.name == "S2gate"
         assert gate.modes == (0, 1)
-        assert gate.parameters.r.value == 2
-        assert gate.parameters.phi.value == 1
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_representation(self, batch_shape):

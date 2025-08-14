@@ -18,6 +18,7 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
+import copy
 import numbers
 from collections.abc import Sequence
 
@@ -658,7 +659,10 @@ class CircuitComponent:
             w.repr = ReprEnum.FOCK
             w.fock_cutoff = fock.core_shape[w.index]
 
-        return self._from_attributes(fock, wires, self.name)
+        result = copy.deepcopy(self)
+        result._ansatz = fock
+        result._wires = wires
+        return result
 
     def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
         r"""

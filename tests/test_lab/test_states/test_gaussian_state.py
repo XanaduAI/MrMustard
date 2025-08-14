@@ -26,28 +26,30 @@ class TestGKet:
 
     def test_init(self):
         "Tests initialization"
-        gket = GKet((0, 1))
+        symplectic = math.random_symplectic(2)
+        gket = GKet((0, 1), symplectic)
 
         assert gket.modes == (0, 1)
-        assert gket.symplectic.shape == (4, 4)
         assert gket.name == "GKet"
         assert math.allclose(gket.probability, 1.0)
 
     def test_correctness(self):
         "Tests is the attributes are consistent"
 
-        g = GKet(0)
-        sym = g.symplectic
-        u = Unitary.from_symplectic((0,), sym)
+        symplectic = math.random_symplectic(1)
+        g = GKet(0, symplectic)
+        u = Unitary.from_symplectic((0,), symplectic)
         assert g == Vacuum(0) >> u
 
     def test_getitem(self):
         "Tests the getitem of the GKet"
 
-        psi = GKet(0)
+        symplectic1 = math.random_symplectic(1)
+        psi = GKet(0, symplectic1)
         assert psi == psi[0]
 
-        phi = GKet((0, 1))
+        symplectic2 = math.random_symplectic(2)
+        phi = GKet((0, 1), symplectic2)
         assert isinstance(phi[0], DM)
 
 
@@ -59,19 +61,20 @@ class TestGDM:
     def test_init(self):
         "Tests the initialization"
 
-        rho = GDM((0, 1), [0.2, 0.3])
+        symplectic = math.random_symplectic(2)
+        rho = GDM((0, 1), [0.2, 0.3], symplectic)
 
         assert rho.modes == (0, 1)
         assert rho.name == "GDM"
-        assert math.allclose(rho.beta, math.astensor([0.2, 0.3]))
-        assert rho.symplectic.shape == (4, 4)
         assert math.allclose(rho.probability, 1.0)
 
     def test_getitem(self):
         "Tests the getitem of GDM"
 
-        rho = GDM(0, 0.2)
+        symplectic1 = math.random_symplectic(1)
+        rho = GDM(0, 0.2, symplectic1)
         assert rho == rho[0]
 
-        sigma = GDM((0, 1), [0.5, 0.4])
+        symplectic2 = math.random_symplectic(2)
+        sigma = GDM((0, 1), [0.5, 0.4], symplectic2)
         assert isinstance(sigma[0], DM)

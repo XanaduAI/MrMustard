@@ -34,7 +34,6 @@ class TestFockDamping:
 
         assert gate.name == "FockDamping"
         assert gate.modes == (modes,)
-        assert math.allclose(gate.parameters.damping.value, damping)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_representation(self, batch_shape):

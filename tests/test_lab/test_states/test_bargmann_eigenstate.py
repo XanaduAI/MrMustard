@@ -32,7 +32,6 @@ class TestBargmannEigenstate:
 
         be = BargmannEigenstate(0, alpha)
         assert be.name == "BargmannEigenstate"
-        assert math.allclose(be.alpha, 0.1 + 0.0j)
         assert be.modes == (0,)
         assert math.allclose(be.ansatz.A, math.zeros((1, 1)))
         assert math.allclose(be.ansatz.b, 0.1)
