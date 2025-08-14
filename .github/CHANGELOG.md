@@ -48,7 +48,6 @@
 * Fixed a bug where `CircuitComponent.fock_array` was not passing `c` directly into `math.hermite_renormalize` for `num_derived_vars=0`. 
 [(#643)](https://github.com/XanaduAI/MrMustard/pull/643)
 
-
 ---
 
 # Release 1.0.0a1
