@@ -299,7 +299,29 @@ class Ket(State):
                 mode="zip",
             ) >> TraceOut(leftover_modes)
         else:
-            result = (self.contract(operator, mode=mode)).contract(self.dual, mode="zip")
+            # custom shape handling from contract
+            # since input and output wires are contracted
+            # to do the trace out
+            if (
+                type(self.ansatz) is not type(operator.ansatz)
+                and settings.DEFAULT_REPRESENTATION == "Fock"
+            ):
+                self_shape = list(self.auto_shape())
+                other_shape = list(operator.auto_shape())
+                # want to make sure that only the operator modes use shape lookahead
+                # for efficiency
+                for m in operator.modes:
+                    for idx1 in self.wires[m].indices:
+                        for idx2 in operator.wires[m].indices:
+                            max_shape = max(self_shape[idx1], other_shape[idx2])
+                            self_shape[idx1] = max_shape
+                            other_shape[idx2] = max_shape
+                self_rep = self.to_fock(tuple(self_shape))
+                other_rep = operator.to_fock(tuple(other_shape))
+            else:
+                self_rep = self
+                other_rep = operator
+            result = (self_rep.contract(other_rep, mode=mode)).contract(self_rep.dual, mode="zip")
             result = result >> TraceOut(result.modes)
         return result
 
