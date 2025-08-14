@@ -290,37 +290,34 @@ class Ket(State):
             raise ValueError(msg)
 
         leftover_modes = self.wires.modes - operator.wires.modes
+        if (
+            type(self.ansatz) is not type(operator.ansatz)
+            and settings.DEFAULT_REPRESENTATION == "Fock"
+        ):
+            self_shape = list(self.auto_shape())
+            other_shape = list(operator.auto_shape())
+            # want to make sure that only the operator modes use shape lookahead
+            # for efficiency
+            for m in operator.modes:
+                idx1 = self.wires[m].indices[0]
+                for idx2 in operator.wires[m].indices:
+                    max_shape = max(self_shape[idx1], other_shape[idx2])
+                    self_shape[idx1] = max_shape
+                    other_shape[idx2] = max_shape
+            self_rep = self.to_fock(tuple(self_shape))
+            other_rep = operator.to_fock(tuple(other_shape))
+        else:
+            self_rep = self
+            other_rep = operator
         if op_type is OperatorType.KET_LIKE:
-            result = self.contract(operator.dual, mode=mode)
+            result = self_rep.contract(other_rep.dual, mode=mode)
             result = result.contract(result.adjoint, mode="zip") >> TraceOut(leftover_modes)
         elif op_type is OperatorType.DM_LIKE:
-            result = self.adjoint.contract(
-                self.contract(operator.dual, mode=mode),
+            result = self_rep.adjoint.contract(
+                self_rep.contract(other_rep.dual, mode=mode),
                 mode="zip",
             ) >> TraceOut(leftover_modes)
         else:
-            # custom shape handling from contract
-            # since input and output wires are contracted
-            # to do the trace out
-            if (
-                type(self.ansatz) is not type(operator.ansatz)
-                and settings.DEFAULT_REPRESENTATION == "Fock"
-            ):
-                self_shape = list(self.auto_shape())
-                other_shape = list(operator.auto_shape())
-                # want to make sure that only the operator modes use shape lookahead
-                # for efficiency
-                for m in operator.modes:
-                    idx1 = self.wires[m].indices[0]
-                    for idx2 in operator.wires[m].indices:
-                        max_shape = max(self_shape[idx1], other_shape[idx2])
-                        self_shape[idx1] = max_shape
-                        other_shape[idx2] = max_shape
-                self_rep = self.to_fock(tuple(self_shape))
-                other_rep = operator.to_fock(tuple(other_shape))
-            else:
-                self_rep = self
-                other_rep = operator
             result = (self_rep.contract(other_rep, mode=mode)).contract(self_rep.dual, mode="zip")
             result = result >> TraceOut(result.modes)
         return result
