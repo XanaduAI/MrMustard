@@ -311,11 +311,10 @@ class Ket(State):
                 # want to make sure that only the operator modes use shape lookahead
                 # for efficiency
                 for m in operator.modes:
-                    for idx1 in self.wires[m].indices:
-                        for idx2 in operator.wires[m].indices:
-                            max_shape = max(self_shape[idx1], other_shape[idx2])
-                            self_shape[idx1] = max_shape
-                            other_shape[idx2] = max_shape
+                    for idx in operator.wires[m].indices:
+                        max_shape = max(self_shape[idx], other_shape[idx])
+                        self_shape[idx] = max_shape
+                        other_shape[idx] = max_shape
                 self_rep = self.to_fock(tuple(self_shape))
                 other_rep = operator.to_fock(tuple(other_shape))
             else:
