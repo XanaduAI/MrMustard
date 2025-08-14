@@ -28,6 +28,9 @@
 * Added support for Python 3.13.
 [(#640)](https://github.com/XanaduAI/MrMustard/pull/640)
 
+* Added the ability to compute batched fock arrays of displacements.
+[(#645)](https://github.com/XanaduAI/MrMustard/pull/645)
+
 ### Bug fixes
 
 * Fixed a bug in `OptimizerJax` that would make the optimizer think it reached a stable optimum upon repeat calls to `minimize`.
@@ -44,6 +47,7 @@
 
 * Fixed a bug where `CircuitComponent.fock_array` was not passing `c` directly into `math.hermite_renormalize` for `num_derived_vars=0`. 
 [(#643)](https://github.com/XanaduAI/MrMustard/pull/643)
+
 
 ---
 
