@@ -88,16 +88,28 @@ class BSgate(Unitary):
         theta: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        # Store parameters privately for fock_array method
-        self._theta = theta
-        self._phi = phi
-        
-        A, b, c = triples.beamsplitter_gate_Abc(
-            theta=theta,
-            phi=phi,
-        )
+        A, b, c = triples.beamsplitter_gate_Abc(theta=theta, phi=phi)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        
+
+        def specialized_fock(shape, method="stable", **kwargs):
+            """Optimized Fock computation using beamsplitter formula."""
+            if ansatz.batch_shape:
+                theta_local, phi_local = math.broadcast_arrays(theta, phi)
+                theta_local = math.reshape(theta_local, (-1,))
+                phi_local = math.reshape(phi_local, (-1,))
+                ret = math.astensor(
+                    [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta_local, phi_local)],
+                )
+                ret = math.reshape(ret, ansatz.batch_shape + shape)
+                if ansatz._lin_sup:
+                    ret = math.sum(ret, axis=ansatz.batch_dims - 1)
+            else:
+                ret = math.beamsplitter(theta, phi, shape=shape, method=method)
+            return ret
+        
+        self._specialized_fock = specialized_fock
         
         super().__init__(ansatz=ansatz, wires=wires, name="BSgate")
 
@@ -125,24 +137,4 @@ class BSgate(Unitary):
             ValueError: If the shape is not valid for the component.
         """
         shape = self._check_fock_shape(shape)
-        if self.ansatz.batch_shape:
-            theta, phi = math.broadcast_arrays(
-                self._theta,
-                self._phi,
-            )
-            theta = math.reshape(theta, (-1,))
-            phi = math.reshape(phi, (-1,))
-            ret = math.astensor(
-                [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta, phi)],
-            )
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.beamsplitter(
-                self._theta,
-                self._phi,
-                shape=shape,
-                method=method,
-            )
-        return ret
+        return self._specialized_fock(shape, method=method)

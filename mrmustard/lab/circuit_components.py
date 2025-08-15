@@ -745,6 +745,30 @@ class CircuitComponent:
         aux_data = (self.wires, self.name)
         return (children, aux_data)
 
+    @staticmethod
+    def _find_closest_common_ancestor(type1: type, type2: type) -> type:
+        """
+        Find the closest common ancestor of two types in the MRO hierarchy.
+        
+        Args:
+            type1: First type
+            type2: Second type
+            
+        Returns:
+            The closest common ancestor type
+        """
+        if type1 == type2:
+            return type1
+            
+        mro1 = type1.__mro__
+        mro2 = type2.__mro__
+        
+        for cls1 in mro1:
+            if cls1 in mro2:
+                return cls1
+
+        return CircuitComponent
+
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Implements the addition between circuit components.
@@ -753,7 +777,38 @@ class CircuitComponent:
             raise ValueError("Cannot add components with different wires.")
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
-        ret = self._from_attributes(ansatz, self.wires, name)
+        
+        # Find the closest common ancestor type
+        common_type = self._find_closest_common_ancestor(type(self), type(other))
+        
+        if type(self) == type(other):
+            # If both are the same type, preserve that type
+            ret = copy.deepcopy(self)
+            ret._ansatz = ansatz
+            ret._name = name
+        else:
+            # Create instance of the closest common ancestor
+            ret = common_type._from_attributes(ansatz, self.wires, name)
+        
+        # If either component has specialized method, create a combined closure
+        if hasattr(self, '_specialized_fock') or hasattr(other, '_specialized_fock'):
+            def combined_specialized_fock(shape, **kwargs):
+                """Lazy combination using specialized methods when available, base fock_array otherwise."""
+                # Use specialized method if available, otherwise use base CircuitComponent.fock_array
+                if hasattr(self, '_specialized_fock'):
+                    fock1 = self._specialized_fock(shape, **kwargs)
+                else:
+                    fock1 = CircuitComponent.fock_array(self, shape)
+                
+                if hasattr(other, '_specialized_fock'):
+                    fock2 = other._specialized_fock(shape, **kwargs)
+                else:
+                    fock2 = CircuitComponent.fock_array(other, shape)
+                
+                return fock1 + fock2
+            
+            ret._specialized_fock = combined_specialized_fock
+        
         ret.manual_shape = tuple(
             max(a, b) if a is not None and b is not None else a or b
             for a, b in zip(self.manual_shape, other.manual_shape)
@@ -775,7 +830,10 @@ class CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the right.
         """
-        return self._from_attributes(self.ansatz * other, self.wires, self.name)
+        # Preserve the specific subclass type by copying and replacing ansatz
+        ret = copy.deepcopy(self)
+        ret._ansatz = self.ansatz * other
+        return ret
 
     def __repr__(self) -> str:
         ansatz = self.ansatz

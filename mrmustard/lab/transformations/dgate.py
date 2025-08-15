@@ -76,12 +76,25 @@ class Dgate(Unitary):
         mode: int,
         alpha: complex | Sequence[complex] = 0.0j,
     ) -> None:
-        # Store parameter privately for fock_array method
-        self._alpha = alpha
-        
         A, b, c = triples.displacement_gate_Abc(alpha=alpha)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
+        
+        # Create specialized closure that captures alpha
+        def specialized_fock(shape, **kwargs):
+            """Optimized Fock computation using displacement formula."""
+            if ansatz.batch_shape:
+                alpha_local = alpha
+                alpha_local = math.reshape(alpha_local, (-1,))
+                ret = math.astensor([math.displacement(alpha_i, shape=shape) for alpha_i in alpha_local])
+                ret = math.reshape(ret, ansatz.batch_shape + shape)
+                if ansatz._lin_sup:
+                    ret = math.sum(ret, axis=ansatz.batch_dims - 1)
+            else:
+                ret = math.displacement(alpha, shape=shape)
+            return ret
+        
+        self._specialized_fock = specialized_fock
         
         super().__init__(ansatz=ansatz, wires=wires, name="Dgate")
 
@@ -101,13 +114,5 @@ class Dgate(Unitary):
             ValueError: If the shape is not valid for the component.
         """
         shape = self._check_fock_shape(shape)
-        if self.ansatz.batch_shape:
-            alpha = self._alpha
-            alpha = math.reshape(alpha, (-1,))
-            ret = math.astensor([math.displacement(alpha_i, shape=shape) for alpha_i in alpha])
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.displacement(self._alpha, shape=shape)
-        return ret
+        
+        return self._specialized_fock(shape)

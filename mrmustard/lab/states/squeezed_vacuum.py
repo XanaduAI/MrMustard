@@ -57,16 +57,31 @@ class SqueezedVacuum(Ket):
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
     ):
-        # Store parameters privately for fock_array method
-        self._r = r
-        self._phi = phi
-
         A, b, c = triples.squeezed_vacuum_state_Abc(
             r=r,
             phi=phi,
         )
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket={mode})
+        
+        # Create specialized closure that captures r and phi
+        def specialized_fock(shape, **kwargs):
+            """Optimized Fock computation using squeezed vacuum formula."""
+            if ansatz.batch_shape:
+                rs, phis = math.broadcast_arrays(r, phi)
+                rs = math.reshape(rs, (-1,))
+                phis = math.reshape(phis, (-1,))
+                ret = math.astensor(
+                    [math.squeezed(r, phi, shape=shape) for r, phi in zip(rs, phis)],
+                )
+                ret = math.reshape(ret, ansatz.batch_shape + shape)
+                if ansatz._lin_sup:
+                    ret = math.sum(ret, axis=ansatz.batch_dims - 1)
+            else:
+                ret = math.squeezed(r, phi, shape=shape)
+            return ret
+        
+        self._specialized_fock = specialized_fock
         
         super().__init__(ansatz=ansatz, wires=wires, name="SqueezedVacuum")
 
@@ -75,23 +90,4 @@ class SqueezedVacuum(Ket):
         shape: int | Sequence[int] | None = None,
     ) -> ComplexTensor:
         shape = self._check_fock_shape(shape)
-        if self.ansatz.batch_shape:
-            rs, phi = math.broadcast_arrays(
-                self._r,
-                self._phi,
-            )
-            rs = math.reshape(rs, (-1,))
-            phi = math.reshape(phi, (-1,))
-            ret = math.astensor(
-                [math.squeezed(r, p, shape=shape) for r, p in zip(rs, phi)],
-            )
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.squeezed(
-                self._r,
-                self._phi,
-                shape=shape,
-            )
-        return ret
+        return self._specialized_fock(shape)
