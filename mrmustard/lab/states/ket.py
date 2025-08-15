@@ -295,30 +295,32 @@ class Ket(State):
             and settings.DEFAULT_REPRESENTATION == "Fock"
         ):
             self_shape = list(self.auto_shape())
-            other_shape = list(operator.auto_shape())
+            operator_shape = list(operator.auto_shape())
             # want to make sure that only the operator modes use shape lookahead
             # for efficiency
             for m in operator.modes:
                 idx1 = self.wires[m].indices[0]
                 for idx2 in operator.wires[m].indices:
-                    max_shape = max(self_shape[idx1], other_shape[idx2])
+                    max_shape = max(self_shape[idx1], operator_shape[idx2])
                     self_shape[idx1] = max_shape
-                    other_shape[idx2] = max_shape
+                    operator_shape[idx2] = max_shape
             self_rep = self.to_fock(tuple(self_shape))
-            other_rep = operator.to_fock(tuple(other_shape))
+            operator_rep = operator.to_fock(tuple(operator_shape))
         else:
             self_rep = self
-            other_rep = operator
+            operator_rep = operator
         if op_type is OperatorType.KET_LIKE:
-            result = self_rep.contract(other_rep.dual, mode=mode)
+            result = self_rep.contract(operator_rep.dual, mode=mode)
             result = result.contract(result.adjoint, mode="zip") >> TraceOut(leftover_modes)
         elif op_type is OperatorType.DM_LIKE:
             result = self_rep.adjoint.contract(
-                self_rep.contract(other_rep.dual, mode=mode),
+                self_rep.contract(operator_rep.dual, mode=mode),
                 mode="zip",
             ) >> TraceOut(leftover_modes)
         else:
-            result = (self_rep.contract(other_rep, mode=mode)).contract(self_rep.dual, mode="zip")
+            result = (self_rep.contract(operator_rep, mode=mode)).contract(
+                self_rep.dual, mode="zip"
+            )
             result = result >> TraceOut(result.modes)
         return result
 
