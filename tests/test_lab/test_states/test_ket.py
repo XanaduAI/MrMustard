@@ -529,28 +529,14 @@ class TestKet:
         with pytest.raises(ValueError, match="Expected an operator defined on"):
             ket.expectation(op3)
 
-    def test_expectation_shape_handling(self):
+    @pytest.mark.parametrize("operator", [DM.random((0,), max_r=10), Dgate(0, alpha=5 + 12j)])
+    def test_expectation_shape_handling(self, operator):
         cutoff = 200
         ket = SqueezedVacuum(0, 1.5)
 
-        dm_like = DM.random((0,), max_r=10)
-        expectation_barg_fock = math.abs(ket.to_bargmann().expectation(dm_like.to_fock(cutoff)))
-        expectation_fock_barg = math.abs(ket.to_fock(cutoff).expectation(dm_like.to_bargmann()))
-        expectation_fock_fock = math.abs(ket.to_fock(cutoff).expectation(dm_like.to_fock(cutoff)))
-
-        assert math.allclose(expectation_fock_fock, expectation_barg_fock)
-        assert math.allclose(expectation_fock_fock, expectation_fock_barg)
-
-        unitary_like = Dgate(0, alpha=5 + 12j)
-        expectation_barg_fock = math.abs(
-            ket.to_bargmann().expectation(unitary_like.to_fock(cutoff))
-        )
-        expectation_fock_barg = math.abs(
-            ket.to_fock(cutoff).expectation(unitary_like.to_bargmann())
-        )
-        expectation_fock_fock = math.abs(
-            ket.to_fock(cutoff).expectation(unitary_like.to_fock(cutoff))
-        )
+        expectation_barg_fock = math.abs(ket.to_bargmann().expectation(operator.to_fock(cutoff)))
+        expectation_fock_barg = math.abs(ket.to_fock(cutoff).expectation(operator.to_bargmann()))
+        expectation_fock_fock = math.abs(ket.to_fock(cutoff).expectation(operator.to_fock(cutoff)))
 
         assert math.allclose(expectation_fock_fock, expectation_barg_fock)
         assert math.allclose(expectation_fock_fock, expectation_fock_barg)
