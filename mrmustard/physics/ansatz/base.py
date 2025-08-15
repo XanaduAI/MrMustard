@@ -242,7 +242,13 @@ class Ansatz(ABC):
     @abstractmethod
     def __eq__(self, other: Ansatz) -> bool:
         r"""
-        Whether this ansatz is equal to another.
+        Whether this ansatz is equal to another ansatz.
+        """
+
+    @abstractmethod
+    def __getitem__(self, item: Any) -> Ansatz:
+        r"""
+        Returns a new ansatz with the batch dimensions sliced according to ``item``.
         """
 
     @abstractmethod
