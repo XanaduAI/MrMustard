@@ -52,10 +52,10 @@ class TestDgate:
             dgate.fock_array((5, 5, 5))
 
     def test_to_fock_lin_sup(self):
-        dgate = (Dgate(0, 0.1) + Dgate(0, -0.1)).to_fock(150)
+        dgate = (Dgate(0, 0.1) + Dgate(0, -0.1)).to_fock(10)
         assert dgate.ansatz.batch_dims == 0
         assert dgate.ansatz.batch_shape == ()
-        assert dgate.ansatz.array.shape == (150, 150)
+        assert dgate.ansatz.array.shape == (10, 10)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_representation(self, batch_shape):

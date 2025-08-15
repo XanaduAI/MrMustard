@@ -871,8 +871,17 @@ def bargmann_to_wigner_Abc(
     n_modes: int,
 ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
     r"""
-    The Abc triple of the Bargmann to Wigner/Husimi transformation.
+    The Abc triple of the Bargmann to Wigner (s = -1) or Husimi (s = 0) transformation.
+    The Glauber function (s = 1) is singular so it is not allowed.
+    Args:
+        s: The phase space parameter. Cannot be equal to 1.
+        n_modes: The number of modes.
+        
+    Raises:
+        ValueError: If s is equal to 1, which would cause division by zero.
     """
+    if np.isclose(s, 1):
+        raise ValueError(f"s=1 is not allowed.")
 
     On = math.zeros((n_modes, n_modes), dtype=math.complex128)
     In = math.eye(n_modes, dtype=math.complex128)
