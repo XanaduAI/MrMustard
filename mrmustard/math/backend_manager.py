@@ -1658,8 +1658,8 @@ class BackendManager:
             Matrix: symplectic gradient tensor
         """
         Jmat = self.J(S.shape[-1] // 2)
-        Z = self.matmul(self.transpose(S), dS_euclidean)
-        return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
+        Z = self.matmul(self.swapaxes(S, -1, -2), dS_euclidean)
+        return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.swapaxes(Z, -1, -2)), Jmat))
 
     def euclidean_to_unitary(self, U: Matrix, dU_euclidean: Matrix) -> Matrix:
         r"""Convert the Euclidean gradient to a Riemannian gradient on the
