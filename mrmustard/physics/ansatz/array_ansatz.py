@@ -18,7 +18,7 @@ This module contains the array ansatz.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from typing import Any
 from warnings import warn
 
@@ -27,7 +27,6 @@ from IPython.display import display
 from numpy.typing import ArrayLike
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.parameters import Variable
 from mrmustard.utils.typing import Batch, Scalar, Tensor
 
 from .base import Ansatz
@@ -53,26 +52,12 @@ class ArrayAnsatz(Ansatz):
         batch_dims: The number of batch dimensions.
     """
 
-    def __init__(self, array: Batch[Tensor] | None, batch_dims: int = 0):
+    def __init__(self, array: Batch[Tensor], batch_dims: int = 0):
         super().__init__()
-        self._array = array
+        self.array = math.astensor(array)
         self._original_abc_data = None
         self._batch_dims = batch_dims
-        if array is not None:
-            self._batch_shape = tuple(self._array.shape[:batch_dims])
-
-    @property
-    def array(self) -> Batch[Tensor]:
-        r"""
-        The array of this ansatz.
-        """
-        self._generate_ansatz()
-        return self._array
-
-    @array.setter
-    def array(self, value: Tensor):
-        self._array = math.astensor(value)
-        self._batch_shape = tuple(value.shape[: self.batch_dims])
+        self._batch_shape = tuple(self.array.shape[:batch_dims])
 
     @property
     def batch_dims(self) -> int:
@@ -80,8 +65,6 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def batch_shape(self) -> tuple[int, ...]:
-        if self._array is None:
-            self._generate_ansatz()
         return self._batch_shape
 
     @property
@@ -136,21 +119,14 @@ class ArrayAnsatz(Ansatz):
         return cls(**data)
 
     @classmethod
-    def from_function(cls, fn: Callable, batch_dims: int = 0, **kwargs: Any) -> ArrayAnsatz:
-        ret = cls(None, batch_dims=batch_dims)
-        ret._fn = fn
-        ret._kwargs = kwargs
-        return ret
-
-    @classmethod
     def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
         ret = cls.__new__(cls)
-        (ret._kwargs,) = children
+        (kwargs_unused,) = children  # no longer using _kwargs
         (
             ret._batch_shape,
             ret._lin_sup,
-            ret._fn,
-            ret._array,
+            _,  # removed _fn
+            ret.array,
             ret._original_abc_data,
             ret._batch_dims,
         ) = aux_data
@@ -258,7 +234,7 @@ class ArrayAnsatz(Ansatz):
 
         if any(s > t for s, t in zip(shape, self.core_shape)):
             warn(
-                "The fock array is being padded with zeros. Is this really necessary?",
+                "A fock array is being padded with zeros. Is this really necessary?",
                 stacklevel=1,
             )
             padded = math.pad(
@@ -313,35 +289,15 @@ class ArrayAnsatz(Ansatz):
         trace = math.trace(new_array)
         return ArrayAnsatz(trace, self.batch_dims)
 
-    def _generate_ansatz(self):
-        r"""
-        Computes and sets the array given a function and its kwargs.
-        """
-        if self._should_regenerate():
-            params = {}
-            for name, param in self._kwargs.items():
-                try:
-                    params[name] = param.value
-                except AttributeError:
-                    params[name] = param
-            self.array = self._fn(**params)
-
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL or (w := widgets.fock(self)) is None:
             print(self)
             return
         display(w)
 
-    def _should_regenerate(self):
-        r"""
-        Determines if the ansatz needs to be regenerated based on its current state
-        and parameter types.
-        """
-        return self._array is None or Variable in {type(param) for param in self._kwargs.values()}
-
     def _tree_flatten(self):  # pragma: no cover
         children, aux_data = super()._tree_flatten()
-        aux_data += (self._array, self._original_abc_data, self._batch_dims)
+        aux_data += (self.array, self._original_abc_data, self._batch_dims)
         return (children, aux_data)
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:

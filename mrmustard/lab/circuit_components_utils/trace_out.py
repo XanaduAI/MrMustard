@@ -67,11 +67,10 @@ class TraceOut(CircuitComponent):
         modes: int | tuple[int, ...],
     ):
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(
-            ansatz=PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes)),
-            wires=Wires(set(), set(modes), set(), set(modes)),
-            name="Tr",
-        )
+        A, b, c = triples.identity_Abc(n_modes=len(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_in_bra=set(modes), modes_in_ket=set(modes))
+        super().__init__(ansatz=ansatz, wires=wires, name="Tr")
 
     def __custom_rrshift__(self, other: CircuitComponent | complex) -> CircuitComponent | complex:
         r"""A custom ``>>`` operator for the ``TraceOut`` component.

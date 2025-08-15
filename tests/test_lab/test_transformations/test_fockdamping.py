@@ -34,7 +34,6 @@ class TestFockDamping:
 
         assert gate.name == "FockDamping"
         assert gate.modes == (modes,)
-        assert math.allclose(gate.parameters.damping.value, damping)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_representation(self, batch_shape):
@@ -50,16 +49,6 @@ class TestFockDamping:
         )
         assert math.allclose(rep1.b, math.zeros((2,)))
         assert math.allclose(rep1.c, 1.0)
-
-    def test_trainable_parameters(self):
-        gate1 = FockDamping(0, 0.1)
-        gate2 = FockDamping(0, 0.1, damping_trainable=True, damping_bounds=(0.0, 0.2))
-
-        with pytest.raises(AttributeError):
-            gate1.parameters.damping.value = 0.3
-
-        gate2.parameters.damping.value = 0.2
-        assert gate2.parameters.damping.value == 0.2
 
     def test_identity(self):
         rep1 = FockDamping(mode=0, damping=0.0).ansatz

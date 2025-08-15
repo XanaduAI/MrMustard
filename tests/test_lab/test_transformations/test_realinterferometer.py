@@ -24,11 +24,11 @@ class TestRealInterferometer:
     """
 
     def test_init(self):
-        "Tests initialization of an Interferometer object"
-        u_int = RealInterferometer((0, 1, 2))
+        "Tests initialization of a RealInterferometer object"
+        orthogonal3 = math.random_orthogonal(3)
+        u_int = RealInterferometer((0, 1, 2), orthogonal=orthogonal3)
         assert u_int.modes == (0, 1, 2)
         assert u_int.name == "RealInterferometer"
-        assert u_int.symplectic.shape == (6, 6)
 
         orth = math.random_orthogonal(2)
         u_int = RealInterferometer((0, 1), orthogonal=orth)
@@ -37,5 +37,6 @@ class TestRealInterferometer:
 
     def test_application(self):
         "Tests the correctness of the application of a RealInterferometer gate"
-        u_int = RealInterferometer((0, 1))
+        orthogonal = math.random_orthogonal(2)
+        u_int = RealInterferometer((0, 1), orthogonal=orthogonal)
         assert u_int >> u_int.dual == Identity((0, 1))

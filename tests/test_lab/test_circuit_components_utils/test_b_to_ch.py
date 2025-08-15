@@ -40,7 +40,6 @@ class TestBtoChar:
         kets = btochar.wires.ket.indices
         assert adjoint_btochar.ansatz == btochar.ansatz.reorder(kets + bras).conj
         assert adjoint_btochar.wires == btochar.wires.adjoint
-        assert adjoint_btochar.parameters.s == btochar.parameters.s
 
     def test_BtoChar_contraction_with_state(self):
         # The init state cov and means comes from the random state 'state = Gaussian(1) >> Dgate([0.2], [0.3])'
@@ -111,7 +110,6 @@ class TestBtoChar:
         ob = btochar.wires.bra.output.indices
         assert dual_btochar.ansatz == btochar.ansatz.reorder(ib + ob + ik + ok).conj
         assert dual_btochar.wires == btochar.wires.dual
-        assert dual_btochar.parameters.s == btochar.parameters.s
 
     def test_fock_array(self):
         btochar = BtoChar(0, 0)

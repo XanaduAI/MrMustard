@@ -67,17 +67,3 @@ class TestSqueezedVacuum:
         rep = SqueezedVacuum(modes, r, phi).ansatz
         exp = (Vacuum(modes) >> Sgate(modes, r, phi)).ansatz
         assert rep == exp
-
-    def test_trainable_parameters(self):
-        state1 = SqueezedVacuum(0, 1, 1)
-        state2 = SqueezedVacuum(0, 1, 1, r_trainable=True, r_bounds=(-2, 2))
-        state3 = SqueezedVacuum(0, 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
-
-        with pytest.raises(AttributeError):
-            state1.parameters.r.value = 3
-
-        state2.parameters.r.value = 2
-        assert state2.parameters.r.value == 2
-
-        state3.parameters.phi.value = 2
-        assert state3.parameters.phi.value == 2

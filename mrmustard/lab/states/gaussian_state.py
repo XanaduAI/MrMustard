@@ -20,14 +20,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ..circuit_components_utils import TraceOut
-from ..utils import make_parameter, reshape_params
+from ..utils import reshape_params
 from .dm import DM
 from .ket import Ket
 
@@ -41,9 +40,8 @@ class GKet(Ket):
     Args:
         modes: the modes over which the state is defined.
         symplectic: the symplectic representation of the unitary that acts on
-        vacuum to produce the desired state. If `None`, a random symplectic matrix
-        is chosen.
-        symplectic_trainable: Whether `symplectic` is trainable.
+        vacuum to produce the desired state. Use ``math.random_symplectic(len(modes))``
+        to generate a random symplectic matrix if needed.
 
     Returns:
         A ``Ket``.
@@ -51,8 +49,9 @@ class GKet(Ket):
     .. code-block::
 
         >>> from mrmustard.lab import GKet, Ket
+        >>> from mrmustard import math
 
-        >>> psi = GKet([0])
+        >>> psi = GKet([0], symplectic=math.random_symplectic(1))
 
         >>> assert isinstance(psi, Ket)
 
@@ -71,26 +70,15 @@ class GKet(Ket):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        symplectic: RealMatrix = None,
-        symplectic_trainable: bool = False,
+        symplectic: RealMatrix,
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="GKet")
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=symplectic_trainable,
-                value=symplectic,
-                name="symplectic",
-                bounds=(None, None),
-                update_fn="update_symplectic",
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.gket_state_Abc,
-            symplectic=self.parameters.symplectic,
-        )
-        self._wires = Wires(modes_out_ket=set(modes))
+
+        A, b, c = triples.gket_state_Abc(symplectic=symplectic)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket=set(modes))
+
+        super().__init__(ansatz=ansatz, wires=wires, name="GKet")
 
     def __getitem__(self, idx: int | Sequence[int]) -> GKet:
         r"""
@@ -102,7 +90,7 @@ class GKet(Ket):
         Returns:
             A new GKet with the modes indexed by `idx`.
         """
-        idx = (idx,) if isinstance(idx, int) else idx
+        idx = (idx,) if isinstance(idx, int) else tuple(idx)
         if not set(idx).issubset(self.modes):
             raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
         trace_out_modes = tuple(mode for mode in self.modes if mode not in idx)
@@ -120,9 +108,8 @@ class GDM(DM):
         float is provided for a multi-mode state, the same temperature is considered
         across all modes.
         symplectic: The symplectic representation of the unitary that acts on a
-        vacuum to produce the desired state. If `None`, a random symplectic matrix
-        is chosen.
-        symplectic_trainable: Whether `symplectic` is trainable.
+        vacuum to produce the desired state. Use ``math.random_symplectic(len(modes))``
+        to generate a random symplectic matrix if needed.
 
     Returns:
         A ``DM``.
@@ -130,8 +117,9 @@ class GDM(DM):
     .. code-block::
 
         >>> from mrmustard.lab import GDM, DM
+        >>> from mrmustard import math
 
-        >>> rho = GDM([0], beta = 1.0)
+        >>> rho = GDM([0], beta = 1.0, symplectic=math.random_symplectic(1))
 
         >>> assert isinstance(rho, DM)
 
@@ -153,38 +141,19 @@ class GDM(DM):
         self,
         modes: int | tuple[int, ...],
         beta: float | Sequence[float],
-        symplectic: RealMatrix = None,
-        beta_trainable: bool = False,
-        symplectic_trainable: bool = False,
+        symplectic: RealMatrix | Sequence[RealMatrix],
     ) -> None:
-        modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="GDM")
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
+        modes = (modes,) if isinstance(modes, int) else tuple(modes)
         (betas,) = list(reshape_params(len(modes), betas=beta))
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=symplectic_trainable,
-                value=symplectic,
-                name="symplectic",
-                bounds=(None, None),
-                update_fn="update_symplectic",
-            ),
+
+        A, b, c = triples.gdm_state_Abc(
+            betas=betas,
+            symplectic=symplectic,
         )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=beta_trainable,
-                value=betas,
-                name="beta",
-                bounds=(0, None),
-                dtype=math.float64,
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.gdm_state_Abc,
-            betas=self.parameters.beta,
-            symplectic=self.parameters.symplectic,
-        )
-        self._wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
+
+        super().__init__(ansatz=ansatz, wires=wires, name="GDM")
 
     def __getitem__(self, idx: int | Sequence[int]) -> GDM:
         r"""

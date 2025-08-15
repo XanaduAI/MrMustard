@@ -19,38 +19,8 @@ This module contains the utility functions used by the classes in ``mrmustard.la
 from __future__ import annotations
 
 from collections.abc import Generator
-from typing import Any, Literal
 
 from mrmustard import math
-from mrmustard.math.parameters import Constant, Variable
-
-
-def make_parameter(
-    is_trainable: bool,
-    value: Any,
-    name: str,
-    bounds: tuple[float | None, float | None],
-    update_fn: Literal[
-        "update_euclidean", "update_orthogonal", "update_symplectic", "update_unitary"
-    ] = "update_euclidean",
-    dtype: Any = None,
-):
-    r"""
-    Returns a constant or variable parameter with given name, value, bounds, and update function.
-
-    Args:
-        is_trainable: Whether to return a variable (``True``) or constant (``False``) parameter.
-        value: The value of the returned parameter.
-        name: The name of the returned parameter.
-        bounds: The bounds of the returned parameter (ignored if ``is_trainable`` is ``False``).
-        update_fn: The name of the update function of the returned parameter (ignored if ``is_trainable`` is ``False``).
-        dtype: The dtype of the returned parameter.
-    """
-    if isinstance(value, Constant | Variable):
-        return value
-    if not is_trainable:
-        return Constant(value=value, name=name, dtype=dtype)
-    return Variable(value=value, name=name, bounds=bounds, update_fn=update_fn, dtype=dtype)
 
 
 def reshape_params(n_modes: int, **kwargs) -> Generator:

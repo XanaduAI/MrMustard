@@ -39,7 +39,6 @@ class TestBtoQ:
         kets = btoq.wires.ket.indices
         assert adjoint_btoq.ansatz == btoq.ansatz.reorder(kets).conj
         assert adjoint_btoq.wires == btoq.wires.adjoint
-        assert adjoint_btoq.parameters.phi == btoq.parameters.phi
 
     def test_BtoQ_twice_on_a_state(self):
         A0 = math.astensor([[0.5, 0.3], [0.3, 0.5]]) + 0.0j
@@ -135,7 +134,6 @@ class TestBtoQ:
         ik = dual_btoq.wires.ket.input.indices
         assert dual_btoq.ansatz == btoq.ansatz.reorder(ik + ok).conj
         assert dual_btoq.wires == btoq.wires.dual
-        assert dual_btoq.parameters.phi == btoq.parameters.phi
 
     def test_fock_array(self):
         btoq = BtoQ((0,), 0.5)

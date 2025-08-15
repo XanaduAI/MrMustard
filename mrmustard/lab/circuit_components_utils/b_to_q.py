@@ -27,7 +27,6 @@ from mrmustard.utils.typing import ComplexTensor
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
 from ..transformations.base import Operation
-from ..utils import make_parameter
 
 __all__ = ["BtoQ"]
 
@@ -63,24 +62,25 @@ class BtoQ(Operation):
         phi: float | Sequence[float] = 0.0,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="BtoQ")
-        self.parameters.add_parameter(make_parameter(False, phi, "phi", (None, None)))
+        self._phi = phi
 
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.bargmann_to_quadrature_Abc,
+        A, b, c = triples.bargmann_to_quadrature_Abc(
             n_modes=len(modes),
-            phi=self.parameters.phi,
+            phi=phi,
         )
-        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
-        for w in self.wires.input.sorted_wires:
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        for w in wires.input.sorted_wires:
             w.repr = ReprEnum.BARGMANN
-        for w in self.wires.output.sorted_wires:
+        for w in wires.output.sorted_wires:
             w.repr = ReprEnum.QUADRATURE
+
+        super().__init__(ansatz=ansatz, wires=wires, name="BtoQ")
 
     def inverse(self):
         if self.modes == ():
             return self
-        ret = BtoQ(self.modes, self.parameters.phi)
+        ret = BtoQ(self.modes, self._phi)
         ret._ansatz = super().inverse().ansatz
         ret._wires = ret.wires.dual
         return ret

@@ -18,13 +18,11 @@ The class representing a RealInterferometer gate.
 
 from __future__ import annotations
 
-from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ...physics import symplectics
-from ..utils import make_parameter
 from .base import Unitary
 
 __all__ = ["RealInterferometer"]
@@ -37,8 +35,8 @@ class RealInterferometer(Unitary):
 
     Args:
         modes: The modes this gate is applied to.
-        orthogonal: A real unitary (orthogonal) matrix.  For N modes it must have shape `(N,N)`. If ``None``, a random orthogonal is generated.
-        orthogonal_trainable: Whether ``orthogonal`` is trainable.
+        orthogonal: A real unitary (orthogonal) matrix.  For N modes it must have shape `(N,N)`.
+        Use ``math.random_orthogonal(len(modes))`` to generate a random orthogonal matrix if needed.
 
     .. code-block::
 
@@ -53,33 +51,20 @@ class RealInterferometer(Unitary):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        orthogonal: RealMatrix | None = None,
-        orthogonal_trainable: bool = False,
+        orthogonal: RealMatrix,
     ):
-        modes = (modes,) if isinstance(modes, int) else modes
+        modes = (modes,) if isinstance(modes, int) else tuple(modes)
         num_modes = len(modes)
         if orthogonal is not None and orthogonal.shape[-1] != num_modes:
             raise ValueError(
                 f"The size of the orthogonal matrix must match the number of modes: {orthogonal.shape[-1]} =/= {num_modes}",
             )
 
-        orthogonal = orthogonal if orthogonal is not None else math.random_orthogonal(num_modes)
+        A, b, c = Unitary.from_symplectic(
+            modes,
+            symplectics.realinterferometer_symplectic(orthogonal),
+        ).bargmann_triple()
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket=set(modes), modes_in_ket=set(modes))
 
-        super().__init__(name="RealInterferometer")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=orthogonal_trainable,
-                value=orthogonal,
-                name="orthogonal",
-                bounds=(None, None),
-                update_fn="update_orthogonal",
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=lambda ortho: Unitary.from_symplectic(
-                modes,
-                symplectics.realinterferometer_symplectic(ortho),
-            ).bargmann_triple(),
-            ortho=self.parameters.orthogonal,
-        )
-        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        super().__init__(ansatz=ansatz, wires=wires, name="RealInterferometer")

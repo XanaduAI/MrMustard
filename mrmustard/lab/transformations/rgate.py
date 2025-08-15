@@ -20,12 +20,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics.wires import Wires
 
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
 from .base import Unitary
 
 __all__ = ["Rgate"]
@@ -39,8 +37,6 @@ class Rgate(Unitary):
     Args:
         mode: The mode this gate is applied to.
         theta: The rotation angle.
-        theta_trainable: Whether ``theta`` is trainable.
-        theta_bounds: The bounds for ``theta``.
 
     .. code-block::
 
@@ -54,18 +50,11 @@ class Rgate(Unitary):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         theta: float | Sequence[float] = 0.0,
-        theta_trainable: bool = False,
-        theta_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Rgate")
-        self.parameters.add_parameter(
-            make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=math.float64)
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.rotation_gate_Abc,
-            theta=self.parameters.theta,
-        )
-        self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))
+        A, b, c = triples.rotation_gate_Abc(theta=theta)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
+
+        super().__init__(ansatz=ansatz, wires=wires, name="Rgate")

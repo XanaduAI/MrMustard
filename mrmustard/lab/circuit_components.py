@@ -18,21 +18,16 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
+import copy
 import numbers
 from collections.abc import Sequence
-from inspect import signature
-from pydoc import locate
-from typing import Any
 
 import ipywidgets as widgets
 import numpy as np
 from IPython.display import display
-from numpy.typing import ArrayLike
 
 from mrmustard import math, settings
 from mrmustard import widgets as mmwidgets
-from mrmustard.math.parameter_set import ParameterSet
-from mrmustard.math.parameters import Variable
 from mrmustard.physics.ansatz import Ansatz, ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.fock_utils import oscillator_eigenstate
 from mrmustard.physics.triples import identity_Abc
@@ -72,7 +67,6 @@ class CircuitComponent:
     ) -> None:
         self._ansatz = ansatz
         self._name = name
-        self._parameters = ParameterSet()
         self._wires = wires or Wires(set(), set(), set(), set())
 
         if isinstance(ansatz, ArrayAnsatz):
@@ -98,8 +92,6 @@ class CircuitComponent:
         ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
         ret = CircuitComponent(ansatz, self.wires.adjoint, name=self.name)
         ret.short_name = self.short_name
-        for param in self.parameters.all_parameters.values():
-            ret.parameters.add_parameter(param)
         return ret
 
     @property
@@ -130,8 +122,6 @@ class CircuitComponent:
         ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
         ret = CircuitComponent(ansatz, self.wires.dual, name=self.name)
         ret.short_name = self.short_name
-        for param in self.parameters.all_parameters.values():
-            ret.parameters.add_parameter(param)
         return ret
 
     @property
@@ -197,20 +187,6 @@ class CircuitComponent:
             >>> assert ket.n_modes == 2
         """
         return len(self.modes)
-
-    @property
-    def parameters(self) -> ParameterSet:
-        r"""
-        The set of parameters of this component.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import Coherent
-
-            >>> coh = Coherent(mode=0, alpha=1.0)
-            >>> assert coh.parameters.alpha.value == 1.0
-        """
-        return self._parameters
 
     @property
     def wires(self) -> Wires:
@@ -306,27 +282,6 @@ class CircuitComponent:
         return cls._from_attributes(BBBB.ansatz, wires, name)
 
     @classmethod
-    def _deserialize(cls, data: dict) -> CircuitComponent:
-        r"""
-        Deserialization when within a circuit.
-
-        Args:
-            data: The data to deserialize.
-
-        Returns:
-            A circuit component with the given serialized data.
-        """
-        if "ansatz_cls" in data:
-            ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
-            ansatz = locate(ansatz_cls).from_dict(data)
-            return cls._from_attributes(ansatz, Wires(*tuple(set(m) for m in wires)), name=name)
-        if "modes" in data:
-            data["modes"] = tuple(data["modes"])
-        elif "mode" in data:
-            data["mode"] = tuple(data["mode"])
-        return cls(**data)
-
-    @classmethod
     def _from_attributes(
         cls,
         ansatz: Ansatz,
@@ -364,16 +319,8 @@ class CircuitComponent:
     @classmethod
     def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
         ret = cls.__new__(cls)
-        ret._parameters, ret._ansatz = children
+        ret._ansatz = children[0]
         ret._wires, ret._name = aux_data
-
-        # make sure the ansatz parameters match the parameter set
-        for param_name, param in ret.ansatz._kwargs.items():
-            if isinstance(param, Variable):
-                ret.ansatz._kwargs[param_name] = ret.parameters.all_parameters[param.name]
-            else:  # need this to build pytree of labels
-                ret.ansatz._kwargs[param_name] = param
-
         return ret
 
     def auto_shape(self, **_) -> tuple[int, ...]:
@@ -682,15 +629,7 @@ class CircuitComponent:
         for w in wires.quantum:
             w.repr = ReprEnum.BARGMANN
 
-        cls = type(self)
-        params = signature(cls).parameters
-        if "mode" in params or "modes" in params:
-            ret = self.__class__(self.modes, **self.parameters.to_dict())
-            ret._ansatz = ansatz
-            ret._wires = wires
-        else:
-            ret = self._from_attributes(ansatz, wires, self.name)
-        return ret
+        return self._from_attributes(ansatz, wires, self.name)
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
         r"""
@@ -729,15 +668,10 @@ class CircuitComponent:
             w.repr = ReprEnum.FOCK
             w.fock_cutoff = fock.core_shape[w.index]
 
-        cls = type(self)
-        params = signature(cls).parameters
-        if "mode" in params or "modes" in params:
-            ret = self.__class__(self.modes, **self.parameters.to_dict())
-            ret._ansatz = fock
-            ret._wires = wires
-        else:
-            ret = self._from_attributes(fock, wires, self.name)
-        return ret
+        result = copy.deepcopy(self)
+        result._ansatz = fock
+        result._wires = wires
+        return result
 
     def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
         r"""
@@ -815,46 +749,34 @@ class CircuitComponent:
             return result
         return result.ansatz.scalar
 
-    def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
-        """
-        Inner serialization to be used by Circuit.serialize().
-
-        The first dict must be JSON-serializable, and the second dict must contain
-        the (non-JSON-serializable) array-like data to be collected separately.
-
-        Returns:
-            A tuple containing the serialized data and the array-like data.
-        """
-        cls = type(self)
-        serializable = {"class": f"{cls.__module__}.{cls.__qualname__}"}
-        params = signature(cls).parameters
-        if "name" in params:  # assume abstract type, serialize the representation
-            ansatz_cls = type(self.ansatz)
-            serializable["name"] = self.name
-            serializable["wires"] = tuple(tuple(a) for a in self.wires.args)
-            serializable["ansatz_cls"] = f"{ansatz_cls.__module__}.{ansatz_cls.__qualname__}"
-            return serializable, self.ansatz.to_dict()
-
-        # handle modes parameter
-        if "modes" in params:
-            serializable["modes"] = tuple(self.wires.modes)
-        elif "mode" in params:
-            serializable["mode"] = tuple(self.wires.modes)
-        else:
-            raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
-
-        if self.parameters:
-            for k, v in self.parameters.variables.items():
-                serializable[f"{k}_bounds"] = v.bounds
-                serializable[f"{k}_trainable"] = True
-            return serializable, {k: v.value for k, v in self.parameters.all_parameters.items()}
-
-        return serializable, {}
-
     def _tree_flatten(self):  # pragma: no cover
-        children = (self.parameters, self.ansatz)
+        children = (self.ansatz,)
         aux_data = (self.wires, self.name)
         return (children, aux_data)
+
+    @staticmethod
+    def _find_closest_common_ancestor(type1: type, type2: type) -> type:
+        """
+        Find the closest common ancestor of two types in the MRO hierarchy.
+
+        Args:
+            type1: First type
+            type2: Second type
+
+        Returns:
+            The closest common ancestor type
+        """
+        if type1 == type2:
+            return type1
+
+        mro1 = type1.__mro__
+        mro2 = type2.__mro__
+
+        for cls1 in mro1:
+            if cls1 in mro2:
+                return cls1
+
+        return CircuitComponent
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -862,40 +784,41 @@ class CircuitComponent:
         """
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
-
-        if (
-            isinstance(self.ansatz, PolyExpAnsatz)
-            and self.ansatz._fn is not None
-            and self.ansatz._fn == other.ansatz._fn
-        ):
-            new_params = {}
-            for name in self.ansatz._kwargs:
-                self_param = getattr(self.parameters, name)
-                other_param = getattr(other.parameters, name)
-                if (self_type := type(self_param)) is not (other_type := type(other_param)):
-                    raise ValueError(
-                        f"Parameter '{name}' is a {self_type.__name__} for one component and a {other_type.__name__} for the other."
-                    )
-                if (self.ansatz.batch_dims - self.ansatz._lin_sup) > 0 or (
-                    other.ansatz.batch_dims - other.ansatz._lin_sup
-                ) > 0:
-                    raise ValueError("Cannot add batched components.")
-                if isinstance(self_param, Variable):
-                    if self_param.bounds != other_param.bounds:
-                        raise ValueError(
-                            f"Parameter '{name}' has bounds {self_param.bounds} and {other_param.bounds} for the two components."
-                        )
-                    new_params[name + "_trainable"] = True
-                    new_params[name + "_bounds"] = self_param.bounds
-                self_val = math.atleast_nd(self_param.value, 1)
-                other_val = math.atleast_nd(other_param.value, 1)
-                new_params[name] = math.concat((self_val, other_val), axis=0)
-            ret = self.__class__(self.modes, **new_params)
-            ret.ansatz._lin_sup = True
-            return ret
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
-        ret = self._from_attributes(ansatz, self.wires, name)
+
+        # Find the closest common ancestor type
+        common_type = self._find_closest_common_ancestor(type(self), type(other))
+
+        if type(self) is type(other):
+            # If both are the same type, preserve that type
+            ret = copy.deepcopy(self)
+            ret._ansatz = ansatz
+            ret._name = name
+        else:
+            # Create instance of the closest common ancestor
+            ret = common_type._from_attributes(ansatz, self.wires, name)
+
+        # If either component has specialized method, create a combined closure
+        if hasattr(self, "_specialized_fock") or hasattr(other, "_specialized_fock"):
+
+            def combined_specialized_fock(shape, **kwargs):
+                """Lazy combination using specialized methods when available, base fock_array otherwise."""
+                # Use specialized method if available, otherwise use base CircuitComponent.fock_array
+                if hasattr(self, "_specialized_fock"):
+                    fock1 = self._specialized_fock(shape, **kwargs)
+                else:
+                    fock1 = CircuitComponent.fock_array(self, shape)
+
+                if hasattr(other, "_specialized_fock"):
+                    fock2 = other._specialized_fock(shape, **kwargs)
+                else:
+                    fock2 = CircuitComponent.fock_array(other, shape)
+
+                return fock1 + fock2
+
+            ret._specialized_fock = combined_specialized_fock
+
         ret.manual_shape = tuple(
             max(a, b) if a is not None and b is not None else a or b
             for a, b in zip(self.manual_shape, other.manual_shape)
@@ -917,7 +840,10 @@ class CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the right.
         """
-        return self._from_attributes(self.ansatz * other, self.wires, self.name)
+        # Preserve the specific subclass type by copying and replacing ansatz
+        ret = copy.deepcopy(self)
+        ret._ansatz = self.ansatz * other
+        return ret
 
     def __repr__(self) -> str:
         ansatz = self.ansatz

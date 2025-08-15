@@ -15,7 +15,6 @@
 """Tests for the sampler."""
 
 import numpy as np
-import pytest
 
 from mrmustard import math, settings
 from mrmustard.lab import Coherent, Number, Vacuum
@@ -30,7 +29,7 @@ class TestPNRSampler:
     def test_init(self):
         sampler = PNRSampler(cutoff=10)
         assert sampler.meas_outcomes == list(range(10))
-        assert sampler.povms == Number(0, 0)
+        assert sampler.povms == {}
 
     def test_probabilities(self):
         atol = 1e-4
@@ -67,6 +66,34 @@ class TestPNRSampler:
 
         assert np.allclose(probs, sampler.probabilities(state), atol=1e-2)
 
+    def test_lazy_povm_caching(self):
+        """Test that POVMs are created lazily and cached for reuse."""
+        sampler = PNRSampler(cutoff=5)
+
+        # Initially no POVMs cached
+        assert sampler.povms == {}
+
+        # Get a POVM - should create and cache it
+        povm1 = sampler._get_povm(0, 0)  # 0 photons on mode 0
+        assert (0, 0) in sampler.povms
+        assert len(sampler.povms) == 1
+
+        # Get the same POVM again - should return cached version
+        povm2 = sampler._get_povm(0, 0)
+        assert povm1 is povm2  # Same object reference
+        assert len(sampler.povms) == 1  # Still only one cached
+
+        # Get a different POVM - should create and cache a new one
+        povm3 = sampler._get_povm(1, 0)  # 1 photon on mode 0
+        assert (0, 1) in sampler.povms  # Cache key is (mode, outcome) = (0, 1)
+        assert len(sampler.povms) == 2
+        assert povm3 is not povm1  # Different objects
+
+        # Get POVM for different mode - should create new one
+        _ = sampler._get_povm(0, 1)  # 0 photons on mode 1
+        assert (1, 0) in sampler.povms  # Cache key is (mode, outcome) = (1, 0)
+        assert len(sampler.povms) == 3
+
 
 class TestHomodyneSampler:
     r"""
@@ -78,11 +105,6 @@ class TestHomodyneSampler:
         assert sampler.povms is None
         assert sampler._phi == 0.5
         assert math.allclose(sampler.meas_outcomes, list(np.linspace(-5, 5, 100)))
-
-    def test_povm_error(self):
-        sampler = HomodyneSampler()
-        with pytest.raises(ValueError, match="no POVMs"):
-            sampler._get_povm(0, 0)
 
     def test_probabilties(self):
         sampler = HomodyneSampler()

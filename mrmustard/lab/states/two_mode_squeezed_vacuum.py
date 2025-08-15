@@ -20,12 +20,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 
-from ..utils import make_parameter
 from .ket import Ket
 
 __all__ = ["TwoModeSqueezedVacuum"]
@@ -40,10 +38,6 @@ class TwoModeSqueezedVacuum(Ket):
         modes: The modes of the two-mode squeezed vacuum state.
         r: The squeezing magnitude.
         phi: The squeezing angle.
-        r_trainable: Whether `r` is trainable.
-        phi_trainable: Whether `phi` is trainable.
-        r_bounds: The bounds of `r`.
-        phi_bounds: The bounds of `phi`.
 
     Returns:
         A ``Ket`` type object that represents the two-mode squeezed vacuum state.
@@ -62,29 +56,12 @@ class TwoModeSqueezedVacuum(Ket):
         modes: tuple[int, int],
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
-        r_trainable: bool = False,
-        phi_trainable: bool = False,
-        r_bounds: tuple[float | None, float | None] = (None, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        super().__init__(name="TwoModeSqueezedVacuum")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
-            ),
+        A, b, c = triples.two_mode_squeezed_vacuum_state_Abc(
+            r=r,
+            phi=phi,
         )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_trainable,
-                value=phi,
-                name="phi",
-                bounds=phi_bounds,
-                dtype=math.float64,
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.two_mode_squeezed_vacuum_state_Abc,
-            r=self.parameters.r,
-            phi=self.parameters.phi,
-        )
-        self._wires = Wires(modes_out_ket=set(modes))
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket=set(modes))
+
+        super().__init__(ansatz=ansatz, wires=wires, name="TwoModeSqueezedVacuum")

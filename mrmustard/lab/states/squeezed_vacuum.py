@@ -26,7 +26,6 @@ from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexTensor
 
-from ..utils import make_parameter
 from .ket import Ket
 
 __all__ = ["SqueezedVacuum"]
@@ -41,10 +40,6 @@ class SqueezedVacuum(Ket):
         mode: The mode of the squeezed vacuum state.
         r: The squeezing magnitude.
         phi: The squeezing angle.
-        r_trainable: Whether `r` is trainable.
-        phi_trainable: Whether `phi` is trainable.
-        r_bounds: The bounds of `r`.
-        phi_bounds: The bounds of `phi`.
 
     .. code-block::
 
@@ -58,60 +53,42 @@ class SqueezedVacuum(Ket):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
-        r_trainable: bool = False,
-        phi_trainable: bool = False,
-        r_bounds: tuple[float | None, float | None] = (None, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="SqueezedVacuum")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
-            ),
+        A, b, c = triples.squeezed_vacuum_state_Abc(
+            r=r,
+            phi=phi,
         )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_trainable,
-                value=phi,
-                name="phi",
-                bounds=phi_bounds,
-                dtype=math.float64,
-            ),
-        )
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket={mode})
 
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.squeezed_vacuum_state_Abc,
-            r=self.parameters.r,
-            phi=self.parameters.phi,
-        )
-        self._wires = Wires(modes_out_ket=set(mode))
+        def specialized_fock(shape, **kwargs):
+            """Optimized Fock computation using squeezed vacuum formula."""
+            r_tensor = math.astensor(r)
+            phi_tensor = math.astensor(phi)
+            if ansatz.batch_shape:
+                rs, phis = math.broadcast_arrays(r_tensor, phi_tensor)
+                rs = math.reshape(rs, (-1,))
+                phis = math.reshape(phis, (-1,))
+                ret = math.astensor(
+                    [math.squeezed(r, phi, shape=shape) for r, phi in zip(rs, phis)],
+                )
+                ret = math.reshape(ret, ansatz.batch_shape + shape)
+                if ansatz._lin_sup:
+                    ret = math.sum(ret, axis=ansatz.batch_dims - 1)
+            else:
+                ret = math.squeezed(r, phi, shape=shape)
+            return ret
+
+        self._specialized_fock = specialized_fock
+
+        super().__init__(ansatz=ansatz, wires=wires, name="SqueezedVacuum")
 
     def fock_array(
         self,
         shape: int | Sequence[int] | None = None,
     ) -> ComplexTensor:
         shape = self._check_fock_shape(shape)
-        if self.ansatz.batch_shape:
-            rs, phi = math.broadcast_arrays(
-                self.parameters.r.value,
-                self.parameters.phi.value,
-            )
-            rs = math.reshape(rs, (-1,))
-            phi = math.reshape(phi, (-1,))
-            ret = math.astensor(
-                [math.squeezed(r, p, shape=shape) for r, p in zip(rs, phi)],
-            )
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.squeezed(
-                self.parameters.r.value,
-                self.parameters.phi.value,
-                shape=shape,
-            )
-        return ret
+        return self._specialized_fock(shape)

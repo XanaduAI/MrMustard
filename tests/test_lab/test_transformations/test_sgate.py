@@ -96,17 +96,3 @@ class TestSgate:
         )
         assert math.allclose(rep3.b, math.zeros((2,)))
         assert math.allclose(rep3.c, 0.9975072676192522)
-
-    def test_trainable_parameters(self):
-        gate1 = Sgate(0, 1, 1)
-        gate2 = Sgate(0, 1, 1, r_trainable=True, r_bounds=(-2, 2))
-        gate3 = Sgate(0, 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
-
-        with pytest.raises(AttributeError):
-            gate1.parameters.r.value = 3
-
-        gate2.parameters.r.value = 2
-        assert gate2.parameters.r.value == 2
-
-        gate3.parameters.phi.value = 2
-        assert gate3.parameters.phi.value == 2

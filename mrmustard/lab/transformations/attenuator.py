@@ -20,12 +20,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics.wires import Wires
 
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
 from .base import Channel
 
 __all__ = ["Attenuator"]
@@ -39,8 +37,6 @@ class Attenuator(Channel):
     Args:
         mode: The mode this gate is applied to.
         transmissivity: The transmissivity.
-        transmissivity_trainable: Whether ``transmissivity`` is trainable.
-        transmissivity_bounds: The bounds for ``transmissivity``.
 
     .. code-block::
 
@@ -49,7 +45,6 @@ class Attenuator(Channel):
 
         >>> channel = Attenuator(mode=1, transmissivity=0.1)
         >>> assert channel.modes == (1,)
-        >>> assert channel.parameters.transmissivity.value == 0.1
 
     .. details::
 
@@ -80,30 +75,16 @@ class Attenuator(Channel):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         transmissivity: float | Sequence[float] = 1.0,
-        transmissivity_trainable: bool = False,
-        transmissivity_bounds: tuple[float | None, float | None] = (0.0, 1.0),
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Att~")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=transmissivity_trainable,
-                value=transmissivity,
-                name="transmissivity",
-                bounds=transmissivity_bounds,
-                dtype=math.float64,
-            ),
+        A, b, c = triples.attenuator_Abc(eta=transmissivity)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(
+            modes_in_bra={mode},
+            modes_out_bra={mode},
+            modes_in_ket={mode},
+            modes_out_ket={mode},
         )
 
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.attenuator_Abc,
-            eta=self.parameters.transmissivity,
-        )
-        self._wires = Wires(
-            modes_in_bra=set(mode),
-            modes_out_bra=set(mode),
-            modes_in_ket=set(mode),
-            modes_out_ket=set(mode),
-        )
+        super().__init__(ansatz=ansatz, wires=wires, name="Att~")

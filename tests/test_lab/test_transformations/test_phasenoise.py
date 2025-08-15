@@ -31,7 +31,6 @@ class TestPhaseNoise:
         "Tests the PhaseNoise initialization."
         ch = PhaseNoise(0, 0.2)
         assert ch.name == "PhaseNoise"
-        assert ch.parameters.phase_stdev.value == 0.2
         assert ch.modes == (0,)
         assert ch.ansatz is None
 
@@ -39,11 +38,11 @@ class TestPhaseNoise:
     def test_application(self, batch_shape):
         "Tests application of PhaseNoise on Ket and DM"
         x = math.broadcast_to(0.5, batch_shape)
-        psi_1 = Ket.random((0, 1)) >> Dgate(0, x, 0.5) >> PhaseNoise(0, 0.2)
+        psi_1 = Ket.random((0, 1)) >> Dgate(0, x + 0.5j) >> PhaseNoise(0, 0.2)
         assert isinstance(psi_1, DM)
         assert math.all(psi_1.purity < 1)
 
-        rho = DM.random((0, 1)) >> Dgate(0, 0.5, 0.5) >> PhaseNoise(0, 0.2)
+        rho = DM.random((0, 1)) >> Dgate(0, 0.5 + 0.5j) >> PhaseNoise(0, 0.2)
         assert isinstance(rho, DM)
         assert math.all(rho.purity < 1)
 

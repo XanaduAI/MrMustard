@@ -24,7 +24,7 @@ from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 
-from ..utils import make_parameter
+__all__ = ["Sauron"]
 
 
 class Sauron(Ket):
@@ -56,19 +56,16 @@ class Sauron(Ket):
         >>> assert psi.modes == (0,)
     """
 
-    def __init__(self, mode: int | tuple[int], n: int, epsilon: float = 0.1):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name=f"Sauron-{n}")
+    def __init__(self, mode: int, n: int, epsilon: float = 0.1):
+        n_tensor = math.astensor(n, dtype=math.int64)
+        epsilon_tensor = math.astensor(epsilon, dtype=math.float64)
 
-        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=math.int64))
-        self.parameters.add_parameter(
-            make_parameter(False, epsilon, "epsilon", (None, None), dtype=math.float64)
+        A, b, c = triples.sauron_state_Abc(
+            n=n_tensor,
+            epsilon=epsilon_tensor,
         )
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket={mode})
 
-        self._ansatz = PolyExpAnsatz.from_function(
-            triples.sauron_state_Abc,
-            n=self.parameters.n,
-            epsilon=self.parameters.epsilon,
-        )
-        self._wires = Wires(modes_out_ket=set(mode))
+        super().__init__(ansatz=ansatz, wires=wires, name=f"Sauron-{n}")
         self.ansatz._lin_sup = True

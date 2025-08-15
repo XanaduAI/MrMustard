@@ -38,19 +38,18 @@ class TestDisplacedSqueezed:
         assert state.name == "DisplacedSqueezed"
         assert state.modes == (modes,)
 
-    def test_trainable_parameters(self):
-        state1 = DisplacedSqueezed(0, 1 + 1j)
-        state2 = DisplacedSqueezed(0, 1 + 1j, alpha_trainable=True, alpha_bounds=(0, 2))
-        state3 = DisplacedSqueezed(0, 1 + 1j, r_trainable=True, r_bounds=(0, 2))
+    def test_stateless_construction(self):
+        # Test that DisplacedSqueezed is now stateless - parameters only used for construction
+        state = DisplacedSqueezed(0, 1 + 1j, 0.5, 0.3)
 
-        with pytest.raises(AttributeError):
-            state1.parameters.alpha.value = 3
+        # Should not have any parameter storage
+        assert not hasattr(state, "alpha")
+        assert not hasattr(state, "r")
+        assert not hasattr(state, "phi")
 
-        state2.parameters.alpha.value = 2
-        assert state2.parameters.alpha.value == 2
-
-        state3.parameters.r.value = 2
-        assert state3.parameters.r.value == 2
+        # But ansatz should be correctly constructed
+        assert state.name == "DisplacedSqueezed"
+        assert state.modes == (0,)
 
     @pytest.mark.parametrize("modes,alpha,r,phi", zip(modes, alpha, r, phi))
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])

@@ -18,12 +18,10 @@ The class representing a generic gaussian gate.
 
 from __future__ import annotations
 
-from mrmustard import math
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
 from .base import Unitary
 
 __all__ = ["Ggate"]
@@ -36,7 +34,7 @@ class Ggate(Unitary):
     Args:
         modes: The modes this gate is applied to.
         symplectic: The symplectic matrix of the gate in the XXPP ordering.
-        symplectic_trainable: Whether ``symplectic`` is trainable.
+        Use ``math.random_symplectic(len(modes))`` to generate a random symplectic matrix if needed.
 
     .. code-block::
 
@@ -53,33 +51,14 @@ class Ggate(Unitary):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        symplectic: RealMatrix | None = None,
-        symplectic_trainable: bool = False,
+        symplectic: RealMatrix,
     ):
-        modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="Ggate")
+        modes = (modes,) if isinstance(modes, int) else tuple(modes)
 
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=symplectic_trainable,
-                value=symplectic,
-                name="symplectic",
-                bounds=(None, None),
-                update_fn="update_symplectic",
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
-            s=self.parameters.symplectic,
-        )
-        self._wires = Wires(
-            modes_in_bra=set(),
-            modes_out_bra=set(),
-            modes_in_ket=set(modes),
-            modes_out_ket=set(modes),
-        )
+        A, b, c = Unitary.from_symplectic(
+            modes, symplectic
+        ).bargmann_triple()  # TODO: add ggate to physics.triples
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
 
-    @property
-    def symplectic(self):
-        return self.parameters.symplectic.value
+        super().__init__(ansatz=ansatz, wires=wires, name="Ggate")

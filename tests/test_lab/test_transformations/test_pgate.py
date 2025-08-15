@@ -31,7 +31,6 @@ class TestPgate:
         up = Pgate(0, 0.3)
         assert up.modes == (0,)
         assert up.name == "Pgate"
-        assert up.parameters.shearing.value == 0.3
 
     @pytest.mark.parametrize("s", [0.1, 0.5, 1])
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])

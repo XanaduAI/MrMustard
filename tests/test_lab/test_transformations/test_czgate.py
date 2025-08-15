@@ -31,7 +31,6 @@ class TestCZgate:
         cz = CZgate((0, 1), 0.3)
         assert cz.modes == (0, 1)
         assert cz.name == "CZgate"
-        assert cz.parameters.s.value == 0.3
 
     @pytest.mark.parametrize("s", [0.1, 0.2, 1.5])
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])

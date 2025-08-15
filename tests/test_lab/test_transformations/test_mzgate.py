@@ -31,13 +31,11 @@ class TestMZgate:
         "Tests the initialization of an MZgate object"
         mz = MZgate((0, 1), 0.1, 0.2, internal=True)
         assert mz.modes == (0, 1)
-        assert mz.parameters.phi_a.value == 0.1
-        assert mz.parameters.phi_b.value == 0.2
         assert mz.name == "MZgate"
 
         mz = MZgate((1, 2))
-        assert mz.parameters.phi_a.value == 0
-        assert mz.parameters.phi_b.value == 0
+        assert mz.modes == (1, 2)
+        assert mz.name == "MZgate"
 
     @pytest.mark.parametrize("phi_a", [0, settings.rng.random(), np.pi / 2])
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])

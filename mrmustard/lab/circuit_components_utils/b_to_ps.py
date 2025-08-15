@@ -27,7 +27,6 @@ from mrmustard.utils.typing import ComplexTensor
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
 from ..transformations.base import Map
-from ..utils import make_parameter
 
 __all__ = ["BtoPS"]
 
@@ -48,23 +47,24 @@ class BtoPS(Map):
         modes: int | tuple[int, ...],
         s: float,
     ):
-        modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="BtoPS")
-        self.parameters.add_parameter(make_parameter(False, s, "s", (None, None)))
+        modes = (modes,) if isinstance(modes, int) else tuple(modes)
+        self._s = s
 
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.bargmann_to_wigner_Abc,
-            s=self.parameters.s,
+        A, b, c = triples.bargmann_to_wigner_Abc(
+            s=s,
             n_modes=len(modes),
         )
-        self._wires = Wires(
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(
             modes_in_bra=set(modes),
             modes_out_bra=set(modes),
             modes_in_ket=set(modes),
             modes_out_ket=set(modes),
         )
-        for w in self.wires.output.sorted_wires:
+        for w in wires.output.sorted_wires:
             w.repr = ReprEnum.PHASESPACE
+
+        super().__init__(ansatz=ansatz, wires=wires, name="BtoPS")
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         raise NotImplementedError(f"{self.__class__.__name__} does not have a Fock representation.")

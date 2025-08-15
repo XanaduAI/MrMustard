@@ -25,7 +25,6 @@ from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.wires import Wires
 
-from ..utils import make_parameter
 from .base import Channel
 
 __all__ = ["PhaseNoise"]
@@ -41,8 +40,6 @@ class PhaseNoise(Channel):
     Args:
         mode: The mode the channel is applied to.
         phase_stdev: The standard deviation of the random phase noise.
-        phase_stdev_trainable: Whether ``phase_stdev`` is trainable.
-        phase_stdev_bounds: The bounds for ``phase_stdev``.
 
     .. code-block::
 
@@ -58,29 +55,20 @@ class PhaseNoise(Channel):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         phase_stdev: float = 0.0,
-        phase_stdev_trainable: bool = False,
-        phase_stdev_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="PhaseNoise")
-        self.parameters.add_parameter(
-            make_parameter(
-                phase_stdev_trainable,
-                phase_stdev,
-                "phase_stdev",
-                phase_stdev_bounds,
-                dtype=math.float64,
-            ),
+        # Store parameter privately for custom method
+        self._phase_stdev = phase_stdev
+
+        wires = Wires(
+            modes_in_bra={mode},
+            modes_out_bra={mode},
+            modes_in_ket={mode},
+            modes_out_ket={mode},
         )
-        self._ansatz = None
-        self._wires = Wires(
-            modes_in_bra=set(mode),
-            modes_out_bra=set(mode),
-            modes_in_ket=set(mode),
-            modes_out_ket=set(mode),
-        )
+
+        super().__init__(ansatz=None, wires=wires, name="PhaseNoise")
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -101,7 +89,7 @@ class PhaseNoise(Channel):
             phase_factors = math.exp(
                 -0.5
                 * (mode_indices[mode] - mode_indices[other.n_modes + mode]) ** 2
-                * self.parameters.phase_stdev.value**2,
+                * self._phase_stdev**2,
             )
             array *= phase_factors
         return CircuitComponent._from_attributes(

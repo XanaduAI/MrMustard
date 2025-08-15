@@ -103,7 +103,7 @@ class Sampler(ABC):
         )
         ret = []
         for unique_sample, idx, count in zip(unique_samples, idxs, counts):
-            meas_op = self._get_povm(unique_sample, initial_mode).dual
+            meas_op = self._get_povm(unique_sample, initial_mode)
             prob = probs[idx]
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob
             reduced_state = (state >> meas_op) / norm
@@ -156,9 +156,10 @@ class Sampler(ABC):
         if self._povms is None:
             raise ValueError("This sampler has no POVMs defined.")
         if isinstance(self.povms, CircuitComponent):
-            kwargs = self.povms.parameters.to_dict()
-            kwargs[self._outcome_arg] = meas_outcome
-            return self.povms.__class__(mode, **kwargs)
+            # TODO: implement generic POVM creation in stateless architecture
+            raise NotImplementedError(
+                "Generic POVM creation not supported in stateless architecture"
+            )
         return self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
 
     def _validate_probs(self, probs: Sequence[float], atol: float) -> Sequence[float]:
@@ -191,12 +192,27 @@ class PNRSampler(Sampler):
     """
 
     def __init__(self, cutoff: int) -> None:
-        super().__init__(list(range(cutoff)), Number(0, 0, cutoff))
+        # Start with empty POVM cache for lazy creation
+        super().__init__(list(range(cutoff)), {})
         self._cutoff = cutoff
-        self._outcome_arg = "n"
 
     def probabilities(self, state, atol=1e-4):
         return self._validate_probs(state.fock_distribution(self._cutoff), atol)
+
+    def _get_povm(self, meas_outcome: Any, mode: int) -> CircuitComponent:
+        r"""
+        Returns the POVM for a specific photon number measurement outcome.
+        Creates POVMs lazily and caches them for reuse.
+        """
+        # Use (mode, outcome) as cache key
+        cache_key = (mode, meas_outcome)
+
+        # Check if we already have this POVM cached
+        if cache_key not in self._povms:
+            # Create and cache the POVM
+            self._povms[cache_key] = Number(mode, meas_outcome, self._cutoff).dual
+
+        return self._povms[cache_key]
 
 
 class HomodyneSampler(Sampler):

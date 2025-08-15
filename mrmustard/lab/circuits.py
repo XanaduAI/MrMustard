@@ -21,12 +21,10 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Sequence
-from pydoc import locate
 
 from mrmustard import math, settings
 from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.path import optimal_path
-from mrmustard.utils.serialize import save
 
 __all__ = ["Circuit"]
 
@@ -82,20 +80,6 @@ class Circuit:
         self.path: list[tuple[int, int]] = [
             (0, i) for i in range(1, len(self.components))
         ]  # default path (likely not optimal)
-
-    @classmethod
-    def deserialize(cls, data: dict) -> Circuit:
-        r"""Deserialize a Circuit."""
-        comps, path = data.pop("components"), data.pop("path")
-
-        for k, v in data.items():
-            kwarg, i = k.split(":")
-            comps[int(i)][kwarg] = v
-
-        classes: list[CircuitComponent] = [locate(c.pop("class")) for c in comps]
-        circ = cls([c._deserialize(comp_data) for c, comp_data in zip(classes, comps)])
-        circ.path = [tuple(p) for p in path]
-        return circ
 
     @classmethod
     def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
@@ -265,21 +249,6 @@ class Circuit:
             verbose=verbose,
         )
 
-    def serialize(self, filestem: str | None = None):
-        r"""
-        Serialize a Circuit.
-
-        Args:
-            filestem: An optional name to give the resulting file saved to disk.
-        """
-        components, data = list(zip(*[c._serialize() for c in self.components]))
-        kwargs = {
-            "arrays": {f"{k}:{i}": v for i, arrs in enumerate(data) for k, v in arrs.items()},
-            "path": self.path,
-            "components": components,
-        }
-        return save(type(self), filename=filestem, **kwargs)
-
     def _tree_flatten(self):  # pragma: no cover
         children = (self.components,)
         aux_data = (self.path,)
@@ -355,7 +324,12 @@ class Circuit:
             else:
                 cc_names = [f"{cc_name}"]
 
-            if comp.parameters.names and settings.DRAW_CIRCUIT_PARAMS:
+            # In stateless architecture, components don't have parameters to display
+            if (
+                hasattr(comp, "parameters")
+                and comp.parameters.names
+                and settings.DRAW_CIRCUIT_PARAMS
+            ):
                 values = []
                 for name in comp.parameters.names:
                     param = comp.parameters.constants.get(name) or comp.parameters.variables.get(

@@ -30,7 +30,7 @@ class TestVacuum:
     def test_init(self, modes):
         state = Vacuum(modes)
 
-        assert state.name == "Vac"
+        assert state.name == "Vacuum"
         assert list(state.modes) == sorted(modes)
         assert state.n_modes == len(modes)
 
