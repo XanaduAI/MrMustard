@@ -19,48 +19,14 @@
 * Added vjps to the JAX backend. Added ``numba`` based Fock lattice strategies to `SqueezedVacuum` and `Sgate`.
 [(#636)](https://github.com/XanaduAI/MrMustard/pull/636)
 
-* Riemannian updates to `OptimizerJax` for improved convergence.
-[(#615)](https://github.com/XanaduAI/MrMustard/pull/615)
+* Added a `seed` keyword for `DM.random`, `Ket.random`, `Channel.random` and `Unitary.random`
+[(#638)](https://github.com/XanaduAI/MrMustard/pull/638)
 
-* Added Fock shape information to `Wires` and improved Fock shape lookahead.
-[(#618)](https://github.com/XanaduAI/MrMustard/pull/618)
+* Added the `is_separable` property to `State`.
+[(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
 
-* Added `dtype` to `make_parameter` on built-ins and improved `mode` argument handling.
-[(#626)](https://github.com/XanaduAI/MrMustard/pull/626)
-
-* Batched `Number` state.
-[(#628)](https://github.com/XanaduAI/MrMustard/pull/628)
-
-* Added Numba compilation cache to all `njit` functions.
-[(#622)](https://github.com/XanaduAI/MrMustard/pull/622)
-
-* Implemented VJP for `hermite_renormalized_batched`.
-[(#625)](https://github.com/XanaduAI/MrMustard/pull/625)
-
-* Added a setting to switch the default contraction representation.
-[(#614)](https://github.com/XanaduAI/MrMustard/pull/614)
-
-* Added persistent compilation cache to `BackendJax`.
-[(#599)](https://github.com/XanaduAI/MrMustard/pull/599)
-
-* Added `out` keyword to `hermite_renormalized`.
-[(#595)](https://github.com/XanaduAI/MrMustard/pull/595)
-
-* Added `backend` argument to `math.einsum`, including `optimize` support.
-[(#611)](https://github.com/XanaduAI/MrMustard/pull/611)
-[(#598)](https://github.com/XanaduAI/MrMustard/pull/598)
-
-* Introduced `mm_einsum` function to contract ansatze in a fully manual call.
-[(#571)](https://github.com/XanaduAI/MrMustard/pull/571)
-
-* Reduced memory overhead by replacing `np.array` with `np.asarray` where appropriate.
-[(#600)](https://github.com/XanaduAI/MrMustard/pull/600)
-
-* Refactored JAX backend `matmul` and associated gradient operations for clarity and control.
-
-* Improved batch support in transpose operations.
-
-* Improved control of Numba parallel execution in `vanilla_batch_numba` via `NUMBA_PARALLEL` setting.
+* Added support for Python 3.13.
+[(#640)](https://github.com/XanaduAI/MrMustard/pull/640)
 
 ### Bug fixes
 
@@ -73,43 +39,15 @@
 * Fixed a bug in `DM.expectation` where the Fock shape lookahead wasn't setting certain wires correctly.
 [(#639)](https://github.com/XanaduAI/MrMustard/pull/639)
 
-* Stable Fock `BSgate` implementation.
-[(#591)](https://github.com/XanaduAI/MrMustard/pull/591)
+* Fixed a bug with `State.fock_distribution` where batch dimensions and mult-mode states were not handled correctly.
+[(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
 
-* Fixed einsum string inconsistency.
-[(#592)](https://github.com/XanaduAI/MrMustard/pull/592)
+* Fixed a bug where `CircuitComponent.fock_array` was not passing `c` directly into `math.hermite_renormalize` for `num_derived_vars=0`. 
+[(#643)](https://github.com/XanaduAI/MrMustard/pull/643)
 
-* Fixes across quadrature, `auto_shape`, and expectation calculations.
-[(#607)](https://github.com/XanaduAI/MrMustard/pull/607)
-
-* Fixed a flaky test in full batch VJP.
-[(#623)](https://github.com/XanaduAI/MrMustard/pull/623)
-
-### Documentation
-
-* Improved README badges.
-[(#632)](https://github.com/XanaduAI/MrMustard/pull/632)
-
-* Documentation fixes and cleanups.
-[(#586)](https://github.com/XanaduAI/MrMustard/pull/586)
-
-* Updated `CODEOWNERS`.
-[(#620)](https://github.com/XanaduAI/MrMustard/pull/620)
-
-### Tests
-
-* Added backend-specific test targets to `Makefile` and enabled manual timing runs.
-[(#603)](https://github.com/XanaduAI/MrMustard/pull/603)
-[(#612)](https://github.com/XanaduAI/MrMustard/pull/612)
-
-* Test suite maintenance and cleanup.
-[(#601)](https://github.com/XanaduAI/MrMustard/pull/601)
-
-### Tooling
-
-* Adopted Ruff linter/formatter and updated pre-commit hooks.
-[(#610)](https://github.com/XanaduAI/MrMustard/pull/610)
-[(#609)](https://github.com/XanaduAI/MrMustard/pull/609)
+* Fixed a bug where `numba` parallelization would conflict with JAX.
+* Fixed the batched behaviour of Riemannian optimizations in `Optimizer`.
+[(#642)](https://github.com/XanaduAI/MrMustard/pull/642)
 
 ---
 
