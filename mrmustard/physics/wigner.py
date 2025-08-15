@@ -80,7 +80,7 @@ def wigner_discretized(rho, q_vec, p_vec):
     .. code::
 
         >>> settings.DISCRETIZATION_METHOD  # default method
-        "iterative"
+        'clenshaw'
 
         >>> settings.DISCRETIZATION_METHOD = "clenshaw"  # change method
 

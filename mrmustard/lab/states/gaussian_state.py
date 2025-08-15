@@ -49,8 +49,9 @@ class GKet(Ket):
     .. code-block::
 
         >>> from mrmustard.lab import GKet, Ket
+        >>> from mrmustard import math
 
-        >>> psi = GKet([0])
+        >>> psi = GKet([0], symplectic=math.random_symplectic(1))
 
         >>> assert isinstance(psi, Ket)
 
@@ -116,8 +117,9 @@ class GDM(DM):
     .. code-block::
 
         >>> from mrmustard.lab import GDM, DM
+        >>> from mrmustard import math
 
-        >>> rho = GDM([0], beta = 1.0)
+        >>> rho = GDM([0], beta = 1.0, symplectic=math.random_symplectic(1))
 
         >>> assert isinstance(rho, DM)
 

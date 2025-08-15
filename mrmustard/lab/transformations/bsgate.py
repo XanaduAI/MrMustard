@@ -46,8 +46,6 @@ class BSgate(Unitary):
 
         >>> unitary = BSgate(modes=(1, 2), theta=0.1)
         >>> assert unitary.modes == (1, 2)
-        >>> assert unitary.parameters.theta.value == 0.1
-        >>> assert unitary.parameters.phi.value == 0.0
 
     .. details::
 

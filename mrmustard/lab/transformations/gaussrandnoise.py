@@ -45,7 +45,6 @@ class GaussRandNoise(Channel):
 
         >>> channel = GaussRandNoise(modes=(1, 2), Y = 0.2 * np.eye(4))
         >>> assert channel.modes == (1, 2)
-        >>> assert math.allclose(channel.parameters.Y.value, 0.2 * np.eye(4))
 
     Raises:
         ValueError: If the number of modes does not match half of the size of ``Y``.

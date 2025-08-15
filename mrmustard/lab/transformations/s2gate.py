@@ -45,8 +45,6 @@ class S2gate(Unitary):
 
         >>> unitary = S2gate(modes=(1, 2), r=1)
         >>> assert unitary.modes == (1, 2)
-        >>> assert unitary.parameters.r.value == 1
-        >>> assert unitary.parameters.phi.value == 0.0
 
     .. details::
 

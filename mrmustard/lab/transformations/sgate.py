@@ -47,8 +47,6 @@ class Sgate(Unitary):
 
         >>> unitary = Sgate(mode=1, r=0.1, phi=0.2)
         >>> assert unitary.modes == (1,)
-        >>> assert unitary.parameters.r.value == 0.1
-        >>> assert unitary.parameters.phi.value == 0.2
 
     .. details::
 

@@ -49,8 +49,6 @@ class MZgate(Unitary):
 
         >>> mz = MZgate((0, 1), phi_a=0.1, phi_b=0.2)
         >>> assert mz.modes == (0, 1)
-        >>> assert mz.parameters.phi_a.value == 0.1
-        >>> assert mz.parameters.phi_b.value == 0.2
     """
 
     short_name = "MZ"

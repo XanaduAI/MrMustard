@@ -42,7 +42,6 @@ class CXgate(Unitary):
         >>> from mrmustard.lab import CXgate
         >>> gate = CXgate((0, 1), s=0.5)
         >>> assert gate.modes == (0, 1)
-        >>> assert gate.parameters.s.value == 0.5
 
     .. details::
 

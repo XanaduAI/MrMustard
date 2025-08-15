@@ -141,8 +141,9 @@ class Transformation(CircuitComponent):
 
         .. code-block::
             >>> from mrmustard.lab import GDM, Identity
+            >>> from mrmustard import math
 
-            >>> rho = GDM(0, beta = 0.1)
+            >>> rho = GDM(0, beta = 0.1, symplectic=math.random_symplectic(1))
             >>> rho_as_operator = Operation.from_bargmann([0], [0], rho.ansatz.triple)
             >>> assert rho_as_operator >> rho_as_operator.inverse() == Identity([0])
         """

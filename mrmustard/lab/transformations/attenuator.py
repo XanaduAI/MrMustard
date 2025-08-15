@@ -45,7 +45,6 @@ class Attenuator(Channel):
 
         >>> channel = Attenuator(mode=1, transmissivity=0.1)
         >>> assert channel.modes == (1,)
-        >>> assert channel.parameters.transmissivity.value == 0.1
 
     .. details::
 

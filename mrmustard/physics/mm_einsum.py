@@ -88,7 +88,7 @@ def mm_einsum(
         PolyExpAnsatz | ArrayAnsatz | ArrayLike: The contracted Ansatz or array, depending on the output indices and Fock dimensions.
 
     Example:
-        >>> from mrmustard.lab_dev import Ket, BSgate
+        >>> from mrmustard.lab import Ket, BSgate
         >>> from mrmustard.physics.mm_einsum import mm_einsum
         >>> # Prepare two single-mode states and a beamsplitter
         >>> ket0 = Ket.random([0])

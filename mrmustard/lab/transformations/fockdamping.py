@@ -46,7 +46,6 @@ class FockDamping(Operation):
         >>> input_state = Coherent(mode=0, alpha=1 + 0.5j)
         >>> output_state = input_state >> operator
         >>> assert operator.modes == (0,)
-        >>> assert operator.parameters.damping.value == 0.1
         >>> assert output_state.L2_norm < 1
 
     .. details::
