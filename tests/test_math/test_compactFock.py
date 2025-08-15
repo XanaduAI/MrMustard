@@ -8,6 +8,7 @@ import pytest
 from mrmustard import math
 from mrmustard.lab import DM, Ggate, SqueezedVacuum, Vacuum
 from mrmustard.lab.transformations.attenuator import Attenuator
+from mrmustard.math.parameters import Variable
 from mrmustard.physics import gaussian
 
 try:
@@ -75,7 +76,6 @@ def test_compactFock_diagonal_gradients():
     Test getting Fock amplitudes and gradients if all modes
     are detected (math.hermite_renormalized_diagonal).
     """
-    from mrmustard.math.parameters import Variable
 
     symplectic_var = Variable.symplectic(math.random_symplectic(1), "symplectic")
 

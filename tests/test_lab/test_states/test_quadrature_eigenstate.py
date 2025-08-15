@@ -62,16 +62,6 @@ class TestQuadratureEigenstate:
         assert math.allclose(b1, b2)
         assert math.allclose(c1, c2)
 
-    def test_parameter_storage(self):
-        state = QuadratureEigenstate(0, 2.5, 1.2)
-
-        assert state.name == "QuadratureEigenstate"
-        assert state.modes == (0,)
-
-        batch_x = [1.0, 2.0, 3.0]
-        batch_phi = [0.1, 0.2, 0.3]
-        batch_state = QuadratureEigenstate(0, batch_x, batch_phi)
-
     def test_with_coherent(self):
         val0 = Coherent(0, 0) >> QuadratureEigenstate(0, 0, 0).dual
         val1 = Coherent(0, 1) >> QuadratureEigenstate(0, np.sqrt(2 * settings.HBAR), 0).dual

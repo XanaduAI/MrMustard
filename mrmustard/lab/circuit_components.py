@@ -781,7 +781,7 @@ class CircuitComponent:
         # Find the closest common ancestor type
         common_type = self._find_closest_common_ancestor(type(self), type(other))
 
-        if type(self) == type(other):
+        if type(self) is type(other):
             # If both are the same type, preserve that type
             ret = copy.deepcopy(self)
             ret._ansatz = ansatz

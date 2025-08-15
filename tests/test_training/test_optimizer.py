@@ -526,7 +526,6 @@ class TestOptimizer:
         (r_var,) = opt.minimize(cost_fn, by_optimizing=[r_var], max_steps=300)
 
         expected = 1 / (n + 1) * (n / (n + 1)) ** n
-        S = TwoModeSqueezedVacuum((0, 1), r=r_var.value)
         assert math.allclose(-cost_fn(r_var.value), expected, atol=1e-5)
 
     def test_sgate_optimization(self):
