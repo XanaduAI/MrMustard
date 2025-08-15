@@ -64,11 +64,12 @@ class SqueezedVacuum(Ket):
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket={mode})
         
-        # Create specialized closure that captures r and phi
         def specialized_fock(shape, **kwargs):
             """Optimized Fock computation using squeezed vacuum formula."""
+            r_tensor = math.astensor(r)
+            phi_tensor = math.astensor(phi)
             if ansatz.batch_shape:
-                rs, phis = math.broadcast_arrays(r, phi)
+                rs, phis = math.broadcast_arrays(r_tensor, phi_tensor)
                 rs = math.reshape(rs, (-1,))
                 phis = math.reshape(phis, (-1,))
                 ret = math.astensor(

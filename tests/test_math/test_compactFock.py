@@ -75,10 +75,13 @@ def test_compactFock_diagonal_gradients():
     Test getting Fock amplitudes and gradients if all modes
     are detected (math.hermite_renormalized_diagonal).
     """
-    G = Ggate(0, symplectic_trainable=True)
-    Att = Attenuator(0, 0.9)
+    from mrmustard.math.parameters import Variable
+    
+    symplectic_var = Variable.symplectic(math.random_symplectic(1), "symplectic")
 
-    def cost_fn(G):
+    def cost_fn(symplectic):
+        G = Ggate(0, symplectic=symplectic)
+        Att = Attenuator(0, 0.9)
         n1 = 2  # number of detected photons
         state_opt = Vacuum([0]) >> G >> Att
         A, B, G0 = state_opt.bargmann_triple()
@@ -92,7 +95,7 @@ def test_compactFock_diagonal_gradients():
         return -math.real(p)
 
     opt = Optimizer(symplectic_lr=0.5)
-    (G,) = opt.minimize(cost_fn, by_optimizing=[G], max_steps=5)
+    (symplectic_var,) = opt.minimize(cost_fn, by_optimizing=[symplectic_var], max_steps=5)
     for i in range(2, min(20, len(opt.opt_history))):
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
 

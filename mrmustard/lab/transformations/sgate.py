@@ -89,8 +89,10 @@ class Sgate(Unitary):
         # Create specialized closure that captures r and phi
         def specialized_fock(shape, **kwargs):
             """Optimized Fock computation using squeezing formula."""
+            r_tensor = math.astensor(r)
+            phi_tensor = math.astensor(phi)
             if ansatz.batch_shape:
-                rs, phis = math.broadcast_arrays(r, phi)
+                rs, phis = math.broadcast_arrays(r_tensor, phi_tensor)
                 rs = math.reshape(rs, (-1,))
                 phis = math.reshape(phis, (-1,))
                 ret = math.astensor(

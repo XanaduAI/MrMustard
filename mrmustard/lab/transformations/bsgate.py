@@ -95,8 +95,10 @@ class BSgate(Unitary):
 
         def specialized_fock(shape, method="stable", **kwargs):
             """Optimized Fock computation using beamsplitter formula."""
+            theta_tensor = math.astensor(theta)
+            phi_tensor = math.astensor(phi)
             if ansatz.batch_shape:
-                theta_local, phi_local = math.broadcast_arrays(theta, phi)
+                theta_local, phi_local = math.broadcast_arrays(theta_tensor, phi_tensor)
                 theta_local = math.reshape(theta_local, (-1,))
                 phi_local = math.reshape(phi_local, (-1,))
                 ret = math.astensor(
@@ -106,7 +108,7 @@ class BSgate(Unitary):
                 if ansatz._lin_sup:
                     ret = math.sum(ret, axis=ansatz.batch_dims - 1)
             else:
-                ret = math.beamsplitter(theta, phi, shape=shape, method=method)
+                ret = math.beamsplitter(theta_tensor, phi_tensor, shape=shape, method=method)
             return ret
         
         self._specialized_fock = specialized_fock

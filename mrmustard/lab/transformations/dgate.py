@@ -83,15 +83,16 @@ class Dgate(Unitary):
         # Create specialized closure that captures alpha
         def specialized_fock(shape, **kwargs):
             """Optimized Fock computation using displacement formula."""
+            alpha_tensor = math.astensor(alpha)
             if ansatz.batch_shape:
-                alpha_local = alpha
+                alpha_local = alpha_tensor
                 alpha_local = math.reshape(alpha_local, (-1,))
                 ret = math.astensor([math.displacement(alpha_i, shape=shape) for alpha_i in alpha_local])
                 ret = math.reshape(ret, ansatz.batch_shape + shape)
                 if ansatz._lin_sup:
                     ret = math.sum(ret, axis=ansatz.batch_dims - 1)
             else:
-                ret = math.displacement(alpha, shape=shape)
+                ret = math.displacement(alpha_tensor, shape=shape)
             return ret
         
         self._specialized_fock = specialized_fock
