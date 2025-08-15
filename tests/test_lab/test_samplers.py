@@ -88,6 +88,9 @@ class TestPNRSampler:
         assert (0, 1) in sampler.povms  # Cache key is (mode, outcome) = (0, 1)
         assert len(sampler.povms) == 2
         assert povm3 is not povm1  # Different objects
+
+        # Get POVM for different mode - should create new one
+        _ = sampler._get_povm(0, 1)  # 0 photons on mode 1
         assert (1, 0) in sampler.povms  # Cache key is (mode, outcome) = (1, 0)
         assert len(sampler.povms) == 3
 
