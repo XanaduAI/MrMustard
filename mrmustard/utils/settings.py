@@ -101,10 +101,6 @@ class Settings:
         self.STABLE_FOCK_CONVERSION: bool = False
         r"""Whether to use the ``stable`` function when computing Fock amplitudes (more stable, but slower). Default is ``False``."""
 
-        self.NUMBA_PARALLEL: bool = True
-        r"""Whether to use parallelization when using Numba. Default is ``True``.
-        Switch to ``False`` when using the Jax backend and restart the kernel if you are in a Jupyter notebook."""
-
         self._original_values = {}
         self._frozen = True
 

@@ -17,7 +17,6 @@
 import numpy as np
 from numba import njit, prange
 
-from mrmustard import settings
 from mrmustard.utils.typing import ComplexTensor
 
 from .core import stable_numba, vanilla_numba
@@ -25,7 +24,7 @@ from .core import stable_numba, vanilla_numba
 # ruff: noqa: RUF005
 
 
-@njit(cache=True, parallel=settings.NUMBA_PARALLEL)
+@njit(cache=True)
 def vanilla_batch_numba(
     shape: tuple[int, ...],
     A,
