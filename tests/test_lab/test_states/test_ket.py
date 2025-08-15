@@ -529,7 +529,11 @@ class TestKet:
         with pytest.raises(ValueError, match="Expected an operator defined on"):
             ket.expectation(op3)
 
-    @pytest.mark.parametrize("operator", [DM.random((0,), max_r=10), Dgate(0, alpha=5 + 12j)])
+    @pytest.mark.parametrize(
+        "operator",
+        [Coherent(0, alpha=5 + 12j).dm(), Dgate(0, alpha=5 + 12j)],
+        ids=["DM_LIKE", "UNITARY_LIKE"],
+    )
     def test_expectation_shape_handling(self, operator):
         cutoff = 200
         ket = SqueezedVacuum(0, 1.5)
