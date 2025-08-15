@@ -20,14 +20,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ..circuit_components_utils import TraceOut
-from mrmustard.math.parameters import Variable
 from ..utils import reshape_params
 from .dm import DM
 from .ket import Ket

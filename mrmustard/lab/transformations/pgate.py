@@ -20,12 +20,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 
 from ...physics import symplectics
-
 from .base import Unitary
 
 __all__ = ["Pgate"]

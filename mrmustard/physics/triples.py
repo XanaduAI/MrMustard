@@ -881,7 +881,7 @@ def bargmann_to_wigner_Abc(
         ValueError: If s is equal to 1, which would cause division by zero.
     """
     if np.isclose(s, 1):
-        raise ValueError(f"s=1 is not allowed.")
+        raise ValueError("s=1 is not allowed.")
 
     On = math.zeros((n_modes, n_modes), dtype=math.complex128)
     In = math.eye(n_modes, dtype=math.complex128)

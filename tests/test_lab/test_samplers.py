@@ -15,7 +15,6 @@
 """Tests for the sampler."""
 
 import numpy as np
-import pytest
 
 from mrmustard import math, settings
 from mrmustard.lab import Coherent, Number, Vacuum

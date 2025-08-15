@@ -18,13 +18,11 @@ The class representing an Interferometer gate.
 
 from __future__ import annotations
 
-from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexMatrix
 
 from ...physics import symplectics
-
 from .base import Unitary
 
 __all__ = ["Interferometer"]

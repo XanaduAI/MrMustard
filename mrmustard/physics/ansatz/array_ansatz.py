@@ -18,7 +18,7 @@ This module contains the array ansatz.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from typing import Any
 from warnings import warn
 
@@ -27,7 +27,6 @@ from IPython.display import display
 from numpy.typing import ArrayLike
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.parameters import Variable
 from mrmustard.utils.typing import Batch, Scalar, Tensor
 
 from .base import Ansatz

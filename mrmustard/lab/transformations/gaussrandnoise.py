@@ -24,7 +24,6 @@ from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ...physics import triples
-
 from .base import Channel
 
 __all__ = ["GaussRandNoise"]

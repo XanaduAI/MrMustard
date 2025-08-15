@@ -18,7 +18,6 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab import Dgate, SqueezedVacuum
-from mrmustard.physics.ansatz import ArrayAnsatz
 
 
 class TestDgate:

@@ -24,7 +24,6 @@ from mrmustard.physics.wires import Wires
 
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
-
 from .base import Channel
 
 __all__ = ["Amplifier"]

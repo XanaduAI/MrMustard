@@ -18,12 +18,10 @@ The class representing a generic gaussian gate.
 
 from __future__ import annotations
 
-from mrmustard import math
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ...physics.ansatz import PolyExpAnsatz
-
 from .base import Unitary
 
 __all__ = ["Ggate"]

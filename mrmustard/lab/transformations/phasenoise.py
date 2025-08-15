@@ -25,7 +25,6 @@ from mrmustard.lab.circuit_components import CircuitComponent
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.wires import Wires
 
-
 from .base import Channel
 
 __all__ = ["PhaseNoise"]

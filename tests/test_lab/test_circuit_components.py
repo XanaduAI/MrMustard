@@ -41,7 +41,6 @@ from mrmustard.lab import (
     Vacuum,
 )
 from mrmustard.lab.circuit_components import ReprEnum
-from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.triples import displacement_gate_Abc, identity_Abc
 from mrmustard.physics.wires import Wires

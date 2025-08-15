@@ -16,7 +16,6 @@
 
 import pytest
 
-from mrmustard import settings
 from mrmustard.lab import (
     Attenuator,
     BSgate,
@@ -26,7 +25,6 @@ from mrmustard.lab import (
     Dgate,
     Number,
     Sgate,
-    SqueezedVacuum,
     Vacuum,
 )
 

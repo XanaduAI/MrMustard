@@ -20,12 +20,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics.wires import Wires
 
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
-
 from .base import Operation
 
 __all__ = ["FockDamping"]

@@ -26,7 +26,6 @@ from mrmustard.utils.typing import ComplexTensor
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import Wires
-
 from .base import Unitary
 
 __all__ = ["BSgate"]

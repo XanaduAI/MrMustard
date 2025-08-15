@@ -21,29 +21,6 @@ import numpy as np
 import pytest
 
 from mrmustard import __version__, math, settings
-from mrmustard.lab import (
-    Amplifier,
-    Attenuator,
-    BSgate,
-    BtoChar,
-    BtoQ,
-    Circuit,
-    Coherent,
-    Dgate,
-    DisplacedSqueezed,
-    FockDamping,
-    Identity,
-    Number,
-    QuadratureEigenstate,
-    Rgate,
-    S2gate,
-    Sgate,
-    SqueezedVacuum,
-    Thermal,
-    TraceOut,
-    TwoModeSqueezedVacuum,
-    Vacuum,
-)
 from mrmustard.utils.serialize import load, save
 
 try:
