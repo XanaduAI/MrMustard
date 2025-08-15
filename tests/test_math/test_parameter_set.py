@@ -159,3 +159,37 @@ class TestParameterSet:
         assert np.allclose(ps[1, 2].constants["c2"].value, [3, 4])
         assert np.allclose(ps[1, 2].variables["v1"].value, 5)
         assert np.allclose(ps[1, 2].variables["v2"].value, [7, 8])
+
+    def test_bool_and_empty_repr(self):
+        r"""
+        Tests the ``__bool__`` method and empty ParameterSet repr.
+        """
+        ps_empty = ParameterSet()
+        assert not ps_empty
+        assert repr(ps_empty) == "ParameterSet()"
+
+        ps_with_param = ParameterSet()
+        ps_with_param.add_parameter(Constant(1.0, "test"))
+        assert bool(ps_with_param)
+
+    def test_repr_integration(self):
+        r"""
+        Tests that ``__repr__`` integrates the formatting methods correctly.
+        """
+        ps = ParameterSet()
+        ps.add_parameter(Constant(3.14, "pi"))
+        ps.add_parameter(Variable(2.718, "e", bounds=(0, None)))
+        ps.add_parameter(Constant([1, 2, 3], "array"))
+
+        repr_str = repr(ps)
+
+        # Check that the table is present and contains expected elements
+        assert "ParameterSet (3 parameters)" in repr_str
+        assert "pi" in repr_str
+        assert "e" in repr_str
+        assert "array" in repr_str
+        assert "Constant" in repr_str
+        assert "Variable" in repr_str
+        assert "3.14" in repr_str
+        assert "2.718" in repr_str
+        assert "(0, +∞)" in repr_str

@@ -21,7 +21,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from mrmustard import math
-from mrmustard.math.parameters import update_symplectic
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
@@ -84,7 +83,7 @@ class GKet(Ket):
                 value=symplectic,
                 name="symplectic",
                 bounds=(None, None),
-                update_fn=update_symplectic,
+                update_fn="update_symplectic",
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(
@@ -168,7 +167,7 @@ class GDM(DM):
                 value=symplectic,
                 name="symplectic",
                 bounds=(None, None),
-                update_fn=update_symplectic,
+                update_fn="update_symplectic",
             ),
         )
         self.parameters.add_parameter(
@@ -177,6 +176,7 @@ class GDM(DM):
                 value=betas,
                 name="beta",
                 bounds=(0, None),
+                dtype=math.float64,
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(

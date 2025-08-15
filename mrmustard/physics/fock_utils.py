@@ -23,108 +23,50 @@ from functools import lru_cache
 
 import numpy as np
 from scipy.special import comb, factorial
-from tensorflow.python.framework.errors_impl import InvalidArgumentError
 
 from mrmustard import math, settings
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
+
+try:
+    import jax
+except ImportError:  # pragma: no cover
+    jax = None
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def fock_state(n: int | Sequence[int], cutoffs: int | Sequence[int] | None = None) -> Tensor:
+def fock_state(n: int | Sequence[int], cutoff: int | None = None) -> Tensor:
     r"""
-    The Fock array of a tensor product of one-mode ``Number`` states.
+    The Fock array of a batchable single-mode ``Number`` state.
 
     Args:
-        n: The photon numbers of the number states.
-        cutoffs: The cutoffs of the arrays for the number states. If it is given as
-            an ``int``, it is broadcasted to all the states. If ``None``, it
-            defaults to ``[n1+1, n2+1, ...]``, where ``ni`` is the photon number
-            of the `i`-th mode.
+        n: The photon number of the number state. Can be a single integer or a batch of integers.
+        cutoff: The cutoff of the Fock array. This acts as the core dimension of the returned array.
+            If ``None``, it defaults to ``math.max(n)+1``.
 
     Returns:
-        The Fock array of a tensor product of one-mode ``Number`` states.
+        The Fock array of a batchable single-mode ``Number`` state.
 
     Raises:
-        ValueError: If the number of cutoffs does not match the number of photon numbers.
         ValueError: If the photon numbers are larger than the corresponding cutoffs.
     """
-    # TODO: using math.atleast gives a traced array when using the jax backend and jit compiling
-    # this is a workaround to avoid the traced array
-    n = np.array(n, ndmin=1)
+    n = math.astensor(n, dtype=math.int64)
+    if cutoff is None:
+        cutoff = int(math.max(n) + 1)
 
-    if cutoffs is None:
-        cutoffs = list(n)
-    elif isinstance(cutoffs, int):
-        cutoffs = [cutoffs] * len(n)
+    def check_photon_numbers(n, cutoff):
+        if math.any(n >= cutoff):
+            raise ValueError("Photon numbers cannot be larger than the corresponding cutoff.")
+
+    if math.backend_name == "jax":  # pragma: no cover
+        jax.debug.callback(check_photon_numbers, n, cutoff)
     else:
-        cutoffs = np.array(cutoffs, ndmin=1)
+        check_photon_numbers(n, cutoff)
 
-    if len(cutoffs) != len(n):
-        msg = f"Expected ``len(cutoffs)={len(n)}`` but found ``{len(cutoffs)}``."
-        raise ValueError(msg)
-
-    shape = tuple(c + 1 for c in cutoffs)
-    array = math.zeros(shape, dtype=math.complex64)
-    try:
-        array = math.update_tensor(array, tuple(n), 1)
-    except (IndexError, InvalidArgumentError) as e:
-        msg = "Photon numbers cannot be larger than the corresponding cutoffs."
-        raise ValueError(msg) from e
-    return array
-
-
-def ket_to_dm(ket: Tensor) -> Tensor:
-    r"""Maps a ket to a density matrix.
-
-    Args:
-        ket: the ket
-
-    Returns:
-        Tensor: the density matrix
-    """
-    return math.outer(ket, math.conj(ket))
-
-
-def ket_to_probs(ket: Tensor) -> Tensor:
-    r"""Maps a ket to probabilities.
-
-    Args:
-        ket: the ket
-
-    Returns:
-        Tensor: the probabilities vector
-    """
-    return math.abs(ket) ** 2
-
-
-def dm_to_probs(dm: Tensor) -> Tensor:
-    r"""Extracts the diagonals of a density matrix.
-
-    Args:
-        dm: the density matrix
-
-    Returns:
-        Tensor: the probabilities vector
-    """
-    return math.all_diagonals(dm, real=True)
-
-
-def U_to_choi(U: Tensor, Udual: Tensor | None = None) -> Tensor:
-    r"""Converts a unitary transformation to a Choi tensor.
-
-    Args:
-        U: the unitary transformation
-        Udual: the dual unitary transformation (optional, will use conj U if not provided)
-
-    Returns:
-        Tensor: the Choi tensor. The index order is going to be :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
-        where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of the density matrix.
-    """
-    return math.outer(U, math.conj(U) if Udual is None else Udual)
+    return math.eye(cutoff)[n]
 
 
 def fidelity(dm_a, dm_b) -> Scalar:
@@ -133,48 +75,6 @@ def fidelity(dm_a, dm_b) -> Scalar:
     # Journal of Modern Optics, 41:12, 2315-2323, DOI: 10.1080/09500349414552171
     sqrt_dm_a = math.sqrtm(dm_a)
     return math.abs(math.trace(math.sqrtm(math.matmul(sqrt_dm_a, dm_b, sqrt_dm_a))) ** 2)
-
-
-def number_means(tensor, is_dm: bool):
-    r"""Returns the mean of the number operator in each mode."""
-    probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
-    modes = list(range(len(probs.shape)))
-    marginals = [math.sum(probs, axis=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    return math.astensor(
-        [
-            math.sum(marginal * math.arange(len(marginal), dtype=math.float64))
-            for marginal in marginals
-        ],
-    )
-
-
-def number_variances(tensor, is_dm: bool):
-    r"""Returns the variance of the number operator in each mode."""
-    probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
-    modes = list(range(len(probs.shape)))
-    marginals = [math.sum(probs, axis=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    return math.astensor(
-        [
-            (
-                math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype) ** 2)
-                - math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype)) ** 2
-            )
-            for marginal in marginals
-        ],
-    )
-
-
-def validate_contraction_indices(in_idx, out_idx, M, name):
-    r"""Validates the indices used for the contraction of a tensor."""
-    if len(set(in_idx)) != len(in_idx):
-        raise ValueError(f"{name}_in_idx should not contain repeated indices.")
-    if len(set(out_idx)) != len(out_idx):
-        raise ValueError(f"{name}_out_idx should not contain repeated indices.")
-    if not set(range(M)).intersection(out_idx).issubset(set(in_idx)):
-        wrong_indices = set(range(M)).intersection(out_idx) - set(in_idx)
-        raise ValueError(
-            f"Indices {wrong_indices} in {name}_out_idx are trying to replace uncontracted indices.",
-        )
 
 
 @tensor_int_cache
@@ -215,10 +115,7 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     # Renormalized physicist hermite polys: Hn / sqrt(n!)
     R = -np.array([[2 + 0j]])  # to get the physicist polys
 
-    def f_hermite_polys(xi):  # pragma: no cover
-        return math.hermite_renormalized(R, math.astensor([2 * xi]), 1 + 0j, (cutoff,))
-
-    hermite_polys = math.map_fn(f_hermite_polys, x)
+    hermite_polys = math.hermite_renormalized(R, 2 * x[..., None], 1 + 0j, (cutoff,))
 
     # (real) wavefunction
     return math.exp(-(x**2 / 2)) * math.transpose(prefactor * hermite_polys)
@@ -364,7 +261,7 @@ def quadrature_distribution(
     """
     cutoff = state.shape[0]
     if x is None:
-        x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+        x = np.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
 
     dims = len(state.shape)
     is_dm = dims == 2
@@ -375,35 +272,6 @@ def quadrature_distribution(
     pdf = quad_basis if is_dm else math.abs(quad_basis) ** 2
 
     return x, math.real(pdf)
-
-
-def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> tuple[float, float]:
-    r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
-    where `\rho` is the reduced density matrix of the state.
-
-    Args:
-        state (Tensor): ket or density matrix of the state being measured
-        quadrature_angle (float): angle of the quadrature distribution
-
-    Returns:
-        tuple(float, float): outcome and probability of the outcome
-    """
-    dims = len(state.shape)
-    if dims > 2:
-        raise ValueError(
-            "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm.",
-        )
-
-    x, pdf = quadrature_distribution(state, quadrature_angle)
-    probs = pdf * (x[1] - x[0])
-
-    # draw a sample from the distribution
-    pdf = math.Categorical(probs=probs, name="homodyne_dist")
-    sample_idx = pdf.sample()
-    homodyne_sample = math.gather(x, sample_idx)
-    probability_sample = math.gather(probs, sample_idx)
-
-    return homodyne_sample, probability_sample
 
 
 def c_ps_matrix(m, n, alpha):

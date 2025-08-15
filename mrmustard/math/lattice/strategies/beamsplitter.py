@@ -33,7 +33,7 @@ SQRT = np.sqrt(np.arange(100000))
 __all__ = ["beamsplitter", "beamsplitter_schwinger", "beamsplitter_vjp", "stable_beamsplitter"]
 
 
-@njit
+@njit(cache=True)
 def beamsplitter(
     shape: tuple[int, int, int, int],
     theta: float,
@@ -90,7 +90,7 @@ def beamsplitter(
     return G
 
 
-@njit
+@njit(cache=True)
 def stable_beamsplitter(shape, theta, phi):  # pragma: no cover  # noqa: C901
     r"""
     Stable implementation of the Fock representation of the beamsplitter.
@@ -171,7 +171,7 @@ def stable_beamsplitter(shape, theta, phi):  # pragma: no cover  # noqa: C901
     return G
 
 
-@njit
+@njit(cache=True)
 def beamsplitter_vjp(
     G: ComplexTensor,
     dLdG: ComplexTensor,

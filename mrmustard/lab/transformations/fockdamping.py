@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.physics.wires import Wires
 
 from ...physics import triples
@@ -46,7 +47,7 @@ class FockDamping(Operation):
         >>> from mrmustard.lab import FockDamping, Coherent
 
         >>> operator = FockDamping(mode=0, damping=0.1)
-        >>> input_state = Coherent(mode=0, x=1, y=0.5)
+        >>> input_state = Coherent(mode=0, alpha=1 + 0.5j)
         >>> output_state = input_state >> operator
         >>> assert operator.modes == (0,)
         >>> assert operator.parameters.damping.value == 0.1
@@ -68,11 +69,12 @@ class FockDamping(Operation):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         damping: float | Sequence[float] = 0.0,
         damping_trainable: bool = False,
         damping_bounds: tuple[float | None, float | None] = (0.0, None),
     ):
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="FockDamping")
         self.parameters.add_parameter(
             make_parameter(
@@ -81,10 +83,11 @@ class FockDamping(Operation):
                 "damping",
                 damping_bounds,
                 None,
+                dtype=math.float64,
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.fock_damping_Abc,
             beta=self.parameters.damping,
         )
-        self._wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
+        self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))

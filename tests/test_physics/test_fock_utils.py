@@ -21,12 +21,11 @@ from hypothesis import strategies as st
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab import (
     Attenuator,
     BSgate,
     Coherent,
-    Number,
     S2gate,
     SqueezedVacuum,
     TwoModeSqueezedVacuum,
@@ -38,23 +37,24 @@ from mrmustard.physics import fock_utils
 st_angle = st.floats(min_value=0, max_value=2 * np.pi)
 
 
-def test_fock_state():
+@pytest.mark.parametrize("batch_shape", [(), (2,), (3, 4)])
+def test_fock_state(batch_shape):
     r"""
     Tests that the `fock_state` method gives expected values.
     """
-    n = [4, 5, 6]
+    batch_indices = np.indices(batch_shape)
+    n = settings.rng.integers(0, 10, size=batch_shape)
 
     array1 = fock_utils.fock_state(n)
-    assert array1.shape == (5, 6, 7)
-    assert array1[4, 5, 6] == 1
+    assert array1.shape == (*batch_shape, math.max(n) + 1)
+    assert math.all(array1[(*batch_indices, n)] == 1)
 
-    array2 = fock_utils.fock_state(n, cutoffs=10)
-    assert array2.shape == (11, 11, 11)
-    assert array2[4, 5, 6] == 1
+    array2 = fock_utils.fock_state(n, cutoff=math.max(n) + 1)
+    assert math.allclose(array1, array2)
 
-    array3 = fock_utils.fock_state(n, cutoffs=[5, 6, 7])
-    assert array3.shape == (6, 7, 8)
-    assert array3[4, 5, 6] == 1
+    array3 = fock_utils.fock_state(n, cutoff=15)
+    assert array3.shape == (*batch_shape, 15)
+    assert math.all(array3[(*batch_indices, n)] == 1)
 
 
 def test_fock_state_error():
@@ -63,14 +63,8 @@ def test_fock_state_error():
     """
     n = [4, 5]
 
-    with pytest.raises(ValueError):
-        fock_utils.fock_state(n, cutoffs=[5, 6, 7])
-
-    if math.backend_name == "jax":
-        pytest.skip("Jax does not raise and silently ignores out of bounds indices.")
-
-    with pytest.raises(ValueError):
-        fock_utils.fock_state(n, cutoffs=2)
+    with pytest.raises(ValueError, match="cannot be larger than"):
+        fock_utils.fock_state(n, cutoff=4)
 
 
 @given(n_mean=st.floats(0, 3), phi=st_angle)
@@ -103,7 +97,7 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
 def test_coherent_state(alpha):
     """Test that coherent states have the correct photon number statistics"""
     cutoff = 10
-    amps = Coherent(0, alpha.real, alpha.imag).fock_array([cutoff])
+    amps = Coherent(0, alpha).fock_array([cutoff])
     expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array(
         [alpha**n / np.sqrt(factorial(n)) for n in range(cutoff)],
     )
@@ -160,31 +154,3 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     mean_1 = np.sum(n * ps1)
     assert np.allclose(mean_0, n_mean * eta_0, atol=1e-5)
     assert np.allclose(mean_1, n_mean * eta_1, atol=1e-5)
-
-
-@given(x=st.floats(-1, 1), y=st.floats(-1, 1))
-def test_number_means(x, y):
-    """Tests the mean photon number."""
-    ket = Coherent(0, x, y).fock_array(80)
-    dm = Coherent(0, x, y).dm().fock_array(80)
-    assert np.allclose(fock_utils.number_means(ket, False), x * x + y * y)
-    assert np.allclose(fock_utils.number_means(dm, True), x * x + y * y)
-
-
-@given(x=st.floats(-1, 1), y=st.floats(-1, 1))
-def test_number_variances_coh(x, y):
-    """Tests the variance of the number operator."""
-    assert np.allclose(
-        fock_utils.number_variances(Coherent(0, x, y).fock_array(80), False)[0],
-        x * x + y * y,
-    )
-    assert np.allclose(
-        fock_utils.number_variances(Coherent(0, x, y).dm().fock_array(80), True)[0],
-        x * x + y * y,
-    )
-
-
-def test_number_variances_fock():
-    """Tests the variance of the number operator in Fock."""
-    assert np.allclose(fock_utils.number_variances(Number(0, 1).fock_array(100), False), 0)
-    assert np.allclose(fock_utils.number_variances(Number(0, 1).dm().fock_array(100), True), 0)

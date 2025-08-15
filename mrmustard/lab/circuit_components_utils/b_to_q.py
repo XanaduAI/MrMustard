@@ -22,6 +22,7 @@ from collections.abc import Sequence
 
 from mrmustard.physics import triples
 from mrmustard.physics.wires import Wires
+from mrmustard.utils.typing import ComplexTensor
 
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
@@ -71,11 +72,10 @@ class BtoQ(Operation):
             phi=self.parameters.phi,
         )
         self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
-        for w in self.wires.input.wires:
+        for w in self.wires.input.sorted_wires:
             w.repr = ReprEnum.BARGMANN
-        for w in self.wires.output.wires:
+        for w in self.wires.output.sorted_wires:
             w.repr = ReprEnum.QUADRATURE
-            w.repr_params_func = lambda: self.parameters.phi
 
     def inverse(self):
         if self.modes == ():
@@ -84,3 +84,6 @@ class BtoQ(Operation):
         ret._ansatz = super().inverse().ansatz
         ret._wires = ret.wires.dual
         return ret
+
+    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
+        raise NotImplementedError(f"{self.__class__.__name__} does not have a Fock representation.")

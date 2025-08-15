@@ -77,7 +77,7 @@ def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
     # replicate the B
     b_batched = math.astensor(np.stack((b,) * batch_size, axis=1))
 
-    G_batched = math.hermite_renormalized_diagonal_batch(A, b_batched, c, cutoffs=cutoffs[:-1])
+    G_batched = math.hermite_renormalized_diagonal(A, b_batched, c, cutoffs=cutoffs[:-1])
 
     for nb in range(batch_size):
         assert np.allclose(G_ref, G_batched[:, :, :, nb])
@@ -121,23 +121,28 @@ def test_sector_u():
 
 def test_vanillaNumba_vs_binomial():
     """Test that the vanilla method and the binomial method give the same result."""
-    settings.SEED = 42
-    A, b, c = Ket.random((0, 1)).bargmann_triple()
-    A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)
+    with settings(SEED=42):
+        A, b, c = Ket.random((0, 1)).bargmann_triple()
+        A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)
 
-    ket_vanilla = vanilla_numba(shape=(10, 10), A=A, b=b, c=c)[:5, :5]
-    ket_binomial = binomial(local_cutoffs=(5, 5), A=A, b=b, c=c, max_l2=0.9999, global_cutoff=12)[
-        0
-    ][:5, :5]
+        ket_vanilla = vanilla_numba(shape=(10, 10), A=A, b=b, c=c)[:5, :5]
+        ket_binomial = binomial(
+            local_cutoffs=(5, 5),
+            A=A,
+            b=b,
+            c=c,
+            max_l2=0.9999,
+            global_cutoff=12,
+        )[0][:5, :5]
 
-    assert np.allclose(ket_vanilla, ket_binomial)
+        assert np.allclose(ket_vanilla, ket_binomial)
 
 
 def test_vanilla_stable():
     "tests the vanilla stable against other known stable methods"
     with settings(STABLE_FOCK_CONVERSION=True):
         assert np.allclose(
-            Dgate(0, x=4.0, y=4.0).fock_array([1000, 1000]),
+            Dgate(0, 4 + 4j).fock_array([1000, 1000]),
             displacement((1000, 1000), 4.0 + 4.0j),
         )
         sgate = Sgate(0, r=4.0, phi=2.0).fock_array([1000, 1000])

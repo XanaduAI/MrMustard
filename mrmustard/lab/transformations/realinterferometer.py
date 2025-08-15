@@ -19,7 +19,6 @@ The class representing a RealInterferometer gate.
 from __future__ import annotations
 
 from mrmustard import math
-from mrmustard.math.parameters import update_orthogonal
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
@@ -73,7 +72,7 @@ class RealInterferometer(Unitary):
                 value=orthogonal,
                 name="orthogonal",
                 bounds=(None, None),
-                update_fn=update_orthogonal,
+                update_fn="update_orthogonal",
             ),
         )
         self._ansatz = PolyExpAnsatz.from_function(

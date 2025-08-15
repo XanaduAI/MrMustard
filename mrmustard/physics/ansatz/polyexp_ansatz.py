@@ -113,19 +113,18 @@ class PolyExpAnsatz(Ansatz):
         lin_sup: bool = False,
     ):
         super().__init__()
+        self.name = name
+        self._simplified = False
+        self._lin_sup = lin_sup
+
         self._A = math.astensor(A) if A is not None else None
         self._b = math.astensor(b) if b is not None else None
         self._c = math.astensor(c) if c is not None else None
 
         verify_batch_triple(self._A, self._b, self._c)
 
-        self._batch_shape = tuple(self._A.shape[:-2]) if A is not None else ()
-
-        self.name = name
-        self._simplified = False
-        self._fn = None
-        self._fn_kwargs = {}
-        self._lin_sup = lin_sup
+        if A is not None:
+            self._batch_shape = tuple(self._A.shape[:-2])
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -155,7 +154,7 @@ class PolyExpAnsatz(Ansatz):
 
     @property
     def batch_size(self) -> int:
-        return int(math.prod(self.batch_shape)) if self.batch_shape else 0
+        return math.prod(self.batch_shape) if self.batch_shape else 0
 
     @property
     def c(self) -> Batch[ComplexTensor]:
@@ -285,8 +284,24 @@ class PolyExpAnsatz(Ansatz):
         """
         ansatz = cls(None, None, None, None)
         ansatz._fn = fn
-        ansatz._fn_kwargs = kwargs
+        ansatz._kwargs = kwargs
         return ansatz
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        (ret._kwargs,) = children
+        (
+            ret._batch_shape,
+            ret._lin_sup,
+            ret._fn,
+            ret._A,
+            ret._b,
+            ret._c,
+            ret._simplified,
+            ret.name,
+        ) = aux_data
+        return ret
 
     def contract(
         self,
@@ -676,7 +691,7 @@ class PolyExpAnsatz(Ansatz):
         """
         if self._should_regenerate():
             params = {}
-            for name, param in self._fn_kwargs.items():
+            for name, param in self._kwargs.items():
                 try:
                     params[name] = param.value
                 except AttributeError:
@@ -769,9 +784,7 @@ class PolyExpAnsatz(Ansatz):
         z_batch_idxs = tuple(range(self.batch_dims, self.batch_dims + len(z_batch_shape)))
         z = math.transpose(
             math.broadcast_to(z, self.batch_shape + z.shape),
-            z_batch_idxs
-            + ansatz_batch_idxs
-            + (len(z_batch_idxs + ansatz_batch_idxs),),  # tensorflow
+            z_batch_idxs + ansatz_batch_idxs + (len(z_batch_idxs + ansatz_batch_idxs),),
         )
 
         A = math.broadcast_to(self.A, z_batch_shape + self.A.shape)
@@ -806,8 +819,13 @@ class PolyExpAnsatz(Ansatz):
             self._A is None
             or self._b is None
             or self._c is None
-            or Variable in {type(param) for param in self._fn_kwargs.values()}
+            or Variable in {type(param) for param in self._kwargs.values()}
         )
+
+    def _tree_flatten(self):  # pragma: no cover
+        children, aux_data = super()._tree_flatten()
+        aux_data += (self._A, self._b, self._c, self._simplified, self.name)
+        return (children, aux_data)
 
     def __add__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""
@@ -932,9 +950,7 @@ class PolyExpAnsatz(Ansatz):
         z_batch_idxs = tuple(range(self.batch_dims, self.batch_dims + len(z_batch_shape)))
         z = math.transpose(
             math.broadcast_to(z, self.batch_shape + z.shape),
-            z_batch_idxs
-            + ansatz_batch_idxs
-            + (len(z_batch_idxs + ansatz_batch_idxs),),  # tensorflow
+            z_batch_idxs + ansatz_batch_idxs + (len(z_batch_idxs + ansatz_batch_idxs),),
         )
 
         A = math.broadcast_to(self.A, z_batch_shape + self.A.shape)
@@ -1016,8 +1032,8 @@ class PolyExpAnsatz(Ansatz):
         if self._fn is not None:
             fn_name = getattr(self._fn, "__name__", str(self._fn))
             repr_str.append(f"  Generated from: {fn_name}")
-            if self._fn_kwargs:
-                param_str = ", ".join(f"{k}={v}" for k, v in self._fn_kwargs.items())
+            if self._kwargs:
+                param_str = ", ".join(f"{k}={v}" for k, v in self._kwargs.items())
                 repr_str.append(f"  Parameters: {param_str}")
 
         return "\n".join(repr_str)

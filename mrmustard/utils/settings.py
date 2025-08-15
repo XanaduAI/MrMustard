@@ -24,8 +24,6 @@ import numpy as np
 import rich.table
 from rich import print as rprint
 
-from mrmustard.utils.filters import add_complex_warning_filter, remove_complex_warning_filter
-
 __all__ = ["settings"]
 
 
@@ -64,7 +62,6 @@ class Settings:
         self._seed: int = np.random.randint(0, 2**31 - 1)  # noqa: NPY002
         self.rng = np.random.default_rng(self._seed)
         self._precision_bits_hermite_poly: int = 128
-        self._complex_warning: bool = False
         self._cache_dir = Path(__file__).parents[2].absolute() / ".serialize_cache"
 
         self.AUTOSHAPE_PROBABILITY: float = 0.99999
@@ -118,19 +115,6 @@ class Settings:
     def CACHE_DIR(self, path: str | Path):
         self._cache_dir = Path(path)
         self._cache_dir.mkdir(exist_ok=True, parents=True)
-
-    @property
-    def COMPLEX_WARNING(self) -> bool:
-        r"""Whether tensorflow's ``ComplexWarning`` should be raised when a complex is cast to a float. Default is ``False``."""
-        return self._complex_warning
-
-    @COMPLEX_WARNING.setter
-    def COMPLEX_WARNING(self, value: bool):
-        self._complex_warning = value
-        if value:
-            remove_complex_warning_filter()
-        else:
-            add_complex_warning_filter()
 
     @property
     def HBAR(self) -> float:

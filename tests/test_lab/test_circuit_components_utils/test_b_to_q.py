@@ -15,6 +15,7 @@
 """Tests for BtoQ."""
 
 import numpy as np
+import pytest
 
 from mrmustard import math, settings
 from mrmustard.lab import BtoQ, Coherent, Identity
@@ -40,22 +41,7 @@ class TestBtoQ:
         assert adjoint_btoq.wires == btoq.wires.adjoint
         assert adjoint_btoq.parameters.phi == btoq.parameters.phi
 
-    def test_dual(self):
-        btoq = BtoQ((0,), 0.5)
-        dual_btoq = btoq.dual
-
-        ok = dual_btoq.wires.ket.output.indices
-        ik = dual_btoq.wires.ket.input.indices
-        assert dual_btoq.ansatz == btoq.ansatz.reorder(ik + ok).conj
-        assert dual_btoq.wires == btoq.wires.dual
-        assert dual_btoq.parameters.phi == btoq.parameters.phi
-
-    def test_inverse(self):
-        btoq = BtoQ((0,), 0.5)
-        inv_btoq = btoq.inverse()
-        assert (btoq >> inv_btoq) == Identity((0,))
-
-    def testBtoQ_works_correctly_by_applying_it_twice_on_a_state(self):
+    def test_BtoQ_twice_on_a_state(self):
         A0 = math.astensor([[0.5, 0.3], [0.3, 0.5]]) + 0.0j
         b0 = math.zeros(2, dtype=np.complex128)
         c0 = math.astensor(1.0 + 0.0j)
@@ -136,7 +122,27 @@ class TestBtoQ:
         axis_angle = rng.random()
         quad = rng.random()
 
-        state = Coherent(0, x, y)
+        state = Coherent(0, x + 1j * y)
         wavefunction = (state >> BtoQ((0,), axis_angle)).ansatz
 
         assert np.allclose(wavefunction(quad), wavefunction_coh(x + 1j * y, quad, axis_angle))
+
+    def test_dual(self):
+        btoq = BtoQ((0,), 0.5)
+        dual_btoq = btoq.dual
+
+        ok = dual_btoq.wires.ket.output.indices
+        ik = dual_btoq.wires.ket.input.indices
+        assert dual_btoq.ansatz == btoq.ansatz.reorder(ik + ok).conj
+        assert dual_btoq.wires == btoq.wires.dual
+        assert dual_btoq.parameters.phi == btoq.parameters.phi
+
+    def test_fock_array(self):
+        btoq = BtoQ((0,), 0.5)
+        with pytest.raises(NotImplementedError):
+            btoq.fock_array()
+
+    def test_inverse(self):
+        btoq = BtoQ((0,), 0.5)
+        inv_btoq = btoq.inverse()
+        assert (btoq >> inv_btoq) == Identity((0,))

@@ -15,12 +15,12 @@
 "This module contains strategies for calculating the matrix elements of the displacement gate."
 
 import numpy as np
-from numba import jit
+from numba import njit
 
 __all__ = ["displacement", "grad_displacement", "jacobian_displacement", "laguerre"]
 
 
-@jit(nopython=True)
+@njit(cache=True)
 def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
     r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
     Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
@@ -64,7 +64,7 @@ def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
     return D if not flipped else np.transpose(D)
 
 
-@jit(nopython=True, cache=True)
+@njit(cache=True)
 def laguerre(x, N, alpha, dtype=np.complex128):  # pragma: no cover
     r"""Returns the N first generalized Laguerre polynomials evaluated at x.
 
@@ -81,7 +81,7 @@ def laguerre(x, N, alpha, dtype=np.complex128):  # pragma: no cover
     return L
 
 
-@jit(nopython=True)
+@njit(cache=True)
 def grad_displacement(T, r, phi):  # pragma: no cover
     r"""Calculates the gradient of the displacement gate with respect to the magnitude and angle of the displacement.
 
@@ -113,7 +113,7 @@ def grad_displacement(T, r, phi):  # pragma: no cover
     return grad_r, grad_phi
 
 
-@jit(nopython=True)
+@njit(cache=True)
 def jacobian_displacement(D, alpha):  # pragma: no cover
     r"""Calculates the jacobian of the displacement gate with respect to the complex displacement
     alpha and its conjugate. Both are needed for backprop, as the displacement gate is not a

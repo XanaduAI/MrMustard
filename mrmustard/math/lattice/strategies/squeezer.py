@@ -25,7 +25,7 @@ SQRT = np.sqrt(np.arange(100000))
 __all__ = ["squeezed", "squeezed_vjp", "squeezer", "squeezer_vjp"]
 
 
-@njit
+@njit(cache=True)
 def squeezer(
     shape: tuple[int, int],
     r: float,
@@ -65,7 +65,7 @@ def squeezer(
     return S
 
 
-@njit
+@njit(cache=True)
 def squeezer_vjp(
     G: ComplexTensor,
     dLdG: ComplexTensor,
@@ -123,7 +123,7 @@ def squeezer_vjp(
     return dLdr, dLdphi
 
 
-@njit
+@njit(cache=True)
 def squeezed(cutoff: int, r: float, theta: float, dtype=np.complex128):  # pragma: no cover
     r"""Calculates the matrix elements of the single-mode squeezed state using recurrence relations.
 
@@ -137,7 +137,7 @@ def squeezed(cutoff: int, r: float, theta: float, dtype=np.complex128):  # pragm
         array (ComplexMatrix): matrix representing the squeezing gate.
     """
     S = np.zeros(cutoff, dtype=dtype)
-    eitheta_tanhr = np.exp(1j * theta) * np.tanh(r)
+    eitheta_tanhr = np.exp(1j * theta) * -np.tanh(r)
     S[0] = np.sqrt(1.0 / np.cosh(r))
 
     for m in range(2, cutoff, 2):
@@ -146,7 +146,7 @@ def squeezed(cutoff: int, r: float, theta: float, dtype=np.complex128):  # pragm
     return S
 
 
-@njit
+@njit(cache=True)
 def squeezed_vjp(
     G: ComplexTensor,
     dLdG: ComplexTensor,

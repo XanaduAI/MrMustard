@@ -20,6 +20,7 @@ import pytest
 from mrmustard import math, settings
 from mrmustard.lab import (
     DM,
+    GDM,
     Attenuator,
     CircuitComponent,
     Coherent,
@@ -61,19 +62,29 @@ class TestDM:
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
+    def test_is_separable(self):
+        entangled_state = GDM([0, 1, 2], beta=1)
+        assert not entangled_state.is_separable
+
+        separable_state = GDM(0, beta=1) >> GDM(1, beta=1) >> GDM(2, beta=1)
+        assert separable_state.is_separable
+
+        entangled_state = GDM(0, beta=1) >> GDM((1, 2), beta=1)
+        assert not entangled_state.is_separable
+
     def test_manual_shape(self):
-        dm = Coherent(0, x=1).dm()
-        assert dm.manual_shape == [None, None]
-        dm.manual_shape[0] = 19
-        assert dm.manual_shape == [19, None]
+        dm = Coherent(0, alpha=1).dm()
+        assert dm.manual_shape == (None, None)
+        dm.manual_shape = (19, None)
+        assert dm.manual_shape == (19, None)
 
     def test_auto_shape(self):
-        dm = Coherent(0, x=1).dm()
+        dm = Coherent(0, 1).dm()
         assert dm.auto_shape() == (8, 8)
-        dm.manual_shape[0] = 1
+        dm.manual_shape = (1, 8)
         assert dm.auto_shape() == (1, 8)
 
-        dm = Coherent(0, x=1).dm() >> Number(1, 10).dual
+        dm = Coherent(0, 1).dm() >> Number(1, 10).dual
         assert dm.auto_shape() == (8, 11, 8, 11)
 
     @pytest.mark.parametrize("modes", [0, 1, 7])
@@ -81,7 +92,7 @@ class TestDM:
     def test_to_from_bargmann(self, modes, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state_in = Coherent(modes, x, y) >> Attenuator(modes, 0.7)
+        state_in = Coherent(modes, x + 1j * y) >> Attenuator(modes, 0.7)
         triple_in = state_in.bargmann_triple()
 
         state_out = DM.from_bargmann((modes,), triple_in, "my_dm")
@@ -112,7 +123,7 @@ class TestDM:
     def test_normalize(self, coeff, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x, y).dm()
+        state = Coherent(0, x + 1j * y).dm()
         state *= coeff
         normalized = state.normalize()
         assert math.allclose(normalized.probability, 1.0)
@@ -122,7 +133,7 @@ class TestDM:
 
     @pytest.mark.parametrize("coeff", [0.5, 0.3])
     def test_normalize_mixture(self, coeff):
-        state = Coherent(0, 1, 1).dm() + Coherent(0, -1, -1).dm()
+        state = Coherent(0, 1 + 1j).dm() + Coherent(0, -1 - 1j).dm()
         state *= coeff
         normalized = state.normalize()
         assert math.allclose(normalized.probability, 1.0)
@@ -146,7 +157,7 @@ class TestDM:
     def test_to_from_fock(self, modes, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state_in = Coherent(modes, x=x, y=y) >> Attenuator(modes, 0.8)
+        state_in = Coherent(modes, x + 1j * y) >> Attenuator(modes, 0.8)
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock_array(5)
 
@@ -161,7 +172,7 @@ class TestDM:
         assert state_in_fock == state_out
 
     def test_to_from_fock_mixture(self):
-        state_in = Coherent(0, x=1, y=2).dm() + Coherent(0, x=-1, y=-2).dm()
+        state_in = Coherent(0, 1 + 2j).dm() + Coherent(0, -1 - 2j).dm()
         state_in_fock = state_in.to_fock(5)
         array_in = state_in.fock_array(5)
 
@@ -192,7 +203,7 @@ class TestDM:
     def test_phase_space(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state0 = Coherent(0, x=x, y=y) >> Attenuator(0, 1.0)
+        state0 = Coherent(0, x + 1j * y) >> Attenuator(0, 1.0)
         cov, means, coeff = state0.phase_space(s=0)
         assert cov.shape[:-2] == state0.ansatz.batch_shape
         assert means.shape[:-1] == state0.ansatz.batch_shape
@@ -202,7 +213,7 @@ class TestDM:
         assert math.allclose(means, math.astensor([1.0, 2.0]) * math.sqrt(settings.HBAR * 2))
 
     def test_from_phase_space(self):
-        state = Coherent(0, x=1, y=2) >> Attenuator(0, 0.8)
+        state = Coherent(0, 1 + 2j) >> Attenuator(0, 0.8)
         cov, means, coeff = state.phase_space(s=0)
         state1 = DM.from_phase_space([0], (cov, means, coeff))
         assert state1 == state
@@ -225,13 +236,13 @@ class TestDM:
     def test_L2_norm(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x=x, y=y).dm()
+        state = Coherent(0, x + 1j * y).dm()
         L2_norm = state.L2_norm
         assert L2_norm.shape == state.ansatz.batch_shape
         assert math.allclose(L2_norm, 1)
 
     def test_L2_norm_mixture(self):
-        state = Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()
+        state = Coherent(0, 1).dm() + Coherent(0, -1).dm()
         L2_norm = state.L2_norm
         assert L2_norm.shape == state.ansatz.batch_shape[:-1]
         assert math.allclose(L2_norm, 2.03663128)
@@ -249,14 +260,14 @@ class TestDM:
     def test_probability(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x=x, y=y).dm()
+        state = Coherent(0, x + 1j * y).dm()
         prob = state.probability
         assert prob.shape == state.ansatz.batch_shape
         assert math.allclose(prob, 1)
         assert math.allclose(state.to_fock(20).probability, 1)
 
     def test_probability_mixture(self):
-        state = (Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()).normalize()
+        state = (Coherent(0, 1).dm() + Coherent(0, -1).dm()).normalize()
         prob = state.probability
         assert prob.shape == state.ansatz.batch_shape[:-1]
         assert math.allclose(prob, 1)
@@ -266,18 +277,18 @@ class TestDM:
     def test_purity(self, batch_shape):
         x = math.broadcast_to(1, batch_shape)
         y = math.broadcast_to(2, batch_shape)
-        state = Coherent(mode=0, x=x, y=y).dm()
+        state = Coherent(mode=0, alpha=x + 1j * y).dm()
         assert math.allclose(state.purity, 1)
         assert state.is_pure
 
     def test_purity_mixture(self):
-        state = Coherent(0, x=1).dm() + Coherent(0, x=-1).dm()
+        state = Coherent(0, 1).dm() + Coherent(0, -1).dm()
         assert math.allclose(state.purity, state.normalize().purity)
         assert not state.is_pure
 
     def test_quadrature_single_mode_dm(self):
         x, y = 1, 2
-        state = Coherent(mode=0, x=x, y=y).dm()
+        state = Coherent(mode=0, alpha=x + 1j * y).dm()
         q = np.linspace(-10, 10, 100)
         quad0 = q
         quad1 = q + 1
@@ -290,7 +301,7 @@ class TestDM:
 
     def test_quadrature_multimode_dm(self):
         x, y = 1, 2
-        state = (Coherent(mode=0, x=x, y=y) >> Coherent(mode=1, x=x, y=y)).dm()
+        state = (Coherent(mode=0, alpha=x + 1j * y) >> Coherent(mode=1, alpha=x + 1j * y)).dm()
         q = np.linspace(-10, 10, 100)
         ket = math.kron(coherent_state_quad(q, x, y), coherent_state_quad(q, x, y))
         bra = math.kron(
@@ -314,7 +325,7 @@ class TestDM:
 
     def test_quadrature_multivariable_dm(self):
         x, y = 1, 2
-        state = Coherent(mode=0, x=x, y=y).dm() >> Coherent(mode=1, x=x, y=y).dm()
+        state = Coherent(mode=0, alpha=x + 1j * y).dm() >> Coherent(mode=1, alpha=x + 1j * y).dm()
         q1 = np.linspace(-10, 10, 100)
         q2 = np.linspace(-10, 10, 100)
         psi_q = math.outer(coherent_state_quad(q1, x, y), coherent_state_quad(q2, x, y))
@@ -325,8 +336,8 @@ class TestDM:
 
     def test_quadrature_batch(self):
         x1, y1, x2, y2 = 1, 2, -1, -2
-        A1, b1, c1 = coherent_state_Abc(x1, y1)
-        A2, b2, c2 = coherent_state_Abc(x2, y2)
+        A1, b1, c1 = coherent_state_Abc(x1 + 1j * y1)
+        A2, b2, c2 = coherent_state_Abc(x2 + 1j * y2)
         A, b, c = math.astensor([A1, A2]), math.astensor([b1, b2]), math.astensor([c1, c2])
         state = Ket.from_bargmann((0,), (A, b, c)).dm()
         q = np.linspace(-10, 10, 100)
@@ -347,8 +358,8 @@ class TestDM:
         alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
         alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
 
-        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
-        coh_1 = Coherent(1, x=math.real(alpha_1), y=math.imag(alpha_1))
+        coh_0 = Coherent(0, alpha=alpha_0)
+        coh_1 = Coherent(1, alpha=alpha_1)
         # TODO: clean this up once we have a better way to create batched multimode states
         ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
         ket = ket.to_fock(40) if fock else ket
@@ -387,8 +398,8 @@ class TestDM:
         beta_0 = 0.1
         beta_1 = 0.2
 
-        u0 = Dgate(0, x=beta_0)
-        u1 = Dgate(1, x=beta_1)
+        u0 = Dgate(0, alpha=beta_0)
+        u1 = Dgate(1, alpha=beta_1)
         u01 = u0 >> u1
 
         exp_u0 = dm.expectation(u0)
@@ -420,12 +431,12 @@ class TestDM:
     @pytest.mark.parametrize("batch_shape_2", [(7,), (4, 5, 7)])
     def test_expectation_diff_batch_shapes(self, batch_shape, batch_shape_2):
         alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
-        coh_0 = Coherent(0, x=math.real(alpha_0), y=math.imag(alpha_0))
+        coh_0 = Coherent(0, alpha=alpha_0)
         dm = coh_0.dm()
 
         # ket operator
         alpha_1 = math.broadcast_to(0.3 + 0.2j, batch_shape_2)
-        coh_1 = Coherent(0, x=math.real(alpha_1), y=math.imag(alpha_1))
+        coh_1 = Coherent(0, alpha=alpha_1)
         exp_coh_1 = dm.expectation(coh_1)
         assert exp_coh_1.shape == batch_shape + batch_shape_2
 
@@ -436,26 +447,36 @@ class TestDM:
 
         # u operator
         beta_0 = math.broadcast_to(0.3, batch_shape_2)
-        u0 = Dgate(0, x=beta_0)
+        u0 = Dgate(0, alpha=beta_0)
         exp_u0 = dm.expectation(u0)
         assert exp_u0.shape == batch_shape + batch_shape_2
 
+    def test_expectation_shape_handling(self):
+        cutoff = 150
+        fock_dm = DM.random((0,), max_r=2).to_fock(cutoff)
+        dgate = Dgate(0, alpha=0.769j)
+        expectation_default = math.abs(fock_dm.expectation(dgate))
+        expectation_fock = math.abs(fock_dm.expectation(dgate.to_fock(cutoff)))
+        expectation_bargmann = math.abs(fock_dm.to_bargmann().expectation(dgate))
+        assert math.allclose(expectation_default, expectation_fock)
+        assert math.allclose(expectation_default, expectation_bargmann)
+
     def test_expectation_lin_sup(self):
-        cat = (Coherent(0, x=1, y=2) + Coherent(0, x=-1, y=2)).normalize()
+        cat = (Coherent(0, alpha=1 + 2j) + Coherent(0, alpha=-1 + 2j)).normalize()
         cat_dm = cat.dm()
         assert math.allclose(cat_dm.expectation(cat, mode="zip"), 1.0)
         assert math.allclose(cat_dm.expectation(cat_dm, mode="zip"), 1.0)
         assert math.allclose(
-            cat_dm.expectation(Dgate(0, x=[0.1, 0.2, 0.3])),
+            cat_dm.expectation(Dgate(0, alpha=[0.1, 0.2, 0.3])),
             [
-                cat_dm.expectation(Dgate(0, x=0.1)),
-                cat_dm.expectation(Dgate(0, x=0.2)),
-                cat_dm.expectation(Dgate(0, x=0.3)),
+                cat_dm.expectation(Dgate(0, alpha=0.1)),
+                cat_dm.expectation(Dgate(0, alpha=0.2)),
+                cat_dm.expectation(Dgate(0, alpha=0.3)),
             ],
         )
 
     def test_expectation_error(self):
-        dm = (Coherent(0, x=1, y=2) >> Coherent(1, x=1, y=3)).dm()
+        dm = (Coherent(0, 1 + 2j) >> Coherent(1, 1 + 3j)).dm()
 
         op1 = Attenuator(0)
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
@@ -469,12 +490,29 @@ class TestDM:
         with pytest.raises(ValueError, match="Expected an operator defined on"):
             dm.expectation(op3)
 
+    @pytest.mark.parametrize("n_modes", [1, 2, 3])
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
-    def test_fock_distribution(self, batch_shape):
-        x = math.broadcast_to(1, batch_shape)
-        y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x=x, y=y)
-        assert math.allclose(state.fock_distribution(10), state.dm().fock_distribution(10))
+    def test_fock_distribution(self, n_modes, batch_shape):
+        cutoff = 10
+        state = Ket.random(tuple(range(n_modes)))
+        A, b, c = state.ansatz.triple
+        A_batch = math.broadcast_to(A, batch_shape + A.shape)
+        b_batch = math.broadcast_to(b, batch_shape + b.shape)
+        c_batch = math.broadcast_to(c, batch_shape + c.shape)
+        state = Ket.from_bargmann(state.modes, (A_batch, b_batch, c_batch))
+        fock_dist = state.fock_distribution(cutoff)
+        fock_dist_dm = state.dm().fock_distribution(cutoff)
+        assert math.allclose(fock_dist, fock_dist_dm)
+        assert fock_dist.shape == (*batch_shape, cutoff**n_modes)
+
+        alpha = math.broadcast_to(1 + 0.1j, batch_shape)
+        state_separable = Coherent(0, alpha=alpha)
+        for i in range(n_modes - 1):
+            state_separable >>= Coherent(i + 1, alpha=alpha)
+        fock_dist_separable = state_separable.fock_distribution(cutoff)
+        fock_dist_dm_separable = state_separable.dm().fock_distribution(cutoff)
+        assert math.allclose(fock_dist_separable, fock_dist_dm_separable)
+        assert fock_dist_separable.shape == (*(batch_shape * n_modes), cutoff**n_modes)
 
     def test_rshift(self):
         ket = Coherent(0, 1) >> Coherent(1, 1)
@@ -510,11 +548,35 @@ class TestDM:
         assert np.all(np.linalg.eigvals(Gamma) < 1)
         assert np.all(np.linalg.eigvals(Temp) < 1)
 
+    def test_random_seed(self):
+        # same seed should produce same state
+        assert DM.random(modes=[0, 1], seed=42) == DM.random(modes=[0, 1], seed=42)
+        # different seeds should produce different states
+        assert DM.random(modes=[0, 1], seed=42) != DM.random(modes=[0, 1], seed=43)
+
+        # local seed should not affect global seed
+        settings.SEED = 42
+        dm_from_global_1 = DM.random(modes=[0, 1])
+        dm_from_global_2 = DM.random(modes=[0, 1])
+
+        settings.SEED = 42
+        dm_from_global_1_redux = DM.random(modes=[0, 1])
+        # this call should not affect the global RNG
+        _ = DM.random(modes=[0, 1], seed=123)
+        dm_from_global_2_redux = DM.random(modes=[0, 1])
+
+        assert dm_from_global_1 == dm_from_global_1_redux
+        assert dm_from_global_2 == dm_from_global_2_redux
+
+        # no modes should raise error
+        with pytest.raises(ValueError, match="Cannot create a random state with no modes."):
+            DM.random(modes=[])
+
     def test_is_positive(self):
         assert (Ket.random((2, 9)) >> Attenuator(2) >> Attenuator(9)).is_positive
         assert (
-            Coherent(2, x=[1, 1, 1], y=2)
-            >> Coherent(9, x=[1, 1, 1], y=2)
+            Coherent(2, alpha=[1 + 2j, 1 + 2j, 1 + 2j])
+            >> Coherent(9, alpha=[1 + 2j, 1 + 2j, 1 + 2j])
             >> Attenuator(2)
             >> Attenuator(9)
         ).is_positive
@@ -533,7 +595,7 @@ class TestDM:
         rho = 2 * rho
         assert not rho.is_physical
         assert Ket.random(modes).dm().is_physical
-        assert Coherent(0, x=[1, 1, 1]).dm().is_physical
+        assert Coherent(0, alpha=[1, 1, 1]).dm().is_physical
 
     def test_fock_array_ordering(self):
         rho = (Number(0, 0) + 1j * Number(0, 1)).dm()
@@ -544,8 +606,8 @@ class TestDM:
             math.astensor([[1.0 + 0.0j, 0.0 - 1.0j], [0.0 + 1.0j, 1.0 + 0.0j]]),
         )
         assert math.allclose(
-            Coherent(0, x=1).dm().fock_array(8, standard_order=True),
-            Coherent(0, x=[1, 1, 1]).dm().fock_array(8, standard_order=True),
+            Coherent(0, alpha=1).dm().fock_array(8, standard_order=True),
+            Coherent(0, alpha=[1, 1, 1]).dm().fock_array(8, standard_order=True),
         )
 
     def test_formal_stellar_decomposition(self):

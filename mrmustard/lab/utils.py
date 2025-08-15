@@ -18,11 +18,11 @@ This module contains the utility functions used by the classes in ``mrmustard.la
 
 from __future__ import annotations
 
-from collections.abc import Callable, Generator
-from typing import Any
+from collections.abc import Generator
+from typing import Any, Literal
 
 from mrmustard import math
-from mrmustard.math.parameters import Constant, Variable, update_euclidean
+from mrmustard.math.parameters import Constant, Variable
 
 
 def make_parameter(
@@ -30,7 +30,9 @@ def make_parameter(
     value: Any,
     name: str,
     bounds: tuple[float | None, float | None],
-    update_fn: Callable = update_euclidean,
+    update_fn: Literal[
+        "update_euclidean", "update_orthogonal", "update_symplectic", "update_unitary"
+    ] = "update_euclidean",
     dtype: Any = None,
 ):
     r"""
@@ -41,7 +43,7 @@ def make_parameter(
         value: The value of the returned parameter.
         name: The name of the returned parameter.
         bounds: The bounds of the returned parameter (ignored if ``is_trainable`` is ``False``).
-        update_fn: The update_fn of the returned parameter (ignored if ``is_trainable`` is ``False``).
+        update_fn: The name of the update function of the returned parameter (ignored if ``is_trainable`` is ``False``).
         dtype: The dtype of the returned parameter.
     """
     if isinstance(value, Constant | Variable):
@@ -64,7 +66,7 @@ def reshape_params(n_modes: int, **kwargs) -> Generator:
         nor ``n_modes``.
     """
     for name, val in kwargs.items():
-        val = math.atleast_1d(val)  # noqa: PLW2901
+        val = math.atleast_nd(val, 1)  # noqa: PLW2901
         if len(val) == 1:
             val = math.tile(val, (n_modes,))  # noqa: PLW2901
         elif len(val) != n_modes:

@@ -83,28 +83,26 @@ class Circuit:
             (0, i) for i in range(1, len(self.components))
         ]  # default path (likely not optimal)
 
-    def optimize(
-        self,
-        n_init: int = 100,
-        with_BF_heuristic: bool = True,
-        verbose: bool = True,
-    ) -> None:
-        r"""
-        Optimizes the Fock shapes and the contraction path of this circuit.
-        It allows one to exclude the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
-        components with multimode Bargmann/Fock components leads to a higher total cost.
+    @classmethod
+    def deserialize(cls, data: dict) -> Circuit:
+        r"""Deserialize a Circuit."""
+        comps, path = data.pop("components"), data.pop("path")
 
-        Args:
-            n_init: The number of random contractions to find an initial cost upper bound.
-            with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
-            verbose: If True (default), the progress of the optimization is shown.
-        """
-        self.path = optimal_path(
-            self.components,
-            n_init=n_init,
-            with_BF_heuristic=with_BF_heuristic,
-            verbose=verbose,
-        )
+        for k, v in data.items():
+            kwarg, i = k.split(":")
+            comps[int(i)][kwarg] = v
+
+        classes: list[CircuitComponent] = [locate(c.pop("class")) for c in comps]
+        circ = cls([c._deserialize(comp_data) for c, comp_data in zip(classes, comps)])
+        circ.path = [tuple(p) for p in path]
+        return circ
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
+        ret = cls.__new__(cls)
+        (ret.components,) = children
+        (ret.path,) = aux_data
+        return ret
 
     def contract(self) -> CircuitComponent:
         r"""
@@ -244,6 +242,29 @@ class Circuit:
 
         print(msg)
 
+    def optimize(
+        self,
+        n_init: int = 100,
+        with_BF_heuristic: bool = True,
+        verbose: bool = True,
+    ) -> None:
+        r"""
+        Optimizes the Fock shapes and the contraction path of this circuit.
+        It allows one to exclude the 1BF and 1FB heuristic in case contracting 1-wire Fock/Bagmann
+        components with multimode Bargmann/Fock components leads to a higher total cost.
+
+        Args:
+            n_init: The number of random contractions to find an initial cost upper bound.
+            with_BF_heuristic: If True (default), the 1BF/1FB heuristics are included in the optimization process.
+            verbose: If True (default), the progress of the optimization is shown.
+        """
+        self.path = optimal_path(
+            self.components,
+            n_init=n_init,
+            with_BF_heuristic=with_BF_heuristic,
+            verbose=verbose,
+        )
+
     def serialize(self, filestem: str | None = None):
         r"""
         Serialize a Circuit.
@@ -259,19 +280,10 @@ class Circuit:
         }
         return save(type(self), filename=filestem, **kwargs)
 
-    @classmethod
-    def deserialize(cls, data: dict) -> Circuit:
-        r"""Deserialize a Circuit."""
-        comps, path = data.pop("components"), data.pop("path")
-
-        for k, v in data.items():
-            kwarg, i = k.split(":")
-            comps[int(i)][kwarg] = v
-
-        classes: list[CircuitComponent] = [locate(c.pop("class")) for c in comps]
-        circ = cls([c._deserialize(comp_data) for c, comp_data in zip(classes, comps)])
-        circ.path = [tuple(p) for p in path]
-        return circ
+    def _tree_flatten(self):  # pragma: no cover
+        children = (self.components,)
+        aux_data = (self.path,)
+        return (children, aux_data)
 
     def __eq__(self, other: Circuit) -> bool:
         if not isinstance(other, Circuit):
@@ -284,17 +296,17 @@ class Circuit:
         """
         return self.components[idx]
 
-    def __len__(self):
-        r"""
-        The number of components in this circuit.
-        """
-        return len(self.components)
-
     def __iter__(self):
         r"""
         An iterator over the components in this circuit.
         """
         return iter(self.components)
+
+    def __len__(self):
+        r"""
+        The number of components in this circuit.
+        """
+        return len(self.components)
 
     def __rshift__(self, other: CircuitComponent | Circuit) -> Circuit:
         r"""
@@ -349,7 +361,7 @@ class Circuit:
                     param = comp.parameters.constants.get(name) or comp.parameters.variables.get(
                         name,
                     )
-                    new_values = math.atleast_1d(param.value)
+                    new_values = math.atleast_nd(param.value, 1)
                     if len(new_values) == 1 and cc_name not in control_gates:
                         new_values = math.tile(new_values, (len(comp.modes),))
                     values.append(math.asnumpy(new_values))

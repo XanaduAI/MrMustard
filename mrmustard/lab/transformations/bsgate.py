@@ -19,14 +19,13 @@ The class representing a beam splitter gate.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import replace
 
 from mrmustard import math
 from mrmustard.utils.typing import ComplexTensor
 
 from ...physics import triples
-from ...physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from ...physics.wires import ReprEnum, Wires
+from ...physics.ansatz import PolyExpAnsatz
+from ...physics.wires import Wires
 from ..utils import make_parameter
 from .base import Unitary
 
@@ -98,8 +97,12 @@ class BSgate(Unitary):
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
         super().__init__(name="BSgate")
-        self.parameters.add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
-        self.parameters.add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
+        self.parameters.add_parameter(
+            make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=math.float64)
+        )
+        self.parameters.add_parameter(
+            make_parameter(phi_trainable, phi, "phi", phi_bounds, dtype=math.float64)
+        )
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.beamsplitter_gate_Abc,
             theta=self.parameters.theta,
@@ -123,16 +126,14 @@ class BSgate(Unitary):
                 - ``"vanilla"``: standard recurrence relation (not numerically stable, but slightly faster than the stable one).
                 - ``"schwinger"``: Use the Schwinger representation to compute the Fock array.
                 - ``"stable"``: Use the stable implementation of the beamsplitter. (default)
+
         Returns:
             array: The Fock representation of this component.
-        """
-        if isinstance(shape, int):
-            shape = (shape,) * self.ansatz.core_dims
-        if shape is None:
-            shape = tuple(self.auto_shape())
-        if len(shape) != 4:
-            raise ValueError(f"Expected Fock shape of length {4}, got length {len(shape)}")
 
+        Raises:
+            ValueError: If the shape is not valid for the component.
+        """
+        shape = self._check_fock_shape(shape)
         if self.ansatz.batch_shape:
             theta, phi = math.broadcast_arrays(
                 self.parameters.theta.value,
@@ -144,6 +145,8 @@ class BSgate(Unitary):
                 [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta, phi)],
             )
             ret = math.reshape(ret, self.ansatz.batch_shape + shape)
+            if self.ansatz._lin_sup:
+                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         else:
             ret = math.beamsplitter(
                 self.parameters.theta.value,
@@ -151,17 +154,4 @@ class BSgate(Unitary):
                 shape=shape,
                 method=method,
             )
-        return ret
-
-    def to_fock(self, shape: int | Sequence[int] | None = None) -> BSgate:
-        batch_dims = self.ansatz.batch_dims - self.ansatz._lin_sup
-        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
-        fock._original_abc_data = self.ansatz.triple
-        ret = self.__class__(self.modes, **self.parameters.to_dict())
-        wires = Wires.from_wires(
-            quantum={replace(w, repr=ReprEnum.FOCK) for w in self.wires.quantum},
-            classical={replace(w, repr=ReprEnum.FOCK) for w in self.wires.classical},
-        )
-        ret._ansatz = fock
-        ret._wires = wires
         return ret

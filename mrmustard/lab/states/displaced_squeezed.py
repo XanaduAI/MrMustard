@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
@@ -34,22 +35,17 @@ class DisplacedSqueezed(Ket):
     r"""
     The displaced squeezed state in Bargmann representation.
 
-
     Args:
         mode: The mode of the displaced squeezed state.
-        x: The displacement along the `x` axis, which represents the position axis in phase space.
-        y: The displacement along the `y` axis, which represents the momentum axis in phase space.
+        alpha: The complex displacement.
         r: The squeezing magnitude.
         phi: The squeezing angle.
-        x_trainable: Whether `x` is a trainable variable.
-        y_trainable: Whether `y` is a trainable variable.
+        alpha_trainable: Whether `alpha` is a trainable variable.
         r_trainable: Whether `r` is a trainable variable.
         phi_trainable: Whether `phi` is a trainable variable.
-        x_bounds: The bounds of `x`.
-        y_bounds: The bounds of `y`.
+        alpha_bounds: The bounds of `alpha`.
         r_bounds: The bounds of `r`.
         phi_bounds: The bounds of `phi`.
-
 
     Returns:
         A ``Ket``.
@@ -58,8 +54,8 @@ class DisplacedSqueezed(Ket):
 
         >>> from mrmustard.lab import DisplacedSqueezed, Vacuum, Sgate, Dgate
 
-        >>> state = DisplacedSqueezed(mode=0, x=1, phi=0.2)
-        >>> assert state == Vacuum(0) >> Sgate(0, phi=0.2) >> Dgate(0, x=1)
+        >>> state = DisplacedSqueezed(mode=0, alpha=1, r=0.2, phi=0.3)
+        >>> assert state == Vacuum(0) >> Sgate(0, r=0.2, phi=0.3) >> Dgate(0, alpha=1)
     """
 
     short_name = "DSq"
@@ -67,38 +63,46 @@ class DisplacedSqueezed(Ket):
     def __init__(
         self,
         mode: int,
-        x: float | Sequence[float] = 0.0,
-        y: float | Sequence[float] = 0.0,
+        alpha: complex | Sequence[complex] = 0.0j,
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
-        x_trainable: bool = False,
-        y_trainable: bool = False,
+        alpha_trainable: bool = False,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        x_bounds: tuple[float | None, float | None] = (None, None),
-        y_bounds: tuple[float | None, float | None] = (None, None),
+        alpha_bounds: tuple[float | None, float | None] = (0, None),
         r_bounds: tuple[float | None, float | None] = (None, None),
         phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
+        mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(name="DisplacedSqueezed")
         self.parameters.add_parameter(
-            make_parameter(is_trainable=x_trainable, value=x, name="x", bounds=x_bounds),
+            make_parameter(
+                is_trainable=alpha_trainable,
+                value=alpha,
+                name="alpha",
+                bounds=alpha_bounds,
+                dtype=math.complex128,
+            ),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=y_trainable, value=y, name="y", bounds=y_bounds),
+            make_parameter(
+                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
+            ),
         )
         self.parameters.add_parameter(
-            make_parameter(is_trainable=r_trainable, value=r, name="r", bounds=r_bounds),
-        )
-        self.parameters.add_parameter(
-            make_parameter(is_trainable=phi_trainable, value=phi, name="phi", bounds=phi_bounds),
+            make_parameter(
+                is_trainable=phi_trainable,
+                value=phi,
+                name="phi",
+                bounds=phi_bounds,
+                dtype=math.float64,
+            ),
         )
 
         self._ansatz = PolyExpAnsatz.from_function(
             fn=triples.displaced_squeezed_vacuum_state_Abc,
-            x=self.parameters.x,
-            y=self.parameters.y,
+            alpha=self.parameters.alpha,
             r=self.parameters.r,
             phi=self.parameters.phi,
         )
-        self._wires = Wires(modes_out_ket={mode})
+        self._wires = Wires(modes_out_ket=set(mode))

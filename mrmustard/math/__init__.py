@@ -18,14 +18,17 @@ The point of entry for the backend.
 
 import sys
 
-from .autocast import *
 from .backend_base import *
 from .backend_manager import BackendManager
 from .backend_numpy import *
 from .caching import *
-from .jax_vjps import *
 from .lattice import *
 from .parameter_set import *
 from .parameters import *
+
+try:  # noqa: SIM105
+    from .jax_vjps import *
+except ImportError:  # pragma: no cover
+    pass
 
 sys.modules[__name__] = BackendManager()

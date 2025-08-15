@@ -30,7 +30,7 @@ from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.utils import outer_product_batch_str
-from mrmustard.physics.wires import ReprEnum, Wires
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
 
 from ..circuit_components import CircuitComponent
@@ -133,14 +133,11 @@ class DM(State):
         if not isinstance(modes, set) and sorted(modes) != list(modes):
             raise ValueError(f"Modes must be sorted. got {modes}")
         modes = set(modes)
-        if ansatz and ansatz.num_vars != 2 * len(modes):
+        if ansatz and ansatz.core_dims != 2 * len(modes):
             raise ValueError(
-                f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.num_vars}.",
+                f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.core_dims}.",
             )
         wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
-        if isinstance(ansatz, ArrayAnsatz):
-            for w in wires:
-                w.repr = ReprEnum.FOCK
         return DM(ansatz, wires, name=name)
 
     @classmethod
@@ -193,7 +190,13 @@ class DM(State):
         )
 
     @classmethod
-    def random(cls, modes: Collection[int], m: int | None = None, max_r: float = 1.0) -> DM:
+    def random(
+        cls,
+        modes: Collection[int],
+        m: int | None = None,
+        max_r: float = 1.0,
+        seed: int | None = None,
+    ) -> DM:
         r"""
         Returns a random ``DM`` with zero displacement.
 
@@ -201,14 +204,18 @@ class DM(State):
             modes: The modes of the ``DM``.
             m: The number modes to be considered for tracing out from a random pure state (Ket)
                 if not specified, m is considered to be len(modes)
+            max_r: Maximum squeezing parameter over which we make random choices.
+            seed: The random seed. If ``None``, the global seed is used.
         """
+        if not modes:
+            raise ValueError("Cannot create a random state with no modes.")
         if m is None:
             m = len(modes)
         max_idx = max(modes)
         ancilla = list(range(max_idx + 1, max_idx + m + 1))
         full_modes = list(modes) + ancilla
         m = len(full_modes)
-        S = math.random_symplectic(m, max_r)
+        S = math.random_symplectic(m, max_r, seed=seed)
         I = math.eye(m, dtype=math.complex128)
         transformation = math.block([[I, I], [-1j * I, 1j * I]]) / np.sqrt(2)
         S = math.conj(math.transpose(transformation)) @ S @ transformation
@@ -309,7 +316,28 @@ class DM(State):
         elif op_type is OperatorType.DM_LIKE:
             result = self.contract(operator.dual, mode=mode) >> TraceOut(leftover_modes)
         else:
-            result = (self.contract(operator, mode=mode)) >> TraceOut(self.modes)
+            # custom shape handling from contract
+            # since input and output wires are contracted
+            # to do the trace out
+            if (
+                type(self.ansatz) is not type(operator.ansatz)
+                and settings.DEFAULT_REPRESENTATION == "Fock"
+            ):
+                self_shape = list(self.auto_shape())
+                other_shape = list(operator.auto_shape())
+                # want to make sure that only the operator modes use shape lookahead
+                # for efficiency
+                for m in operator.modes:
+                    for idx1, idx2 in zip(self.wires[m].indices, operator.wires[m].indices):
+                        max_shape = max(self_shape[idx1], other_shape[idx2])
+                        self_shape[idx1] = max_shape
+                        other_shape[idx2] = max_shape
+                self_rep = self.to_fock(tuple(self_shape))
+                other_rep = operator.to_fock(tuple(other_shape))
+            else:
+                self_rep = self
+                other_rep = operator
+            result = (self_rep.contract(other_rep, mode=mode)) >> TraceOut(self.modes)
 
         return result
 
@@ -380,6 +408,9 @@ class DM(State):
 
         Returns:
             array: The Fock representation of this component.
+
+        Raises:
+            ValueError: If the shape is not valid for the component.
 
         Note:
             The ``standard_order`` boolean argument lets one choose the standard convention for the
@@ -605,18 +636,10 @@ class DM(State):
         core = Ket.from_bargmann(self.modes, (Acore, bcore, c_core))
         for i in range(M):
             core = core.contract(
-                Dgate(
-                    core_modes[i],
-                    -math.real(bcore_m_ket[..., i]),
-                    -math.imag(bcore_m_ket[..., i]),
-                ),
+                Dgate(core_modes[i], -bcore_m_ket[..., i]),
                 mode="zip",
             )
-            dgate_u = Dgate(
-                core_modes[i],
-                math.real(bcore_m_ket[..., i]),
-                math.imag(bcore_m_ket[..., i]),
-            )
+            dgate_u = Dgate(core_modes[i], bcore_m_ket[..., i])
             dgate_ch = dgate_u.contract(dgate_u.adjoint, mode="zip")
             phi = dgate_ch.contract(phi, mode="zip")
         c_core = math.ones_like(c)
@@ -721,7 +744,7 @@ class DM(State):
         R_c_transpose = math.einsum("...ij->...ji", R_c)
 
         Aphi_out = Am
-        gamma = np.linalg.pinv(R_c) @ R
+        gamma = math.pinv(R_c) @ R
         gamma_transpose = math.einsum("...ij->...ji", gamma)
         Aphi_in = gamma @ math.inv(Aphi_out - math.Xmat(M)) @ gamma_transpose + math.Xmat(M)
 
@@ -760,7 +783,7 @@ class DM(State):
         )
         alpha = b_core[..., core_ket_indices]
         for i, m in enumerate(core_modes):
-            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
+            d_g = Dgate(m, -alpha[..., i])
             d_g_inv = d_g.inverse()
             d_ch = d_g.contract(d_g.adjoint, mode="zip")
             d_ch_inverse = d_g_inv.contract(d_g_inv.adjoint, mode="zip")

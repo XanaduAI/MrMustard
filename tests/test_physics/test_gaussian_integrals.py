@@ -24,7 +24,6 @@ from mrmustard.physics.gaussian_integrals import (
     join_Abc,
     join_Abc_real,
     real_gaussian_integral,
-    reorder_abc,
 )
 
 
@@ -49,7 +48,7 @@ def test_real_gaussian_integral():
             ],
         ],
     )
-    b = math.cast(math.arange(3), dtype=math.complex128)  # tensorflow does not support complex
+    b = math.arange(3, dtype=math.complex128)
     c = 1.0 + 0j
     res = real_gaussian_integral((A, b, c), idx=[0, 1])
     assert math.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
@@ -75,7 +74,7 @@ def test_real_gaussian_integral():
             [-0.01297994 + 0.26050244j, 0.05696707 - 0.2351408j],
         ],
     )
-    b2 = math.cast(math.arange(2), dtype=math.complex128)  # tensorflow does not support complex
+    b2 = math.cast(math.arange(2), dtype=math.complex128)
     c2 = 1.0 + 0j
     res3 = real_gaussian_integral((A2, b2, c2), idx=[0, 1])
     assert math.allclose(res3[0], math.astensor([]))
@@ -92,7 +91,7 @@ def test_real_gaussian_integral():
 def test_join_Abc_real():
     """Tests the ``join_Abc_real`` method."""
     A1, b1, c1 = triples.vacuum_state_Abc(1)
-    A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
+    A2, b2, c2 = triples.displacement_gate_Abc(0.1 + 0.3j)
     idx1 = [0]
     idx2 = [0]
 
@@ -177,33 +176,11 @@ def test_join_Abc_batched_kron():
     assert math.allclose(c, math.astensor([70, 700]))
 
 
-def test_reorder_abc():
-    """Test that the reorder_abc function works correctly"""
-    A = math.astensor([[1, 2], [2, 3]])
-    b = math.astensor([4, 5])
-    c = math.astensor(6)
-    same = reorder_abc((A, b, c), (0, 1))
-    assert all(math.allclose(x, y) for x, y in zip(same, (A, b, c)))
-    flipped = reorder_abc((A, b, c), (1, 0))
-    assert all(math.allclose(x, y) for x, y in zip(flipped, (A[::-1, :][:, ::-1], b[::-1], c)))
-
-    A = math.astensor([[[1, 2, 3], [2, 4, 5], [3, 5, 6]]])
-    b = math.astensor([[4, 5, 6]])
-    c = math.astensor([[1, 2, 3]])
-    same = reorder_abc((A, b, c), (0, 1))
-    assert all(math.allclose(x, y) for x, y in zip(same, (A, b, c)))
-    flipped = reorder_abc((A, b, c), (1, 0))
-    assert all(
-        math.allclose(x, y)
-        for x, y in zip(flipped, (A[:, (1, 0, 2), :][:, :, (1, 0, 2)], b[:, (1, 0, 2)], c))
-    )
-
-
 def test_complex_gaussian_integral_2_not_batched():
     """Tests the ``complex_gaussian_integral_2`` method for non-batched inputs."""
     A1, b1, c1 = triples.vacuum_state_Abc(2)
-    A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
-    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=0.1, y=0.3)
+    A2, b2, c2 = triples.displacement_gate_Abc(0.1 + 0.3j)
+    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(alpha=0.1 + 0.3j)
 
     res = complex_gaussian_integral_2((A1, b1, c1), (A2, b2, c2), [0, 1], [0, 1])
     assert math.allclose(res[0], A3)
@@ -238,8 +215,8 @@ def test_complex_gaussian_integral_1_not_batched():
     assert math.allclose(res[2], cr)
 
     A1, b1, c1 = triples.vacuum_state_Abc(2)
-    A2, b2, c2 = triples.displacement_gate_Abc(x=0.1, y=0.3)
-    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(x=0.1, y=0.3)
+    A2, b2, c2 = triples.displacement_gate_Abc(0.1 + 0.3j)
+    A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(0.1 + 0.3j)
 
     A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
 

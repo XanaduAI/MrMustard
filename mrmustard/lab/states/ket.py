@@ -27,7 +27,7 @@ from mrmustard import math, settings, widgets
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_psi
 from mrmustard.physics.gaussian import purity
-from mrmustard.physics.wires import ReprEnum, Wires
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Scalar
 
 from ..circuit_components import CircuitComponent
@@ -139,14 +139,11 @@ class Ket(State):
         if not isinstance(modes, set) and sorted(modes) != list(modes):
             raise ValueError(f"Modes must be sorted. Got {modes}")
         modes = set(modes)
-        if ansatz and ansatz.num_vars != len(modes):
+        if ansatz and ansatz.core_dims != len(modes):
             raise ValueError(
-                f"Expected an ansatz with {len(modes)} variables, found {ansatz.num_vars}.",
+                f"Expected an ansatz with {len(modes)} variables, found {ansatz.core_dims}.",
             )
         wires = Wires(modes_out_ket=modes)
-        if isinstance(ansatz, ArrayAnsatz):
-            for w in wires.quantum_wires:
-                w.repr = ReprEnum.FOCK
         return Ket(ansatz, wires, name=name)
 
     @classmethod
@@ -177,13 +174,14 @@ class Ket(State):
         )
 
     @classmethod
-    def random(cls, modes: Collection[int], max_r: float = 1.0) -> Ket:
+    def random(cls, modes: Collection[int], max_r: float = 1.0, seed: int | None = None) -> Ket:
         r"""
         Generates a random zero displacement state.
 
         Args:
             modes: The modes of the state.
             max_r: Maximum squeezing parameter over which we make random choices.
+            seed: The random seed. If ``None``, the global seed is used.
 
         Returns:
             A ``Ket`` object.
@@ -199,9 +197,11 @@ class Ket(State):
             >>> from mrmustard.lab import Ket
             >>> assert isinstance(Ket.random([0,1]), Ket)
         """
+        if not modes:
+            raise ValueError("Cannot create a random state with no modes.")
 
         m = len(modes)
-        S = math.random_symplectic(m, max_r)
+        S = math.random_symplectic(m, max_r, seed=seed)
         transformation = (
             1
             / math.sqrt(complex(2))
@@ -543,7 +543,7 @@ class Ket(State):
             >>> from mrmustard.lab import Ket, DM, Attenuator, Dgate
 
             >>> psi = Ket.random([0,1])
-            >>> U = Dgate(0, x=1, y=0)
+            >>> U = Dgate(0, alpha=1)
             >>> channel = Attenuator(0, .5)
 
             >>> assert isinstance(psi >> U, Ket)

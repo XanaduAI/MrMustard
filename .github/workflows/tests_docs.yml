@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - develop
+      - main
   pull_request:
     paths:
       - '.github/workflows/tests.yml'
@@ -28,10 +29,11 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.29"
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Run tests
         run: |
-          uv run --all-extras --group doc pytest --doctest-modules mrmustard/math/parameter_set.py
-          uv run --all-extras --group doc pytest --doctest-modules mrmustard/physics/ansatz
-          uv run --all-extras --group doc pytest --doctest-modules mrmustard/lab
+          uv run --all-groups pytest --doctest-modules mrmustard/math/parameter_set.py
+          uv run --all-groups pytest --doctest-modules mrmustard/physics/ansatz
+          uv run --all-groups pytest --doctest-modules mrmustard/lab
+          

@@ -22,7 +22,6 @@ help:
 	@echo "  ruff [check=1]     to run ruff linting and formatting; use with 'check=1' to avoid modifying files"
 	@echo "  test               to run the test suite for entire codebase"	
 	@echo "  test numpy         to run the test suite with numpy backend"
-	@echo "  test tensorflow    to run the test suite with tensorflow backend"
 	@echo "  test jax           to run the test suite with jax backend"
 	@echo "  coverage           to generate a coverage report for entire codebase"
 	@echo "  clean-coverage     to delete the coverage report"
@@ -87,7 +86,7 @@ test-%:
 	$(PYTHON3) $(TESTRUNNER) --backend=$*
 
 # Support for "make test <backend>" syntax
-ifneq ($(filter numpy tensorflow jax,$(word 2,$(MAKECMDGOALS))),)
+ifneq ($(filter numpy jax,$(word 2,$(MAKECMDGOALS))),)
   BACKEND := $(word 2,$(MAKECMDGOALS))
   $(BACKEND):
 	@:
