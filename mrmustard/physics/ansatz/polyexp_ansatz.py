@@ -32,8 +32,8 @@ from mrmustard.physics.fock_utils import c_in_PS
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
-    join_Abc,
 )
+from mrmustard.physics.gaussian_integrals_numba import join_Abc_numba
 from mrmustard.physics.utils import generate_batch_str, verify_batch_triple
 from mrmustard.utils.argsort import argsort_gen
 from mrmustard.utils.typing import (
@@ -899,7 +899,7 @@ class PolyExpAnsatz(Ansatz):
         Returns:
             The tensor product of this PolyExpAnsatz and other.
         """
-        As, bs, cs = join_Abc(
+        As, bs, cs = join_Abc_numba(
             self.triple,
             other.triple,
             outer_product_batch_str(
