@@ -21,6 +21,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import numpy as np
+from numba import njit
 
 from ..lattice import strategies
 from ..lattice.strategies.compactFock.inputValidation import (
@@ -123,8 +124,10 @@ def hermite_renormalized_batched_jax(
     """
     batch_size = A.shape[0]
     output_shape = (batch_size, *shape)
+    # we cannot parallelize vanilla_batch_numba
+    vanilla_batch_numba = njit(strategies.vanilla_batch_numba.py_func, cache=True)
     return jax.pure_callback(
-        lambda A, b, c: strategies.vanilla_batch_numba(
+        lambda A, b, c: vanilla_batch_numba(
             shape,
             np.asarray(A),
             np.asarray(b),
