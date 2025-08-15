@@ -37,10 +37,10 @@ try:
         update_unitary,
     )
 
-except ImportError as e:
+except ImportError:
     raise ImportError(
         "Optimizer only supports the Jax backend. Please install the `jax_backend` group using `uv pip install -g jax_backend` and set the backend to Jax using `math.change_backend('jax')`."
-    ) from e
+    ) from None
 
 
 class Optimizer:
