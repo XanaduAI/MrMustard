@@ -19,6 +19,9 @@
 * Added vjps to the JAX backend. Added ``numba`` based Fock lattice strategies to `SqueezedVacuum` and `Sgate`.
 [(#636)](https://github.com/XanaduAI/MrMustard/pull/636)
 
+* Added a `seed` keyword for `DM.random`, `Ket.random`, `Channel.random` and `Unitary.random`
+[(#638)](https://github.com/XanaduAI/MrMustard/pull/638)
+
 * Added the `is_separable` property to `State`.
 [(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
 
@@ -38,6 +41,9 @@
 
 * Fixed a bug with `State.fock_distribution` where batch dimensions and mult-mode states were not handled correctly.
 [(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
+
+* Fixed a bug where `CircuitComponent.fock_array` was not passing `c` directly into `math.hermite_renormalize` for `num_derived_vars=0`. 
+[(#643)](https://github.com/XanaduAI/MrMustard/pull/643)
 
 ---
 
