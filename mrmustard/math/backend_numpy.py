@@ -20,7 +20,6 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 import numpy as np
-from numba import njit
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import loggamma as scipy_loggamma
@@ -401,10 +400,7 @@ class BackendNumpy(BackendBase):
         stable: bool = False,
         out: np.ndarray | None = None,
     ) -> np.ndarray:
-        # we cannot parallelize vanilla_batch_numba because of JAX so we do it here
-        return njit(strategies.vanilla_batch_numba.py_func, cache=True, parallel=True)(
-            tuple(shape), A, b, c, stable, out
-        )
+        return strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable, out)
 
     def hermite_renormalized_binomial(
         self,
