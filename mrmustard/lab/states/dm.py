@@ -292,13 +292,34 @@ class DM(State):
             raise ValueError(msg)
 
         leftover_modes = self.wires.modes - operator.wires.modes
+        # custom shape handling from contract
+        # since input and output wires are contracted
+        # to do the trace out
+        if (
+            type(self.ansatz) is not type(operator.ansatz)
+            and settings.DEFAULT_REPRESENTATION == "Fock"
+        ):
+            self_shape = list(self.auto_shape())
+            operator_shape = list(operator.auto_shape())
+            # want to make sure that only the operator modes use shape lookahead
+            # for efficiency
+            for m in operator.modes:
+                for idx1, idx2 in zip(self.wires[m].indices, operator.wires[m].indices):
+                    max_shape = max(self_shape[idx1], operator_shape[idx2])
+                    self_shape[idx1] = max_shape
+                    operator_shape[idx2] = max_shape
+            self_rep = self.to_fock(tuple(self_shape))
+            operator_rep = operator.to_fock(tuple(operator_shape))
+        else:
+            self_rep = self
+            operator_rep = operator
         if op_type is OperatorType.KET_LIKE:
             # if mode is not zip we need to generate a new eins_str for the second contraction
             if mode != "zip":
                 eins_str = (
                     outer_product_batch_str(
-                        self.ansatz.batch_dims - self.ansatz._lin_sup,
-                        operator.ansatz.batch_dims - operator.ansatz._lin_sup,
+                        self_rep.ansatz.batch_dims - self_rep.ansatz._lin_sup,
+                        operator_rep.ansatz.batch_dims - operator_rep.ansatz._lin_sup,
                     )
                     if mode == "kron"
                     else mode
@@ -309,35 +330,14 @@ class DM(State):
             else:
                 eins_str = mode
                 eins_str2 = mode
-            result = self.contract(operator.dual.adjoint, mode=eins_str).contract(
-                operator.dual,
+            result = self_rep.contract(operator_rep.dual.adjoint, mode=eins_str).contract(
+                operator_rep.dual,
                 mode=eins_str2,
             ) >> TraceOut(leftover_modes)
         elif op_type is OperatorType.DM_LIKE:
-            result = self.contract(operator.dual, mode=mode) >> TraceOut(leftover_modes)
+            result = self_rep.contract(operator_rep.dual, mode=mode) >> TraceOut(leftover_modes)
         else:
-            # custom shape handling from contract
-            # since input and output wires are contracted
-            # to do the trace out
-            if (
-                type(self.ansatz) is not type(operator.ansatz)
-                and settings.DEFAULT_REPRESENTATION == "Fock"
-            ):
-                self_shape = list(self.auto_shape())
-                other_shape = list(operator.auto_shape())
-                # want to make sure that only the operator modes use shape lookahead
-                # for efficiency
-                for m in operator.modes:
-                    for idx1, idx2 in zip(self.wires[m].indices, operator.wires[m].indices):
-                        max_shape = max(self_shape[idx1], other_shape[idx2])
-                        self_shape[idx1] = max_shape
-                        other_shape[idx2] = max_shape
-                self_rep = self.to_fock(tuple(self_shape))
-                other_rep = operator.to_fock(tuple(other_shape))
-            else:
-                self_rep = self
-                other_rep = operator
-            result = (self_rep.contract(other_rep, mode=mode)) >> TraceOut(self.modes)
+            result = (self_rep.contract(operator_rep, mode=mode)) >> TraceOut(self_rep.modes)
 
         return result
 

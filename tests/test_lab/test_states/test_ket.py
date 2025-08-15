@@ -529,6 +529,22 @@ class TestKet:
         with pytest.raises(ValueError, match="Expected an operator defined on"):
             ket.expectation(op3)
 
+    @pytest.mark.parametrize(
+        "operator",
+        [Coherent(0, alpha=5 + 12j).dm(), Dgate(0, alpha=5 + 12j)],
+        ids=["DM_LIKE", "UNITARY_LIKE"],
+    )
+    def test_expectation_shape_handling(self, operator):
+        cutoff = 200
+        ket = SqueezedVacuum(0, 1.5)
+
+        expectation_barg_fock = math.abs(ket.to_bargmann().expectation(operator.to_fock(cutoff)))
+        expectation_fock_barg = math.abs(ket.to_fock(cutoff).expectation(operator.to_bargmann()))
+        expectation_fock_fock = math.abs(ket.to_fock(cutoff).expectation(operator.to_fock(cutoff)))
+
+        assert math.allclose(expectation_fock_fock, expectation_barg_fock)
+        assert math.allclose(expectation_fock_fock, expectation_fock_barg)
+
     def test_rshift(self):
         ket = Coherent(0, 1) >> Coherent(1, 1)
         unitary = Dgate(0, 1)

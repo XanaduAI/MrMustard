@@ -42,8 +42,11 @@
 * Fixed a bug with `State.fock_distribution` where batch dimensions and mult-mode states were not handled correctly.
 [(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
 
-* Fixed a bug where `CircuitComponent.fock_array` was not passing `c` directly into `math.hermite_renormalize` for `num_derived_vars=0`. 
+* Fixed a bug where `CircuitComponent.fock_array` was not passing `c` directly into `math.hermite_renormalize` for `num_derived_vars=0`.
 [(#643)](https://github.com/XanaduAI/MrMustard/pull/643)
+
+* Fixed a bug in `Ket.expectation` where the Fock shape lookahead wasn't setting certain wires correctly.
+[(#646)](https://github.com/XanaduAI/MrMustard/pull/646)
 
 ---
 
