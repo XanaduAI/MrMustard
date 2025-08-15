@@ -103,7 +103,7 @@ class Sampler(ABC):
         )
         ret = []
         for unique_sample, idx, count in zip(unique_samples, idxs, counts):
-            meas_op = self._get_povm(unique_sample, initial_mode).dual
+            meas_op = self._get_povm(unique_sample, initial_mode)
             prob = probs[idx]
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob
             reduced_state = (state >> meas_op) / norm
@@ -190,8 +190,8 @@ class PNRSampler(Sampler):
     """
 
     def __init__(self, cutoff: int) -> None:
-        # In stateless architecture, we'll create POVMs on demand
-        super().__init__(list(range(cutoff)), None)
+        # Start with empty POVM cache for lazy creation
+        super().__init__(list(range(cutoff)), {})
         self._cutoff = cutoff
 
     def probabilities(self, state, atol=1e-4):
@@ -200,9 +200,17 @@ class PNRSampler(Sampler):
     def _get_povm(self, meas_outcome: Any, mode: int) -> CircuitComponent:
         r"""
         Returns the POVM for a specific photon number measurement outcome.
+        Creates POVMs lazily and caches them for reuse.
         """
-        # Create the Number state POVM for the specific outcome on the specified mode
-        return Number(mode, meas_outcome, self._cutoff).dual
+        # Use (mode, outcome) as cache key
+        cache_key = (mode, meas_outcome)
+        
+        # Check if we already have this POVM cached
+        if cache_key not in self._povms:
+            # Create and cache the POVM
+            self._povms[cache_key] = Number(mode, meas_outcome, self._cutoff).dual
+            
+        return self._povms[cache_key]
 
 
 class HomodyneSampler(Sampler):
@@ -256,3 +264,4 @@ class HomodyneSampler(Sampler):
             samples = self.sample(normalized_reduced_state, count)
             ret.extend(np.append([unique_sample], sample) for sample in samples)
         return np.array(ret)
+    
