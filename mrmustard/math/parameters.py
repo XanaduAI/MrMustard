@@ -265,7 +265,7 @@ class Variable:
         Returns:
             A variable with ``update_fn`` for orthogonal optimization.
         """
-        value = value or math.random_orthogonal(N)
+        value = value if value is not None else math.random_orthogonal(N)
         return Variable(value, name, bounds, "update_orthogonal")
 
     @staticmethod
@@ -289,7 +289,7 @@ class Variable:
         Returns:
             A variable with ``update_fn`` for simplectic optimization.
         """
-        value = value or math.random_symplectic(N)
+        value = value if value is not None else math.random_symplectic(N)
         return Variable(value, name, bounds, "update_symplectic")
 
     @staticmethod
@@ -313,7 +313,7 @@ class Variable:
         Returns:
             A variable with ``update_fn`` for unitary optimization.
         """
-        value = value or math.random_unitary(N)
+        value = value if value is not None else math.random_unitary(N)
         return Variable(value, name, bounds, "update_unitary")
 
     def _tree_flatten(self):  # pragma: no cover
