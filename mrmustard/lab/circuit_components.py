@@ -452,18 +452,27 @@ class CircuitComponent:
         shape = self._check_fock_shape(shape)
         try:
             A, b, c = self.ansatz.triple
-            G = math.hermite_renormalized(
-                A,
-                b,
-                math.ones(self.ansatz.batch_shape, dtype=math.complex128),
-                shape=shape + self.ansatz.shape_derived_vars,
-            )
-            G = math.reshape(G, self.ansatz.batch_shape + shape + (-1,))
-            cs = math.reshape(c, (*self.ansatz.batch_shape, -1))
-            core_str = "".join(
-                [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))],
-            )
-            ret = math.einsum(f"...{core_str},...{core_str[-1]}->...{core_str[:-1]}", G, cs)
+            # TODO: make hermite_renormalized work with num_derived_vars > 0 in sc-97587
+            if self.ansatz.num_derived_vars == 0:
+                ret = math.hermite_renormalized(
+                    A,
+                    b,
+                    c,
+                    shape=shape,
+                )
+            else:
+                G = math.hermite_renormalized(
+                    A,
+                    b,
+                    math.ones(self.ansatz.batch_shape, dtype=math.complex128),
+                    shape=shape + self.ansatz.shape_derived_vars,
+                )
+                G = math.reshape(G, self.ansatz.batch_shape + shape + (-1,))
+                cs = math.reshape(c, (*self.ansatz.batch_shape, -1))
+                core_str = "".join(
+                    [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))],
+                )
+                ret = math.einsum(f"...{core_str},...{core_str[-1]}->...{core_str[:-1]}", G, cs)
             if self.ansatz._lin_sup:
                 ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
         except AttributeError:
