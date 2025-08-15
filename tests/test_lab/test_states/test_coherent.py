@@ -39,10 +39,10 @@ class TestCoherent:
     def test_stateless_construction(self):
         # Test that Coherent is now stateless - parameters only used for construction
         state = Coherent(0, 1 + 1j)
-        
+
         # Should not have any parameter storage
-        assert not hasattr(state, 'alpha')
-        
+        assert not hasattr(state, "alpha")
+
         # But ansatz should be correctly constructed
         assert state.name == "Coherent"
         assert state.modes == (0,)

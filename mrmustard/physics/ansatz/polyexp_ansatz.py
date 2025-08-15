@@ -122,8 +122,6 @@ class PolyExpAnsatz(Ansatz):
         verify_batch_triple(self.A, self.b, self.c)
         self._batch_shape = tuple(self.A.shape[:-2])
 
-
-
     @property
     def batch_dims(self) -> tuple[int, ...]:
         return len(self.batch_shape)
@@ -247,8 +245,6 @@ class PolyExpAnsatz(Ansatz):
     def from_dict(cls, data: dict[str, ArrayLike]) -> PolyExpAnsatz:
         r"""Creates an ansatz from a dictionary. For deserialization purposes."""
         return cls(**data)
-
-
 
     @classmethod
     def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
@@ -650,8 +646,6 @@ class PolyExpAnsatz(Ansatz):
                 c = math.update_add_tensor(c, [d0r], [c[dr]])
         return (A, b, c), to_keep
 
-
-
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL:
             print(self)
@@ -761,8 +755,6 @@ class PolyExpAnsatz(Ansatz):
             new_c2,
             lin_sup=self._lin_sup,
         )
-
-
 
     def _tree_flatten(self):  # pragma: no cover
         children, aux_data = super()._tree_flatten()

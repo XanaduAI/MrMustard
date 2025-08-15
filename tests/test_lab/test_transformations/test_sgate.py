@@ -96,5 +96,3 @@ class TestSgate:
         )
         assert math.allclose(rep3.b, math.zeros((2,)))
         assert math.allclose(rep3.c, 0.9975072676192522)
-
-

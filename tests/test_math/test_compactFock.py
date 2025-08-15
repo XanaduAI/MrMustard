@@ -76,7 +76,7 @@ def test_compactFock_diagonal_gradients():
     are detected (math.hermite_renormalized_diagonal).
     """
     from mrmustard.math.parameters import Variable
-    
+
     symplectic_var = Variable.symplectic(math.random_symplectic(1), "symplectic")
 
     def cost_fn(symplectic):

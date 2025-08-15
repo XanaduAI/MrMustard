@@ -62,8 +62,6 @@ class TestBSgate:
         assert math.allclose(rep2.b, math.zeros((4,)))
         assert math.allclose(rep2.c, 1)
 
-
-
     def test_fock_representation(self):
         gate = BSgate((0, 1), 2, 3)
         gate_fock = gate.fock_array(5, method="vanilla")  # int shape

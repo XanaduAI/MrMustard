@@ -89,8 +89,8 @@ class TestOptimizer:
     def test_cat_state_optimization(self):
         # Note: we need to intitialize the cat state with a non-zero value. This is because
         # the gradients are zero when x is zero.
-        alpha1_var = Variable(0.1+0.0j, "alpha1")
-        alpha2_var = Variable(-0.1+0.0j, "alpha2")
+        alpha1_var = Variable(0.1 + 0.0j, "alpha1")
+        alpha2_var = Variable(-0.1 + 0.0j, "alpha2")
         expected_alpha = np.sqrt(np.pi)
         expected_cat = Coherent(0, alpha=expected_alpha) + Coherent(0, alpha=-expected_alpha)
 
@@ -102,14 +102,16 @@ class TestOptimizer:
         # stable_threshold and max_steps are set to whatever gives us optimized parameters
         # that are within the default ATOL=1e-8 of the expected values
         opt = Optimizer(stable_threshold=1e-12)
-        (alpha1_var, alpha2_var) = opt.minimize(cost_fn, by_optimizing=[alpha1_var, alpha2_var], max_steps=6000)
+        (alpha1_var, alpha2_var) = opt.minimize(
+            cost_fn, by_optimizing=[alpha1_var, alpha2_var], max_steps=6000
+        )
 
         assert math.allclose(alpha1_var.value, expected_alpha, atol=1e-6)
         assert math.allclose(alpha2_var.value, -expected_alpha, atol=1e-6)
 
     @pytest.mark.parametrize("alpha", [0.2 + 0.4j, -0.1 - 0.2j, 0.1j, 0.4])
     def test_complex_dgate_optimization_bargmann(self, alpha):
-        alpha_var = Variable(0.0+0.0j, "alpha")
+        alpha_var = Variable(0.0 + 0.0j, "alpha")
 
         def cost_fn(alpha_opt):
             dgate = Dgate(0, alpha=alpha_opt)
@@ -253,7 +255,9 @@ class TestOptimizer:
             return -(math.abs((amps[1, 1, 2, 0] + amps[1, 1, 0, 2]) / np.sqrt(2)) ** 2)
 
         opt = Optimizer(unitary_lr=0.05)
-        (r_var, unitary_var) = opt.minimize(cost_fn, by_optimizing=[r_var, unitary_var], max_steps=200)
+        (r_var, unitary_var) = opt.minimize(
+            cost_fn, by_optimizing=[r_var, unitary_var], max_steps=200
+        )
         assert math.allclose(-cost_fn(r_var.value, unitary_var.value), 0.0625, atol=1e-5)
 
     def test_learning_four_mode_RealInterferometer(self):
@@ -298,8 +302,38 @@ class TestOptimizer:
 
         opt = Optimizer()
 
-        (r0_var, phi0_var, r1_var, phi1_var, r2_var, phi2_var, r3_var, phi3_var, orthogonal_var) = opt.minimize(cost_fn, by_optimizing=[r0_var, phi0_var, r1_var, phi1_var, r2_var, phi2_var, r3_var, phi3_var, orthogonal_var], max_steps=200)
-        assert math.allclose(-cost_fn(r0_var.value, phi0_var.value, r1_var.value, phi1_var.value, r2_var.value, phi2_var.value, r3_var.value, phi3_var.value, orthogonal_var.value), 0.0625, atol=1e-5)
+        (r0_var, phi0_var, r1_var, phi1_var, r2_var, phi2_var, r3_var, phi3_var, orthogonal_var) = (
+            opt.minimize(
+                cost_fn,
+                by_optimizing=[
+                    r0_var,
+                    phi0_var,
+                    r1_var,
+                    phi1_var,
+                    r2_var,
+                    phi2_var,
+                    r3_var,
+                    phi3_var,
+                    orthogonal_var,
+                ],
+                max_steps=200,
+            )
+        )
+        assert math.allclose(
+            -cost_fn(
+                r0_var.value,
+                phi0_var.value,
+                r1_var.value,
+                phi1_var.value,
+                r2_var.value,
+                phi2_var.value,
+                r3_var.value,
+                phi3_var.value,
+                orthogonal_var.value,
+            ),
+            0.0625,
+            atol=1e-5,
+        )
 
     def test_learning_two_mode_Ggate(self):
         """Finding the optimal Ggate to make a pair of single photons"""
@@ -332,8 +366,12 @@ class TestOptimizer:
 
         opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
 
-        (r_var, phi_var, unitary_var) = opt.minimize(cost_fn, by_optimizing=[r_var, phi_var, unitary_var], max_steps=1000)
-        assert math.allclose(-cost_fn(r_var.value, phi_var.value, unitary_var.value), 0.25, atol=1e-5)
+        (r_var, phi_var, unitary_var) = opt.minimize(
+            cost_fn, by_optimizing=[r_var, phi_var, unitary_var], max_steps=1000
+        )
+        assert math.allclose(
+            -cost_fn(r_var.value, phi_var.value, unitary_var.value), 0.25, atol=1e-5
+        )
 
     def test_learning_two_mode_RealInterferometer(self):
         """Finding the optimal Interferometer to make a pair of single photons"""
@@ -354,8 +392,18 @@ class TestOptimizer:
 
         opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
 
-        (r0_var, phi0_var, r1_var, phi1_var, orthogonal_var) = opt.minimize(cost_fn, by_optimizing=[r0_var, phi0_var, r1_var, phi1_var, orthogonal_var], max_steps=1000)
-        assert math.allclose(-cost_fn(r0_var.value, phi0_var.value, r1_var.value, phi1_var.value, orthogonal_var.value), 0.25, atol=1e-5)
+        (r0_var, phi0_var, r1_var, phi1_var, orthogonal_var) = opt.minimize(
+            cost_fn,
+            by_optimizing=[r0_var, phi0_var, r1_var, phi1_var, orthogonal_var],
+            max_steps=1000,
+        )
+        assert math.allclose(
+            -cost_fn(
+                r0_var.value, phi0_var.value, r1_var.value, phi1_var.value, orthogonal_var.value
+            ),
+            0.25,
+            atol=1e-5,
+        )
 
     def test_learning_two_mode_squeezing(self):
         """Finding the optimal beamsplitter transmission to make a pair of single photons"""
@@ -375,8 +423,12 @@ class TestOptimizer:
 
         opt = Optimizer(euclidean_lr=0.05)
 
-        (r_var, phi_var, theta_var, bs_phi_var) = opt.minimize(cost_fn, by_optimizing=[r_var, phi_var, theta_var, bs_phi_var], max_steps=300)
-        assert math.allclose(-cost_fn(r_var.value, phi_var.value, theta_var.value, bs_phi_var.value), 0.25, atol=1e-5)
+        (r_var, phi_var, theta_var, bs_phi_var) = opt.minimize(
+            cost_fn, by_optimizing=[r_var, phi_var, theta_var, bs_phi_var], max_steps=300
+        )
+        assert math.allclose(
+            -cost_fn(r_var.value, phi_var.value, theta_var.value, bs_phi_var.value), 0.25, atol=1e-5
+        )
 
     def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum(self):
         """Optimizes a Ggate on two modes so as to prepare a state with the same entropy
@@ -430,7 +482,9 @@ class TestOptimizer:
             return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
 
         opt = Optimizer(euclidean_lr=0.001)
-        (phi01_var, phi23_var, r_var, phi_var) = opt.minimize(cost_fn, by_optimizing=[phi01_var, phi23_var, r_var, phi_var], max_steps=300)
+        (phi01_var, phi23_var, r_var, phi_var) = opt.minimize(
+            cost_fn, by_optimizing=[phi01_var, phi23_var, r_var, phi_var], max_steps=300
+        )
         assert math.allclose(math.sinh(r_var.value) ** 2, 1, atol=1e-2)
 
     def test_reuse_optimizer(self):
@@ -452,7 +506,9 @@ class TestOptimizer:
 
         r_var_reused = Variable(0.2, "r")
         phi_var_reused = Variable(0.1, "phi")
-        (r_var_reused, phi_var_reused) = opt.minimize(cost_fn, by_optimizing=[r_var_reused, phi_var_reused])
+        (r_var_reused, phi_var_reused) = opt.minimize(
+            cost_fn, by_optimizing=[r_var_reused, phi_var_reused]
+        )
 
         assert math.allclose(r_var_reused.value, r_var.value)
         assert math.allclose(phi_var_reused.value, phi_var.value)
@@ -528,5 +584,7 @@ class TestOptimizer:
             return math.abs(circ.contract().fock_array((2, 2, 2, 2))[1, 1, 1, 1]) ** 2
 
         opt = Optimizer(euclidean_lr=0.001)
-        (phi01_var, phi23_var, r12_var, phi12_var) = opt.minimize(cost_fn, by_optimizing=[phi01_var, phi23_var, r12_var, phi12_var], max_steps=300)
+        (phi01_var, phi23_var, r12_var, phi12_var) = opt.minimize(
+            cost_fn, by_optimizing=[phi01_var, phi23_var, r12_var, phi12_var], max_steps=300
+        )
         assert math.allclose(math.sinh(r12_var.value) ** 2, 1, atol=1e-2)

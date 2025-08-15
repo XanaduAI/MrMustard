@@ -49,8 +49,6 @@ class TestAmplifier:
         assert math.allclose(rep1.b, math.zeros((1, 4)))
         assert math.allclose(rep1.c, 0.90909090)
 
-
-
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_operation(self, batch_shape):
         gain = math.broadcast_to(1.5, batch_shape)

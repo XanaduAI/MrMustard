@@ -241,7 +241,7 @@ class Unitary(Operation):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
-        
+
         return Unitary(
             ansatz=ansatz,
             wires=Wires(set(), set(), set(modes_out), set(modes_in)),
@@ -359,7 +359,7 @@ class Map(Transformation):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
-        
+
         return Map(
             ansatz=ansatz,
             wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
@@ -488,7 +488,7 @@ class Channel(Map):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
-        
+
         return Channel(
             ansatz=ansatz,
             wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),

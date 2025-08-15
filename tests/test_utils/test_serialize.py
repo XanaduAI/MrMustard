@@ -172,5 +172,3 @@ class TestSerialize:
         assert path.exists() and path.suffix == ".zip"
         load(path, remove_after=True)
         assert not list(settings.CACHE_DIR.glob("*"))
-
-

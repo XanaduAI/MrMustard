@@ -51,8 +51,6 @@ class TestS2gate:
         assert math.allclose(rep1.b, math.zeros((4,)))
         assert math.allclose(rep1.c, 1 / math.cosh(0.1))
 
-
-
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_operation(self, batch_shape):
         r = math.broadcast_to(1.0, batch_shape)

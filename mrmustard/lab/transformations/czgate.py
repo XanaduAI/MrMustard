@@ -75,5 +75,5 @@ class CZgate(Unitary):
             modes_in_ket=set(modes),
             modes_out_ket=set(modes),
         )
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="CZgate")

@@ -223,7 +223,6 @@ class TestCircuitComponent:
         with pytest.raises(ValueError, match="different wires"):
             d1 + d2
 
-
     def test_sub(self):
         s1 = DisplacedSqueezed(1, alpha=1.0 + 0.5j, r=0.1)
         s2 = DisplacedSqueezed(1, alpha=0.5 + 0.2j, r=0.2)
@@ -588,5 +587,3 @@ class TestCircuitComponent:
         dgate._ipython_display_()
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(dgate)
-
-

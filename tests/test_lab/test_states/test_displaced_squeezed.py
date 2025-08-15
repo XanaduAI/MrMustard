@@ -41,12 +41,12 @@ class TestDisplacedSqueezed:
     def test_stateless_construction(self):
         # Test that DisplacedSqueezed is now stateless - parameters only used for construction
         state = DisplacedSqueezed(0, 1 + 1j, 0.5, 0.3)
-        
+
         # Should not have any parameter storage
-        assert not hasattr(state, 'alpha')
-        assert not hasattr(state, 'r')
-        assert not hasattr(state, 'phi')
-        
+        assert not hasattr(state, "alpha")
+        assert not hasattr(state, "r")
+        assert not hasattr(state, "phi")
+
         # But ansatz should be correctly constructed
         assert state.name == "DisplacedSqueezed"
         assert state.modes == (0,)

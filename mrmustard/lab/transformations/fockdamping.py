@@ -73,5 +73,5 @@ class FockDamping(Operation):
         A, b, c = triples.fock_damping_Abc(beta=damping)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="FockDamping")

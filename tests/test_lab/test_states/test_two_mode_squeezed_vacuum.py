@@ -40,11 +40,11 @@ class TestTwoModeSqueezedVacuum:
     def test_stateless_construction(self):
         # Test that TwoModeSqueezedVacuum is now stateless - parameters only used for construction
         state = TwoModeSqueezedVacuum((0, 1), 1.5, 2.3)
-        
+
         # Should not have any parameter storage
-        assert not hasattr(state, 'r')
-        assert not hasattr(state, 'phi')
-        
+        assert not hasattr(state, "r")
+        assert not hasattr(state, "phi")
+
         # But ansatz should be correctly constructed
         assert state.name == "TwoModeSqueezedVacuum"
         assert state.modes == (0, 1)

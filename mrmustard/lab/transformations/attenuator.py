@@ -89,5 +89,5 @@ class Attenuator(Channel):
             modes_in_ket={mode},
             modes_out_ket={mode},
         )
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="Att~")

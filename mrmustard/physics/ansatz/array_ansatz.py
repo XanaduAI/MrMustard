@@ -60,8 +60,6 @@ class ArrayAnsatz(Ansatz):
         self._batch_dims = batch_dims
         self._batch_shape = tuple(self.array.shape[:batch_dims])
 
-
-
     @property
     def batch_dims(self) -> int:
         return self._batch_dims
@@ -120,8 +118,6 @@ class ArrayAnsatz(Ansatz):
     @classmethod
     def from_dict(cls, data: dict[str, ArrayLike]) -> ArrayAnsatz:
         return cls(**data)
-
-
 
     @classmethod
     def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
@@ -294,15 +290,11 @@ class ArrayAnsatz(Ansatz):
         trace = math.trace(new_array)
         return ArrayAnsatz(trace, self.batch_dims)
 
-
-
     def _ipython_display_(self):
         if widgets.IN_INTERACTIVE_SHELL or (w := widgets.fock(self)) is None:
             print(self)
             return
         display(w)
-
-
 
     def _tree_flatten(self):  # pragma: no cover
         children, aux_data = super()._tree_flatten()

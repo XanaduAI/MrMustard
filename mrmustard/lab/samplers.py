@@ -157,7 +157,9 @@ class Sampler(ABC):
             raise ValueError("This sampler has no POVMs defined.")
         if isinstance(self.povms, CircuitComponent):
             # TODO: implement generic POVM creation in stateless architecture
-            raise NotImplementedError("Generic POVM creation not supported in stateless architecture")
+            raise NotImplementedError(
+                "Generic POVM creation not supported in stateless architecture"
+            )
         return self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
 
     def _validate_probs(self, probs: Sequence[float], atol: float) -> Sequence[float]:
@@ -196,7 +198,7 @@ class PNRSampler(Sampler):
 
     def probabilities(self, state, atol=1e-4):
         return self._validate_probs(state.fock_distribution(self._cutoff), atol)
-    
+
     def _get_povm(self, meas_outcome: Any, mode: int) -> CircuitComponent:
         r"""
         Returns the POVM for a specific photon number measurement outcome.
@@ -204,12 +206,12 @@ class PNRSampler(Sampler):
         """
         # Use (mode, outcome) as cache key
         cache_key = (mode, meas_outcome)
-        
+
         # Check if we already have this POVM cached
         if cache_key not in self._povms:
             # Create and cache the POVM
             self._povms[cache_key] = Number(mode, meas_outcome, self._cutoff).dual
-            
+
         return self._povms[cache_key]
 
 
@@ -264,4 +266,3 @@ class HomodyneSampler(Sampler):
             samples = self.sample(normalized_reduced_state, count)
             ret.extend(np.append([unique_sample], sample) for sample in samples)
         return np.array(ret)
-    

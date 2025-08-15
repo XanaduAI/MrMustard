@@ -231,5 +231,3 @@ class TestCircuit:
         "tests the contract method"
         circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Dgate(0, 1.0)])
         assert circ.contract() == Number(0, n=15) >> Sgate(0, r=1.0) >> Dgate(0, 1.0)
-
-

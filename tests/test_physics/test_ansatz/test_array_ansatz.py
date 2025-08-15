@@ -106,8 +106,6 @@ class TestArrayAnsatz:
         aa2 = ArrayAnsatz(array=array)
         assert aa1 == aa2
 
-
-
     def test_multiply_by_scalar(self):
         fock1 = ArrayAnsatz(self.array1578, batch_dims=1)
         fock_test = 1.3 * fock1

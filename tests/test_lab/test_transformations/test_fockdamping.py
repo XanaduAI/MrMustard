@@ -50,8 +50,6 @@ class TestFockDamping:
         assert math.allclose(rep1.b, math.zeros((2,)))
         assert math.allclose(rep1.c, 1.0)
 
-
-
     def test_identity(self):
         rep1 = FockDamping(mode=0, damping=0.0).ansatz
         rep2 = Identity(modes=0).ansatz

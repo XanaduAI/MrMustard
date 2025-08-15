@@ -62,12 +62,11 @@ class RealInterferometer(Unitary):
                 f"The size of the orthogonal matrix must match the number of modes: {orthogonal.shape[-1]} =/= {num_modes}",
             )
 
-
         A, b, c = Unitary.from_symplectic(
             modes,
             symplectics.realinterferometer_symplectic(orthogonal),
         ).bargmann_triple()
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket=set(modes), modes_in_ket=set(modes))
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="RealInterferometer")

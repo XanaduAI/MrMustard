@@ -62,5 +62,5 @@ class Pgate(Unitary):
         ).bargmann_triple()  # TODO: add pgate to physics.triples
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="Pgate")

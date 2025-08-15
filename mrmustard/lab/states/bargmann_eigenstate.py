@@ -66,5 +66,5 @@ class BargmannEigenstate(Ket):
         A, b, c = triples.bargmann_eigenstate_Abc(alpha=alpha)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket={mode})
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="BargmannEigenstate")

@@ -61,14 +61,14 @@ class PhaseNoise(Channel):
     ):
         # Store parameter privately for custom method
         self._phase_stdev = phase_stdev
-        
+
         wires = Wires(
             modes_in_bra={mode},
             modes_out_bra={mode},
             modes_in_ket={mode},
             modes_out_ket={mode},
         )
-        
+
         super().__init__(ansatz=None, wires=wires, name="PhaseNoise")
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:

@@ -94,6 +94,7 @@ class TestJitting:
 
     def test_jit_circuit_with_parameters(self):
         r"""Tests if circuit with stateless components can be jitted."""
+
         def evaluate_parameters(params):
             r"""
             Create stateless circuit elements with the given parameters.
@@ -102,7 +103,7 @@ class TestJitting:
             BS_01 = BSgate(modes=(0, 1), theta=params[0], phi=params[1])
             BS_12 = BSgate(modes=(1, 2), theta=params[2], phi=params[3])
             att = Attenuator(mode=0, transmissivity=0.5)
-            
+
             state_out = (
                 initial_state
                 >> initial_state.on(1)

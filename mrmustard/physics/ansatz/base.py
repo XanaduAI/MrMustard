@@ -120,8 +120,6 @@ class Ansatz(ABC):
         Deserialize an Ansatz.
         """
 
-
-
     @abstractmethod
     def contract(
         self,
@@ -179,8 +177,6 @@ class Ansatz(ABC):
         Returns:
             The traced-over ansatz.
         """
-
-
 
     def _tree_flatten(self):  # pragma: no cover
         children = ({},)

@@ -64,5 +64,5 @@ class TwoModeSqueezedVacuum(Ket):
         )
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket=set(modes))
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="TwoModeSqueezedVacuum")

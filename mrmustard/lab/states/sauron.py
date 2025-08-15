@@ -66,6 +66,6 @@ class Sauron(Ket):
         )
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket={mode})
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name=f"Sauron-{n}")
         self.ansatz._lin_sup = True

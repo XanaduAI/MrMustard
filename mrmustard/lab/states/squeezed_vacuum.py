@@ -63,7 +63,7 @@ class SqueezedVacuum(Ket):
         )
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket={mode})
-        
+
         def specialized_fock(shape, **kwargs):
             """Optimized Fock computation using squeezed vacuum formula."""
             r_tensor = math.astensor(r)
@@ -81,9 +81,9 @@ class SqueezedVacuum(Ket):
             else:
                 ret = math.squeezed(r, phi, shape=shape)
             return ret
-        
+
         self._specialized_fock = specialized_fock
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="SqueezedVacuum")
 
     def fock_array(

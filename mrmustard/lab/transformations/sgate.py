@@ -85,7 +85,7 @@ class Sgate(Unitary):
         A, b, c = triples.squeezing_gate_Abc(r=r, phi=phi)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket={mode}, modes_in_ket={mode})
-        
+
         # Create specialized closure that captures r and phi
         def specialized_fock(shape, **kwargs):
             """Optimized Fock computation using squeezing formula."""
@@ -104,9 +104,9 @@ class Sgate(Unitary):
             else:
                 ret = math.squeezer(r, phi, shape=shape)
             return ret
-        
+
         self._specialized_fock = specialized_fock
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="Sgate")
 
     def fock_array(

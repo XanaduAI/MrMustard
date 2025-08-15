@@ -69,14 +69,14 @@ class Number(Ket):
     ) -> None:
         n_tensor = math.astensor(n, dtype=math.int64)
         cutoff = int(math.max(n_tensor) + 1) if cutoff is None else cutoff
-        
+
         batch_dims = len(n_tensor.shape)
         array = fock_state(n=n_tensor, cutoff=cutoff)
         ansatz = ArrayAnsatz(array, batch_dims=batch_dims)
         wires = Wires(modes_out_ket={mode})
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="N")
-        
+
         self.short_name = str(int(n_tensor)) if batch_dims == 0 else "N_batched"
         self.manual_shape = (int(cutoff),)
 

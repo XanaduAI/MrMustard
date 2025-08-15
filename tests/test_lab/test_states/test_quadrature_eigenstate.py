@@ -67,7 +67,7 @@ class TestQuadratureEigenstate:
 
         assert state.name == "QuadratureEigenstate"
         assert state.modes == (0,)
-        
+
         batch_x = [1.0, 2.0, 3.0]
         batch_phi = [0.1, 0.2, 0.3]
         batch_state = QuadratureEigenstate(0, batch_x, batch_phi)

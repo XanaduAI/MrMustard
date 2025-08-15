@@ -59,5 +59,5 @@ class Thermal(DM):
         A, b, c = triples.thermal_state_Abc(nbar=nbar)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_bra={mode}, modes_out_ket={mode})
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="Thermal")

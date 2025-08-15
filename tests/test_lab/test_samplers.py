@@ -70,26 +70,26 @@ class TestPNRSampler:
     def test_lazy_povm_caching(self):
         """Test that POVMs are created lazily and cached for reuse."""
         sampler = PNRSampler(cutoff=5)
-        
+
         # Initially no POVMs cached
         assert sampler.povms == {}
-        
+
         # Get a POVM - should create and cache it
         povm1 = sampler._get_povm(0, 0)  # 0 photons on mode 0
         assert (0, 0) in sampler.povms
         assert len(sampler.povms) == 1
-        
+
         # Get the same POVM again - should return cached version
         povm2 = sampler._get_povm(0, 0)
         assert povm1 is povm2  # Same object reference
         assert len(sampler.povms) == 1  # Still only one cached
-        
+
         # Get a different POVM - should create and cache a new one
         povm3 = sampler._get_povm(1, 0)  # 1 photon on mode 0
         assert (0, 1) in sampler.povms  # Cache key is (mode, outcome) = (0, 1)
         assert len(sampler.povms) == 2
         assert povm3 is not povm1  # Different objects
-        
+
         # Get POVM for different mode - should create new one
         povm4 = sampler._get_povm(0, 1)  # 0 photons on mode 1
         assert (1, 0) in sampler.povms  # Cache key is (mode, outcome) = (1, 0)

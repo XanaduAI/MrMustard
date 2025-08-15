@@ -41,7 +41,7 @@ class Vacuum(Ket):
 
         >>> from mrmustard.lab import Vacuum
 
-        >>> state = Vacuum(modes=(1, 2))    
+        >>> state = Vacuum(modes=(1, 2))
         >>> assert state.modes == (1, 2)
 
     .. details::

@@ -70,5 +70,3 @@ class TestDgate:
         assert math.allclose(rep1.A, [[0, 1], [1, 0]])
         assert math.allclose(rep2.b, [0.1 + 0.2j, -0.1 + 0.2j])
         assert math.allclose(rep2.c, 0.97530991 + 0.0j)
-
-

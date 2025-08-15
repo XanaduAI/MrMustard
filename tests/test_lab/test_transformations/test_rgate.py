@@ -72,5 +72,3 @@ class TestRgate:
         )
         assert math.allclose(rep3.b, math.zeros((2,)))
         assert math.allclose(rep3.c, 1.0 + 0.0j)
-
-

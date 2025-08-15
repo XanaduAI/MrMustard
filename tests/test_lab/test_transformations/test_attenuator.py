@@ -43,5 +43,3 @@ class TestAttenuator:
         assert math.allclose(rep1.A, [[0, e, 0, 0], [e, 0, 0, 0.9], [0, 0, 0, e], [0, 0.9, e, 0]])
         assert math.allclose(rep1.b, math.zeros((4,)))
         assert math.allclose(rep1.c, 1.0)
-
-

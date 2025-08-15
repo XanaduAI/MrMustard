@@ -56,11 +56,11 @@ class Ggate(Unitary):
         symplectic: RealMatrix,
     ):
         modes = (modes,) if isinstance(modes, int) else tuple(modes)
-        
-        A, b, c = Unitary.from_symplectic(modes, symplectic).bargmann_triple()  # TODO: add ggate to physics.triples
+
+        A, b, c = Unitary.from_symplectic(
+            modes, symplectic
+        ).bargmann_triple()  # TODO: add ggate to physics.triples
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="Ggate")
-
-

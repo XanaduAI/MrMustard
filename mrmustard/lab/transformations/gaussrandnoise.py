@@ -91,5 +91,5 @@ class GaussRandNoise(Channel):
             modes_in_ket=set(modes),
             modes_out_ket=set(modes),
         )
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="GRN~")

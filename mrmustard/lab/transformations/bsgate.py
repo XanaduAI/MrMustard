@@ -91,7 +91,6 @@ class BSgate(Unitary):
         A, b, c = triples.beamsplitter_gate_Abc(theta=theta, phi=phi)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
-        
 
         def specialized_fock(shape, method="stable", **kwargs):
             """Optimized Fock computation using beamsplitter formula."""
@@ -102,7 +101,10 @@ class BSgate(Unitary):
                 theta_local = math.reshape(theta_local, (-1,))
                 phi_local = math.reshape(phi_local, (-1,))
                 ret = math.astensor(
-                    [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta_local, phi_local)],
+                    [
+                        math.beamsplitter(t, p, shape=shape, method=method)
+                        for t, p in zip(theta_local, phi_local)
+                    ],
                 )
                 ret = math.reshape(ret, ansatz.batch_shape + shape)
                 if ansatz._lin_sup:
@@ -110,9 +112,9 @@ class BSgate(Unitary):
             else:
                 ret = math.beamsplitter(theta_tensor, phi_tensor, shape=shape, method=method)
             return ret
-        
+
         self._specialized_fock = specialized_fock
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="BSgate")
 
     def fock_array(

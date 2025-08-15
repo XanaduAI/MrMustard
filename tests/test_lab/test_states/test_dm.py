@@ -70,12 +70,18 @@ class TestDM:
         sym1 = math.random_symplectic(1)
         sym2 = math.random_symplectic(1)
         sym3 = math.random_symplectic(1)
-        separable_state = GDM(0, beta=1, symplectic=sym1) >> GDM(1, beta=1, symplectic=sym2) >> GDM(2, beta=1, symplectic=sym3)
+        separable_state = (
+            GDM(0, beta=1, symplectic=sym1)
+            >> GDM(1, beta=1, symplectic=sym2)
+            >> GDM(2, beta=1, symplectic=sym3)
+        )
         assert separable_state.is_separable
 
         sym_single = math.random_symplectic(1)
         sym_double = math.random_symplectic(2)
-        entangled_state = GDM(0, beta=1, symplectic=sym_single) >> GDM((1, 2), beta=1, symplectic=sym_double)
+        entangled_state = GDM(0, beta=1, symplectic=sym_single) >> GDM(
+            (1, 2), beta=1, symplectic=sym_double
+        )
         assert not entangled_state.is_separable
 
     def test_manual_shape(self):

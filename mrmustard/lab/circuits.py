@@ -325,7 +325,11 @@ class Circuit:
                 cc_names = [f"{cc_name}"]
 
             # In stateless architecture, components don't have parameters to display
-            if hasattr(comp, 'parameters') and comp.parameters.names and settings.DRAW_CIRCUIT_PARAMS:
+            if (
+                hasattr(comp, "parameters")
+                and comp.parameters.names
+                and settings.DRAW_CIRCUIT_PARAMS
+            ):
                 values = []
                 for name in comp.parameters.names:
                     param = comp.parameters.constants.get(name) or comp.parameters.variables.get(

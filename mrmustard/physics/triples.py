@@ -876,7 +876,7 @@ def bargmann_to_wigner_Abc(
     Args:
         s: The phase space parameter. Cannot be equal to 1.
         n_modes: The number of modes.
-        
+
     Raises:
         ValueError: If s is equal to 1, which would cause division by zero.
     """

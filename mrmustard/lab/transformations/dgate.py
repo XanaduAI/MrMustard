@@ -79,7 +79,7 @@ class Dgate(Unitary):
         A, b, c = triples.displacement_gate_Abc(alpha=alpha)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
-        
+
         # Create specialized closure that captures alpha
         def specialized_fock(shape, **kwargs):
             """Optimized Fock computation using displacement formula."""
@@ -87,16 +87,18 @@ class Dgate(Unitary):
             if ansatz.batch_shape:
                 alpha_local = alpha_tensor
                 alpha_local = math.reshape(alpha_local, (-1,))
-                ret = math.astensor([math.displacement(alpha_i, shape=shape) for alpha_i in alpha_local])
+                ret = math.astensor(
+                    [math.displacement(alpha_i, shape=shape) for alpha_i in alpha_local]
+                )
                 ret = math.reshape(ret, ansatz.batch_shape + shape)
                 if ansatz._lin_sup:
                     ret = math.sum(ret, axis=ansatz.batch_dims - 1)
             else:
                 ret = math.displacement(alpha_tensor, shape=shape)
             return ret
-        
+
         self._specialized_fock = specialized_fock
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="Dgate")
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
@@ -115,5 +117,5 @@ class Dgate(Unitary):
             ValueError: If the shape is not valid for the component.
         """
         shape = self._check_fock_shape(shape)
-        
+
         return self._specialized_fock(shape)

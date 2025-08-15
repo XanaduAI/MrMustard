@@ -75,11 +75,10 @@ class GKet(Ket):
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
 
-        
         A, b, c = triples.gket_state_Abc(symplectic=symplectic)
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket=set(modes))
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="GKet")
 
     def __getitem__(self, idx: int | Sequence[int]) -> GKet:
@@ -146,14 +145,14 @@ class GDM(DM):
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else tuple(modes)
         (betas,) = list(reshape_params(len(modes), betas=beta))
-        
+
         A, b, c = triples.gdm_state_Abc(
             betas=betas,
             symplectic=symplectic,
         )
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
-        
+
         super().__init__(ansatz=ansatz, wires=wires, name="GDM")
 
     def __getitem__(self, idx: int | Sequence[int]) -> GDM:

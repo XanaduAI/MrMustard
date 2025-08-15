@@ -67,4 +67,3 @@ class TestSqueezedVacuum:
         rep = SqueezedVacuum(modes, r, phi).ansatz
         exp = (Vacuum(modes) >> Sgate(modes, r, phi)).ansatz
         assert rep == exp
-
