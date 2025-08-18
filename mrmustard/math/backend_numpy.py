@@ -450,8 +450,8 @@ class BackendNumpy(BackendBase):
     # ~~~~~~~~~~~~~~~~~~~~~~~
 
     def displacement(self, alpha: complex, shape: tuple[int, int], tol: float):
-        if self.abs(alpha) > tol:
-            gate = strategies.displacement(tuple(shape), complex(alpha))
+        if np.max(self.abs(alpha)) > tol:
+            gate = strategies.displacement(tuple(shape), self.cast(alpha, dtype=self.complex128))
         else:
             gate = self.eye(max(shape), dtype=self.complex128)[: shape[0], : shape[1]]
         return self.astensor(gate, dtype=self.complex128)
