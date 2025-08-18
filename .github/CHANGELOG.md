@@ -45,6 +45,10 @@
 * Fixed a bug where `CircuitComponent.fock_array` was not passing `c` directly into `math.hermite_renormalize` for `num_derived_vars=0`.
 [(#643)](https://github.com/XanaduAI/MrMustard/pull/643)
 
+* Fixed a bug where `numba` parallelization would conflict with JAX.
+* Fixed the batched behaviour of Riemannian optimizations in `Optimizer`.
+[(#642)](https://github.com/XanaduAI/MrMustard/pull/642)
+
 * Fixed a bug in `Ket.expectation` where the Fock shape lookahead wasn't setting certain wires correctly.
 [(#646)](https://github.com/XanaduAI/MrMustard/pull/646)
 
