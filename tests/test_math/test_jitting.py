@@ -43,23 +43,17 @@ class TestJitting:
                 modes=(0, 1),
                 theta=params[0],
                 phi=params[1],
-                theta_trainable=False,
-                phi_trainable=False,
             )
             BS_12 = BSgate(
                 modes=(1, 2),
                 theta=params[2],
                 phi=params[3],
-                theta_trainable=False,
-                phi_trainable=False,
             )
-            att = Attenuator(mode=0, transmissivity=params[4], transmissivity_trainable=False)
+            att = Attenuator(mode=0, transmissivity=params[4])
             initial_state = SqueezedVacuum(
                 mode=0,
                 r=params[5],
                 phi=params[6],
-                r_trainable=False,
-                phi_trainable=False,
             )
             state_out = (
                 initial_state
@@ -99,20 +93,17 @@ class TestJitting:
         )
 
     def test_jit_circuit_with_parameters(self):
-        r"""Tests if circuit with pre-defined elements can be jitted."""
-        initial_state = SqueezedVacuum(mode=0, r=0.5, phi=0.5, r_trainable=True, phi_trainable=True)
-        BS_01 = BSgate(modes=(0, 1), theta=0.5, phi=0.5, theta_trainable=True, phi_trainable=True)
-        BS_12 = BSgate(modes=(1, 2), theta=0.5, phi=0.5, theta_trainable=True, phi_trainable=True)
-        att = Attenuator(mode=0, transmissivity=0.5, transmissivity_trainable=True)
+        r"""Tests if circuit with stateless components can be jitted."""
 
         def evaluate_parameters(params):
             r"""
-            Evaluate pre-defined circuit elements with the given parameters.
+            Create stateless circuit elements with the given parameters.
             """
-            BS_01.parameters.all_parameters["theta"].value = params[0]
-            BS_01.parameters.all_parameters["phi"].value = params[1]
-            BS_12.parameters.all_parameters["theta"].value = params[2]
-            BS_12.parameters.all_parameters["phi"].value = params[3]
+            initial_state = SqueezedVacuum(mode=0, r=0.5, phi=0.5)
+            BS_01 = BSgate(modes=(0, 1), theta=params[0], phi=params[1])
+            BS_12 = BSgate(modes=(1, 2), theta=params[2], phi=params[3])
+            att = Attenuator(mode=0, transmissivity=0.5)
+
             state_out = (
                 initial_state
                 >> initial_state.on(1)

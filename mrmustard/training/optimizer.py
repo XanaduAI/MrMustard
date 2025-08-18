@@ -21,7 +21,6 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 
 from mrmustard import math, settings
-from mrmustard.lab import Circuit, CircuitComponent
 from mrmustard.math.parameters import Variable
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
@@ -83,20 +82,20 @@ class Optimizer:
         self,
         optim: GradientTransformation,
         cost_fn: Callable,
-        by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
+        by_optimizing: Sequence[Variable],
         opt_state: OptState,
-    ) -> tuple[Sequence[Variable | CircuitComponent | Circuit], OptState, float]:
+    ) -> tuple[Sequence[Variable], OptState, float]:
         r"""
         Make a step of the optimization.
 
         Args:
             optim: The optimizer to use.
-            cost_fn: The cost function to minimize.
-            by_optimizing: The items to optimize.
+            cost_fn: The cost function to minimize (operates on Variables directly).
+            by_optimizing: The Variable objects to optimize.
             opt_state: The current state of the optimizer.
 
         Returns:
-            The updated by_optimizing, the updated optimizer state, and the loss value.
+            The updated Variables, the updated optimizer state, and the loss value.
         """
         loss_value, grads = jax.value_and_grad(cost_fn, argnums=tuple(range(len(by_optimizing))))(
             *by_optimizing,
@@ -109,23 +108,23 @@ class Optimizer:
     def minimize(
         self,
         cost_fn: Callable,
-        by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
+        by_optimizing: Sequence[Variable],
         max_steps: int = 1000,
         euclidean_optim: type[GradientTransformation] | None = None,
-    ) -> Sequence[Variable | CircuitComponent | Circuit]:
+    ) -> Sequence[Variable]:
         r"""
-        Minimizes the given cost function by optimizing ``Variable``s either on their own or within a ``CircuitComponent`` / ``Circuit``.
+        Minimizes the given cost function by optimizing ``Variable``s.
 
         Args:
-            cost_fn: A function that will be executed in a differentiable context in
-                order to compute gradients as needed.
-            by_optimizing: A list of elements that contain the parameters to optimize.
+            cost_fn: A function that accepts the values of the variables and returns a scalar loss.
+                The function will be called as cost_fn(*[var.value for var in by_optimizing]).
+            by_optimizing: A list of Variable objects to optimize.
             max_steps: The minimization keeps going until the loss is stable or max_steps are
                 reached (if ``max_steps=0`` it will only stop when the loss is stable).
             euclidean_optim: The type of euclidean optimizer to use. If ``None``, the default optimizer used is ``optax.adamw``.
 
         Returns:
-            The list of elements optimized.
+            The list of optimized Variables.
         """
         self.opt_history = [0]
         if settings.PROGRESSBAR:
@@ -174,11 +173,11 @@ class Optimizer:
     def _optimization_loop(
         self,
         cost_fn: Callable,
-        by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
+        by_optimizing: Sequence[Variable],
         max_steps: int,
         progress_bar: ProgressBar | None = None,
         euclidean_optim: type[GradientTransformation] | None = None,
-    ) -> Sequence[Variable | CircuitComponent | Circuit]:
+    ) -> Sequence[Variable]:
         r"""
         The core optimization loop.
         """
@@ -189,11 +188,13 @@ class Optimizer:
             else adamw(learning_rate=self.euclidean_lr)
         )
 
-        labels_pytree = jax.tree_util.tree_map(
-            lambda node: str(node.update_fn),
-            by_optimizing,
-            is_leaf=lambda n: isinstance(n, Variable),
-        )
+        # Create wrapper cost function that extracts values from Variables
+        def wrapped_cost_fn(*variables):
+            values = [var.value for var in variables]
+            return cost_fn(*values)
+
+        # Create labels for each Variable based on their update_fn
+        labels_pytree = tuple(var.update_fn for var in by_optimizing)
 
         optim = multi_transform(
             {
@@ -211,7 +212,7 @@ class Optimizer:
         while not self.should_stop(max_steps):
             by_optimizing, opt_state, loss_value = self.make_step(
                 optim,
-                cost_fn,
+                wrapped_cost_fn,
                 by_optimizing,
                 opt_state,
             )

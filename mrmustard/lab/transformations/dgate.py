@@ -26,7 +26,6 @@ from mrmustard.utils.typing import ComplexTensor
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import Wires
-from ..utils import make_parameter
 from .base import Unitary
 
 __all__ = ["Dgate"]
@@ -40,8 +39,6 @@ class Dgate(Unitary):
     Args:
         mode: The mode this gate is applied to.
         alpha: The displacement in the complex phase space.
-        alpha_trainable: Whether ``alpha`` is a trainable variable.
-        alpha_bounds: The bounds for the absolute value of ``alpha``.
 
     .. code-block::
 
@@ -49,7 +46,6 @@ class Dgate(Unitary):
 
         >>> unitary = Dgate(mode=1, alpha=0.1 + 0.2j)
         >>> assert unitary.modes == (1,)
-        >>> assert unitary.parameters.alpha.value == 0.1 + 0.2j
 
     .. details::
 
@@ -78,19 +74,31 @@ class Dgate(Unitary):
         self,
         mode: int,
         alpha: complex | Sequence[complex] = 0.0j,
-        alpha_trainable: bool = False,
-        alpha_bounds: tuple[float | None, float | None] = (0, None),
     ) -> None:
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Dgate")
-        self.parameters.add_parameter(
-            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.displacement_gate_Abc,
-            alpha=self.parameters.alpha,
-        )
-        self._wires = Wires(set(), set(), set(mode), set(mode))
+        A, b, c = triples.displacement_gate_Abc(alpha=alpha)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
+
+        # Create specialized closure that captures alpha
+        def specialized_fock(shape, **kwargs):
+            """Optimized Fock computation using displacement formula."""
+            alpha_tensor = math.astensor(alpha)
+            if ansatz.batch_shape:
+                alpha_local = alpha_tensor
+                alpha_local = math.reshape(alpha_local, (-1,))
+                ret = math.astensor(
+                    [math.displacement(alpha_i, shape=shape) for alpha_i in alpha_local]
+                )
+                ret = math.reshape(ret, ansatz.batch_shape + shape)
+                if ansatz._lin_sup:
+                    ret = math.sum(ret, axis=ansatz.batch_dims - 1)
+            else:
+                ret = math.displacement(alpha_tensor, shape=shape)
+            return ret
+
+        self._specialized_fock = specialized_fock
+
+        super().__init__(ansatz=ansatz, wires=wires, name="Dgate")
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
@@ -108,13 +116,5 @@ class Dgate(Unitary):
             ValueError: If the shape is not valid for the component.
         """
         shape = self._check_fock_shape(shape)
-        if self.ansatz.batch_shape:
-            alpha = self.parameters.alpha.value
-            alpha = math.reshape(alpha, (-1,))
-            ret = math.astensor([math.displacement(alpha_i, shape=shape) for alpha_i in alpha])
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.displacement(self.parameters.alpha.value, shape=shape)
-        return ret
+
+        return self._specialized_fock(shape)

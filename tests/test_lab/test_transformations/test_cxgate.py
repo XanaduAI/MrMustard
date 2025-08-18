@@ -31,7 +31,6 @@ class TestCXgate:
         cx = CXgate((0, 1), 0.3)
         assert cx.modes == (0, 1)
         assert cx.name == "CXgate"
-        assert cx.parameters.s.value == 0.3
 
     @pytest.mark.parametrize("s", [0.1, 0.2, 1.5])
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])

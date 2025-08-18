@@ -20,12 +20,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 
-from ..utils import make_parameter
 from .ket import Ket
 
 __all__ = ["BargmannEigenstate"]
@@ -36,17 +34,17 @@ class BargmannEigenstate(Ket):
     The `N`-mode Bargmann eigenstate.
 
     Args:
-        modes: A list of modes.
+        mode: The mode of the Bargmann eigenstate.
         alpha: The displacement of the state (i.e., the eigen-value).
 
     Notes:
-        The only difference with ``Coherent(modes, alphas)`` is in its `c` parameter (and hence, does not have unit norm).
+        The only difference with ``Coherent(mode, alpha)`` is in its `c` parameter (and hence, does not have unit norm).
 
     .. code-block::
 
         >>> from mrmustard.lab import BargmannEigenstate
 
-        >>> state = BargmannEigenstate(1, 0.1 + 0.5j)
+        >>> state = BargmannEigenstate(mode=1, alpha=0.1 + 0.5j)
         >>> assert state.modes == (1,)
 
     .. details::
@@ -62,25 +60,11 @@ class BargmannEigenstate(Ket):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         alpha: complex | Sequence[complex] = 0.0j,
-        alpha_trainable: bool = False,
-        alpha_bounds: tuple[complex | None, complex | None] = (None, None),
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="BargmannEigenstate")
+        A, b, c = triples.bargmann_eigenstate_Abc(alpha=alpha)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket={mode})
 
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=alpha_trainable,
-                value=alpha,
-                name="alpha",
-                bounds=alpha_bounds,
-                dtype=math.complex128,
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.bargmann_eigenstate_Abc,
-            alpha=self.parameters.alpha,
-        )
-        self._wires = Wires(modes_out_ket=set(mode))
+        super().__init__(ansatz=ansatz, wires=wires, name="BargmannEigenstate")

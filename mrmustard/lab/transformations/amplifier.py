@@ -20,12 +20,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics.wires import Wires
 
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
 from .base import Channel
 
 __all__ = ["Amplifier"]
@@ -39,8 +37,6 @@ class Amplifier(Channel):
     Args:
         mode: The mode this gate is applied to.
         gain: The gain.
-        gain_trainable: Whether ``gain`` is trainable.
-        gain_bounds: The bounds for ``gain``.
 
     .. code-block::
 
@@ -80,26 +76,16 @@ class Amplifier(Channel):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         gain: float | Sequence[float] = 1.0,
-        gain_trainable: bool = False,
-        gain_bounds: tuple[float | None, float | None] = (1.0, None),
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Amp~")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=gain_trainable,
-                value=gain,
-                name="gain",
-                bounds=gain_bounds,
-                dtype=math.float64,
-            ),
+        A, b, c = triples.amplifier_Abc(g=gain)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(
+            modes_in_bra={mode},
+            modes_out_bra={mode},
+            modes_in_ket={mode},
+            modes_out_ket={mode},
         )
-        self._ansatz = PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain)
-        self._wires = Wires(
-            modes_in_bra=set(mode),
-            modes_out_bra=set(mode),
-            modes_in_ket=set(mode),
-            modes_out_ket=set(mode),
-        )
+
+        super().__init__(ansatz=ansatz, wires=wires, name="Amp~")

@@ -24,7 +24,6 @@ from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ...physics import triples
-from ..utils import make_parameter
 from .base import Channel
 
 __all__ = ["GaussRandNoise"]
@@ -38,7 +37,6 @@ class GaussRandNoise(Channel):
     Args:
         modes: The modes the channel is applied to. The number of modes must match half of the size of ``Y``.
         Y: The Y matrix of the Gaussian random noise channel.
-        Y_trainable: Whether ``Y`` is trainable.
 
     .. code-block::
 
@@ -47,7 +45,6 @@ class GaussRandNoise(Channel):
 
         >>> channel = GaussRandNoise(modes=(1, 2), Y = 0.2 * np.eye(4))
         >>> assert channel.modes == (1, 2)
-        >>> assert math.allclose(channel.parameters.Y.value, 0.2 * np.eye(4))
 
     Raises:
         ValueError: If the number of modes does not match half of the size of ``Y``.
@@ -69,9 +66,8 @@ class GaussRandNoise(Channel):
         self,
         modes: int | tuple[int, ...],
         Y: RealMatrix,
-        Y_trainable: bool = False,
     ):
-        modes = (modes,) if isinstance(modes, int) else modes
+        modes = (modes,) if isinstance(modes, int) else tuple(modes)
         if Y.shape[-1] // 2 != len(modes):
             raise ValueError(
                 f"The number of modes {len(modes)} does not match the dimension of the "
@@ -82,20 +78,16 @@ class GaussRandNoise(Channel):
         math.error_if(
             Y_eigenvectors_real,
             Y_eigenvectors_real < -settings.ATOL,
-            "The input Y matrix has negative eigen-values.",
+            "The input Y matrix has negative eigenvalues.",
         )
 
-        super().__init__(name="GRN~")
-        self.parameters.add_parameter(
-            make_parameter(is_trainable=Y_trainable, value=Y, name="Y", bounds=(None, None)),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.gaussian_random_noise_Abc,
-            Y=self.parameters.Y,
-        )
-        self._wires = Wires(
+        A, b, c = triples.gaussian_random_noise_Abc(Y=Y)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(
             modes_in_bra=set(modes),
             modes_out_bra=set(modes),
             modes_in_ket=set(modes),
             modes_out_ket=set(modes),
         )
+
+        super().__init__(ansatz=ansatz, wires=wires, name="GRN~")

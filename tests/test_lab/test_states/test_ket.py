@@ -80,10 +80,12 @@ class TestKet:
         separable_multimode = Coherent(0, alpha=1) >> Coherent(1, alpha=1) >> Coherent(2, alpha=1)
         assert separable_multimode.is_separable
 
-        entangled_state = GKet([0, 1, 2])
+        symplectic3 = math.random_symplectic(3)
+        entangled_state = GKet([0, 1, 2], symplectic3)
         assert not entangled_state.is_separable
 
-        entangled_state = Coherent(0, alpha=1) >> GKet([1, 2])
+        symplectic2 = math.random_symplectic(2)
+        entangled_state = Coherent(0, alpha=1) >> GKet([1, 2], symplectic2)
         assert not entangled_state.is_separable
 
         with pytest.raises(NotImplementedError):
@@ -717,7 +719,8 @@ class TestKet:
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_wigner_poly_exp(self, n):
-        psi = (Number(0, n).dm().to_bargmann()) >> Ggate(0)
+        symplectic = math.random_symplectic(1)
+        psi = (Number(0, n).dm().to_bargmann()) >> Ggate(0, symplectic)
         xs = np.linspace(-5, 5, 100)
         poly_exp_wig = math.real(psi.wigner(xs, 0))
         wig = wigner_discretized(psi.fock_array(), xs, 0)

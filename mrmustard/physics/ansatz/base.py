@@ -19,8 +19,7 @@ This module contains the base ansatz class.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Sequence
-from typing import Any
+from collections.abc import Sequence
 
 from numpy.typing import ArrayLike
 
@@ -45,8 +44,6 @@ class Ansatz(ABC):
     def __init__(self) -> None:
         self._lin_sup = False
         self._batch_shape = ()
-        self._fn = None
-        self._kwargs = {}
 
     @property
     @abstractmethod
@@ -122,13 +119,6 @@ class Ansatz(ABC):
         Deserialize an Ansatz.
         """
 
-    @classmethod
-    @abstractmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> Ansatz:
-        r"""
-        Returns an ansatz from a function and kwargs.
-        """
-
     @abstractmethod
     def contract(
         self,
@@ -187,19 +177,12 @@ class Ansatz(ABC):
             The traced-over ansatz.
         """
 
-    @abstractmethod
-    def _generate_ansatz(self):
-        r"""
-        This method computes and sets data given a function
-        and some kwargs.
-        """
-
     def _tree_flatten(self):  # pragma: no cover
-        children = (self._kwargs,)
+        children = ({},)
         aux_data = (
             self._batch_shape,
             self._lin_sup,
-            self._fn,
+            None,
         )
         return (children, aux_data)
 

@@ -41,7 +41,7 @@ class Vacuum(Ket):
 
         >>> from mrmustard.lab import Vacuum
 
-        >>> state = Vacuum((1, 2))
+        >>> state = Vacuum(modes=(1, 2))
         >>> assert state.modes == (1, 2)
 
     .. details::
@@ -67,19 +67,9 @@ class Vacuum(Ket):
         A, b, c = triples.vacuum_state_Abc(len(modes))
         ansatz = PolyExpAnsatz(A, b, c)
         wires = Wires(modes_out_ket=set(modes))
-        super().__init__(ansatz, wires, name="Vac")
+        super().__init__(ansatz, wires, name="Vacuum")
 
         self.manual_shape = (1,) * len(modes)
-
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
-        (modes,) = aux_data
-        return cls(modes)
-
-    def _tree_flatten(self):  # pragma: no cover
-        children = ()
-        aux_data = (self.modes,)
-        return (children, aux_data)
 
     def __getitem__(self, idx: int | Collection[int]) -> Vacuum:
         idx = (idx,) if isinstance(idx, int) else idx

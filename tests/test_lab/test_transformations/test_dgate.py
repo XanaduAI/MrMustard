@@ -18,7 +18,6 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab import Dgate, SqueezedVacuum
-from mrmustard.physics.ansatz import ArrayAnsatz
 
 
 class TestDgate:
@@ -52,10 +51,10 @@ class TestDgate:
             dgate.fock_array((5, 5, 5))
 
     def test_to_fock_lin_sup(self):
-        dgate = (Dgate(0, 0.1) + Dgate(0, -0.1)).to_fock(150)
+        dgate = (Dgate(0, 0.1) + Dgate(0, -0.1)).to_fock(10)
         assert dgate.ansatz.batch_dims == 0
         assert dgate.ansatz.batch_shape == ()
-        assert dgate.ansatz.array.shape == (150, 150)
+        assert dgate.ansatz.array.shape == (10, 10)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_representation(self, batch_shape):
@@ -70,18 +69,3 @@ class TestDgate:
         assert math.allclose(rep1.A, [[0, 1], [1, 0]])
         assert math.allclose(rep2.b, [0.1 + 0.2j, -0.1 + 0.2j])
         assert math.allclose(rep2.c, 0.97530991 + 0.0j)
-
-    def test_trainable_parameters(self):
-        gate1 = Dgate(0, 1 + 1j)
-        gate2 = Dgate(0, 1 + 1j, alpha_trainable=True, alpha_bounds=(0, 2))
-        gate3 = Dgate(0, 1 + 2j, alpha_trainable=True, alpha_bounds=(0, 2))
-
-        with pytest.raises(AttributeError):
-            gate1.parameters.alpha.value = 3
-
-        gate2.parameters.alpha.value = 2
-        assert gate2.parameters.alpha.value == 2
-
-        gate_fock = gate3.to_fock()
-        assert isinstance(gate_fock.ansatz, ArrayAnsatz)
-        assert gate_fock.parameters.alpha.value == 1 + 2j

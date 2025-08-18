@@ -26,7 +26,6 @@ from mrmustard.utils.typing import ComplexTensor
 
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
 from .base import Unitary
 
 __all__ = ["Sgate"]
@@ -41,10 +40,6 @@ class Sgate(Unitary):
         mode: The mode this gate is applied to.
         r: The squeezing magnitude.
         phi: The squeezing angle.
-        r_trainable: Whether ``r`` is trainable.
-        phi_trainable: Whether ``phi`` is trainable.
-        r_bounds: The bounds for ``r``.
-        phi_bounds: The bounds for ``phi``.
 
     .. code-block::
 
@@ -52,8 +47,6 @@ class Sgate(Unitary):
 
         >>> unitary = Sgate(mode=1, r=0.1, phi=0.2)
         >>> assert unitary.modes == (1,)
-        >>> assert unitary.parameters.r.value == 0.1
-        >>> assert unitary.parameters.phi.value == 0.2
 
     .. details::
 
@@ -83,64 +76,40 @@ class Sgate(Unitary):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         r: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
-        r_trainable: bool = False,
-        phi_trainable: bool = False,
-        r_bounds: tuple[float | None, float | None] = (0.0, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Sgate")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
-            ),
-        )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_trainable,
-                value=phi,
-                name="phi",
-                bounds=phi_bounds,
-                dtype=math.float64,
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.squeezing_gate_Abc,
-            r=self.parameters.r,
-            phi=self.parameters.phi,
-        )
-        self._wires = Wires(
-            modes_in_bra=set(),
-            modes_out_bra=set(),
-            modes_in_ket=set(mode),
-            modes_out_ket=set(mode),
-        )
+        A, b, c = triples.squeezing_gate_Abc(r=r, phi=phi)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket={mode}, modes_in_ket={mode})
+
+        # Create specialized closure that captures r and phi
+        def specialized_fock(shape, **kwargs):
+            """Optimized Fock computation using squeezing formula."""
+            r_tensor = math.astensor(r)
+            phi_tensor = math.astensor(phi)
+            if ansatz.batch_shape:
+                rs, phis = math.broadcast_arrays(r_tensor, phi_tensor)
+                rs = math.reshape(rs, (-1,))
+                phis = math.reshape(phis, (-1,))
+                ret = math.astensor(
+                    [math.squeezer(r, phi, shape=shape) for r, phi in zip(rs, phis)],
+                )
+                ret = math.reshape(ret, ansatz.batch_shape + shape)
+                if ansatz._lin_sup:
+                    ret = math.sum(ret, axis=ansatz.batch_dims - 1)
+            else:
+                ret = math.squeezer(r, phi, shape=shape)
+            return ret
+
+        self._specialized_fock = specialized_fock
+
+        super().__init__(ansatz=ansatz, wires=wires, name="Sgate")
 
     def fock_array(
         self,
         shape: int | Sequence[int] | None = None,
     ) -> ComplexTensor:
         shape = self._check_fock_shape(shape)
-        if self.ansatz.batch_shape:
-            rs, phi = math.broadcast_arrays(
-                self.parameters.r.value,
-                self.parameters.phi.value,
-            )
-            rs = math.reshape(rs, (-1,))
-            phi = math.reshape(phi, (-1,))
-            ret = math.astensor(
-                [math.squeezer(r, p, shape=shape) for r, p in zip(rs, phi)],
-            )
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.squeezer(
-                self.parameters.r.value,
-                self.parameters.phi.value,
-                shape=shape,
-            )
-        return ret
+        return self._specialized_fock(shape)

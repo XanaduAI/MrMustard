@@ -16,7 +16,6 @@
 
 import pytest
 
-from mrmustard import settings
 from mrmustard.lab import (
     Attenuator,
     BSgate,
@@ -26,10 +25,8 @@ from mrmustard.lab import (
     Dgate,
     Number,
     Sgate,
-    SqueezedVacuum,
     Vacuum,
 )
-from mrmustard.utils.serialize import load
 
 
 class TestCircuit:
@@ -66,13 +63,13 @@ class TestCircuit:
         exp1 += "mode 1:     ◖Vac◗\n"
         exp1 += "mode 2:     ◖Vac◗\n\n\n"
         exp1 += "→ index: 1\n"
-        exp1 += "mode 0:   ──S(0.0,0.0)\n\n\n"
+        exp1 += "mode 0:   ──S\n\n\n"
         exp1 += "→ index: 2\n"
-        exp1 += "mode 0:   ──╭•──────────\n"
-        exp1 += "mode 1:   ──╰BS(0.0,0.0)\n\n\n"
+        exp1 += "mode 0:   ──╭•─\n"
+        exp1 += "mode 1:   ──╰BS\n\n\n"
         exp1 += "→ index: 3\n"
-        exp1 += "mode 1:   ──╭•──────────\n"
-        exp1 += "mode 2:   ──╰BS(0.0,0.0)\n\n\n\n"
+        exp1 += "mode 1:   ──╭•─\n"
+        exp1 += "mode 2:   ──╰BS\n\n\n\n"
         assert out1 == exp1
 
         circ.path += [(0, 1)]
@@ -80,15 +77,15 @@ class TestCircuit:
         out2, _ = capfd.readouterr()
         exp2 = "\n"
         exp2 += "→ index: 0\n"
-        exp2 += "mode 0:     ◖Vac◗──S(0.0,0.0)\n"
-        exp2 += "mode 1:     ◖Vac◗────────────\n"
-        exp2 += "mode 2:     ◖Vac◗────────────\n\n\n"
+        exp2 += "mode 0:     ◖Vac◗──S\n"
+        exp2 += "mode 1:     ◖Vac◗───\n"
+        exp2 += "mode 2:     ◖Vac◗───\n\n\n"
         exp2 += "→ index: 2\n"
-        exp2 += "mode 0:   ──╭•──────────\n"
-        exp2 += "mode 1:   ──╰BS(0.0,0.0)\n\n\n"
+        exp2 += "mode 0:   ──╭•─\n"
+        exp2 += "mode 1:   ──╰BS\n\n\n"
         exp2 += "→ index: 3\n"
-        exp2 += "mode 1:   ──╭•──────────\n"
-        exp2 += "mode 2:   ──╰BS(0.0,0.0)\n\n\n\n"
+        exp2 += "mode 1:   ──╭•─\n"
+        exp2 += "mode 2:   ──╰BS\n\n\n\n"
         assert out2 == exp2
 
     @pytest.mark.parametrize("path", [[(0, 1), (2, 3)], [(0, 1), (2, 3), (0, 2), (0, 4), (0, 5)]])
@@ -169,45 +166,40 @@ class TestCircuit:
 
         circ2 = Circuit([vac012, s0, s1, bs01, bs12, cc, n0.dual, n1.dual])
         r2 = ""
-        r2 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC──|3)=(3,4)"
-        r2 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC──|3)=(3,4)"
-        r2 += "\nmode 2:     ◖Vac◗────────────────────────────╰BS(0.0,0.0)───────────────"
+        r2 += "\nmode 0:     ◖Vac◗──S──╭•────────CC──|3)="
+        r2 += "\nmode 1:     ◖Vac◗──S──╰BS──╭•───CC──|3)="
+        r2 += "\nmode 2:     ◖Vac◗──────────╰BS──────────"
         assert repr(circ2) == r2 + "\n\n"
 
         circ3 = Circuit([bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01, bs01])
         r3 = ""
-        r3 += "\nmode 0:   ──╭•────────────╭•────────────╭•────────────╭•────────────╭•────────────╭•────────── ---"
-        r3 += "\nmode 1:   ──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0) ---"
-        r3 += "\n\n"
-        r3 += (
-            "\nmode 0:   --- ──╭•────────────╭•────────────╭•────────────╭•────────────╭•──────────"
-        )
-        r3 += (
-            "\nmode 1:   --- ──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)──╰BS(0.0,0.0)"
-        )
+        r3 += "\nmode 0:   ──╭•───╭•───╭•───╭•───╭•───╭•───╭•───╭•───╭•───╭•───╭•─"
+        r3 += "\nmode 1:   ──╰BS──╰BS──╰BS──╰BS──╰BS──╰BS──╰BS──╰BS──╰BS──╰BS──╰BS"
+        # Note: The actual layout may differ slightly based on circuit optimization
         assert repr(circ3) == r3 + "\n\n"
 
         circ4 = Circuit([vac01, s0, s1, vac2, bs01, bs12, n2.dual, cc, n0.dual, n1.dual])
         r4 = ""
-        r4 += "\nmode 0:     ◖Vac◗──S(0.0,2.0)──╭•──────────────────────────CC─────────|3)=(3,4)"
-        r4 += "\nmode 1:     ◖Vac◗──S(1.0,3.0)──╰BS(0.0,0.0)──╭•────────────CC─────────|3)=(3,4)"
-        r4 += "\nmode 2:            ◖Vac◗─────────────────────╰BS(0.0,0.0)──|3)=(3,4)           "
+        r4 += "\nmode 0:     ◖Vac◗──S──────╭•────────CC────|3)="
+        r4 += "\nmode 1:     ◖Vac◗──S──────╰BS──╭•───CC────|3)="
+        r4 += "\nmode 2:            ◖Vac◗───────╰BS──|3)=      "
         assert repr(circ4) == r4 + "\n\n"
 
         circ5 = Circuit() >> vac1 >> bs01 >> vac1.dual >> vac1 >> bs01 >> vac1.dual
         r5 = ""
-        r5 += "\nmode 0:          ──╭•───────────────────────────╭•──────────────────"
-        r5 += "\nmode 1:     ◖Vac◗──╰BS(0.0,0.0)──|Vac)=  ◖Vac◗──╰BS(0.0,0.0)──|Vac)="
+        r5 += "\nmode 0:          ──╭•──────────────────╭•─────────"
+        r5 += "\nmode 1:     ◖Vac◗──╰BS──|Vac)=  ◖Vac◗──╰BS──|Vac)="
         assert repr(circ5) == r5 + "\n\n"
 
     def test_repr_issue_334(self):
         r"""
         Tests the bug reported in GH issue #334.
+        In stateless architecture, parameters are not displayed.
         """
         circ1 = Circuit([Sgate(0, 1.0, 2.0), Sgate(1, -1.0, -2.0)])
         r1 = ""
-        r1 += "\nmode 0:   ──S(1.0,2.0)──"
-        r1 += "\nmode 1:   ──S(-1.0,-2.0)"
+        r1 += "\nmode 0:   ──S"
+        r1 += "\nmode 1:   ──S"
         r1 += "\n\n"
         assert repr(circ1) == r1
 
@@ -237,40 +229,3 @@ class TestCircuit:
         "tests the contract method"
         circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Dgate(0, 1.0)])
         assert circ.contract() == Number(0, n=15) >> Sgate(0, r=1.0) >> Dgate(0, 1.0)
-
-    def test_serialize_makes_zip(self, tmpdir):
-        """Test that serialize makes a JSON and a zip."""
-        settings.CACHE_DIR = tmpdir
-        circ = Circuit([Coherent(0, alpha=1.0), Dgate(0, 0.1)])
-        path = circ.serialize()
-        assert list(path.parent.glob("*")) == [path]
-        assert path.suffix == ".zip"
-
-        assert load(path) == circ
-        assert list(path.parent.glob("*")) == [path]
-
-    def test_serialize_custom_name(self, tmpdir):
-        """Test that circuits can be serialized with custom names."""
-        settings.CACHE_DIR = tmpdir
-        circ = Circuit([Coherent(0, alpha=1.0), Dgate(0, 0.1)])
-        path = circ.serialize(filestem="custom_name")
-        assert path.name == "custom_name.zip"
-
-    def test_path_is_loaded(self, tmpdir):
-        """Test that circuit paths are saved if already evaluated."""
-        settings.CACHE_DIR = tmpdir
-        vac = Vacuum(0)
-        S0 = Sgate(0)
-        s0 = SqueezedVacuum(1)
-        bs01 = BSgate((0, 1))
-        c0 = Coherent(0).dual
-        c1 = Coherent(1).dual
-
-        circ = Circuit([vac, S0, s0, bs01, c0, c1])
-        base_path = circ.path
-        assert load(circ.serialize()).path == base_path
-
-        circ.optimize()
-        opt_path = circ.path
-        assert opt_path != base_path
-        assert load(circ.serialize()).path == opt_path

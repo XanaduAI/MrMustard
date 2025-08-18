@@ -20,9 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.lab.states.ket import Ket
-from mrmustard.lab.utils import make_parameter
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
@@ -38,8 +36,6 @@ class Coherent(Ket):
     Args:
         mode: The mode of the coherent state.
         alpha: The `alpha` displacement of the coherent state.
-        alpha_trainable: Whether the `alpha` displacement is trainable.
-        alpha_bounds: The bounds on the absolute value of `alpha` displacement.
 
     Returns:
         A ``Ket`` object representing a coherent state.
@@ -84,17 +80,9 @@ class Coherent(Ket):
         self,
         mode: int,
         alpha: complex | Sequence[complex] = 0.0,
-        alpha_trainable: bool = False,
-        alpha_bounds: tuple[float | None, float | None] = (0, None),
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Coherent")
-        self.parameters.add_parameter(
-            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128),
-        )
+        A, b, c = triples.coherent_state_Abc(alpha=alpha)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_out_ket={mode})
 
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.coherent_state_Abc,
-            alpha=self.parameters.alpha,
-        )
-        self._wires = Wires(modes_out_ket=set(mode))
+        super().__init__(ansatz=ansatz, wires=wires, name="Coherent")

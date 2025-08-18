@@ -20,12 +20,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.physics.ansatz import PolyExpAnsatz
 from mrmustard.physics.wires import Wires
 
 from ...physics import symplectics
-from ..utils import make_parameter
 from .base import Unitary
 
 __all__ = ["Pgate"]
@@ -36,10 +34,8 @@ class Pgate(Unitary):
     Quadratic phase gate.
 
     Args:
-        modes: The modes this gate is applied to.
+        mode: The mode this gate is applied to.
         shearing: The shearing parameter.
-        shearing_trainable: Whether ``shearing`` is trainable.
-        shearing_bounds: The bounds for ``shearing``.
 
     .. details::
         The quadratic phase gate is defined as
@@ -55,27 +51,14 @@ class Pgate(Unitary):
 
     def __init__(
         self,
-        mode: int | tuple[int],
+        mode: int,
         shearing: float | Sequence[float] = 0.0,
-        shearing_trainable: bool = False,
-        shearing_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Pgate")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=shearing_trainable,
-                value=shearing,
-                name="shearing",
-                bounds=shearing_bounds,
-                dtype=math.float64,
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=lambda shearing: Unitary.from_symplectic(
-                (mode,),
-                symplectics.pgate_symplectic(1, shearing),
-            ).bargmann_triple(),
-            shearing=self.parameters.shearing,
-        )
-        self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))
+        A, b, c = Unitary.from_symplectic(
+            (mode,),
+            symplectics.pgate_symplectic(1, shearing),
+        ).bargmann_triple()  # TODO: add pgate to physics.triples
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_in_ket={mode}, modes_out_ket={mode})
+
+        super().__init__(ansatz=ansatz, wires=wires, name="Pgate")

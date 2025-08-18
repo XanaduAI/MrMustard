@@ -141,8 +141,9 @@ class Transformation(CircuitComponent):
 
         .. code-block::
             >>> from mrmustard.lab import GDM, Identity
+            >>> from mrmustard import math
 
-            >>> rho = GDM(0, beta = 0.1)
+            >>> rho = GDM(0, beta = 0.1, symplectic=math.random_symplectic(1))
             >>> rho_as_operator = Operation.from_bargmann([0], [0], rho.ansatz.triple)
             >>> assert rho_as_operator >> rho_as_operator.inverse() == Identity([0])
         """
@@ -241,6 +242,7 @@ class Unitary(Operation):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
+
         return Unitary(
             ansatz=ansatz,
             wires=Wires(set(), set(), set(modes_out), set(modes_in)),
@@ -358,6 +360,7 @@ class Map(Transformation):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
+
         return Map(
             ansatz=ansatz,
             wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
@@ -486,6 +489,7 @@ class Channel(Map):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
+
         return Channel(
             ansatz=ansatz,
             wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),

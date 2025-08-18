@@ -26,7 +26,6 @@ from mrmustard.utils.typing import ComplexTensor
 from ...physics import triples
 from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import Wires
-from ..utils import make_parameter
 from .base import Unitary
 
 __all__ = ["BSgate"]
@@ -40,10 +39,6 @@ class BSgate(Unitary):
         modes: The pair of modes of the beam splitter gate.
         theta: The transmissivity angle.
         phi: The phase angle.
-        theta_trainable: Whether ``theta`` is a trainable variable.
-        phi_trainable: Whether ``phi`` is a trainable variable.
-        theta_bounds: The bounds for ``theta``.
-        phi_bounds: The bounds for ``phi``.
 
         .. code-block::
 
@@ -51,8 +46,6 @@ class BSgate(Unitary):
 
         >>> unitary = BSgate(modes=(1, 2), theta=0.1)
         >>> assert unitary.modes == (1, 2)
-        >>> assert unitary.parameters.theta.value == 0.1
-        >>> assert unitary.parameters.phi.value == 0.0
 
     .. details::
 
@@ -91,24 +84,35 @@ class BSgate(Unitary):
         modes: tuple[int, int],
         theta: float | Sequence[float] = 0.0,
         phi: float | Sequence[float] = 0.0,
-        theta_trainable: bool = False,
-        phi_trainable: bool = False,
-        theta_bounds: tuple[float | None, float | None] = (None, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
     ):
-        super().__init__(name="BSgate")
-        self.parameters.add_parameter(
-            make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=math.float64)
-        )
-        self.parameters.add_parameter(
-            make_parameter(phi_trainable, phi, "phi", phi_bounds, dtype=math.float64)
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.beamsplitter_gate_Abc,
-            theta=self.parameters.theta,
-            phi=self.parameters.phi,
-        )
-        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        A, b, c = triples.beamsplitter_gate_Abc(theta=theta, phi=phi)
+        ansatz = PolyExpAnsatz(A, b, c)
+        wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+
+        def specialized_fock(shape, method="stable", **kwargs):
+            """Optimized Fock computation using beamsplitter formula."""
+            theta_tensor = math.astensor(theta)
+            phi_tensor = math.astensor(phi)
+            if ansatz.batch_shape:
+                theta_local, phi_local = math.broadcast_arrays(theta_tensor, phi_tensor)
+                theta_local = math.reshape(theta_local, (-1,))
+                phi_local = math.reshape(phi_local, (-1,))
+                ret = math.astensor(
+                    [
+                        math.beamsplitter(t, p, shape=shape, method=method)
+                        for t, p in zip(theta_local, phi_local)
+                    ],
+                )
+                ret = math.reshape(ret, ansatz.batch_shape + shape)
+                if ansatz._lin_sup:
+                    ret = math.sum(ret, axis=ansatz.batch_dims - 1)
+            else:
+                ret = math.beamsplitter(theta_tensor, phi_tensor, shape=shape, method=method)
+            return ret
+
+        self._specialized_fock = specialized_fock
+
+        super().__init__(ansatz=ansatz, wires=wires, name="BSgate")
 
     def fock_array(
         self,
@@ -134,24 +138,4 @@ class BSgate(Unitary):
             ValueError: If the shape is not valid for the component.
         """
         shape = self._check_fock_shape(shape)
-        if self.ansatz.batch_shape:
-            theta, phi = math.broadcast_arrays(
-                self.parameters.theta.value,
-                self.parameters.phi.value,
-            )
-            theta = math.reshape(theta, (-1,))
-            phi = math.reshape(phi, (-1,))
-            ret = math.astensor(
-                [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta, phi)],
-            )
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.beamsplitter(
-                self.parameters.theta.value,
-                self.parameters.phi.value,
-                shape=shape,
-                method=method,
-            )
-        return ret
+        return self._specialized_fock(shape, method=method)

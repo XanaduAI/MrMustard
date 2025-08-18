@@ -64,13 +64,25 @@ class TestDM:
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
 
     def test_is_separable(self):
-        entangled_state = GDM([0, 1, 2], beta=1)
+        symplectic = math.random_symplectic(3)
+        entangled_state = GDM([0, 1, 2], beta=1, symplectic=symplectic)
         assert not entangled_state.is_separable
 
-        separable_state = GDM(0, beta=1) >> GDM(1, beta=1) >> GDM(2, beta=1)
+        sym1 = math.random_symplectic(1)
+        sym2 = math.random_symplectic(1)
+        sym3 = math.random_symplectic(1)
+        separable_state = (
+            GDM(0, beta=1, symplectic=sym1)
+            >> GDM(1, beta=1, symplectic=sym2)
+            >> GDM(2, beta=1, symplectic=sym3)
+        )
         assert separable_state.is_separable
 
-        entangled_state = GDM(0, beta=1) >> GDM((1, 2), beta=1)
+        sym_single = math.random_symplectic(1)
+        sym_double = math.random_symplectic(2)
+        entangled_state = GDM(0, beta=1, symplectic=sym_single) >> GDM(
+            (1, 2), beta=1, symplectic=sym_double
+        )
         assert not entangled_state.is_separable
 
     def test_manual_shape(self):
@@ -355,7 +367,8 @@ class TestDM:
 
     @pytest.mark.parametrize("fock", [False, True])
     @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
-    def test_expectation(self, batch_shape, fock):
+    def test_expectation_ket_operators(self, batch_shape, fock):
+        """Test expectation values with ket operators."""
         alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
         alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
 
@@ -379,6 +392,20 @@ class TestDM:
         assert math.allclose(exp_coh_1, 1)
         assert math.allclose(exp_ket, 1)
 
+    @pytest.mark.parametrize("fock", [False, True])
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
+    def test_expectation_dm_operators(self, batch_shape, fock):
+        """Test expectation values with density matrix operators."""
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
+
+        coh_0 = Coherent(0, alpha=alpha_0)
+        coh_1 = Coherent(1, alpha=alpha_1)
+        # TODO: clean this up once we have a better way to create batched multimode states
+        ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
+        ket = ket.to_fock(40) if fock else ket
+        dm = ket.dm()
+
         # dm operator
         dm0 = coh_0.dm()
         dm1 = coh_1.dm()
@@ -394,6 +421,20 @@ class TestDM:
         assert math.allclose(exp_dm0, 1)
         assert math.allclose(exp_dm1, 1)
         assert math.allclose(exp_dm01, 1)
+
+    @pytest.mark.parametrize("fock", [False, True])
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
+    def test_expectation_unitary_operators(self, batch_shape, fock):
+        """Test expectation values with unitary operators."""
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
+
+        coh_0 = Coherent(0, alpha=alpha_0)
+        coh_1 = Coherent(1, alpha=alpha_1)
+        # TODO: clean this up once we have a better way to create batched multimode states
+        ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
+        ket = ket.to_fock(40) if fock else ket
+        dm = ket.dm()
 
         # u operator
         beta_0 = 0.1

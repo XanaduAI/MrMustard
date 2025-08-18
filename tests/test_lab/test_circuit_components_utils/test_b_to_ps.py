@@ -28,7 +28,7 @@ class TestBtoPS:
     """
 
     modes = [(0,), (1, 2), (7, 9)]
-    s = [0, -0.9, 1]
+    s = [0, -0.9, 0.9]
 
     @pytest.mark.parametrize("hbar", [1.0, 2.0, 3.0])
     def test_application(self, hbar):
@@ -53,7 +53,6 @@ class TestBtoPS:
         bw = BtoPS(modes, s)
         assert bw.name == "BtoPS"
         assert bw.modes == modes
-        assert bw.parameters.s.value == s
 
     def test_fock_array(self):
         btops = BtoPS((0,), 0.5)

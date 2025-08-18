@@ -183,11 +183,9 @@ class DM(State):
         if cov.shape[:-2] != ():
             raise NotImplementedError("Not implemented for batched states.")
         shape_check(cov, means, 2 * len(modes), "Phase space")
-        return coeff * DM.from_ansatz(
-            modes,
-            PolyExpAnsatz.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
-            name,
-        )
+        A, b, c = wigner_to_bargmann_rho(cov=cov, means=means)
+        ansatz = PolyExpAnsatz(A, b, c)
+        return coeff * DM.from_ansatz(modes, ansatz, name)
 
     @classmethod
     def random(
