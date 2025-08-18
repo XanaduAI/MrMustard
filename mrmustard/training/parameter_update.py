@@ -72,7 +72,7 @@ def update_symplectic(symplectic_lr: float):
     def update_fn(grads, state, params):
         def update_single(dS_euclidean, S):
             Y = math.euclidean_to_symplectic(S, dS_euclidean)
-            YT = math.transpose(Y)
+            YT = math.swapaxes(Y, -1, -2)
             new_value = math.matmul(
                 S,
                 math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT)),

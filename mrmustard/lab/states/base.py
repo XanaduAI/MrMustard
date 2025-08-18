@@ -84,7 +84,7 @@ def _validate_operator(operator: CircuitComponent) -> tuple[OperatorType, str]:
         return OperatorType.DM_LIKE, ""
 
     # check if operator is unitary-like
-    if w.ket.input and w.ket.output and not w.bra.input and not w.bra.input:
+    if w.ket.input and w.ket.output and not w.bra:
         if w.ket.input.modes != w.ket.output.modes:
             msg = "Found unitary-like operator with different modes for input and output wires."
             return OperatorType.INVALID_TYPE, msg
