@@ -21,6 +21,10 @@ from collections.abc import Sequence
 import numpy as np
 
 from mrmustard import math
+from mrmustard.physics.gaussian_integrals_numba import (
+    complex_gaussian_integral_1_numba,
+    join_Abc_numba,
+)
 from mrmustard.physics.utils import outer_product_batch_str, verify_batch_triple
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
@@ -221,12 +225,6 @@ def join_Abc(
     n1 = nA1 - m1
     n2 = nA2 - m2
 
-    # Step 0: Flatten the non-batch dimensions of c1 and c2
-    c1_flat_shape = (*batch1, int(np.prod(poly_shape1)))
-    c2_flat_shape = (*batch2, int(np.prod(poly_shape2)))
-    c1_flat = math.reshape(c1, c1_flat_shape)
-    c2_flat = math.reshape(c2, c2_flat_shape)
-
     # Step 1 & 2: Determine broadcast shape based on batch_string and broadcast tensors
     broadcast_dims = dict(zip(in1, batch1))
     for dim, batch in zip(in2, batch2):
@@ -262,16 +260,16 @@ def join_Abc(
     A2_new_shape = (*tuple(broadcast_shape2), nA2, mA2)
     b1_new_shape = (*tuple(broadcast_shape1), nb1)
     b2_new_shape = (*tuple(broadcast_shape2), nb2)
-    c1_new_shape = (*tuple(broadcast_shape1), c1_flat.shape[-1])
-    c2_new_shape = (*tuple(broadcast_shape2), c2_flat.shape[-1])
+    c1_new_shape = (*tuple(broadcast_shape1), *poly_shape1)
+    c2_new_shape = (*tuple(broadcast_shape2), *poly_shape2)
 
     # Reshape to add broadcasting dimensions
     A1_reshaped = math.reshape(A1, A1_new_shape)
     A2_reshaped = math.reshape(A2, A2_new_shape)
     b1_reshaped = math.reshape(b1, b1_new_shape)
     b2_reshaped = math.reshape(b2, b2_new_shape)
-    c1_reshaped = math.reshape(c1_flat, c1_new_shape)
-    c2_reshaped = math.reshape(c2_flat, c2_new_shape)
+    c1_reshaped = math.reshape(c1, c1_new_shape)
+    c2_reshaped = math.reshape(c2, c2_new_shape)
 
     # Create full output shape for broadcasting
     output_batch_shape = tuple(output_shape)
@@ -279,8 +277,8 @@ def join_Abc(
     A2_broadcast_shape = (*output_batch_shape, nA2, mA2)
     b1_broadcast_shape = (*output_batch_shape, nb1)
     b2_broadcast_shape = (*output_batch_shape, nb2)
-    c1_broadcast_shape = (*output_batch_shape, c1_flat.shape[-1])
-    c2_broadcast_shape = (*output_batch_shape, c2_flat.shape[-1])
+    c1_broadcast_shape = (*output_batch_shape, *poly_shape1)
+    c2_broadcast_shape = (*output_batch_shape, *poly_shape2)
 
     # Step 2: Broadcast tensors to the output shape
     A1_broadcasted = math.broadcast_to(A1_reshaped, A1_broadcast_shape, dtype=math.complex128)
@@ -289,6 +287,11 @@ def join_Abc(
     b2_broadcasted = math.broadcast_to(b2_reshaped, b2_broadcast_shape, dtype=math.complex128)
     c1_broadcasted = math.broadcast_to(c1_reshaped, c1_broadcast_shape, dtype=math.complex128)
     c2_broadcasted = math.broadcast_to(c2_reshaped, c2_broadcast_shape, dtype=math.complex128)
+
+    c1_flat_shape = (*output_batch_shape, int(np.prod(poly_shape1)))
+    c2_flat_shape = (*output_batch_shape, int(np.prod(poly_shape2)))
+    c1_flat = math.reshape(c1_broadcasted, c1_flat_shape)
+    c2_flat = math.reshape(c2_broadcasted, c2_flat_shape)
 
     # Step 3: Join A1 and A2
     A1Z = math.concat(
@@ -336,8 +339,8 @@ def join_Abc(
     )
 
     # Step 5 & 6: Compute outer product of the last dimensions of c1 and c2
-    c1_expanded = c1_broadcasted[..., :, None]
-    c2_expanded = c2_broadcasted[..., None, :]
+    c1_expanded = c1_flat[..., :, None]
+    c2_expanded = c2_flat[..., None, :]
     c = c1_expanded * c2_expanded
     # Reshape c to the desired output shape
     c_shape = output_batch_shape + poly_shape1 + poly_shape2
@@ -372,9 +375,11 @@ def true_branch_complex_gaussian_integral_1(m, M, bM, det_M, c, D, R, bR):
 
     c_factor = math.sqrt(math.cast((-1) ** m / det_M, "complex128")) * math.exp(
         -0.5 * math.sum(bM * M_bM, axis=-1),
-    )
-    c_reshaped = math.reshape(c_factor, batch_shape + (1,) * (len(c.shape[batch_dim:])))
-    c_post = c * c_reshaped
+    )  # batch_shape
+    c_reshaped = math.reshape(
+        c_factor, batch_shape + (1,) * (len(c.shape[batch_dim:]))
+    )  # batch_shape + (1,) * num_derived_vars
+    c_post = c * c_reshaped  # c.shape
 
     A_post = R - math.einsum("...ij,...jk,...lk->...il", D, inv_M, D)
     b_post = bR - math.einsum("...ij,...j->...i", D, M_bM)
@@ -471,7 +476,6 @@ def complex_gaussian_integral_1(
     idx = math.astensor(idx, dtype=math.int64)
     eye = math.eye(m, dtype=A.dtype)
 
-    eye = math.eye(m, dtype=A.dtype)
     Z = math.zeros((m, m), dtype=A.dtype)
     X = math.block([[Z, eye], [eye, Z]])
     M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + X * measure
@@ -538,7 +542,10 @@ def complex_gaussian_integral_2(
     Returns:
         The ``(A,b,c)`` triple which parametrizes the result of the integral with batch dimension preserved (if any).
     """
-    A, b, c = join_Abc(Abc1, Abc2, batch_string=batch_string)
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+
+    A, b, c = join_Abc_numba((A1, b1, c1), (A2, b2, c2), batch_string=batch_string)
 
     # offset idx2 to account for the core variables of the first triple
     A1, _, c1 = Abc1
@@ -547,4 +554,9 @@ def complex_gaussian_integral_2(
     core_1 = A1.shape[-1] - derived_1
     idx2 = tuple(i + core_1 for i in idx2)
 
-    return complex_gaussian_integral_1((A, b, c), idx1, idx2, measure)
+    if A.shape[:-2] == ():
+        A_ret, b_ret, c_ret = complex_gaussian_integral_1_numba((A, b, c), idx1, idx2, measure)
+    else:
+        A_ret, b_ret, c_ret = complex_gaussian_integral_1((A, b, c), idx1, idx2, measure)
+
+    return A_ret, b_ret, c_ret

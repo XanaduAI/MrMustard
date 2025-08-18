@@ -21,14 +21,13 @@ from mrmustard.physics import triples
 from mrmustard.physics.gaussian_integrals import (
     complex_gaussian_integral_1,
     complex_gaussian_integral_2,
-    join_Abc,
     join_Abc_real,
-    real_gaussian_integral,
 )
+from mrmustard.physics.gaussian_integrals_numba import join_Abc_numba, real_gaussian_integral_numba
 
 
-def test_real_gaussian_integral():
-    """Tests the ``real_gaussian_integral`` method with a hard-coded A matric from a Gaussian(3) state."""
+def test_real_gaussian_integral_numba():
+    """Tests the ``real_gaussian_integral_numba`` method with a hard-coded A matric from a Gaussian(3) state."""
     A = math.astensor(
         [
             [
@@ -49,8 +48,8 @@ def test_real_gaussian_integral():
         ],
     )
     b = math.arange(3, dtype=math.complex128)
-    c = 1.0 + 0j
-    res = real_gaussian_integral((A, b, c), idx=[0, 1])
+    c = math.astensor(1.0 + 0j)
+    res = real_gaussian_integral_numba(A, b, c, idx=(0, 1))
     assert math.allclose(res[0], A[2, 2] - A[2:, :2] @ math.inv(A[:2, :2]) @ A[:2, 2:])
     assert math.allclose(
         res[1],
@@ -63,7 +62,7 @@ def test_real_gaussian_integral():
         / math.sqrt(math.det(A[:2, :2]))
         * math.exp(-0.5 * math.sum(b[:2] * math.matvec(math.inv(A[:2, :2]), b[:2]))),
     )
-    res2 = real_gaussian_integral((A, b, c), idx=[])
+    res2 = real_gaussian_integral_numba(A, b, c, idx=())
     assert math.allclose(res2[0], A)
     assert math.allclose(res2[1], b)
     assert math.allclose(res2[2], c)
@@ -75,8 +74,8 @@ def test_real_gaussian_integral():
         ],
     )
     b2 = math.cast(math.arange(2), dtype=math.complex128)
-    c2 = 1.0 + 0j
-    res3 = real_gaussian_integral((A2, b2, c2), idx=[0, 1])
+    c2 = math.astensor(1.0 + 0j)
+    res3 = real_gaussian_integral_numba(A2, b2, c2, idx=(0, 1))
     assert math.allclose(res3[0], math.astensor([]))
     assert math.allclose(res3[1], math.astensor([]))
     assert math.allclose(
@@ -116,7 +115,7 @@ def test_join_Abc_nonbatched():
     b2 = math.astensor([12, 13])
     c2 = math.astensor(10)
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string=None)
+    A, b, c = join_Abc_numba((A1, b1, c1), (A2, b2, c2), batch_string=None)
 
     assert math.allclose(
         A,
@@ -136,7 +135,7 @@ def test_join_Abc_batched_zip():
     b2 = math.astensor([[12, 13], [14, 15]])
     c2 = math.astensor([10, 100])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
+    A, b, c = join_Abc_numba((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
 
     assert math.allclose(
         A,
@@ -161,7 +160,7 @@ def test_join_Abc_batched_kron():
     b2 = math.astensor([[12, 13], [14, 15]])
     c2 = math.astensor([10, 100])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,j->ij")
+    A, b, c = join_Abc_numba((A1, b1, c1), (A2, b2, c2), batch_string="i,j->ij")
 
     assert math.allclose(
         A,
@@ -218,7 +217,7 @@ def test_complex_gaussian_integral_1_not_batched():
     A2, b2, c2 = triples.displacement_gate_Abc(0.1 + 0.3j)
     A3, b3, c3 = triples.displaced_squeezed_vacuum_state_Abc(0.1 + 0.3j)
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2))
+    A, b, c = join_Abc_numba((A1, b1, c1), (A2, b2, c2))
 
     res = complex_gaussian_integral_1((A, b, c), [0, 1], [2, 3])
     assert math.allclose(res[0], A3)
@@ -236,7 +235,7 @@ def test_complex_gaussian_integral_1_batched():
     b1 = math.astensor([b1, b1, b1])
     c1 = math.astensor([c1, c1, c1])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
+    A, b, c = join_Abc_numba((A1, b1, c1), (A2, b2, c2), batch_string="i,i->i")
     res1 = complex_gaussian_integral_1((A, b, c), [0], [2])
     assert math.allclose(res1[0], A3)
     assert math.allclose(res1[1], b3)
@@ -259,7 +258,7 @@ def test_complex_gaussian_integral_1_multidim_batched():
     b1 = math.astensor([[b1, b1, b1], [b1, b1, b1]])
     c1 = math.astensor([[c1, c1, c1], [c1, c1, c1]])
 
-    A, b, c = join_Abc((A1, b1, c1), (A2, b2, c2), batch_string="ij,ij->ij")
+    A, b, c = join_Abc_numba((A1, b1, c1), (A2, b2, c2), batch_string="ij,ij->ij")
     res1 = complex_gaussian_integral_1((A, b, c), [0], [2])
     assert math.allclose(res1[0], A3)
     assert math.allclose(res1[1], b3)
