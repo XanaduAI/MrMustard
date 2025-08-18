@@ -52,6 +52,9 @@
 * Fixed a bug in `Ket.expectation` where the Fock shape lookahead wasn't setting certain wires correctly.
 [(#646)](https://github.com/XanaduAI/MrMustard/pull/646)
 
+* Fixed bug in Gaussian integrals where small/large c values were not multiplying correctly.
+[(#641)](https://github.com/XanaduAI/MrMustard/pull/641)
+
 ---
 
 # Release 1.0.0a1
