@@ -20,13 +20,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ...physics import triples
-from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
 from .base import Channel
+from .builtins import amplifier_channel
 
 __all__ = ["Amplifier"]
 
@@ -35,23 +34,17 @@ class Amplifier(Channel):
     r"""
     The noisy amplifier channel.
 
+    >>> import numpy as np
+    >>> from mrmustard.lab import Amplifier, Coherent
+    >>> from mrmustard import settings
+    >>> amp = Amplifier(0, gain=4)
+    >>> coh = Coherent(0, alpha=1.0 + 2.0j)
+    >>> _, mu, _ = (coh >> amp).phase_space(0)
+    >>> assert np.allclose(mu*np.sqrt(2/settings.HBAR), np.array([4.0, 8.0]))
 
     Args:
         mode: The mode this gate is applied to.
         gain: The gain.
-        gain_trainable: Whether ``gain`` is trainable.
-        gain_bounds: The bounds for ``gain``.
-
-    .. code-block::
-
-        >>> import numpy as np
-        >>> from mrmustard.lab import Amplifier, Coherent
-        >>> from mrmustard import settings
-
-        >>> amp = Amplifier(0, gain=4)
-        >>> coh = Coherent(0, x=1.0, y=2.0)
-        >>> _, mu, _ = (coh >> amp).phase_space(0)
-        >>> assert np.allclose(mu*np.sqrt(2/settings.HBAR), np.array([4.0, 8.0]))
 
     .. details::
 
@@ -78,28 +71,24 @@ class Amplifier(Channel):
             c &= 1//bar{g}\:.
     """
 
+    short_name = "Amp~"
+
     def __init__(
         self,
         mode: int | tuple[int],
-        gain: float | Sequence[float] = 1.0,
-        gain_trainable: bool = False,
-        gain_bounds: tuple[float | None, float | None] = (1.0, None),
+        gain: float | Sequence[float] | Parameter = 1.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Amp~")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=gain_trainable,
-                value=gain,
-                name="gain",
-                bounds=gain_bounds,
-                dtype=math.float64,
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (amplifier_channel, ("gain", "lin_sup"))}
             ),
+            wires=Wires(
+                modes_in_bra=set(mode),
+                modes_out_bra=set(mode),
+                modes_in_ket=set(mode),
+                modes_out_ket=set(mode),
+            ),
+            name=self.__class__.__name__,
         )
-        self._ansatz = PolyExpAnsatz.from_function(fn=triples.amplifier_Abc, g=self.parameters.gain)
-        self._wires = Wires(
-            modes_in_bra=set(mode),
-            modes_out_bra=set(mode),
-            modes_in_ket=set(mode),
-            modes_out_ket=set(mode),
-        )
+        self.parameters["gain"] = Parameter.from_cc_init(gain, "float64", f"{self.name}/gain")

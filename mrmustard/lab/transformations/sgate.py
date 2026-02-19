@@ -20,13 +20,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ...physics import triples
-from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
 from .base import Unitary
+from .builtins import squeezing_gate, squeezing_gate_fock
 
 __all__ = ["Sgate"]
 
@@ -35,24 +34,16 @@ class Sgate(Unitary):
     r"""
     The squeezing gate.
 
+    >>> from mrmustard.lab import Sgate
+    >>> unitary = Sgate(mode=1, r=0.1, phi=0.2)
+    >>> assert unitary.modes == (1,)
+    >>> assert unitary.parameters.r.value == 0.1
+    >>> assert unitary.parameters.phi.value == 0.2
 
     Args:
         mode: The mode this gate is applied to.
         r: The squeezing magnitude.
         phi: The squeezing angle.
-        r_trainable: Whether ``r`` is trainable.
-        phi_trainable: Whether ``phi`` is trainable.
-        r_bounds: The bounds for ``r``.
-        phi_bounds: The bounds for ``phi``.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import Sgate
-
-        >>> unitary = Sgate(mode=1, r=0.1, phi=0.2)
-        >>> assert unitary.modes == (1,)
-        >>> assert unitary.parameters.r.value == 0.1
-        >>> assert unitary.parameters.phi.value == 0.2
 
     .. details::
 
@@ -83,37 +74,19 @@ class Sgate(Unitary):
     def __init__(
         self,
         mode: int | tuple[int],
-        r: float | Sequence[float] = 0.0,
-        phi: float | Sequence[float] = 0.0,
-        r_trainable: bool = False,
-        phi_trainable: bool = False,
-        r_bounds: tuple[float | None, float | None] = (0.0, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
+        r: float | Sequence[float] | Parameter = 0.0,
+        phi: float | Sequence[float] | Parameter = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Sgate")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={
+                    ReprEnum.BARGMANN: (squeezing_gate, ("r", "phi", "lin_sup")),
+                    ReprEnum.FOCK: (squeezing_gate_fock, ("r", "phi", "shape", "lin_sup")),
+                }
             ),
+            wires=Wires(modes_in_ket=set(mode), modes_out_ket=set(mode)),
+            name=self.__class__.__name__,
         )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_trainable,
-                value=phi,
-                name="phi",
-                bounds=phi_bounds,
-                dtype=math.float64,
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.squeezing_gate_Abc,
-            r=self.parameters.r,
-            phi=self.parameters.phi,
-        )
-        self._wires = Wires(
-            modes_in_bra=set(),
-            modes_out_bra=set(),
-            modes_in_ket=set(mode),
-            modes_out_ket=set(mode),
-        )
+        self.parameters["r"] = Parameter.from_cc_init(r, "float64", f"{self.name}/r")
+        self.parameters["phi"] = Parameter.from_cc_init(phi, "float64", f"{self.name}/phi")

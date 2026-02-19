@@ -19,7 +19,7 @@ from unittest.mock import patch
 import pytest
 from ipywidgets import HTML
 
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.wires import ReprEnum, Wires
 
 
 class TestWires:
@@ -27,9 +27,84 @@ class TestWires:
     Tests for the Wires class.
     """
 
-    def test_init(self):
-        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
-        assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
+    def test_add(self):
+        w1 = Wires({0}, {0, 1}, {2}, {3})
+        w2 = Wires({1}, {2}, {3}, {4})
+        w12 = Wires({0, 1}, {0, 1, 2}, {2, 3}, {3, 4})
+
+        assert (w1 + w2).modes == w12.modes
+
+    def test_add_error(self):
+        w1 = Wires({0}, {1}, {2}, {3})
+        w2 = Wires({0}, {2}, {3}, {4})
+        with pytest.raises(ValueError, match="Overlapping quantum wires"):
+            w1 + w2
+
+    def test_adjoint(self):
+        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
+        w_adj = w.adjoint
+        assert w.input.ket.modes == w_adj.input.bra.modes
+        assert w.output.ket.modes == w_adj.output.bra.modes
+        assert w.input.bra.modes == w_adj.input.ket.modes
+        assert w.output.bra.modes == w_adj.output.ket.modes
+
+    def test_bool(self):
+        assert Wires({0})
+        assert not Wires({0}).input
+
+    def test_contracted_labels1(self):
+        w1 = Wires({0}, {0}, {2}, {2})
+        w2 = Wires({1}, {}, {3}, {2, 3})
+        idx1, idx2, idx_out = w1.contracted_labels(w2)
+        assert idx1 == [0, 1, 2, 3]
+        assert idx2 == [4, 5, 2, 7]
+        assert idx_out == [0, 4, 1, 5, 3, 7]
+
+    def test_dual(self):
+        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
+        w_d = w.dual
+        assert w.input.ket.modes == w_d.output.ket.modes
+        assert w.output.ket.modes == w_d.input.ket.modes
+        assert w.input.bra.modes == w_d.output.bra.modes
+        assert w.output.bra.modes == w_d.input.bra.modes
+
+    def test_eq_neq(self):
+        w1 = Wires({0, 1}, {2, 3}, {4, 5}, {6, 7})
+        w2 = Wires({0, 1}, {2, 3}, {4, 5}, {6, 7})
+        w3 = Wires(set(), {2, 3}, {4, 5}, {6, 7})
+        w4 = Wires({0, 1}, set(), {4, 5}, {6, 7})
+        w5 = Wires({0, 1}, {2, 3}, set(), {6, 7})
+        w6 = Wires({0, 1}, {2, 3}, {4, 5}, set())
+
+        assert w1 == w2
+        assert w1 != w3
+        assert w1 != w4
+        assert w1 != w5
+        assert w1 != w6
+
+    def test_fock_shapes(self):
+        wires = Wires({0}, {1}, {0}, {1})
+        assert wires.fock_shapes == (None, None, None, None)
+        expected_fock_shapes = (10, None, 10, None)
+        for wire, fock_shape in zip(wires, expected_fock_shapes):
+            wire.fock_shape = fock_shape
+        assert wires.fock_shapes == expected_fock_shapes
+
+    def test_getitem(self):
+        w = Wires({0, 1}, {0, 2})
+
+        w0 = Wires({0}, {0})
+        assert w[0] == w0
+
+        w1 = Wires({1})
+        assert w[1] == w1
+
+        w2 = Wires(set(), {2})
+        assert w[2] == w2
+
+        assert w[0].indices == (0, 2)
+        assert w[1].indices == (1,)
+        assert w[2].indices == (3,)
 
     def test_indices(self):
         w = Wires({0, 10, 20}, {30, 40, 50}, {60, 70}, {80})
@@ -48,75 +123,9 @@ class TestWires:
         assert w.output.ket.indices == (6, 7)
         assert w.input.ket.indices == (8,)
 
-    def test_wire_subsets(self):
-        w = Wires({0}, {1}, {2}, {3})
-        assert w.output.bra.modes == {0}
-        assert w.input.bra.modes == {1}
-        assert w.output.ket.modes == {2}
-        assert w.input.ket.modes == {3}
-
-    def test_adjoint(self):
-        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
-        w_adj = w.adjoint
-        assert w.input.ket.modes == w_adj.input.bra.modes
-        assert w.output.ket.modes == w_adj.output.bra.modes
-        assert w.input.bra.modes == w_adj.input.ket.modes
-        assert w.output.bra.modes == w_adj.output.ket.modes
-
-    def test_dual(self):
-        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8})
-        w_d = w.dual
-        assert w.input.ket.modes == w_d.output.ket.modes
-        assert w.output.ket.modes == w_d.input.ket.modes
-        assert w.input.bra.modes == w_d.output.bra.modes
-        assert w.output.bra.modes == w_d.input.bra.modes
-
-    def test_add(self):
-        w1 = Wires({0}, {0, 1}, {2}, {3})
-        w2 = Wires({1}, {2}, {3}, {4})
-        w12 = Wires({0, 1}, {0, 1, 2}, {2, 3}, {3, 4})
-
-        assert (w1 + w2).modes == w12.modes
-
-    def test_add_error(self):
-        w1 = Wires({0}, {1}, {2}, {3})
-        w2 = Wires({0}, {2}, {3}, {4})
-        with pytest.raises(ValueError, match="Overlapping quantum wires"):
-            w1 + w2
-
-    def test_bool(self):
-        assert Wires({0})
-        assert not Wires({0}).input
-
-    def test_getitem(self):
-        w = Wires({0, 1}, {0, 2})
-
-        w0 = Wires({0}, {0})
-        assert w[0] == w0
-
-        w1 = Wires({1})
-        assert w[1] == w1
-
-        w2 = Wires(set(), {2})
-        assert w[2] == w2
-
-        assert w[0].indices == (0, 2)
-        assert w[1].indices == (1,)
-        assert w[2].indices == (3,)
-
-    def test_eq_neq(self):
-        w1 = Wires({0, 1}, {2, 3}, {4, 5}, {6, 7})
-        w2 = Wires({0, 1}, {2, 3}, {4, 5}, {6, 7})
-        w3 = Wires(set(), {2, 3}, {4, 5}, {6, 7})
-        w4 = Wires({0, 1}, set(), {4, 5}, {6, 7})
-        w5 = Wires({0, 1}, {2, 3}, set(), {6, 7})
-        w6 = Wires({0, 1}, {2, 3}, {4, 5}, set())
-
-        assert w1 == w2
-        assert w1 != w3
-        assert w1 != w4
-        assert w1 != w5
-        assert w1 != w6
+    def test_init(self):
+        w = Wires({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
+        assert w.args == ({0, 1, 2}, {3, 4, 5}, {6, 7}, {8}, {9}, {10})
 
     def test_matmul(self):
         # contracts 1,1 on bra side
@@ -133,12 +142,7 @@ class TestWires:
             {16, 19},
             {18},
         )
-        assert perm == [9, 0, 10, 11, 1, 2, 12, 3, 13, 4, 14, 5, 6, 15, 7, 16, 8]
-
-    def test_matmul_keeps_ids(self):
-        U = Wires(set(), set(), {0}, {0})
-        psi = Wires(set(), set(), {0}, set())
-        assert (psi @ U)[0].ids[0] == U.ids[0]
+        assert perm == [7, 0, 8, 9, 1, 2, 10, 3, 11, 4, 12, 5, 6, 13, 7, 16, 8]
 
     def test_matmul_error(self):
         u = Wires(set(), set(), {0}, set())  # only output wire
@@ -146,25 +150,43 @@ class TestWires:
         with pytest.raises(ValueError):
             u @ v
 
-    def test_contracted_labels1(self):
-        w1 = Wires({0}, {0}, {2}, {2})
-        w2 = Wires({1}, {}, {3}, {2, 3})
-        idx1, idx2, idx_out = w1.contracted_labels(w2)
-        assert idx1 == [0, 1, 2, 3]
-        assert idx2 == [4, 5, 2, 7]
-        assert idx_out == [0, 4, 1, 5, 3, 7]
+    def test_matmul_keeps_ids(self):
+        U = Wires(set(), set(), {0}, {0})
+        psi = Wires(set(), set(), {0}, set())
+        assert (psi @ U)[0].ids[0] == U.ids[0]
+
+    def test_representations(self):
+        empty_wires = Wires(set(), set(), set(), set())
+        assert empty_wires.representations == ()
+
+        single_wire = Wires({0}, set(), set(), set())
+        assert single_wire.representations == (ReprEnum.BARGMANN,)
+
+        multiple_wires = Wires({0}, {0}, {0}, {0})
+        assert multiple_wires.representations == (ReprEnum.BARGMANN,) * 4
+
+        expected_representations = (
+            ReprEnum.FOCK,
+            ReprEnum.QUADRATURE,
+            ReprEnum.BARGMANN,
+            ReprEnum.BARGMANN,
+        )
+
+        for wire, representation in zip(multiple_wires, expected_representations):
+            wire.repr = representation
+
+        assert multiple_wires.representations == expected_representations
+
+    def test_wire_subsets(self):
+        w = Wires({0}, {1}, {2}, {3})
+        assert w.output.bra.modes == {0}
+        assert w.input.bra.modes == {1}
+        assert w.output.ket.modes == {2}
+        assert w.input.ket.modes == {3}
 
 
 class TestWiresDisplay:
     """Test the wires _ipython_display_ functionality."""
-
-    @patch("mrmustard.physics.wires.display")
-    def test_ipython_repr(self, mock_display):
-        """Test the IPython repr function."""
-        wires = Wires({0}, set(), {3}, {3, 4})
-        wires._ipython_display_()
-        [widget] = mock_display.call_args.args
-        assert isinstance(widget, HTML)
 
     def test_eq(self):
         w1 = Wires({0}, {1})
@@ -181,6 +203,14 @@ class TestWiresDisplay:
         for w in wires:
             assert isinstance(w.id, int)
 
+    @patch("mrmustard.physics.wires.display")
+    def test_ipython_repr(self, mock_display):
+        """Test the IPython repr function."""
+        wires = Wires({0}, set(), {3}, {3, 4})
+        wires._ipython_display_()
+        [widget] = mock_display.call_args.args
+        assert isinstance(widget, HTML)
+
     @patch("mrmustard.widgets.IN_INTERACTIVE_SHELL", True)
     def test_ipython_repr_interactive(self, capsys):
         """Test the IPython repr function."""
@@ -188,3 +218,22 @@ class TestWiresDisplay:
         wires._ipython_display_()
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(wires)
+
+    def test_repr(self):
+        wires = Wires(modes_out_bra={0}, modes_in_bra={1})
+        assert (
+            repr(wires)
+            == "Wires(modes_out_bra={0}, modes_in_bra={1}, modes_out_ket=set(), modes_in_ket=set(), classical_out=set(), classical_in=set())"
+        )
+        wires = Wires(
+            modes_out_bra={0},
+            modes_in_bra={1},
+            modes_out_ket={2},
+            modes_in_ket={3},
+            classical_out={4},
+            classical_in={5},
+        )
+        assert (
+            repr(wires)
+            == "Wires(modes_out_bra={0}, modes_in_bra={1}, modes_out_ket={2}, modes_in_ket={3}, classical_out={4}, classical_in={5})"
+        )

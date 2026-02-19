@@ -1,14 +1,13 @@
-mrmustard.training
-==================
+.. title:: Training
+
+.. currentmodule:: mrmustard.training
+
+The `training` module
+---------------------
 
 .. toctree::
     :maxdepth: 1
 
     training/optimizer
-    training/callbacks
-
-.. currentmodule:: mrmustard.training
-
-.. automodapi:: mrmustard.training
-    :no-heading:
-    :include-all-objects:
+    training/parameter_update
+    training/progress_bar

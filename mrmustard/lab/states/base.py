@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Sequence
-from enum import Enum
+from itertools import product
 
 import numpy as np
 import plotly.graph_objects as go
@@ -26,11 +26,17 @@ from IPython.display import display
 from plotly.subplots import make_subplots
 
 from mrmustard import math, settings
-from mrmustard.math.lattice.autoshape import autoshape_numba
+from mrmustard.mathlib.lattice.autoshape import autoshape_numba
+from mrmustard.mathlib.lattice.strategies.wormhole import (
+    wormhole_1leftover_dm,
+    wormhole_1leftover_ket,
+)
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.bargmann_utils import bargmann_Abc_to_phasespace_cov_means
 from mrmustard.physics.fock_utils import quadrature_distribution
+from mrmustard.physics.gaussian import von_neumann_entropy
 from mrmustard.physics.wigner import wigner_discretized
+from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector, RealVector
 
 from ..circuit_components import CircuitComponent
@@ -38,58 +44,6 @@ from ..circuit_components_utils import BtoChar, BtoPS, BtoQ
 from ..transformations import Transformation
 
 __all__ = ["State"]
-
-# ~~~~~~~
-# Helpers
-# ~~~~~~~
-
-
-class OperatorType(Enum):
-    r"""
-    A convenience Enum class used to tag the type operators in the ``expectation`` method
-    of ``Ket``\s and ``DM``\s.
-    """
-
-    KET_LIKE = 1
-    DM_LIKE = 2
-    UNITARY_LIKE = 3
-    INVALID_TYPE = 4
-
-
-def _validate_operator(operator: CircuitComponent) -> tuple[OperatorType, str]:
-    r"""
-    A function used to validate an operator inside the ``expectation`` method of ``Ket`` and
-    ``DM``.
-
-    If ``operator`` is ket-like, density matrix-like, or unitary-like, returns the corresponding
-    ``OperatorType`` and an empty string. Otherwise, it returns ``INVALID_TYPE`` and an error
-    message.
-    """
-    w = operator.wires
-
-    # check if operator is ket-like
-    if w.ket.output and not w.ket.input and not w.bra:
-        return (
-            OperatorType.KET_LIKE,
-            "",
-        )
-
-    # check if operator is density matrix-like
-    if w.ket.output and w.bra.output and not w.ket.input and not w.bra.input:
-        if w.ket.output.modes != w.bra.output.modes:
-            msg = "Found DM-like operator with different modes for ket and bra wires."
-            return OperatorType.INVALID_TYPE, msg
-        return OperatorType.DM_LIKE, ""
-
-    # check if operator is unitary-like
-    if w.ket.input and w.ket.output and not w.bra.input and not w.bra.input:
-        if w.ket.input.modes != w.ket.output.modes:
-            msg = "Found unitary-like operator with different modes for input and output wires."
-            return OperatorType.INVALID_TYPE, msg
-        return OperatorType.UNITARY_LIKE, ""
-
-    msg = "Cannot calculate the expectation value of the given ``operator``."
-    return OperatorType.INVALID_TYPE, msg
 
 
 # ~~~~~~~
@@ -110,24 +64,45 @@ class State(CircuitComponent):
         return math.allclose(self.purity, 1.0)
 
     @property
+    def is_separable(self):
+        r"""
+        Check if a multi-mode quantum state is separable based on the von Neumann entropy.
+
+        Returns:
+            Whether the state is separable.
+
+        Raises:
+            NotImplementedError: If the state is a linear superposition.
+        """
+        if self.ansatz._lin_sup:
+            raise NotImplementedError("Separation of linear superpositions is not implemented.")
+        if self.n_modes == 1:
+            return True
+        rho = self.dm()
+        cov_full, _, _ = rho.phase_space(s=0)
+        S_total = von_neumann_entropy(cov_full)
+        entropy_diff = -S_total
+        for mode in self.modes:
+            rho_reduced = rho.get_modes(mode)
+            cov_reduced, _, _ = rho_reduced.phase_space(s=0)
+            entropy = von_neumann_entropy(cov_reduced)
+            entropy_diff += entropy
+        return math.allclose(entropy_diff, 0)
+
+    @property
     def L2_norm(self) -> float:
         r"""
         The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
 
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import Ket
-
-            >>> state = Ket.random([0])
-            >>> assert math.allclose(state.L2_norm, 1.0)
+        >>> from mrmustard import math
+        >>> from mrmustard.lab import GaussianKet
+        >>> state = GaussianKet.random([0])
+        >>> assert math.allclose(state.L2_norm, 1.0)
         """
-        if isinstance(self.ansatz, PolyExpAnsatz) and self.ansatz.num_derived_vars > 0:
-            fock_state = self.to_fock()
-            ret = math.real(fock_state.contract(fock_state.dual, mode="zip").ansatz.scalar)
-        else:
-            ret = math.real(self.contract(self.dual, mode="zip").ansatz.scalar)
-        return ret
+        state = self
+        if isinstance(state.ansatz, PolyExpAnsatz) and state.ansatz.num_derived_vars > 0:
+            state = state.to_fock()
+        return math.real(state.contract(state.dual).ansatz.scalar)
 
     @property
     @abstractmethod
@@ -144,6 +119,23 @@ class State(CircuitComponent):
         The purity of this state.
         """
 
+    @property
+    def wigner(self):
+        r"""
+        Returns the Wigner function of this state in phase space as an ``Ansatz``.
+
+        >>> import numpy as np
+        >>> from mrmustard.lab import GaussianKet
+        >>> state = GaussianKet.random([0])
+        >>> x = np.linspace(-5, 5, 100)
+        >>> assert np.all(state.wigner(x,0).real >= 0)
+        """
+        if isinstance(self.ansatz, PolyExpAnsatz):
+            return (self >> BtoPS(self.modes, s=0)).ansatz.PS
+        raise ValueError(
+            "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first.",
+        )
+
     @classmethod
     def from_bargmann(
         cls,
@@ -156,6 +148,16 @@ class State(CircuitComponent):
         Initializes a state of type ``cls`` from an ``(A, b, c)`` triple
         parametrizing the Ansatz in Bargmann representation.
 
+        >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+        >>> from mrmustard.physics.triples import coherent_state_Abc
+        >>> from mrmustard.lab.states.ket import Ket
+        >>> modes = (0,)
+        >>> triple = coherent_state_Abc(alpha=0.1)
+        >>> coh = Ket.from_bargmann(modes, triple)
+        >>> assert coh.modes == modes
+        >>> assert coh.ansatz == PolyExpAnsatz(*triple)
+        >>> assert isinstance(coh, Ket)
+
         Args:
             modes: The modes of this state.
             triple: The ``(A, b, c)`` triple.
@@ -167,20 +169,6 @@ class State(CircuitComponent):
         Raises:
             ValueError: If the ``A`` or ``b`` have a shape that is inconsistent with
                 the number of modes.
-
-        .. code-block::
-
-            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
-            >>> from mrmustard.physics.triples import coherent_state_Abc
-            >>> from mrmustard.lab.states.ket import Ket
-
-            >>> modes = (0,)
-            >>> triple = coherent_state_Abc(x=0.1)
-
-            >>> coh = Ket.from_bargmann(modes, triple)
-            >>> assert coh.modes == modes
-            >>> assert coh.ansatz == PolyExpAnsatz(*triple)
-            >>> assert isinstance(coh, Ket)
         """
         return cls.from_ansatz(modes, PolyExpAnsatz(*triple, lin_sup=lin_sup), name)
 
@@ -196,6 +184,13 @@ class State(CircuitComponent):
         Initializes a state of type ``cls`` from an array parametrizing the
         state in Fock representation.
 
+        >>> from mrmustard.physics.ansatz import ArrayAnsatz
+        >>> from mrmustard.lab import Coherent, Ket
+        >>> array = Coherent(mode=0, alpha=0.1).to_fock().ansatz.array
+        >>> coh = Ket.from_fock((0,), array, batch_dims=0)
+        >>> assert coh.modes == (0,)
+        >>> assert coh.ansatz == ArrayAnsatz(array, batch_dims=0)
+        >>> assert isinstance(coh, Ket)
 
         Args:
             modes: The modes of this state.
@@ -209,19 +204,6 @@ class State(CircuitComponent):
         Raises:
             ValueError: If the given array has a shape that is inconsistent with the number of
                 modes.
-
-        .. code-block::
-
-            >>> from mrmustard.physics.ansatz import ArrayAnsatz
-            >>> from mrmustard.physics.triples import coherent_state_Abc
-            >>> from mrmustard.lab import Coherent, Ket
-
-            >>> array = Coherent(mode=0, x=0.1).to_fock().ansatz.array
-            >>> coh = Ket.from_fock((0,), array, batch_dims=0)
-
-            >>> assert coh.modes == (0,)
-            >>> assert coh.ansatz == ArrayAnsatz(array, batch_dims=0)
-            >>> assert isinstance(coh, Ket)
         """
         return cls.from_ansatz(modes, ArrayAnsatz(array, batch_dims=batch_dims), name)
 
@@ -236,6 +218,15 @@ class State(CircuitComponent):
         r"""
         Initializes a state of type ``cls`` given modes and an ansatz.
 
+        >>> from mrmustard import math
+        >>> from mrmustard.lab import Ket
+        >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+        >>> A = math.astensor([[0,.5], [.5,0]])
+        >>> b = math.astensor([2-1j,2+1j])
+        >>> c = 1
+        >>> psi = Ket.from_ansatz([0,1], PolyExpAnsatz(A,b,c))
+        >>> assert isinstance(psi, Ket)
+
         Args:
             modes: The modes of this state.
             ansatz: The ansatz of this state.
@@ -243,20 +234,6 @@ class State(CircuitComponent):
 
         Returns:
             A state.
-
-
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import Ket
-            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
-
-            >>> A = math.astensor([[0,.5], [.5,0]])
-            >>> b = math.astensor([2-1j,2+1j])
-            >>> c = 1
-            >>> psi = Ket.from_ansatz([0,1], PolyExpAnsatz(A,b,c))
-
-            >>> assert isinstance(psi, Ket)
         """
 
     @classmethod
@@ -272,6 +249,14 @@ class State(CircuitComponent):
         Initializes a state from the covariance matrix and the vector of means of a state in
         phase space.
 
+        >>> from mrmustard import math
+        >>> from mrmustard.lab import Ket, Vacuum
+        >>> assert Ket.from_phase_space([0], (math.eye(2)/2, [0,0], 1)) == Vacuum([0])
+
+        Note:
+            If the given covariance matrix and vector of means are consistent with a pure
+            state, a ``Ket`` is returned. Otherwise, a ``DM`` is returned. One can skip this check by
+            setting ``atol_purity`` to ``None`` (``atol_purity`` defaults to ``None``).
 
         Args:
             modes: The modes of this states.
@@ -289,18 +274,6 @@ class State(CircuitComponent):
                 with the number of modes.
             ValueError: If ``atol_purity`` is not ``None`` and the purity of the returned state
                 is smaller than ``1-atol_purity`` or larger than ``1+atol_purity``.
-
-        Note:
-            If the given covariance matrix and vector of means are consistent with a pure
-            state, a ``Ket`` is returned. Otherwise, a ``DM`` is returned. One can skip this check by
-            setting ``atol_purity`` to ``None`` (``atol_purity`` defaults to ``None``).
-
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import Ket, Vacuum
-
-            >>> assert Ket.from_phase_space([0], (math.eye(2)/2, [0,0], 1)) == Vacuum([0])
         """
 
     @classmethod
@@ -346,6 +319,13 @@ class State(CircuitComponent):
         and is unbatched. Otherwise, defaults to ``settings.DEFAULT_FOCK_SIZE``. If ``respect_manual_shape`` is ``True``,
         the non-None values in ``self.manual_shape`` are used to override the shape.
 
+        >>> from mrmustard import math
+        >>> from mrmustard.lab import Vacuum
+        >>> assert math.allclose(Vacuum([0]).fock_array(), 1)
+
+        Note:
+            If jitted, the shape will default to ``settings.DEFAULT_FOCK_SIZE``.
+
         Args:
             max_prob: The maximum probability mass to capture in the shape. Default is ``settings.AUTOSHAPE_PROBABILITY``.
             max_shape: The maximum shape cutoff. Default is ``settings.AUTOSHAPE_MAX``.
@@ -354,17 +334,6 @@ class State(CircuitComponent):
 
         Returns:
             The Fock shape of this component.
-
-
-        Note:
-            If jitted, the shape will default to ``settings.DEFAULT_FOCK_SIZE``.
-        Example:
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import Vacuum
-
-            >>> assert math.allclose(Vacuum([0]).fock_array(), 1)
         """
         try:
             shape = self.ansatz.core_shape
@@ -400,15 +369,154 @@ class State(CircuitComponent):
         Returns the Fock distribution of the state up to some cutoff.
 
         Args:
-            cutoff: The photon cutoff.
+            cutoff: The photon cutoff (maximum photon number).
 
         Returns:
-            The Fock distribution.
+            The Fock distribution including states from :math:`|0\rangle` to :math:`|\text{cutoff}\rangle`.
         """
-        fock_array = self.fock_array(cutoff)
+        batch_shape = self.ansatz.batch_shape
+        batch_dim = self.ansatz.batch_dims
+        fock_array = self.fock_array(cutoff + 1)
         if not self.wires.ket or not self.wires.bra:
-            return math.reshape(math.abs(fock_array) ** 2, (-1,))
-        return math.reshape(math.abs(math.diag_part(fock_array)), (-1,))
+            return math.reshape(math.abs(fock_array) ** 2, (*batch_shape, -1))
+        n_modes = self.n_modes
+        if self.is_separable:
+            for i in range(n_modes):
+                fock_array = math.diagonal(fock_array, axis1=-n_modes - 1, axis2=-(1 + i))
+            return math.reshape(math.abs(fock_array), (*batch_shape, -1))
+        indices_list = [(...,) + ns * 2 for ns in product(list(range(cutoff + 1)), repeat=n_modes)]
+        return math.stack([fock_array[indices] for indices in indices_list], axis=batch_dim)
+
+    def get_modes(self, modes: int | Sequence[int]) -> State:
+        r"""
+        Reduced density matrix obtained by tracing out all the modes except those in
+        ``modes``. Note that the result is returned with modes in increasing order.
+
+        Args:
+            modes: The modes to keep.
+
+        Returns:
+            A ``State`` object with the remaining modes.
+
+        Raises:
+            ValueError: If the modes to keep are not a subset of the modes of the state.
+        """
+        if not self.wires.ket or not self.wires.bra:
+            return self.dm().get_modes(modes)
+        keep = {modes} if isinstance(modes, int) else set(modes)
+        if not keep.issubset(self.modes):
+            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{keep}``.")
+        idxz = [i for i, m in enumerate(self.modes) if m not in keep]
+        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in keep]
+        ansatz = self.ansatz.trace(idxz, idxz_conj)
+        return self._from_attributes(
+            ansatz, Wires(modes_out_bra=keep, modes_out_ket=keep), self.name
+        )
+
+    def wormhole_1mode(
+        self,
+        pnr_outcomes: tuple[int, ...] | list[tuple[int, ...]],
+        output_cutoff: int,
+        leftover_mode: int,
+    ) -> dict[tuple[int, ...], State]:
+        r"""
+        Compute conditional single-mode states given PNR measurements.
+
+        Uses the wormhole algorithm to efficiently compute the conditional state
+        of one "leftover" mode given photon number resolving (PNR) measurements
+        on all other modes. This is much more efficient than computing the full
+        Fock tensor and slicing for high photon counts.
+
+        Supports both single and batched states. For batched states, the computation
+        is parallelized across batch elements for improved performance.
+
+        Args:
+            pnr_outcomes: Either a single tuple or a list of tuples specifying photon
+                counts for the measured modes. Each tuple has length n_modes - 1,
+                with photon counts in mode order (excluding the leftover mode).
+            output_cutoff: Maximum photon number for the output state.
+            leftover_mode: The mode to keep unmeasured. Must be one of this state's modes.
+
+        Returns:
+            Dict mapping PNR tuples to State objects (same type as self).
+            For batched input states, the returned states will also be batched.
+
+        Raises:
+            ValueError: If this state has fewer than 2 modes.
+            ValueError: If leftover_mode is not one of this state's modes.
+            ValueError: If pnr_outcomes tuples have wrong length.
+
+        Example:
+            >>> import numpy as np
+            >>> from mrmustard.lab import GaussianKet
+            >>> ket = GaussianKet.random([0, 1], seed=42)
+            >>> pnr = (2,)
+            >>> cutoff = 5
+            >>> results = ket.wormhole_1mode(pnr, output_cutoff=cutoff, leftover_mode=0)
+            >>> cond_ket = results[pnr]
+            >>> cond_ket.fock_array().shape
+            (6,)
+
+        Note:
+            The wormhole algorithm is particularly efficient for high photon counts
+            where computing the full Fock tensor would be prohibitively expensive.
+            Memory scaling depends on state type: O(2^M × cutoff) for Ket,
+            O(4^M × cutoff²) for DM, where M is the number of measured modes.
+        """
+        if self.n_modes < 2:
+            raise ValueError("wormhole_1mode requires at least 2 modes")
+
+        if isinstance(pnr_outcomes, tuple):
+            pnr_outcomes = [pnr_outcomes]
+
+        modes = sorted(self.modes)
+
+        if leftover_mode not in self.modes:
+            raise ValueError(f"leftover_mode {leftover_mode} is not in this state's modes {modes}")
+
+        expected_len = self.n_modes - 1
+        for pnr in pnr_outcomes:
+            if len(pnr) != expected_len:
+                raise ValueError(
+                    f"Each PNR tuple must have length {expected_len} (n_modes - 1), got {len(pnr)}"
+                )
+
+        A, b, c = self.bargmann_triple()
+        leftover_mode_idx = modes.index(leftover_mode)
+
+        if not self.wires.ket or not self.wires.bra:
+            # Ket case
+            results_arrays = wormhole_1leftover_ket(
+                A,
+                b,
+                c,
+                output_cutoff=output_cutoff,
+                pnr_outcomes=pnr_outcomes,
+                leftover_mode=leftover_mode_idx,
+            )
+        else:
+            # DM case
+            results_arrays = wormhole_1leftover_dm(
+                A,
+                b,
+                c,
+                output_cutoff=output_cutoff,
+                pnr_outcomes=pnr_outcomes,
+                leftover_mode=leftover_mode_idx,
+            )
+
+        # Determine batch dimensions from input state
+        batch_dims = self.ansatz.batch_dims
+
+        results: dict[tuple[int, ...], State] = {}
+        for pnr_tuple, state_array in results_arrays.items():
+            state_obj = self.__class__.from_ansatz(
+                modes=[leftover_mode],
+                ansatz=ArrayAnsatz(state_array, batch_dims=batch_dims),
+            )
+            results[pnr_tuple] = state_obj
+
+        return results
 
     @abstractmethod
     def formal_stellar_decomposition(
@@ -422,8 +530,7 @@ class State(CircuitComponent):
             core_modes: The set of modes defining core variables.
 
         Returns:
-            state: The core state.
-            transformation: The Gaussian transformation performing the stellar decomposition.
+            A tuple containing the core state and the Gaussian transformation performing the stellar decomposition.
         """
 
     def normalize(self) -> State:
@@ -431,37 +538,35 @@ class State(CircuitComponent):
         Returns a rescaled version of the state such that its probability is 1.
         """
         probability = self.probability
-        if probability.shape != () and isinstance(self.ansatz, PolyExpAnsatz):
-            delta = len(self.ansatz.c.shape) - len(probability.shape)
-            probability = math.reshape(probability, probability.shape + (1,) * delta)
-        elif probability.shape != () and isinstance(self.ansatz, ArrayAnsatz):
-            probability = math.reshape(
-                probability,
-                probability.shape + (1,) * self.ansatz.core_dims,
-            )
         if not self.wires.ket or not self.wires.bra:
             return self / math.sqrt(probability)
         return self / probability
 
     def phase_space(self, s: float) -> tuple:
         r"""
-        Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means and a scaling coefficient. When a state is a linear superposition of Gaussians, each of cov, means, coeff are arranged in a batch.
-        Phase space representations are labelled by an ``s`` parameter (float) which modifies the exponent of :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`, which is the operator basis used to expand phase space density matrices.
+        Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means
+        and a scaling coefficient. When a state is a linear superposition of Gaussians, each of cov, means,
+        coeff are arranged in a batch.
+
+        Phase space representations are labelled by an ``s`` parameter (float) which modifies the
+        exponent of :math:`D_s(\gamma) = e^{\frac{s}{2}|\gamma|^2}D(\gamma)`, which is the operator
+        basis used to expand phase space density matrices.
+
         The ``s`` parameter typically takes the values of -1, 0, 1 to indicate Glauber/Wigner/Husimi functions.
 
         Args:
             s: The phase space parameter
 
-            Returns:
-                The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
+        Returns:
+            The covariance matrix, the mean vector and the coefficient of the state in s-parametrized phase space.
         """
         if not isinstance(self.ansatz, PolyExpAnsatz):
             raise ValueError("Can calculate phase space only for Bargmann states.")
 
         if not self.wires.ket or not self.wires.bra:
-            new_state = self.adjoint.contract(self.contract(BtoChar(self.modes, s=s), "zip"), "zip")
+            new_state = self.adjoint.contract(self.contract(BtoChar(self.modes, s=s)))
         else:
-            new_state = self.contract(BtoChar(self.modes, s=s), "zip")
+            new_state = self.contract(BtoChar(self.modes, s=s))
         return bargmann_Abc_to_phasespace_cov_means(*new_state.bargmann_triple())
 
     @abstractmethod
@@ -476,18 +581,16 @@ class State(CircuitComponent):
             core_modes: The set of modes defining core variables.
 
         Returns:
-            state: The core state.
-            transformation: The Gaussian transformation performing the stellar decomposition.
+            A tuple containing the core state and the Gaussian transformation performing the stellar decomposition.
         """
 
     def quadrature_distribution(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
         r"""
-        The (discretized) quadrature distribution of the State.
+        The (discretized) quadrature distribution of the ``State``.
 
         Args:
             quad: the discretized quadrature axis over which the distribution is computed.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+            phi: The quadrature angle. ``0`` corresponds to the x quadrature, ``pi/2`` to the p quadrature.
         Returns:
             The quadrature distribution.
         """
@@ -516,12 +619,9 @@ class State(CircuitComponent):
         Plots the Wigner function on a heatmap, alongside the probability distributions on the
         two quadrature axis.
 
-        .. code-block::
-
-            >>> from mrmustard.lab import Coherent
-
-            >>> state = Coherent(0, x=1) / 2**0.5 + Coherent(0, x=-1) / 2**0.5
-            >>> # state.visualize_2d()
+        >>> from mrmustard.lab import Coherent
+        >>> state = Coherent(0, alpha=1) / 2**0.5 + Coherent(0, alpha=-1) / 2**0.5
+        >>> # state.visualize_2d()
 
         Args:
             xbounds: The range of the `x` axis.
@@ -530,7 +630,7 @@ class State(CircuitComponent):
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
             return_fig: Whether to return the ``Plotly`` figure.
-            min_shape: The minimum fock shape to use for the Wigner function plot (default 50).
+            min_shape: The minimum fock shape to use for the Wigner function plot.
 
         Returns:
             A ``Plotly`` figure representing the state in 2D.
@@ -648,7 +748,7 @@ class State(CircuitComponent):
             colorscale: A colorscale. Must be one of ``Plotly``\'s built-in continuous color
                 scales.
             return_fig: Whether to return the ``Plotly`` figure.
-            min_shape: The minimum fock shape to use for the Wigner function plot (default 50).
+            min_shape: The minimum fock shape to use for the Wigner function plot.
 
         Returns:
             A ``Plotly`` figure representing the state in 3D.
@@ -762,24 +862,3 @@ class State(CircuitComponent):
             return fig
         display(fig)
         return None
-
-    @property
-    def wigner(self):
-        r"""
-        Returns the Wigner function of this state in phase space as an ``Ansatz``.
-
-        .. code-block::
-
-            >>> import numpy as np
-            >>> from mrmustard.lab import Ket
-
-            >>> state = Ket.random([0])
-            >>> x = np.linspace(-5, 5, 100)
-
-            >>> assert np.all(state.wigner(x,0).real >= 0)
-        """
-        if isinstance(self.ansatz, PolyExpAnsatz):
-            return (self >> BtoPS(self.modes, s=0)).ansatz.PS
-        raise ValueError(
-            "Wigner ansatz not implemented for Fock states. Consider calling ``.to_bargmann()`` first.",
-        )

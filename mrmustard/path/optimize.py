@@ -22,6 +22,8 @@ from mrmustard.path.branch_and_bound import (
     random_solution,
 )
 
+__all__ = ["optimal_path"]
+
 
 def optimal_path(
     components: list[CircuitComponent],

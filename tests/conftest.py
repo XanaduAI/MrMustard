@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-from pathlib import Path
 
 import pytest
 from hypothesis import Verbosity
@@ -41,10 +40,10 @@ hyp_settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "dev"))
 def pytest_addoption(parser):
     r"""
     Adds the option to select the backend using the ``--backend`` flag. For example,
-    ``pytest --backend=tensorflow`` runs all the tests with tensorflow backend. The command
+    ``pytest --backend=jax`` runs all the tests with jax backend. The command
     ``pytest`` defaults to ``pytest --backend=numpy``.
     """
-    parser.addoption("--backend", default="numpy", help="``numpy``, ``tensorflow`` or ``jax``.")
+    parser.addoption("--backend", default="numpy", help="``numpy`` or ``jax``.")
 
 
 @pytest.fixture
@@ -55,9 +54,9 @@ def backend(request):
     return request.config.getoption("--backend")
 
 
-def pytest_ignore_collect(path, config):
+def pytest_ignore_collect(collection_path, config):
     """Skip test_training when using the numpy backend."""
-    return config.getoption("--backend") == "numpy" and "test_training" in Path(path).parts
+    return config.getoption("--backend") == "numpy" and "test_training" in collection_path.parts
 
 
 @pytest.fixture(autouse=True)

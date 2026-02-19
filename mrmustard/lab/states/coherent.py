@@ -20,12 +20,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
 from mrmustard.lab.states.ket import Ket
-from mrmustard.lab.utils import make_parameter
-from mrmustard.physics import triples
-from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
+
+from .builtins import coherent_state
 
 __all__ = ["Coherent"]
 
@@ -34,25 +34,16 @@ class Coherent(Ket):
     r"""
     The coherent state in Bargmann representation.
 
+    >>> from mrmustard.lab import Coherent, Vacuum, Dgate
+    >>> state = Coherent(mode=0, alpha=0.3 + 0.2j)
+    >>> assert state == Vacuum(0) >> Dgate(0, alpha=0.3 + 0.2j)
 
     Args:
         mode: The mode of the coherent state.
-        x: The `x` displacement of the coherent state.
-        y: The `y` displacement of the coherent state.
-        x_trainable: Whether the `x` displacement is trainable.
-        y_trainable: Whether the `y` displacement is trainable.
-        x_bounds: The bounds of the `x` displacement.
-        y_bounds: The bounds of the `y` displacement.
+        alpha: The `alpha` displacement of the coherent state.
 
     Returns:
         A ``Ket`` object representing a coherent state.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import Coherent, Vacuum, Dgate
-
-        >>> state = Coherent(mode=0, x=0.3, y=0.2)
-        >>> assert state == Vacuum(0) >> Dgate(0, x=0.3, y=0.2)
 
     .. details::
 
@@ -76,30 +67,15 @@ class Coherent(Ket):
 
     def __init__(
         self,
-        mode: int | tuple[int],
-        x: float | Sequence[float] = 0.0,
-        y: float | Sequence[float] = 0.0,
-        x_trainable: bool = False,
-        y_trainable: bool = False,
-        x_bounds: tuple[float | None, float | None] = (None, None),
-        y_bounds: tuple[float | None, float | None] = (None, None),
+        mode: int,
+        alpha: complex | Sequence[complex] | Parameter = 0.0 + 0.0j,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Coherent")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=math.float64
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (coherent_state, ("alpha", "lin_sup"))}
             ),
+            wires=Wires(modes_out_ket=set(mode)),
+            name=self.__class__.__name__,
         )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=y_trainable, value=y, name="y", bounds=y_bounds, dtype=math.float64
-            ),
-        )
-
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.coherent_state_Abc,
-            x=self.parameters.x,
-            y=self.parameters.y,
-        )
-        self._wires = Wires(modes_out_ket=set(mode))
+        self.parameters["alpha"] = Parameter.from_cc_init(alpha, "complex128", f"{self.name}/alpha")

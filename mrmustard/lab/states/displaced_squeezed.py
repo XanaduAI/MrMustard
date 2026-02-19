@@ -20,12 +20,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
-from mrmustard.physics import triples
-from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ..utils import make_parameter
+from .builtins import displaced_squeezed_vacuum_state
 from .ket import Ket
 
 __all__ = ["DisplacedSqueezed"]
@@ -35,84 +34,42 @@ class DisplacedSqueezed(Ket):
     r"""
     The displaced squeezed state in Bargmann representation.
 
+    >>> from mrmustard.lab import DisplacedSqueezed, Vacuum, Sgate, Dgate
+    >>> state = DisplacedSqueezed(mode=0, alpha=1, r=0.2, phi=0.3)
+    >>> assert state == Vacuum(0) >> Sgate(0, r=0.2, phi=0.3) >> Dgate(0, alpha=1)
 
     Args:
         mode: The mode of the displaced squeezed state.
-        x: The displacement along the `x` axis, which represents the position axis in phase space.
-        y: The displacement along the `y` axis, which represents the momentum axis in phase space.
+        alpha: The complex displacement.
         r: The squeezing magnitude.
         phi: The squeezing angle.
-        x_trainable: Whether `x` is a trainable variable.
-        y_trainable: Whether `y` is a trainable variable.
-        r_trainable: Whether `r` is a trainable variable.
-        phi_trainable: Whether `phi` is a trainable variable.
-        x_bounds: The bounds of `x`.
-        y_bounds: The bounds of `y`.
-        r_bounds: The bounds of `r`.
-        phi_bounds: The bounds of `phi`.
-
 
     Returns:
         A ``Ket``.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import DisplacedSqueezed, Vacuum, Sgate, Dgate
-
-        >>> state = DisplacedSqueezed(mode=0, x=1, phi=0.2)
-        >>> assert state == Vacuum(0) >> Sgate(0, phi=0.2) >> Dgate(0, x=1)
     """
 
     short_name = "DSq"
 
     def __init__(
         self,
-        mode: int | tuple[int],
-        x: float | Sequence[float] = 0.0,
-        y: float | Sequence[float] = 0.0,
-        r: float | Sequence[float] = 0.0,
-        phi: float | Sequence[float] = 0.0,
-        x_trainable: bool = False,
-        y_trainable: bool = False,
-        r_trainable: bool = False,
-        phi_trainable: bool = False,
-        x_bounds: tuple[float | None, float | None] = (None, None),
-        y_bounds: tuple[float | None, float | None] = (None, None),
-        r_bounds: tuple[float | None, float | None] = (None, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
+        mode: int,
+        alpha: complex | Sequence[complex] | Parameter = 0.0j,
+        r: float | Sequence[float] | Parameter = 0.0,
+        phi: float | Sequence[float] | Parameter = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="DisplacedSqueezed")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=math.float64
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={
+                    ReprEnum.BARGMANN: (
+                        displaced_squeezed_vacuum_state,
+                        ("alpha", "r", "phi", "lin_sup"),
+                    )
+                }
             ),
+            wires=Wires(modes_out_ket=set(mode)),
+            name=self.__class__.__name__,
         )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=y_trainable, value=y, name="y", bounds=y_bounds, dtype=math.float64
-            ),
-        )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
-            ),
-        )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_trainable,
-                value=phi,
-                name="phi",
-                bounds=phi_bounds,
-                dtype=math.float64,
-            ),
-        )
-
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.displaced_squeezed_vacuum_state_Abc,
-            x=self.parameters.x,
-            y=self.parameters.y,
-            r=self.parameters.r,
-            phi=self.parameters.phi,
-        )
-        self._wires = Wires(modes_out_ket=set(mode))
+        self.parameters["alpha"] = Parameter.from_cc_init(alpha, "complex128", f"{self.name}/alpha")
+        self.parameters["r"] = Parameter.from_cc_init(r, "float64", f"{self.name}/r")
+        self.parameters["phi"] = Parameter.from_cc_init(phi, "float64", f"{self.name}/phi")

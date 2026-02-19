@@ -34,6 +34,20 @@ from mrmustard.physics.wires import Wires
 
 Edge = tuple[int, int]
 
+__all__ = [
+    "Graph",
+    "GraphComponent",
+    "assign_costs",
+    "children",
+    "contract",
+    "grandchildren",
+    "heuristic",
+    "optimal_contraction",
+    "optimize_fock_shapes",
+    "parse_components",
+    "random_solution",
+    "validate_components",
+]
 
 # =====================
 # ====== Classes ======
@@ -294,7 +308,7 @@ def parse_components(components: list[CircuitComponent]) -> Graph:
         wires = A.wires.copy()
         comp.wires = wires
         for j, B in enumerate(components[i + 1 :]):
-            ovlp_bra, ovlp_ket = wires.overlap(B.wires)
+            ovlp_bra, ovlp_ket, _ = wires.overlap(B.wires)
             if ovlp_ket or ovlp_bra:
                 graph.add_edge(i, i + j + 1)
                 wires = Wires(

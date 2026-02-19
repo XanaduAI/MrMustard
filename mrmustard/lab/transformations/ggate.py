@@ -19,13 +19,13 @@ The class representing a generic gaussian gate.
 from __future__ import annotations
 
 from mrmustard import math
-from mrmustard.math.parameters import update_symplectic
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import RealMatrix
 
-from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
 from .base import Unitary
+from .builtins import gaussian_gate
 
 __all__ = ["Ggate"]
 
@@ -34,19 +34,15 @@ class Ggate(Unitary):
     r"""
     The generic N-mode Gaussian gate.
 
+    >>> from mrmustard import math
+    >>> from mrmustard.lab import Ggate, Vacuum, Identity, Ket
+    >>> U = Ggate.random(modes=0)
+    >>> assert isinstance(Vacuum(0) >> U, Ket)
+    >>> assert U >> U.dual == Identity(0)
+
     Args:
         modes: The modes this gate is applied to.
         symplectic: The symplectic matrix of the gate in the XXPP ordering.
-        symplectic_trainable: Whether ``symplectic`` is trainable.
-
-    .. code-block::
-
-        >>> from mrmustard import math
-        >>> from mrmustard.lab import Ggate, Vacuum, Identity, Ket
-
-        >>> U = Ggate(modes=0, symplectic=math.random_symplectic(1))
-        >>> assert isinstance(Vacuum(0) >> U, Ket)
-        >>> assert U >> U.dual == Identity(0)
     """
 
     short_name = "G"
@@ -54,33 +50,44 @@ class Ggate(Unitary):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        symplectic: RealMatrix | None = None,
-        symplectic_trainable: bool = False,
+        symplectic: RealMatrix | Parameter,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="Ggate")
-
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(len(modes))
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=symplectic_trainable,
-                value=symplectic,
-                name="symplectic",
-                bounds=(None, None),
-                update_fn=update_symplectic,
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (gaussian_gate, ("symplectic", "lin_sup"))}
             ),
+            wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
+            name=self.__class__.__name__,
         )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=lambda s: Unitary.from_symplectic(modes, s).bargmann_triple(),
-            s=self.parameters.symplectic,
-        )
-        self._wires = Wires(
-            modes_in_bra=set(),
-            modes_out_bra=set(),
-            modes_in_ket=set(modes),
-            modes_out_ket=set(modes),
+        self.parameters["symplectic"] = Parameter.from_cc_init(
+            symplectic, "float64", f"{self.name}/symplectic"
         )
 
     @property
     def symplectic(self):
         return self.parameters.symplectic.value
+
+    @classmethod
+    def random(
+        cls, modes: int | tuple[int, ...], max_r: float = 1.0, seed: int | None = None
+    ) -> Ggate:
+        r"""
+        Returns a random Ggate.
+
+        Args:
+            modes: The modes of the Ggate.
+            max_r: Maximum squeezing parameter over which we make random choices.
+            seed: The random seed. If ``None``, the global seed is used.
+
+        Returns:
+            The random Ggate.
+
+        Raises:
+            ValueError: if ``modes`` is an empty tuple.
+        """
+        modes = (modes,) if isinstance(modes, int) else modes
+        if len(modes) == 0:
+            raise ValueError("Cannot create a random Ggate with no modes.")
+        symplectic = math.random_symplectic(len(modes), max_r=max_r, seed=seed)
+        return cls(modes, symplectic)

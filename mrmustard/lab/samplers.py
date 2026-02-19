@@ -94,7 +94,9 @@ class Sampler(ABC):
             return self.sample_prob_dist(state, n_samples, seed)[0]
 
         initial_mode = state.modes[0]
-        initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
+        initial_samples, probs = self.sample_prob_dist(
+            state.get_modes(initial_mode), n_samples, seed
+        )
 
         unique_samples, idxs, counts = np.unique(
             initial_samples,
@@ -129,7 +131,7 @@ class Sampler(ABC):
             A tuple of the generated samples and the probability
             of obtaining the sample.
         """
-        rng = np.random.default_rng(seed) if seed else settings.rng
+        rng = settings.get_rng(seed)
         probs = self.probabilities(state)
         meas_outcomes = list(product(self.meas_outcomes, repeat=len(state.modes)))
         samples = rng.choice(
@@ -156,7 +158,7 @@ class Sampler(ABC):
         if self._povms is None:
             raise ValueError("This sampler has no POVMs defined.")
         if isinstance(self.povms, CircuitComponent):
-            kwargs = self.povms.parameters.to_dict()
+            kwargs = self.povms.parameters
             kwargs[self._outcome_arg] = meas_outcome
             return self.povms.__class__(mode, **kwargs)
         return self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
@@ -191,7 +193,7 @@ class PNRSampler(Sampler):
     """
 
     def __init__(self, cutoff: int) -> None:
-        super().__init__(list(range(cutoff)), Number(0, 0, cutoff))
+        super().__init__(list(range(cutoff + 1)), Number(0, 0, cutoff))
         self._cutoff = cutoff
         self._outcome_arg = "n"
 
@@ -232,17 +234,20 @@ class HomodyneSampler(Sampler):
             return self.sample_prob_dist(state, n_samples, seed)[0]
 
         initial_mode = state.modes[0]
-        initial_samples, probs = self.sample_prob_dist(state[initial_mode], n_samples, seed)
+        initial_samples, probs = self.sample_prob_dist(
+            state.get_modes(initial_mode), n_samples, seed
+        )
 
         unique_samples, idxs, counts = np.unique(
             initial_samples,
             return_index=True,
             return_counts=True,
         )
+        btoq_ansatz = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz
         ret = []
         for unique_sample, idx, count in zip(unique_samples, idxs, counts):
             # Use partial_eval to evaluate the ansatz at the first mode only
-            reduced_ansatz = (state >> BtoQ([initial_mode], phi=self._phi)).ansatz(unique_sample)
+            reduced_ansatz = btoq_ansatz(unique_sample)
             reduced_state = state.from_bargmann(state.modes[1:], reduced_ansatz.triple)
             prob = probs[idx] / self._step
             norm = math.sqrt(prob) if isinstance(state, Ket) else prob

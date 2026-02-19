@@ -17,21 +17,28 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from typing import Any
 
 import numpy as np
-from opt_einsum import contract
 from scipy.linalg import expm as scipy_expm
 from scipy.linalg import sqrtm as scipy_sqrtm
 from scipy.special import loggamma as scipy_loggamma
 from scipy.special import xlogy as scipy_xlogy
 
-from ..utils.settings import settings
-from .backend_base import BackendBase
-from .lattice import strategies
-from .lattice.strategies.compactFock.inputValidation import (
-    hermite_multidimensional_diagonal,
-    hermite_multidimensional_diagonal_batch,
+from mrmustard import settings
+from mrmustard.mathlib import cython_lattice
+from mrmustard.mathlib.gaussian_integrals import (  # numba or guvectorized functions
+    complex_gaussian_integral_1_guvectorized,
+    complex_gaussian_integral_1_jitted,
+    complex_gaussian_integral_2_guvectorized,
+    complex_gaussian_integral_2_jitted,
 )
+from mrmustard.mathlib.lattice import strategies
+from mrmustard.mathlib.lattice.strategies.compactFock.inputValidation import (
+    hermite_multidimensional_diagonal,
+)
+
+from .backend_base import BackendBase
 
 np.set_printoptions(legacy="1.25")
 
@@ -78,17 +85,27 @@ class BackendNumpy(BackendBase):
     ) -> np.ndarray:
         return np.arange(start, limit, delta, dtype=dtype)
 
+    def argmax(self, array: np.ndarray, axis: int | None = None) -> np.ndarray:
+        return np.argmax(array, axis=axis)
+
+    def argmin(self, array: np.ndarray, axis: int | None = None) -> np.ndarray:
+        return np.argmin(array, axis=axis)
+
+    def argsort(self, array: np.ndarray, axis: int | None = None) -> np.ndarray:
+        return np.argsort(array, axis=axis)
+
     def asnumpy(self, tensor: np.ndarray) -> np.ndarray:
         return np.asarray(tensor)
-
-    def assign(self, tensor: np.ndarray, value: np.ndarray) -> np.ndarray:
-        return value
 
     def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
         return np.asarray(array, dtype=dtype)
 
     def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
         return np.array(array, ndmin=n, dtype=dtype)
+
+    def BackendError(self):
+        # no numpy backend specific errors
+        raise NotImplementedError
 
     def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
         return np.broadcast_to(array, shape)
@@ -106,8 +123,65 @@ class BackendNumpy(BackendBase):
     def clip(self, array, a_min, a_max) -> np.ndarray:
         return np.clip(array, a_min, a_max)
 
+    def complex_gaussian_integral_1_single(self, A, b, idx12, A_out, b_out, log_c_out):
+        if A_out is None:  # assume all None
+            m = A.shape[-2] - len(idx12)
+            A_out = np.empty((m, m), dtype=A.dtype)
+            b_out = np.empty((m,), dtype=A.dtype)
+            log_c_out = np.empty((1,), dtype=A.dtype)
+
+        complex_gaussian_integral_1_jitted(A, b, idx12, A_out, b_out, log_c_out)
+
+        return A_out, b_out, log_c_out[..., 0]
+
+    def complex_gaussian_integral_1_batched(self, A, b, idx12, A_out, b_out, log_c_out):
+        batch_A = A.shape[:-2]
+        batch_b = b.shape[:-1]
+        target_batch = np.broadcast_shapes(batch_A, batch_b)
+
+        if A_out is None:  # assume all None
+            m = A.shape[-1] - len(idx12)
+            A_out = np.empty((*target_batch, m, m), dtype=A.dtype)
+            b_out = np.empty((*target_batch, m), dtype=A.dtype)
+            log_c_out = np.empty((*target_batch, 1), dtype=A.dtype)
+        complex_gaussian_integral_1_guvectorized(A, b, idx12, A_out, b_out, log_c_out)
+
+        return A_out, b_out, log_c_out[..., 0]
+
+    def complex_gaussian_integral_2_single(
+        self, A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out
+    ):
+        if A_out is None:  # assume all None
+            m = A1.shape[-2] + A2.shape[-2] - 2 * len(idx1)
+            A_out = np.empty((m, m), dtype=A1.dtype)
+            b_out = np.empty((m,), dtype=A1.dtype)
+            log_c_out = np.empty((1,), dtype=A1.dtype)
+
+        complex_gaussian_integral_2_jitted(A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out)
+
+        return A_out, b_out, log_c_out[..., 0]
+
+    def complex_gaussian_integral_2_batched(
+        self, A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out
+    ):
+        batch_A1, batch_b1 = A1.shape[:-2], b1.shape[:-1]
+        batch_A2, batch_b2 = A2.shape[:-2], b2.shape[:-1]
+        target_batch = np.broadcast_shapes(
+            np.broadcast_shapes(batch_A1, batch_b1), np.broadcast_shapes(batch_A2, batch_b2)
+        )
+
+        if A_out is None:  # assume all None
+            output_size = A1.shape[-1] + A2.shape[-1] - 2 * len(idx1)
+            A_out = np.empty((*target_batch, output_size, output_size), dtype=A1.dtype)
+            b_out = np.empty((*target_batch, output_size), dtype=A1.dtype)
+            log_c_out = np.empty((*target_batch, 1), dtype=A1.dtype)
+
+        complex_gaussian_integral_2_guvectorized(
+            A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out
+        )
+        return A_out, b_out, log_c_out[..., 0]
+
     def concat(self, values: list[np.ndarray], axis: int) -> np.ndarray:
-        # tf.concat can concatenate lists of scalars, while np.concatenate errors
         try:
             return np.concatenate(values, axis)
         except ValueError:
@@ -127,35 +201,22 @@ class BackendNumpy(BackendBase):
             det = np.linalg.det(matrix)
         return det  # noqa: RET504
 
+    def diagonal(
+        self, array: np.ndarray, offset: int | None, axis1: int | None, axis2: int | None
+    ) -> np.ndarray:
+        return np.diagonal(array, offset=offset, axis1=axis1, axis2=axis2)
+
     def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
-        if array.ndim in (1, 2):
-            return np.diag(array, k=k)
-        # fallback into more complex algorithm
-        original_sh = array.shape
-
-        ravelled_sh = (np.prod(original_sh[:-1]), original_sh[-1])
-        array = array.ravel().reshape(*ravelled_sh)
-
-        ret = np.asarray([np.diag(line, k) for line in array])
-        inner_shape = (
-            original_sh[-1] + abs(k),
-            original_sh[-1] + abs(k),
-        )
-        return ret.reshape(original_sh[:-1] + inner_shape)
-
-    def diag_part(self, array: np.ndarray, k: int) -> np.ndarray:
-        ret = np.diagonal(array, offset=k, axis1=-2, axis2=-1)
-        ret.flags.writeable = True
-        return ret
-
-    def einsum(self, string: str, *tensors, optimize: bool | str) -> np.ndarray:
-        return contract(string, *tensors, optimize=optimize, backend="numpy")
+        return np.diag(array, k=k)
 
     def exp(self, array: np.ndarray) -> np.ndarray:
         return np.exp(array)
 
     def expand_dims(self, array: np.ndarray, axis: int) -> np.ndarray:
         return np.expand_dims(array, axis)
+
+    def squeeze(self, array: np.ndarray, axis: int | tuple[int, ...] | None = None) -> np.ndarray:
+        return np.squeeze(array, axis=axis)
 
     def expm(self, matrix: np.ndarray) -> np.ndarray:
         return scipy_expm(matrix)
@@ -166,8 +227,8 @@ class BackendNumpy(BackendBase):
     def eye_like(self, array: np.ndarray) -> np.ndarray:
         return np.eye(array.shape[-1], dtype=array.dtype)
 
-    def from_backend(self, value) -> bool:
-        return isinstance(value, np.ndarray)
+    def equal(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return np.equal(a, b)
 
     def gather(self, array: np.ndarray, indices: np.ndarray, axis: int = 0) -> np.ndarray:
         return np.take(array, indices, axis=axis)
@@ -178,25 +239,33 @@ class BackendNumpy(BackendBase):
     def inv(self, tensor: np.ndarray) -> np.ndarray:
         return np.linalg.inv(tensor)
 
+    def iscomplexobj(self, x: Any) -> bool:
+        return np.iscomplexobj(x)
+
     def isnan(self, array: np.ndarray) -> np.ndarray:
         return np.isnan(array)
 
-    def is_trainable(self, tensor: np.ndarray) -> bool:
-        return False
+    def issubdtype(self, arg1, arg2) -> bool:
+        return np.issubdtype(arg1, arg2)
 
     def lgamma(self, x: np.ndarray) -> np.ndarray:
         return scipy_loggamma(x)
 
     def log(self, x: np.ndarray) -> np.ndarray:
-        return np.log(x)
+        with np.errstate(divide="ignore"):
+            return np.log(x)
 
     def make_complex(self, real: np.ndarray, imag: np.ndarray) -> np.ndarray:
         return real + 1j * imag
 
     def matmul(self, *matrices: np.ndarray) -> np.ndarray:
-        mat = matrices[0]
-        for matrix in matrices[1:]:
-            mat = np.matmul(mat, matrix)
+        use_matmul = self.any(matrix.ndim > 2 for matrix in matrices)
+        if use_matmul:
+            mat = matrices[0]
+            for matrix in matrices[1:]:
+                mat = np.matmul(mat, matrix)
+        else:
+            mat = np.linalg.multi_dot(matrices)
         return mat
 
     def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -211,6 +280,9 @@ class BackendNumpy(BackendBase):
     def minimum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.minimum(a, b)
 
+    def mod(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return np.mod(a, b)
+
     def moveaxis(
         self,
         array: np.ndarray,
@@ -219,23 +291,20 @@ class BackendNumpy(BackendBase):
     ) -> np.ndarray:
         return np.moveaxis(array, old, new)
 
-    def new_variable(
-        self,
-        value,
-        bounds: tuple[float | None, float | None] | None,
-        name: str,
-        dtype=np.float64,
-    ):
-        return np.array(value, dtype=dtype)
+    def mean(self, array: np.ndarray, axis: int | tuple[int] | None = None) -> np.ndarray:
+        return np.mean(array, axis=axis)
 
-    def new_constant(self, value, name: str, dtype=np.float64):
-        return np.asarray(value, dtype=dtype)
-
-    def norm(self, array: np.ndarray) -> np.ndarray:
-        return np.linalg.norm(array)
+    def norm(
+        self, array: np.ndarray, axis: int | tuple[int, int] | None = None, keepdims: bool = False
+    ) -> np.ndarray:
+        return np.linalg.norm(array, axis=axis, keepdims=keepdims)
 
     def ones(self, shape: Sequence[int], dtype=np.float64) -> np.ndarray:
         return np.ones(shape, dtype=dtype)
+
+    def full(self, shape: Sequence[int], fill_value, dtype=None) -> np.ndarray:
+        dtype = dtype or np.result_type(fill_value)
+        return np.full(shape, fill_value, dtype=dtype)
 
     def ones_like(self, array: np.ndarray) -> np.ndarray:
         return np.ones(array.shape, dtype=array.dtype)
@@ -245,12 +314,12 @@ class BackendNumpy(BackendBase):
 
     def conditional(
         self,
-        cond: np.ndarray,
+        cond: np.ndarray | bool,
         true_fn: Callable,
         false_fn: Callable,
         *args,
     ) -> np.ndarray:
-        if cond.all():
+        if self.asnumpy(cond).all():
             return true_fn(*args)
         return false_fn(*args)
 
@@ -291,6 +360,9 @@ class BackendNumpy(BackendBase):
     def reshape(self, array: np.ndarray, shape: Sequence[int]) -> np.ndarray:
         return np.reshape(array, shape)
 
+    def shape(self, array: np.ndarray) -> tuple[int, ...]:
+        return np.shape(array)
+
     def sin(self, array: np.ndarray) -> np.ndarray:
         return np.sin(array)
 
@@ -329,6 +401,12 @@ class BackendNumpy(BackendBase):
 
     def transpose(self, a: np.ndarray, perm: Sequence[int] | None = None) -> np.ndarray | None:
         return np.transpose(a, axes=perm)
+
+    def tan(self, array: np.ndarray) -> np.ndarray:
+        return np.tan(array)
+
+    def tanh(self, array: np.ndarray) -> np.ndarray:
+        return np.tanh(array)
 
     def update_tensor(
         self,
@@ -382,71 +460,6 @@ class BackendNumpy(BackendBase):
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    @staticmethod
-    def DefaultEuclideanOptimizer() -> None:
-        return None
-
-    def hermite_renormalized_unbatched(
-        self,
-        A: np.ndarray,
-        b: np.ndarray,
-        c: np.ndarray,
-        shape: tuple[int],
-        stable: bool = False,
-        out: np.ndarray | None = None,
-    ) -> np.ndarray:
-        if stable:
-            return strategies.stable_numba(tuple(shape), A, b, c, out)
-        return strategies.vanilla_numba(tuple(shape), A, b, c, out)
-
-    def hermite_renormalized_batched(
-        self,
-        A: np.ndarray,
-        b: np.ndarray,
-        c: np.ndarray,
-        shape: tuple[int],
-        stable: bool = False,
-        out: np.ndarray | None = None,
-    ) -> np.ndarray:
-        return strategies.vanilla_batch_numba(tuple(shape), A, b, c, stable, out)
-
-    def hermite_renormalized_binomial(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        shape: tuple[int],
-        max_l2: float | None,
-        global_cutoff: int | None,
-    ) -> np.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
-        up to a given L2 norm or global cutoff, whichever applies first. The max_l2 value, if
-        not provided, is set to the default value of the AUTOSHAPE_PROBABILITY setting.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            shape: The shape of the final tensor (local cutoffs).
-            max_l2 (float): The maximum squared L2 norm of the tensor.
-            global_cutoff (optional int): The global cutoff.
-
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-        G, _ = strategies.binomial(
-            tuple(shape),
-            A,
-            B,
-            C,
-            max_l2=max_l2 or settings.AUTOSHAPE_PROBABILITY,
-            global_cutoff=global_cutoff or sum(shape) - len(shape) + 1,
-        )
-
-        return G
-
     def reorder_AB_bargmann(self, A: np.ndarray, B: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann_utils the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
@@ -457,78 +470,60 @@ class BackendNumpy(BackendBase):
         B = self.gather(B, ordering, axis=0)
         return A, B
 
+    # ~~~~~~~~~~~~~~~~~~~~
+    # hermite_renormalized
+    # ~~~~~~~~~~~~~~~~~~~~
+
+    def hermite_renormalized(
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        c: np.ndarray,
+        shape: tuple[int],
+        stable: bool = False,
+        out: np.ndarray | None = None,
+    ) -> np.ndarray:
+        return cython_lattice.vanilla(tuple(shape), A, b, c, stable, out)
+
+    def hermite_renormalized_batched(
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        c: np.ndarray,
+        shape: tuple[int],
+        stable: bool = False,
+        out: np.ndarray | None = None,
+    ) -> np.ndarray:
+        return cython_lattice.vanilla_batched(tuple(shape), A, b, c, stable, out)
+
+    def hermite_renormalized_binomial(
+        self,
+        A: np.ndarray,
+        B: np.ndarray,
+        C: np.ndarray,
+        shape: tuple[int],
+        max_l2: float | None,
+        global_cutoff: int | None,
+    ) -> np.ndarray:
+        return strategies.binomial(
+            tuple(shape),
+            A,
+            B,
+            C,
+            max_l2=max_l2 or settings.AUTOSHAPE_PROBABILITY,
+            global_cutoff=global_cutoff or sum(shape) - len(shape) + 1,
+        )[0]
+
     def hermite_renormalized_diagonal(
         self,
         A: np.ndarray,
         B: np.ndarray,
         C: np.ndarray,
         cutoffs: tuple[int],
+        reorderedAB: bool,
     ) -> np.ndarray:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
-
-    def hermite_renormalized_diagonal_reorderedAB(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        cutoffs: tuple[int],
-    ) -> np.ndarray:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
-        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
-
-        Calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
-        by applying the recursion relation in a selective manner.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial.
-        """
-        poly0, _, _, _, _ = hermite_multidimensional_diagonal(A, B, C, cutoffs)
-
-        return poly0
-
-    def hermite_renormalized_diagonal_batch(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        cutoffs: tuple[int],
-    ) -> np.ndarray:
-        r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
-        A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
-
-    def hermite_renormalized_diagonal_reorderedAB_batch(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        cutoffs: tuple[int],
-    ) -> np.ndarray:
-        r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
-
-        Args:
-            A: The A matrix.
-            B: The B vectors.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial from different B values.
-        """
-        poly0, _, _, _, _ = hermite_multidimensional_diagonal_batch(A, B, C, cutoffs)
-
-        return poly0
+        A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
+        return hermite_multidimensional_diagonal(A, B, C, cutoffs)[0]
 
     def hermite_renormalized_1leftoverMode(
         self,
@@ -538,33 +533,90 @@ class BackendNumpy(BackendBase):
         output_cutoff: int,
         pnr_cutoffs: tuple[int, ...],
         stable: bool = False,
+        reorderedAB: bool = True,
     ) -> np.ndarray:
         return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
             (-2, -1, *tuple(range(len(pnr_cutoffs)))),
         )
 
-    def displacement(self, x: float, y: float, shape: tuple[int, int], tol: float):
-        alpha = self.asnumpy(x) + 1j * self.asnumpy(y)
-        if np.sqrt(x * x + y * y) > tol:
-            gate = strategies.displacement(tuple(shape), alpha)
-        else:
-            gate = self.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
-        return self.astensor(gate, dtype=gate.dtype.name)
+    # ~~~~~~~~~~~~~~~~~~~~~~~
+    # Fock lattice strategies
+    # ~~~~~~~~~~~~~~~~~~~~~~~
 
-    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
-        t, s = self.asnumpy(theta), self.asnumpy(phi)
-        if method == "vanilla":
-            bs_unitary = strategies.beamsplitter(shape, t, s)
-        elif method == "schwinger":
-            bs_unitary = strategies.beamsplitter_schwinger(shape, t, s)
-        elif method == "stable":
-            bs_unitary = strategies.stable_beamsplitter(shape, t, s)
-        return self.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
+    def displacement(self, alpha: complex | np.ndarray, shape: tuple[int, int]):
+        alpha = self.astensor(alpha, dtype=self.complex128)
+        batch_shape = alpha.shape
+        if batch_shape == ():
+            return cython_lattice.displacement(tuple(shape), alpha)
+        alpha_flattened = alpha.reshape(-1)
+        ret = cython_lattice.displacement_batched(tuple(shape), alpha_flattened)
+        return ret.reshape((*batch_shape, *shape))
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int, int]):
-        sq_ket = strategies.squeezed(shape, self.asnumpy(r), self.asnumpy(phi))
-        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+    def beamsplitter(
+        self,
+        theta: float | np.ndarray,
+        phi: float | np.ndarray,
+        shape: tuple[int, int, int, int],
+        method: str,
+    ):
+        theta, phi = (
+            self.astensor(theta, dtype=self.float64),
+            self.astensor(phi, dtype=self.float64),
+        )
+        if method == "schwinger":
+            return strategies.beamsplitter_schwinger(shape, theta, phi)
+        stable = method == "stable"
+        batch_shape = theta.shape
+        if batch_shape == ():
+            return cython_lattice.beamsplitter(shape, theta, phi, stable=stable)
+        theta_flattened = theta.reshape(-1)
+        phi_flattened = phi.reshape(-1)
+        bs_unitary = cython_lattice.beamsplitter_batched(
+            shape, theta_flattened, phi_flattened, stable=stable
+        )
+        return bs_unitary.reshape((*batch_shape, *shape))
+
+    def homodyne_projector(
+        self,
+        fock_dim: int,
+        A: np.ndarray,
+        b: np.ndarray,
+        c: np.ndarray,
+        out: np.ndarray | None,
+    ):
+        A, b, c = (
+            self.astensor(A, dtype=self.complex128),
+            self.astensor(b, dtype=self.complex128),
+            self.astensor(c, dtype=self.complex128),
+        )
+        batch_shape = A.shape[:-2]
+        if batch_shape == ():
+            return cython_lattice.homodyne_projector(fock_dim, A, b, c, out=out)
+        A_flattened = A.reshape(-1, *A.shape[-2:])
+        b_flattened = b.reshape(-1, *b.shape[-1:])
+        c_flattened = c.reshape(-1)
+        out_flattened = out.reshape(-1, *out.shape[-3:]) if out is not None else None
+        ret = cython_lattice.homodyne_projector_batched(
+            fock_dim, A_flattened, b_flattened, c_flattened, out=out_flattened
+        )
+        return ret.reshape((*batch_shape, fock_dim, fock_dim, fock_dim))
+
+    def squeezed(self, r: float, phi: float, shape: tuple[int]):
+        r, phi = self.astensor(r, dtype=self.float64), self.astensor(phi, dtype=self.float64)
+        batch_shape = r.shape
+        if batch_shape == ():
+            return cython_lattice.squeezed(int(shape[0]), r, phi)
+        r_flattened = r.reshape(-1)
+        phi_flattened = phi.reshape(-1)
+        ret = cython_lattice.squeezed_batched(int(shape[0]), r_flattened, phi_flattened)
+        return ret.reshape((*batch_shape, shape[0]))
 
     def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
-        sq_ket = strategies.squeezer(shape, self.asnumpy(r), self.asnumpy(phi))
-        return self.astensor(sq_ket, dtype=sq_ket.dtype.name)
+        r, phi = self.astensor(r, dtype=self.float64), self.astensor(phi, dtype=self.float64)
+        batch_shape = r.shape
+        if batch_shape == ():
+            return cython_lattice.squeezer(shape, r, phi)
+        r_flattened = r.reshape(-1)
+        phi_flattened = phi.reshape(-1)
+        ret = cython_lattice.squeezer_batched(shape, r_flattened, phi_flattened)
+        return ret.reshape((*batch_shape, *shape))

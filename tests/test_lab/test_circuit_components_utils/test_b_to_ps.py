@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.lab import BtoPS, Dgate, Ket
+from mrmustard.lab import BtoPS, Dgate, GaussianKet
 from mrmustard.physics.wigner import wigner_discretized
 
 
@@ -32,7 +32,7 @@ class TestBtoPS:
 
     @pytest.mark.parametrize("hbar", [1.0, 2.0, 3.0])
     def test_application(self, hbar):
-        state = Ket.random((0,), max_r=0.8) >> Dgate(0, x=2, y=0.1)
+        state = GaussianKet.random((0,), max_r=0.8) >> Dgate(0, 2 + 0.1j)
 
         dm = state.to_fock(100).dm().ansatz.array
         vec = np.linspace(-4.5, 4.5, 100)

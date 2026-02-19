@@ -20,14 +20,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import ComplexTensor
 
-from ...physics import triples
-from ...physics.ansatz import PolyExpAnsatz
-from ...physics.wires import Wires
-from ..utils import make_parameter
 from .base import Unitary
+from .builtins import beamsplitter_gate, beamsplitter_gate_fock
 
 __all__ = ["BSgate"]
 
@@ -36,23 +35,16 @@ class BSgate(Unitary):
     r"""
     The beam splitter gate.
 
+    >>> from mrmustard.lab import BSgate
+    >>> unitary = BSgate(modes=(1, 2), theta=0.1)
+    >>> assert unitary.modes == (1, 2)
+    >>> assert unitary.parameters.theta.value == 0.1
+    >>> assert unitary.parameters.phi.value == 0.0
+
     Args:
         modes: The pair of modes of the beam splitter gate.
         theta: The transmissivity angle.
         phi: The phase angle.
-        theta_trainable: Whether ``theta`` is a trainable variable.
-        phi_trainable: Whether ``phi`` is a trainable variable.
-        theta_bounds: The bounds for ``theta``.
-        phi_bounds: The bounds for ``phi``.
-
-        .. code-block::
-
-        >>> from mrmustard.lab import BSgate
-
-        >>> unitary = BSgate(modes=(1, 2), theta=0.1)
-        >>> assert unitary.modes == (1, 2)
-        >>> assert unitary.parameters.theta.value == 0.1
-        >>> assert unitary.parameters.phi.value == 0.0
 
     .. details::
 
@@ -89,26 +81,24 @@ class BSgate(Unitary):
     def __init__(
         self,
         modes: tuple[int, int],
-        theta: float | Sequence[float] = 0.0,
-        phi: float | Sequence[float] = 0.0,
-        theta_trainable: bool = False,
-        phi_trainable: bool = False,
-        theta_bounds: tuple[float | None, float | None] = (None, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
+        theta: float | Sequence[float] | Parameter = 0.0,
+        phi: float | Sequence[float] | Parameter = 0.0,
     ):
-        super().__init__(name="BSgate")
-        self.parameters.add_parameter(
-            make_parameter(theta_trainable, theta, "theta", theta_bounds, dtype=math.float64)
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={
+                    ReprEnum.BARGMANN: (beamsplitter_gate, ("theta", "phi", "lin_sup")),
+                    ReprEnum.FOCK: (
+                        beamsplitter_gate_fock,
+                        ("theta", "phi", "shape", "method", "lin_sup"),
+                    ),
+                }
+            ),
+            wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
+            name=self.__class__.__name__,
         )
-        self.parameters.add_parameter(
-            make_parameter(phi_trainable, phi, "phi", phi_bounds, dtype=math.float64)
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.beamsplitter_gate_Abc,
-            theta=self.parameters.theta,
-            phi=self.parameters.phi,
-        )
-        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        self.parameters["theta"] = Parameter.from_cc_init(theta, "float64", f"{self.name}/theta")
+        self.parameters["phi"] = Parameter.from_cc_init(phi, "float64", f"{self.name}/phi")
 
     def fock_array(
         self,
@@ -126,34 +116,26 @@ class BSgate(Unitary):
                 - ``"vanilla"``: standard recurrence relation (not numerically stable, but slightly faster than the stable one).
                 - ``"schwinger"``: Use the Schwinger representation to compute the Fock array.
                 - ``"stable"``: Use the stable implementation of the beamsplitter. (default)
+
         Returns:
             array: The Fock representation of this component.
-        """
-        if isinstance(shape, int):
-            shape = (shape,) * self.ansatz.core_dims
-        if shape is None:
-            shape = tuple(self.auto_shape())
-        if len(shape) != 4:
-            raise ValueError(f"Expected Fock shape of length {4}, got length {len(shape)}")
 
-        if self.ansatz.batch_shape:
-            theta, phi = math.broadcast_arrays(
-                self.parameters.theta.value,
-                self.parameters.phi.value,
-            )
-            theta = math.reshape(theta, (-1,))
-            phi = math.reshape(phi, (-1,))
-            ret = math.astensor(
-                [math.beamsplitter(t, p, shape=shape, method=method) for t, p in zip(theta, phi)],
-            )
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.beamsplitter(
-                self.parameters.theta.value,
-                self.parameters.phi.value,
+        Raises:
+            ValueError: If the shape is not valid for the component.
+        """
+        if self.ansatz_factory is None:
+            raise ValueError("CircuitComponent has no ansatz factory.")
+        shape = self._check_fock_shape(shape)
+        ansatz_factory = self.ansatz_factory
+        if ansatz_factory.ansatz_dict.get(ReprEnum.FOCK, None) is None:
+            ansatz_factory = self.to_fock(shape).ansatz_factory
+        return (
+            ansatz_factory(
+                **self.parameters,
+                representation=ReprEnum.FOCK,
                 shape=shape,
                 method=method,
             )
-        return ret
+            .reduce(shape)
+            .array
+        )

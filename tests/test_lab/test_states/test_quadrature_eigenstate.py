@@ -19,6 +19,7 @@ import pytest
 
 from mrmustard import math, settings
 from mrmustard.lab.states import Coherent, QuadratureEigenstate
+from mrmustard.parameters import Variable
 from mrmustard.physics.wires import ReprEnum
 
 
@@ -66,8 +67,10 @@ class TestQuadratureEigenstate:
 
     def test_trainable_parameters(self):
         state1 = QuadratureEigenstate(0, 1, 1)
-        state2 = QuadratureEigenstate(0, 1, 1, x_trainable=True, x_bounds=(0, 2))
-        state3 = QuadratureEigenstate(0, 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+        x_var = Variable(1, "x", dtype=math.float64)
+        phi_var = Variable(1, "phi", dtype=math.float64)
+        state2 = QuadratureEigenstate(0, x=x_var, phi=1)
+        state3 = QuadratureEigenstate(0, x=1, phi=phi_var)
 
         with pytest.raises(AttributeError):
             state1.parameters.x.value = 3
@@ -79,8 +82,8 @@ class TestQuadratureEigenstate:
         assert state3.parameters.phi.value == 2
 
     def test_with_coherent(self):
-        val0 = Coherent(0, 0, 0) >> QuadratureEigenstate(0, 0, 0).dual
-        val1 = Coherent(0, 1, 0) >> QuadratureEigenstate(0, np.sqrt(2 * settings.HBAR), 0).dual
+        val0 = Coherent(0, 0) >> QuadratureEigenstate(0, 0, 0).dual
+        val1 = Coherent(0, 1) >> QuadratureEigenstate(0, np.sqrt(2 * settings.HBAR), 0).dual
         assert math.allclose(val0, val1)
 
     def test_wires(self):

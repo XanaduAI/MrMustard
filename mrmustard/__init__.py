@@ -15,14 +15,26 @@
 """This is the top-most `__init__.py` file of MrMustard package."""
 
 # ruff: noqa: PLC0415
-# ruff: noqa: ICN001
 import os
 
-from rich import print as rprint
+os.environ["SCIPY_ARRAY_API"] = "1"
+
+from typing import TYPE_CHECKING
 
 from ._version import __version__
-from .utils.filters import add_complex_warning_filter
-from .utils.settings import *
+
+__all__ = [
+    "about",
+    "version",
+]
+
+if TYPE_CHECKING:
+    from mrmustard import math, settings
+    from mrmustard.math.backend_manager import BackendManager
+    from mrmustard.settings.settings import Settings
+
+    math: BackendManager = math  # noqa: PLW0127
+    settings: Settings = settings  # noqa: PLW0127
 
 
 def version():
@@ -56,17 +68,16 @@ def about():
         Numba version:             0.48.0
         Scipy version:             1.7.3
         The Walrus version:        0.17.0
-        TensorFlow version:        2.7.0
         Torch version:             1.10.0+cu102
     """
     import platform
     import sys
 
     import numba
-    import numpy
+    import numpy as np
     import scipy
-    import tensorflow
     import thewalrus
+    from rich import print as rprint
 
     # a QuTiP-style infobox
     rprint("\nMr Mustard: a differentiable bridge between phase space and Fock space.")
@@ -76,12 +87,7 @@ def about():
     rprint(f"Platform info:             {platform.platform()}")
     rprint(f"Installation path:         {os.path.dirname(__file__)}")
     rprint(f"Mr Mustard version:        {__version__}")
-    rprint(f"Numpy version:             {numpy.__version__}")
+    rprint(f"Numpy version:             {np.__version__}")
     rprint(f"Numba version:             {numba.__version__}")
     rprint(f"Scipy version:             {scipy.__version__}")
     rprint(f"The Walrus version:        {thewalrus.__version__}")
-    rprint(f"TensorFlow version:        {tensorflow.__version__}")
-
-
-# filter tensorflow cast warnings
-add_complex_warning_filter()

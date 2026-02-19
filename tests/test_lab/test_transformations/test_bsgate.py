@@ -18,6 +18,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab.transformations import BSgate
+from mrmustard.parameters import Variable
 
 
 class TestBSgate:
@@ -66,8 +67,10 @@ class TestBSgate:
 
     def test_trainable_parameters(self):
         gate1 = BSgate((0, 1), 1, 1)
-        gate2 = BSgate((0, 1), 1, 1, theta_trainable=True, theta_bounds=(-2, 2))
-        gate3 = BSgate((0, 1), 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+        theta_var = Variable(1, "theta", dtype=math.float64)
+        phi_var = Variable(1, "phi", dtype=math.float64)
+        gate2 = BSgate((0, 1), theta=theta_var)
+        gate3 = BSgate((0, 1), phi=phi_var)
 
         with pytest.raises(AttributeError):
             gate1.parameters.theta.value = 3
@@ -84,7 +87,7 @@ class TestBSgate:
         gate_fock2 = gate.fock_array((5, 5, 5, 5), method="schwinger")  # tuple shape
         assert math.allclose(gate_fock, gate_fock2)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Expected Fock shape"):
             gate.fock_array((5, 5, 5))  # wrong shape
 
         bs_with_batch = BSgate((0, 1), math.astensor([[1, 2]]), math.astensor([[3], [4], [5]]))

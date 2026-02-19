@@ -18,9 +18,8 @@ import numpy as np
 import pytest
 
 from mrmustard import math
-from mrmustard.lab import DM, BtoChar, Identity, Ket
+from mrmustard.lab import DM, BtoChar, GaussianKet, Identity
 from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
-from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
 from mrmustard.physics.triples import displacement_map_s_parametrized_Abc
 
 
@@ -36,9 +35,7 @@ class TestBtoChar:
         btochar = BtoChar(0, 0)
         adjoint_btochar = btochar.adjoint
 
-        bras = btochar.wires.bra.indices
-        kets = btochar.wires.ket.indices
-        assert adjoint_btochar.ansatz == btochar.ansatz.reorder(kets + bras).conj
+        assert adjoint_btochar.ansatz == btochar.ansatz.conj
         assert adjoint_btochar.wires == btochar.wires.adjoint
         assert adjoint_btochar.parameters.s == btochar.parameters.s
 
@@ -56,16 +53,16 @@ class TestBtoChar:
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=1)
-        A2, b2, c2 = complex_gaussian_integral_2(
-            state_bargmann_triple,
-            Ds_bargmann_triple,
-            idx1=[0, 1],
-            idx2=[1, 3],
+        A2, b2, log_c2 = math.complex_gaussian_integral_2(
+            *state_bargmann_triple[:2],
+            *Ds_bargmann_triple[:2],
+            [0, 1],
+            [1, 3],  # bra-in, ket-in
         )
 
         assert math.allclose(A1, A2)
         assert math.allclose(b1, b2)
-        assert math.allclose(c1, c2)
+        assert math.allclose(c1, math.exp(log_c2) * state_bargmann_triple[2])
 
         # The init state cov and means comes from the random state 'state = Gaussian(2) >> Dgate([0.2], [0.3])'
         state_cov = np.array(
@@ -87,29 +84,25 @@ class TestBtoChar:
 
         # get new triple by contraction
         Ds_bargmann_triple = displacement_map_s_parametrized_Abc(s=0, n_modes=2)
-        A2, b2, c2 = complex_gaussian_integral_2(
-            state_bargmann_triple,
-            Ds_bargmann_triple,
-            idx1=[0, 1, 2, 3],
-            idx2=[2, 3, 6, 7],
+        A2, b2, log_c2 = math.complex_gaussian_integral_2(
+            *state_bargmann_triple[:2],
+            *Ds_bargmann_triple[:2],
+            [0, 1, 2, 3],
+            [2, 3, 6, 7],  # bra-in, ket-in
         )
 
         assert math.allclose(A1, A2)
         assert math.allclose(b1, b2)
-        assert math.allclose(c1, c2)
+        assert math.allclose(c1, math.exp(log_c2) * state_bargmann_triple[2])
 
-        psi = Ket.random([0])
+        psi = GaussianKet.random([0])
         assert math.allclose((psi >> BtoChar(0, 1)).ansatz(0, 0), 1.0)
 
     def test_dual(self):
         btochar = BtoChar(0, 0)
         dual_btochar = btochar.dual
 
-        ok = btochar.wires.ket.output.indices
-        ik = btochar.wires.ket.input.indices
-        ib = btochar.wires.bra.input.indices
-        ob = btochar.wires.bra.output.indices
-        assert dual_btochar.ansatz == btochar.ansatz.reorder(ib + ob + ik + ok).conj
+        assert dual_btochar.ansatz == btochar.ansatz.conj
         assert dual_btochar.wires == btochar.wires.dual
         assert dual_btochar.parameters.s == btochar.parameters.s
 

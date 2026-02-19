@@ -20,13 +20,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ...physics import triples
-from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
 from .base import Operation
+from .builtins import fock_damping_operation
 
 __all__ = ["FockDamping"]
 
@@ -35,23 +34,17 @@ class FockDamping(Operation):
     r"""
     The Fock damping operator.
 
+    >>> from mrmustard.lab import FockDamping, Coherent
+    >>> operator = FockDamping(mode=0, damping=0.1)
+    >>> input_state = Coherent(mode=0, alpha=1 + 0.5j)
+    >>> output_state = input_state >> operator
+    >>> assert operator.modes == (0,)
+    >>> assert operator.parameters.damping.value == 0.1
+    >>> assert output_state.L2_norm < 1
 
     Args:
         mode: The mode this gate is applied to.
         damping: The damping parameter.
-        damping_trainable: Whether ``damping`` is trainable.
-        damping_bounds: The bounds for ``damping``.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import FockDamping, Coherent
-
-        >>> operator = FockDamping(mode=0, damping=0.1)
-        >>> input_state = Coherent(mode=0, x=1, y=0.5)
-        >>> output_state = input_state >> operator
-        >>> assert operator.modes == (0,)
-        >>> assert operator.parameters.damping.value == 0.1
-        >>> assert output_state.L2_norm < 1
 
     .. details::
 
@@ -67,27 +60,21 @@ class FockDamping(Operation):
             c &= 1\:.
     """
 
+    short_name = "FDamp"
+
     def __init__(
         self,
         mode: int | tuple[int],
-        damping: float | Sequence[float] = 0.0,
-        damping_trainable: bool = False,
-        damping_bounds: tuple[float | None, float | None] = (0.0, None),
+        damping: float | Sequence[float] | Parameter = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="FockDamping")
-        self.parameters.add_parameter(
-            make_parameter(
-                damping_trainable,
-                damping,
-                "damping",
-                damping_bounds,
-                None,
-                dtype=math.float64,
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (fock_damping_operation, ("damping", "lin_sup"))}
             ),
+            wires=Wires(modes_in_ket=set(mode), modes_out_ket=set(mode)),
+            name=self.__class__.__name__,
         )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.fock_damping_Abc,
-            beta=self.parameters.damping,
+        self.parameters["damping"] = Parameter.from_cc_init(
+            damping, "float64", f"{self.name}/damping"
         )
-        self._wires = Wires(modes_in_ket=set(mode), modes_out_ket=set(mode))

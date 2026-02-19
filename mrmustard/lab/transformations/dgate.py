@@ -20,14 +20,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
-from mrmustard.utils.typing import ComplexTensor
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ...physics import triples
-from ...physics.ansatz import PolyExpAnsatz
-from ...physics.wires import Wires
-from ..utils import make_parameter
 from .base import Unitary
+from .builtins import displacement_gate, displacement_gate_fock
 
 __all__ = ["Dgate"]
 
@@ -36,24 +34,14 @@ class Dgate(Unitary):
     r"""
     The displacement gate.
 
+    >>> from mrmustard.lab import Dgate
+    >>> unitary = Dgate(mode=1, alpha=0.1 + 0.2j)
+    >>> assert unitary.modes == (1,)
+    >>> assert unitary.parameters.alpha.value == 0.1 + 0.2j
 
     Args:
         mode: The mode this gate is applied to.
-        x: The displacements along the ``x`` axis, which represents the position axis in phase space.
-        y: The displacements along the ``y`` axis, which represents the momentum axis in phase space.
-        x_trainable: Whether ``x`` is a trainable variable.
-        y_trainable: Whether ``y`` is a trainable variable.
-        x_bounds: The bounds for ``x``.
-        y_bounds: The bounds for ``y``.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import Dgate
-
-        >>> unitary = Dgate(mode=1, x=0.1, y=0.2)
-        >>> assert unitary.modes == (1,)
-        >>> assert unitary.parameters.x.value == 0.1
-        >>> assert unitary.parameters.y.value == 0.2
+        alpha: The displacement in the complex phase space.
 
     .. details::
 
@@ -80,57 +68,18 @@ class Dgate(Unitary):
 
     def __init__(
         self,
-        mode: int | tuple[int],
-        x: float | Sequence[float] = 0.0,
-        y: float | Sequence[float] = 0.0,
-        x_trainable: bool = False,
-        y_trainable: bool = False,
-        x_bounds: tuple[float | None, float | None] = (None, None),
-        y_bounds: tuple[float | None, float | None] = (None, None),
+        mode: int,
+        alpha: complex | Sequence[complex] | Parameter = 0.0 + 0.0j,
     ) -> None:
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Dgate")
-        self.parameters.add_parameter(
-            make_parameter(x_trainable, x, "x", x_bounds, dtype=math.float64)
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={
+                    ReprEnum.BARGMANN: (displacement_gate, ("alpha", "lin_sup")),
+                    ReprEnum.FOCK: (displacement_gate_fock, ("alpha", "shape", "lin_sup")),
+                }
+            ),
+            wires=Wires(modes_in_ket=set(mode), modes_out_ket=set(mode)),
+            name=self.__class__.__name__,
         )
-        self.parameters.add_parameter(
-            make_parameter(y_trainable, y, "y", y_bounds, dtype=math.float64)
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.displacement_gate_Abc,
-            x=self.parameters.x,
-            y=self.parameters.y,
-        )
-        self._wires = Wires(set(), set(), set(mode), set(mode))
-
-    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
-        r"""
-        Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
-
-        Args:
-            shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
-                it is broadcasted to all the dimensions. If not given, it defaults to
-                ``settings.DEFAULT_FOCK_SIZE``.
-        Returns:
-            array: The Fock representation of this component.
-        """
-        if isinstance(shape, int):
-            shape = (shape,) * self.ansatz.num_vars
-        auto_shape = self.auto_shape()
-        shape = shape or auto_shape
-        shape = tuple(shape)
-        if len(shape) != len(auto_shape):
-            raise ValueError(
-                f"Expected Fock shape of length {len(auto_shape)}, got length {len(shape)}",
-            )
-        if self.ansatz.batch_shape:
-            x, y = math.broadcast_arrays(self.parameters.x.value, self.parameters.y.value)
-            x = math.reshape(x, (-1,))
-            y = math.reshape(y, (-1,))
-            ret = math.astensor([math.displacement(xi, yi, shape=shape) for xi, yi in zip(x, y)])
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.displacement(self.parameters.x.value, self.parameters.y.value, shape=shape)
-        return ret
+        self.parameters["alpha"] = Parameter.from_cc_init(alpha, "complex128", f"{self.name}/alpha")

@@ -18,6 +18,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab.transformations import Rgate
+from mrmustard.parameters import Variable
 
 
 class TestRgate:
@@ -75,7 +76,8 @@ class TestRgate:
 
     def test_trainable_parameters(self):
         gate1 = Rgate(0, 1)
-        gate2 = Rgate(0, 1, True, (-2, 2))
+        theta_var = Variable(1, "theta", dtype=math.float64)
+        gate2 = Rgate(0, theta=theta_var)
 
         with pytest.raises(AttributeError):
             gate1.parameters.theta.value = 3

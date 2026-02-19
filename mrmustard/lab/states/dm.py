@@ -24,20 +24,20 @@ import numpy as np
 from IPython.display import display
 
 from mrmustard import math, settings, widgets
+from mrmustard.physics import stellar
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.bargmann_utils import wigner_to_bargmann_rho
+from mrmustard.physics.ansatz_factory import AnsatzFactory
 from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
-from mrmustard.physics.gaussian_integrals import complex_gaussian_integral_2
-from mrmustard.physics.utils import outer_product_batch_str
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
 from ..transformations import Channel, Dgate, Map
 from ..utils import shape_check
-from .base import OperatorType, State, _validate_operator
+from .base import State
+from .builtins import wigner_to_bargmann_rho
 
 __all__ = ["DM"]
 
@@ -54,15 +54,13 @@ class DM(State):
         r"""
         Whether this DM corresponds to a positive operator.
 
+        >>> from mrmustard.lab import GaussianDM
+        >>> assert GaussianDM.random([0]).is_positive
+
         Raises:
             NotImplementedError: If the state is mixed.
             NotImplementedError: If the state has derived variables.
             NotImplementedError: If the state has an ``ArrayAnsatz``.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import DM
-            >>> assert DM.random([0]).is_positive
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
@@ -91,10 +89,8 @@ class DM(State):
         r"""
         Whether this DM is a physical density operator.
 
-        .. code-block::
-
-            >>> from mrmustard.lab import DM
-            >>> assert DM.random([0]).is_physical
+        >>> from mrmustard.lab import GaussianDM
+        >>> assert GaussianDM.random([0]).is_physical
         """
         return self.is_positive and math.allclose(self.probability, 1, settings.ATOL)
 
@@ -114,12 +110,9 @@ class DM(State):
         r"""
         Computes the purity (:math:`tr(rho^2)`) of this DM.
 
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import DM, Vacuum
-
-            >>> assert math.allclose(Vacuum([0]).dm().purity, 1.0)
+        >>> from mrmustard import math
+        >>> from mrmustard.lab import DM, Vacuum
+        >>> assert math.allclose(Vacuum([0]).dm().purity, 1.0)
         """
         return self.L2_norm / self.probability**2
 
@@ -138,7 +131,15 @@ class DM(State):
                 f"Expected an ansatz with {2 * len(modes)} variables, found {ansatz.core_dims}.",
             )
         wires = Wires(modes_out_bra=set(modes), modes_out_ket=set(modes))
-        return DM(ansatz, wires, name=name)
+        if ansatz is not None:
+            ansatz_factory, representation = AnsatzFactory.from_ansatz(ansatz)
+            if representation == ReprEnum.FOCK:
+                for w in wires.quantum:
+                    w.repr = ReprEnum.FOCK
+                    w.fock_shape = ansatz.core_shape[w.index]
+        else:
+            ansatz_factory = None
+        return DM(ansatz_factory=ansatz_factory, wires=wires, name=name)
 
     @classmethod
     def from_phase_space(
@@ -153,6 +154,11 @@ class DM(State):
         which parametrize the s-parametrized phase space function
         :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
 
+        >>> from mrmustard import math
+        >>> from mrmustard.lab import DM, Vacuum
+        >>> rho = DM.from_phase_space([0], (math.eye(2)/2, [0,0], 1))
+        >>> assert rho == Vacuum([0]).dm()
+
         Args:
             modes: The modes of this states.
             triple: The ``(cov, means, coeff)`` triple.
@@ -161,16 +167,6 @@ class DM(State):
 
         Returns:
             A ``DM`` object from its phase space representation.
-
-
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import DM, Vacuum
-
-            >>> rho = DM.from_phase_space([0], (math.eye(2)/2, [0,0], 1))
-
-            >>> assert rho == Vacuum([0]).dm()
 
         .. details::
 
@@ -183,60 +179,27 @@ class DM(State):
         if cov.shape[:-2] != ():
             raise NotImplementedError("Not implemented for batched states.")
         shape_check(cov, means, 2 * len(modes), "Phase space")
-        return coeff * DM.from_ansatz(
-            modes,
-            PolyExpAnsatz.from_function(fn=wigner_to_bargmann_rho, cov=cov, means=means),
-            name,
-        )
 
-    @classmethod
-    def random(cls, modes: Collection[int], m: int | None = None, max_r: float = 1.0) -> DM:
-        r"""
-        Returns a random ``DM`` with zero displacement.
-
-        Args:
-            modes: The modes of the ``DM``.
-            m: The number modes to be considered for tracing out from a random pure state (Ket)
-                if not specified, m is considered to be len(modes)
-        """
-        if m is None:
-            m = len(modes)
-        max_idx = max(modes)
-        ancilla = list(range(max_idx + 1, max_idx + m + 1))
-        full_modes = list(modes) + ancilla
-        m = len(full_modes)
-        S = math.random_symplectic(m, max_r)
-        I = math.eye(m, dtype=math.complex128)
-        transformation = math.block([[I, I], [-1j * I, 1j * I]]) / np.sqrt(2)
-        S = math.conj(math.transpose(transformation)) @ S @ transformation
-        S_1 = S[:m, :m]
-        S_2 = S[:m, m:]
-        A = math.transpose(math.solve(math.dagger(S_1), math.transpose(S_2)))
-        b = math.zeros(m, dtype=A.dtype)
-        A, b, c = complex_gaussian_integral_2(
-            (math.conj(A), math.conj(b), math.astensor(complex(1))),
-            (A, b, math.astensor(complex(1))),
-            range(len(modes)),
-            range(len(modes)),
-        )
-        rho = cls.from_bargmann(list(modes), (A, b, c))
-        return rho.normalize()
+        ansatz_dict = {
+            ReprEnum.BARGMANN: (wigner_to_bargmann_rho, ("cov", "means", "lin_sup")),
+        }
+        ansatz_factory = AnsatzFactory(ansatz_dict=ansatz_dict, cov=cov, means=means)
+        ansatz = ansatz_factory(cov=cov, means=means, representation=ReprEnum.BARGMANN)
+        return DM.from_ansatz(modes, coeff * ansatz, name)
 
     def dm(self) -> DM:
         r"""
         The ``DM`` object obtained from this ``DM``.
 
+        >>> from mrmustard.lab import Vacuum, DM
+        >>> assert isinstance(Vacuum([0]).dm(), DM)
+
         Returns:
             A ``DM``.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import Vacuum, DM
-            >>> assert isinstance(Vacuum([0]).dm(), DM)
         """
         return self
 
-    def expectation(self, operator: CircuitComponent, mode: str = "kron") -> Batch[Scalar]:
+    def expectation(self, operator: CircuitComponent) -> Batch[Scalar]:
         r"""
         The expectation value of an operator with respect to this DM.
 
@@ -247,68 +210,50 @@ class DM(State):
         the ket side), density matrix-like wires (output wires on both ket and bra sides), or
         unitary-like wires (input and output wires on the ket side).
 
+        >>> from mrmustard import math
+        >>> from mrmustard.lab import Rgate, GaussianDM
+        >>> beta = 1
+        >>> symplectic = math.eye(2)
+        >>> rho = GaussianDM([0], beta, symplectic)
+        >>> answer = (1-math.exp(-beta))/(1+math.exp(-beta))
+        >>> assert math.allclose(rho.expectation(Rgate(0, np.pi)), answer)
+
         Args:
             operator: A ket-like, density-matrix like, or unitary-like circuit component.
-            mode: The mode of contraction. Can either "zip" the batch dimensions, "kron" the batch dimensions,
-                or pass a custom einsum-style batch string like "ab,cb->ac".
+
         Returns:
             Expectation value either as a complex number or a batch of complex numbers.
 
         Raise:
-            ValueError: If ``operator`` is not a ket-like, density-matrix like, or unitary-like
-                component.
-            ValueError: If ``operator`` is defined over a set of modes that is not a subset of the
-                modes of this state.
-
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import Rgate, GDM
-
-            >>> beta = 1
-            >>> symplectic = math.eye(2)
-            >>> rho = GDM([0], beta, symplectic)
-            >>> answer = (1-math.exp(-beta))/(1+math.exp(-beta))
-
-            >>> assert math.allclose(rho.expectation(Rgate(0, np.pi)), answer)
+            ValueError: If the operator is not a ket-like, density-matrix like, or unitary-like component.
+            ValueError: If the operator is defined over a set of modes that is not a subset of the modes of this state.
+            ValueError: If the modes in common between the operator and the state are not a subset of the modes of the operator.
         """
-        op_type, msg = _validate_operator(operator)
-        if op_type is OperatorType.INVALID_TYPE:
-            raise ValueError(msg)
+        if self.wires.modes.isdisjoint(operator.wires.modes):
+            raise ValueError(f"No modes in common between {self} and {operator}.")
 
-        if not operator.wires.modes.issubset(self.wires.modes):
-            msg = f"Expected an operator defined on a subset of modes `{self.modes}`, "
-            msg += f"found one defined on `{operator.modes}.`"
-            raise ValueError(msg)
+        self_rep = self >> TraceOut(self.wires.modes - operator.wires.modes)
 
-        leftover_modes = self.wires.modes - operator.wires.modes
-        if op_type is OperatorType.KET_LIKE:
-            # if mode is not zip we need to generate a new eins_str for the second contraction
-            if mode != "zip":
-                eins_str = (
-                    outer_product_batch_str(
-                        self.ansatz.batch_dims - self.ansatz._lin_sup,
-                        operator.ansatz.batch_dims - operator.ansatz._lin_sup,
-                    )
-                    if mode == "kron"
-                    else mode
+        if operator.wires.is_ket_like:
+            ret = operator.expectation(self_rep)
+
+        elif operator.wires.is_dm_like:
+            ret = self_rep.contract(operator.dual)
+
+        elif operator.wires.is_unitary_like:
+            if not operator.wires.modes.issubset(self.wires.modes):
+                raise ValueError(
+                    f"Unitary-like operator modes {operator.wires.modes} are not a subset of the state modes {self.wires.modes}"
                 )
-                batch_in, batch_out = eins_str.split("->")
-                _, batch2 = batch_in.split(",")
-                eins_str2 = f"{batch_out},{batch2}->{batch_out}"
-            else:
-                eins_str = mode
-                eins_str2 = mode
-            result = self.contract(operator.dual.adjoint, mode=eins_str).contract(
-                operator.dual,
-                mode=eins_str2,
-            ) >> TraceOut(leftover_modes)
-        elif op_type is OperatorType.DM_LIKE:
-            result = self.contract(operator.dual, mode=mode) >> TraceOut(leftover_modes)
-        else:
-            result = (self.contract(operator, mode=mode)) >> TraceOut(self.modes)
+            ret = self_rep.contract(operator) >> TraceOut(operator.wires.modes)
 
-        return result
+        else:
+            raise ValueError(f"Cannot calculate the expectation value of {operator} with {self}.")
+
+        if isinstance(ret, CircuitComponent) and len(ret.wires.modes) == 0:
+            return ret.ansatz.scalar
+
+        return ret
 
     def fidelity(self, other: State) -> float:
         r"""
@@ -367,6 +312,10 @@ class DM(State):
         is the transpose of the standard density matrix. For multiple modes, the same applies to
         each pair of indices of each mode.
 
+        >>> from mrmustard import math
+        >>> from mrmustard.lab import Vacuum, DM
+        >>> assert math.allclose(Vacuum([0]).dm().fock_array(), math.astensor([[1]]))
+
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is generated via ``auto_shape``.
@@ -378,6 +327,9 @@ class DM(State):
         Returns:
             array: The Fock representation of this component.
 
+        Raises:
+            ValueError: If the shape is not valid for the component.
+
         Note:
             The ``standard_order`` boolean argument lets one choose the standard convention for the
             index ordering of the density matrix. For a single mode, if ``standard_order=True`` the
@@ -387,15 +339,8 @@ class DM(State):
             mode, the array returned by ``fock_array`` with ``standard_order=False`` (false by default)
             is the transpose of the standard density matrix. For multiple modes, the same applies to each
             pair of indices of each mode.
-
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import Vacuum, DM
-
-            >>> assert math.allclose(Vacuum([0]).dm().fock_array(), math.astensor([[1]]))
         """
-        array = super().fock_array(shape or self.auto_shape())
+        array = super().fock_array(shape)
         if standard_order:
             m = self.n_modes
             batch_dims = self.ansatz.batch_dims - self.ansatz._lin_sup
@@ -411,6 +356,13 @@ class DM(State):
     def formal_stellar_decomposition(self, core_modes):
         r"""
         Computes the formal stellar decomposition for the DM.
+
+        >>> from mrmustard.lab import GaussianDM, Vacuum
+        >>> rho = GaussianDM.random([0,1])
+        >>> core, phi = rho.formal_stellar_decomposition([0])
+        >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
+        >>> assert rho == core >> phi
+        >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
 
         Args:
             core_modes: The set of modes defining core variables.
@@ -429,97 +381,55 @@ class DM(State):
             where the map :math:`phi` acts on the given `core_modes` only.
             Core states have favorable properties in the Fock representation
             e.g., being sparse.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import DM, Vacuum
-
-            >>> rho = DM.random([0,1])
-            >>> core, phi = rho.formal_stellar_decomposition([0])
-            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
-            >>> assert rho == core >> phi
-            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
         """
         other_modes = [m for m in self.modes if m not in core_modes]
-        core_indices = self.wires[core_modes].indices
-        other_indices = self.wires[other_modes].indices
-        new_order = core_indices + other_indices
-        A, b, c = self.ansatz.reorder(new_order).triple
-
+        idx = self.wires[core_modes].indices + self.wires[other_modes].indices
+        inv = np.argsort(idx)
         M = len(core_modes)
-        batch_shape = self.ansatz.batch_shape
-        Am = A[..., : 2 * M, : 2 * M]
-        An = A[..., 2 * M :, 2 * M :]
-        R = A[..., : 2 * M, 2 * M :]
-        bm = b[..., : 2 * M]
-        bn = b[..., 2 * M :]
-        R_transpose = math.einsum("...ij->...ji", R)
 
-        A_core = math.block(
-            [
-                [math.zeros((*batch_shape, 2 * M, 2 * M), dtype=math.complex128), R],
-                [R_transpose, An],
-            ],
+        A, b, c = self.ansatz.A, self.ansatz.b, self.ansatz.c
+        A = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2)
+        b = math.gather(b, idx, axis=-1)
+
+        core_tr, phi_tr = stellar.formal_stellar_triples((A, b, c), 2 * M)
+
+        # reorder phi from out-in to standard order
+        inv_phi = (
+            list(range(M))
+            + list(range(2 * M, 3 * M))
+            + list(range(M, 2 * M))
+            + list(range(3 * M, 4 * M))
         )
-        b_core = math.concat([math.zeros((*batch_shape, 2 * M), dtype=math.complex128), bn], -1)
-        c_core = c
 
-        inverse_order = np.argsort(new_order)
+        A_core = math.gather(math.gather(core_tr[0], inv, axis=-1), inv, axis=-2)
+        b_core = math.gather(core_tr[1], inv, axis=-1)
 
-        temp = math.astensor(inverse_order)
-        A_core = A_core[..., temp, :]
-        A_core = A_core[..., :, temp]
-        b_core = b_core[..., temp]
-        core = DM.from_bargmann(self.modes, (A_core, b_core, c_core))
+        A_phi = math.gather(math.gather(phi_tr[0], inv_phi, axis=-1), inv_phi, axis=-2)
+        b_phi = math.gather(phi_tr[1], inv_phi, axis=-1)
 
-        I = math.broadcast_to(math.eye(2 * M, dtype=math.complex128), (*batch_shape, 2 * M, 2 * M))
-        O = math.zeros_like(Am)
-        A_out_in = math.block([[Am, I], [I, O]])
-        A_tmp = math.reshape(A_out_in, (*batch_shape, 2, 2, M, 2, 2, M))
-        A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
-        A_T = math.reshape(A_tmp, (*batch_shape, 4 * M, 4 * M))
+        core = DM.from_bargmann(self.modes, (A_core, b_core, core_tr[2]))
+        phi = Map.from_bargmann(core_modes, core_modes, (A_phi, b_phi, phi_tr[2]))
 
-        b_out_in = math.concat([bm, math.zeros((*batch_shape, 2 * M), dtype=math.complex128)], -1)
-        b_temp = math.reshape(b_out_in, (*batch_shape, 2, 2, M))
-        b_temp = math.einsum("...ijk->...jik", b_temp)
-        b_T = math.reshape(b_temp, (*batch_shape, 4 * M))
-        c_T = math.ones_like(c)
-        phi = Map.from_bargmann(core_modes, core_modes, (A_T, b_T, c_T))
         return core, phi
 
-    def physical_stellar_decomposition(self, core_modes):
+    def _ket_stellar_decomposition(self, core_modes: Collection[int]):
         r"""
-        Applies the physical stellar decomposition, pulling out a channel from a pure state.
+        Physical stellar decomposition returning a Ket core.
+
+        This private method implements the algorithm that extracts a pure state (Ket) core
+        from a DM. It only works when the number of core modes equals half the total modes.
 
         Args:
-            core_modes: the core modes defining the core variables.
+            core_modes: The core modes (must be exactly n_modes // 2).
 
         Returns:
-            core: The core state (`Ket`)
-            phi: The channel acting on the core modes (`Map`)
-
-        Raises:
-            ValueError: If the number of core modes is not half the total number of modes.
-
-        Note:
-            This method writes a given `DM` as a pure state (`Ket`) followed by a `Channel` acting
-            on `core_modes`.
-            The pure state output has the core property, and therefore, has favorable Fock representation.
-            For the method to work, we need the number of core modes to be half of the number of total modes.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import DM, Ket, Vacuum
-            >>> rho = DM.random([0,1])
-            >>> core, phi = rho.physical_stellar_decomposition([0])
-
-            >>> assert isinstance(core, Ket)
-            >>> assert rho == core >> phi
-            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0)
+            core: The core state (``Ket``)
+            phi: The channel acting on the core modes (``Channel``)
         """
         from .ket import Ket  # noqa: PLC0415
 
         other_modes = [m for m in self.modes if m not in core_modes]
+        core_modes = list(core_modes)
         core_bra_indices = self.wires.bra[core_modes].indices
         core_ket_indices = self.wires.ket[core_modes].indices
         core_indices = core_bra_indices + core_ket_indices
@@ -534,20 +444,16 @@ class DM(State):
         A, b, c = self.ansatz.reorder(new_order).triple
 
         m_modes = A.shape[-1] // 2
-
-        if (m_modes % 2) or (m_modes // 2 != len(core_modes)):
-            raise ValueError(
-                f"The number of modes ({m_modes}) must be twice the number of core modes ({len(core_modes)}) for the physical decomposition to work.",
-            )
-
         M = len(core_modes)
+
         Am = A[..., : 2 * M, : 2 * M]
         An = A[..., 2 * M :, 2 * M :]
         bm = b[..., : 2 * M]
         bn = b[..., 2 * M :]
         R = A[..., 2 * M :, : 2 * M]
         R_transpose = math.einsum("...ij->...ji", R)
-        # computing the core state:
+
+        # Computing the core state
         reduced_A = An - R @ math.inv(Am - math.Xmat(M)) @ R_transpose
         r_squared = reduced_A[..., :M, M:]
         r_evals, r_evecs = math.eigh(r_squared)
@@ -601,174 +507,72 @@ class DM(State):
 
         core = Ket.from_bargmann(self.modes, (Acore, bcore, c_core))
         for i in range(M):
-            core = core.contract(
-                Dgate(
-                    core_modes[i],
-                    -math.real(bcore_m_ket[..., i]),
-                    -math.imag(bcore_m_ket[..., i]),
-                ),
-                mode="zip",
-            )
-            dgate_u = Dgate(
-                core_modes[i],
-                math.real(bcore_m_ket[..., i]),
-                math.imag(bcore_m_ket[..., i]),
-            )
-            dgate_ch = dgate_u.contract(dgate_u.adjoint, mode="zip")
-            phi = dgate_ch.contract(phi, mode="zip")
+            core = core.contract(Dgate(core_modes[i], -bcore_m_ket[..., i]))
+            dgate_u = Dgate(core_modes[i], bcore_m_ket[..., i])
+            dgate_ch = dgate_u.contract(dgate_u.adjoint)
+            phi = dgate_ch.contract(phi)
+
         c_core = math.ones_like(c)
         phi = Channel.from_bargmann(core_modes, core_modes, (phi.ansatz.A, phi.ansatz.b, c_core))
         renorm = phi.contract(TraceOut(self.modes))
         phi = phi / renorm.ansatz.c
+
         return (
             Ket.from_bargmann(core.modes, (core.ansatz.A, core.ansatz.b, c_core)).normalize(),
             phi,
         )
 
-    def physical_stellar_decomposition_mixed(
-        self,
-        core_modes: Collection[int],
-    ) -> tuple[DM, Channel]:
+    def physical_stellar_decomposition(self, core_modes: Collection[int]):
         r"""
-        Applies the physical stellar decomposition based on the rank condition.
+        Applies the physical stellar decomposition.
+
+        When the number of core modes equals exactly half of the total modes (and n_modes is even),
+        returns a ``Ket`` core and ``Channel``. Otherwise, returns a ``DM`` core and ``Channel``.
+
+        >>> from mrmustard.lab import GaussianDM, Vacuum
+        >>> rho = GaussianDM.random([0, 1])
+        >>> core, phi = rho.physical_stellar_decomposition([0])
+        >>> assert rho == core >> phi
+        >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0)
 
         Args:
-            core_modes: the core modes defining the core variables.
+            core_modes: The core modes defining the core variables.
 
         Returns:
-            core: The core state (`DM`)
-            phi: The channel acting on the core modes (`Channel`)
+            When ``len(core_modes) == n_modes // 2`` (and n_modes is even):
+                core: The core state (``Ket``)
+                phi: The channel acting on the core modes (``Channel``)
+            Otherwise:
+                core: The core state (``DM``)
+                phi: The channel acting on the core modes (``Channel``)
 
         Raises:
-            ValueError: If the rank condition is not satisfied.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import DM, Vacuum
-
-            >>> rho = DM.random([0,1])
-            >>> core, phi = rho.physical_stellar_decomposition_mixed([0])
-
-            >>> assert rho == core >> phi
-            >>> assert core.is_physical
-            >>> assert (core >> Vacuum(1).dual).normalize() == Vacuum(0).dm()
+            ValueError: If the rank condition is not satisfied (when core modes < half).
         """
-        other_modes = [m for m in self.modes if m not in core_modes]
-        core_bra_indices = self.wires.bra[core_modes].indices
-        core_ket_indices = self.wires.ket[core_modes].indices
-        core_indices = core_bra_indices + core_ket_indices
-
-        other_bra_indices = self.wires.bra[other_modes].indices
-        other_ket_indices = self.wires.ket[other_modes].indices
-        other_indices = other_bra_indices + other_ket_indices
-
-        new_order = math.astensor(core_indices + other_indices)
-
-        A, b, c = self.ansatz.reorder(new_order).triple
-        batch_shape = self.ansatz.batch_shape
-
         M = len(core_modes)
-        N = self.n_modes - M
+        n = self.n_modes
 
-        Am = A[..., : 2 * M, : 2 * M]
-        An = A[..., 2 * M :, 2 * M :]
-        R = A[..., 2 * M :, : 2 * M]
-        bm = b[..., : 2 * M]
-        bn = b[..., 2 * M :]
+        # When M == n/2 and n is even, use the Ket decomposition
+        if n // 2 == M and n % 2 == 0:
+            return self._ket_stellar_decomposition(core_modes)
 
-        sigma = R[..., M:, :M]
-        r = R[..., M:, M:]
-        alpha_m = Am[..., M:, :M]
-        alpha_n = An[..., N:, :N]
-        a_n = An[..., N:, N:]
+        # Otherwise, use the DM decomposition
+        other_modes = [m for m in self.modes if m not in core_modes]
+        idx = self.wires[core_modes].indices + self.wires[other_modes].indices
+        inv = np.argsort(idx)
 
-        r_transpose = math.einsum("...ij->...ji", r)
-        sigma_transpose = math.einsum("...ij->...ji", sigma)
-        R_transpose = math.einsum("...ij->...ji", R)
+        A, b, c = self.ansatz.A, self.ansatz.b, self.ansatz.c
+        A = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2)
+        b = math.gather(b, idx, axis=-1)
 
-        rank = np.linalg.matrix_rank(
-            r @ math.conj(r_transpose) + sigma @ math.conj(sigma_transpose),
-        )
-        if math.any(rank > M):
-            raise ValueError(
-                "The physical mixed stellar decomposition is not possible for this DM, "
-                f"as the rank {rank} of the off-diagonal block of the Bargmann matrix is larger than the number "
-                f"of core modes {M}.",
-            )
+        core_tr, phi_tr = stellar.physical_stellar_triples_dm((A, b, c), len(core_modes))
 
-        I2M = math.broadcast_to(
-            math.eye(2 * M, dtype=math.complex128),
-            (*batch_shape, 2 * M, 2 * M),
-        )
-        reduced_A = R @ math.inv(I2M - math.Xmat(M) @ Am) @ math.conj(R_transpose)
+        A_core = math.gather(math.gather(core_tr[0], inv, axis=-1), inv, axis=-2)
+        b_core = math.gather(core_tr[1], inv, axis=-1)
 
-        # computing a low-rank r_c:
-        r_c_squared = reduced_A[..., N:, N:] + sigma @ math.inv(alpha_m) @ math.conj(
-            sigma_transpose,
-        )
-        r_c_evals, r_c_evecs = math.eigh(r_c_squared)
-        r_c = math.einsum(
-            "...ij,...j->...ij",
-            r_c_evecs[..., -M:],
-            math.sqrt(r_c_evals[..., -M:], dtype=math.complex128),
-        )
-        Os_NM = math.zeros((*batch_shape, N, M), dtype=math.complex128)
-        Os_MN = math.zeros((*batch_shape, M, N), dtype=math.complex128)
-        R_c = math.block([[math.conj(r_c), Os_NM], [Os_MN, r_c]])
-        R_c_transpose = math.einsum("...ij->...ji", R_c)
+        core = DM.from_bargmann(self.modes, (A_core, b_core, core_tr[2]))
+        phi = Channel.from_bargmann(core_modes, core_modes, phi_tr)
 
-        Aphi_out = Am
-        gamma = math.pinv(R_c) @ R
-        gamma_transpose = math.einsum("...ij->...ji", gamma)
-        Aphi_in = gamma @ math.inv(Aphi_out - math.Xmat(M)) @ gamma_transpose + math.Xmat(M)
-
-        Aphi_oi = math.block([[Aphi_out, gamma_transpose], [gamma, Aphi_in]])
-        A_tmp = math.reshape(Aphi_oi, (*batch_shape, 2, 2, M, 2, 2, M))
-        A_tmp = math.einsum("...ijklmn->...jikmln", A_tmp)
-        Aphi = math.reshape(A_tmp, (*batch_shape, 4 * M, 4 * M))
-        bphi = math.zeros((*batch_shape, 4 * M), dtype=math.complex128)
-        c_phi = math.ones_like(c)
-        phi = Channel.from_bargmann(core_modes, core_modes, (Aphi, bphi, c_phi))
-        renorm = phi.contract(TraceOut(self.modes))
-        phi = phi / renorm.ansatz.c
-
-        alpha_core_n = alpha_n - sigma @ math.inv(alpha_m) @ math.conj(sigma_transpose)
-        a_core_n = a_n + reduced_A[..., N:, :N]
-        A_core_n = math.block(
-            [[math.conj(a_core_n), math.conj(alpha_core_n)], [alpha_core_n, a_core_n]],
-        )
-
-        A_core = math.block(
-            [
-                [math.zeros((*batch_shape, 2 * M, 2 * M), dtype=math.complex128), R_c_transpose],
-                [R_c, A_core_n],
-            ],
-        )
-        b_core_m = math.einsum("...ij,...j->...i", math.inv(gamma_transpose), bm)
-        b_core_n = bn - math.einsum("...ij,...jk,...k->...i", R_c, Aphi_in, b_core_m)
-
-        b_core = math.concat([b_core_m, b_core_n], -1)
-        inverse_order = np.argsort(new_order)
-        A_core = A_core[..., inverse_order, :][..., inverse_order]
-        b_core = b_core[..., inverse_order]
-        core = DM.from_bargmann(
-            self.modes,
-            (A_core, b_core, c_phi),
-        )
-        alpha = b_core[..., core_ket_indices]
-        for i, m in enumerate(core_modes):
-            d_g = Dgate(m, -math.real(alpha[..., i]), -math.imag(alpha[..., i]))
-            d_g_inv = d_g.inverse()
-            d_ch = d_g.contract(d_g.adjoint, mode="zip")
-            d_ch_inverse = d_g_inv.contract(d_g_inv.adjoint, mode="zip")
-
-            core = core.contract(d_ch, mode="zip")
-            phi = (d_ch_inverse).contract(phi, mode="zip")
-
-        core = DM.from_bargmann(self.modes, (core.ansatz.A, core.ansatz.b, c_phi)).normalize()
-        phi = Channel.from_bargmann(core_modes, core_modes, (phi.ansatz.A, phi.ansatz.b, c_phi))
-        renorm = phi.contract(TraceOut(self.modes))
-        phi = phi / renorm.ansatz.c
         return core, phi
 
     def _ipython_display_(self):  # pragma: no cover
@@ -778,31 +582,14 @@ class DM(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=False, is_fock=is_fock))
 
-    def __getitem__(self, idx: int | Sequence[int]) -> State:
-        r"""
-        Traces out all the modes except those given.
-        The result is returned with modes in increasing order.
-
-        Args:
-            idx: The modes to keep.
-
-        Returns:
-            A new DM with the modes indexed by `idx`.
-        """
-        idx = (idx,) if isinstance(idx, int) else idx
-        modes = set(idx)
-        if not modes.issubset(self.modes):
-            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
-        wires = Wires(modes_out_bra=modes, modes_out_ket=modes)
-        idxz = [i for i, m in enumerate(self.modes) if m not in modes]
-        idxz_conj = [i + len(self.modes) for i, m in enumerate(self.modes) if m not in modes]
-        ansatz = self.ansatz.trace(idxz, idxz_conj)
-        return DM(ansatz, wires, name=self.name)
-
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` (output of self into the inputs of other),
         adding the adjoints when they are missing.
+
+        >>> from mrmustard.lab import CircuitComponent, GaussianDM, TraceOut
+        >>> assert isinstance(GaussianDM.random([0]).dual >> GaussianDM.random([0]), CircuitComponent)
+        >>> assert isinstance(GaussianDM.random([0,1]) >> TraceOut(0), DM)
 
         Args:
             other: the ``CircuitComponent`` we want to contract with.
@@ -815,13 +602,6 @@ class DM(State):
             Given this is a ``DM`` object which
             has both ket and bra wires at the output, expressions like ``dm >> u`` where
             ``u`` is a unitary will automatically apply the adjoint of ``u`` on the bra side.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import CircuitComponent, DM, TraceOut
-
-            >>> assert isinstance(DM.random([0]).dual >> DM.random([0]), CircuitComponent)
-            >>> assert isinstance(DM.random([0,1]) >> TraceOut(0), DM)
         """
 
         result = super().__rshift__(other)

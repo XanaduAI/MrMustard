@@ -1,21 +1,23 @@
-mrmustard.physics
-=================
-
-.. toctree::
-    :maxdepth: 1
-
-    physics/wires
-    physics/representations
-
-.. toctree::
-    :maxdepth: 1
-
-    physics/bargmann
-    physics/utils/fock_calculations
-    physics/utils/gaussian_calculations
+.. title:: Physics
 
 .. currentmodule:: mrmustard.physics
 
-.. automodapi:: mrmustard.physics
-    :no-heading:
-    :include-all-objects:
+The `physics` module
+--------------------
+
+.. toctree::
+    :maxdepth: 1
+
+    physics/ansatz
+    physics/ansatz_factory
+    physics/bargmann_utils
+    physics/fock_utils
+    physics/gaussian
+    physics/husimi
+    physics/mm_einsum
+    physics/stellar
+    physics/symplectics
+    physics/triples
+    physics/utils
+    physics/wigner
+    physics/wires

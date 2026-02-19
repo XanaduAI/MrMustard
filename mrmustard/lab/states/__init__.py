@@ -21,12 +21,13 @@ from .base import State as State
 from .coherent import Coherent as Coherent
 from .displaced_squeezed import DisplacedSqueezed as DisplacedSqueezed
 from .dm import DM as DM
-from .gaussian_state import GDM as GDM
-from .gaussian_state import GKet as GKet
+from .gaussian_state import GaussianDM as GaussianDM
+from .gaussian_state import GaussianKet as GaussianKet
 from .ket import Ket as Ket
 from .number import Number as Number
 from .quadrature_eigenstate import QuadratureEigenstate as QuadratureEigenstate
 from .sauron import Sauron as Sauron
+from .squeezed_thermal import SqueezedThermal as SqueezedThermal
 from .squeezed_vacuum import SqueezedVacuum as SqueezedVacuum
 from .thermal import Thermal as Thermal
 from .two_mode_squeezed_vacuum import TwoModeSqueezedVacuum as TwoModeSqueezedVacuum

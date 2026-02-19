@@ -1,9 +1,11 @@
-Mr Mustard Documentation
-########################
+.. currentmodule:: mrmustard
+
+MrMustard Documentation
+=======================
 
 .. rst-class:: lead grey-text ml-2
 
-:Release: |release|
+:Release: |mm_version|
 
 .. raw:: html
 
@@ -30,7 +32,7 @@ Mr Mustard Documentation
             </div>
             <div class="col-lg-8 col-12 align-middle mb-2">
                 <p class="lead grey-text">
-                    Mr Mustard: Your Universal Differentiable Toolkit for Quantum Optics
+                    MrMustard: Your Universal Differentiable Toolkit for Quantum Optics
                 </p>
         </div>
         <div class="row mt-3">
@@ -38,17 +40,17 @@ Mr Mustard Documentation
 .. index-card::
     :link: introduction/basic_reference.html
     :name: Key Concepts
-    :description: Learn about the main features of Mr Mustard
+    :description: Learn about the main features of MrMustard
 
 .. index-card::
     :link: development/development_guide.html
     :name: Developing
-    :description: How you can contribute to Mr Mustard
+    :description: How you can contribute to MrMustard
 
 .. index-card::
-    :link: code/mm.html
+    :link: code/lab.html
     :name: API
-    :description: Explore the Mr Mustard API
+    :description: Explore the MrMustard API
 
 .. raw:: html
 
@@ -56,7 +58,7 @@ Mr Mustard Documentation
     </div>
 
 Features
-========
+--------
 
 🔄 **Universal Representation Compatibility**
 
@@ -110,11 +112,12 @@ Features
 
 ..
 
-* Plug-and-play backends (``numpy``, ``tensorflow``, ``jax``)
+* Plug-and-play backends (``numpy``, ``jax``)
+
 
 .. toctree::
    :maxdepth: 1
-   :caption: Using Mr Mustard
+   :caption: Using MrMustard
    :hidden:
 
    introduction/basic_reference
@@ -130,12 +133,15 @@ Features
 
 .. toctree::
    :maxdepth: 1
-   :caption: Mr Mustard API
+   :caption: MrMustard API
    :hidden:
 
-   code/mm
-   code/lab
-   code/physics
-   code/math
-   code/training
-   code/utils
+   Lab <code/lab>
+   Math <code/math>
+   Math Library <code/mathlib>
+   Parameters <code/parameters>
+   Path <code/path>
+   Physics <code/physics>
+   Settings <code/settings>
+   Training <code/training>
+   Utils <code/utils>

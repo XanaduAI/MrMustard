@@ -21,13 +21,30 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from functools import lru_cache
 
-import jax
 import numpy as np
 from scipy.special import comb, factorial
 
 from mrmustard import math, settings
-from mrmustard.math.caching import tensor_int_cache
 from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
+
+__all__ = [
+    "c_in_PS",
+    "c_ps_matrix",
+    "estimate_dx",
+    "estimate_quadrature_axis",
+    "estimate_xmax",
+    "fidelity",
+    "fock_state",
+    "gamma_matrix",
+    "oscillator_eigenstate",
+    "quadrature_basis",
+    "quadrature_distribution",
+]
+
+try:
+    import jax
+except ImportError:  # pragma: no cover
+    jax = None
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
@@ -40,29 +57,14 @@ def fock_state(n: int | Sequence[int], cutoff: int | None = None) -> Tensor:
 
     Args:
         n: The photon number of the number state. Can be a single integer or a batch of integers.
-        cutoff: The cutoff of the Fock array. This acts as the core dimension of the returned array.
-            If ``None``, it defaults to ``math.max(n)+1``.
+        cutoff: The cutoff of the Fock array.
 
     Returns:
         The Fock array of a batchable single-mode ``Number`` state.
-
-    Raises:
-        ValueError: If the photon numbers are larger than the corresponding cutoffs.
     """
     n = math.astensor(n, dtype=math.int64)
-    if cutoff is None:
-        cutoff = int(math.max(n) + 1)
-
-    def check_photon_numbers(n, cutoff):
-        if math.any(n >= cutoff):
-            raise ValueError("Photon numbers cannot be larger than the corresponding cutoff.")
-
-    if math.backend_name == "jax":  # pragma: no cover
-        jax.debug.callback(check_photon_numbers, n, cutoff)
-    else:
-        check_photon_numbers(n, cutoff)
-
-    return math.eye(cutoff)[n]
+    cutoff = cutoff or int(math.max(n))
+    return math.eye(cutoff + 1)[n]
 
 
 def fidelity(dm_a, dm_b) -> Scalar:
@@ -73,16 +75,16 @@ def fidelity(dm_a, dm_b) -> Scalar:
     return math.abs(math.trace(math.sqrtm(math.matmul(sqrt_dm_a, dm_b, sqrt_dm_a))) ** 2)
 
 
-@tensor_int_cache
 def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     r"""Harmonic oscillator eigenstate wavefunction `\psi_n(q) = <n|q>`.
 
     Args:
         q (Vector): a vector containing the q points at which the function is evaluated (units of \sqrt{\hbar})
-        cutoff (int): maximum number of photons
+        cutoff (int): Fock space dimension (shape). Note: despite the parameter name, this is
+            the shape (cutoff + 1), not the max photon number. Callers pass shape values here.
 
     Returns:
-        Tensor: a tensor of size ``len(q)*cutoff``. Each entry with index ``[i, j]`` represents the eigenstate evaluated
+        Tensor: a tensor of size ``len(q) * cutoff``. Each entry with index ``[i, j]`` represents the eigenstate evaluated
             with number of photons ``i`` evaluated at position ``q[j]``, i.e., `\psi_i(q_j)`.
 
     .. details::
@@ -111,10 +113,7 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     # Renormalized physicist hermite polys: Hn / sqrt(n!)
     R = -np.array([[2 + 0j]])  # to get the physicist polys
 
-    def f_hermite_polys(xi):  # pragma: no cover
-        return math.hermite_renormalized(R, math.astensor([2 * xi]), 1 + 0j, (cutoff,))
-
-    hermite_polys = math.map_fn(f_hermite_polys, x)
+    hermite_polys = math.hermite_renormalized(R, 2 * x[..., None], 1 + 0j, (cutoff,))
 
     # (real) wavefunction
     return math.exp(-(x**2 / 2)) * math.transpose(prefactor * hermite_polys)
@@ -258,9 +257,10 @@ def quadrature_distribution(
     Returns:
         The coordinates at which the pdf is evaluated and the probability distribution.
     """
-    cutoff = state.shape[0]
+    shape = state.shape[0]
+    cutoff = shape - 1
     if x is None:
-        x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+        x = np.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
 
     dims = len(state.shape)
     is_dm = dims == 2
@@ -284,7 +284,7 @@ def c_ps_matrix(m, n, alpha):
 
 def gamma_matrix(c):
     """
-    helper function for ``c_in_PS`.
+    helper function for ``c_in_PS``.
     constructs the matrix transformation that helps transforming ``c``.
     ``c`` here must be 2-dimensional.
     """

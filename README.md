@@ -1,15 +1,17 @@
-![Logo](https://github.com/XanaduAI/MrMustard/blob/main/mm_white.png#gh-light-mode-only)
-![Logo](https://github.com/XanaduAI/MrMustard/blob/main/mm_dark.png#gh-dark-mode-only)
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/XanaduAI/MrMustard/main/mm_white.png">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/XanaduAI/MrMustard/main/mm_dark.png">
+  <img alt="Logo" src="https://raw.githubusercontent.com/XanaduAI/MrMustard/main/mm_white.png">
+</picture>
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
-[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Numpy%20tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_numpy.yml)
-[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Jax%20tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_jax.yml)
-[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tensorflow%20tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_tensorflow.yml)
-[![Python version](https://img.shields.io/pypi/pyversions/mrmustard.svg?style=popout-square)](https://pypi.org/project/MrMustard/)
+[![Numpy tests](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_numpy.yml/badge.svg?branch=main)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_numpy.yml)
+[![Jax tests](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_jax.yml/badge.svg?branch=main)](https://github.com/XanaduAI/MrMustard/actions/workflows/tests_jax.yml)
+[![Python version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FXanaduAI%2FMrMustard%2Fmain%2Fpyproject.toml)](https://pypi.org/project/MrMustard/)
 
 # Mr Mustard: Your Universal Differentiable Toolkit for Quantum Optics
 
-Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` (default), `tensorflow`, `jax`).
+Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (`numpy` (default) and `jax`).
 
 ## Installation
 
@@ -40,14 +42,14 @@ from mrmustard.lab.states import Coherent, Number
 from mrmustard.lab.transformations import BSgate
 
 # Create cat states
-cat_horizontal = (Coherent(mode=0, x=2) + Coherent(mode=0, x=-2)).normalize()
-cat_vertical = (Coherent(mode=1, y=2) + Coherent(mode=1, y=-2)).normalize()
+cat_horizontal = (Coherent(mode=0, alpha=2.0) + Coherent(mode=0, alpha=-2.0)).normalize()
+cat_vertical = (Coherent(mode=1, alpha=2.0j) + Coherent(mode=1, alpha=-2.0j)).normalize()
 
 # merge with beamsplitter
 both_modes = cat_vertical >> cat_horizontal >> BSgate(modes=(0, 1), theta=np.pi/4)
 
 # Wigner function of the marginal
-both_modes[0]
+both_modes.get_modes(0)
 ```
 
 <img width="571" alt="Wigner function of the marginal" src="https://github.com/user-attachments/assets/85477eef-abd3-4fe3-a00f-c0a6b1dc0260" />
@@ -88,7 +90,7 @@ both_modes.fock_array(shape=(100, 4))[:,3]
 
 - Contract components in any order
 - Linear superpositions of compatible objects
-- Plug-and-play backends (`numpy`, `tensorflow`, `jax`)
+- Plug-and-play backends (`numpy`, `jax`)
 
 ## Available Components
 
@@ -102,7 +104,7 @@ both_modes.fock_array(shape=(100, 4))[:,3]
 
 - **Single-mode**: Vacuum, Coherent, SqueezedVacuum, DisplacedSqueezed, Thermal, Number, Sauron, QuadratureEigenstate, BargmannEigenstate
 - **Two-mode**: TwoModeSqueezedVacuum,
-- **N-mode**: GDM (Gaussian density matrix), GKet (Gaussian ket)
+- **N-mode**: GaussianDM (Gaussian density matrix), GaussianKet (Gaussian ket)
 
 **Measurements:**
 
@@ -121,7 +123,7 @@ from mrmustard.lab.samplers import HomodyneSampler
 
 # Create and apply a circuit
 input_state = Vacuum(modes=(0, 1))
-output_state = input_state >> BSgate(modes=(0, 1)) >> Sgate(mode=0, r=0.5) >> Dgate(mode=1, x=0.5)
+output_state = input_state >> BSgate(modes=(0, 1)) >> Sgate(mode=0, r=0.5) >> Dgate(mode=1, alpha=0.5)
 
 # Measure the result
 homodyne = HomodyneSampler()
@@ -136,35 +138,26 @@ Transform any simulation into an optimization by marking parameters as trainable
 from mrmustard import math
 from mrmustard.lab.states import DisplacedSqueezed
 from mrmustard.lab.transformations import Dgate, Ggate
-from mrmustard.training import OptimizerJax
+from mrmustard.parameters import Variable
+from mrmustard.training import Optimizer
 
 math.change_backend("jax")
 
-# Create trainable gates
-D = Dgate(mode=0, x=0.1, y=-0.5, x_trainable=True, y_trainable=True)
-G = Ggate(modes=0, symplectic_trainable=True)
+# Create trainable parameters
+alpha = Variable(0.1 - 0.5j, name="alpha")
+symplectic = Variable(math.random_symplectic(1), name="symplectic")
 
-# Define cost function
-def cost_fn(G, D):
+# Define cost function which accepts trainable parameters
+def cost_fn(alpha, symplectic):
+    D = Dgate(mode=0, alpha=alpha)
+    G = Ggate(modes=0, symplectic=symplectic)
     state_out = Vacuum(modes=0) >> G >> D
-    target = DisplacedSqueezed(mode=0, r=0.3, phi=1.1, x=0.4, y=-0.2)
+    target = DisplacedSqueezed(mode=0, alpha=0.4 - 0.2j, r=0.3, phi=1.1)
     return 1 - state_out.fidelity(target)
 
 # Optimize
 opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
-(G, D) = opt.minimize(cost_fn, by_optimizing=[G, D])
-```
-
-### Advanced: Circuit Optimization
-
-```python
-from mrmustard.lab.circuits import Circuit
-from mrmustard.lab.states import Coherent, Number
-from mrmustard.lab.transformations import Sgate
-
-# Optimize contraction path and Fock shapes
-circ = Circuit([Number(0, n=15), Sgate(0, r=1.0), Coherent(0, x=1.0).dual])
-circ.optimize(n_init=100, with_BF_heuristic=True, verbose=True)
+(alpha_optimized, symplectic_optimized) = opt.minimize(cost_fn, by_optimizing=[alpha, symplectic])
 ```
 
 ## Backend Flexibility
@@ -176,10 +169,6 @@ import mrmustard.math as math
 
 # Default numpy backend
 math.cos(0.1)  # numpy
-
-# Switch to tensorflow
-math.change_backend("tensorflow")
-math.cos(0.1)  # tensorflow
 
 # Switch to jax
 math.change_backend("jax")
@@ -198,7 +187,7 @@ Contains the core quantum optics functionality, including the `Ansatz` class res
 
 ### The `math` Module
 
-The backbone providing plug-and-play backend support. Acts as a drop-in replacement for `numpy`, `tensorflow`, or `jax`.
+The backbone providing plug-and-play backend support. Acts as a drop-in replacement for `numpy` or `jax`.
 
 ## Getting Started
 

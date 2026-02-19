@@ -14,64 +14,99 @@
 
 """Tests for the ``Gket`` and ``Gdm`` classes."""
 
+import pytest
+
 from mrmustard import math
-from mrmustard.lab.states import DM, GDM, GKet, Vacuum
+from mrmustard.lab.states import DM, GaussianDM, GaussianKet, Vacuum
 from mrmustard.lab.transformations import Unitary
+from mrmustard.parameters import Variable
 
 
-class TestGKet:
+class TestGaussianKet:
     r"""
-    Tests for the ``GKet`` class.
+    Tests for the ``GaussianKet`` class.
     """
 
     def test_init(self):
         "Tests initialization"
-        gket = GKet((0, 1))
+        symplectic = math.random_symplectic(2)
+        gket = GaussianKet((0, 1), symplectic)
 
         assert gket.modes == (0, 1)
         assert gket.parameters.symplectic.value.shape == (4, 4)
-        assert gket.name == "GKet"
+        assert gket.name == "GaussianKet"
         assert math.allclose(gket.probability, 1.0)
 
     def test_correctness(self):
         "Tests is the attributes are consistent"
 
-        g = GKet(0)
+        g = GaussianKet.random(modes=0)
         sym = g.parameters.symplectic.value
         u = Unitary.from_symplectic((0,), sym)
         assert g == Vacuum(0) >> u
 
-    def test_getitem(self):
-        "Tests the getitem of the GKet"
+    def test_get_modes(self):
+        "Tests the get_modes of the GaussianKet"
 
-        psi = GKet(0)
-        assert psi == psi[0]
+        psi = GaussianKet.random(modes=0)
+        assert psi == psi.get_modes(0)
 
-        phi = GKet((0, 1))
-        assert isinstance(phi[0], DM)
+        phi = GaussianKet.random(modes=(0, 1))
+        assert isinstance(phi.get_modes(0), DM)
+
+    def test_random(self):
+        "Tests the random method of the GaussianKet"
+        psi = GaussianKet.random(modes=0, seed=1)
+        assert isinstance(psi, GaussianKet)
+        assert psi.modes == (0,)
+        assert psi.parameters.symplectic.value.shape == (2, 2)
+        assert math.allclose(psi.probability, 1.0)
+        assert math.allclose(psi.parameters.symplectic.value, math.random_symplectic(1, seed=1))
 
 
-class TestGDM:
+class TestGaussianDM:
     r"""
-    Tests the ``GDM`` class.
+    Tests the ``GaussianDM`` class.
     """
 
     def test_init(self):
         "Tests the initialization"
-
-        rho = GDM((0, 1), [0.2, 0.3])
+        symplectic = math.random_symplectic(2)
+        rho = GaussianDM((0, 1), [0.2, 0.3], symplectic)
 
         assert rho.modes == (0, 1)
-        assert rho.name == "GDM"
+        assert rho.name == "GaussianDM"
         assert math.allclose(rho.parameters.beta.value, math.astensor([0.2, 0.3]))
         assert rho.parameters.symplectic.value.shape == (4, 4)
         assert math.allclose(rho.probability, 1.0)
 
-    def test_getitem(self):
-        "Tests the getitem of GDM"
+        beta_var = Variable(math.astensor([0.2, 0.3]), "beta")
+        rho = GaussianDM((0, 1), beta_var, symplectic)
+        assert math.allclose(rho.parameters.beta.value, beta_var.value)
 
-        rho = GDM(0, 0.2)
-        assert rho == rho[0]
+    def test_get_modes(self):
+        "Tests the get_modes of GaussianDM"
 
-        sigma = GDM((0, 1), [0.5, 0.4])
-        assert isinstance(sigma[0], DM)
+        rho = GaussianDM.random(modes=0)
+        assert rho == rho.get_modes(0)
+
+        sigma = GaussianDM.random(modes=(0, 1))
+        assert isinstance(sigma.get_modes(0), DM)
+
+    def test_random(self):
+        "Tests the random method of GaussianDM"
+        rho = GaussianDM.random(modes=0, min_beta=0.2, seed=1)
+        assert isinstance(rho, GaussianDM)
+        assert rho.modes == (0,)
+        assert rho.parameters.beta.value.shape == (1,)
+        assert rho.parameters.symplectic.value.shape == (2, 2)
+        assert math.allclose(rho.probability, 1.0)
+        assert math.allclose(rho.parameters.symplectic.value, math.random_symplectic(1, seed=1))
+
+    def test_random_max_beta_equal_to_min_beta_but_not_less(self):
+        rho = GaussianDM.random(modes=0, min_beta=0.3, max_beta=0.3)
+        assert isinstance(rho, GaussianDM)
+        assert rho.modes == (0,)
+        assert rho.parameters.beta.value.shape == (1,)
+        with pytest.raises(ValueError, match="high - low < 0"):
+            GaussianDM.random(modes=0, min_beta=0.3, max_beta=0.2)

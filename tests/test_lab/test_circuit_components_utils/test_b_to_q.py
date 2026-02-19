@@ -18,13 +18,7 @@ import numpy as np
 import pytest
 
 from mrmustard import math, settings
-from mrmustard.lab import BtoQ, Coherent, Identity
-from mrmustard.physics.gaussian_integrals import (
-    complex_gaussian_integral_1,
-    join_Abc,
-    join_Abc_real,
-    real_gaussian_integral,
-)
+from mrmustard.lab import BtoQ, Coherent, GaussianKet, Identity
 
 
 class TestBtoQ:
@@ -36,68 +30,18 @@ class TestBtoQ:
         btoq = BtoQ((0,), 0.5)
         adjoint_btoq = btoq.adjoint
 
-        kets = btoq.wires.ket.indices
-        assert adjoint_btoq.ansatz == btoq.ansatz.reorder(kets).conj
+        assert adjoint_btoq.ansatz == btoq.ansatz.conj
         assert adjoint_btoq.wires == btoq.wires.adjoint
         assert adjoint_btoq.parameters.phi == btoq.parameters.phi
 
-    def test_BtoQ_twice_on_a_state(self):
-        A0 = math.astensor([[0.5, 0.3], [0.3, 0.5]]) + 0.0j
-        b0 = math.zeros(2, dtype=np.complex128)
-        c0 = math.astensor(1.0 + 0.0j)
-
-        modes = (0, 1)
-        BtoQ_CC1 = BtoQ(modes, 0.0)
-        step1A, step1b, step1c = BtoQ_CC1.bargmann_triple()
-        Ainter, binter, cinter = complex_gaussian_integral_1(
-            join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
-            idx_z=[0, 1],
-            idx_zconj=[4, 5],
-            measure=-1,
-        )
-        QtoBMap_CC2 = BtoQ(modes, 0.0).dual
-        step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple()
-
-        new_A, new_b, new_c = join_Abc_real(
-            (Ainter, binter, cinter),
-            (step2A, step2b, step2c),
-            [0, 1],
-            [2, 3],
-        )
-
-        Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0, 1])
-
-        assert math.allclose(A0, Af)
-        assert math.allclose(b0, bf)
-        assert math.allclose(c0, cf)
-
-        A0 = math.astensor([[0.4895454]])
-        b0 = math.zeros(1)
-        c0 = math.astensor(1.0 + 0.0j)
-
-        modes = (0,)
-        BtoQ_CC1 = BtoQ(modes, 0.0)
-        step1A, step1b, step1c = BtoQ_CC1.bargmann_triple()
-        Ainter, binter, cinter = complex_gaussian_integral_1(
-            join_Abc((A0, b0, c0), (step1A, step1b, step1c)),
-            idx_z=[
-                0,
-            ],
-            idx_zconj=[2],
-            measure=-1,
-        )
-        QtoBMap_CC2 = BtoQ(modes, 0.0).dual
-        step2A, step2b, step2c = QtoBMap_CC2.bargmann_triple()
-
-        new_A, new_b, new_c = join_Abc_real(
-            (Ainter, binter, cinter),
-            (step2A, step2b, step2c),
-            [0],
-            [1],
-        )
-
-        Af, bf, cf = real_gaussian_integral((new_A, new_b, new_c), idx=[0])
-
+    @pytest.mark.parametrize("modes", [(0,), (0, 1)])
+    def test_BtoQ_QtoB(self, modes):
+        component = GaussianKet.random(modes=modes)
+        btoq = BtoQ(modes, 0.0)
+        quad_component = component >> btoq
+        new_component = quad_component >> btoq.inverse()
+        A0, b0, c0 = component.ansatz.triple
+        Af, bf, cf = new_component.ansatz.triple
         assert math.allclose(A0, Af)
         assert math.allclose(b0, bf)
         assert math.allclose(c0, cf)
@@ -116,13 +60,13 @@ class TestBtoQ:
             )
             return c * np.exp(0.5 * A * quad**2 + b * quad)
 
-        rng = settings.rng
+        rng = settings.get_rng()
         x = rng.random()
         y = rng.random()
         axis_angle = rng.random()
         quad = rng.random()
 
-        state = Coherent(0, x, y)
+        state = Coherent(0, x + 1j * y)
         wavefunction = (state >> BtoQ((0,), axis_angle)).ansatz
 
         assert np.allclose(wavefunction(quad), wavefunction_coh(x + 1j * y, quad, axis_angle))
@@ -131,9 +75,7 @@ class TestBtoQ:
         btoq = BtoQ((0,), 0.5)
         dual_btoq = btoq.dual
 
-        ok = dual_btoq.wires.ket.output.indices
-        ik = dual_btoq.wires.ket.input.indices
-        assert dual_btoq.ansatz == btoq.ansatz.reorder(ik + ok).conj
+        assert dual_btoq.ansatz == btoq.ansatz.conj
         assert dual_btoq.wires == btoq.wires.dual
         assert dual_btoq.parameters.phi == btoq.parameters.phi
 

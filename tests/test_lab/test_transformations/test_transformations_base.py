@@ -31,9 +31,8 @@ from mrmustard.lab.transformations import (
     Sgate,
     Unitary,
 )
+from mrmustard.physics.utils import random_Abc
 from mrmustard.physics.wires import Wires
-
-from ...random import Abc_triple
 
 
 class TestOperation:
@@ -43,7 +42,7 @@ class TestOperation:
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_init_from_bargmann(self, batch_shape):
-        A, b, c = Abc_triple(3, batch_shape)
+        A, b, c = random_Abc(3, batch_shape)
         operator = Operation.from_bargmann((0,), (1, 2), (A, b, c), "my_operator")
         assert math.allclose(operator.ansatz.A, A)
         assert math.allclose(operator.ansatz.b, b)
@@ -67,9 +66,18 @@ class TestUnitary:
     def test_rshift(self):
         unitary1 = Dgate(0, 1) >> Dgate(1, 1)
         unitary2 = Dgate(1, 2) >> Dgate(2, 2)
-        u_component = CircuitComponent(unitary1.ansatz, unitary1.wires, unitary1.name)
+        u_component = CircuitComponent(
+            ansatz_factory=unitary1.ansatz_factory,
+            wires=unitary1.wires,
+            name=unitary1.name,
+        )
         channel = Attenuator(1, 1)
-        ch_component = CircuitComponent(channel.ansatz, channel.wires, channel.name)
+        ch_component = CircuitComponent(
+            ansatz_factory=channel.ansatz_factory,
+            wires=channel.wires,
+            name=channel.name,
+        )
+        ch_component.parameters["transmissivity"] = channel.parameters.transmissivity
 
         assert isinstance(unitary1 >> unitary2, Unitary)
         assert isinstance(unitary1 >> channel, Channel)
@@ -78,18 +86,32 @@ class TestUnitary:
 
     def test_repr(self):
         unitary1 = Dgate(0, 1)
-        u_component = CircuitComponent(unitary1.ansatz, unitary1.wires, unitary1.name)
-        assert repr(unitary1) == "Dgate(modes=(0,), name=Dgate, repr=PolyExpAnsatz)"
-        assert repr(unitary1.to_fock(5)) == "Dgate(modes=(0,), name=Dgate, repr=ArrayAnsatz)"
-        assert repr(u_component) == "CircuitComponent(modes=(0,), name=Dgate, repr=PolyExpAnsatz)"
+        u_component = CircuitComponent(
+            ansatz_factory=unitary1.ansatz_factory,
+            wires=unitary1.wires,
+            name=unitary1.name,
+        )
+        u_component.parameters["alpha"] = unitary1.parameters.alpha
+        assert (
+            repr(unitary1)
+            == "Dgate(modes=(0,), name=Dgate, repr=PolyExpAnsatz(batch_shape=(), lin_sup=False, num_CV_vars=2, num_derived_vars=0))"
+        )
+        assert (
+            repr(unitary1.to_fock(5))
+            == "Dgate(modes=(0,), name=Dgate, repr=ArrayAnsatz(shape=(5, 5), batch_dims=0))"
+        )
+        assert (
+            repr(u_component)
+            == "CircuitComponent(modes=(0,), name=Dgate, repr=PolyExpAnsatz(batch_shape=(), lin_sup=False, num_CV_vars=2, num_derived_vars=0))"
+        )
         assert (
             repr(u_component.to_fock(5))
-            == "CircuitComponent(modes=(0,), name=Dgate, repr=ArrayAnsatz)"
+            == "CircuitComponent(modes=(0,), name=Dgate, repr=ArrayAnsatz(shape=(5, 5), batch_dims=0))"
         )
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_init_from_bargmann(self, batch_shape):
-        A, b, c = Abc_triple(2, batch_shape)
+        A, b, c = random_Abc(2, batch_shape)
         gate = Unitary.from_bargmann((2,), (2,), (A, b, c), "my_unitary")
         assert math.allclose(gate.ansatz.A, A)
         assert math.allclose(gate.ansatz.b, b)
@@ -101,8 +123,8 @@ class TestUnitary:
         S = math.broadcast_to(S, batch_shape + S.shape)
         u = Unitary.from_symplectic((0, 1), S)
         assert u.ansatz.batch_shape == batch_shape
-        assert u.contract(u.dual, "zip") == Identity((0, 1))
-        assert u.dual.contract(u, "zip") == Identity((0, 1))
+        assert u.contract(u.dual) == Identity((0, 1))
+        assert u.dual.contract(u) == Identity((0, 1))
 
     def test_init_from_fock(self):
         cutoff = 100
@@ -115,18 +137,42 @@ class TestUnitary:
     def test_inverse_unitary(self, batch_shape):
         r = math.broadcast_to(0.1, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
-        u = Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip")
-        gate = Unitary(u.ansatz, u.wires, u.name)
+        u = Sgate(0, r, phi).contract(Dgate(0, r + 1j * phi))
+        gate = Unitary(ansatz_factory=u.ansatz_factory, wires=u.wires, name=u.name)
         gate_inv = gate.inverse()
         gate_inv_inv = gate_inv.inverse()
         assert gate_inv_inv == gate
         should_be_identity = gate >> gate_inv
-        assert should_be_identity.ansatz == Dgate(0, 0.0, 0.0).ansatz
+        assert should_be_identity.ansatz == Dgate(0, 0.0j).ansatz
 
     def test_random(self):
         modes = (1, 3, 20)
         u = Unitary.random(modes)
         assert (u >> u.dual) == Identity(modes)
+
+    def test_random_seed(self):
+        # same seed should produce same unitary
+        assert Unitary.random(modes=[0, 1], seed=42) == Unitary.random(modes=[0, 1], seed=42)
+        # different seeds should produce different unitaries
+        assert Unitary.random(modes=[0, 1], seed=42) != Unitary.random(modes=[0, 1], seed=43)
+
+        # local seed should not affect global seed
+        settings.SEED = 42
+        u_from_global_1 = Unitary.random(modes=[0, 1])
+        u_from_global_2 = Unitary.random(modes=[0, 1])
+
+        settings.SEED = 42
+        u_from_global_1_redux = Unitary.random(modes=[0, 1])
+        # this call should not affect the global RNG
+        _ = Unitary.random(modes=[0, 1], seed=123)
+        u_from_global_2_redux = Unitary.random(modes=[0, 1])
+
+        assert u_from_global_1 == u_from_global_1_redux
+        assert u_from_global_2 == u_from_global_2_redux
+
+        # no modes should raise error
+        with pytest.raises(ValueError, match="Cannot create a random unitary with no modes."):
+            Unitary.random(modes=[])
 
 
 class TestMap:
@@ -136,7 +182,7 @@ class TestMap:
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_init_from_bargmann(self, batch_shape):
-        A, b, c = Abc_triple(4, batch_shape)
+        A, b, c = random_Abc(4, batch_shape)
         my_map = Map.from_bargmann((0,), (0,), (A, b, c), "my_map")
         assert math.allclose(my_map.ansatz.A, A)
         assert math.allclose(my_map.ansatz.b, b)
@@ -164,7 +210,7 @@ class TestChannel:
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_init_from_bargmann(self, batch_shape):
-        A, b, c = Abc_triple(4, batch_shape)
+        A, b, c = random_Abc(4, batch_shape)
         channel = Channel.from_bargmann((0,), (0,), (A, b, c), "my_channel")
         assert math.allclose(channel.ansatz.A, A)
         assert math.allclose(channel.ansatz.b, b)
@@ -172,10 +218,18 @@ class TestChannel:
 
     def test_rshift(self):
         unitary = Dgate(0, 1) >> Dgate(1, 1)
-        u_component = CircuitComponent(unitary.ansatz, unitary.wires, unitary.name)
+        u_component = CircuitComponent(
+            ansatz_factory=unitary.ansatz_factory,
+            wires=unitary.wires,
+            name=unitary.name,
+        )
         channel1 = Attenuator(1, 0.9) >> Attenuator(2, 0.9)
         channel2 = Attenuator(2, 0.9) >> Attenuator(3, 0.9)
-        ch_component = CircuitComponent(channel1.ansatz, channel1.wires, channel1.name)
+        ch_component = CircuitComponent(
+            ansatz_factory=channel1.ansatz_factory,
+            wires=channel1.wires,
+            name=channel1.name,
+        )
 
         assert isinstance(channel1 >> unitary, Channel)
         assert isinstance(channel1 >> channel2, Channel)
@@ -184,23 +238,58 @@ class TestChannel:
 
     def test_repr(self):
         channel1 = Attenuator(0, 0.9)
-        ch_component = CircuitComponent(channel1.ansatz, channel1.wires, channel1.name)
+        ch_component = CircuitComponent(
+            ansatz_factory=channel1.ansatz_factory,
+            wires=channel1.wires,
+            name=channel1.name,
+        )
+        ch_component.parameters["transmissivity"] = channel1.parameters.transmissivity
 
-        assert repr(channel1) == "Attenuator(modes=(0,), name=Att~, repr=PolyExpAnsatz)"
-        assert repr(ch_component) == "CircuitComponent(modes=(0,), name=Att~, repr=PolyExpAnsatz)"
+        assert (
+            repr(channel1)
+            == "Attenuator(modes=(0,), name=Attenuator, repr=PolyExpAnsatz(batch_shape=(), lin_sup=False, num_CV_vars=4, num_derived_vars=0))"
+        )
+        assert (
+            repr(ch_component)
+            == "CircuitComponent(modes=(0,), name=Attenuator, repr=PolyExpAnsatz(batch_shape=(), lin_sup=False, num_CV_vars=4, num_derived_vars=0))"
+        )
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_inverse_channel(self, batch_shape):
-        r = math.broadcast_to(0.1, batch_shape)
+        r = math.broadcast_to(0.1 + 0.2j, batch_shape)
         phi = math.broadcast_to(0.2, batch_shape)
-        g = Sgate(0, r, phi).contract(Dgate(0, r, phi), "zip").contract(Attenuator(0, 0.5), "zip")
-        gate = Channel(g.ansatz, g.wires, g.name)
+        g = Sgate(0, r, phi).contract(Dgate(0, r + 1j * phi)).contract(Attenuator(0, 0.5))
+        gate = Channel(ansatz_factory=g.ansatz_factory, wires=g.wires, name=g.name)
         should_be_identity = gate >> gate.inverse()
         assert should_be_identity.ansatz == Attenuator(0, 1.0).ansatz
 
     def test_random(self):
         modes = (1, 2, 6)
         assert math.allclose((Vacuum(modes) >> Channel.random(modes)).probability, 1)
+
+    def test_random_seed(self):
+        # same seed should produce same channel
+        assert Channel.random(modes=[0, 1], seed=42) == Channel.random(modes=[0, 1], seed=42)
+        # different seeds should produce different channels
+        assert Channel.random(modes=[0, 1], seed=42) != Channel.random(modes=[0, 1], seed=43)
+
+        # local seed should not affect global seed
+        settings.SEED = 42
+        ch_from_global_1 = Channel.random(modes=[0, 1])
+        ch_from_global_2 = Channel.random(modes=[0, 1])
+
+        settings.SEED = 42
+        ch_from_global_1_redux = Channel.random(modes=[0, 1])
+        # this call should not affect the global RNG
+        _ = Channel.random(modes=[0, 1], seed=123)
+        ch_from_global_2_redux = Channel.random(modes=[0, 1])
+
+        assert ch_from_global_1 == ch_from_global_1_redux
+        assert ch_from_global_2 == ch_from_global_2_redux
+
+        # no modes should raise error
+        with pytest.raises(ValueError, match="Cannot create a random channel with no modes."):
+            Channel.random(modes=[])
 
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (0, 1, 2)])
     def test_is_CP(self, modes):
@@ -229,8 +318,8 @@ class TestChannel:
 
     @pytest.mark.parametrize("nmodes", [1, 2, 3])
     def test_from_XY(self, nmodes):
-        X = settings.rng.random((2 * nmodes, 2 * nmodes))
-        Y = settings.rng.random((2 * nmodes, 2 * nmodes))
+        X = settings.get_rng().random((2 * nmodes, 2 * nmodes))
+        Y = settings.get_rng().random((2 * nmodes, 2 * nmodes))
         x, y = Channel.from_XY(tuple(range(nmodes)), tuple(range(nmodes)), X, Y).XY
         assert math.allclose(x, X)
         assert math.allclose(y, Y)

@@ -18,6 +18,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab.transformations import FockDamping, Identity
+from mrmustard.parameters import Variable
 
 
 class TestFockDamping:
@@ -53,7 +54,8 @@ class TestFockDamping:
 
     def test_trainable_parameters(self):
         gate1 = FockDamping(0, 0.1)
-        gate2 = FockDamping(0, 0.1, damping_trainable=True, damping_bounds=(0.0, 0.2))
+        damping_var = Variable(0.1, "damping", dtype=math.float64)
+        gate2 = FockDamping(0, damping=damping_var)
 
         with pytest.raises(AttributeError):
             gate1.parameters.damping.value = 0.3
