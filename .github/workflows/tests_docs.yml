@@ -29,7 +29,10 @@ jobs:
           version: "0.8.11"
           python-version: "3.13"
 
-      - name: Run tests
+      - name: Run doctests
         run: |
           uv run --all-extras --group doc pytest --doctest-modules mrmustard/physics/ansatz
           uv run --all-extras --group doc pytest --doctest-modules mrmustard/lab
+
+      - name: Build docs
+        run: uv run --all-extras --group doc sphinx-build -W --keep-going doc doc/_build/html
