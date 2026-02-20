@@ -29,10 +29,19 @@ jobs:
           version: "0.8.11"
           python-version: "3.13"
 
+      - name: Install dependencies
+        run: uv sync --no-editable --all-extras --group doc
+
       - name: Run doctests
+        working-directory: ${{ runner.temp }}
         run: |
-          uv run --no-editable --all-extras --group doc pytest --doctest-modules mrmustard/physics/ansatz
-          uv run --no-editable --all-extras --group doc pytest --doctest-modules mrmustard/lab
+          uv run --no-sync --project ${{ github.workspace }} pytest --doctest-modules --pyargs mrmustard.physics.ansatz
+          uv run --no-sync --project ${{ github.workspace }} pytest --doctest-modules --pyargs mrmustard.lab
 
       - name: Build docs
-        run: uv run --no-editable --all-extras --group doc sphinx-build -W --keep-going doc doc/_build/html
+        working-directory: ${{ runner.temp }}
+        run: >-
+          uv run --no-sync --project ${{ github.workspace }} sphinx-build
+          -W --keep-going
+          ${{ github.workspace }}/doc
+          ${{ github.workspace }}/doc/_build/html
