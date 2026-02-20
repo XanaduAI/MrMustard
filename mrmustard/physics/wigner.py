@@ -70,10 +70,10 @@ def wigner_discretized(rho, q_vec, p_vec):
     The supported discretization methods are:
 
     * ``iterative`` (default): Uses an iterative method to calculate the Wigner
-    coefficients :math:`W_{mn}` in :math:`W = \sum_{mn} W_{mn} |m\rangle\langle n|`.
-    This method is recommended for systems with low numbers of excitations (``n\leq50``).
+      coefficients :math:`W_{mn}` in :math:`W = \sum_{mn} W_{mn} |m\rangle\langle n|`.
+      This method is recommended for systems with low numbers of excitations (``n\leq50``).
     * ``clenshaw``: Uses Clenshaw summations to improve the performance for systems
-    with large numbers of excitations (``n\leq50``).
+      with large numbers of excitations (``n\leq50``).
 
     The discretization method can be changed by moodifying the `Settings` object.
 

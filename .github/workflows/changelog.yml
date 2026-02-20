@@ -9,7 +9,7 @@ jobs:
     if: contains( github.event.pull_request.labels.*.name, 'no changelog') != true
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 2
 

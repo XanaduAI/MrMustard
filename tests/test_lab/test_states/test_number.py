@@ -35,7 +35,7 @@ class TestNumber:
     def test_init(self, modes, n, cutoffs):
         state = Number(modes, n, cutoffs)
 
-        assert state.name == "N"
+        assert state.name == "Number"
         assert state.modes == (modes,)
         assert all(isinstance(x, int) for x in state.manual_shape)
 
@@ -45,7 +45,7 @@ class TestNumber:
     @pytest.mark.requires_backend("numpy")
     def test_init_with_np_int(self):
         state = Number(math.int64(0), n=1)
-        assert state.name == "N"
+        assert state.name == "Number"
         assert state.modes == (0,)
         assert all(isinstance(x, int) for x in state.manual_shape)
 
@@ -80,4 +80,4 @@ class TestNumber:
         state = Number(0, n=1)
         for w in state.wires.quantum:
             assert w.repr == ReprEnum.FOCK
-            assert w.fock_cutoff == state.ansatz.core_shape[w.index]
+            assert w.fock_shape == state.ansatz.core_shape[w.index]

@@ -18,7 +18,7 @@ This module contains the array ansatz.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from typing import Any
 from warnings import warn
 
@@ -27,7 +27,7 @@ from IPython.display import display
 from numpy.typing import ArrayLike
 
 from mrmustard import math, settings, widgets
-from mrmustard.math.parameters import Variable
+from mrmustard.physics.utils import batch_indexer_info
 from mrmustard.utils.typing import Batch, Scalar, Tensor
 
 from .base import Ansatz
@@ -41,32 +41,27 @@ class ArrayAnsatz(Ansatz):
 
     Represents the ansatz as a multidimensional array.
 
-    .. code-block::
-
-          >>> from mrmustard.physics.ansatz import ArrayAnsatz
-
-          >>> array = np.random.random((2, 4, 5))
-          >>> ansatz = ArrayAnsatz(array)
+    >>> import numpy as np
+    >>> from mrmustard.physics.ansatz import ArrayAnsatz
+    >>> array = np.random.random((2, 4, 5))
+    >>> ansatz = ArrayAnsatz(array)
 
     Args:
         array: A (potentially) batched array.
         batch_dims: The number of batch dimensions.
     """
 
-    def __init__(self, array: Batch[Tensor] | None, batch_dims: int = 0):
+    def __init__(self, array: Batch[Tensor], batch_dims: int = 0):
         super().__init__()
         self._array = array
-        self._original_abc_data = None
         self._batch_dims = batch_dims
-        if array is not None:
-            self._batch_shape = tuple(self._array.shape[:batch_dims])
+        self._batch_shape = tuple(self._array.shape[:batch_dims])
 
     @property
     def array(self) -> Batch[Tensor]:
         r"""
         The array of this ansatz.
         """
-        self._generate_ansatz()
         return self._array
 
     @array.setter
@@ -80,8 +75,6 @@ class ArrayAnsatz(Ansatz):
 
     @property
     def batch_shape(self) -> tuple[int, ...]:
-        if self._array is None:
-            self._generate_ansatz()
         return self._batch_shape
 
     @property
@@ -89,15 +82,15 @@ class ArrayAnsatz(Ansatz):
         return int(np.prod(self.batch_shape)) if self.batch_shape else 0
 
     @property
+    def conj(self):
+        return ArrayAnsatz(math.conj(self.array), self.batch_dims)
+
+    @property
     def core_dims(self) -> int:
         r"""
         The number of core dimensions of this ansatz.
         """
         return len(self.core_shape)
-
-    @property
-    def conj(self):
-        return ArrayAnsatz(math.conj(self.array), self.batch_dims)
 
     @property
     def core_shape(self) -> tuple[int, ...] | None:
@@ -122,131 +115,191 @@ class ArrayAnsatz(Ansatz):
         """
         return self.array[(...,) + (0,) * self.core_dims]
 
-    @property
-    def triple(self) -> tuple:
-        r"""
-        The data of the original PolyExpAnsatz if it exists.
-        """
-        if self._original_abc_data is None:
-            raise AttributeError("This ArrayAnsatz does not have (A,b,c) data.")
-        return self._original_abc_data
-
     @classmethod
     def from_dict(cls, data: dict[str, ArrayLike]) -> ArrayAnsatz:
         return cls(**data)
 
-    @classmethod
-    def from_function(cls, fn: Callable, batch_dims: int = 0, **kwargs: Any) -> ArrayAnsatz:
-        ret = cls(None, batch_dims=batch_dims)
-        ret._fn = fn
-        ret._kwargs = kwargs
-        return ret
+    def concat(self, other: ArrayAnsatz, axis: int = 0) -> ArrayAnsatz:
+        r"""
+        Concatenates two ArrayAnsatz objects along the specified batch axis.
 
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
-        ret = cls.__new__(cls)
-        (ret._kwargs,) = children
-        (
-            ret._batch_shape,
-            ret._lin_sup,
-            ret._fn,
-            ret._array,
-            ret._original_abc_data,
-            ret._batch_dims,
-        ) = aux_data
-        return ret
+        All batch axes except the concatenation axis must agree in size.
+        Core shapes must also match.
+
+        Args:
+            other: The other ArrayAnsatz to concatenate with.
+            axis: The batch axis along which to concatenate (default 0).
+
+        Returns:
+            A new ArrayAnsatz with the concatenated batch dimensions.
+
+        Raises:
+            ValueError: If batch dimensions don't match (except at axis) or if core shapes don't match.
+
+        Example:
+            >>> from mrmustard.physics.ansatz import ArrayAnsatz
+            >>> import numpy as np
+            >>> array1 = np.random.random((2, 4, 5))
+            >>> ansatz1 = ArrayAnsatz(array1, batch_dims=1)
+            >>> array2 = np.random.random((3, 4, 5))
+            >>> ansatz2 = ArrayAnsatz(array2, batch_dims=1)
+            >>> concatenated = ansatz1.concat(ansatz2, axis=0)
+            >>> assert concatenated.batch_shape == (5,)
+            >>> assert concatenated.core_shape == (4, 5)
+        """
+        # Check that both have the same number of batch dimensions
+        if self.batch_dims != other.batch_dims:
+            raise ValueError(
+                f"Cannot concatenate ansatze with different number of batch dimensions. "
+                f"Got {self.batch_dims} and {other.batch_dims}"
+            )
+
+        # Check that core shapes match
+        if any(np.asarray(self.core_shape) != np.asarray(other.core_shape)):
+            raise ValueError(
+                f"Cannot concatenate ansatze with different core_shape. "
+                f"Got {self.core_shape} and {other.core_shape}"
+            )
+
+        # Normalize negative axis
+        if axis < 0:
+            axis = self.batch_dims + axis
+
+        if axis < 0 or axis >= self.batch_dims:
+            raise ValueError(f"axis {axis} is out of range for batch_dims {self.batch_dims}")
+
+        # Check that all other batch axes (except the concatenation axis) match
+        self_batch_shape = np.asarray(self.batch_shape)
+        other_batch_shape = np.asarray(other.batch_shape)
+        for i in range(self.batch_dims):
+            if i != axis and self_batch_shape[i] != other_batch_shape[i]:
+                raise ValueError(
+                    f"Batch shapes must match except at axis {axis}. "
+                    f"Got {self.batch_shape} and {other.batch_shape}"
+                )
+
+        # Concatenate the arrays along the batch axis
+        array_concat = math.concat([self.array, other.array], axis=axis)
+
+        return ArrayAnsatz(array_concat, batch_dims=self.batch_dims)
 
     def contract(
         self,
         other: ArrayAnsatz,
-        idx1: Sequence[str | int],
-        idx2: Sequence[str | int],
-        idx_out: Sequence[str | int],
+        idxs: tuple[Sequence[int], Sequence[int]],
     ) -> ArrayAnsatz:
-        r"""Contracts this ansatz with another using einsum-style notation with labels.
-
-        Indices are specified as sequences of labels (str or int). Batch dimensions must
-        be strings, core dimensions must be integers.
-
-        Example:
-            `self.contract(other, idx1=['b', 0, 1], idx2=['b', 1, 2], idx_out=[0, 2])`
-            Contracts batch label 'b' and core index 1.
+        r"""Contract along specified core axes, broadcasting batch dimensions.
 
         Args:
             other: The other ArrayAnsatz to contract with.
-            idx1: Sequence of labels (str/int) for this ansatz's dimensions. Must match rank.
-            idx2: Sequence of labels (str/int) for the other ansatz's dimensions. Must match rank.
-            idx_out: Sequence of labels for the output dimensions. Must be subset of input labels.
+            idxs: Tuple ``(idx_self, idx_other)`` of core-axis indices to contract
+                (0-based relative to core dims). Negative indices allowed.
 
         Returns:
-            The contracted ArrayAnsatz.
+            The contracted ArrayAnsatz, with kept core axes ordered as
+            ``[self non-contracted] + [other non-contracted]``. Batch dims are
+            broadcast and preserved.
+
+        Example:
+            >>> from mrmustard.physics.ansatz import ArrayAnsatz
+            >>> from mrmustard import math
+            >>> array1 = math.arange(20).reshape((1, 4, 5))
+            >>> array2 = math.arange(72).reshape((3, 4, 6))
+            >>> ansatz1 = ArrayAnsatz(array1, batch_dims=1)
+            >>> ansatz2 = ArrayAnsatz(array2, batch_dims=1)
+            >>> # broadcast 1 and 3 while contracting 4 and 4, leaving 3 (batch), 5 and 6:
+            >>> contracted = ansatz1.contract(ansatz2, ([0], [0]))
+            >>> assert contracted.array.shape == (3, 5, 6)
 
         Raises:
-            ValueError: If index sequences have incorrect length or invalid labels.
+            ValueError: If index sequences have incorrect length, duplicates, or out-of-range indices.
         """
-        if len(idx1) != len(self.array.shape):
-            raise ValueError(f"expected len(idx1)={self.array.ndim} got {len(idx1)}")
-        if len(idx2) != len(other.array.shape):
-            raise ValueError(f"expected len(idx2)={other.array.ndim} got {len(idx2)}")
+        idxs_self, idxs_other = idxs
 
-        all_labels_in = set(idx1) | set(idx2)
-        if not set(idx_out).issubset(all_labels_in):
-            raise ValueError("Output labels must be present in input labels.")
+        if len(idxs_self) != len(idxs_other):
+            raise ValueError(
+                "idxs must be sequences of equal length, "
+                f"got {len(idxs_self)} and {len(idxs_other)}."
+            )
 
-        unique_labels = sorted(all_labels_in, key=lambda x: (isinstance(x, int), x))
-        label_to_char = {label: chr(97 + i) for i, label in enumerate(unique_labels)}
+        def normalize(indices: list[int], core_dims: int) -> list[int]:
+            normalized = [i + core_dims if i < 0 else i for i in indices]
+            if any(i < 0 or i >= core_dims for i in normalized):
+                raise ValueError(
+                    f"At least one core index is out of range for core dims {core_dims}."
+                )
+            if len(set(normalized)) != len(normalized):
+                raise ValueError("Repeated indices in contraction list are not allowed.")
+            return normalized
 
-        einsum_str1 = "".join([label_to_char[i] for i in idx1])
-        einsum_str2 = "".join([label_to_char[i] for i in idx2])
-        einsum_str_out = "".join([label_to_char[i] for i in idx_out])
-        einsum_str = f"{einsum_str1},{einsum_str2}->{einsum_str_out}"
+        idxs_self = normalize(idxs_self, self.core_dims)
+        idxs_other = normalize(idxs_other, other.core_dims)
 
-        contracted_labels = set(idx1) & set(idx2)
-        array1 = self.array
-        array2 = other.array
-        slices1 = [slice(None)] * len(idx1)
-        slices2 = [slice(None)] * len(idx2)
+        # Broadcast batch dims and optionally truncate mismatched contracted cores
+        bshape = np.broadcast_shapes(self.batch_shape, other.batch_shape)
+        a = math.broadcast_to(self.array, bshape + self.core_shape)
+        b = math.broadcast_to(other.array, bshape + other.core_shape)
+        if idxs_self:
+            sa = [slice(None)] * a.ndim
+            sb = [slice(None)] * b.ndim
+            for i_s, i_o in zip(idxs_self, idxs_other):
+                da = a.shape[len(bshape) + i_s]
+                db = b.shape[len(bshape) + i_o]
+                if da != db:
+                    m = int(min(da, db))
+                    sa[len(bshape) + i_s] = slice(0, m)
+                    sb[len(bshape) + i_o] = slice(0, m)
+            a, b = a[tuple(sa)], b[tuple(sb)]
 
-        for label in contracted_labels:
-            pos1 = idx1.index(label)
-            dim1 = array1.shape[pos1]
-            pos2 = idx2.index(label)
-            dim2 = array2.shape[pos2]
+        # Build einsum subscripts for contraction, using ellipsis for batch dims.
+        letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        k = len(idxs_self)  # number of contracted indices
+        pair = list(letters[:k])  # labels for contracted indices
 
-            if dim1 != dim2:
-                min_dim = min(dim1, dim2)
-                slices1[pos1] = slice(0, min_dim)
-                slices2[pos2] = slice(0, min_dim)
+        # Indices to keep (uncontracted) for self and other
+        keep_self = [i for i in range(self.core_dims) if i not in idxs_self]
+        keep_other = [j for j in range(other.core_dims) if j not in idxs_other]
 
-        reduced_array1 = array1[tuple(slices1)]
-        reduced_array2 = array2[tuple(slices2)]
-        result = math.einsum(einsum_str, reduced_array1, reduced_array2)
+        # Assign unique labels to kept indices for self and other
+        self_keep_labels = list(letters[k : k + len(keep_self)])
+        other_keep_labels = list(letters[k + len(keep_self) : k + len(keep_self) + len(keep_other)])
 
-        batch_dims_out = sum(1 for label in idx_out if isinstance(label, str))
-        return ArrayAnsatz(result, batch_dims=batch_dims_out)
+        # Map core indices to their einsum labels
+        s_map = dict(zip(idxs_self, pair)) | dict(zip(keep_self, self_keep_labels))
+        o_map = dict(zip(idxs_other, pair)) | dict(zip(keep_other, other_keep_labels))
+
+        # Build einsum input and output strings for self, other, and result
+        s_seq = "".join(s_map[i] for i in range(self.core_dims))
+        o_seq = "".join(o_map[j] for j in range(other.core_dims))
+        out_seq = "".join(self_keep_labels + other_keep_labels)
+        subs = f"...{s_seq},...{o_seq}->...{out_seq}"
+
+        # Perform the contraction using einsum
+        out = math.einsum(subs, a, b)
+        return ArrayAnsatz(out, batch_dims=len(bshape))
+
+    def display(self):
+        if widgets.IN_INTERACTIVE_SHELL or (w := widgets.fock(self)) is None:
+            print(repr(self))
+            return
+        display(w)
 
     def reduce(self, shape: Sequence[int]) -> ArrayAnsatz:
         r"""
         Returns a new ``ArrayAnsatz`` with a sliced core shape.
 
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.physics.ansatz import ArrayAnsatz
-
-            >>> array1 = math.arange(27).reshape((3, 3, 3))
-            >>> fock1 = ArrayAnsatz(array1)
-
-            >>> fock2 = fock1.reduce((3, 3, 3))
-            >>> assert fock1 == fock2
-
-            >>> fock3 = fock1.reduce((2, 2, 2))
-            >>> array3 = math.astensor([[[0, 1], [3, 4]], [[9, 10], [12, 13]]])
-            >>> assert fock3 == ArrayAnsatz(array3)
-
-            >>> fock4 = fock1.reduce((1, 3, 1))
-            >>> array4 = math.astensor([[[0], [3], [6]]])
-            >>> assert fock4 == ArrayAnsatz(array4)
+        >>> from mrmustard import math
+        >>> from mrmustard.physics.ansatz import ArrayAnsatz
+        >>> array1 = math.arange(27).reshape((3, 3, 3))
+        >>> fock1 = ArrayAnsatz(array1)
+        >>> fock2 = fock1.reduce((3, 3, 3))
+        >>> assert fock1 == fock2
+        >>> fock3 = fock1.reduce((2, 2, 2))
+        >>> array3 = math.astensor([[[0, 1], [3, 4]], [[9, 10], [12, 13]]])
+        >>> assert fock3 == ArrayAnsatz(array3)
+        >>> fock4 = fock1.reduce((1, 3, 1))
+        >>> array4 = math.astensor([[[0], [3], [6]]])
+        >>> assert fock4 == ArrayAnsatz(array4)
 
         Args:
             shape: The shape of the array of the returned ``ArrayAnsatz``.
@@ -298,51 +351,22 @@ class ArrayAnsatz(Ansatz):
         new_array = math.transpose(self.array, order)
 
         # truncate new_array if the z and zconj dimensions differ
-        z_dims = new_array.shape[-2 * len(idx_z) : -len(idx_z)]
-        zconj_dims = new_array.shape[-len(idx_z) :]
-        slices = [slice(None)] * len(new_array.shape)
-        for i, (z_dim, zconj_dim) in enumerate(zip(z_dims, zconj_dims)):
-            if z_dim != zconj_dim:
-                min_dim = min(z_dim, zconj_dim)
-                slices[-2 * len(idx_z) + i] = slice(0, min_dim)
-                slices[-len(idx_z) + i] = slice(0, min_dim)
-        new_array = new_array[tuple(slices)]
+        d = len(idx_z)
+        z_dims = new_array.shape[-2 * d : -d]
+        zconj_dims = new_array.shape[-d:]
+        if z_dims != zconj_dims:
+            slices = [slice(None)] * len(new_array.shape)
+            for i, (z_dim, zconj_dim) in enumerate(zip(z_dims, zconj_dims)):
+                if z_dim != zconj_dim:
+                    min_dim = min(z_dim, zconj_dim)
+                    slices[-2 * d + i] = slice(0, min_dim)
+                    slices[-d + i] = slice(0, min_dim)
+            new_array = new_array[tuple(slices)]
 
-        n = math.prod(new_array.shape[-len(idx_zconj) :])
-        new_array = math.reshape(new_array, (*new_array.shape[: -2 * len(idx_z)], n, n))
-        trace = math.trace(new_array)
+        n = math.prod(new_array.shape[-d:])
+        new_array = math.reshape(new_array, (*new_array.shape[: -2 * d], n, n))
+        trace = math.einsum("...ii->...", new_array)
         return ArrayAnsatz(trace, self.batch_dims)
-
-    def _generate_ansatz(self):
-        r"""
-        Computes and sets the array given a function and its kwargs.
-        """
-        if self._should_regenerate():
-            params = {}
-            for name, param in self._kwargs.items():
-                try:
-                    params[name] = param.value
-                except AttributeError:
-                    params[name] = param
-            self.array = self._fn(**params)
-
-    def _ipython_display_(self):
-        if widgets.IN_INTERACTIVE_SHELL or (w := widgets.fock(self)) is None:
-            print(self)
-            return
-        display(w)
-
-    def _should_regenerate(self):
-        r"""
-        Determines if the ansatz needs to be regenerated based on its current state
-        and parameter types.
-        """
-        return self._array is None or Variable in {type(param) for param in self._kwargs.values()}
-
-    def _tree_flatten(self):  # pragma: no cover
-        children, aux_data = super()._tree_flatten()
-        aux_data += (self._array, self._original_abc_data, self._batch_dims)
-        return (children, aux_data)
 
     def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
         r"""
@@ -378,6 +402,8 @@ class ArrayAnsatz(Ansatz):
         raise AttributeError("Cannot call an ArrayAnsatz.")
 
     def __eq__(self, other: Ansatz) -> bool:
+        if not isinstance(other, ArrayAnsatz):
+            return False
         if self.batch_shape != other.batch_shape:
             return False
         slices = tuple(slice(0, min(si, oi)) for si, oi in zip(self.core_shape, other.core_shape))
@@ -387,11 +413,39 @@ class ArrayAnsatz(Ansatz):
             atol=settings.ATOL,
         )
 
+    def __getitem__(self, index: Any) -> ArrayAnsatz:
+        r"""
+        Batch-only indexing. Supports integers, slices, None (newaxis), and Ellipsis.
+        Indexing is restricted to the first ``batch_dims`` axes. Core axes are not indexable.
+
+        The number of batch dimensions in the returned object is updated according to
+        how many integers (remove) and Nones (insert) are used in the batch indexer.
+        """
+        final_index, removed_by_int, inserted_by_none = batch_indexer_info(index, self.batch_dims)
+        new_array = self.array[final_index]
+        return ArrayAnsatz(
+            new_array, batch_dims=self.batch_dims - removed_by_int + inserted_by_none
+        )
+
     def __mul__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:
         return ArrayAnsatz(array=self.array * other, batch_dims=self.batch_dims)
 
     def __neg__(self) -> ArrayAnsatz:
         return ArrayAnsatz(array=-self.array, batch_dims=self.batch_dims)
 
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __str__(self) -> str:
+        return f"ArrayAnsatz(shape={self.array.shape}, batch_dims={self.batch_dims})"
+
     def __truediv__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:
+        # handle the case where other is a batched scalar
+        shape = math.shape(other)
+        if shape != ():
+            delta = len(self.array.shape) - len(shape)
+            other = math.reshape(
+                other,
+                shape + (1,) * delta,
+            )
         return ArrayAnsatz(array=self.array / other, batch_dims=self.batch_dims)

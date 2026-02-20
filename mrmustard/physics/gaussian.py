@@ -21,6 +21,14 @@ from __future__ import annotations
 from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Scalar, Vector
 
+__all__ = [
+    "fidelity",
+    "number_means",
+    "purity",
+    "symplectic_eigenvals",
+    "von_neumann_entropy",
+]
+
 
 def number_means(cov: Matrix, means: Vector) -> Vector:
     r"""Returns the photon number means vector given a Wigner covariance matrix and a means vector.

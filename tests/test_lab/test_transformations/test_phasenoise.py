@@ -18,7 +18,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab.circuit_components import CircuitComponent
-from mrmustard.lab.states import DM, Coherent, Ket, Number
+from mrmustard.lab.states import DM, Coherent, GaussianDM, GaussianKet, Number
 from mrmustard.lab.transformations import Dgate, FockDamping, PhaseNoise
 
 
@@ -35,15 +35,15 @@ class TestPhaseNoise:
         assert ch.modes == (0,)
         assert ch.ansatz is None
 
-    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
+    @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 1)])
     def test_application(self, batch_shape):
         "Tests application of PhaseNoise on Ket and DM"
-        x = math.broadcast_to(0.5, batch_shape)
-        psi_1 = Ket.random((0, 1)) >> Dgate(0, x, 0.5) >> PhaseNoise(0, 0.2)
+        x = math.broadcast_to(0.5 + 0.5j, batch_shape)
+        psi_1 = GaussianKet.random((0, 1)) >> Dgate(0, x) >> PhaseNoise(0, 0.2)
         assert isinstance(psi_1, DM)
         assert math.all(psi_1.purity < 1)
 
-        rho = DM.random((0, 1)) >> Dgate(0, 0.5, 0.5) >> PhaseNoise(0, 0.2)
+        rho = GaussianDM.random((0, 1)) >> Dgate(0, x) >> PhaseNoise(0, 0.2)
         assert isinstance(rho, DM)
         assert math.all(rho.purity < 1)
 

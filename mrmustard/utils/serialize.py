@@ -25,6 +25,8 @@ import numpy as np
 
 from mrmustard import __version__, math, settings
 
+__all__ = ["load", "save"]
+
 
 def save(cls: type, filename=None, do_zip=True, arrays=None, **data) -> Path:
     r"""

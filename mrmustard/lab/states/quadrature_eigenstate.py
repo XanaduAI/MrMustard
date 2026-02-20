@@ -23,11 +23,11 @@ from collections.abc import Sequence
 import numpy as np
 
 from mrmustard import math
-from mrmustard.physics import triples
-from mrmustard.physics.ansatz import PolyExpAnsatz
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
 from mrmustard.physics.wires import ReprEnum, Wires
 
-from ..utils import make_parameter
+from .builtins import quadrature_eigenstate
 from .ket import Ket
 
 __all__ = ["QuadratureEigenstate"]
@@ -37,21 +37,14 @@ class QuadratureEigenstate(Ket):
     r"""
     The Quadrature eigenstate in Bargmann representation.
 
+    >>> from mrmustard.lab import QuadratureEigenstate
+    >>> state = QuadratureEigenstate(1, x = 1, phi = 0)
+    >>> assert state.modes == (1,)
+
     Args:
         mode: The mode of the quadrature eigenstate.
         x: The displacement of the state.
         phi: The angle of the state with `0` being a position eigenstate and `\pi/2` being the momentum eigenstate.
-        x_trainable: Whether `x` is trainable.
-        phi_trainable: Whether `phi` is trainable.
-        x_bounds: The bounds of `x`.
-        phi_bounds: The bounds of `phi`.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import QuadratureEigenstate
-
-        >>> state = QuadratureEigenstate(1, x = 1, phi = 0)
-        >>> assert state.modes == (1,)
 
     .. details::
         Its ``(A,b,c)`` triple is given by
@@ -60,48 +53,32 @@ class QuadratureEigenstate(Ket):
             A = -I_{N}\exp(i2\phi)\text{, }b = I_Nx\exp(i\phi)\sqrt{2/\hbar}\text{, and }c = 1/(\pi\hbar)^{-1/4}\exp(-\abs{x}^2/(2\hbar)).
     """
 
+    short_name = "Qe"
+
     def __init__(
         self,
         mode: int | tuple[int],
-        x: float | Sequence[float] = 0.0,
-        phi: float | Sequence[float] = 0.0,
-        x_trainable: bool = False,
-        phi_trainable: bool = False,
-        x_bounds: tuple[float | None, float | None] = (None, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
+        x: float | Sequence[float] | Parameter = 0.0,
+        phi: float | Sequence[float] | Parameter = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="QuadratureEigenstate")
-
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=x_trainable, value=x, name="x", bounds=x_bounds, dtype=math.float64
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (quadrature_eigenstate, ("x", "phi", "lin_sup"))}
             ),
+            wires=Wires(modes_out_ket=set(mode)),
+            name=self.__class__.__name__,
         )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_trainable,
-                value=phi,
-                name="phi",
-                bounds=phi_bounds,
-                dtype=math.float64,
-            ),
-        )
+        self.parameters["x"] = Parameter.from_cc_init(x, "float64", f"{self.name}/x")
+        self.parameters["phi"] = Parameter.from_cc_init(phi, "float64", f"{self.name}/phi")
 
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.quadrature_eigenstates_Abc,
-            x=self.parameters.x,
-            phi=self.parameters.phi,
-        )
-        self._wires = Wires(modes_out_ket=set(mode))
-
-        for w in self.wires.sorted_wires:
+        for w in self.wires.standard_order:
             w.repr = ReprEnum.QUADRATURE
-            w.fock_cutoff = 50
+            w.fock_shape = 50
 
     @property
     def L2_norm(self):
         r"""
         The L2 norm of this quadrature eigenstate.
         """
-        return np.inf
+        return math.full(self.ansatz.batch_shape, np.inf)

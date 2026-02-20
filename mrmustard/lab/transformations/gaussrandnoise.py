@@ -19,35 +19,30 @@ The class representing a Gaussian random noise channel.
 from __future__ import annotations
 
 from mrmustard import math, settings
-from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import RealMatrix
 
-from ...physics import triples
-from ..utils import make_parameter
 from .base import Channel
+from .builtins import gaussian_random_noise_channel
 
-__all__ = ["GaussRandNoise"]
+__all__ = ["GaussianRandomNoise"]
 
 
-class GaussRandNoise(Channel):
+class GaussianRandomNoise(Channel):
     r"""
     The Gaussian random noise channel.
 
+    >>> import numpy as np
+    >>> from mrmustard.lab import GaussianRandomNoise
+    >>> channel = GaussianRandomNoise(modes=(1, 2), Y = 0.2 * np.eye(4))
+    >>> assert channel.modes == (1, 2)
+    >>> assert math.allclose(channel.parameters.Y.value, 0.2 * np.eye(4))
 
     Args:
         modes: The modes the channel is applied to. The number of modes must match half of the size of ``Y``.
         Y: The Y matrix of the Gaussian random noise channel.
-        Y_trainable: Whether ``Y`` is trainable.
-
-    .. code-block::
-
-        >>> import numpy as np
-        >>> from mrmustard.lab import GaussRandNoise
-
-        >>> channel = GaussRandNoise(modes=(1, 2), Y = 0.2 * np.eye(4))
-        >>> assert channel.modes == (1, 2)
-        >>> assert math.allclose(channel.parameters.Y.value, 0.2 * np.eye(4))
 
     Raises:
         ValueError: If the number of modes does not match half of the size of ``Y``.
@@ -68,8 +63,7 @@ class GaussRandNoise(Channel):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        Y: RealMatrix,
-        Y_trainable: bool = False,
+        Y: RealMatrix | Parameter,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
         if Y.shape[-1] // 2 != len(modes):
@@ -84,18 +78,16 @@ class GaussRandNoise(Channel):
             Y_eigenvectors_real < -settings.ATOL,
             "The input Y matrix has negative eigen-values.",
         )
-
-        super().__init__(name="GRN~")
-        self.parameters.add_parameter(
-            make_parameter(is_trainable=Y_trainable, value=Y, name="Y", bounds=(None, None)),
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (gaussian_random_noise_channel, ("Y", "lin_sup"))}
+            ),
+            wires=Wires(
+                modes_in_bra=set(modes),
+                modes_out_bra=set(modes),
+                modes_in_ket=set(modes),
+                modes_out_ket=set(modes),
+            ),
+            name=self.__class__.__name__,
         )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.gaussian_random_noise_Abc,
-            Y=self.parameters.Y,
-        )
-        self._wires = Wires(
-            modes_in_bra=set(modes),
-            modes_out_bra=set(modes),
-            modes_in_ket=set(modes),
-            modes_out_ket=set(modes),
-        )
+        self.parameters["Y"] = Parameter.from_cc_init(Y, "float64", f"{self.name}/Y")

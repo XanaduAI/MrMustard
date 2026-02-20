@@ -1,7 +1,15 @@
+.. currentmodule:: mrmustard.training.optimizer
+
 Optimizer
 =========
 
-.. currentmodule:: mrmustard.training.optimizer
+.. autosummary::
+    :nosignatures:
 
-.. automodapi:: mrmustard.training.optimizer
-    :no-heading:
+    Optimizer
+
+Optimizer
+---------
+
+.. autoclass:: mrmustard.training.optimizer::Optimizer
+    :members:

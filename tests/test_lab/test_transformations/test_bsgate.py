@@ -18,6 +18,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab.transformations import BSgate
+from mrmustard.parameters import Variable
 
 
 class TestBSgate:
@@ -66,8 +67,10 @@ class TestBSgate:
 
     def test_trainable_parameters(self):
         gate1 = BSgate((0, 1), 1, 1)
-        gate2 = BSgate((0, 1), 1, 1, theta_trainable=True, theta_bounds=(-2, 2))
-        gate3 = BSgate((0, 1), 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+        theta_var = Variable(1, "theta", dtype=math.float64)
+        phi_var = Variable(1, "phi", dtype=math.float64)
+        gate2 = BSgate((0, 1), theta=theta_var)
+        gate3 = BSgate((0, 1), phi=phi_var)
 
         with pytest.raises(AttributeError):
             gate1.parameters.theta.value = 3

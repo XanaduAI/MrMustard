@@ -1,4 +1,4 @@
 Release notes
 -------------
 
-.. mdinclude:: ../../.github/CHANGELOG.md
+.. mdinclude:: ../../../MrMustard/CHANGELOG.md

@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(".")), "doc"))
 
 # -- Project information -----------------------------------------------------
 
-project = "Mr Mustard"
+project = "MrMustard"
 copyright = "2022, Xanadu Quantum Technologies"  # noqa: A001
 author = "Filippo Miatto"
 
@@ -56,7 +56,6 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinxcontrib.bibtex",
     "edit_on_github",
-    "sphinx_autodoc_typehints",
     "sphinx.ext.intersphinx",
     "sphinx_automodapi.automodapi",
     "sphinx_copybutton",
@@ -78,6 +77,25 @@ source_suffix = [".rst", ".md"]
 # The master toctree document.
 master_doc = "index"
 
+autodoc_typehints = "description"
+autodoc_type_aliases = {
+    "ComplexMatrix": "ComplexMatrix",
+    "ComplexTensor": "ComplexTensor",
+    "ComplexVector": "ComplexVector",
+    "IntMatrix": "IntMatrix",
+    "IntTensor": "IntTensor",
+    "IntVector": "IntVector",
+    "Matrix": "Matrix",
+    "RealMatrix": "RealMatrix",
+    "RealTensor": "RealTensor",
+    "RealVector": "RealVector",
+    "Scalar": "Scalar",
+    "Tensor": "Tensor",
+    "UIntMatrix": "UIntMatrix",
+    "UIntTensor": "UIntTensor",
+    "UIntVector": "UIntVector",
+    "Vector": "Vector",
+}
 autosummary_generate = True
 autosummary_imported_members = False
 automodapi_toctreedirnm = "code/api"
@@ -132,7 +150,7 @@ inheritance_node_attrs = {"color": "lightskyblue1", "style": "filled"}
 html_theme = "xanadu"
 
 html_theme_options = {
-    "navbar_name": "Mr Mustard",
+    "navbar_name": "MrMustard",
     "navbar_logo_path": "_static/mm_logo.png",
     "navbar_right_links": [
         {

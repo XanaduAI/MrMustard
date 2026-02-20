@@ -20,10 +20,10 @@ from __future__ import annotations
 
 from collections.abc import Collection
 
-from mrmustard.physics import triples
-from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
+from .builtins import vacuum_state
 from .ket import Ket
 
 __all__ = ["Vacuum"]
@@ -33,16 +33,12 @@ class Vacuum(Ket):
     r"""
     The `N`-mode vacuum state in Bargmann representation.
 
+    >>> from mrmustard.lab import Vacuum
+    >>> state = Vacuum((1, 2))
+    >>> assert state.modes == (1, 2)
+
     Args:
         modes: A tuple of modes.
-
-
-    .. code-block::
-
-        >>> from mrmustard.lab import Vacuum
-
-        >>> state = Vacuum((1, 2))
-        >>> assert state.modes == (1, 2)
 
     .. details::
 
@@ -64,25 +60,18 @@ class Vacuum(Ket):
         modes: int | tuple[int, ...],
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
-        A, b, c = triples.vacuum_state_Abc(len(modes))
-        ansatz = PolyExpAnsatz(A, b, c)
-        wires = Wires(modes_out_ket=set(modes))
-        super().__init__(ansatz, wires, name="Vac")
-
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (vacuum_state, ("n_modes", "lin_sup"))},
+                n_modes=len(modes),
+            ),
+            wires=Wires(modes_out_ket=set(modes)),
+            name=self.__class__.__name__,
+        )
         self.manual_shape = (1,) * len(modes)
 
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
-        (modes,) = aux_data
-        return cls(modes)
-
-    def _tree_flatten(self):  # pragma: no cover
-        children = ()
-        aux_data = (self.modes,)
-        return (children, aux_data)
-
-    def __getitem__(self, idx: int | Collection[int]) -> Vacuum:
-        idx = (idx,) if isinstance(idx, int) else idx
-        if not set(idx).issubset(set(self.modes)):
-            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{idx}``.")
-        return Vacuum(idx)
+    def get_modes(self, modes: int | Collection[int]) -> Vacuum:
+        keep = {modes} if isinstance(modes, int) else set(modes)
+        if not keep.issubset(set(self.modes)):
+            raise ValueError(f"Expected a subset of ``{self.modes}``, found ``{keep}``.")
+        return Vacuum(keep)

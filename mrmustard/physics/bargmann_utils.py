@@ -20,7 +20,66 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
-from mrmustard.utils.typing import ComplexMatrix, Matrix, Scalar, Vector
+from mrmustard.utils.typing import (
+    ComplexMatrix,
+    ComplexTensor,
+    ComplexVector,
+    Matrix,
+    Scalar,
+    Vector,
+)
+
+__all__ = [
+    "XY_of_channel",
+    "au2Symplectic",
+    "bargmann_Abc_to_phasespace_cov_means",
+    "cayley",
+    "symplectic2Au",
+    "symplectic_to_bargmann_Abc",
+    "wigner_to_bargmann_psi",
+    "wigner_to_bargmann_rho",
+]
+
+
+def au2Symplectic(A):
+    r"""
+    helper for finding the Au of a unitary from its symplectic rep.
+    Au : in bra-ket order
+    """
+    # A represents the A matrix corresponding to unitary U
+    A = A * (1.0 + 0.0 * 1j)
+    m = A.shape[-1] // 2
+    # identifying blocks of A_u
+    u_2 = A[..., :m, m:]
+    u_3 = A[..., m:, m:]
+
+    transposed_u_2 = math.einsum("...ij->...ji", u_2)
+    # The formula to apply comes here
+    S_1 = math.conj(math.inv(transposed_u_2))
+    S_2 = -math.conj(math.solve(transposed_u_2, u_3))
+    S_3 = math.conj(S_2)
+    S_4 = math.conj(S_1)
+
+    S = math.block([[S_1, S_2], [S_3, S_4]])
+
+    transformation = (
+        1
+        / np.sqrt(2)
+        * math.block(
+            [
+                [
+                    math.eye(m, dtype=math.complex128),
+                    math.eye(m, dtype=math.complex128),
+                ],
+                [
+                    -1j * math.eye(m, dtype=math.complex128),
+                    1j * math.eye(m, dtype=math.complex128),
+                ],
+            ],
+        )
+    )
+
+    return math.real(transformation @ S @ math.conj(math.transpose(transformation)))
 
 
 def bargmann_Abc_to_phasespace_cov_means(
@@ -77,6 +136,64 @@ def cayley(X, c):
     return math.solve(X + c * I, X - c * I)
 
 
+def symplectic2Au(S):
+    r"""
+    The inverse of au2Symplectic i.e., returns symplectic, given Au
+
+    S: symplectic in XXPP order
+    """
+    m = S.shape[-1] // 2
+    # the following lines of code transform the quadrature symplectic matrix to
+    # the annihilation one
+    R = math.rotmat(m)
+    S = R @ math.cast(S, "complex128") @ math.dagger(R)
+    # identifying blocks of S
+    S_1 = S[..., :m, :m]
+    S_2 = S[..., :m, m:]
+
+    S_1_transposed = math.einsum("...ij->...ji", S_1)
+
+    # the formula to apply comes here
+    A_1 = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
+    A_2 = math.conj(math.inv(S_1_transposed))
+    A_3 = math.einsum("...ij->...ji", A_2)
+    A_4 = -math.conj(math.solve(S_1, S_2))
+
+    return math.block([[A_1, A_2], [A_3, A_4]])
+
+
+def symplectic_to_bargmann_Abc(
+    symplectic: Matrix,
+) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
+    r"""
+    Converts a symplectic matrix to a Bargmann triple.
+
+    Args:
+        symplectic: The symplectic matrix to convert.
+
+    Returns:
+        The (A,b,c) Bargmann triple.
+    """
+    num_modes = symplectic.shape[-1] // 2
+    batch_shape = symplectic.shape[:-2]
+    m = num_modes
+    A = symplectic2Au(symplectic)
+    b = math.zeros((*batch_shape, 2 * m), dtype="complex128")
+    A_inin = A[..., m:, m:]
+    c = ((-1) ** m * math.det(A_inin @ math.conj(A_inin) - math.eye_like(A_inin))) ** 0.25
+    return A, b, c
+
+
+def wigner_to_bargmann_psi(cov, means):
+    r"""Converts the wigner representation in terms of covariance matrix and mean vector into the Bargmann A,B,C triple
+    for a Hilbert vector (i.e. for M modes, A has shape M x M and B has shape M).
+    """
+    N = cov.shape[-1] // 2
+    A, B, C = wigner_to_bargmann_rho(cov, means)
+    return A[N:, N:], B[N:], math.sqrt(C)
+    # NOTE: c for th psi is to calculated from the global phase formula.
+
+
 def wigner_to_bargmann_rho(cov, means):
     r"""Converts the wigner representation in terms of covariance matrix and mean vector into the Bargmann `A,B,C` triple
     for a density matrix (i.e. for `M` modes, `A` has shape `2M x 2M` and `B` has shape `2M`).
@@ -94,83 +211,6 @@ def wigner_to_bargmann_rho(cov, means):
     den_C = math.sqrt(detQ, dtype=num_C.dtype)
     C = num_C / den_C
     return A, B, C
-
-
-def wigner_to_bargmann_psi(cov, means):
-    r"""Converts the wigner representation in terms of covariance matrix and mean vector into the Bargmann A,B,C triple
-    for a Hilbert vector (i.e. for M modes, A has shape M x M and B has shape M).
-    """
-    N = cov.shape[-1] // 2
-    A, B, C = wigner_to_bargmann_rho(cov, means)
-    return A[N:, N:], B[N:], math.sqrt(C)
-    # NOTE: c for th psi is to calculated from the global phase formula.
-
-
-def au2Symplectic(A):
-    r"""
-    helper for finding the Au of a unitary from its symplectic rep.
-    Au : in bra-ket order
-    """
-    # A represents the A matrix corresponding to unitary U
-    A = A * (1.0 + 0.0 * 1j)
-    m = A.shape[-1] // 2
-    # identifying blocks of A_u
-    u_2 = A[..., :m, m:]
-    u_3 = A[..., m:, m:]
-
-    transposed_u_2 = math.einsum("...ij->...ji", u_2)
-    # The formula to apply comes here
-    S_1 = math.conj(math.inv(transposed_u_2))
-    S_2 = -math.conj(math.solve(transposed_u_2, u_3))
-    S_3 = math.conj(S_2)
-    S_4 = math.conj(S_1)
-
-    S = math.block([[S_1, S_2], [S_3, S_4]])
-
-    transformation = (
-        1
-        / np.sqrt(2)
-        * math.block(
-            [
-                [
-                    math.eye(m, dtype=math.complex128),
-                    math.eye(m, dtype=math.complex128),
-                ],
-                [
-                    -1j * math.eye(m, dtype=math.complex128),
-                    1j * math.eye(m, dtype=math.complex128),
-                ],
-            ],
-        )
-    )
-
-    return math.real(transformation @ S @ math.conj(math.transpose(transformation)))
-
-
-def symplectic2Au(S):
-    r"""
-    The inverse of au2Symplectic i.e., returns symplectic, given Au
-
-    S: symplectic in XXPP order
-    """
-    m = S.shape[-1] // 2
-    # the following lines of code transform the quadrature symplectic matrix to
-    # the annihilation one
-    R = math.rotmat(m)
-    S = R @ S @ math.dagger(R)
-    # identifying blocks of S
-    S_1 = S[..., :m, :m]
-    S_2 = S[..., :m, m:]
-
-    S_1_transposed = math.einsum("...ij->...ji", S_1)
-
-    # the formula to apply comes here
-    A_1 = S_2 @ math.conj(math.inv(S_1))  # use solve for inverse
-    A_2 = math.conj(math.inv(S_1_transposed))
-    A_3 = math.einsum("...ij->...ji", A_2)
-    A_4 = -math.conj(math.solve(S_1, S_2))
-
-    return math.block([[A_1, A_2], [A_3, A_4]])
 
 
 def XY_of_channel(A: ComplexMatrix):

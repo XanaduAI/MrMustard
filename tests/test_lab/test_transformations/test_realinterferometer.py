@@ -25,7 +25,7 @@ class TestRealInterferometer:
 
     def test_init(self):
         "Tests initialization of an Interferometer object"
-        u_int = RealInterferometer((0, 1, 2))
+        u_int = RealInterferometer.random(modes=(0, 1, 2))
         assert u_int.modes == (0, 1, 2)
         assert u_int.name == "RealInterferometer"
         assert u_int.symplectic.shape == (6, 6)
@@ -37,5 +37,13 @@ class TestRealInterferometer:
 
     def test_application(self):
         "Tests the correctness of the application of a RealInterferometer gate"
-        u_int = RealInterferometer((0, 1))
+        u_int = RealInterferometer.random(modes=(0, 1))
         assert u_int >> u_int.dual == Identity((0, 1))
+
+    def test_random(self):
+        "Tests the random method of RealInterferometer"
+        u_int = RealInterferometer.random(modes=0, seed=1)
+        assert isinstance(u_int, RealInterferometer)
+        assert u_int.modes == (0,)
+        assert u_int.parameters.orthogonal.value.shape == (1, 1)
+        assert math.allclose(u_int.parameters.orthogonal.value, math.random_orthogonal(1, seed=1))

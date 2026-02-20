@@ -20,14 +20,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
-from mrmustard.utils.typing import ComplexTensor
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ...physics import triples
-from ...physics.ansatz import PolyExpAnsatz
-from ...physics.wires import Wires
-from ..utils import make_parameter
 from .base import Unitary
+from .builtins import displacement_gate, displacement_gate_fock
 
 __all__ = ["Dgate"]
 
@@ -36,20 +34,14 @@ class Dgate(Unitary):
     r"""
     The displacement gate.
 
+    >>> from mrmustard.lab import Dgate
+    >>> unitary = Dgate(mode=1, alpha=0.1 + 0.2j)
+    >>> assert unitary.modes == (1,)
+    >>> assert unitary.parameters.alpha.value == 0.1 + 0.2j
 
     Args:
         mode: The mode this gate is applied to.
         alpha: The displacement in the complex phase space.
-        alpha_trainable: Whether ``alpha`` is a trainable variable.
-        alpha_bounds: The bounds for the absolute value of ``alpha``.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import Dgate
-
-        >>> unitary = Dgate(mode=1, alpha=0.1 + 0.2j)
-        >>> assert unitary.modes == (1,)
-        >>> assert unitary.parameters.alpha.value == 0.1 + 0.2j
 
     .. details::
 
@@ -77,44 +69,17 @@ class Dgate(Unitary):
     def __init__(
         self,
         mode: int,
-        alpha: complex | Sequence[complex] = 0.0j,
-        alpha_trainable: bool = False,
-        alpha_bounds: tuple[float | None, float | None] = (0, None),
+        alpha: complex | Sequence[complex] | Parameter = 0.0 + 0.0j,
     ) -> None:
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="Dgate")
-        self.parameters.add_parameter(
-            make_parameter(alpha_trainable, alpha, "alpha", alpha_bounds, dtype=math.complex128),
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={
+                    ReprEnum.BARGMANN: (displacement_gate, ("alpha", "lin_sup")),
+                    ReprEnum.FOCK: (displacement_gate_fock, ("alpha", "shape", "lin_sup")),
+                }
+            ),
+            wires=Wires(modes_in_ket=set(mode), modes_out_ket=set(mode)),
+            name=self.__class__.__name__,
         )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.displacement_gate_Abc,
-            alpha=self.parameters.alpha,
-        )
-        self._wires = Wires(set(), set(), set(mode), set(mode))
-
-    def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
-        r"""
-        Returns the unitary representation of the Displacement gate using the Laguerre polynomials.
-
-        Args:
-            shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
-                it is broadcasted to all the dimensions. If not given, it defaults to
-                ``settings.DEFAULT_FOCK_SIZE``.
-
-        Returns:
-            array: The Fock representation of this component.
-
-        Raises:
-            ValueError: If the shape is not valid for the component.
-        """
-        shape = self._check_fock_shape(shape)
-        if self.ansatz.batch_shape:
-            alpha = self.parameters.alpha.value
-            alpha = math.reshape(alpha, (-1,))
-            ret = math.astensor([math.displacement(alpha_i, shape=shape) for alpha_i in alpha])
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.displacement(self.parameters.alpha.value, shape=shape)
-        return ret
+        self.parameters["alpha"] = Parameter.from_cc_init(alpha, "complex128", f"{self.name}/alpha")

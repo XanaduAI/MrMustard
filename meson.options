@@ -1,0 +1,1 @@
+option('use_openmp', type: 'feature', value: 'auto', description: 'Enable OpenMP support (auto/enabled/disabled)')

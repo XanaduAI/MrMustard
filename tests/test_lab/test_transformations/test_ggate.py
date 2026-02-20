@@ -49,3 +49,11 @@ class TestGgate:
         G = Ggate(modes=(0, 1, 2), symplectic=math.random_symplectic(3))
         assert G >> G.dual == Identity((0, 1, 2))
         assert G.dual >> G == Identity((0, 1, 2))
+
+    def test_random(self):
+        "Tests the random method of Ggate"
+        G = Ggate.random(modes=0, seed=1)
+        assert isinstance(G, Ggate)
+        assert G.modes == (0,)
+        assert G.parameters.symplectic.value.shape == (2, 2)
+        assert math.allclose(G.parameters.symplectic.value, math.random_symplectic(1, seed=1))

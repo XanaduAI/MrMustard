@@ -20,14 +20,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard.physics import triples
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import ComplexTensor
 
-from ...physics.ansatz import PolyExpAnsatz
-from ...physics.wires import ReprEnum
 from ..transformations.base import Map
-from ..utils import make_parameter
+from .builtins import bargmann_to_wigner
 
 __all__ = ["BtoPS"]
 
@@ -43,27 +42,30 @@ class BtoPS(Map):
         s: The `s` parameter of this channel. The case `s=-1`  corresponds to Husimi, `s=0` to Wigner, and `s=1` to Glauber P function.
     """
 
+    short_name = "BtoPS"
+
     def __init__(
         self,
         modes: int | tuple[int, ...],
         s: float,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="BtoPS")
-        self.parameters.add_parameter(make_parameter(False, s, "s", (None, None)))
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (bargmann_to_wigner, ("s", "n_modes", "lin_sup"))},
+                n_modes=len(modes),
+            ),
+            wires=Wires(
+                modes_in_bra=set(modes),
+                modes_out_bra=set(modes),
+                modes_in_ket=set(modes),
+                modes_out_ket=set(modes),
+            ),
+            name=self.__class__.__name__,
+        )
+        self.parameters["s"] = Parameter.from_cc_init(s, "float64", f"{self.name}/s")
 
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.bargmann_to_wigner_Abc,
-            s=self.parameters.s,
-            n_modes=len(modes),
-        )
-        self._wires = Wires(
-            modes_in_bra=set(modes),
-            modes_out_bra=set(modes),
-            modes_in_ket=set(modes),
-            modes_out_ket=set(modes),
-        )
-        for w in self.wires.output.sorted_wires:
+        for w in self.wires.output.standard_order:
             w.repr = ReprEnum.PHASESPACE
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:

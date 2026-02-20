@@ -19,13 +19,13 @@ The class representing an Interferometer gate.
 from __future__ import annotations
 
 from mrmustard import math
-from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import ComplexMatrix
 
-from ...physics import symplectics
-from ..utils import make_parameter
 from .base import Unitary
+from .builtins import interferometer_gate
 
 __all__ = ["Interferometer"]
 
@@ -36,22 +36,18 @@ class Interferometer(Unitary):
 
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` unitary symplectic matrix.
 
+    >>> from mrmustard import math
+    >>> from mrmustard.lab import Interferometer
+    >>> unitary = Interferometer(modes=(1, 2), unitary=math.eye(2))
+    >>> assert unitary.modes == (1, 2)
+    >>> assert math.allclose(unitary.symplectic, math.eye(4))
+
     Args:
         modes: The modes this gate is applied to.
-        unitary: A unitary matrix. For N modes it must have shape `(N,N)`. If ``None``, a random unitary is generated.
-        unitary_trainable: Whether ``unitary`` is trainable.
+        unitary: A unitary matrix. For N modes it must have shape `(N,N)`.
 
     Raises:
         ValueError: If the size of the unitary does not match the number of modes.
-
-    .. code-block::
-
-        >>> from mrmustard import math
-        >>> from mrmustard.lab import Interferometer
-
-        >>> unitary = Interferometer(modes=(1, 2), unitary=math.eye(2))
-        >>> assert unitary.modes == (1, 2)
-        >>> assert math.allclose(unitary.symplectic, math.eye(4))
     """
 
     short_name = "I"
@@ -59,25 +55,42 @@ class Interferometer(Unitary):
     def __init__(
         self,
         modes: int | tuple[int, ...],
-        unitary: ComplexMatrix | None = None,
-        unitary_trainable: bool = False,
+        unitary: ComplexMatrix | Parameter,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
         num_modes = len(modes)
-        unitary = unitary if unitary is not None else math.random_unitary(num_modes)
-        if unitary.shape[-1] != num_modes:
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (interferometer_gate, ("unitary", "lin_sup"))}
+            ),
+            wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
+            name=self.__class__.__name__,
+        )
+        self.parameters["unitary"] = Parameter.from_cc_init(
+            unitary, "complex128", f"{self.name}/unitary"
+        )
+        if (size := self.parameters.unitary.value.shape[-1]) != num_modes:
             raise ValueError(
-                f"The size of the unitary must match the number of modes: {unitary.shape[-1]} =/= {num_modes}",
+                f"The size of the unitary must match the number of modes: {size} =/= {num_modes}",
             )
-        super().__init__(name="Interferometer")
-        self.parameters.add_parameter(
-            make_parameter(unitary_trainable, unitary, "unitary", (None, None), "update_unitary"),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=lambda uni: Unitary.from_symplectic(
-                modes,
-                symplectics.interferometer_symplectic(uni),
-            ).bargmann_triple(),
-            uni=self.parameters.unitary,
-        )
-        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+
+    @classmethod
+    def random(cls, modes: int | tuple[int, ...], seed: int | None = None) -> Interferometer:
+        r"""
+        Returns a random Interferometer.
+
+        Args:
+            modes: The modes of the Interferometer.
+            seed: The random seed. If ``None``, the global seed is used.
+
+        Returns:
+            The random Interferometer.
+
+        Raises:
+            ValueError: if ``modes`` is an empty tuple.
+        """
+        modes = (modes,) if isinstance(modes, int) else modes
+        if len(modes) == 0:
+            raise ValueError("Cannot create a random Interferometer with no modes.")
+        unitary = math.random_unitary(len(modes), seed)
+        return cls(modes, unitary)

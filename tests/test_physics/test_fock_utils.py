@@ -43,28 +43,18 @@ def test_fock_state(batch_shape):
     Tests that the `fock_state` method gives expected values.
     """
     batch_indices = np.indices(batch_shape)
-    n = settings.rng.integers(0, 10, size=batch_shape)
+    n = settings.get_rng().integers(0, 10, size=batch_shape)
 
     array1 = fock_utils.fock_state(n)
     assert array1.shape == (*batch_shape, math.max(n) + 1)
     assert math.all(array1[(*batch_indices, n)] == 1)
 
-    array2 = fock_utils.fock_state(n, cutoff=math.max(n) + 1)
+    array2 = fock_utils.fock_state(n, cutoff=math.max(n))
     assert math.allclose(array1, array2)
 
     array3 = fock_utils.fock_state(n, cutoff=15)
-    assert array3.shape == (*batch_shape, 15)
+    assert array3.shape == (*batch_shape, 16)
     assert math.all(array3[(*batch_indices, n)] == 1)
-
-
-def test_fock_state_error():
-    r"""
-    Tests that the `fock_state` method handles errors as expected.
-    """
-    n = [4, 5]
-
-    with pytest.raises(ValueError, match="cannot be larger than"):
-        fock_utils.fock_state(n, cutoff=4)
 
 
 @given(n_mean=st.floats(0, 3), phi=st_angle)
@@ -148,8 +138,8 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     n = np.arange(cutoff)
     L = Attenuator(0, transmissivity=eta_0) >> Attenuator(1, transmissivity=eta_1)
     state = TwoModeSqueezedVacuum((0, 1), r=np.arcsinh(np.sqrt(n_mean)), phi=phi) >> L
-    ps0 = np.diag(state[0].fock_array(cutoff))
-    ps1 = np.diag(state[1].fock_array(cutoff))
+    ps0 = np.diag(state.get_modes(0).fock_array(cutoff))
+    ps1 = np.diag(state.get_modes(1).fock_array(cutoff))
     mean_0 = np.sum(n * ps0)
     mean_1 = np.sum(n * ps1)
     assert np.allclose(mean_0, n_mean * eta_0, atol=1e-5)

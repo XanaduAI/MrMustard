@@ -20,12 +20,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
-from mrmustard.physics import triples
-from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ..utils import make_parameter
+from .builtins import bargmann_eigenstate
 from .ket import Ket
 
 __all__ = ["BargmannEigenstate"]
@@ -33,21 +32,18 @@ __all__ = ["BargmannEigenstate"]
 
 class BargmannEigenstate(Ket):
     r"""
-    The `N`-mode Bargmann eigenstate.
+    The Bargmann eigenstate.
+
+    >>> from mrmustard.lab import BargmannEigenstate
+    >>> state = BargmannEigenstate(mode=1, alpha=0.1 + 0.5j)
+    >>> assert state.modes == (1,)
 
     Args:
-        modes: A list of modes.
+        mode: The mode of the Bargmann eigenstate.
         alpha: The displacement of the state (i.e., the eigen-value).
 
-    Notes:
-        The only difference with ``Coherent(modes, alphas)`` is in its `c` parameter (and hence, does not have unit norm).
-
-    .. code-block::
-
-        >>> from mrmustard.lab import BargmannEigenstate
-
-        >>> state = BargmannEigenstate(1, 0.1 + 0.5j)
-        >>> assert state.modes == (1,)
+    Note:
+        The only difference with ``Coherent(mode, alpha)`` is in its `c` parameter (and hence, does not have unit norm).
 
     .. details::
 
@@ -63,24 +59,14 @@ class BargmannEigenstate(Ket):
     def __init__(
         self,
         mode: int | tuple[int],
-        alpha: complex | Sequence[complex] = 0.0j,
-        alpha_trainable: bool = False,
-        alpha_bounds: tuple[complex | None, complex | None] = (None, None),
+        alpha: complex | Sequence[complex] | Parameter = 0.0 + 0.0j,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="BargmannEigenstate")
-
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=alpha_trainable,
-                value=alpha,
-                name="alpha",
-                bounds=alpha_bounds,
-                dtype=math.complex128,
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (bargmann_eigenstate, ("alpha", "lin_sup"))}
             ),
+            wires=Wires(modes_out_ket=set(mode)),
+            name=self.__class__.__name__,
         )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.bargmann_eigenstate_Abc,
-            alpha=self.parameters.alpha,
-        )
-        self._wires = Wires(modes_out_ket=set(mode))
+        self.parameters["alpha"] = Parameter.from_cc_init(alpha, "complex128", f"{self.name}/alpha")

@@ -22,10 +22,10 @@ import numpy as np
 
 from mrmustard import math
 from mrmustard.lab.circuit_components import CircuitComponent
+from mrmustard.parameters import Parameter
 from mrmustard.physics.ansatz.array_ansatz import ArrayAnsatz
 from mrmustard.physics.wires import Wires
 
-from ..utils import make_parameter
 from .base import Channel
 
 __all__ = ["PhaseNoise"]
@@ -38,17 +38,13 @@ class PhaseNoise(Channel):
     This class represents the application of a random phase. The distributiuon of the phase
     is assumed to be a Gaussian with mean zero, and standard deviation `phase_stdev`.
 
+    >>> from mrmustard.lab import PhaseNoise, Coherent, DM
+    >>> phase_noise = PhaseNoise(0, phase_stdev=0.5)
+    >>> assert isinstance(Coherent(0, 1) >> phase_noise, DM)
+
     Args:
         mode: The mode the channel is applied to.
         phase_stdev: The standard deviation of the random phase noise.
-        phase_stdev_trainable: Whether ``phase_stdev`` is trainable.
-        phase_stdev_bounds: The bounds for ``phase_stdev``.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import PhaseNoise, Coherent, DM
-        >>> phase_noise = PhaseNoise(0, phase_stdev=0.5)
-        >>> assert isinstance(Coherent(0, 1) >> phase_noise, DM)
 
     .. details::
         The Fock representation is connected to the Fourier coefficients of the distribution.
@@ -59,27 +55,20 @@ class PhaseNoise(Channel):
     def __init__(
         self,
         mode: int | tuple[int],
-        phase_stdev: float = 0.0,
-        phase_stdev_trainable: bool = False,
-        phase_stdev_bounds: tuple[float | None, float | None] = (0.0, None),
+        phase_stdev: float | Parameter = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="PhaseNoise")
-        self.parameters.add_parameter(
-            make_parameter(
-                phase_stdev_trainable,
-                phase_stdev,
-                "phase_stdev",
-                phase_stdev_bounds,
-                dtype=math.float64,
+        super().__init__(
+            wires=Wires(
+                modes_in_bra=set(mode),
+                modes_out_bra=set(mode),
+                modes_in_ket=set(mode),
+                modes_out_ket=set(mode),
             ),
+            name=self.__class__.__name__,
         )
-        self._ansatz = None
-        self._wires = Wires(
-            modes_in_bra=set(mode),
-            modes_out_bra=set(mode),
-            modes_in_ket=set(mode),
-            modes_out_ket=set(mode),
+        self.parameters["phase_stdev"] = Parameter.from_cc_init(
+            phase_stdev, "float64", f"{self.name}/phase_stdev"
         )
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -93,7 +82,7 @@ class PhaseNoise(Channel):
             the result of the contraction.
         """
         if not other.wires.bra or not other.wires.ket:
-            other = other.contract(other.adjoint, "zip")
+            other = other.contract(other.adjoint)
         other = other.to_fock()
         array = other.fock_array()
         mode_indices = np.indices(other.ansatz.core_shape)

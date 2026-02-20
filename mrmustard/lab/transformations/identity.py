@@ -18,11 +18,11 @@ The classes representing an identity gate.
 
 from __future__ import annotations
 
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ...physics import triples
-from ...physics.ansatz import PolyExpAnsatz
 from .base import Unitary
+from .builtins import identity_gate
 
 __all__ = ["Identity"]
 
@@ -31,15 +31,12 @@ class Identity(Unitary):
     r"""
     The identity gate.
 
+    >>> from mrmustard.lab import Identity
+    >>> unitary = Identity(modes=(1, 2))
+    >>> assert unitary.modes == (1, 2)
+
     Args:
         modes: The modes this gate is applied to.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import Identity
-
-        >>> unitary = Identity(modes=(1, 2))
-        >>> assert unitary.modes == (1, 2)
 
     .. details::
 
@@ -67,12 +64,16 @@ class Identity(Unitary):
         modes: int | tuple[int, ...],
     ):
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="Identity")
-
-        self._ansatz = PolyExpAnsatz.from_function(fn=triples.identity_Abc, n_modes=len(modes))
-        self._wires = Wires(
-            modes_in_bra=set(),
-            modes_out_bra=set(),
-            modes_in_ket=set(modes),
-            modes_out_ket=set(modes),
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (identity_gate, ("n_modes", "lin_sup"))},
+                n_modes=len(modes),
+            ),
+            wires=Wires(
+                modes_in_bra=set(),
+                modes_out_bra=set(),
+                modes_in_ket=set(modes),
+                modes_out_ket=set(modes),
+            ),
+            name=self.__class__.__name__,
         )

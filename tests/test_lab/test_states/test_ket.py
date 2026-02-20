@@ -27,23 +27,24 @@ from mrmustard.lab import (
     CircuitComponent,
     Coherent,
     Dgate,
+    GaussianDM,
+    GaussianKet,
     Ggate,
-    GKet,
     Identity,
     Ket,
     Number,
     QuadratureEigenstate,
     SqueezedVacuum,
+    TwoModeSqueezedVacuum,
     Vacuum,
 )
 
 # Representation class has been removed - functionality moved to CircuitComponent
 from mrmustard.physics.triples import coherent_state_Abc
+from mrmustard.physics.utils import random_Abc
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.physics.wires import Wires
 from mrmustard.widgets import state as state_widget
-
-from ...random import Abc_triple
 
 
 def coherent_state_quad(q, x, y, phi=0):
@@ -80,10 +81,10 @@ class TestKet:
         separable_multimode = Coherent(0, alpha=1) >> Coherent(1, alpha=1) >> Coherent(2, alpha=1)
         assert separable_multimode.is_separable
 
-        entangled_state = GKet([0, 1, 2])
+        entangled_state = GaussianKet.random(modes=(0, 1, 2))
         assert not entangled_state.is_separable
 
-        entangled_state = Coherent(0, alpha=1) >> GKet([1, 2])
+        entangled_state = Coherent(0, alpha=1) >> GaussianKet.random(modes=(1, 2))
         assert not entangled_state.is_separable
 
         with pytest.raises(NotImplementedError):
@@ -228,14 +229,14 @@ class TestKet:
 
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     def test_from_phase_space(self, modes):
-        rnd = Ket.random(modes)
+        rnd = GaussianKet.random(modes)
         cov, means, coeff = rnd.phase_space(s=0)
         rnd2 = Ket.from_phase_space(modes, (cov, means, coeff))
         assert rnd == rnd2
 
-        rnd = DM.random(modes)
+        rnd = GaussianDM.random(modes)
         cov, means, coeff = rnd.phase_space(s=0)
-        rnd2 = DM.from_phase_space(modes, (cov, means, coeff))
+        rnd2 = GaussianDM.from_phase_space(modes, (cov, means, coeff))
         assert rnd == rnd2
 
     def test_to_from_phase_space(self):
@@ -248,7 +249,7 @@ class TestKet:
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     @pytest.mark.parametrize("batch_shape", [(1,), (2, 3)])
     def test_to_from_quadrature(self, modes, batch_shape):
-        A, b, c = Abc_triple(len(modes), batch_shape)
+        A, b, c = random_Abc(len(modes), batch_shape)
         state0 = Ket.from_bargmann(modes, (A, b, c))
         Atest, btest, ctest = state0.quadrature_triple()
         state1 = Ket.from_quadrature(modes, (Atest, btest, ctest))
@@ -345,15 +346,15 @@ class TestKet:
 
         assert dm.ansatz.batch_shape == ket.ansatz.batch_shape
         assert dm.name == ket.name
-        assert dm.ansatz == (ket.contract(ket.adjoint, "zip")).ansatz
-        assert dm.wires == (ket.contract(ket.adjoint, "zip")).wires
+        assert dm.ansatz == (ket.contract(ket.adjoint)).ansatz
+        assert dm.wires == (ket.contract(ket.adjoint)).wires
 
     def test_dm_lin_sup(self):
         state = Coherent(0, 1) + Coherent(0, -1)
         dm = state.dm()
         assert dm.ansatz.batch_shape == (4,)
         assert dm.name == state.name
-        assert dm.wires == (state.contract(state.adjoint, "zip")).wires
+        assert dm.wires == (state.contract(state.adjoint)).wires
 
     @pytest.mark.parametrize("phi", [0, 0.3, np.pi / 4, np.pi / 2])
     def test_quadrature_single_mode_ket(self, phi):
@@ -406,23 +407,23 @@ class TestKet:
     @pytest.mark.parametrize("fock", [False, True])
     @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
     def test_expectation(self, batch_shape, fock):
-        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
-        alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
+        alpha_0 = math.broadcast_to(-0.1 - 0.1j, batch_shape)
+        alpha_1 = math.broadcast_to(0.1 + 0.1j, batch_shape)
 
         coh_0 = Coherent(0, alpha=alpha_0)
         coh_1 = Coherent(1, alpha=alpha_1)
         # TODO: clean this up once we have a better way to create batched multimode states
-        ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
-        ket = ket.to_fock(40) if fock else ket
+        ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1).ansatz)
+        ket = ket.to_fock(10) if fock else ket
 
         # ket operator
         exp_coh_0 = ket.expectation(coh_0)
         exp_coh_1 = ket.expectation(coh_1)
         exp_ket = ket.expectation(ket)
 
-        assert exp_coh_0.shape == batch_shape * 2
-        assert exp_coh_1.shape == batch_shape * 2
-        assert exp_ket.shape == batch_shape * 2
+        assert exp_coh_0.shape == batch_shape
+        assert exp_coh_1.shape == batch_shape
+        assert exp_ket.shape == batch_shape
 
         assert math.allclose(exp_coh_0, 1)
         assert math.allclose(exp_coh_1, 1)
@@ -433,13 +434,16 @@ class TestKet:
         dm1 = coh_1.dm()
         dm01 = ket.dm()
 
+        dm0.manual_shape = (5, 5)  # otherwise norm < 1
+        dm1.manual_shape = (5, 5)
+
         exp_dm0 = ket.expectation(dm0)
         exp_dm1 = ket.expectation(dm1)
         exp_dm01 = ket.expectation(dm01)
 
-        assert exp_dm0.shape == batch_shape * 2
-        assert exp_dm1.shape == batch_shape * 2
-        assert exp_dm01.shape == batch_shape * 2
+        assert exp_dm0.shape == batch_shape
+        assert exp_dm1.shape == batch_shape
+        assert exp_dm01.shape == batch_shape
 
         assert math.allclose(exp_dm0, 1)
         assert math.allclose(exp_dm1, 1)
@@ -481,11 +485,11 @@ class TestKet:
     @pytest.mark.parametrize("batch_shape", [(2,), (2, 3)])
     @pytest.mark.parametrize("batch_shape_2", [(7,), (4, 5, 7)])
     def test_expectation_diff_batch_shapes(self, batch_shape, batch_shape_2):
-        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape + batch_shape_2)
         coh_0 = Coherent(0, alpha=alpha_0)
 
         # ket operator
-        alpha_1 = math.broadcast_to(0.3 + 0.2j, batch_shape_2)
+        alpha_1 = math.broadcast_to(0.3 + 0.2j, batch_shape + batch_shape_2)
         coh_1 = Coherent(0, alpha=alpha_1)
         exp_coh_1 = coh_0.expectation(coh_1)
         assert exp_coh_1.shape == batch_shape + batch_shape_2
@@ -496,15 +500,15 @@ class TestKet:
         assert exp_dm1.shape == batch_shape + batch_shape_2
 
         # u operator
-        beta_0 = math.broadcast_to(0.3, batch_shape_2)
+        beta_0 = math.broadcast_to(0.3, batch_shape + batch_shape_2)
         u0 = Dgate(0, alpha=beta_0)
         exp_u0 = coh_0.expectation(u0)
         assert exp_u0.shape == batch_shape + batch_shape_2
 
     def test_expectation_lin_sup(self):
         cat = (Coherent(0, alpha=1 + 2j) + Coherent(0, alpha=-1 + 2j)).normalize()
-        assert math.allclose(cat.expectation(cat, mode="zip"), 1.0)
-        assert math.allclose(cat.expectation(cat.dm(), mode="zip"), 1.0)
+        assert math.allclose(cat.expectation(cat), 1.0)
+        assert math.allclose(cat.expectation(cat.dm()), 1.0)
         assert math.allclose(
             cat.expectation(Dgate(0, alpha=[0.1, 0.2, 0.3])),
             [
@@ -522,25 +526,23 @@ class TestKet:
             ket.expectation(op1)
 
         op2 = CircuitComponent._from_attributes(None, Wires(set(), set(), {1}, {0}))
-        with pytest.raises(ValueError, match="different modes"):
+        with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
             ket.expectation(op2)
-
-        op3 = Dgate(2)
-        with pytest.raises(ValueError, match="Expected an operator defined on"):
-            ket.expectation(op3)
 
     @pytest.mark.parametrize(
         "operator",
-        [Coherent(0, alpha=5 + 12j).dm(), Dgate(0, alpha=5 + 12j)],
+        [Coherent(0, alpha=0.1 + 0.2j).dm(), Dgate(0, alpha=-0.1 - 0.2j)],
         ids=["DM_LIKE", "UNITARY_LIKE"],
     )
     def test_expectation_shape_handling(self, operator):
-        cutoff = 200
-        ket = SqueezedVacuum(0, 1.5)
+        ket = SqueezedVacuum(0, 0.5)
+        shape = 50
+        ket.manual_shape = (shape,)  # otherwise autoshape too small when combined with dgate
+        operator.manual_shape = (shape, shape)
 
-        expectation_barg_fock = math.abs(ket.to_bargmann().expectation(operator.to_fock(cutoff)))
-        expectation_fock_barg = math.abs(ket.to_fock(cutoff).expectation(operator.to_bargmann()))
-        expectation_fock_fock = math.abs(ket.to_fock(cutoff).expectation(operator.to_fock(cutoff)))
+        expectation_barg_fock = math.abs(ket.to_bargmann().expectation(operator.to_fock(shape)))
+        expectation_fock_barg = math.abs(ket.to_fock(shape).expectation(operator.to_bargmann()))
+        expectation_fock_fock = math.abs(ket.to_fock(shape).expectation(operator.to_fock(shape)))
 
         assert math.allclose(expectation_fock_fock, expectation_barg_fock)
         assert math.allclose(expectation_fock_fock, expectation_fock_barg)
@@ -548,13 +550,20 @@ class TestKet:
     def test_rshift(self):
         ket = Coherent(0, 1) >> Coherent(1, 1)
         unitary = Dgate(0, 1)
-        u_component = CircuitComponent(unitary.ansatz, unitary.wires, unitary.name)
+        u_component = CircuitComponent(
+            ansatz_factory=unitary.ansatz_factory,
+            wires=unitary.wires,
+            name=unitary.name,
+        )
+        u_component.parameters["alpha"] = unitary.parameters.alpha
+
         channel = Attenuator(1, 1)
         ch_component = CircuitComponent(
-            channel.ansatz,
-            channel.wires,
-            channel.name,
+            ansatz_factory=channel.ansatz_factory,
+            wires=channel.wires,
+            name=channel.name,
         )
+        ch_component.parameters["transmissivity"] = channel.parameters.transmissivity
 
         # gates
         assert isinstance(ket >> unitary, Ket)
@@ -574,17 +583,17 @@ class TestKet:
         x3, x30, x98 = x
         ket = Vacuum((3, 30, 98)) >> Dgate(3, x3) >> Dgate(30, x30) >> Dgate(98, x98)
         dm = ket.dm()
-        assert ket[m] == dm[m]
+        assert ket.get_modes(m) == dm.get_modes(m)
 
     def test_contract_zip(self):
         coh = Coherent(0, [1.0, -1.0])
         displacements = Dgate(0, [1.0, -1.0])
-        better_cat = coh.contract(displacements, mode="zip")
+        better_cat = coh.contract(displacements)
         assert better_cat == Coherent(0, [2.0, -2.0])
 
     @pytest.mark.parametrize("max_sq", [1, 2, 3])
     def test_random_states(self, max_sq):
-        psi = Ket.random((1, 22), max_sq)
+        psi = GaussianKet.random((1, 22), max_sq)
         A = psi.ansatz.A
         assert math.allclose(psi.probability, 1)  # checks if the state is normalized
         assert math.allclose(
@@ -594,27 +603,31 @@ class TestKet:
 
     def test_random_seed(self):
         # same seed should produce same state
-        assert Ket.random(modes=[0, 1], seed=42) == Ket.random(modes=[0, 1], seed=42)
+        assert GaussianKet.random(modes=[0, 1], seed=42) == GaussianKet.random(
+            modes=[0, 1], seed=42
+        )
         # different seeds should produce different states
-        assert Ket.random(modes=[0, 1], seed=42) != Ket.random(modes=[0, 1], seed=43)
+        assert GaussianKet.random(modes=[0, 1], seed=42) != GaussianKet.random(
+            modes=[0, 1], seed=43
+        )
 
         # local seed should not affect global seed
         settings.SEED = 42
-        ket_from_global_1 = Ket.random(modes=[0, 1])
-        ket_from_global_2 = Ket.random(modes=[0, 1])
+        ket_from_global_1 = GaussianKet.random(modes=[0, 1])
+        ket_from_global_2 = GaussianKet.random(modes=[0, 1])
 
         settings.SEED = 42
-        ket_from_global_1_redux = Ket.random(modes=[0, 1])
+        ket_from_global_1_redux = GaussianKet.random(modes=[0, 1])
         # this call should not affect the global RNG
-        _ = Ket.random(modes=[0, 1], seed=123)
-        ket_from_global_2_redux = Ket.random(modes=[0, 1])
+        _ = GaussianKet.random(modes=[0, 1], seed=123)
+        ket_from_global_2_redux = GaussianKet.random(modes=[0, 1])
 
         assert ket_from_global_1 == ket_from_global_1_redux
         assert ket_from_global_2 == ket_from_global_2_redux
 
         # no modes should raise error
-        with pytest.raises(ValueError, match="Cannot create a random state with no modes."):
-            Ket.random(modes=[])
+        with pytest.raises(ValueError, match="Cannot create a random GaussianKet with no modes."):
+            GaussianKet.random(modes=[])
 
     def test_ipython_repr(self):
         """
@@ -642,7 +655,7 @@ class TestKet:
         assert isinstance(wires, HTML)
 
     def test_is_physical(self):
-        assert Ket.random((0, 1)).is_physical
+        assert GaussianKet.random((0, 1)).is_physical
         assert Coherent(0, [1, 1, 1]).is_physical
 
     def test_physical_stellar_decomposition(self):
@@ -650,7 +663,7 @@ class TestKet:
         Tests the physical stellar decomposition.
         """
         # two-mode example:
-        psi = Ket.random([0, 1])
+        psi = GaussianKet.random([0, 1])
         core, U = psi.physical_stellar_decomposition([0])
         assert psi == core >> U
 
@@ -660,7 +673,7 @@ class TestKet:
         assert U >> U.dual == Identity([0])
 
         # many-mode example:
-        phi = Ket.random(list(range(5)))
+        phi = GaussianKet.random(list(range(5)))
         core, U = phi.physical_stellar_decomposition([0, 2])
         assert phi == core >> U
         assert (core >> Vacuum((1, 3, 4)).dual).normalize() == Vacuum((0, 2))
@@ -671,22 +684,49 @@ class TestKet:
         assert math.allclose(A_c_reordered, math.zeros((2, 2)))
 
         # batching test:
-        psi = Ket.random([0, 1, 2])
-        phi = Ket.random([0, 1, 2])
+        psi = GaussianKet.random([0, 1, 2])
+        phi = GaussianKet.random([0, 1, 2])
 
         sigma = psi + phi
         sigma.ansatz._lin_sup = False
         core, U = sigma.physical_stellar_decomposition([0])
-        assert sigma == core.contract(U, mode="zip")
+        assert sigma == core.contract(U)
 
         # displacement test
-        phi = Ket.random(list(range(5))) >> Dgate(0, 2) >> Dgate(1, 1)
+        phi = GaussianKet.random(list(range(5))) >> Dgate(0, 2) >> Dgate(1, 1)
         core, U = phi.physical_stellar_decomposition([0, 2])
         assert phi == core >> U
         assert (core >> Vacuum((1, 3, 4)).dual).normalize().dm() == Vacuum((0, 2)).dm()
 
+    def test_physical_stellar_already_core(self):
+        r"""Tests stellar decomposition when state is already core (Am=0) but has displacement."""
+        # TMSV has Am=0 on diagonal blocks; adding displacement should return Dgate, not Identity
+        tmsv = TwoModeSqueezedVacuum([0, 1], r=0.5)
+        alpha = 1.0 + 0.5j
+
+        # Displace mode 0
+        displaced_tmsv = tmsv >> Dgate(0, alpha)
+        core, U = displaced_tmsv.physical_stellar_decomposition([0])
+
+        # Should reconstruct original
+        assert displaced_tmsv == core >> U
+
+        # Core should be TMSV (undisplaced)
+        A_core, _, _ = core.ansatz.triple
+        assert math.allclose(A_core[0, 0], 0)  # core has Am=0
+
+        # U should be a Dgate, not Identity - check the A matrix structure
+        A_u, b_u, _ = U.ansatz.triple
+        # Dgate has A = [[0, 1], [1, 0]] and non-zero b
+        assert math.allclose(A_u[0, 0], 0)
+        assert math.allclose(A_u[0, 1], 1)
+        assert not math.allclose(b_u, 0)  # Dgate has displacement
+
+        # U should still be unitary
+        assert U >> U.dual == Identity([0])
+
     def test_formal_stellar_decomposition(self):
-        psi = Ket.random((0, 1, 2))
+        psi = GaussianKet.random((0, 1, 2))
         core1, phi1 = psi.formal_stellar_decomposition([1])
         core12, phi12 = psi.formal_stellar_decomposition([1, 2])
 
@@ -700,13 +740,13 @@ class TestKet:
         assert psi == core12 >> phi12
         assert (core12 >> Vacuum(0).dual).normalize() == Vacuum((1, 2))
 
-        psi = Ket.random([0, 1, 2])
-        phi = Ket.random([0, 1, 2])
+        psi = GaussianKet.random([0, 1, 2])
+        phi = GaussianKet.random([0, 1, 2])
 
         sigma = psi + phi
         core, U = sigma.formal_stellar_decomposition([0])
 
-        assert sigma == core.contract(U, mode="zip")
+        assert sigma == core.contract(U)
 
     def test_wigner(self):
         ans = Vacuum(0).wigner
@@ -717,8 +757,268 @@ class TestKet:
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_wigner_poly_exp(self, n):
-        psi = (Number(0, n).dm().to_bargmann()) >> Ggate(0)
+        psi = (Number(0, n).dm().to_bargmann()) >> Ggate.random(modes=0)
         xs = np.linspace(-5, 5, 100)
         poly_exp_wig = math.real(psi.wigner(xs, 0))
         wig = wigner_discretized(psi.fock_array(), xs, 0)
         assert math.allclose(poly_exp_wig[:, None], wig[0], atol=3e-3)
+
+
+class TestStellarRoots:
+    """Tests for Ket.stellar_roots and the underlying physics function."""
+
+    def test_number_state_roots_at_origin(self):
+        """Number state |n> has n roots all at z = 0.
+
+        |3> has Bargmann polynomial z^3/sqrt(3!), so exactly 3 roots at 0.
+        np.roots strips trailing zeros from the Fock array, so the number of
+        roots equals n regardless of the cutoff.
+        """
+        state = Number(0, n=3)
+        roots = state.stellar_roots(max_degree=9)
+        assert len(roots) == 3
+        assert np.allclose(np.abs(roots), 0.0, atol=1e-6)
+
+    def test_superposition_root_value(self):
+        """(|0> + |1>) / sqrt(2) has one stellar root at z = -1."""
+        amplitudes = np.array([1.0, 1.0]) / np.sqrt(2)
+        state = Ket.from_fock([0], amplitudes)
+        roots = state.stellar_roots()
+        assert len(roots) == 1
+        assert np.isclose(roots[0], -1.0, atol=1e-10)
+
+    def test_gaussian_state_has_no_roots(self):
+        """A Gaussian state (scalar c in Bargmann) has no stellar roots."""
+        assert len(Coherent(0, alpha=1.0).stellar_roots()) == 0
+        assert len(SqueezedVacuum(0, r=0.5).stellar_roots()) == 0
+        assert len(Vacuum(0).stellar_roots()) == 0
+
+    def test_multimode_raises(self):
+        """Stellar roots require a single-mode ket."""
+        state = Vacuum((0, 1))
+        with pytest.raises(ValueError, match="single-mode"):
+            state.stellar_roots()
+
+    def test_batched_raises(self):
+        """Stellar roots are not supported for batched states."""
+        state = Coherent(0, alpha=[1.0, 2.0])
+        with pytest.raises(ValueError, match="batched"):
+            state.stellar_roots()
+
+    def test_linear_superposition_raises_with_advice(self):
+        """Linear superpositions raise with advice to convert to Fock first."""
+        cat = Coherent(0, alpha=1.0 - 1.0j) + Coherent(0, alpha=1.0 + 1.0j)
+        with pytest.raises(ValueError, match="to_fock"):
+            cat.stellar_roots()
+
+    def test_linear_superposition_works_via_to_fock(self):
+        """Linear superposition stellar roots work after converting to Fock."""
+        cat = Coherent(0, alpha=1.0 - 1.0j) + Coherent(0, alpha=1.0 + 1.0j)
+        fock_cat = cat.to_fock(30)
+        roots = fock_cat.stellar_roots()
+        assert len(roots) > 0
+
+    def test_fock_state_returns_array(self):
+        """stellar_roots returns a numpy array for Fock states."""
+        state = Number(0, n=2)
+        roots = state.stellar_roots()
+        assert isinstance(roots, np.ndarray)
+        assert len(roots) == 2
+
+    def test_bargmann_polynomial_root(self):
+        """Bargmann state with non-scalar c has roots from the polynomial part.
+
+        A = [[0,1],[1,0]] with b=0 gives d^k/dy^k exp(zy)|_{y=0} = z^k,
+        so c=[1,1] produces the Bargmann function 1+z with root at -1.
+        """
+        A = np.array([[0, 1], [1, 0]], dtype=complex)
+        b = np.zeros(2, dtype=complex)
+        c = np.array([1.0, 1.0], dtype=complex)
+        state = Ket.from_bargmann([0], (A, b, c))
+        roots = state.stellar_roots()
+        assert len(roots) == 1
+        assert np.isclose(roots[0], -1.0, atol=1e-10)
+
+    def test_bargmann_fock_roots_agree(self):
+        """Bargmann and Fock routes give identical stellar roots for the same state."""
+        A = np.array([[0, 1], [1, 0]], dtype=complex)
+        b = np.zeros(2, dtype=complex)
+        c = np.array([1.0, 0.0, 1.0], dtype=complex)
+        bargmann_state = Ket.from_bargmann([0], (A, b, c))
+
+        degree = 5
+        fock_amps = np.asarray(bargmann_state.fock_array([degree + 1])).ravel()
+        fock_state = Ket.from_fock([0], fock_amps)
+
+        bargmann_roots = bargmann_state.stellar_roots(max_degree=degree)
+        fock_roots = fock_state.stellar_roots()
+        assert np.allclose(
+            np.sort(np.abs(bargmann_roots)),
+            np.sort(np.abs(fock_roots)),
+            atol=1e-10,
+        )
+
+    def test_single_amplitude_fock_has_no_roots(self):
+        """A Fock state with a single amplitude (vacuum-like) has no roots."""
+        state = Ket.from_fock([0], np.array([1.0]))
+        assert len(state.stellar_roots()) == 0
+
+    def test_multi_derived_variable_root_count(self):
+        """Bargmann state with k>1 derived variables has correct number of roots.
+
+        For shape_derived_vars = (n1, ..., nk), the polynomial degree is
+        sum(n_i - 1) and the default produces exactly that many roots.
+        A non-zero A[0,0] (Gaussian envelope) adds non-zero Fock amplitudes
+        beyond the polynomial degree, which would introduce spurious roots
+        if the degree were too large.
+        """
+        # k=2: shape_derived_vars = (3, 2), degree = (3-1)+(2-1) = 3
+        A = np.array([[0.1, 0.3, 0.2], [0.3, 0, 0], [0.2, 0, 0]], dtype=complex)
+        b = np.zeros(3, dtype=complex)
+        c = np.array([[1.0, 0.5], [0.3, 0.1], [0.2, 0.05]], dtype=complex)
+        state = Ket.from_bargmann([0], (A, b, c))
+
+        degree = sum(n - 1 for n in state.ansatz.shape_derived_vars)
+        assert degree == 3
+
+        roots = state.stellar_roots()
+        assert len(roots) == degree
+
+    def test_max_degree_clamped_for_bargmann(self):
+        """max_degree is clamped to the true polynomial degree for Bargmann states.
+
+        Requesting a larger max_degree would include Gaussian-envelope Fock
+        amplitudes and produce spurious roots, so the method clamps silently.
+        """
+        A = np.array([[0.1, 0.3], [0.3, 0]], dtype=complex)
+        b = np.zeros(2, dtype=complex)
+        c = np.array([1.0, 0.5, 0.2], dtype=complex)  # degree 2
+        state = Ket.from_bargmann([0], (A, b, c))
+
+        roots_default = state.stellar_roots()
+        roots_large = state.stellar_roots(max_degree=50)
+        assert len(roots_default) == len(roots_large) == 2
+        np.testing.assert_allclose(
+            np.sort(np.abs(roots_default)),
+            np.sort(np.abs(roots_large)),
+            atol=1e-10,
+        )
+
+    def test_max_degree_limits_roots(self):
+        """Explicit max_degree controls the polynomial degree used."""
+        amplitudes = np.array([1.0, 0.0, 1.0, 0.5]) / np.linalg.norm([1.0, 0.0, 1.0, 0.5])
+        state = Ket.from_fock([0], amplitudes)
+
+        # Default: degree = len(amplitudes) - 1 = 3, so 3 roots
+        roots_full = state.stellar_roots()
+        assert len(roots_full) == 3
+
+        # Truncate to degree 2: only 2 roots
+        roots_truncated = state.stellar_roots(max_degree=2)
+        assert len(roots_truncated) == 2
+
+    def test_wormhole_1mode_single_outcome(self):
+        """Test wormhole_1mode with a single PNR outcome."""
+        ket = GaussianKet.random([0, 1], seed=42)
+        cutoff = 10
+        pnr = 3
+
+        # Get conditional Ket using wormhole - returns dict
+        results = ket.wormhole_1mode((pnr,), output_cutoff=cutoff, leftover_mode=0)
+        assert isinstance(results, dict)
+        cond_ket = results[(pnr,)]
+
+        # Verify it's a single-mode Ket
+        assert isinstance(cond_ket, Ket)
+        assert cond_ket.modes == (0,)
+        assert cond_ket.fock_array().shape == (cutoff + 1,)
+
+        # Verify against full tensor slice (unnormalized)
+        A, b, c = ket.bargmann_triple()
+        full_shape = (cutoff + 1, pnr + 1)
+        full_tensor = math.hermite_renormalized(A, b, c, shape=full_shape, stable=True)
+        ref_ket = np.array(full_tensor[:, pnr])
+        assert math.allclose(cond_ket.fock_array(), ref_ket, atol=1e-10)
+
+    def test_wormhole_1mode_multiple_outcomes(self):
+        """Test wormhole_1mode with multiple PNR outcomes."""
+        ket = GaussianKet.random([0, 1], seed=123)
+        cutoff = 8
+        pnr_list = [(0,), (1,), (2,)]
+
+        results = ket.wormhole_1mode(pnr_list, output_cutoff=cutoff, leftover_mode=0)
+
+        # Verify we get a dict with the right keys
+        assert isinstance(results, dict)
+        assert (0,) in results
+        assert (1,) in results
+        assert (2,) in results
+
+        # Verify each result matches full tensor slice (unnormalized)
+        A, b, c = ket.bargmann_triple()
+        for pnr_tuple in pnr_list:
+            pnr = pnr_tuple[0]
+            cond_ket = results[pnr_tuple]
+            assert isinstance(cond_ket, Ket)
+            assert cond_ket.modes == (0,)
+
+            full_shape = (cutoff + 1, pnr + 1)
+            full_tensor = math.hermite_renormalized(A, b, c, shape=full_shape, stable=True)
+            ref_ket = np.array(full_tensor[:, pnr])
+            assert math.allclose(cond_ket.fock_array(), ref_ket, atol=1e-10)
+
+    def test_wormhole_1mode_3modes(self):
+        """Test wormhole_1mode with a 3-mode Ket."""
+        ket = GaussianKet.random([0, 1, 2], seed=456)
+        cutoff = 6
+        pnr1, pnr2 = 2, 3
+
+        # Tuple specifies PNR for modes 1 and 2 (in order), leftover is mode 0
+        results = ket.wormhole_1mode((pnr1, pnr2), output_cutoff=cutoff, leftover_mode=0)
+        cond_ket = results[(pnr1, pnr2)]
+
+        assert isinstance(cond_ket, Ket)
+        assert cond_ket.modes == (0,)
+
+        # Verify against full tensor slice
+        A, b, c = ket.bargmann_triple()
+        full_shape = (cutoff + 1, pnr1 + 1, pnr2 + 1)
+        full_tensor = math.hermite_renormalized(A, b, c, shape=full_shape, stable=True)
+        ref_ket = np.array(full_tensor[:, pnr1, pnr2])
+        assert math.allclose(cond_ket.fock_array(), ref_ket, atol=1e-10)
+
+    def test_wormhole_1mode_different_leftover(self):
+        """Test wormhole_1mode with different leftover modes."""
+        ket = GaussianKet.random([0, 1], seed=789)
+        cutoff = 8
+        pnr = 2
+
+        # Leftover mode 0
+        results_0 = ket.wormhole_1mode((pnr,), output_cutoff=cutoff, leftover_mode=0)
+        cond_ket_0 = results_0[(pnr,)]
+        assert cond_ket_0.modes == (0,)
+
+        # Leftover mode 1
+        results_1 = ket.wormhole_1mode((pnr,), output_cutoff=cutoff, leftover_mode=1)
+        cond_ket_1 = results_1[(pnr,)]
+        assert cond_ket_1.modes == (1,)
+
+    def test_wormhole_1mode_matches_full_tensor_slice(self):
+        """Test that Ket wormhole_1mode matches slicing the full Fock tensor."""
+        ket = GaussianKet.random([0, 1], seed=888)
+        cutoff = 8
+        pnr = 4
+
+        # Get conditional Ket using wormhole - returns dict
+        results = ket.wormhole_1mode((pnr,), output_cutoff=cutoff, leftover_mode=0)
+        cond_ket = results[(pnr,)]
+        ket_array = cond_ket.fock_array()
+
+        # Get reference by computing full tensor and slicing
+        A, b, c = ket.bargmann_triple()
+        full_shape = (cutoff + 1, pnr + 1)
+        full_tensor = math.hermite_renormalized(A, b, c, shape=full_shape, stable=True)
+        ref_ket = np.array(full_tensor[:, pnr])
+
+        # Should match exactly (both unnormalized)
+        assert math.allclose(ket_array, ref_ket, atol=1e-10)
