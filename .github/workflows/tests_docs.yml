@@ -29,6 +29,9 @@ jobs:
           version: "0.8.11"
           python-version: "3.13"
 
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+
       - name: Install dependencies
         run: uv sync --no-editable --all-extras --group doc
 
