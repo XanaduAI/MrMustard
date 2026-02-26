@@ -6,11 +6,9 @@ on:
       - main
   pull_request:
     paths:
-      - '.github/workflows/tests.yml'
+      - '.github/workflows/tests_docs.yml'
       - 'mrmustard/**'
       - 'pyproject.toml'
-      - 'uv.lock'
-      - 'pytest.ini'
 
 jobs:
   docs:
@@ -23,17 +21,30 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "0.5.29"
+          version: "0.8.11"
           python-version: "3.13"
 
-      - name: Run tests
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+
+      - name: Install dependencies
+        run: uv sync --no-editable --all-extras --group doc
+
+      - name: Run doctests
+        working-directory: ${{ runner.temp }}
         run: |
-          uv run --all-groups pytest --doctest-modules mrmustard/math/parameter_set.py
-          uv run --all-groups pytest --doctest-modules mrmustard/physics/ansatz
-          uv run --all-groups pytest --doctest-modules mrmustard/lab
-          
+          uv run --no-sync --project ${{ github.workspace }} pytest --doctest-modules --pyargs mrmustard.physics.ansatz
+          uv run --no-sync --project ${{ github.workspace }} pytest --doctest-modules --pyargs mrmustard.lab
+
+      - name: Build docs
+        working-directory: ${{ runner.temp }}
+        run: >-
+          uv run --no-sync --project ${{ github.workspace }} sphinx-build
+          -W --keep-going
+          ${{ github.workspace }}/doc
+          ${{ github.workspace }}/doc/_build/html

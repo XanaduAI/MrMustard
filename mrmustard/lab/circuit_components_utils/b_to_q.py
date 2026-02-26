@@ -20,14 +20,14 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard.physics import triples
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
 from mrmustard.physics.wires import Wires
 from mrmustard.utils.typing import ComplexTensor
 
-from ...physics.ansatz import PolyExpAnsatz
 from ...physics.wires import ReprEnum
 from ..transformations.base import Operation
-from ..utils import make_parameter
+from .builtins import bargmann_to_quadrature
 
 __all__ = ["BtoQ"]
 
@@ -37,25 +37,17 @@ class BtoQ(Operation):
     The ``Operation`` that changes the representation of an object from Bargmann (B) into quadrature (Q).
     By default it's defined on the output ket side.
 
+    >>> from mrmustard import math
+    >>> from mrmustard.lab import BtoQ, GaussianKet, QuadratureEigenstate
+    >>> psi = GaussianKet.random([0])
+    >>> assert math.allclose(psi >> QuadratureEigenstate(0, x=1).dual, (psi >> BtoQ(0)).ansatz(1))
 
     Args:
         modes: The modes of this channel.
-        phi: The quadrature angle. 0 corresponds to the `x` quadrature, and :math:`\pi/2` to the `p` quadrature.
-
-
-    Returns:
-        An ``Operation`` type object that performs the change of representation.
-
-    Note:
-        Be cautious about contractions after change of representation as the Abc parametrization has altered.
-
-    .. code-block::
-
-        >>> from mrmustard import math
-        >>> from mrmustard.lab import BtoQ, Ket, QuadratureEigenstate
-        >>> psi = Ket.random([0])
-        >>> assert math.allclose(psi >> QuadratureEigenstate(0, x=1).dual, (psi >> BtoQ(0)).ansatz(1))
+        phi: The quadrature angle. ``0`` corresponds to the `x` quadrature, and :math:`\pi/2` to the `p` quadrature.
     """
+
+    short_name = "BtoQ"
 
     def __init__(
         self,
@@ -63,26 +55,30 @@ class BtoQ(Operation):
         phi: float | Sequence[float] = 0.0,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
-        super().__init__(name="BtoQ")
-        self.parameters.add_parameter(make_parameter(False, phi, "phi", (None, None)))
-
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.bargmann_to_quadrature_Abc,
-            n_modes=len(modes),
-            phi=self.parameters.phi,
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={
+                    ReprEnum.BARGMANN: (bargmann_to_quadrature, ("n_modes", "phi", "lin_sup"))
+                },
+                n_modes=len(modes),
+            ),
+            wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
+            name=self.__class__.__name__,
         )
-        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
-        for w in self.wires.input.sorted_wires:
+        self.parameters["phi"] = Parameter.from_cc_init(phi, "float64", f"{self.name}/phi")
+        for w in self.wires.input.standard_order:
             w.repr = ReprEnum.BARGMANN
-        for w in self.wires.output.sorted_wires:
+        for w in self.wires.output.standard_order:
             w.repr = ReprEnum.QUADRATURE
 
     def inverse(self):
         if self.modes == ():
             return self
         ret = BtoQ(self.modes, self.parameters.phi)
-        ret._ansatz = super().inverse().ansatz
+        ret_inverse = super().inverse()
+        ret._ansatz_factory = ret_inverse.ansatz_factory
         ret._wires = ret.wires.dual
+        ret._wires._reindex()
         return ret
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:

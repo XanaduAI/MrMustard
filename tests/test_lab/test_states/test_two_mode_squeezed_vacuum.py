@@ -19,6 +19,7 @@ import pytest
 from mrmustard import math
 from mrmustard.lab.states import TwoModeSqueezedVacuum, Vacuum
 from mrmustard.lab.transformations import S2gate
+from mrmustard.parameters import Variable
 
 
 class TestTwoModeSqueezedVacuum:
@@ -39,8 +40,10 @@ class TestTwoModeSqueezedVacuum:
 
     def test_trainable_parameters(self):
         state1 = TwoModeSqueezedVacuum((0, 1), 1, 1)
-        state2 = TwoModeSqueezedVacuum((0, 1), 1, 1, r_trainable=True, r_bounds=(0, 2))
-        state3 = TwoModeSqueezedVacuum((0, 1), 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+        r_var = Variable(1, "r", dtype=math.float64)
+        phi_var = Variable(1, "phi", dtype=math.float64)
+        state2 = TwoModeSqueezedVacuum((0, 1), r=r_var, phi=1)
+        state3 = TwoModeSqueezedVacuum((0, 1), r=1, phi=phi_var)
 
         with pytest.raises(AttributeError):
             state1.parameters.r.value = 3

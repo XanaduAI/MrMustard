@@ -49,6 +49,8 @@ https://github.com/pallets/flask/blob/master/src/flask/logging.py
 import logging
 import sys
 
+__all__ = ["create_logger"]
+
 
 def logging_handler_defined(logger):
     """Checks if the logger or any of its ancestors has a handler defined.

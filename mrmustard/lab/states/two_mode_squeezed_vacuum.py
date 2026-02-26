@@ -20,12 +20,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
-from mrmustard.physics import triples
-from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ..utils import make_parameter
+from .builtins import two_mode_squeezed_vacuum_state
 from .ket import Ket
 
 __all__ = ["TwoModeSqueezedVacuum"]
@@ -35,56 +34,35 @@ class TwoModeSqueezedVacuum(Ket):
     r"""
     The two-mode squeezed vacuum state.
 
+    >>> from mrmustard.lab import TwoModeSqueezedVacuum, S2gate, Vacuum
+    >>> state = TwoModeSqueezedVacuum(modes=(0, 1), r=0.3, phi=0.2)
+    >>> assert state == Vacuum((0,1)) >> S2gate((0, 1), r=0.3, phi=0.2)
 
     Args:
         modes: The modes of the two-mode squeezed vacuum state.
         r: The squeezing magnitude.
         phi: The squeezing angle.
-        r_trainable: Whether `r` is trainable.
-        phi_trainable: Whether `phi` is trainable.
-        r_bounds: The bounds of `r`.
-        phi_bounds: The bounds of `phi`.
 
     Returns:
         A ``Ket`` type object that represents the two-mode squeezed vacuum state.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import TwoModeSqueezedVacuum, S2gate, Vacuum
-
-        >>> state = TwoModeSqueezedVacuum(modes=(0, 1), r=0.3, phi=0.2)
-        >>> assert state == Vacuum((0,1)) >> S2gate((0, 1), r=0.3, phi=0.2)
-
     """
+
+    short_name = "TMSq"
 
     def __init__(
         self,
         modes: tuple[int, int],
-        r: float | Sequence[float] = 0.0,
-        phi: float | Sequence[float] = 0.0,
-        r_trainable: bool = False,
-        phi_trainable: bool = False,
-        r_bounds: tuple[float | None, float | None] = (None, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
+        r: float | Sequence[float] | Parameter = 0.0,
+        phi: float | Sequence[float] | Parameter = 0.0,
     ):
-        super().__init__(name="TwoModeSqueezedVacuum")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={
+                    ReprEnum.BARGMANN: (two_mode_squeezed_vacuum_state, ("r", "phi", "lin_sup"))
+                }
             ),
+            wires=Wires(modes_out_ket=set(modes)),
+            name=self.__class__.__name__,
         )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_trainable,
-                value=phi,
-                name="phi",
-                bounds=phi_bounds,
-                dtype=math.float64,
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.two_mode_squeezed_vacuum_state_Abc,
-            r=self.parameters.r,
-            phi=self.parameters.phi,
-        )
-        self._wires = Wires(modes_out_ket=set(modes))
+        self.parameters["r"] = Parameter.from_cc_init(r, "float64", f"{self.name}/r")
+        self.parameters["phi"] = Parameter.from_cc_init(phi, "float64", f"{self.name}/phi")

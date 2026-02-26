@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-from pathlib import Path
 
 import pytest
 from hypothesis import Verbosity
@@ -55,9 +54,9 @@ def backend(request):
     return request.config.getoption("--backend")
 
 
-def pytest_ignore_collect(path, config):
+def pytest_ignore_collect(collection_path, config):
     """Skip test_training when using the numpy backend."""
-    return config.getoption("--backend") == "numpy" and "test_training" in Path(path).parts
+    return config.getoption("--backend") == "numpy" and "test_training" in collection_path.parts
 
 
 @pytest.fixture(autouse=True)

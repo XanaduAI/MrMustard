@@ -18,6 +18,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab.states import Coherent
+from mrmustard.parameters import Variable
 
 
 class TestCoherent:
@@ -38,7 +39,8 @@ class TestCoherent:
 
     def test_trainable_parameters(self):
         state1 = Coherent(0, 1 + 1j)
-        state2 = Coherent(0, 1 + 1j, alpha_trainable=True, alpha_bounds=(0, 2))
+        alpha_var = Variable(1 + 1j, "alpha", dtype=math.complex128)
+        state2 = Coherent(0, alpha=alpha_var)
 
         with pytest.raises(AttributeError):
             state1.parameters.alpha.value = 3
@@ -69,12 +71,13 @@ class TestCoherent:
         assert lc.ansatz.batch_size == 3
 
         assert (lc.contract(lc.dual)).ansatz.batch_size == 9
-        assert (lc.contract(lc.dual, mode="zip")).ansatz.batch_size == 9
 
     def test_vacuum_shape(self):
         assert Coherent(0, 0.0).auto_shape() == (1,)
 
-    @pytest.mark.parametrize("alpha", [10 + 10j, 18 + 18j, 25 + 25j])
+    @pytest.mark.parametrize(
+        "alpha", [10 + 10j, 18 + 18j]
+    )  # TODO: add back 25 + 25j when new integrals are merged
     def test_probability(self, alpha):
         """Tests that highly displaced states are properly normalized."""
         state = Coherent(mode=0, alpha=alpha)

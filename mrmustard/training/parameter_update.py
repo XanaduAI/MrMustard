@@ -12,103 +12,143 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+r"""
+Custom optax ``GradientTransformation``\ s for non-euclidean parameter updates.
 """
-Custom optax ``GradientTransformation``s for non-euclidean parameter updates.
-"""
+
+from collections.abc import Callable
 
 import jax
 import optax
 
 from mrmustard import math
 
+__all__ = [
+    "riemannian_gradient",
+    "riemannian_retraction",
+    "update_orthogonal",
+    "update_symplectic",
+    "update_unitary",
+]
 
-def update_orthogonal(orthogonal_lr: float):
+
+def riemannian_gradient(method: str):
     r"""
-    Creates an optax GradientTransformation for orthogonal parameter updates.
+    Transforms Euclidean gradients to Riemannian gradients (Lie Algebra elements).
+    """
 
-    Implemented from:
-        Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
+    def init_fn(params):
+        return optax.EmptyState()
+
+    def update_fn(grads, state, params):
+        if params is None:
+            return grads, state
+
+        if method == "symplectic":
+            updates = jax.tree_util.tree_map(
+                lambda p, g: math.euclidean_to_symplectic(p, g),
+                params,
+                grads,
+            )
+        elif method == "unitary":
+            updates = jax.tree_util.tree_map(
+                lambda p, g: math.euclidean_to_unitary(p, g),
+                params,
+                grads,
+            )
+        elif method == "orthogonal":
+            updates = jax.tree_util.tree_map(
+                lambda p, g: math.euclidean_to_unitary(p, math.real(g)),
+                params,
+                grads,
+            )
+        else:
+            updates = grads
+
+        return updates, state
+
+    return optax.GradientTransformation(init_fn, update_fn)
+
+
+def riemannian_retraction():
+    r"""
+    Applies the retraction step: S_new = S @ expm(update).
+    Returns S_new - S (the additive update expected by optax).
+    """
+
+    def init_fn(params):
+        return optax.EmptyState()
+
+    def update_fn(updates, state, params):
+        # updates is the step in Lie Algebra (e.g. -lr * m / v from AdaBelief)
+        # params is the current point on the manifold
+
+        def apply_step(p, u):
+            p_new = math.matmul(p, math.expm(u))
+            # Return additive difference (expected by optax)
+            return p_new - p
+
+        new_updates = jax.tree_util.tree_map(apply_step, params, updates)
+        return new_updates, state
+
+    return optax.GradientTransformation(init_fn, update_fn)
+
+
+def update_orthogonal(
+    orthogonal_lr: float | Callable[[int], float], optimizer_cls: Callable = optax.adabelief
+):
+    r"""
+    Creates an optax GradientTransformation for orthogonal parameter updates using Riemannian optimization.
 
     Args:
         orthogonal_lr: The learning rate for orthogonal updates.
+        optimizer_cls: The optimizer class to use (default: optax.adabelief).
 
     Returns:
         An optax.GradientTransformation for orthogonal updates.
     """
-
-    def init_fn(params):
-        return None
-
-    def update_fn(grads, state, params):
-        def update_single(dO_euclidean, O):
-            Y = math.euclidean_to_unitary(O, math.real(dO_euclidean))
-            new_value = math.matmul(O, math.expm(-orthogonal_lr * Y))
-            return new_value - O
-
-        updates = jax.tree_util.tree_map(update_single, grads, params)
-        return updates, state
-
-    return optax.GradientTransformation(init_fn, update_fn)
+    return optax.chain(
+        riemannian_gradient("orthogonal"),
+        optimizer_cls(learning_rate=orthogonal_lr),
+        riemannian_retraction(),
+    )
 
 
-def update_symplectic(symplectic_lr: float):
-    r"""Creates an optax GradientTransformation for symplectic parameter updates.
-
-    Implemented from:
-        Wang J, Sun H, Fiori S. A Riemannian-steepest-descent approach
-        for optimization on the real symplectic group.
-        Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
+def update_symplectic(
+    symplectic_lr: float | Callable[[int], float], optimizer_cls: Callable = optax.adabelief
+):
+    r"""
+    Creates an optax GradientTransformation for symplectic parameter updates using Riemannian optimization.
 
     Args:
         symplectic_lr: The learning rate for symplectic updates.
+        optimizer_cls: The optimizer class to use (default: optax.adabelief).
 
     Returns:
         An optax.GradientTransformation for symplectic updates.
     """
-
-    def init_fn(params):
-        return None
-
-    def update_fn(grads, state, params):
-        def update_single(dS_euclidean, S):
-            Y = math.euclidean_to_symplectic(S, dS_euclidean)
-            YT = math.swapaxes(Y, -1, -2)
-            new_value = math.matmul(
-                S,
-                math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT)),
-            )
-            return new_value - S
-
-        updates = jax.tree_util.tree_map(update_single, grads, params)
-        return updates, state
-
-    return optax.GradientTransformation(init_fn, update_fn)
+    return optax.chain(
+        riemannian_gradient("symplectic"),
+        optimizer_cls(learning_rate=symplectic_lr),
+        riemannian_retraction(),
+    )
 
 
-def update_unitary(unitary_lr: float):
+def update_unitary(
+    unitary_lr: float | Callable[[int], float], optimizer_cls: Callable = optax.adabelief
+):
     r"""
-    Creates an optax GradientTransformation for unitary parameter updates.
-
-    Implemented from:
-        Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
+    Creates an optax GradientTransformation for unitary parameter updates using Riemannian optimization.
 
     Args:
         unitary_lr: The learning rate for unitary updates.
+        optimizer_cls: The optimizer class to use (default: optax.adabelief).
 
     Returns:
         An optax.GradientTransformation for unitary updates.
     """
-
-    def init_fn(params):
-        return None
-
-    def update_fn(grads, state, params):
-        def update_single(dU_euclidean, U):
-            Y = math.euclidean_to_unitary(U, dU_euclidean)
-            new_value = math.matmul(U, math.expm(-unitary_lr * Y))
-            return new_value - U
-
-        updates = jax.tree_util.tree_map(update_single, grads, params)
-        return updates, state
-
-    return optax.GradientTransformation(init_fn, update_fn)
+    return optax.chain(
+        riemannian_gradient("unitary"),
+        optimizer_cls(learning_rate=unitary_lr),
+        riemannian_retraction(),
+    )

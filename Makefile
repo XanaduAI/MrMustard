@@ -20,7 +20,7 @@ help:
 	@echo "  docs               to build the documentation"
 	@echo "  clean-docs         to delete all built documentation"
 	@echo "  ruff [check=1]     to run ruff linting and formatting; use with 'check=1' to avoid modifying files"
-	@echo "  test               to run the test suite for entire codebase"	
+	@echo "  test               to run the test suite for entire codebase"
 	@echo "  test numpy         to run the test suite with numpy backend"
 	@echo "  test jax           to run the test suite with jax backend"
 	@echo "  coverage           to generate a coverage report for entire codebase"

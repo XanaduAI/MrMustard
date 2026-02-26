@@ -1,15 +1,14 @@
-mrmustard.utils
-===============
+.. title:: Utils
+
+.. currentmodule:: mrmustard.utils
+
+The `utils` module
+------------------
 
 .. toctree::
     :maxdepth: 1
 
-    utils/settings
+    utils/argsort
+    utils/logger
+    utils/serialize
     utils/typing
-
-
-.. currentmodule:: mrmustard.utils
-
-.. automodapi:: mrmustard.utils
-    :no-heading:
-    :include-all-objects:

@@ -88,6 +88,74 @@ class TestBackendManager:
 
         assert math.allclose(math.einsum("ij,jk->ik", ar, ar), res)
 
+    def test_einsum_with_parentheses(self):
+        r"""
+        Tests the ``einsum`` method with parentheses for vectorizing indices.
+        """
+        # Test basic parentheses: vectorize two indices
+        a = math.astensor([[1, 2], [3, 4]])  # shape (2, 2)
+        b = math.astensor([[5, 6], [7, 8]])  # shape (2, 2)
+
+        # Without parentheses: result shape is (2, 2)
+        result_no_parens = math.einsum("ij,jk->ik", a, b)
+
+        # With parentheses: vectorize i and k -> result shape is (4,)
+        result_with_parens = math.einsum("ij,jk->(ik)", a, b)
+
+        # The result should be the flattened version
+        expected = math.reshape(result_no_parens, (-1,))
+        assert math.allclose(result_with_parens, expected)
+        assert result_with_parens.shape == (4,)
+
+        # Test with multiple groups
+        c = math.astensor([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])  # shape (2, 2, 2)
+        result_multi = math.einsum("ijk->(ij)k", c)
+        assert result_multi.shape == (4, 2)  # First two dims vectorized
+
+        # Test with two separate parenthesized groups
+        d = math.astensor(
+            [[[[1, 2], [3, 4]], [[5, 6], [7, 8]]], [[[9, 10], [11, 12]], [[13, 14], [15, 16]]]]
+        )  # shape (2, 2, 2, 2)
+        result_two_groups = math.einsum("ijkl->(ij)(kl)", d)
+        assert result_two_groups.shape == (
+            4,
+            4,
+        )  # First two dims vectorized, last two dims vectorized
+
+        # Verify correctness: should match reshaping the result without parentheses
+        result_no_parens_4d = math.einsum("ijkl->ijkl", d)
+        expected_two_groups = math.reshape(result_no_parens_4d, (4, 4))
+        assert math.allclose(result_two_groups, expected_two_groups)
+
+        # Test that regular einsum still works without parentheses
+        assert math.allclose(math.einsum("ij,jk->ik", a, b), result_no_parens)
+
+    def test_einsum_parentheses_errors(self):
+        r"""
+        Tests error handling for invalid parentheses in einsum.
+        """
+        a = math.astensor([[1, 2], [3, 4]])
+
+        # Test nested parentheses
+        with pytest.raises(ValueError, match="Nested parentheses not supported"):
+            math.einsum("ij->((ij))", a)
+
+        # Test unmatched closing parenthesis
+        with pytest.raises(ValueError, match="Unmatched"):
+            math.einsum("ij->ij)", a)
+
+        # Test unclosed opening parenthesis
+        with pytest.raises(ValueError, match="Unclosed"):
+            math.einsum("ij->(ij", a)
+
+        # Test single index in parentheses (should require at least 2)
+        with pytest.raises(ValueError, match="at least 2 indices"):
+            math.einsum("ij->(i)j", a)
+
+        # Test ellipsis with parentheses (not supported)
+        with pytest.raises(ValueError, match="Ellipsis notation with parenthesized groups"):
+            math.einsum("...ij,...jk->...(ik)", a, a)
+
     def test_error(self):
         r"""
         Tests the error on `_apply`.
@@ -513,8 +581,8 @@ class TestBackendManager:
         r"""
         Tests the ``moveaxis`` method.
         """
-        arr1 = settings.rng.random(size=(1, 2, 3))
-        arr2 = settings.rng.random(size=(2, 1, 3))
+        arr1 = settings.get_rng().random(size=(1, 2, 3))
+        arr2 = settings.get_rng().random(size=(2, 1, 3))
         arr2_moved = math.moveaxis(arr2, 0, 1)
         assert math.allclose(arr1.shape, arr2_moved.shape)
 
@@ -620,6 +688,88 @@ class TestBackendManager:
         """
         arr = np.array(l)
         assert math.allclose(math.asnumpy(math.sinh(arr)), np.sinh(arr))
+
+    @pytest.mark.parametrize("l", lists)
+    def test_tan(self, l):
+        r"""
+        Tests the ``tan`` method.
+        """
+        arr = np.array(l)
+        assert math.allclose(math.asnumpy(math.tan(arr)), np.tan(arr))
+
+    @pytest.mark.parametrize("l", lists)
+    def test_tanh(self, l):
+        r"""
+        Tests the ``tanh`` method.
+        """
+        arr = np.array(l)
+        assert math.allclose(math.asnumpy(math.tanh(arr)), np.tanh(arr))
+
+    def test_argmin(self):
+        r"""
+        Tests the ``argmin`` method.
+        """
+        arr = np.array([3.0, 1.0, 4.0, 1.0, 5.0])
+        assert math.asnumpy(math.argmin(arr)) == np.argmin(arr)
+
+        # Test with 2D array and axis
+        arr2d = np.array([[3.0, 1.0, 4.0], [2.0, 5.0, 1.0]])
+        result = math.asnumpy(math.argmin(arr2d, axis=0))
+        expected = np.argmin(arr2d, axis=0)
+        assert np.array_equal(result, expected)
+
+        result = math.asnumpy(math.argmin(arr2d, axis=1))
+        expected = np.argmin(arr2d, axis=1)
+        assert np.array_equal(result, expected)
+
+    def test_argmax(self):
+        r"""
+        Tests the ``argmax`` method.
+        """
+        arr = np.array([3.0, 1.0, 4.0, 1.0, 5.0])
+        assert math.asnumpy(math.argmax(arr)) == np.argmax(arr)
+
+        # Test with 2D array and axis
+        arr2d = np.array([[3.0, 1.0, 4.0], [2.0, 5.0, 1.0]])
+        result = math.asnumpy(math.argmax(arr2d, axis=0))
+        expected = np.argmax(arr2d, axis=0)
+        assert np.array_equal(result, expected)
+
+        result = math.asnumpy(math.argmax(arr2d, axis=1))
+        expected = np.argmax(arr2d, axis=1)
+        assert np.array_equal(result, expected)
+
+    def test_argsort(self):
+        r"""
+        Tests the ``argsort`` method.
+        """
+        arr = np.array([3.0, 1.0, 4.0, 1.0, 5.0])
+        assert np.array_equal(math.asnumpy(math.argsort(arr)), np.argsort(arr))
+
+        # Test with 2D array and axis
+        arr2d = np.array([[3.0, 1.0, 4.0], [2.0, 5.0, 1.0]])
+        result = math.asnumpy(math.argsort(arr2d, axis=0))
+        expected = np.argsort(arr2d, axis=0)
+        assert np.array_equal(result, expected)
+
+        result = math.asnumpy(math.argsort(arr2d, axis=1))
+        expected = np.argsort(arr2d, axis=1)
+        assert np.array_equal(result, expected)
+
+    @pytest.mark.parametrize("l", lists)
+    def test_mean(self, l):
+        r"""
+        Tests the ``mean`` method.
+        """
+        arr = np.array(l)
+        assert math.allclose(math.asnumpy(math.mean(arr)), np.mean(arr))
+
+        # Test with axis for multi-dimensional arrays
+        if arr.ndim > 1:
+            for axis in range(arr.ndim):
+                result = math.asnumpy(math.mean(arr, axis=axis))
+                expected = np.mean(arr, axis=axis)
+                assert math.allclose(result, expected)
 
     def test_solve(self):
         r"""

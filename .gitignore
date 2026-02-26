@@ -1,8 +1,8 @@
-.*
-
+.coverage.*
 .DS_Store
 .vscode
 *.egg-info*
+*.html
 *.pdf
 *.pkl
 *.png
@@ -10,15 +10,23 @@
 *.pyc
 *.uxf
 *.npy
+*.pyd
+*.so
 
 .coverage
 .hypothesis/
 .ipynb_checkpoints/
 .mypy_cache/
 .pytest_cache/
-/.serialize_cache/
+.serialize_cache/
 __pycache__/
 coverage.xml
 doc/_build
 doc/code/api/*
 notebooks/*
+data.gz
+performance/
+ray_logs*/
+build/*
+# Ignore any directory named tmp at any level in the repository for temporary files
+tmp/

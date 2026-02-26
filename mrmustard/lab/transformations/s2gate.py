@@ -20,13 +20,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ...physics import triples
-from ...physics.ansatz import PolyExpAnsatz
-from ..utils import make_parameter
 from .base import Unitary
+from .builtins import twomode_squeezing_gate
 
 __all__ = ["S2gate"]
 
@@ -35,24 +34,16 @@ class S2gate(Unitary):
     r"""
     The two-mode squeezing gate.
 
+    >>> from mrmustard.lab import S2gate
+    >>> unitary = S2gate(modes=(1, 2), r=1)
+    >>> assert unitary.modes == (1, 2)
+    >>> assert unitary.parameters.r.value == 1
+    >>> assert unitary.parameters.phi.value == 0.0
 
     Args:
         modes: The pair of modes of the two-mode squeezing gate.
         r: The squeezing amplitude.
         phi: The phase angle.
-        r_trainable: Whether ``r`` is trainable.
-        phi_trainable: Whether ``phi`` is trainable.
-        r_bounds: The bounds for ``r``.
-        phi_bounds: The bounds for ``phi``.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import S2gate
-
-        >>> unitary = S2gate(modes=(1, 2), r=1)
-        >>> assert unitary.modes == (1, 2)
-        >>> assert unitary.parameters.r.value == 1
-        >>> assert unitary.parameters.phi.value == 0.0
 
     .. details::
 
@@ -69,34 +60,20 @@ class S2gate(Unitary):
             c = \sech(r)
     """
 
+    short_name = "S2"
+
     def __init__(
         self,
         modes: tuple[int, int],
-        r: float | Sequence[float] = 0.0,
-        phi: float | Sequence[float] = 0.0,
-        r_trainable: bool = False,
-        phi_trainable: bool = False,
-        r_bounds: tuple[float | None, float | None] = (0, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
+        r: float | Sequence[float] | Parameter = 0.0,
+        phi: float | Sequence[float] | Parameter = 0.0,
     ):
-        super().__init__(name="S2gate")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (twomode_squeezing_gate, ("r", "phi", "lin_sup"))}
             ),
+            wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
+            name=self.__class__.__name__,
         )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_trainable,
-                value=phi,
-                name="phi",
-                bounds=phi_bounds,
-                dtype=math.float64,
-            ),
-        )
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.twomode_squeezing_gate_Abc,
-            r=self.parameters.r,
-            phi=self.parameters.phi,
-        )
-        self._wires = Wires(modes_in_ket=set(modes), modes_out_ket=set(modes))
+        self.parameters["r"] = Parameter.from_cc_init(r, "float64", f"{self.name}/r")
+        self.parameters["phi"] = Parameter.from_cc_init(phi, "float64", f"{self.name}/phi")

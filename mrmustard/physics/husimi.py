@@ -18,6 +18,8 @@ This module contains functions for transforming to the Husimi representation.
 
 from mrmustard import math, settings
 
+__all__ = ["pq_to_aadag", "wigner_to_husimi"]
+
 
 def pq_to_aadag(X):
     r"""maps a matrix or vector from the q/p basis to the a/adagger basis"""

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import functools
 import inspect
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from functools import cached_property
@@ -67,7 +67,7 @@ class QuantumWire:
         is_ket: Whether this wire is on the ket side.
         index: The index of this wire in the circuit.
         repr: The representation of this wire.
-        fock_cutoff: The (optional) Fock cutoff for this wire.
+        fock_shape: The (optional) Fock array shape for this wire (equals cutoff + 1).
         id: Unique identifier for this wire.
     """
 
@@ -76,7 +76,7 @@ class QuantumWire:
     is_ket: bool
     index: int
     repr: ReprEnum = ReprEnum.BARGMANN
-    fock_cutoff: int | None = None
+    fock_shape: int | None = None
     id: int = field(default_factory=lambda: randint(0, 2**32 - 1), compare=False)
 
     def copy(self, new_id: bool = False) -> QuantumWire:
@@ -94,7 +94,7 @@ class QuantumWire:
             is_ket=self.is_ket,
             index=self.index,
             repr=self.repr,
-            fock_cutoff=self.fock_cutoff,
+            fock_shape=self.fock_shape,
             id=self.id if not new_id else randint(0, 2**32 - 1),
         )
 
@@ -315,37 +315,122 @@ class Wires:
         classical_out = classical_out or set()
         classical_in = classical_in or set()
 
-        self._quantum_wires = set()
-        self._classical_wires = set()
+        quantum_wires = set()
+        classical_wires = set()
         for i, m in enumerate(sorted(modes_out_bra)):
-            self._quantum_wires.add(QuantumWire(mode=m, is_out=True, is_ket=False, index=i))
+            quantum_wires.add(QuantumWire(mode=m, is_out=True, is_ket=False, index=i))
         n = len(modes_out_bra)
         for i, m in enumerate(sorted(modes_in_bra)):
-            self._quantum_wires.add(QuantumWire(mode=m, is_out=False, is_ket=False, index=n + i))
+            quantum_wires.add(QuantumWire(mode=m, is_out=False, is_ket=False, index=n + i))
         n += len(modes_in_bra)
         for i, m in enumerate(sorted(modes_out_ket)):
-            self._quantum_wires.add(QuantumWire(mode=m, is_out=True, is_ket=True, index=n + i))
+            quantum_wires.add(QuantumWire(mode=m, is_out=True, is_ket=True, index=n + i))
         n += len(modes_out_ket)
         for i, m in enumerate(sorted(modes_in_ket)):
-            self._quantum_wires.add(QuantumWire(mode=m, is_out=False, is_ket=True, index=n + i))
+            quantum_wires.add(QuantumWire(mode=m, is_out=False, is_ket=True, index=n + i))
         n += len(modes_in_ket)
         for i, m in enumerate(sorted(classical_out)):
-            self._classical_wires.add(ClassicalWire(mode=m, is_out=True, index=n + i))
+            classical_wires.add(ClassicalWire(mode=m, is_out=True, index=n + i))
         n += len(classical_out)
         for i, m in enumerate(sorted(classical_in)):
-            self._classical_wires.add(ClassicalWire(mode=m, is_out=False, index=n + i))
+            classical_wires.add(ClassicalWire(mode=m, is_out=False, index=n + i))
+
+        self._quantum_wires = quantum_wires
+        self._classical_wires = classical_wires
 
     @cached_property
     def adjoint(self) -> Wires:
         r"""
         New ``Wires`` object with the adjoint quantum wires (ket becomes bra and vice versa).
+
+        Note: Wires are not reindexed after this operation.
         """
         ret = self.copy(new_ids=True)
         for w in ret.quantum:
             w.is_ket = not w.is_ket
         ret._clear_cached_properties()
-        ret._reindex()
         return ret
+
+    @cached_property
+    def bra(self) -> Wires:
+        r"""
+        New ``Wires`` object with references to only quantum bra wires.
+        Note that the wires are not copied.
+        """
+        return Wires.from_wires(quantum={q for q in self.quantum_wires if not q.is_ket})
+
+    @cached_property
+    def classical(self) -> Wires:
+        r"""
+        New ``Wires`` object with references to only classical wires.
+        Note that the wires are not copied.
+        """
+        return Wires.from_wires(classical=self.classical_wires)
+
+    @cached_property
+    def dual(self) -> Wires:
+        r"""
+        New ``Wires`` object with dual quantum and classical wires (input becomes output and vice versa).
+
+        Note: Wires are not reindexed after this operation.
+        """
+        ret = self.copy(new_ids=True)
+        for w in ret:
+            w.is_out = not w.is_out
+        ret._clear_cached_properties()
+        return ret
+
+    @cached_property
+    def index_order(self) -> list[QuantumWire | ClassicalWire]:
+        r"""
+        A list of all wires sorted in index order.
+        """
+        return sorted({*self.quantum_wires, *self.classical_wires}, key=lambda s: s.index)
+
+    @cached_property
+    def input(self) -> Wires:
+        r"""
+        New ``Wires`` object with references to only classical and quantum input wires.
+        Note that the wires are not copied.
+        """
+        return Wires.from_wires(
+            quantum={q for q in self.quantum_wires if not q.is_out},
+            classical={c for c in self.classical_wires if not c.is_out},
+        )
+
+    @cached_property
+    def ket(self) -> Wires:
+        r"""
+        New ``Wires`` object with references to only quantum ket wires.
+        Note that the wires are not copied.
+        """
+        return Wires.from_wires(quantum={q for q in self.quantum_wires if q.is_ket})
+
+    @cached_property
+    def output(self) -> Wires:
+        r"""
+        New ``Wires`` object with references to only classical and quantum output wires.
+        Note that the wires are not copied.
+        """
+        return Wires.from_wires(
+            quantum={q for q in self.quantum_wires if q.is_out},
+            classical={c for c in self.classical_wires if c.is_out},
+        )
+
+    @cached_property
+    def quantum(self) -> Wires:
+        r"""
+        New ``Wires`` object with references to only quantum wires.
+        Note that the wires are not copied.
+        """
+        return Wires.from_wires(quantum=self.quantum_wires)
+
+    @cached_property
+    def standard_order(self) -> list[QuantumWire | ClassicalWire]:
+        r"""
+        A list of all wires sorted in standard order.
+        """
+        return sorted({*self.quantum_wires, *self.classical_wires}, key=lambda s: s._order())
 
     @property
     def args(self) -> tuple[tuple[int, ...], ...]:
@@ -361,99 +446,75 @@ class Wires:
             self.classical.input.modes,
         )
 
-    @cached_property
-    def bra(self) -> Wires:
+    @property
+    def classical_wires(self) -> set[ClassicalWire]:
         r"""
-        New ``Wires`` object with references to only quantum bra wires.
-        Note that the wires are not copied.
+        The classical wires.
         """
-        return Wires.from_wires(quantum={q for q in self._quantum_wires if not q.is_ket})
+        return self._classical_wires
 
-    @cached_property
-    def classical(self) -> Wires:
+    @property
+    def fock_shapes(self) -> tuple[int | None, ...]:
         r"""
-        New ``Wires`` object with references to only classical wires.
-        Note that the wires are not copied.
+        The fock shapes of the wires in standard order.
         """
-        return Wires.from_wires(classical=self._classical_wires)
-
-    @cached_property
-    def dual(self) -> Wires:
-        r"""
-        New ``Wires`` object with dual quantum and classical wires (input becomes output and vice versa).
-        """
-        ret = self.copy(new_ids=True)
-        for w in ret:
-            w.is_out = not w.is_out
-        ret._clear_cached_properties()
-        ret._reindex()
-        return ret
+        return tuple(w.fock_shape for w in self)
 
     @property
     def ids(self) -> tuple[int, ...]:
         r"""
         The ids of the wires in standard order.
         """
-        return tuple(w.id for w in self.sorted_wires)
+        return tuple(w.id for w in self.standard_order)
 
     @property
     def indices(self) -> tuple[int, ...]:
         r"""
         The indices of the wires in standard order.
         """
-        return tuple(w.index for w in self.sorted_wires)
+        return tuple(w.index for w in self.standard_order)
 
-    @cached_property
-    def input(self) -> Wires:
+    @property
+    def is_ket_like(self) -> bool:
         r"""
-        New ``Wires`` object with references to only classical and quantum input wires.
-        Note that the wires are not copied.
+        Whether the wires are ket-like.
         """
-        return Wires.from_wires(
-            quantum={q for q in self._quantum_wires if not q.is_out},
-            classical={c for c in self._classical_wires if not c.is_out},
-        )
+        return not self.input and not self.bra
 
-    @cached_property
-    def ket(self) -> Wires:
+    @property
+    def is_dm_like(self) -> bool:
         r"""
-        New ``Wires`` object with references to only quantum ket wires.
-        Note that the wires are not copied.
+        Whether the wires are dm-like.
         """
-        return Wires.from_wires(quantum={q for q in self._quantum_wires if q.is_ket})
+        return not self.input and self.bra.modes == self.ket.modes
+
+    @property
+    def is_unitary_like(self) -> bool:
+        r"""
+        Whether the wires are unitary-like.
+        """
+        return (not self.ket or not self.bra) and self.input.modes == self.output.modes
 
     @property
     def modes(self) -> set[int]:
         r"""
         The modes spanned by the wires.
         """
-        return {q.mode for q in self._quantum_wires} | {c.mode for c in self._classical_wires}
+        return {q.mode for q in self.quantum_wires} | {c.mode for c in self.classical_wires}
 
-    @cached_property
-    def output(self) -> Wires:
+    @property
+    def quantum_wires(self) -> set[QuantumWire]:
         r"""
-        New ``Wires`` object with references to only classical and quantum output wires.
-        Note that the wires are not copied.
+        The quantum wires.
         """
-        return Wires.from_wires(
-            quantum={q for q in self._quantum_wires if q.is_out},
-            classical={c for c in self._classical_wires if c.is_out},
-        )
+        return self._quantum_wires
 
-    @cached_property
-    def quantum(self) -> Wires:
+    @property
+    def representations(self) -> tuple[ReprEnum, ...]:
         r"""
-        New ``Wires`` object with references to only quantum wires.
-        Note that the wires are not copied.
+        The representations of the wires in standard order.
         """
-        return Wires.from_wires(quantum=self._quantum_wires)
-
-    @cached_property
-    def sorted_wires(self) -> list[QuantumWire | ClassicalWire]:
-        r"""
-        A list of all wires sorted in standard order.
-        """
-        return sorted({*self._quantum_wires, *self._classical_wires}, key=lambda s: s._order())
+        return tuple(w.repr for w in self)
 
     @classmethod
     def from_wires(
@@ -479,10 +540,21 @@ class Wires:
 
         Args:
             other: another Wires object
+
+        Returns:
+            The indices being contracted between self and other in standard order.
         """
-        ovlp_bra, ovlp_ket = self.overlap(other)
-        idxA = self.output.bra[ovlp_bra].indices + self.output.ket[ovlp_ket].indices
-        idxB = other.input.bra[ovlp_bra].indices + other.input.ket[ovlp_ket].indices
+        ovlp_bra, ovlp_ket, ovlp_classical = self.overlap(other)
+        idxA = (
+            self.output.bra[ovlp_bra].indices
+            + self.output.ket[ovlp_ket].indices
+            + self.output.classical[ovlp_classical].indices
+        )
+        idxB = (
+            other.input.bra[ovlp_bra].indices
+            + other.input.ket[ovlp_ket].indices
+            + other.input.classical[ovlp_classical].indices
+        )
         return idxA, idxB
 
     def contracted_labels(self, other: Wires) -> tuple[list[int], list[int], list[int]]:
@@ -502,37 +574,67 @@ class Wires:
         for i, j in zip(idxA, idxB):
             lblB[j] = lblA[i]
         output_labels = set(lblA) ^ set(lblB)
-        id2label = {w.id: lbl for w, lbl in zip(self.sorted_wires, lblA)}
-        id2label.update({w.id: lbl for w, lbl in zip(other_copy.sorted_wires, lblB)})
+        id2label = {w.id: lbl for w, lbl in zip(self.standard_order, lblA)}
+        id2label.update({w.id: lbl for w, lbl in zip(other_copy.standard_order, lblB)})
         wires_out, _ = self @ other_copy
         lbl_out = [
-            id2label[w.id] for w in wires_out.sorted_wires if id2label[w.id] in output_labels
+            id2label[w.id] for w in wires_out.standard_order if id2label[w.id] in output_labels
         ]
         return lblA, lblB, lbl_out
 
     def copy(self, new_ids: bool = False) -> Wires:
         """Returns a deep copy of this Wires object."""
         return Wires.from_wires(
-            quantum={q.copy(new_ids) for q in self._quantum_wires},
-            classical={c.copy(new_ids) for c in self._classical_wires},
+            quantum={q.copy(new_ids) for q in self.quantum_wires},
+            classical={c.copy(new_ids) for c in self.classical_wires},
         )
 
-    def overlap(self, other: Wires) -> tuple[set[int], set[int]]:
+    def overlap(self, other: Wires) -> tuple[set[int], set[int], set[int]]:
         r"""
-        Returns the modes that overlap between self and other.
+        Returns the modes that overlap between self and other on the bra, ket,
+        and classical wires.
 
         Args:
             other: Another ``Wires`` object.
+
+        Returns:
+            A tuple of sets of modes that overlap between self and other on the bra, ket,
+            and classical wires respectively.
         """
         ovlp_ket = self.output.ket.modes & other.input.ket.modes
         ovlp_bra = self.output.bra.modes & other.input.bra.modes
-        return ovlp_bra, ovlp_ket
+        ovlp_classical = self.output.classical.modes & other.input.classical.modes
+        return ovlp_bra, ovlp_ket, ovlp_classical
 
-    def _ipython_display_(self):
-        if widgets.IN_INTERACTIVE_SHELL:
-            print(self)
-            return
-        display(widgets.wires(self))
+    def remove_wires(
+        self, wires: QuantumWire | ClassicalWire | Sequence[QuantumWire | ClassicalWire]
+    ) -> Wires:
+        r"""
+        Returns a new Wires object with the given wires removed.
+
+        Args:
+            wires: The wire(s) to remove.
+
+        Returns:
+            A new Wires object with the given wires removed and indices updated.
+        """
+        wires = [wires] if isinstance(wires, QuantumWire | ClassicalWire) else wires
+        indices_to_remove = sorted([w.index for w in wires], reverse=True)
+
+        sorted_wires = self.index_order.copy()
+
+        # Remove indices in reverse order to avoid index shifting issues
+        for index_to_remove in indices_to_remove:
+            # Update indices of wires after the removed one
+            for w in sorted_wires[index_to_remove + 1 :]:
+                w.index -= 1
+            # Remove the wire at this index
+            sorted_wires.pop(index_to_remove)
+
+        q_new_wires = [q for q in sorted_wires if isinstance(q, QuantumWire)]
+        c_new_wires = [c for c in sorted_wires if isinstance(c, ClassicalWire)]
+
+        return Wires.from_wires(quantum=q_new_wires, classical=c_new_wires)
 
     def _clear_cached_properties(self) -> None:
         r"""
@@ -544,30 +646,63 @@ class Wires:
             if isinstance(value, functools.cached_property):
                 self.__dict__.pop(name, None)
 
+    def _ipython_display_(self):
+        if widgets.IN_INTERACTIVE_SHELL:
+            print(self)
+            return
+        display(widgets.wires(self))
+
     def _reindex(self) -> None:
         r"""
         Updates the indices of the wires according to the standard order.
         """
-        for i, w in enumerate(self.sorted_wires):
+        for i, w in enumerate(self.standard_order):
             w.index = i
 
     def __add__(self, other: Wires) -> Wires:
         r"""
-        New ``Wires`` object with references to the wires of self and other.
-        If there are overlapping wires (same mode, is_ket, is_out), raises a ValueError.
-        Note that the wires are not reindexed nor copied. Use with caution.
+        Returns a new ``Wires`` object with copies of the wires of self and other combined.
+        Indices of `other` are updated w.r.t. the indices of `self`.
+        Note: the result is not guaranteed to be in standard order.
+
+        Args:
+            other: Another ``Wires`` object.
+
+        Returns:
+            A new ``Wires`` object with the wires of self and other combined.
+
+        Raises:
+            ValueError: If there are overlapping wires (same mode, is_ket, is_out).
         """
-        if ovlp_classical := self._classical_wires & other._classical_wires:
+        # copy the wires to avoid mutating the original objects
+        self_wires = self.copy()
+        other_wires = other.copy()
+
+        # check for overlapping wires
+        if ovlp_classical := self_wires.classical_wires & other_wires.classical_wires:
             raise ValueError(f"Overlapping classical wires {ovlp_classical}.")
-        if ovlp_quantum := self._quantum_wires & other._quantum_wires:
+        if ovlp_quantum := self_wires.quantum_wires & other_wires.quantum_wires:
             raise ValueError(f"Overlapping quantum wires {ovlp_quantum}.")
+
+        # get the offsets for the indices of other w.r.t. self
+        self_q_indices = [q.index for q in self_wires.quantum_wires]
+        self_c_indices = [c.index for c in self_wires.classical_wires]
+        q_offset = max(self_q_indices) + 1 if self_q_indices else 0
+        c_offset = max(self_c_indices) + 1 if self_c_indices else 0
+
+        # update the indices
+        for w in other_wires.quantum_wires:
+            w.index += q_offset
+        for w in other_wires.classical_wires:
+            w.index += c_offset
+
         return Wires.from_wires(
-            quantum=self._quantum_wires | other._quantum_wires,
-            classical=self._classical_wires | other._classical_wires,
+            quantum=self_wires.quantum_wires | other_wires.quantum_wires,
+            classical=self_wires.classical_wires | other_wires.classical_wires,
         )
 
     def __bool__(self) -> bool:
-        return bool(self._quantum_wires) or bool(self._classical_wires)
+        return bool(self.quantum_wires) or bool(self.classical_wires)
 
     def __eq__(self, other: Wires) -> bool:
         return self.args == other.args
@@ -578,18 +713,18 @@ class Wires:
         """
         modes = {modes} if isinstance(modes, int) else set(modes)
         return Wires.from_wires(
-            quantum={q for q in self._quantum_wires if q.mode in modes},
-            classical={c for c in self._classical_wires if c.mode in modes},
+            quantum={q for q in self.quantum_wires if q.mode in modes},
+            classical={c for c in self.classical_wires if c.mode in modes},
         )
 
     def __hash__(self) -> int:
-        return hash((tuple(self._classical_wires), tuple(self._quantum_wires)))
+        return hash((tuple(self.classical_wires), tuple(self.quantum_wires)))
 
     def __iter__(self) -> Iterator[QuantumWire | ClassicalWire]:
-        return iter(self.sorted_wires)
+        return iter(self.standard_order)
 
     def __len__(self) -> int:
-        return len(self._quantum_wires) + len(self._classical_wires)
+        return len(self.quantum_wires) + len(self.classical_wires)
 
     def __matmul__(self, other: Wires) -> tuple[Wires, list[int], list[int]]:
         r"""
@@ -627,28 +762,36 @@ class Wires:
         Returns:
             The wires of the circuit composition and the permutations.
         """
-        bra_out = other.output.bra + (self.output.bra - other.input.bra)
-        ket_out = other.output.ket + (self.output.ket - other.input.ket)
-        bra_in = self.input.bra + (other.input.bra - self.output.bra)
-        ket_in = self.input.ket + (other.input.ket - self.output.ket)
-        cl_out = other.classical.output + (self.classical.output - other.classical.input)
-        cl_in = self.classical.input + (other.classical.input - self.classical.output)
+        # copy the wires to avoid mutating the original objects
+        self_wires = self.copy()
+        other_wires = other.copy()
 
-        # get the wires
-        new_wires = Wires.from_wires(
-            quantum=bra_out.sorted_wires
-            + bra_in.sorted_wires
-            + ket_out.sorted_wires
-            + ket_in.sorted_wires,
-            classical=cl_out.sorted_wires + cl_in.sorted_wires,
-            copy=True,  # because we will call _reindex()
-        )
+        # get the indices of the wires to contract
+        self_idxs, other_idxs = self_wires.contracted_indices(other_wires)
+
+        # remove the contracted wires
+        self_sorted = self_wires.index_order
+        other_sorted = other_wires.index_order
+        self_wires_to_remove = [self_sorted[i] for i in self_idxs]
+        other_wires_to_remove = [other_sorted[j] for j in other_idxs]
+        self_wires = self_wires.remove_wires(self_wires_to_remove)
+        other_wires = other_wires.remove_wires(other_wires_to_remove)
+
+        # combine the remaining wires
+        new_wires = self_wires + other_wires
+
+        # get the permutations to reorder the wires to standard order
+        ok = new_wires.ket.output.indices
+        ik = new_wires.ket.input.indices
+        ib = new_wires.bra.input.indices
+        ob = new_wires.bra.output.indices
+        oc = new_wires.classical.output.indices
+        ic = new_wires.classical.input.indices
+        perm = list(ob + ib + ok + ik + oc + ic)
+
+        # reindex the new wires to standard order
         new_wires._reindex()
 
-        combined = [w for w in self.sorted_wires if w.id in new_wires.ids] + [
-            w for w in other.sorted_wires if w.id in new_wires.ids
-        ]  # NOTE: assumes self and other have different ids
-        perm = [combined.index(w) for w in new_wires.sorted_wires]
         return new_wires, perm
 
     def __repr__(self) -> str:
@@ -667,6 +810,6 @@ class Wires:
         Note that the wires are not reindexed nor copied. Use with caution.
         """
         return Wires.from_wires(
-            quantum={q for q in self._quantum_wires if q.mode not in other.modes},
-            classical={c for c in self._classical_wires if c.mode not in other.modes},
+            quantum={q for q in self.quantum_wires if q.mode not in other.modes},
+            classical={c for c in self.classical_wires if c.mode not in other.modes},
         )

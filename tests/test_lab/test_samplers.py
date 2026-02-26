@@ -28,14 +28,14 @@ class TestPNRSampler:
     """
 
     def test_init(self):
-        sampler = PNRSampler(cutoff=10)
+        sampler = PNRSampler(cutoff=9)
         assert sampler.meas_outcomes == list(range(10))
         assert sampler.povms == Number(0, 0)
 
     def test_probabilities(self):
         atol = 1e-4
 
-        sampler = PNRSampler(cutoff=10)
+        sampler = PNRSampler(cutoff=9)
         vac_prob = [1.0] + [0.0] * 99
         assert math.allclose(sampler.probabilities(Vacuum((0, 1))), vac_prob)
 
@@ -48,7 +48,7 @@ class TestPNRSampler:
         assert math.allclose(sampler.probabilities(coh_state), exp_probs, atol)
 
     def test_sample(self):
-        n_samples = 1000
+        n_samples = 2000
         sampler = PNRSampler(cutoff=10)
 
         assert not np.any(sampler.sample(Vacuum(0)))

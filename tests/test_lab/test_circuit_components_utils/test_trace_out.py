@@ -69,5 +69,5 @@ class TestTraceOut:
         assert np.isclose(no_state, 1.0)
 
     def test_trace_out_with_batch(self):
-        state = Ket.from_fock([0], settings.rng.random((2, 3, 4)), batch_dims=2)
+        state = Ket.from_fock([0], settings.get_rng().random((2, 3, 4)), batch_dims=2)
         assert (state >> TraceOut(0)).shape == (2, 3)
