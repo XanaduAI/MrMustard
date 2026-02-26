@@ -73,6 +73,7 @@ dev = [
     "thewalrus >=0.19.0,<1",
 ]
 doc = [
+    "mrmustard[jax_backend]",
     "docutils>=0.20.1,<0.21",
     "m2r2>=0.3.3.post2,<1",
     "mistune==0.8.4",
