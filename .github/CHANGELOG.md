@@ -152,7 +152,7 @@ representations by setting `settings.DEFAULT_REPRESENTATION` to `None`.
 [(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
 
 * Added the `Kgate` (Kerr) non-Gaussian single-mode unitary, diagonal in the Fock basis
-with entries :math:`e^{i\kappa n^2}`.
+with entries :math:`e^{i\kappa n*(n-1)}`.
 [(#653)](https://github.com/XanaduAI/MrMustard/pull/653)
 
 ### Bug fixes
