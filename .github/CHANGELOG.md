@@ -151,6 +151,10 @@ representations by setting `settings.DEFAULT_REPRESENTATION` to `None`.
 * Added a ``rich`` based repr to ``ParameterSet``.
 [(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
 
+* Added the `Kgate` (Kerr) non-Gaussian single-mode unitary, diagonal in the Fock basis
+with entries :math:`e^{i\kappa n*(n-1)}`.
+[(#653)](https://github.com/XanaduAI/MrMustard/pull/653)
+
 ### Bug fixes
 
 * Fixed a bug in `CircuitComponent.quadrature` where einsum fock indices collided with mode indices for states on non-zero modes (e.g. a single-mode DM on mode 1 after tracing), forcing the number of quadrature points to equal the Fock cutoff and silently giving wrong results.
