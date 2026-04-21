@@ -67,9 +67,7 @@ class Kgate(Unitary):
             wires=Wires(modes_in_ket=set(mode), modes_out_ket=set(mode)),
             name=self.__class__.__name__,
         )
-        self.parameters["kappa"] = Parameter.from_cc_init(
-            kappa, "float64", f"{self.name}/kappa"
-        )
+        self.parameters["kappa"] = Parameter.from_cc_init(kappa, "float64", f"{self.name}/kappa")
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -94,21 +92,15 @@ class Kgate(Unitary):
         mode_indices = np.indices(core_shape)
         kappa = math.cast(math.astensor(self.parameters.kappa.value), "complex128")
         kappa_shape = kappa.shape
-        kappa = math.reshape(
-            kappa, (*kappa_shape, *((1,) * (state_batch_dims + len(core_shape))))
-        )
+        kappa = math.reshape(kappa, (*kappa_shape, *((1,) * (state_batch_dims + len(core_shape)))))
 
         (mode,) = self.modes
         phase_exp = math.astensor(0, dtype="complex128")
         if has_ket:
             ket_axis = (n_modes if has_bra else 0) + mode
-            phase_exp = phase_exp + math.astensor(
-                mode_indices[ket_axis] ** 2, dtype="complex128"
-            )
+            phase_exp = phase_exp + math.astensor(mode_indices[ket_axis] ** 2, dtype="complex128")
         if has_bra:
-            phase_exp = phase_exp - math.astensor(
-                mode_indices[mode] ** 2, dtype="complex128"
-            )
+            phase_exp = phase_exp - math.astensor(mode_indices[mode] ** 2, dtype="complex128")
         array = array * math.exp(1j * kappa * phase_exp)
 
         return CircuitComponent._from_attributes(

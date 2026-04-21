@@ -19,7 +19,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab.states import DM, Coherent, Ket, Number
-from mrmustard.lab.transformations import Dgate, Kgate
+from mrmustard.lab.transformations import Kgate
 from mrmustard.parameters import Variable
 
 
