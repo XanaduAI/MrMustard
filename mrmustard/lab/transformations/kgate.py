@@ -51,8 +51,7 @@ class Kgate(Unitary):
         normal_ordered: If ``True`` (default), the generator is
             :math:`a^\dagger a^\dagger a a = n(n-1)`. If ``False``, the generator
             is :math:`n^2`. The two differ only by a linear rotation
-            :math:`e^{i\kappa n}`, i.e. a global phase on the vacuum and a
-            ``Rgate`` on the remaining Fock components.
+            :math:`e^{i\kappa n}`, i.e. an  ``Rgate`` .
 
     .. details::
         The Kerr gate is genuinely non-Gaussian and has no Bargmann representation.
