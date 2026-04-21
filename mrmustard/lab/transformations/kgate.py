@@ -35,7 +35,10 @@ class Kgate(Unitary):
     r"""
     The Kerr gate.
 
-    A non-Gaussian single-mode unitary, diagonal in the Fock basis:
+    A non-Gaussian single-mode unitary, diagonal in the Fock basis. By default
+    the generator is the normal-ordered :math:`a^\dagger a^\dagger a a = n(n-1)`,
+    giving :math:`U|n\rangle = e^{i\kappa n(n-1)}|n\rangle`. With
+    ``normal_ordered=False`` the generator is :math:`n^2`, giving
     :math:`U|n\rangle = e^{i\kappa n^2}|n\rangle`.
 
     >>> from mrmustard.lab import Kgate, Number
@@ -45,14 +48,20 @@ class Kgate(Unitary):
     Args:
         mode: The mode the gate is applied to.
         kappa: The Kerr nonlinearity strength.
+        normal_ordered: If ``True`` (default), the generator is
+            :math:`a^\dagger a^\dagger a a = n(n-1)`. If ``False``, the generator
+            is :math:`n^2`. The two differ only by a linear rotation
+            :math:`e^{i\kappa n}`, i.e. a global phase on the vacuum and a
+            ``Rgate`` on the remaining Fock components.
 
     .. details::
         The Kerr gate is genuinely non-Gaussian and has no Bargmann representation.
         Its action is applied directly in the Fock basis through ``__custom_rrshift__``:
-        on a ket it multiplies the component on mode :math:`m` by :math:`e^{i\kappa n_m^2}`,
-        on a density matrix it multiplies by :math:`e^{i\kappa (n_m^2 - \tilde{n}_m^2)}`,
-        where :math:`n_m` and :math:`\tilde{n}_m` are the ket- and bra-side photon numbers
-        on mode :math:`m`.
+        on a ket it multiplies the Fock component :math:`|n\rangle` by
+        :math:`e^{i\kappa g(n)}`, and on a density matrix it multiplies by
+        :math:`e^{i\kappa (g(n) - g(\tilde{n}))}`, where
+        :math:`g(n) = n(n-1)` when ``normal_ordered`` is ``True`` and
+        :math:`g(n) = n^2` otherwise.
     """
 
     short_name = "K"
@@ -61,6 +70,7 @@ class Kgate(Unitary):
         self,
         mode: int | tuple[int],
         kappa: float | Parameter = 0.0,
+        normal_ordered: bool = True,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
         super().__init__(
@@ -68,12 +78,19 @@ class Kgate(Unitary):
             name=self.__class__.__name__,
         )
         self.parameters["kappa"] = Parameter.from_cc_init(kappa, "float64", f"{self.name}/kappa")
+        self._normal_ordered = normal_ordered
+
+    @property
+    def normal_ordered(self) -> bool:
+        r"""Whether the generator is :math:`n(n-1)` (True) or :math:`n^2` (False)."""
+        return self._normal_ordered
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Kerr is diagonal in Fock, so we implement its right-shift directly:
-        multiply the ket-side photon-number axis by :math:`e^{i\kappa n^2}`, and
-        (when present) the bra-side axis by :math:`e^{-i\kappa n^2}`.
+        multiply the ket-side photon-number axis by :math:`e^{i\kappa g(n)}`, and
+        (when present) the bra-side axis by :math:`e^{-i\kappa g(n)}`, where
+        :math:`g(n) = n(n-1)` if ``normal_ordered`` else :math:`n^2`.
 
         Args:
             other: the component other than the Kgate in the contraction.
@@ -94,13 +111,16 @@ class Kgate(Unitary):
         kappa_shape = kappa.shape
         kappa = math.reshape(kappa, (*kappa_shape, *((1,) * (state_batch_dims + len(core_shape)))))
 
+        def g(n: np.ndarray) -> np.ndarray:
+            return n * (n - 1) if self._normal_ordered else n * n
+
         (mode,) = self.modes
         phase_exp = math.astensor(0, dtype="complex128")
         if has_ket:
             ket_axis = (n_modes if has_bra else 0) + mode
-            phase_exp = phase_exp + math.astensor(mode_indices[ket_axis] ** 2, dtype="complex128")
+            phase_exp = phase_exp + math.astensor(g(mode_indices[ket_axis]), dtype="complex128")
         if has_bra:
-            phase_exp = phase_exp - math.astensor(mode_indices[mode] ** 2, dtype="complex128")
+            phase_exp = phase_exp - math.astensor(g(mode_indices[mode]), dtype="complex128")
         array = array * math.exp(1j * kappa * phase_exp)
 
         return CircuitComponent._from_attributes(
