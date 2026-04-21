@@ -52,15 +52,6 @@ class Kgate(Unitary):
             :math:`a^\dagger a^\dagger a a = n(n-1)`. If ``False``, the generator
             is :math:`n^2`. The two differ only by a linear rotation
             :math:`e^{i\kappa n}`, i.e. an  ``Rgate`` .
-
-    .. details::
-        The Kerr gate is genuinely non-Gaussian and has no Bargmann representation.
-        Its action is applied directly in the Fock basis through ``__custom_rrshift__``:
-        on a ket it multiplies the Fock component :math:`|n\rangle` by
-        :math:`e^{i\kappa g(n)}`, and on a density matrix it multiplies by
-        :math:`e^{i\kappa (g(n) - g(\tilde{n}))}`, where
-        :math:`g(n) = n(n-1)` when ``normal_ordered`` is ``True`` and
-        :math:`g(n) = n^2` otherwise.
     """
 
     short_name = "K"
