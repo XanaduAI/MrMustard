@@ -18,6 +18,7 @@ Transformations
     GaussianRandomNoise
     Identity
     Interferometer
+    Kgate
     Map
     MZgate
     Operation
@@ -33,7 +34,7 @@ Transformations
 Inheritance Diagram
 -------------------
 
-.. inheritance-diagram:: Transformation Map Channel Amplifier Attenuator GaussianRandomNoise PhaseNoise Operation FockDamping Unitary BSgate CXgate CZgate Dgate Ggate Identity Interferometer MZgate Pgate RealInterferometer Rgate S2gate Sgate
+.. inheritance-diagram:: Transformation Map Channel Amplifier Attenuator GaussianRandomNoise PhaseNoise Operation FockDamping Unitary BSgate CXgate CZgate Dgate Ggate Identity Interferometer Kgate MZgate Pgate RealInterferometer Rgate S2gate Sgate
     :parts: 1
 
 Amplifier
@@ -117,6 +118,13 @@ Interferometer
 --------------
 
 .. autoclass:: mrmustard.lab.transformations::Interferometer
+    :members:
+    :show-inheritance:
+
+Kgate
+-----
+
+.. autoclass:: mrmustard.lab.transformations::Kgate
     :members:
     :show-inheritance:
 

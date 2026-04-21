@@ -28,6 +28,7 @@ from .gaussrandnoise import *
 from .ggate import *
 from .identity import *
 from .interferometer import *
+from .kgate import *
 from .mzgate import *
 from .pgate import *
 from .phasenoise import *
