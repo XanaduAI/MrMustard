@@ -24,14 +24,16 @@ from mrmustard.lab import (
     CircuitComponent,
     Coherent,
     Dgate,
+    GaussianDM,
+    GaussianKet,
     Ket,
     Number,
+    SqueezedVacuum,
     Vacuum,
 )
 from mrmustard.physics.triples import coherent_state_Abc
+from mrmustard.physics.utils import random_Abc
 from mrmustard.physics.wires import Wires
-
-from ...random import Abc_triple
 
 
 def coherent_state_quad(q, x, y, phi=0):
@@ -60,6 +62,18 @@ class TestDM:
         assert name if name else state.name in ("DM0", "DM01", "DM2319")
         assert list(state.modes) == sorted(modes)
         assert state.wires == Wires(modes_out_bra=modes, modes_out_ket=modes)
+
+    def test_is_separable(self):
+        entangled_state = GaussianDM.random(modes=(0, 1, 2))
+        assert not entangled_state.is_separable
+
+        separable_state = (
+            GaussianDM.random(modes=0) >> GaussianDM.random(modes=1) >> GaussianDM.random(modes=2)
+        )
+        assert separable_state.is_separable
+
+        entangled_state = GaussianDM.random(modes=0) >> GaussianDM.random(modes=(1, 2))
+        assert not entangled_state.is_separable
 
     def test_manual_shape(self):
         dm = Coherent(0, alpha=1).dm()
@@ -212,7 +226,7 @@ class TestDM:
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (2, 3, 19)])
     @pytest.mark.parametrize("batch_shape", [(1,), (2, 3)])
     def test_to_from_quadrature(self, modes, batch_shape):
-        A, b, c = Abc_triple(len(modes) * 2, batch_shape)
+        A, b, c = random_Abc(len(modes) * 2, batch_shape)
         state0 = DM.from_bargmann(modes, (A, b, c))
         Atest, btest, ctest = state0.quadrature_triple()
         state1 = DM.from_quadrature(modes, (Atest, btest, ctest))
@@ -288,6 +302,21 @@ class TestDM:
         assert math.allclose(state.to_fock(40).quadrature(quad0, quad1), bra * ket)
         assert math.allclose(state.to_fock(40).quadrature_distribution(q), math.abs(bra) ** 2)
 
+    @pytest.mark.parametrize("mode", [1, 3])
+    def test_quadrature_fock_dm_on_nonzero_mode(self, mode):
+        """Regression: the einsum in ``quadrature`` built fock indices starting
+        at ``chr(97 + n_modes)`` and mode indices at ``chr(97 + mode)``.  When
+        ``mode >= n_modes`` (e.g. a single-mode DM on mode 1 after tracing out
+        mode 0), the two namespaces collided, forcing the number of quadrature
+        points to equal the Fock cutoff and silently using only diagonal elements.
+        """
+        x, y = 1, 2
+        cutoff = 40
+        state = Coherent(mode=mode, alpha=x + 1j * y).dm().to_fock(cutoff)
+        q = np.linspace(-10, 10, 73)
+        expected = math.abs(coherent_state_quad(q, x, y)) ** 2
+        assert math.allclose(state.quadrature_distribution(q), expected)
+
     def test_quadrature_multimode_dm(self):
         x, y = 1, 2
         state = (Coherent(mode=0, alpha=x + 1j * y) >> Coherent(mode=1, alpha=x + 1j * y)).dm()
@@ -343,47 +372,61 @@ class TestDM:
 
     @pytest.mark.parametrize("fock", [False, True])
     @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
-    def test_expectation(self, batch_shape, fock):
+    def test_expectation_ket(self, batch_shape, fock):
         alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
         alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
-
         coh_0 = Coherent(0, alpha=alpha_0)
         coh_1 = Coherent(1, alpha=alpha_1)
-        # TODO: clean this up once we have a better way to create batched multimode states
-        ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1, "zip").ansatz)
+        ket = Ket.from_ansatz((0, 1), coh_0.contract(coh_1).ansatz)
         ket = ket.to_fock(40) if fock else ket
         dm = ket.dm()
 
         # ket operator
         exp_coh_0 = dm.expectation(coh_0)
-        exp_coh_1 = dm.expectation(coh_1)
+        exp_coh_1 = dm.expectation(coh_1[None, ...])
         exp_ket = dm.expectation(ket)
 
-        assert exp_coh_0.shape == batch_shape * 2
-        assert exp_coh_1.shape == batch_shape * 2
-        assert exp_ket.shape == batch_shape * 2
+        assert exp_coh_0.shape == batch_shape
+        assert exp_coh_1.shape == (1, *batch_shape)
+        assert exp_ket.shape == batch_shape
 
         assert math.allclose(exp_coh_0, 1)
         assert math.allclose(exp_coh_1, 1)
         assert math.allclose(exp_ket, 1)
 
-        # dm operator
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
+    def test_expectation_dm(self, batch_shape):
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
+        coh_0 = Coherent(0, alpha=alpha_0)
+        coh_1 = Coherent(1, alpha=alpha_1)
+        coh_01 = coh_0.contract(coh_1)
+        dm = Ket.from_ansatz((0, 1), coh_01.ansatz).dm()
+
         dm0 = coh_0.dm()
         dm1 = coh_1.dm()
 
         exp_dm0 = dm.expectation(dm0)
-        exp_dm1 = dm.expectation(dm1)
+        exp_dm1 = dm.expectation(dm1[None, ...])
         exp_dm01 = dm.expectation(dm)
 
-        assert exp_dm0.shape == batch_shape * 2
-        assert exp_dm1.shape == batch_shape * 2
-        assert exp_dm01.shape == batch_shape * 2
+        assert exp_dm0.shape == batch_shape
+        assert exp_dm1.shape == (1, *batch_shape)
+        assert exp_dm01.shape == batch_shape
 
         assert math.allclose(exp_dm0, 1)
         assert math.allclose(exp_dm1, 1)
         assert math.allclose(exp_dm01, 1)
 
-        # u operator
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3)])
+    def test_expectation_u(self, batch_shape):
+        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
+        alpha_1 = math.broadcast_to(1 + 3j, batch_shape)
+        coh_0 = Coherent(0, alpha=alpha_0)
+        coh_1 = Coherent(1, alpha=alpha_1)
+        coh_01 = coh_0.contract(coh_1)
+        dm_0 = Ket.from_ansatz((0, 1), coh_01.ansatz).dm()
+
         beta_0 = 0.1
         beta_1 = 0.2
 
@@ -391,12 +434,12 @@ class TestDM:
         u1 = Dgate(1, alpha=beta_1)
         u01 = u0 >> u1
 
-        exp_u0 = dm.expectation(u0)
-        exp_u1 = dm.expectation(u1)
-        exp_u01 = dm.expectation(u01)
+        exp_u0 = dm_0.expectation(u0)
+        exp_u1 = dm_0[None, ...].expectation(u1[None])
+        exp_u01 = dm_0.expectation(u01)
 
         assert exp_u0.shape == batch_shape
-        assert exp_u1.shape == batch_shape
+        assert exp_u1.shape == (1, *batch_shape)
         assert exp_u01.shape == batch_shape
 
         expected_u0 = math.exp(-(math.abs(beta_0) ** 2) / 2) * math.exp(
@@ -409,52 +452,56 @@ class TestDM:
         assert math.allclose(exp_u0, expected_u0)
         assert math.allclose(exp_u1, expected_u1)
 
-        exp_u0_coh = coh_0.expectation(u0)
-        exp_u1_coh = coh_1.expectation(u1)
+        exp_u0_coh_0 = coh_0.expectation(u0)
+        exp_u1_coh_1 = coh_1.expectation(u1[None])
 
-        assert math.allclose(exp_u0, exp_u0_coh)
-        assert math.allclose(exp_u1, exp_u1_coh)
-        assert math.allclose(exp_u01, exp_u0_coh * exp_u1_coh)
+        assert math.allclose(exp_u0, exp_u0_coh_0)
+        assert math.allclose(exp_u1, exp_u1_coh_1)
+        assert math.allclose(exp_u01, exp_u0_coh_0 * exp_u1_coh_1)
 
-    @pytest.mark.parametrize("batch_shape", [(2,), (2, 3)])
-    @pytest.mark.parametrize("batch_shape_2", [(7,), (4, 5, 7)])
-    def test_expectation_diff_batch_shapes(self, batch_shape, batch_shape_2):
-        alpha_0 = math.broadcast_to(1 + 2j, batch_shape)
-        coh_0 = Coherent(0, alpha=alpha_0)
-        dm = coh_0.dm()
+    def test_expectation_with_different_batch_shapes(self):
+        # init state
+        coh2 = Coherent(0, alpha=math.broadcast_to(0.3 + 0.2j, (2,)))
+        coh7 = Coherent(0, alpha=math.broadcast_to(0.3 + 0.2j, (7,)))
+        dm2 = coh2.dm()
 
-        # ket operator
-        alpha_1 = math.broadcast_to(0.3 + 0.2j, batch_shape_2)
-        coh_1 = Coherent(0, alpha=alpha_1)
-        exp_coh_1 = dm.expectation(coh_1)
-        assert exp_coh_1.shape == batch_shape + batch_shape_2
+        # expectation with ket
+        assert dm2.expectation(coh2).shape == (2,)
+        assert dm2[:, None].expectation(coh7[None, :]).shape == (2, 7)
 
-        # dm operator
-        dm1 = coh_1.dm()
-        exp_dm1 = dm.expectation(dm1)
-        assert exp_dm1.shape == batch_shape + batch_shape_2
+        # expectation with dm
+        assert dm2.expectation(coh2.dm()).shape == (2,)
+        assert dm2[:, None].expectation(coh7.dm()[None, :]).shape == (2, 7)
 
         # u operator
-        beta_0 = math.broadcast_to(0.3, batch_shape_2)
-        u0 = Dgate(0, alpha=beta_0)
-        exp_u0 = dm.expectation(u0)
-        assert exp_u0.shape == batch_shape + batch_shape_2
+        u0 = Dgate(0, alpha=math.broadcast_to(0.3, (2,)))
+        assert dm2.expectation(u0).shape == (2,)
+        u0 = Dgate(0, alpha=math.broadcast_to(0.3, (7,)))
+        assert dm2[:, None].expectation(u0[None, :]).shape == (2, 7)
 
-    def test_expectation_shape_handling(self):
-        cutoff = 150
-        fock_dm = DM.random((0,), max_r=2).to_fock(cutoff)
-        dgate = Dgate(0, alpha=0.769j)
-        expectation_default = math.abs(fock_dm.expectation(dgate))
-        expectation_fock = math.abs(fock_dm.expectation(dgate.to_fock(cutoff)))
-        expectation_bargmann = math.abs(fock_dm.to_bargmann().expectation(dgate))
-        assert math.allclose(expectation_default, expectation_fock)
-        assert math.allclose(expectation_default, expectation_bargmann)
+    @pytest.mark.parametrize(
+        "operator",
+        [Coherent(0, alpha=0.1 + 0.2j).dm(), Dgate(0, alpha=-0.1 - 0.2j)],
+        ids=["DM_LIKE", "UNITARY_LIKE"],
+    )
+    def test_expectation_shape_handling(self, operator):
+        dm = SqueezedVacuum(0, 0.5).dm()
+        shape = 20
+        dm.manual_shape = (shape, shape)  # otherwise autoshape too small when combined with dgate
+
+        expectation_barg_fock = math.abs(dm.to_bargmann().expectation(operator.to_fock(shape)))
+        expectation_fock_barg = math.abs(dm.to_fock(shape).expectation(operator.to_bargmann()))
+        expectation_fock_fock = math.abs(dm.to_fock(shape).expectation(operator.to_fock(shape)))
+
+        assert math.allclose(expectation_barg_fock, expectation_fock_barg)
+        assert math.allclose(expectation_fock_fock, expectation_barg_fock)
+        assert math.allclose(expectation_fock_fock, expectation_fock_barg)
 
     def test_expectation_lin_sup(self):
-        cat = (Coherent(0, alpha=1 + 2j) + Coherent(0, alpha=-1 + 2j)).normalize()
+        cat = (Coherent(0, alpha=0.1 + 0.2j) + Coherent(0, alpha=-0.1 - 0.2j)).normalize()
         cat_dm = cat.dm()
-        assert math.allclose(cat_dm.expectation(cat, mode="zip"), 1.0)
-        assert math.allclose(cat_dm.expectation(cat_dm, mode="zip"), 1.0)
+        assert math.allclose(cat_dm.expectation(cat), 1.0)
+        assert math.allclose(cat_dm.expectation(cat_dm), 1.0)
         assert math.allclose(
             cat_dm.expectation(Dgate(0, alpha=[0.1, 0.2, 0.3])),
             [
@@ -465,34 +512,59 @@ class TestDM:
         )
 
     def test_expectation_error(self):
-        dm = (Coherent(0, 1 + 2j) >> Coherent(1, 1 + 3j)).dm()
+        dm = GaussianDM.random(modes=(0, 1))
 
-        op1 = Attenuator(0)
         with pytest.raises(ValueError, match="Cannot calculate the expectation value"):
-            dm.expectation(op1)
+            dm.expectation(Attenuator(0))
 
-        op2 = CircuitComponent._from_attributes(None, Wires(set(), set(), {1}, {0}))
-        with pytest.raises(ValueError, match="different modes"):
-            dm.expectation(op2)
+        with pytest.raises(ValueError, match="No modes in common"):
+            dm.expectation(GaussianDM.random(modes=(2,)))
 
-        op3 = Dgate(2)
-        with pytest.raises(ValueError, match="Expected an operator defined on"):
-            dm.expectation(op3)
+        with pytest.raises(ValueError, match="No modes in common"):
+            dm.expectation(Dgate(2))
 
+    @pytest.mark.parametrize("n_modes", [1, 2, 3])
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
-    def test_fock_distribution(self, batch_shape):
-        x = math.broadcast_to(1, batch_shape)
-        y = math.broadcast_to(2, batch_shape)
-        state = Coherent(0, x + 1j * y)
-        assert math.allclose(state.fock_distribution(10), state.dm().fock_distribution(10))
+    def test_fock_distribution(self, n_modes, batch_shape):
+        cutoff = 5
+        state = GaussianKet.random(tuple(range(n_modes)))
+        A, b, c = state.ansatz.triple
+        A_batch = math.broadcast_to(A, batch_shape + A.shape)
+        b_batch = math.broadcast_to(b, batch_shape + b.shape)
+        c_batch = math.broadcast_to(c, batch_shape + c.shape)
+        state = Ket.from_bargmann(state.modes, (A_batch, b_batch, c_batch))
+        fock_dist = state.fock_distribution(cutoff)
+        fock_dist_dm = state.dm().fock_distribution(cutoff)
+        assert math.allclose(fock_dist, fock_dist_dm)
+        assert fock_dist.shape == (*batch_shape, (cutoff + 1) ** n_modes)
+
+        alpha = math.broadcast_to(1 + 0.1j, batch_shape)
+        state_separable = Coherent(0, alpha=alpha)
+        for i in range(n_modes - 1):
+            state_separable >>= Coherent(i + 1, alpha=alpha)
+        fock_dist_separable = state_separable.fock_distribution(cutoff)
+        fock_dist_dm_separable = state_separable.dm().fock_distribution(cutoff)
+        assert math.allclose(fock_dist_separable, fock_dist_dm_separable)
+        assert fock_dist_separable.shape == (*batch_shape, (cutoff + 1) ** n_modes)
 
     def test_rshift(self):
         ket = Coherent(0, 1) >> Coherent(1, 1)
-        unitary = Dgate(0, 1)
-        u_component = CircuitComponent(unitary.ansatz, unitary.wires, unitary.name)
-        channel = Attenuator(1, 1)
-        ch_component = CircuitComponent(channel.ansatz, channel.wires, channel.name)
 
+        unitary = Dgate(0, 1)
+        u_component = CircuitComponent(
+            ansatz_factory=unitary.ansatz_factory,
+            wires=unitary.wires,
+            name=unitary.name,
+        )
+        u_component.parameters["alpha"] = unitary.parameters.alpha
+
+        channel = Attenuator(1, 1)
+        ch_component = CircuitComponent(
+            ansatz_factory=channel.ansatz_factory,
+            wires=channel.wires,
+            name=channel.name,
+        )
+        ch_component.parameters["transmissivity"] = channel.parameters.transmissivity
         dm = ket >> channel
 
         # gates
@@ -509,7 +581,7 @@ class TestDM:
     @pytest.mark.parametrize("modes", [(5,), (1, 2)])
     def test_random(self, modes):
         m = len(modes)
-        dm = DM.random(modes)
+        dm = GaussianDM.random(modes)
         A = dm.ansatz.A
         Gamma = A[..., :m, m:]
         Lambda = A[..., m:, m:]
@@ -520,8 +592,32 @@ class TestDM:
         assert np.all(np.linalg.eigvals(Gamma) < 1)
         assert np.all(np.linalg.eigvals(Temp) < 1)
 
+    def test_random_seed(self):
+        # same seed should produce same state
+        assert GaussianDM.random(modes=[0, 1], seed=42) == GaussianDM.random(modes=[0, 1], seed=42)
+        # different seeds should produce different states
+        assert GaussianDM.random(modes=[0, 1], seed=42) != GaussianDM.random(modes=[0, 1], seed=43)
+
+        # local seed should not affect global seed
+        settings.SEED = 42
+        dm_from_global_1 = GaussianDM.random(modes=[0, 1])
+        dm_from_global_2 = GaussianDM.random(modes=[0, 1])
+
+        settings.SEED = 42
+        dm_from_global_1_redux = GaussianDM.random(modes=[0, 1])
+        # this call should not affect the global RNG
+        _ = GaussianDM.random(modes=[0, 1], seed=123)
+        dm_from_global_2_redux = GaussianDM.random(modes=[0, 1])
+
+        assert dm_from_global_1 == dm_from_global_1_redux
+        assert dm_from_global_2 == dm_from_global_2_redux
+
+        # no modes should raise error
+        with pytest.raises(ValueError, match="Cannot create a random GaussianDM with no modes."):
+            GaussianDM.random(modes=[])
+
     def test_is_positive(self):
-        assert (Ket.random((2, 9)) >> Attenuator(2) >> Attenuator(9)).is_positive
+        assert (GaussianKet.random((2, 9)) >> Attenuator(2) >> Attenuator(9)).is_positive
         assert (
             Coherent(2, alpha=[1 + 2j, 1 + 2j, 1 + 2j])
             >> Coherent(9, alpha=[1 + 2j, 1 + 2j, 1 + 2j])
@@ -538,11 +634,11 @@ class TestDM:
 
     @pytest.mark.parametrize("modes", [tuple(range(10)), (0, 1)])
     def test_is_physical(self, modes):
-        rho = DM.random(modes)
+        rho = GaussianDM.random(modes)
         assert rho.is_physical
         rho = 2 * rho
         assert not rho.is_physical
-        assert Ket.random(modes).dm().is_physical
+        assert GaussianKet.random(modes).dm().is_physical
         assert Coherent(0, alpha=[1, 1, 1]).dm().is_physical
 
     def test_fock_array_ordering(self):
@@ -559,7 +655,7 @@ class TestDM:
         )
 
     def test_formal_stellar_decomposition(self):
-        rho = DM.random([0, 1])
+        rho = GaussianDM.random([0, 1])
         sigma, phi = rho.formal_stellar_decomposition([0])
 
         assert sigma.modes == (0, 1)
@@ -578,27 +674,27 @@ class TestDM:
         assert As[0, 0] == 0 and As[0, 2] == 0 and As[2, 2] == 0
 
         # 4-mode example
-        rho = DM.random([0, 1, 2, 3])
+        rho = GaussianDM.random([0, 1, 2, 3])
         core, phi = rho.formal_stellar_decomposition([0, 3])
 
         # displacement test
-        rho = DM.random([0, 1]) >> Dgate(0, 0.5) >> Dgate(1, 0.2)
+        rho = GaussianDM.random([0, 1]) >> Dgate(0, 0.5) >> Dgate(1, 0.2)
         core, phi = rho.formal_stellar_decomposition([0])
         assert (core >> Vacuum(1).dual).normalize() == Vacuum((0,)).dm()
         assert rho == core >> phi
 
         # batch test
-        rho1 = DM.random([0, 1, 2, 3]) >> Dgate(0, 0.7)
-        rho2 = DM.random([0, 1, 2, 3])
+        rho1 = GaussianDM.random([0, 1, 2, 3]) >> Dgate(0, 0.7)
+        rho2 = GaussianDM.random([0, 1, 2, 3])
 
         sigma = rho1 + rho2
         sigma.ansatz._lin_sup = False
         core, phi = sigma.formal_stellar_decomposition([0, 1])
 
-        assert core.contract(phi, mode="zip") == sigma
+        assert core.contract(phi) == sigma
 
     def test_physical_stellar_decomposition(self):
-        rho = DM.random([0, 1])
+        rho = GaussianDM.random([0, 1])
         core, phi = rho.physical_stellar_decomposition([0])
 
         assert rho == core >> phi
@@ -609,7 +705,7 @@ class TestDM:
         assert math.allclose(A[0, 0], 0)
 
         # 4-mode example
-        rho = DM.random([0, 1, 2, 3])
+        rho = GaussianDM.random([0, 1, 2, 3])
         core, phi = rho.physical_stellar_decomposition([0, 3])
 
         assert rho == core >> phi
@@ -617,49 +713,52 @@ class TestDM:
         assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3))
 
         # testing displacement
-        rho = DM.random([0, 1]) >> Dgate(0, 0.5)
+        rho = GaussianDM.random([0, 1]) >> Dgate(0, 0.5)
         core, phi = rho.physical_stellar_decomposition([0])
         assert (core >> Vacuum(1).dual).normalize() == Vacuum((0,))
 
         # testing batches:
-        rho1 = DM.random([0, 1, 2, 3]) >> Dgate(0, 1)
-        rho2 = DM.random([0, 1, 2, 3])
+        rho1 = GaussianDM.random([0, 1, 2, 3]) >> Dgate(0, 1)
+        rho2 = GaussianDM.random([0, 1, 2, 3])
 
         sigma = rho1 + rho2
         sigma.ansatz._lin_sup = False
         core, phi = sigma.physical_stellar_decomposition([0, 1])
 
-        assert core.dm().contract(phi, mode="zip") == sigma
+        assert core.dm().contract(phi) == sigma
 
     def test_stellar_decomposition_mixed(self):
-        rho = DM.random([0, 1])
-        core, phi = rho.physical_stellar_decomposition_mixed([0])
+        """Test DM stellar decomposition for cases where M > n/2 (returns DM core)."""
+        # 4-mode example with M=3 > n/2=2: returns DM
+        rho = GaussianDM.random([0, 1, 2, 3])
+        core, phi = rho.physical_stellar_decomposition([0, 1, 2])
 
         assert rho == core >> phi
         assert core.is_physical
         assert isinstance(core, DM)
 
+        # Check core property on core modes
         A = core.ansatz.A
-        assert math.allclose(A[0, 0], 0)
+        assert math.allclose(A[:3, :3], math.zeros((3, 3)))
 
-        # 4-mode example
-        rho = DM.random([0, 1, 2, 3])
-        core, phi = rho.physical_stellar_decomposition_mixed([0, 3])
+        # 6-mode example with M=4 > n/2=3: returns DM
+        rho = GaussianDM.random([0, 1, 2, 3, 4, 5])
+        core, phi = rho.physical_stellar_decomposition([0, 1, 2, 3])
 
         assert rho == core >> phi
-        assert phi.is_physical
-        assert (core >> Vacuum((1, 2)).dual).normalize() == Vacuum((0, 3)).dm()
+        assert isinstance(core, DM)
 
-        # batched displaced example:
-        rho1 = DM.random([0, 1, 2, 3]) >> Dgate(0, 1)
-        rho2 = DM.random([0, 1, 2, 3])
+        # batched displaced example with M=3 > n/2=2: returns DM
+        rho1 = GaussianDM.random([0, 1, 2, 3]) >> Dgate(0, 1)
+        rho2 = GaussianDM.random([0, 1, 2, 3])
 
         sigma = rho1 + rho2
         sigma.ansatz._lin_sup = False
-        core, phi = sigma.physical_stellar_decomposition_mixed([0, 1])
+        core, phi = sigma.physical_stellar_decomposition([0, 1, 2])
 
-        assert math.allclose(core.dm().contract(phi, mode="zip").ansatz.A, sigma.ansatz.A)
-        assert math.allclose(core.dm().contract(phi, mode="zip").ansatz.b, sigma.ansatz.b)
+        assert isinstance(core, DM)
+        assert math.allclose(core.dm().contract(phi).ansatz.A, sigma.ansatz.A)
+        assert math.allclose(core.dm().contract(phi).ansatz.b, sigma.ansatz.b)
 
     def test_wigner(self):
         ans = Vacuum(0).dm().wigner
@@ -668,3 +767,102 @@ class TestDM:
         solution = np.exp(-(x**2)) / np.pi
 
         assert math.allclose(ans(x, 0), solution)
+
+    def test_wormhole_1mode_single_outcome(self):
+        """Test wormhole_1mode with a single PNR outcome."""
+        dm = GaussianDM.random([0, 1], seed=42)
+        cutoff = 10
+        pnr = 3
+
+        # Get conditional DM using wormhole (tuple API) - returns dict
+        results = dm.wormhole_1mode((pnr,), output_cutoff=cutoff, leftover_mode=0)
+        assert isinstance(results, dict)
+        cond_dm = results[(pnr,)]
+
+        # Verify it's a single-mode DM
+        assert isinstance(cond_dm, DM)
+        assert cond_dm.modes == (0,)
+        assert cond_dm.fock_array().shape == (cutoff + 1, cutoff + 1)
+
+        # Verify against full tensor slice
+        A, b, c = dm.bargmann_triple()
+        full_shape = (cutoff + 1, pnr + 1, cutoff + 1, pnr + 1)
+        full_tensor = math.hermite_renormalized(A, b, c, shape=full_shape, stable=True)
+        ref_array = np.array(full_tensor[:, pnr, :, pnr])
+
+        assert math.allclose(cond_dm.fock_array(), ref_array, atol=1e-10)
+
+    def test_wormhole_1mode_multiple_outcomes(self):
+        """Test wormhole_1mode with multiple PNR outcomes."""
+        dm = GaussianDM.random([0, 1], seed=123)
+        cutoff = 8
+        pnr_list = [(0,), (1,), (2,)]
+
+        results = dm.wormhole_1mode(pnr_list, output_cutoff=cutoff, leftover_mode=0)
+
+        # Verify we get a dict with the right keys
+        assert isinstance(results, dict)
+        assert (0,) in results
+        assert (1,) in results
+        assert (2,) in results
+
+        # Verify each result is correct
+        A, b, c = dm.bargmann_triple()
+        for pnr_tuple in pnr_list:
+            pnr = pnr_tuple[0]
+            full_shape = (cutoff + 1, pnr + 1, cutoff + 1, pnr + 1)
+            full_tensor = math.hermite_renormalized(A, b, c, shape=full_shape, stable=True)
+            ref_array = np.array(full_tensor[:, pnr, :, pnr])
+
+            assert math.allclose(results[pnr_tuple].fock_array(), ref_array, atol=1e-10)
+
+    def test_wormhole_1mode_3modes(self):
+        """Test wormhole_1mode with a 3-mode DM."""
+        dm = GaussianDM.random([0, 1, 2], seed=456)
+        cutoff = 6
+        pnr1, pnr2 = 2, 3
+
+        # Tuple specifies PNR for modes 1 and 2 (in order), leftover is mode 0
+        results = dm.wormhole_1mode((pnr1, pnr2), output_cutoff=cutoff, leftover_mode=0)
+        cond_dm = results[(pnr1, pnr2)]
+
+        # Verify against full tensor
+        A, b, c = dm.bargmann_triple()
+        full_shape = (cutoff + 1, pnr1 + 1, pnr2 + 1, cutoff + 1, pnr1 + 1, pnr2 + 1)
+        full_tensor = math.hermite_renormalized(A, b, c, shape=full_shape, stable=True)
+        ref_array = np.array(full_tensor[:, pnr1, pnr2, :, pnr1, pnr2])
+
+        assert math.allclose(cond_dm.fock_array(), ref_array, atol=1e-10)
+
+    def test_wormhole_1mode_different_leftover(self):
+        """Test wormhole_1mode with different leftover modes."""
+        dm = GaussianDM.random([0, 1], seed=789)
+        cutoff = 8
+        pnr = 2
+
+        # Leftover mode 0
+        results_0 = dm.wormhole_1mode((pnr,), output_cutoff=cutoff, leftover_mode=0)
+        cond_dm_0 = results_0[(pnr,)]
+        assert cond_dm_0.modes == (0,)
+
+        # Leftover mode 1
+        results_1 = dm.wormhole_1mode((pnr,), output_cutoff=cutoff, leftover_mode=1)
+        cond_dm_1 = results_1[(pnr,)]
+        assert cond_dm_1.modes == (1,)
+
+    def test_wormhole_1mode_errors(self):
+        """Test wormhole_1mode raises appropriate errors."""
+        dm = GaussianDM.random([0, 1], seed=111)
+
+        # Wrong leftover mode
+        with pytest.raises(ValueError, match="leftover_mode 5 is not in"):
+            dm.wormhole_1mode((0,), output_cutoff=5, leftover_mode=5)
+
+        # Wrong tuple length
+        with pytest.raises(ValueError, match="must have length"):
+            dm.wormhole_1mode((0, 0), output_cutoff=5, leftover_mode=0)
+
+        # Single mode DM
+        dm_single = Coherent(0, 1).dm()
+        with pytest.raises(ValueError, match="requires at least 2 modes"):
+            dm_single.wormhole_1mode((), output_cutoff=5, leftover_mode=0)

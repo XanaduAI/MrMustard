@@ -2,6 +2,51 @@
 
 ### Breaking changes
 
+* Deprecated `Circuit` in the `lab` module.
+
+* Updated `lab` to use the new `AnsatzFactory` under the hood.
+
+* Renamed `Wires.sorted_wires` to `Wires.standard_order`.
+
+* Deprecated `displacement`, `squeezed` and `squeezer` from `mathlib.lattice.strategies` in favor of cythonized implementation in `mathlib.cython_lattice.strategies`.
+
+* Moved `mathlib.cython_lattice.beamsplitter` into `mathlib.cython_lattice.strategies`.
+
+* Refactored parameter initialization: factory methods `Parameter.orthogonal()`, `Parameter.symplectic()`, and
+`Parameter.unitary()` no longer accept a `value` parameter and only generate random matrices.
+
+* Introduced stricter dtype checking via `Parameter.from_cc_init` utility that raises errors when `Parameter` objects have incorrect dtypes.
+
+* Moved non-backend related files of `mrmustard.math` into its own `mrmustard.mathlib` module.
+
+* Moved `mrmustard.math.parameters` and `mrmustard.math.parameters_dict` into its own `mrmustard.parameters` module.
+
+* Deprecated `beamsplitter` and `stable_beamsplitter` from `math.lattice.strategies` in favor of cythonized
+implementation `math.cython_lattice.beamsplitter`.
+
+* Deprecated `math.lattice.strategies.vanilla` in favour of cythonized implementation `math.cython_lattice.vanilla`.
+
+* Fixed conflated use of cutoff (max photon number) and shape (array size).
+
+* Deprecated `State.random` in favour of `GaussianKet.random` and `GaussianDM.random`.
+
+* Deprecated the default initialization of `Ggate`, `GaussianDM`, `GaussianKet`, `Interferometer`, and
+`RealInterferometer` in favor of the `random` classmethod.
+
+* Renamed `GKet` -> `GaussianKet` and `GDM` -> `GaussianDM`
+
+* Replaced `settings.rng` with `settings.get_rng()`.
+
+* Repurposed `__getitem__` for batch-only array operations. For mode selection use `.get_modes()` instead.
+
+* Removed official support for Python 3.10.
+
+* Deprecated the methods `real_gaussian_integral` and `join_Abc_real`.
+
+* Replaced `ParameterSet` with `ParameterDict`, a dict-typed class for handling variables and constants.
+
+* Deprecated the `trainable` and `bounds` parameters of built-in `CircuitComponent`s in favor of explict initializations of `Variable`s.
+
 * Removed `tensorflow` as a dependency as well as any legacy `tensorflow` code. Renamed `OptimizerJax` to `Optimizer`.
 [(#633)](https://github.com/XanaduAI/MrMustard/pull/633)
 
@@ -10,25 +55,145 @@
 
 ### Improvements
 
-* Added a ``rich`` based repr to ``ParameterSet``.
-[(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
+* Added `tan`, `tanh`, `argmax`, `argmin`, `argsort`, and `mean` functions to the math backend.
 
-* Made `JAX` an optional `jax_backend` dependency.
-[(#637)](https://github.com/XanaduAI/MrMustard/pull/637)
+* Added `stellar_roots()` and `plot_stellar_roots()` methods to `Ket` for computing and visualizing the zeros of the Bargmann polynomial of single-mode states.
+
+* Introduced preliminary implementation of the Wormhole algorithm for computing Fock amplitudes with complexity lineary in the total photon number. Exposed as `Ket.wormhole_1mode` and `DM.wormhole_1mode` for computing conditional single-mode states.
+
+* Updated `settings.STABLE_FOCK_CONVERSION` to default to `True`.
+
+* Introduced prelimiary implementation of the Wormhole algorithm for computing Fock amplitudes with complexity lineary in the total photon number. Exposed as `Ket.wormhole_1mode` and `DM.wormhole_1mode` for computing conditional single-mode states.
+
+* Extended `einsum` to support parentheses in the output string for vectorizing grouped indices (e.g., `"ij,jk->(ik)"` flattens indices `i` and `k` into a single dimension).
+
+* Introduced the `AnsatzFactory` a single interface for the generation (and caching) of ansatz.
+
+* Added the `fock_shapes` and `representations` properties to `Wires`.
+
+* Added a `shape` method to the `math` backend.
+
+* Standard ordering of `Wires` is no longer enforced. As such, added `CircuitComponent.to_standard_order` and updated to handle contractions between `Wires` in non standard order.
+
+* Added `homodyne_projector_triple` and `math.homodyne_projector`.
+
+* Reimplemented tangent space optimization. Now Riemannian optimization supports `optax` optimizers and schedulers.
+
+* Made OpenMP an optional dependency for MrMustard no longer failing the build if it is not found (although it is highly recommended).
+
+* Added time elapsed in the optimizers' progress bar.
+
+* Added `real_normal`, `real_uniform`, `complex_normal` and `complex_uniform` initializers for `Variable` and `Constant`.
+
+* Added the `squeeze` operation to the backend.
+
+* Added batch_shape argument to `Parameter.orthogonal`, `Parameter.unitary` and `Parameter.symplectic` and to the underlying math module functions that generate random matrices.
+
+* Refactored parameter handling across all states and transformations by introducing `Parameter` as an explicit
+superclass for `Constant` and `Variable`.
+
+* Added `CircuitComponent.stack` `CircuitComponent.concat`, `PolyExpAnsatz.concat` and `ArrayAnsatz.concat` for stacking and concatenating
+along batch dimensions.
+
+* Added a `Cython` implementation of `beamsplitter` and `stable_beamsplitter`.
+
+* Added a `Cython` implementation of `vanilla_numba`, `vanilla_vjp_numba`, `vanilla_vjp_numba_batched`.
+
+* Move MrMustard to the `meson` build backend.
+
+* Introduced numba-powered complex gaussian integrals.
+
+* Enabled `scipy`'s array API standard.
+
+* Added a [Cython](https://cython.org/) implementation of `vanilla_stable`.
+
+* Added a `random` classmethod for `Ggate`, `GaussianDM`, `GaussianKet`, `Interferometer`, and `RealInterferometer`.
+
+* Added pydantic validation of `settings`.
+
+* Bumped the supported `scipy` version from `>=1.8.0,<2` to `>=1.14.0,<2`.
+
+* Added `if TYPE_CHECKING:` imports to top-level `__init__.py` to improve ability to view
+`mrmustard.math` module type-hints and docstrings.
+
+* Introduced `ParameterDict`.
+
+* Added a batched implementation of `math.displacement`.
+
+* Bumped up the pinned `jax` version to v0.6.2(3.10), v0.7.1(>=3.11) and `jaxlib` to v0.6.2 (3.10), v0.7.1(>=3.11).
+
+* Added a batched implementation of `math.beamsplitter`.
+
+* Added support for Plotly 6.3.
+
+* Made it possible to pass a seed to `math.random_orthogonal`, and `math.random_unitary`, as well
+as `lab.transformations.Inteferometer` and `lab.transformations.RealInterferometer` to use if no
+matrix is provided and a random interferometer is to be generated.
+
+* Added ability to raise when contracting two circuit components in different
+representations by setting `settings.DEFAULT_REPRESENTATION` to `None`.
+
+* Added support for Python 3.13.
+[(#640)](https://github.com/XanaduAI/MrMustard/pull/640)
+
+* Added the `is_separable` property to `State`.
+[(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
+
+* Added a `seed` keyword for `DM.random`, `Ket.random`, `Channel.random` and `Unitary.random`
+[(#638)](https://github.com/XanaduAI/MrMustard/pull/638)
 
 * Added vjps to the JAX backend. Added ``numba`` based Fock lattice strategies to `SqueezedVacuum` and `Sgate`.
 [(#636)](https://github.com/XanaduAI/MrMustard/pull/636)
 
+* Made `JAX` an optional `jax_backend` dependency.
+[(#637)](https://github.com/XanaduAI/MrMustard/pull/637)
+
+* Added a ``rich`` based repr to ``ParameterSet``.
+[(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
+
+* Added the `Kgate` (Kerr) non-Gaussian single-mode unitary, diagonal in the Fock basis
+with entries :math:`e^{i\kappa n*(n-1)}`.
+[(#653)](https://github.com/XanaduAI/MrMustard/pull/653)
+
 ### Bug fixes
 
-* Fixed a bug in `OptimizerJax` that would make the optimizer think it reached a stable optimum upon repeat calls to `minimize`.
-[(#634)](https://github.com/XanaduAI/MrMustard/pull/634)
+* Fixed a bug in `CircuitComponent.quadrature` where einsum fock indices collided with mode indices for states on non-zero modes (e.g. a single-mode DM on mode 1 after tracing), forcing the number of quadrature points to equal the Fock cutoff and silently giving wrong results.
+
+* Fixed a bug in `beamsplitter.pyx::beamsplitter_c` and `beamsplitter.pyx::beamsplitter_stable_c`that would cause builds on Windows to fail.
+
+* Fixed a bug in `vanilla.pyx::vanilla_c` where the core shape of `b` was not guaranteed to be positive.
+
+* Fixed a bug in `CircuitComponent.__add__` where built-in `CircuitComponent`s with multi-dimensional parameters
+  (e.g. `symplectic`) were not being added together correctly.
+
+* Fixed a bug where `math.einsum` was not using the set backend if `backend=None`.
+
+* Fixed a bug that prevented `Number` from being JIT compiled in the JAX backend.
+
+* Fixed bug in Gaussian integrals where small/large c values were not multiplying correctly.
+[(#641)](https://github.com/XanaduAI/MrMustard/pull/641)
+
+* Fixed a bug in `Ket.expectation` where the Fock shape lookahead wasn't setting certain wires correctly.
+[(#646)](https://github.com/XanaduAI/MrMustard/pull/646)
+
+* Fixed a bug where `numba` parallelization would conflict with JAX.
+* Fixed the batched behaviour of Riemannian optimizations in `Optimizer`.
+[(#642)](https://github.com/XanaduAI/MrMustard/pull/642)
+
+* Fixed a bug where `CircuitComponent.fock_array` was not passing `c` directly into `math.hermite_renormalize` for `num_derived_vars=0`.
+[(#643)](https://github.com/XanaduAI/MrMustard/pull/643)
+
+* Fixed a bug with `State.fock_distribution` where batch dimensions and mult-mode states were not handled correctly.
+[(#635)](https://github.com/XanaduAI/MrMustard/pull/635)
+
+* Fixed a bug in `DM.expectation` where the Fock shape lookahead wasn't setting certain wires correctly.
+[(#639)](https://github.com/XanaduAI/MrMustard/pull/639)
 
 * Fixed a bug in `Optimizer` where complex gradients were the conjugate of the expected.
 [(#617)](https://github.com/XanaduAI/MrMustard/pull/617)
 
-* Fixed a bug in `DM.expectation` where the Fock shape lookahead wasn't setting certain wires correctly.
-[(#639)](https://github.com/XanaduAI/MrMustard/pull/639)
+* Fixed a bug in `OptimizerJax` that would make the optimizer think it reached a stable optimum upon repeat calls to `minimize`.
+[(#634)](https://github.com/XanaduAI/MrMustard/pull/634)
 
 ---
 

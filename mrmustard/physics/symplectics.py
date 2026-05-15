@@ -24,6 +24,15 @@ from collections.abc import Sequence
 from mrmustard import math
 from mrmustard.utils.typing import Matrix
 
+__all__ = [
+    "cxgate_symplectic",
+    "czgate_symplectic",
+    "interferometer_symplectic",
+    "mzgate_symplectic",
+    "pgate_symplectic",
+    "realinterferometer_symplectic",
+]
+
 
 def cxgate_symplectic(s: float | Sequence[float]) -> Matrix:
     r"""

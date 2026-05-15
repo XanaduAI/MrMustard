@@ -19,16 +19,13 @@ This module contains the base ansatz class.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from typing import Any
 
 from numpy.typing import ArrayLike
 
 from mrmustard.utils.typing import (
     Batch,
-    ComplexMatrix,
-    ComplexTensor,
-    ComplexVector,
     Scalar,
     Tensor,
     Vector,
@@ -45,21 +42,12 @@ class Ansatz(ABC):
     def __init__(self) -> None:
         self._lin_sup = False
         self._batch_shape = ()
-        self._fn = None
-        self._kwargs = {}
 
     @property
     @abstractmethod
-    def batch_dims(self) -> tuple[int, ...]:
+    def batch_dims(self) -> int:
         r"""
         The number of batch dimensions of the ansatz.
-        """
-
-    @property
-    @abstractmethod
-    def core_dims(self) -> int:
-        r"""
-        The number of core dimensions of the ansatz.
         """
 
     @property
@@ -85,6 +73,13 @@ class Ansatz(ABC):
 
     @property
     @abstractmethod
+    def core_dims(self) -> int:
+        r"""
+        The number of core dimensions of the ansatz.
+        """
+
+    @property
+    @abstractmethod
     def data(self) -> tuple | Tensor:
         r"""
         The data of the ansatz.
@@ -106,44 +101,54 @@ class Ansatz(ABC):
         For now it's ``c`` for PolyExpAnsatz and the array for ArrayAnsatz.
         """
 
-    @property
-    @abstractmethod
-    def triple(
-        self,
-    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        r"""
-        The batch of triples :math:`(A_i, b_i, c_i)`.
-        """
-
     @classmethod
     @abstractmethod
     def from_dict(cls, data: dict[str, ArrayLike]) -> Ansatz:
         r"""
         Deserialize an Ansatz.
+
+        Args:
+            data: The data to deserialize.
+
+        Returns:
+            An Ansatz.
         """
 
-    @classmethod
     @abstractmethod
-    def from_function(cls, fn: Callable, **kwargs: Any) -> Ansatz:
+    def concat(self, other: Ansatz, axis: int = 0) -> Ansatz:
         r"""
-        Returns an ansatz from a function and kwargs.
+        Concatenates this ansatz with another along a specified batch axis.
+
+        All batch axes except the concatenation axis must agree in size.
+        Core dimensions and other properties must match according to the
+        specific ansatz type.
+
+        Args:
+            other: Another ansatz of the same type.
+            axis: The batch axis along which to concatenate (default 0).
+
+        Returns:
+            A new ansatz with concatenated batch dimensions.
+
+        Raises:
+            ValueError: If the ansatze have incompatible shapes or properties.
         """
 
     @abstractmethod
     def contract(
         self,
         other: Ansatz,
-        idx1: int | tuple[str | int, ...],
-        idx2: int | tuple[str | int, ...],
-        idx_out: int | tuple[str | int, ...],
+        idxs: tuple[Sequence[int], Sequence[int]],
     ) -> Ansatz:
         r"""
-        Contract two ansatz together.
+        Contract two ansatz along the specified core indices, broadcasting batch dimensions.
+
         Args:
             other: Another ansatz.
-            idx1: The (optional) index of the first ansatz to contract.
-            idx2: The (optional) index of the second ansatz to contract.
-            idx_out: The (optional) index of the output ansatz.
+            idxs: Tuple ``(idx_self, idx_other)`` of sequences of core-axis indices
+                (0-based, relative to the core variables of each operand) to contract.
+                The two sequences must have the same length. Negative indices are
+                supported and are interpreted relative to the number of core variables.
         Returns:
             The resulting contracted ansatz.
         """
@@ -152,6 +157,12 @@ class Ansatz(ABC):
     def reorder(self, order: tuple[int, ...] | list[int]) -> Ansatz:
         r"""
         Reorders the ansatz indices.
+
+        Args:
+            order: The desired order of the ansatz indices.
+
+        Returns:
+            A new Ansatz with reordered indices.
         """
 
     @abstractmethod
@@ -172,6 +183,9 @@ class Ansatz(ABC):
     def to_dict(self) -> dict[str, ArrayLike]:
         r"""
         Serialize an Ansatz.
+
+        Returns:
+            A dictionary containing the serialized data.
         """
 
     @abstractmethod
@@ -186,22 +200,6 @@ class Ansatz(ABC):
         Returns:
             The traced-over ansatz.
         """
-
-    @abstractmethod
-    def _generate_ansatz(self):
-        r"""
-        This method computes and sets data given a function
-        and some kwargs.
-        """
-
-    def _tree_flatten(self):  # pragma: no cover
-        children = (self._kwargs,)
-        aux_data = (
-            self._batch_shape,
-            self._lin_sup,
-            self._fn,
-        )
-        return (children, aux_data)
 
     @abstractmethod
     def __add__(self, other: Ansatz) -> Ansatz:
@@ -243,6 +241,13 @@ class Ansatz(ABC):
     def __eq__(self, other: Ansatz) -> bool:
         r"""
         Whether this ansatz is equal to another.
+        """
+
+    @abstractmethod
+    def __getitem__(self, index: Any) -> Ansatz:
+        r"""
+        Batch-only indexing. Supports integers, slices, None (newaxis), and Ellipsis.
+        Indexing is restricted to the first ``batch_dims`` axes.
         """
 
     @abstractmethod

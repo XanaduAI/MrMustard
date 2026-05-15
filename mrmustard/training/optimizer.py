@@ -21,15 +21,16 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 
 from mrmustard import math, settings
-from mrmustard.lab import Circuit, CircuitComponent
-from mrmustard.math.parameters import Variable
+from mrmustard.lab import CircuitComponent
+from mrmustard.parameters import ParameterDict, Variable
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
 
 try:
     import equinox as eqx
     import jax
-    from optax import GradientTransformation, OptState, adamw, multi_transform
+    import optax
+    from optax import GradientTransformation, OptState, multi_transform
 
     from mrmustard.training.parameter_update import (
         update_orthogonal,
@@ -42,20 +43,38 @@ except ImportError:
         "Optimizer only supports the Jax backend. Please install the `jax_backend` group using `uv pip install -g jax_backend` and set the backend to Jax using `math.change_backend('jax')`."
     ) from None
 
+__all__ = ["Optimizer"]
+
 
 class Optimizer:
     r"""
     A Jax based optimizer for any parametrized object.
 
     Args:
-        euclidean_lr: The euclidean learning rate of the optimizer.
-        symplectic_lr: The symplectic learning rate of the optimizer.
-        unitary_lr: The unitary learning rate of the optimizer.
-        orthogonal_lr: The orthogonal learning rate of the optimizer.
+        euclidean_lr: The learning rate for euclidean parameters.
+        symplectic_lr: The learning rate for symplectic parameters.
+        unitary_lr: The learning rate for unitary parameters.
+        orthogonal_lr: The learning rate for orthogonal parameters.
+        euclidean_optimizer: The optax optimizer class for euclidean updates (default: ``optax.adabelief``).
+        symplectic_optimizer: The optax optimizer class for symplectic updates (default: ``optax.adabelief``).
+        unitary_optimizer: The optax optimizer class for unitary updates (default: ``optax.adabelief``).
+        orthogonal_optimizer: The optax optimizer class for orthogonal updates (default: ``optax.adabelief``).
         stable_threshold: The threshold for the loss to be considered stable.
 
     Raises:
         ValueError: If the set backend is not "jax".
+
+    Example:
+        Using different optimizers for different parameter types:
+
+        >>> from mrmustard.training import Optimizer
+        >>> import optax
+        >>> opt = Optimizer(
+        ...     euclidean_lr=0.01,
+        ...     symplectic_lr=0.001,
+        ...     euclidean_optimizer=optax.adamw,
+        ...     symplectic_optimizer=optax.adam,
+        ... )
     """
 
     def __init__(
@@ -64,6 +83,10 @@ class Optimizer:
         symplectic_lr: float = 0.001,
         unitary_lr: float = 0.001,
         orthogonal_lr: float = 0.1,
+        euclidean_optimizer: type[GradientTransformation] | None = None,
+        symplectic_optimizer: type[GradientTransformation] | None = None,
+        unitary_optimizer: type[GradientTransformation] | None = None,
+        orthogonal_optimizer: type[GradientTransformation] | None = None,
         stable_threshold: float = 1e-6,
     ):
         if math.backend_name != "jax":
@@ -74,6 +97,10 @@ class Optimizer:
         self.symplectic_lr = symplectic_lr
         self.unitary_lr = unitary_lr
         self.orthogonal_lr = orthogonal_lr
+        self.euclidean_optimizer = euclidean_optimizer or optax.adabelief
+        self.symplectic_optimizer = symplectic_optimizer or optax.adabelief
+        self.unitary_optimizer = unitary_optimizer or optax.adabelief
+        self.orthogonal_optimizer = orthogonal_optimizer or optax.adabelief
         self.opt_history = [0]
         self.log = create_logger(__name__)
         self.stable_threshold = stable_threshold
@@ -83,9 +110,9 @@ class Optimizer:
         self,
         optim: GradientTransformation,
         cost_fn: Callable,
-        by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
+        by_optimizing: Sequence[Variable | CircuitComponent],
         opt_state: OptState,
-    ) -> tuple[Sequence[Variable | CircuitComponent | Circuit], OptState, float]:
+    ) -> tuple[Sequence[Variable | CircuitComponent], OptState, float]:
         r"""
         Make a step of the optimization.
 
@@ -101,7 +128,7 @@ class Optimizer:
         loss_value, grads = jax.value_and_grad(cost_fn, argnums=tuple(range(len(by_optimizing))))(
             *by_optimizing,
         )
-        conj_grads = jax.tree_util.tree_map(lambda x: jax.numpy.conj(x), grads)
+        conj_grads = jax.tree.map(lambda x: jax.numpy.conj(x), grads)
         updates, opt_state = optim.update(conj_grads, opt_state, by_optimizing)
         by_optimizing = eqx.apply_updates(by_optimizing, updates)
         return by_optimizing, opt_state, loss_value
@@ -109,24 +136,30 @@ class Optimizer:
     def minimize(
         self,
         cost_fn: Callable,
-        by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
+        by_optimizing: Sequence[Variable] | ParameterDict,
         max_steps: int = 1000,
-        euclidean_optim: type[GradientTransformation] | None = None,
-    ) -> Sequence[Variable | CircuitComponent | Circuit]:
+    ) -> Sequence[Variable] | ParameterDict:
         r"""
-        Minimizes the given cost function by optimizing ``Variable``s either on their own or within a ``CircuitComponent`` / ``Circuit``.
+        Minimizes the given cost function by optimizing ``Variable``\ s.
+        If a ``ParameterDict`` is provided, it will return a ``ParameterDict`` with the optimized variables.
 
         Args:
             cost_fn: A function that will be executed in a differentiable context in
                 order to compute gradients as needed.
-            by_optimizing: A list of elements that contain the parameters to optimize.
+            by_optimizing: A list of ``Variable``\ s to optimize.
             max_steps: The minimization keeps going until the loss is stable or max_steps are
-                reached (if ``max_steps=0`` it will only stop when the loss is stable).
-            euclidean_optim: The type of euclidean optimizer to use. If ``None``, the default optimizer used is ``optax.adamw``.
+                reached (if ``max_steps=0``\ , it will only stop when the loss is stable).
 
         Returns:
-            The list of elements optimized.
+            The list of optimized ``Variable``\ s or the ``ParameterDict`` with the optimized variables.
         """
+        if isinstance(by_optimizing, ParameterDict):
+            return_param_dict = True
+            by_optimizing = by_optimizing.variables.values()
+        else:
+            return_param_dict = False
+            by_optimizing = tuple(by_optimizing)
+
         self.opt_history = [0]
         if settings.PROGRESSBAR:
             progress_bar = ProgressBar(max_steps)
@@ -136,16 +169,14 @@ class Optimizer:
                     by_optimizing,
                     max_steps=max_steps,
                     progress_bar=progress_bar,
-                    euclidean_optim=euclidean_optim,
                 )
         else:
             by_optimizing = self._optimization_loop(
                 cost_fn,
                 by_optimizing,
                 max_steps=max_steps,
-                euclidean_optim=euclidean_optim,
             )
-        return by_optimizing
+        return ParameterDict(*by_optimizing) if return_param_dict else by_optimizing
 
     def should_stop(self, max_steps: int) -> bool:
         r"""
@@ -174,20 +205,14 @@ class Optimizer:
     def _optimization_loop(
         self,
         cost_fn: Callable,
-        by_optimizing: Sequence[Variable | CircuitComponent | Circuit],
+        by_optimizing: Sequence[Variable],
         max_steps: int,
         progress_bar: ProgressBar | None = None,
-        euclidean_optim: type[GradientTransformation] | None = None,
-    ) -> Sequence[Variable | CircuitComponent | Circuit]:
+    ) -> Sequence[Variable]:
         r"""
         The core optimization loop.
         """
         by_optimizing = tuple(by_optimizing)
-        euclidean_optim = (
-            euclidean_optim(learning_rate=self.euclidean_lr)
-            if euclidean_optim is not None
-            else adamw(learning_rate=self.euclidean_lr)
-        )
 
         labels_pytree = jax.tree_util.tree_map(
             lambda node: str(node.update_fn),
@@ -197,10 +222,14 @@ class Optimizer:
 
         optim = multi_transform(
             {
-                "update_euclidean": euclidean_optim,
-                "update_unitary": update_unitary(self.unitary_lr),
-                "update_symplectic": update_symplectic(self.symplectic_lr),
-                "update_orthogonal": update_orthogonal(self.orthogonal_lr),
+                "update_euclidean": self.euclidean_optimizer(learning_rate=self.euclidean_lr),
+                "update_unitary": update_unitary(self.unitary_lr, self.unitary_optimizer),
+                "update_symplectic": update_symplectic(
+                    self.symplectic_lr, self.symplectic_optimizer
+                ),
+                "update_orthogonal": update_orthogonal(
+                    self.orthogonal_lr, self.orthogonal_optimizer
+                ),
             },
             labels_pytree,
         )

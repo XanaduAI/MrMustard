@@ -20,16 +20,18 @@ import importlib.util
 import sys
 from collections.abc import Callable, Sequence
 from functools import lru_cache
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from opt_einsum import contract
 from scipy.stats import ortho_group, unitary_group
 
-from ..utils.settings import settings
+from mrmustard import settings
+
 from ..utils.typing import Batch, Matrix, Scalar, Tensor, Trainable, Vector
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
+from .utils import compute_collapsed_shape, strip_parentheses
 
 __all__ = [
     "BackendManager",
@@ -301,6 +303,42 @@ class BackendManager:
         """
         return self._apply("arange", (start, limit, delta, dtype))
 
+    def argmax(self, array: Tensor, axis: int | None = None) -> Tensor:
+        r"""The indices of the maximum values along an axis.
+
+        Args:
+            array: The array to find the maximum indices of
+            axis: The axis along which to find the maximum indices. If ``None``, the array is flattened.
+
+        Returns:
+            The indices of the maximum values
+        """
+        return self._apply("argmax", (array, axis))
+
+    def argmin(self, array: Tensor, axis: int | None = None) -> Tensor:
+        r"""The indices of the minimum values along an axis.
+
+        Args:
+            array: The array to find the minimum indices of
+            axis: The axis along which to find the minimum indices. If ``None``, the array is flattened.
+
+        Returns:
+            The indices of the minimum values
+        """
+        return self._apply("argmin", (array, axis))
+
+    def argsort(self, array: Tensor, axis: int | None = None) -> Tensor:
+        r"""The indices that would sort an array along an axis.
+
+        Args:
+            array: The array to sort.
+            axis: The axis along which to sort. If ``None``, the array is flattened before sorting.
+
+        Returns:
+            The indices that sort the array.
+        """
+        return self._apply("argsort", (array, axis))
+
     def asnumpy(self, tensor: Tensor) -> Tensor:
         r"""Converts an array to a numpy array.
 
@@ -350,8 +388,8 @@ class BackendManager:
         Returns:
             The matrix made of blocks.
         """
-        rows = [self.concat(row, axis=axes[1]) for row in blocks]
-        return self.concat(rows, axis=axes[0])
+        rows = [self.concat(row, axis=axes[-1]) for row in blocks]
+        return self.concat(rows, axis=axes[-2])
 
     def broadcast_arrays(self, *arrays: list[Tensor]) -> list[Tensor]:
         r"""
@@ -403,6 +441,124 @@ class BackendManager:
             The clipped array.
         """
         return self._apply("clip", (array, a_min, a_max))
+
+    def complex_gaussian_integral_1(self, A, b, idx12, A_out=None, b_out=None, log_c_out=None):
+        r"""
+        Computes the complex Gaussian integral:
+
+        .. math::
+            \int_{C^m} d\mu(z) \exp(\frac{1}{2}(z,z^*,\beta)^T A (z,z^*,\beta) + (z,z^*,\beta)^T b),
+
+        where :math:`z\in\mathbb{C}^{m}`, :math:`\beta\in\mathbb{C}^{N}` and the integration measure is given by
+        :math:`d\mu(z) = \exp(-|z|^2) \frac{d^{2m}z}{\pi^m} = \frac{1}{\pi^m}\exp(-|z|^2) d\mathrm{Re}(z) d\mathrm{Im}(z)`.
+
+        If we partition A and b into idx12 blocks and the remaining blocks:
+
+        .. math::
+            A = \begin{pmatrix} B & C^T \\ C & D \end{pmatrix},\quad
+            b = \begin{pmatrix} g \\ h \end{pmatrix},
+
+        the result is given by:
+
+        .. math::
+            A_{\mathrm{out}} = D - C M^{-1} C^T, \\
+            b_{\mathrm{out}} = h - C M^{-1} g, \\
+            \log c_{\mathrm{out}} = -\frac{1}{2} g^T M^{-1} g + \frac{1}{2} \log(\det(iM^{-1}))
+
+        where :math:`M = B - X`, :math:`X` is the block with zeros on the diagonal and identities on the off-diagonal.
+
+        This function supports broadcasted/batched inputs, however note that this function is about one order of magnitude faster when
+        the inputs are not batched versus being batched with size 1, so it's recommended to squeeze the batch dimension before calling this function.
+
+        Arguments:
+            A: The A matrix.
+            b: The b vector.
+            idx12: the indices of the z variables to integrate over. 
+                The first half is the z variables and the second half is the z* variables.
+            A_out: The (optional) output A matrix.
+            b_out: The (optional) output b vector.
+            log_c_out: The (optional) output log_c vector.
+
+        Returns:
+            The ``(A_out, b_out, log_c_out)`` triple which parametrizes the result of the integral with eventual batch dimensions.
+        """
+        idx12 = np.array(idx12, dtype=np.int64)
+        if A.ndim == 2 and b.ndim == 1:
+            return self._apply(
+                "complex_gaussian_integral_1_single", (A, b, idx12, A_out, b_out, log_c_out)
+            )
+        return self._apply(
+            "complex_gaussian_integral_1_batched", (A, b, idx12, A_out, b_out, log_c_out)
+        )
+
+    def complex_gaussian_integral_2(
+        self, A1, b1, A2, b2, idx1, idx2, A_out=None, b_out=None, log_c_out=None
+    ):
+        r"""
+        Computes the complex Gaussian integral:
+
+        .. math::
+            \int_{C^m} d\mu(z) 
+            \exp\!\left(\tfrac{1}{2}(z,\beta)^T A_1 (z,\beta) + (z,\beta)^T b_1\right)
+            \exp\!\left(\tfrac{1}{2}(z^*,\gamma)^T A_2 (z^*,\gamma) + (z^*,\gamma)^T b_2\right),
+
+        where :math:`z\in\mathbb{C}^{m}`, :math:`\beta\in\mathbb{C}^{N_1}`, :math:`\gamma\in\mathbb{C}^{N_2}`
+        and the integration measure is given by
+        :math:`d\mu(z) = \exp(-|z|^2) \frac{d^{2m}z}{\pi^m} = \frac{1}{\pi^m}\exp(-|z|^2) d\mathrm{Re}(z) d\mathrm{Im}(z)`.
+
+        If we partition :math:`A_1, b_1` and :math:`A_2, b_2` into :math:`\mathrm{idx1}, \mathrm{idx2}` blocks and the remaining blocks:
+
+        .. math::
+            A_1 = \begin{pmatrix} A & C^T \\ C & B \end{pmatrix},\quad
+            b_1 = \begin{pmatrix} g \\ h \end{pmatrix},\qquad
+            A_2 = \begin{pmatrix} D & F^T \\ F & E \end{pmatrix},\quad
+            b_2 = \begin{pmatrix} i \\ j \end{pmatrix},
+
+        the result is given by:
+
+        .. math::
+            A_{\mathrm{out}} = \begin{pmatrix}
+                B - C\,D\,L\,C^T & -F\,L\,C^T \\
+                -F\,L\,C^T & E - F\,L\,A\,F^T
+            \end{pmatrix}, \\
+            b_{\mathrm{out}} = \begin{pmatrix}
+                h - C\,(D\,L^T g + L\, i) \\
+                j - F\,(A\,L\, i + L^T g)
+            \end{pmatrix}, \\
+            \log c_{\mathrm{out}} = -\frac{1}{2}\big[g^T D L^T g + 2 g^T L i + i^T A L i\big] + \frac{1}{2} \log(\det(-L)),
+
+        where :math:`L = (A D - I)^{-1}`.
+
+        This function supports broadcasted/batched inputs, however note that this function is about one order of magnitude faster when
+        the inputs are not batched versus being batched with size 1, so it's recommended to squeeze the batch dimension before calling this function.
+
+        Arguments:
+            A1: The first A matrix.
+            b1: The first b vector.
+            A2: The second A matrix.
+            b2: The second b vector.
+            idx1: The indices in the first tuple to integrate over. 
+                The first half is the z variables and the second half is the z* variables.
+            idx2: The indices in the second tuple to integrate over. 
+                The first half is the z variables and the second half is the z* variables.
+            A_out: The (optional) output A matrix.
+            b_out: The (optional) output b vector.
+            log_c_out: The (optional) output log_c vector.
+
+        Returns:
+            The ``(A_out, b_out, log_c_out)`` triple which parametrizes the result of the integral with eventual batch dimensions.
+        """
+        idx1 = np.array(idx1, dtype=np.int64)
+        idx2 = np.array(idx2, dtype=np.int64)
+        if A1.ndim == 2 and A2.ndim == 2 and b1.ndim == 1 and b2.ndim == 1:
+            return self._apply(
+                "complex_gaussian_integral_2_single",
+                (A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out),
+            )
+        return self._apply(
+            "complex_gaussian_integral_2_batched",
+            (A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out),
+        )
 
     def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:
         r"""Concatenates values along the given axis.
@@ -460,8 +616,24 @@ class BackendManager:
         """
         return self._apply("det", (matrix,))
 
+    def diagonal(self, array: Tensor, offset: int = 0, axis1: int = 0, axis2: int = 0) -> Tensor:
+        r"""
+        Return specified diagonals of array.
+
+        Args:
+            array: The array to take the diagonal of.
+            offset: The offset of the diagonal.
+            axis1: The first axis to take the diagonal of.
+            axis2: The second axis to take the diagonal of.
+
+        Returns:
+            The diagonal of ``array``.
+        """
+        return self._apply("diagonal", (array, offset, axis1, axis2))
+
     def diag(self, array: Tensor, k: int = 0) -> Tensor:
-        r"""The array made by inserting the given array along the :math:`k`-th diagonal.
+        r"""
+        The array made by inserting the given array along the :math:`k`-th diagonal.
 
         Args:
             array: The array to insert.
@@ -482,7 +654,7 @@ class BackendManager:
         Returns:
             The array of the main diagonal of ``array``.
         """
-        return self._apply("diag_part", (array, k))
+        return self.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
     def eigvals(self, tensor: Tensor) -> Tensor:
         r"""The eigenvalues of a tensor.
@@ -512,12 +684,16 @@ class BackendManager:
         string: str,
         *tensors,
         optimize: bool | str = "greedy",
+        memory_limit: int | Literal["max_input"] | None = None,
         backend: str | None = None,
     ) -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
         Args:
-            string: The string of the Einstein summation convention.
+            string: The string of the Einstein summation convention. Supports parentheses
+                in the output string to group indices that should be vectorized/flattened.
+                For example, ``"ij,jk->h(ik)"`` will vectorize indices ``i`` and ``k``.
+                Note: ellipsis notation (``...``) cannot be combined with parenthesized groups.
             tensors: The tensors to perform the Einstein summation on.
             optimize: Optional flag whether to optimize the contraction order.
                 Allowed values are True, False, "greedy", "optimal" or "auto".
@@ -529,7 +705,19 @@ class BackendManager:
             The result of the Einstein summation convention.
         """
         optimize = optimize or settings.EINSUM_OPTIMIZE
-        return contract(string, *tensors, optimize=optimize, backend=backend)
+        backend = self.backend_name if backend is None else backend
+
+        string, groups = strip_parentheses(string)
+
+        result = contract(
+            string, *tensors, optimize=optimize, memory_limit=memory_limit, backend=backend
+        )
+
+        if groups:
+            new_shape = compute_collapsed_shape(tuple(result.shape), groups)
+            result = self.reshape(result, new_shape)
+
+        return result
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.
@@ -553,6 +741,20 @@ class BackendManager:
             The array with an additional dimension inserted at the given axis.
         """
         return self._apply("expand_dims", (array, axis))
+
+    def squeeze(self, array: Tensor, axis: int | tuple[int, ...] | None = None) -> Tensor:
+        r"""Remove axes of length one from the array.
+
+        Args:
+            array: The array to squeeze.
+            axis: The axis or axes to squeeze. If ``None``, all axes of length
+                one are removed. If an axis is specified, it will only be removed
+                if its length is one, otherwise an error is raised.
+
+        Returns:
+            The squeezed array with the specified axes removed.
+        """
+        return self._apply("squeeze", (array, axis))
 
     def expm(self, matrix: Tensor) -> Tensor:
         r"""The matrix exponential of matrix.
@@ -663,6 +865,10 @@ class BackendManager:
                     f"batch+shape {batch_shape + shape} is too large for out.shape={out.shape}",
                 )
 
+        A = self.astensor(A, dtype=self.complex128)
+        b = self.astensor(b, dtype=self.complex128)
+        c = self.astensor(c, dtype=self.complex128)
+
         stable = stable or settings.STABLE_FOCK_CONVERSION
         if A.ndim > 2 and b.ndim > 1 and c.ndim > 0:
             batch_shape = A.shape[:-2]
@@ -756,8 +962,8 @@ class BackendManager:
             A: The A matrix.
             b: The b vector.
             c: The c scalar.
-            output_cutoff: upper boundary of photon numbers in mode 0
-            pnr_cutoffs: upper boundary of photon numbers in the other modes
+            output_cutoff: Upper boundary of photon numbers in mode 0.
+            pnr_cutoffs: Upper boundary of photon numbers in the other modes.
             reorderedAB: Whether to reorder A and B parameters match conventions in mrmustard.math.numba.compactFock~.
 
         Returns:
@@ -789,8 +995,8 @@ class BackendManager:
             B: The B vector.
             C: The C scalar.
             shape: The shape of the final tensor (local cutoffs).
-            max_l2 (float): The maximum squared L2 norm of the tensor.
-            global_cutoff (optional int): The global cutoff.
+            max_l2 : The maximum squared L2 norm of the tensor.
+            global_cutoff: The global cutoff.
 
         Returns:
             The renormalized Hermite polynomial of given shape.
@@ -997,16 +1203,32 @@ class BackendManager:
             ),
         )
 
-    def norm(self, array: Tensor) -> Tensor:
+    def mean(self, array: Tensor, axis: int | Sequence[int] | None = None) -> Tensor:
+        r"""The mean of array along an axis.
+
+        Args:
+            array: The array to take the mean of
+            axis: The axis/axes to compute the mean over. If ``None``, the mean is computed over all axes.
+
+        Returns:
+            The mean of array
+        """
+        return self._apply("mean", (array, axis))
+
+    def norm(
+        self, array: Tensor, axis: int | Sequence[int] | None = None, keepdims: bool = False
+    ) -> Tensor:
         r"""The norm of array.
 
         Args:
             array: The array to take the norm of
+            axis: The axis or axes to norm over. If ``None``, the norm is computed over all axes.
+            keepdims: Whether to keep the dimensions of the array.
 
         Returns:
-            The norm of array
+            The norm of ``array``.
         """
-        return self._apply("norm", (array,))
+        return self._apply("norm", (array, axis, keepdims))
 
     def ones(self, shape: Sequence[int], dtype=None) -> Tensor:
         r"""Returns an array of ones with the given ``shape`` and ``dtype``.
@@ -1020,9 +1242,21 @@ class BackendManager:
             The array of ones
         """
         # NOTE : should be float64 by default
-
-        shape = shape if isinstance(shape, int) else tuple(shape)
         return self._apply("ones", (shape, dtype))
+
+    def full(self, shape: Sequence[int], fill_value: Scalar, dtype=None) -> Tensor:
+        r"""Returns an array of given shape filled with ``fill_value``.
+
+        Args:
+            shape: The shape of the array.
+            fill_value: The value to fill the array with.
+            dtype: The dtype of the array. If ``None``, the returned array is
+                of type inferred from ``fill_value``.
+
+        Returns:
+            The array filled with ``fill_value``.
+        """
+        return self._apply("full", (shape, fill_value, dtype))
 
     def ones_like(self, array: Tensor) -> Tensor:
         r"""Returns an array of ones with the same shape and ``dtype`` as ``array``.
@@ -1057,10 +1291,10 @@ class BackendManager:
         r"""The padded array.
 
         Args:
-            array: The array to pad
-            paddings (tuple): paddings to apply
-            mode (str): mode to apply the padding
-            constant_values (int): constant values to use for padding
+            array: The array to pad.
+            paddings: Paddings to apply.
+            mode: Mode to apply the padding.
+            constant_values: Constant values to use for padding.
 
         Returns:
             The padded array
@@ -1071,7 +1305,7 @@ class BackendManager:
         r"""The pseudo-inverse of matrix.
 
         Args:
-            matrix: The matrix to take the pseudo-inverse of
+            matrix: The matrix to take the pseudo-inverse of.
 
         Returns:
             The pseudo-inverse of matrix
@@ -1081,11 +1315,11 @@ class BackendManager:
     def pow(self, x: Tensor, y: Tensor) -> Tensor:
         r"""Returns :math:`x^y`. Broadcasts ``x`` and ``y`` if necessary.
         Args:
-            x: The base
-            y: The exponent
+            x: The base.
+            y: The exponent.
 
         Returns:
-            The :math:`x^y`
+            The :math:`x^y`.
         """
         return self._apply("pow", (x, y))
 
@@ -1121,7 +1355,7 @@ class BackendManager:
         r"""The real part of ``array``.
 
         Args:
-            array: The array to take the real part of
+            array: The array to take the real part of.
 
         Returns:
             The real part of ``array``
@@ -1132,23 +1366,35 @@ class BackendManager:
         r"""The reshaped array.
 
         Args:
-            array: The array to reshape
-            shape (tuple): shape to reshape the array to
+            array: The array to reshape.
+            shape: Shape to reshape the array to.
 
         Returns:
-            The reshaped array
+            The reshaped array.
         """
         shape = (shape,) if isinstance(shape, int) else tuple(shape)
         return self._apply("reshape", (array, shape))
+
+    def shape(self, array: Tensor) -> tuple[int, ...]:
+        r"""
+        The shape of an array.
+
+        Args:
+            array: The array to take the shape of.
+
+        Returns:
+            The shape of the array.
+        """
+        return self._apply("shape", (array,))
 
     def sin(self, array: Tensor) -> Tensor:
         r"""The sine of ``array``.
 
         Args:
-            array: The array to take the sine of
+            array: The array to take the sine of.
 
         Returns:
-            The sine of ``array``
+            The sine of ``array``.
         """
         return self._apply("sin", (array,))
 
@@ -1156,10 +1402,10 @@ class BackendManager:
         r"""The hyperbolic sine of ``array``.
 
         Args:
-            array: The array to take the hyperbolic sine of
+            array: The array to take the hyperbolic sine of.
 
         Returns:
-            The hyperbolic sine of ``array``
+            The hyperbolic sine of ``array``.
         """
         return self._apply("sinh", (array,))
 
@@ -1167,11 +1413,11 @@ class BackendManager:
         r"""The solution of the linear system :math:`Ax = b`.
 
         Args:
-            matrix: The matrix :math:`A`
-            rhs: The vector :math:`b`
+            matrix: The matrix :math:`A`.
+            rhs: The vector :math:`b`.
 
         Returns:
-            The solution :math:`x`
+            The solution :math:`x`.
         """
         return self._apply("solve", (matrix, rhs))
 
@@ -1179,11 +1425,11 @@ class BackendManager:
         r"""Sort the array along an axis.
 
         Args:
-            array: The array to sort
+            array: The array to sort.
             axis: (optional) The axis to sort along. Defaults to last axis.
 
         Returns:
-            A sorted version of the array in acending order.
+            A sorted version of the array in ascending order.
         """
         return self._apply("sort", (array, axis))
 
@@ -1191,11 +1437,11 @@ class BackendManager:
         r"""The square root of ``x``.
 
         Args:
-            x: The array to take the square root of
+            x: The array to take the square root of.
             dtype: ``dtype`` of the output array.
 
         Returns:
-            The square root of ``x``
+            The square root of ``x``.
         """
         return self._apply("sqrt", (x, dtype))
 
@@ -1208,18 +1454,19 @@ class BackendManager:
                 is of type ``math.complex128``.
 
         Returns:
-            The square root of ``x``"""
+            The square root of ``x``.
+        """
         return self._apply("sqrtm", (tensor, dtype))
 
     def stack(self, arrays: Sequence[Tensor], axis: int = 0) -> Tensor:
         r"""Stack arrays in sequence along a new axis.
 
         Args:
-            arrays: Sequence of tensors to stack
-            axis: The axis along which to stack the arrays
+            arrays: Sequence of tensors to stack.
+            axis: The axis along which to stack the arrays.
 
         Returns:
-            The stacked array
+            The stacked array.
         """
         return self._apply("stack", (arrays, axis))
 
@@ -1227,11 +1474,11 @@ class BackendManager:
         r"""The sum of array.
 
         Args:
-            array: The array to take the sum of
-            axis (int | Sequence[int] | None): The axis/axes to sum over
+            array: The array to take the sum of.
+            axis: The axis/axes to sum over.
 
         Returns:
-            The sum of array
+            The sum of array.
         """
         array = self.astensor(array)
         if axis is not None and not isinstance(axis, int):
@@ -1258,12 +1505,12 @@ class BackendManager:
         r"""The tensordot product of ``a`` and ``b``.
 
         Args:
-            a: The first array to take the tensordot product of
-            b: The second array to take the tensordot product of
-            axes: The axes to take the tensordot product over
+            a: The first array to take the tensordot product of.
+            b: The second array to take the tensordot product of.
+            axes: The axes to take the tensordot product over.
 
         Returns:
-            The tensordot product of ``a`` and ``b``
+            The tensordot product of ``a`` and ``b``.
         """
         return self._apply("tensordot", (a, b, tuple(axes)))
 
@@ -1271,11 +1518,11 @@ class BackendManager:
         r"""The tiled array.
 
         Args:
-            array: The array to tile
-            repeats (tuple): number of times to tile the array along each axis
+            array: The array to tile.
+            repeats: Number of times to tile the array along each axis.
 
         Returns:
-            The tiled array
+            The tiled array.
         """
         return self._apply("tile", (array, tuple(repeats)))
 
@@ -1283,11 +1530,11 @@ class BackendManager:
         r"""The trace of array.
 
         Args:
-            array: The array to take the trace of
-            dtype (type): ``dtype`` of the output array
+            array: The array to take the trace of.
+            dtype: ``dtype`` of the output array.
 
         Returns:
-            The trace of array
+            The trace of array.
         """
         return self._apply("trace", (array, dtype))
 
@@ -1295,25 +1542,47 @@ class BackendManager:
         r"""The transposed arrays.
 
         Args:
-            a: The array to transpose
-            perm (tuple): permutation to apply to the array
+            a: The array to transpose.
+            perm: Permutation to apply to the array.
 
         Returns:
-            The transposed array
+            The transposed array.
         """
         perm = tuple(perm) if perm is not None else None
         return self._apply("transpose", (a, perm))
+
+    def tan(self, array: Tensor) -> Tensor:
+        r"""The tangent of ``array``.
+
+        Args:
+            array: The array to take the tangent of
+
+        Returns:
+            The tangent of ``array``
+        """
+        return self._apply("tan", (array,))
+
+    def tanh(self, array: Tensor) -> Tensor:
+        r"""The hyperbolic tangent of ``array``.
+
+        Args:
+            array: The array to take the hyperbolic tangent of
+
+        Returns:
+            The hyperbolic tangent of ``array``
+        """
+        return self._apply("tanh", (array,))
 
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         r"""Updates a tensor in place with the given values.
 
         Args:
-            tensor: The tensor to update
-            indices: The indices to update
-            values: The values to update
+            tensor: The tensor to update.
+            indices: The indices to update.
+            values: The values to update.
 
         Returns:
-            The updated tensor
+            The updated tensor.
         """
         return self._apply("update_tensor", (tensor, indices, values))
 
@@ -1321,34 +1590,41 @@ class BackendManager:
         r"""Updates a tensor in place by adding the given values.
 
         Args:
-            tensor: The tensor to update
-            indices: The indices to update
-            values: The values to add
+            tensor: The tensor to update.
+            indices: The indices to update.
+            values: The values to add.
 
         Returns:
-            The updated tensor
+            The updated tensor.
         """
         return self._apply("update_add_tensor", (tensor, indices, values))
 
     def value_and_gradients(
         self,
-        cost_fn: Callable,
+        cost_fn: Callable[..., Scalar],
         parameters: dict[str, list[Trainable]],
     ) -> tuple[Tensor, dict[str, list[Tensor]]]:
         r"""The loss and gradients of the given cost function.
 
         Args:
-            cost_fn (callable): cost function to compute the loss and gradients of
-            parameters (dict): parameters to compute the loss and gradients of
+            cost_fn: Cost function to compute the loss and gradients of.
+            parameters: Parameters to compute the loss and gradients of.
 
         Returns:
-            tuple: loss and gradients (dict) of the given cost function
+            The loss and gradients of the given cost function.
         """
         return self._apply("value_and_gradients", (cost_fn, parameters))
 
     def xlogy(self, x: Tensor, y: Tensor) -> Tensor:
         """
         Returns ``0`` if ``x == 0`` elementwise and ``x * log(y)`` otherwise.
+
+        Args:
+            x: The first array.
+            y: The second array.
+
+        Returns:
+            The result of the xlogy operation.
         """
         return self._apply("xlogy", (x, y))
 
@@ -1369,27 +1645,27 @@ class BackendManager:
         r"""Executes ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
 
         Args:
-            cond: The condition to check
-            true_fn: The function to execute if ``cond`` is ``True``
-            false_fn: The function to execute if ``cond`` is ``False``
-            *args: The arguments to pass to ``true_fn`` and ``false_fn``
+            cond: The condition to check.
+            true_fn: The function to execute if ``cond`` is ``True``.
+            false_fn: The function to execute if ``cond`` is ``False``.
+            *args: The arguments to pass to ``true_fn`` and ``false_fn``.
+
         Returns:
             The result of ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
         """
         return self._apply("conditional", (cond, true_fn, false_fn, *args))
 
-    def error_if(self, array: Tensor, condition: Tensor, msg: str):
+    def error_if(self, array: Tensor, condition: Tensor, msg: str) -> None:
         r"""Raises an error if ``condition`` is ``True``.
 
         Args:
-            array: The array to check
+            array: The array to check.
             condition: The condition to check; should only use array elements in the condition
                 And must be boolean.
-            msg: The message to raise if ``condition`` is ``True``
+            msg: The message to raise if ``condition`` is ``True``.
 
-        Returns:
-            None
-            Raises an error if at least one element of ``cond`` is True.
+        Raises:
+            ValueError: If at least one element of ``condition`` is ``True``.
         """
         return self._apply("error_if", (array, condition, msg))
 
@@ -1419,14 +1695,14 @@ class BackendManager:
         """Transforms elems by applying fn to each element unstacked on axis 0.
 
         Args:
-            fn (func): The callable to be performed. It accepts one argument,
+            fn: The callable to be performed. It accepts one argument,
                 which will have the same (possibly nested) structure as elems.
-            elements (Tensor): A tensor or (possibly nested) sequence of tensors,
+            elements: A tensor or (possibly nested) sequence of tensors,
                 each of which will be unstacked along their first dimension.
                 ``func`` will be applied to the nested sequence of the resulting slices.
 
         Returns:
-            Tensor: applied ``func`` on ``elements``
+            The result of applying ``fn`` on ``elements``.
         """
         return self._apply("map_fn", (fn, elements))
 
@@ -1434,23 +1710,28 @@ class BackendManager:
     # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def displacement(self, alpha: complex, shape: tuple[int, int], tol: float = 1e-15):
+    def displacement(self, alpha: complex | Tensor, shape: tuple[int, int]) -> Tensor:
         r"""
-        Creates a single mode displacement matrix using a numba-based fock lattice strategy.
+        Creates a single mode displacement matrix using a Fock lattice strategy.
 
         Args:
             alpha: The displacement.
             shape: The shape of the displacement matrix.
-            tol: The tolerance to determine if the displacement is small enough to be approximated by the identity.
 
         Returns:
             The matrix representing the displacement gate.
         """
-        return self._apply("displacement", (alpha, shape, tol))
+        return self._apply("displacement", (alpha, shape))
 
-    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
+    def beamsplitter(
+        self,
+        theta: float | Tensor,
+        phi: float | Tensor,
+        shape: tuple[int, int, int, int],
+        method: Literal["vanilla", "schwinger", "stable"],
+    ) -> Tensor:
         r"""
-        Creates a beamsplitter matrix with given cutoffs using a numba-based fock lattice strategy.
+        Creates a beamsplitter matrix with given cutoffs using a Fock lattice strategy.
 
         Args:
             theta: Transmittivity angle of the beamsplitter.
@@ -1466,9 +1747,27 @@ class BackendManager:
         """
         return self._apply("beamsplitter", (theta, phi), {"shape": shape, "method": method})
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int]):
+    def homodyne_projector(
+        self, fock_dim: int, A: Tensor, b: Tensor, c: Tensor, out: Tensor | None = None
+    ) -> Tensor:
         r"""
-        Creates a single mode squeezed state matrix using a numba-based fock lattice strategy.
+        Creates a homodyne projector matrix.
+
+        Args:
+            fock_dim: The Fock dimension.
+            A: The A matrix.
+            b: The b vector.
+            c: The c scalar.
+            out: The output tensor.
+
+        Returns:
+            The homodyne projector matrix.
+        """
+        return self._apply("homodyne_projector", (fock_dim, A, b, c, out))
+
+    def squeezed(self, r: float, phi: float, shape: tuple[int]) -> Tensor:
+        r"""
+        Creates a single mode squeezed state matrix using a Fock lattice strategy.
 
         Args:
             r: Squeezing magnitude.
@@ -1480,9 +1779,9 @@ class BackendManager:
         """
         return self._apply("squeezed", (r, phi, shape))
 
-    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):  # pragma: no cover
+    def squeezer(self, r: float, phi: float, shape: tuple[int, int]) -> Tensor:  # pragma: no cover
         r"""
-        Creates a single mode squeezer matrix using a numba-based fock lattice strategy.
+        Creates a single mode squeezer matrix using a Fock lattice strategy.
 
         Args:
             r: Squeezing magnitude.
@@ -1512,66 +1811,91 @@ class BackendManager:
         perm = list(range(N, 2 * N)) + list(range(N))
         return self.conj(self.transpose(array, perm=perm))
 
-    def unitary_to_orthogonal(self, U):
+    def unitary_to_orthogonal(self, U: Tensor) -> Tensor:
         r"""
-        Unitary to orthogonal mapping.
+        Maps a unitary matrix (or batch of unitary matrices) into an orthogonal matrix (or batch)
+        of twice the size.
 
         Args:
-            U: The unitary matrix in ``U(n)``
+            U: A unitary matrix of shape (..., N, N) where ... represents optional batch dimensions.
 
         Returns:
-            The orthogonal matrix in :math:`O(2n)`
+            An orthogonal matrix of shape (..., 2N, 2N).
         """
         X = self.real(U)
         Y = self.imag(U)
         return self.block([[X, -Y], [Y, X]])
 
-    def random_symplectic(self, num_modes: int, max_r: float = 1.0) -> Tensor:
+    def random_symplectic(
+        self,
+        num_modes: int,
+        max_r: float = 1.0,
+        seed: int | None = None,
+        batch_shape: tuple[int, ...] = (),
+    ) -> Tensor:
         r"""
         A random symplectic matrix in ``Sp(2*num_modes)``.
 
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
-        """
-        if num_modes == 1:
-            W = self.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
-            V = self.exp(1j * 2 * np.pi * settings.rng.uniform(size=(1, 1)))
-        else:
-            W = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
-            V = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
-        r = settings.rng.uniform(low=0.0, high=max_r, size=num_modes)
-        OW = self.unitary_to_orthogonal(W)
-        OV = self.unitary_to_orthogonal(V)
-        dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0), k=0)
-        return OW @ dd @ OV
 
-    @staticmethod
-    def random_orthogonal(N: int) -> Tensor:
+        Args:
+            num_modes: The number of modes.
+            max_r: The maximum squeezing value.
+            seed: The random seed. If ``None``, the global seed is used.
+            batch_shape: The batch shape for generating multiple random matrices.
+        """
+        rng = settings.get_rng(seed)
+        total_size = int(np.prod(batch_shape))
+
+        W = unitary_group.rvs(dim=num_modes, size=total_size, random_state=rng)
+        V = unitary_group.rvs(dim=num_modes, size=total_size, random_state=rng)
+        r = rng.uniform(low=0.0, high=max_r, size=(*batch_shape, num_modes))
+        OW = self.unitary_to_orthogonal(W).reshape(*batch_shape, 2 * num_modes, 2 * num_modes)
+        OV = self.unitary_to_orthogonal(V).reshape(*batch_shape, 2 * num_modes, 2 * num_modes)
+        diag_elements = self.concat([self.exp(-r), self.exp(r)], axis=-1)
+        return self.einsum("...ij,...j,...jl->...il", OW, diag_elements, OV)
+
+    def random_orthogonal(
+        self, N: int, seed: int | None = None, batch_shape: tuple[int, ...] = ()
+    ) -> Tensor:
         r"""
         A random orthogonal matrix in :math:`O(N)`.
-        """
-        if N == 1:
-            return np.array([[1.0]])
-        return ortho_group.rvs(dim=N, random_state=settings.rng)
 
-    def random_unitary(self, N: int) -> Tensor:
+        Args:
+            N: The dimension of the matrix.
+            seed: The random seed. If ``None``, the global seed is used.
+            batch_shape: The batch shape for generating multiple random matrices.
+        """
+        rng = settings.get_rng(seed)
+        matrices = ortho_group.rvs(dim=N, size=int(np.prod(batch_shape)), random_state=rng)
+        return matrices.reshape(*batch_shape, N, N)
+
+    def random_unitary(
+        self, N: int, seed: int | None = None, batch_shape: tuple[int, ...] = ()
+    ) -> Tensor:
         r"""
         A random unitary matrix in :math:`U(N)`.
+
+        Args:
+            N: The dimension of the matrix.
+            seed: The random seed. If ``None``, the global seed is used.
+            batch_shape: The batch shape for generating multiple random matrices.
         """
-        if N == 1:
-            return self.exp(1j * settings.rng.uniform(size=(1, 1)))
-        return unitary_group.rvs(dim=N, random_state=settings.rng)
+        rng = settings.get_rng(seed)
+        matrices = unitary_group.rvs(dim=N, size=int(np.prod(batch_shape)), random_state=rng)
+        return matrices.reshape(*batch_shape, N, N)
 
     @staticmethod
     @lru_cache
-    def Xmat(num_modes: int):
+    def Xmat(num_modes: int) -> Tensor:
         r"""
         The matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}.`
 
         Args:
-            num_modes (int): positive integer
+            num_modes: A positive integer representing the number of modes.
 
         Returns:
-            The :math:`2N\times 2N` array
+            The :math:`2N\times 2N` array.
         """
         I = np.identity(num_modes)
         O = np.zeros((num_modes, num_modes))
@@ -1579,14 +1903,14 @@ class BackendManager:
 
     @staticmethod
     @lru_cache
-    def Zmat(num_modes: int):
+    def Zmat(num_modes: int) -> Tensor:
         r"""The matrix :math:`Z_n = \begin{bmatrix}I_n & 0\\ 0 & -I_n\end{bmatrix}.`
 
         Args:
             num_modes: A positive integer representing the number of modes.
 
         Returns:
-            The :math:`2N\times 2N` array
+            The :math:`2N\times 2N` array.
         """
         I = np.identity(num_modes)
         O = np.zeros((num_modes, num_modes))
@@ -1594,21 +1918,43 @@ class BackendManager:
 
     @staticmethod
     @lru_cache
-    def rotmat(num_modes: int):
-        "Rotation matrix from quadratures to complex amplitudes."
+    def rotmat(num_modes: int) -> Tensor:
+        r"""Rotation matrix from quadratures to complex amplitudes.
+
+        Args:
+            num_modes: A positive integer representing the number of modes.
+
+        Returns:
+            The rotation matrix.
+        """
         I = np.identity(num_modes)
         return np.sqrt(0.5) * np.block([[I, 1j * I], [I, -1j * I]])
 
     @staticmethod
     @lru_cache
-    def J(num_modes: int):
-        """Symplectic form."""
+    def J(num_modes: int) -> Tensor:
+        r"""Symplectic form.
+
+        Args:
+            num_modes: A positive integer representing the number of modes.
+
+        Returns:
+            The symplectic form.
+        """
         I = np.identity(num_modes)
         O = np.zeros_like(I)
         return np.block([[O, I], [-I, O]])
 
     def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
-        """Returns all the diagonals of a density matrix."""
+        r"""Returns all the diagonals of a density matrix.
+
+        Args:
+            rho: The density matrix.
+            real: Whether to return the real part of the diagonals.
+
+        Returns:
+            The diagonals of the density matrix.
+        """
         cutoffs = rho.shape[: rho.ndim // 2]
         rho = self.reshape(rho, (int(np.prod(cutoffs)), int(np.prod(cutoffs))))
         diag = self.diag_part(rho)
@@ -1617,7 +1963,7 @@ class BackendManager:
 
         return self.reshape(diag, cutoffs)
 
-    def euclidean_to_symplectic(self, S: Matrix, dS_euclidean: Matrix) -> Matrix:
+    def euclidean_to_symplectic(self, S: Tensor, dS_euclidean: Tensor) -> Tensor:
         r"""Convert the Euclidean gradient to a Riemannian gradient on the
         tangent bundle of the symplectic manifold.
 
@@ -1627,17 +1973,17 @@ class BackendManager:
             Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
 
         Args:
-            S (Matrix): symplectic matrix
-            dS_euclidean (Matrix): Euclidean gradient tensor
+            S: Symplectic matrix.
+            dS_euclidean: Euclidean gradient tensor.
 
         Returns:
-            Matrix: symplectic gradient tensor
+            The symplectic gradient tensor.
         """
         Jmat = self.J(S.shape[-1] // 2)
-        Z = self.matmul(self.transpose(S), dS_euclidean)
-        return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
+        Z = self.matmul(self.swapaxes(S, -1, -2), dS_euclidean)
+        return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.swapaxes(Z, -1, -2)), Jmat))
 
-    def euclidean_to_unitary(self, U: Matrix, dU_euclidean: Matrix) -> Matrix:
+    def euclidean_to_unitary(self, U: Tensor, dU_euclidean: Tensor) -> Tensor:
         r"""Convert the Euclidean gradient to a Riemannian gradient on the
         tangent bundle of the unitary manifold.
 
@@ -1645,11 +1991,11 @@ class BackendManager:
             Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
 
         Args:
-            U (Matrix): unitary matrix
-            dU_euclidean (Matrix): Euclidean gradient tensor
+            U: Unitary matrix.
+            dU_euclidean: Euclidean gradient tensor.
 
         Returns:
-            Matrix: unitary gradient tensor
+            The unitary gradient tensor.
         """
-        Z = self.matmul(self.conj(self.transpose(U)), dU_euclidean)
-        return 0.5 * (Z - self.conj(self.transpose(Z)))
+        Z = self.matmul(self.conj(self.swapaxes(U, -1, -2)), dU_euclidean)
+        return 0.5 * (Z - self.conj(self.swapaxes(Z, -1, -2)))

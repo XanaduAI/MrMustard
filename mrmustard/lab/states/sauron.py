@@ -18,13 +18,12 @@ The Sauron state is an approximation of the `n`-th Fock states using a ring of `
 
 from __future__ import annotations
 
-from mrmustard import math
 from mrmustard.lab.states.ket import Ket
-from mrmustard.physics import triples
-from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics.wires import Wires
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ..utils import make_parameter
+from .builtins import sauron_state
 
 
 class Sauron(Ket):
@@ -32,12 +31,16 @@ class Sauron(Ket):
     The `n`-th Sauron state is an approximation of the `n`-th Fock states using
     a ring of `n+1` coherent states.
 
+    >>> from mrmustard.lab import Sauron
+    >>> psi = Sauron(0, 1)
+    >>> assert psi.modes == (0,)
+
     Args:
         mode: The mode of the Sauron state.
         n: The Fock state that is approximated.
         epsilon: The radius of the ring of coherent states, default is 0.1.
 
-    Notes:
+    Note:
         The reference to the Lord of the Rings comes from
         the approximation becoming perfect in the limit for the radius of the ring going
         to zero where vacuum (= darkness) is.
@@ -47,28 +50,20 @@ class Sauron(Ket):
         .. math::
 
             |\text{Sauron}(n)\rangle = \frac{1}{\mathcal{N}}\sum_{k=0}^{n} e^{i 2\pi k/(n+1)} |\epsilon e^{2\pi k/(n+1)}\rangle_c,
-
-    .. code-block::
-
-        >>> from mrmustard.lab import Sauron
-
-        >>> psi = Sauron(0, 1)
-        >>> assert psi.modes == (0,)
     """
+
+    short_name = "Saur"
 
     def __init__(self, mode: int | tuple[int], n: int, epsilon: float = 0.1):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name=f"Sauron-{n}")
-
-        self.parameters.add_parameter(make_parameter(False, n, "n", (None, None), dtype=math.int64))
-        self.parameters.add_parameter(
-            make_parameter(False, epsilon, "epsilon", (None, None), dtype=math.float64)
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={ReprEnum.BARGMANN: (sauron_state, ("n", "epsilon", "lin_sup"))}
+            ),
+            wires=Wires(modes_out_ket=set(mode)),
+            name=f"{self.__class__.__name__}-{n}",
         )
-
-        self._ansatz = PolyExpAnsatz.from_function(
-            triples.sauron_state_Abc,
-            n=self.parameters.n,
-            epsilon=self.parameters.epsilon,
+        self.parameters["n"] = Parameter.from_cc_init(n, "int64", f"{self.name}/n")
+        self.parameters["epsilon"] = Parameter.from_cc_init(
+            epsilon, "float64", f"{self.name}/epsilon"
         )
-        self._wires = Wires(modes_out_ket=set(mode))
-        self.ansatz._lin_sup = True

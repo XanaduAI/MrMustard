@@ -20,13 +20,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mrmustard import math
-from mrmustard.physics import triples
-from mrmustard.physics.ansatz import PolyExpAnsatz
-from mrmustard.physics.wires import Wires
-from mrmustard.utils.typing import ComplexTensor
+from mrmustard.parameters import Parameter
+from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.physics.wires import ReprEnum, Wires
 
-from ..utils import make_parameter
+from .builtins import squeezed_vacuum_state, squeezed_vacuum_state_fock
 from .ket import Ket
 
 __all__ = ["SqueezedVacuum"]
@@ -36,22 +34,14 @@ class SqueezedVacuum(Ket):
     r"""
     The squeezed vacuum state in Bargmann representation.
 
+    >>> from mrmustard.lab import SqueezedVacuum, Vacuum, Sgate
+    >>> state = SqueezedVacuum(mode=0, r=0.3, phi=0.2)
+    >>> assert state == Vacuum(0) >> Sgate(0, r=0.3, phi=0.2)
 
     Args:
         mode: The mode of the squeezed vacuum state.
         r: The squeezing magnitude.
         phi: The squeezing angle.
-        r_trainable: Whether `r` is trainable.
-        phi_trainable: Whether `phi` is trainable.
-        r_bounds: The bounds of `r`.
-        phi_bounds: The bounds of `phi`.
-
-    .. code-block::
-
-        >>> from mrmustard.lab import SqueezedVacuum, Vacuum, Sgate
-
-        >>> state = SqueezedVacuum(mode=0, r=0.3, phi=0.2)
-        >>> assert state == Vacuum(0) >> Sgate(0, r=0.3, phi=0.2)
     """
 
     short_name = "Sq"
@@ -59,59 +49,19 @@ class SqueezedVacuum(Ket):
     def __init__(
         self,
         mode: int | tuple[int],
-        r: float | Sequence[float] = 0.0,
-        phi: float | Sequence[float] = 0.0,
-        r_trainable: bool = False,
-        phi_trainable: bool = False,
-        r_bounds: tuple[float | None, float | None] = (None, None),
-        phi_bounds: tuple[float | None, float | None] = (None, None),
+        r: float | Sequence[float] | Parameter = 0.0,
+        phi: float | Sequence[float] | Parameter = 0.0,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
-        super().__init__(name="SqueezedVacuum")
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=r_trainable, value=r, name="r", bounds=r_bounds, dtype=math.float64
+        super().__init__(
+            ansatz_factory=AnsatzFactory(
+                ansatz_dict={
+                    ReprEnum.BARGMANN: (squeezed_vacuum_state, ("r", "phi", "lin_sup")),
+                    ReprEnum.FOCK: (squeezed_vacuum_state_fock, ("r", "phi", "shape", "lin_sup")),
+                }
             ),
+            wires=Wires(modes_out_ket=set(mode)),
+            name=self.__class__.__name__,
         )
-        self.parameters.add_parameter(
-            make_parameter(
-                is_trainable=phi_trainable,
-                value=phi,
-                name="phi",
-                bounds=phi_bounds,
-                dtype=math.float64,
-            ),
-        )
-
-        self._ansatz = PolyExpAnsatz.from_function(
-            fn=triples.squeezed_vacuum_state_Abc,
-            r=self.parameters.r,
-            phi=self.parameters.phi,
-        )
-        self._wires = Wires(modes_out_ket=set(mode))
-
-    def fock_array(
-        self,
-        shape: int | Sequence[int] | None = None,
-    ) -> ComplexTensor:
-        shape = self._check_fock_shape(shape)
-        if self.ansatz.batch_shape:
-            rs, phi = math.broadcast_arrays(
-                self.parameters.r.value,
-                self.parameters.phi.value,
-            )
-            rs = math.reshape(rs, (-1,))
-            phi = math.reshape(phi, (-1,))
-            ret = math.astensor(
-                [math.squeezed(r, p, shape=shape) for r, p in zip(rs, phi)],
-            )
-            ret = math.reshape(ret, self.ansatz.batch_shape + shape)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        else:
-            ret = math.squeezed(
-                self.parameters.r.value,
-                self.parameters.phi.value,
-                shape=shape,
-            )
-        return ret
+        self.parameters["r"] = Parameter.from_cc_init(r, "float64", f"{self.name}/r")
+        self.parameters["phi"] = Parameter.from_cc_init(phi, "float64", f"{self.name}/phi")

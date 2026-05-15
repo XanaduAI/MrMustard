@@ -4,15 +4,15 @@ Development guide
 Dependencies
 ------------
 
-Mr Mustard requires the following to be installed:
+MrMustard requires the following to be installed:
 
-* `Python <http://python.org/>`_ >= 3.10, <3.13
+* `Python <http://python.org/>`_ >= 3.11, <3.14
 * `uv <https://github.com/astral-sh/uv>`_ >= 0.7.0
 
 Installation
 ------------
 
-For development purposes, it is recommended to install Mr Mustard using ``uv``
+For development purposes, it is recommended to install MrMustard using ``uv``
 
 .. code-block:: bash
 
@@ -21,7 +21,7 @@ For development purposes, it is recommended to install Mr Mustard using ``uv``
     uv sync --all-groups
 
 The ``--all-groups`` flag ensures that all developmental dependencies are included. Note
-that ``uv`` will install Mr Mustard into a ``.venv`` virtual environment by default.
+that ``uv`` will install MrMustard into a ``.venv`` virtual environment by default.
 Alternatively, ``pip`` is also supported
 
 .. code-block:: bash
@@ -31,18 +31,18 @@ Alternatively, ``pip`` is also supported
     pip install --group dev -e .
 
 The ``-e`` flag ensures that edits to the source code will be reflected when
-importing Mr Mustard in Python and the ``--group dev`` ensures development dependencies
+importing MrMustard in Python and the ``--group dev`` ensures development dependencies
 are also installed (additional flags include ``--group doc`` to build documentation locally
 and ``--group interactive`` to support interactive Jupyter notebooks).
 
 Software tests
 --------------
 
-The Mr Mustard test suite includes `pytest <https://docs.pytest.org/en/latest/>`_,
+The MrMustard test suite includes `pytest <https://docs.pytest.org/en/latest/>`_,
 `pytest-cov <https://pytest-cov.readthedocs.io/en/latest/>`_ for coverage reports and
 `hypothesis <https://hypothesis.readthedocs.io/en/latest/>`_ for property-based testing.
 
-To ensure that Mr Mustard is working correctly after installation, the test suite
+To ensure that MrMustard is working correctly after installation, the test suite
 can be run by navigating to the source code folder and running
 
 .. code-block:: bash
@@ -64,7 +64,7 @@ Individual test modules are run by invoking pytest directly from the command lin
 The ``--backend`` flag allows specifying the backend used when running the tests (by default ``numpy``).
 For example, to use the Jax backend, run the command ``pytest tests/test_lab/test_states/test_ket.py --backend=jax``.
 
-.. note:: **Run options for Mr Mustard tests**
+.. note:: **Run options for MrMustard tests**
 
     When running tests, it can be useful to examine a single failing test.
     The following command stops at the first failing test:
@@ -96,7 +96,7 @@ The coverage of a specific file can also be checked by generating a report:
 
 .. code-block:: console
 
-    uv run pytest tests/test_lab/test_states/test_ket.py --cov=mrmustard/location/to/module --cov-report=term-missing
+    uv run pytest tests/test_lab/test_states/test_ket.py --cov=mrmustard/location/to/module
 
 Here the coverage report will be created relative to the module specified by
 the path passed to the ``--cov=`` option.
@@ -109,10 +109,10 @@ filtering out certain tests:
 
 .. code-block:: console
 
-    uv run pytest tests/test_lab/test_states/test_ket.py --cov --cov-report=term-missing -k 'not test_L2_norm'
+    uv run pytest tests/test_lab/test_states/test_ket.py --cov -k 'not test_L2_norm'
 
 Passing the ``--cov`` option without any modules specified will generate a
-coverage report for all modules of Mr Mustard.
+coverage report for all modules of MrMustard.
 
 Format and code style
 ---------------------
@@ -171,7 +171,7 @@ Before submitting a pull request, please make sure the following is done:
 
 * **Make sure the modified code in the pull request conforms to the PEP8 coding standard.**
 
-  Mr Mustard's source code conforms to `PEP8 standards <https://www.python.org/dev/peps/pep-0008/>`_.
+  MrMustard's source code conforms to `PEP8 standards <https://www.python.org/dev/peps/pep-0008/>`_.
   Before submitting the PR, make sure your code is formatted either through the ``pre-commit`` hook or
 
   .. code-block:: bash
@@ -179,7 +179,7 @@ Before submitting a pull request, please make sure the following is done:
       make ruff
 
 When ready, submit your fork as a `pull request <https://help.github.com/articles/about-pull-requests>`_
-to the Mr Mustard repository, filling out the pull request template. This template is added
+to the MrMustard repository, filling out the pull request template. This template is added
 automatically to the comment box when you create a new issue.
 
 * When describing the pull request, please include as much detail as possible
@@ -194,7 +194,7 @@ automatically to the comment box when you create a new issue.
 
   - Once the test suite is finished, a **code coverage report** will be generated on
     `Codecov <https://codecov.io/gh/XanaduAI/MrMustard>`_. This will calculate the percentage
-    of Mr Mustard covered by the test suite, to ensure that all new code additions
+    of MrMustard covered by the test suite, to ensure that all new code additions
     are adequately tested.
 
   - Finally, the **code quality** is calculated by

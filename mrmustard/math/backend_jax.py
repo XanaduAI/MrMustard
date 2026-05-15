@@ -19,38 +19,40 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from functools import partial
 from typing import Any
+from warnings import warn
 
 import numpy as np
 from platformdirs import user_cache_dir
 
-from mrmustard.lab import Circuit, CircuitComponent
-from mrmustard.physics.ansatz import Ansatz
+from mrmustard.parameters import Variable
 
 from .backend_base import BackendBase
-from .parameter_set import ParameterSet
-from .parameters import Constant, Variable
 
 try:
-    import equinox as eqx
     import jax
+except ImportError:
+    raise ImportError(
+        "The JAX backend requires the `jax_backend` group. Please install it using `uv pip install -g jax_backend`."
+    ) from None
+else:
+    import equinox as eqx
     import jax.numpy as jnp
     import jax.scipy as jsp
 
-    from .jax_vjps import (
+    from mrmustard.mathlib.jax_vjps import (
         beamsplitter_jax,
+        complex_gaussian_integral_1_jax,
+        complex_gaussian_integral_2_jax,
         displacement_jax,
         hermite_renormalized_1leftoverMode_jax,
         hermite_renormalized_batched_jax,
         hermite_renormalized_binomial_jax,
         hermite_renormalized_diagonal_jax,
         hermite_renormalized_jax,
+        homodyne_projector_jax,
         squeezed_jax,
         squeezer_jax,
     )
-except ImportError:
-    raise ImportError(
-        "The JAX backend requires the `jax_backend` group. Please install it using `uv pip install -g jax_backend`."
-    ) from None
 
 jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_compilation_cache_dir", f"{user_cache_dir('mrmustard')}/jax_cache")
@@ -73,6 +75,11 @@ def get_all_subclasses(cls):
         all_subclasses.append(subclass)
         all_subclasses.extend(get_all_subclasses(subclass))
     return all_subclasses
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# JAX Gaussian Integral Implementations
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 class BackendJax(BackendBase):
@@ -124,6 +131,128 @@ class BackendJax(BackendBase):
     ) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.arange(start, limit, delta, dtype=dtype)
+
+    @partial(jax.jit, static_argnames=["axis"])
+    def argmax(self, array: jnp.ndarray, axis: int | None = None) -> jnp.ndarray:
+        return jnp.argmax(array, axis=axis)
+
+    @partial(jax.jit, static_argnames=["axis"])
+    def argmin(self, array: jnp.ndarray, axis: int | None = None) -> jnp.ndarray:
+        return jnp.argmin(array, axis=axis)
+
+    @partial(jax.jit, static_argnames=["axis"])
+    def argsort(self, array: jnp.ndarray, axis: int | None = None) -> jnp.ndarray:
+        return jnp.argsort(array, axis=axis)
+
+    def complex_gaussian_integral_1_single(self, A, b, idx12, A_out, b_out, log_c_out):
+        """
+        Single (non-batched) complex Gaussian integral for one Abc using JAX.
+
+        Args:
+            A: Complex matrix
+            b: Complex vector
+            idx12: Indices to integrate over
+            A_out: Ignored (for API compatibility)
+            b_out: Ignored (for API compatibility)
+            log_c_out: Ignored (for API compatibility)
+
+        Returns:
+            Tuple of (A_out, b_out, log_c_out)
+        """
+        return complex_gaussian_integral_1_jax(A, b, idx12)
+
+    def complex_gaussian_integral_1_batched(self, A, b, idx12, A_out, b_out, log_c_out):
+        """
+        Batched complex Gaussian integral for one Abc using JAX vmap.
+
+        Args:
+            A: Batched complex matrices
+            b: Batched complex vectors
+            idx12: Indices to integrate over (same for all batch elements)
+            A_out: Ignored (for API compatibility)
+            b_out: Ignored (for API compatibility)
+            log_c_out: Ignored (for API compatibility)
+
+        Returns:
+            Tuple of (A_out, b_out, log_c_out) with batch dimensions
+        """
+        # Get batch shapes
+        batch_shape_A = A.shape[:-2]
+        batch_shape_b = b.shape[:-1]
+
+        # Broadcast to common batch shape
+        target_batch_shape = jnp.broadcast_shapes(batch_shape_A, batch_shape_b)
+
+        # Broadcast A and b to target shape
+        A_broadcast = jnp.broadcast_to(A, target_batch_shape + A.shape[-2:])
+        b_broadcast = jnp.broadcast_to(b, target_batch_shape + b.shape[-1:])
+
+        # Apply vmap for each batch dimension
+        vmapped_fn = complex_gaussian_integral_1_jax
+        for _ in range(len(target_batch_shape)):
+            vmapped_fn = jax.vmap(vmapped_fn, in_axes=(0, 0, None))
+
+        return vmapped_fn(A_broadcast, b_broadcast, idx12)
+
+    def complex_gaussian_integral_2_single(
+        self, A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out
+    ):
+        """
+        Single (non-batched) complex Gaussian integral for two Abc using JAX.
+
+        Args:
+            A1, b1: First Abc triple
+            A2, b2: Second Abc triple
+            idx1, idx2: Indices to integrate over
+            A_out: Ignored (for API compatibility)
+            b_out: Ignored (for API compatibility)
+            log_c_out: Ignored (for API compatibility)
+
+        Returns:
+            Tuple of (A_out, b_out, log_c_out)
+        """
+        return complex_gaussian_integral_2_jax(A1, b1, A2, b2, idx1, idx2)
+
+    def complex_gaussian_integral_2_batched(
+        self, A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out
+    ):
+        """
+        Batched complex Gaussian integral for two Abc using JAX vmap.
+
+        Args:
+            A1, b1: First batched Abc triple
+            A2, b2: Second batched Abc triple
+            idx1, idx2: Indices to integrate over (same for all batch elements)
+            A_out: Ignored (for API compatibility)
+            b_out: Ignored (for API compatibility)
+            log_c_out: Ignored (for API compatibility)
+
+        Returns:
+            Tuple of (A_out, b_out, log_c_out) with batch dimensions
+        """
+        # Get batch shapes
+        batch_shape_A1 = A1.shape[:-2]
+        batch_shape_b1 = b1.shape[:-1]
+        batch_shape_A2 = A2.shape[:-2]
+        batch_shape_b2 = b2.shape[:-1]
+
+        # Broadcast to common batch shape
+        target_batch_shape = jnp.broadcast_shapes(
+            batch_shape_A1, batch_shape_b1, batch_shape_A2, batch_shape_b2
+        )
+
+        # Broadcast all inputs to target shape
+        A1_broadcast = jnp.broadcast_to(A1, target_batch_shape + A1.shape[-2:])
+        b1_broadcast = jnp.broadcast_to(b1, target_batch_shape + b1.shape[-1:])
+        A2_broadcast = jnp.broadcast_to(A2, target_batch_shape + A2.shape[-2:])
+        b2_broadcast = jnp.broadcast_to(b2, target_batch_shape + b2.shape[-1:])
+
+        # Apply vmap for each batch dimension
+        vmapped_fn = complex_gaussian_integral_2_jax
+        for _ in range(len(target_batch_shape)):
+            vmapped_fn = jax.vmap(vmapped_fn, in_axes=(0, 0, 0, 0, None, None))
+
+        return vmapped_fn(A1_broadcast, b1_broadcast, A2_broadcast, b2_broadcast, idx1, idx2)
 
     def asnumpy(self, tensor: jnp.ndarray) -> np.ndarray:
         return np.array(tensor)
@@ -177,7 +306,6 @@ class BackendJax(BackendBase):
     def clip(self, array: jnp.ndarray, a_min: float, a_max: float) -> jnp.ndarray:
         return jnp.clip(array, a_min, a_max)
 
-    @jax.jit
     def conj(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.conj(array)
 
@@ -225,24 +353,13 @@ class BackendJax(BackendBase):
     def det(self, matrix: jnp.ndarray) -> jnp.ndarray:
         return jnp.linalg.det(matrix)
 
+    def diagonal(
+        self, array: jnp.ndarray, offset: int | None, axis1: int | None, axis2: int | None
+    ) -> jnp.ndarray:
+        return jnp.diagonal(array, offset=offset, axis1=axis1, axis2=axis2)
+
     def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
-        if array.ndim in [1, 2]:
-            return jnp.diag(array, k=k)
-        # fallback into more complex algorithm
-        original_sh = jnp.asarray(array.shape)
-
-        ravelled_sh = (jnp.prod(original_sh[:-1]), original_sh[-1])
-        array = array.ravel().reshape(*ravelled_sh)
-        ret = jnp.asarray([jnp.diag(line, k) for line in array])
-        inner_shape = (
-            original_sh[-1] + abs(k),
-            original_sh[-1] + abs(k),
-        )
-        return ret.reshape(tuple(original_sh[:-1]) + tuple(inner_shape))
-
-    @partial(jax.jit, static_argnames=["k"])
-    def diag_part(self, array: jnp.ndarray, k: int) -> jnp.ndarray:
-        return jnp.diagonal(array, offset=k, axis1=-2, axis2=-1)
+        return jnp.diag(array, k=k)
 
     @jax.jit
     def exp(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -251,6 +368,10 @@ class BackendJax(BackendBase):
     @partial(jax.jit, static_argnames=["axis"])
     def expand_dims(self, array: jnp.ndarray, axis: int) -> jnp.ndarray:
         return jnp.expand_dims(array, axis)
+
+    @partial(jax.jit, static_argnames=["axis"])
+    def squeeze(self, array: jnp.ndarray, axis: int | tuple[int, ...] | None = None) -> jnp.ndarray:
+        return jnp.squeeze(array, axis=axis)
 
     @jax.jit
     def expm(self, matrix: jnp.ndarray) -> jnp.ndarray:
@@ -299,7 +420,13 @@ class BackendJax(BackendBase):
 
     @jax.jit
     def matmul(self, *matrices: jnp.ndarray) -> jnp.ndarray:
-        return jnp.linalg.multi_dot(matrices)
+        try:
+            return jnp.linalg.multi_dot(matrices)
+        except ValueError:
+            mat = matrices[0]
+            for matrix in matrices[1:]:
+                mat = jnp.matmul(mat, matrix)
+            return mat
 
     @jax.jit
     def max(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -326,9 +453,17 @@ class BackendJax(BackendBase):
     ) -> jnp.ndarray:
         return jnp.moveaxis(array, old, new)
 
+    @partial(jax.jit, static_argnames=["axis"])
+    def mean(self, array: jnp.ndarray, axis: int | Sequence[int] | None = None) -> jnp.ndarray:
+        return jnp.mean(array, axis=axis)
+
     def ones(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
         return jnp.ones(shape, dtype=dtype)
+
+    def full(self, shape: Sequence[int], fill_value, dtype=None) -> jnp.ndarray:
+        dtype = dtype or jnp.result_type(fill_value)
+        return jnp.full(shape, fill_value, dtype=dtype)
 
     @jax.jit
     def ones_like(self, array: jnp.ndarray) -> jnp.ndarray:
@@ -370,6 +505,9 @@ class BackendJax(BackendBase):
     def reshape(self, array: jnp.ndarray, shape: Sequence[int]) -> jnp.ndarray:
         return jnp.reshape(array, shape)
 
+    def shape(self, array: jnp.ndarray) -> tuple[int, ...]:
+        return jnp.shape(array)
+
     @jax.jit
     def sin(self, array: jnp.ndarray) -> jnp.ndarray:
         return jnp.sin(array)
@@ -404,9 +542,11 @@ class BackendJax(BackendBase):
     def swapaxes(self, array: jnp.ndarray, axis1: int, axis2: int) -> jnp.ndarray:
         return jnp.swapaxes(array, axis1, axis2)
 
-    @jax.jit
-    def norm(self, array: jnp.ndarray) -> jnp.ndarray:
-        return jnp.linalg.norm(array)
+    @partial(jax.jit, static_argnames=["axis", "keepdims"])
+    def norm(
+        self, array: jnp.ndarray, axis: int | tuple[int, int] | None = None, keepdims: bool = False
+    ) -> jnp.ndarray:
+        return jnp.linalg.norm(array, axis=axis, keepdims=keepdims)
 
     def map_fn(self, func, elements):
         return jax.vmap(func)(elements)
@@ -420,6 +560,14 @@ class BackendJax(BackendBase):
 
     def transpose(self, a: jnp.ndarray, perm: Sequence[int] | None = None) -> jnp.ndarray:
         return jnp.transpose(a, perm)
+
+    @jax.jit
+    def tan(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.tan(array)
+
+    @jax.jit
+    def tanh(self, array: jnp.ndarray) -> jnp.ndarray:
+        return jnp.tanh(array)
 
     def zeros(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:
         dtype = dtype or self.float64
@@ -489,7 +637,13 @@ class BackendJax(BackendBase):
         out: jnp.ndarray | None = None,
     ) -> jnp.ndarray:
         if out is not None:
-            raise ValueError("The 'out' keyword is not supported in the JAX backend.")
+            warn(
+                "Using the out= keyword argument with the jax backend"
+                " results in increased memory usage.",
+                stacklevel=2,
+            )
+            out[...] = hermite_renormalized_jax(A, b, c, shape, stable)
+            return out
         return hermite_renormalized_jax(A, b, c, shape, stable)
 
     def hermite_renormalized_batched(
@@ -502,7 +656,13 @@ class BackendJax(BackendBase):
         out: jnp.ndarray | None = None,
     ) -> jnp.ndarray:
         if out is not None:
-            raise ValueError("The 'out' keyword is not supported in the JAX backend.")
+            warn(
+                "Using the out= keyword argument with the jax backend"
+                " results in increased memory usage.",
+                stacklevel=2,
+            )
+            out[...] = hermite_renormalized_batched_jax(A, b, c, shape, stable)
+            return out
         return hermite_renormalized_batched_jax(A, b, c, shape, stable)
 
     def hermite_renormalized_binomial(
@@ -543,11 +703,30 @@ class BackendJax(BackendBase):
     # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~
 
-    def displacement(self, alpha: complex, shape: tuple[int, int], tol: float):
-        return displacement_jax(alpha, shape, tol)
+    def displacement(self, alpha: complex | jnp.ndarray, shape: tuple[int, int]):
+        return displacement_jax(alpha, shape)
 
-    def beamsplitter(self, theta: float, phi: float, shape: tuple[int, int, int, int], method: str):
+    def beamsplitter(
+        self,
+        theta: float | jnp.ndarray,
+        phi: float | jnp.ndarray,
+        shape: tuple[int, int, int, int],
+        method: str,
+    ):
         return beamsplitter_jax(theta, phi, shape, method)
+
+    def homodyne_projector(
+        self, fock_dim: int, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, out: jnp.ndarray | None
+    ):
+        if out is not None:
+            warn(
+                "Using the out= keyword argument with the jax backend"
+                " results in increased memory usage.",
+                stacklevel=2,
+            )
+            out[...] = homodyne_projector_jax(fock_dim, A, b, c)
+            return out
+        return homodyne_projector_jax(fock_dim, A, b, c)
 
     def squeezed(self, r: float, phi: float, shape: tuple[int]):
         return squeezed_jax(r, phi, shape)
@@ -557,22 +736,5 @@ class BackendJax(BackendBase):
 
 
 # defining custom pytree nodes
-for cls in get_all_subclasses(Ansatz):
-    jax.tree_util.register_pytree_node(cls, cls._tree_flatten, cls._tree_unflatten)
 jax.tree_util.register_pytree_node(BackendJax, BackendJax._tree_flatten, BackendJax._tree_unflatten)
-jax.tree_util.register_pytree_node(Circuit, Circuit._tree_flatten, Circuit._tree_unflatten)
-jax.tree_util.register_pytree_node(
-    CircuitComponent,
-    CircuitComponent._tree_flatten,
-    CircuitComponent._tree_unflatten,
-)
-# register all subclasses of CircuitComponent
-for cls in get_all_subclasses(CircuitComponent):
-    jax.tree_util.register_pytree_node(cls, cls._tree_flatten, cls._tree_unflatten)
-jax.tree_util.register_pytree_node(Constant, Constant._tree_flatten, Constant._tree_unflatten)
-jax.tree_util.register_pytree_node(
-    ParameterSet,
-    ParameterSet._tree_flatten,
-    ParameterSet._tree_unflatten,
-)
 jax.tree_util.register_pytree_node(Variable, Variable._tree_flatten, Variable._tree_unflatten)

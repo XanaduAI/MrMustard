@@ -19,6 +19,7 @@ import pytest
 from mrmustard import math
 from mrmustard.lab.states import SqueezedVacuum, Vacuum
 from mrmustard.lab.transformations import Sgate
+from mrmustard.parameters import Variable
 
 
 class TestSqueezedVacuum:
@@ -70,8 +71,10 @@ class TestSqueezedVacuum:
 
     def test_trainable_parameters(self):
         state1 = SqueezedVacuum(0, 1, 1)
-        state2 = SqueezedVacuum(0, 1, 1, r_trainable=True, r_bounds=(-2, 2))
-        state3 = SqueezedVacuum(0, 1, 1, phi_trainable=True, phi_bounds=(-2, 2))
+        r_var = Variable(1, "r", dtype=math.float64)
+        phi_var = Variable(1, "phi", dtype=math.float64)
+        state2 = SqueezedVacuum(0, r=r_var, phi=1)
+        state3 = SqueezedVacuum(0, r=1, phi=phi_var)
 
         with pytest.raises(AttributeError):
             state1.parameters.r.value = 3

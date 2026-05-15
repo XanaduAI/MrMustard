@@ -20,23 +20,19 @@ from __future__ import annotations
 
 import numbers
 from collections.abc import Sequence
-from inspect import signature
-from pydoc import locate
 from typing import Any
 
 import ipywidgets as widgets
 import numpy as np
 from IPython.display import display
-from numpy.typing import ArrayLike
 
 from mrmustard import math, settings
 from mrmustard import widgets as mmwidgets
-from mrmustard.math.parameter_set import ParameterSet
-from mrmustard.math.parameters import Variable
+from mrmustard.parameters import ParameterDict
 from mrmustard.physics.ansatz import Ansatz, ArrayAnsatz, PolyExpAnsatz
+from mrmustard.physics.ansatz_factory import AnsatzFactory
 from mrmustard.physics.fock_utils import oscillator_eigenstate
-from mrmustard.physics.triples import identity_Abc
-from mrmustard.physics.utils import outer_product_batch_str, zip_batch_strings
+from mrmustard.physics.mm_einsum import bargmann_to_fock, fock_to_bargmann
 from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import (
     Batch,
@@ -57,7 +53,7 @@ class CircuitComponent:
     defined by their ``ansatz`` and ``wires``.
 
     Args:
-        ansatz: The ansatz of this circuit component.
+        ansatz_factory: The AnsatzFactory of this circuit component.
         wires: The wires of this circuit component.
         name: The name of this circuit component.
     """
@@ -66,19 +62,14 @@ class CircuitComponent:
 
     def __init__(
         self,
-        ansatz: Ansatz | None = None,
+        ansatz_factory: AnsatzFactory | None = None,
         wires: Wires | None = None,
         name: str | None = None,
     ) -> None:
-        self._ansatz = ansatz
+        self._ansatz_factory = ansatz_factory
         self._name = name
-        self._parameters = ParameterSet()
+        self._parameters = ParameterDict()
         self._wires = wires or Wires(set(), set(), set(), set())
-
-        if isinstance(ansatz, ArrayAnsatz):
-            for w in self.wires.quantum:
-                w.repr = ReprEnum.FOCK
-                w.fock_cutoff = ansatz.core_shape[w.index]
 
     @property
     def adjoint(self) -> CircuitComponent:
@@ -86,28 +77,46 @@ class CircuitComponent:
         The adjoint of this component obtained by conjugating the ansatz and swapping
         the ket and bra wires.
 
-        .. code-block::
+        >>> from mrmustard.lab import GaussianKet
+        >>> psi = GaussianKet.random([0])
+        >>> assert psi.dm() == psi.contract(psi.adjoint)
 
-            >>> from mrmustard.lab import Ket
-
-            >>> psi = Ket.random([0])
-            >>> assert psi.dm() == psi.contract(psi.adjoint)
+        Note:
+            The resulting CircuitComponent is not in standard order.
+            To get the standard order, call ``to_standard_order()`` on the result.
         """
-        bras = self.wires.bra.indices
-        kets = self.wires.ket.indices
-        ansatz = self.ansatz.reorder(kets + bras).conj if self.ansatz else None
-        ret = CircuitComponent(ansatz, self.wires.adjoint, name=self.name)
+        ansatz_factory, _ = AnsatzFactory.from_ansatz(self.ansatz.conj)
+        ret = CircuitComponent(
+            ansatz_factory=ansatz_factory, wires=self.wires.adjoint, name=self.name
+        )
         ret.short_name = self.short_name
-        for param in self.parameters.all_parameters.values():
-            ret.parameters.add_parameter(param)
+        ret._parameters = self.parameters.copy()
         return ret
 
     @property
-    def ansatz(self) -> Ansatz:
+    def ansatz(self) -> Ansatz | None:
         r"""
         The ansatz of this circuit component.
         """
-        return self._ansatz
+        if self.ansatz_factory is None:
+            return None
+        representation = ReprEnum.BARGMANN
+        shape = ()
+        if len(self.wires.quantum) != 0:
+            for w in self.wires.quantum:
+                if w.repr == ReprEnum.FOCK:
+                    representation = ReprEnum.FOCK
+                shape += (w.fock_shape,)
+        elif self.ansatz_factory.ansatz_dict.get(ReprEnum.BARGMANN, None) is None:
+            representation = ReprEnum.FOCK
+        return self.ansatz_factory(**self.parameters, representation=representation, shape=shape)
+
+    @property
+    def ansatz_factory(self) -> AnsatzFactory | None:
+        r"""
+        The ansatz factory of this component.
+        """
+        return self._ansatz_factory
 
     @property
     def dual(self) -> CircuitComponent:
@@ -115,55 +124,47 @@ class CircuitComponent:
         The dual of this component obtained by conjugating the ansatz and swapping
         the input and output wires.
 
-        .. code-block::
+        >>> from mrmustard import math
+        >>> from mrmustard.lab import GaussianKet
+        >>> psi = GaussianKet.random([0])
+        >>> assert math.allclose(1.0, psi >> psi.dual)
 
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import Ket
-
-            >>> psi = Ket.random([0])
-            >>> assert math.allclose(1.0, psi >> psi.dual)
+        Note:
+            The resulting CircuitComponent is not in standard order.
+            To get the standard order, call ``to_standard_order()`` on the result.
         """
-        ok = self.wires.ket.output.indices
-        ik = self.wires.ket.input.indices
-        ib = self.wires.bra.input.indices
-        ob = self.wires.bra.output.indices
-        ansatz = self.ansatz.reorder(ib + ob + ik + ok).conj if self.ansatz else None
-        ret = CircuitComponent(ansatz, self.wires.dual, name=self.name)
+        ansatz_factory, _ = AnsatzFactory.from_ansatz(self.ansatz.conj)
+        ret = CircuitComponent(ansatz_factory=ansatz_factory, wires=self.wires.dual, name=self.name)
         ret.short_name = self.short_name
-        for param in self.parameters.all_parameters.values():
-            ret.parameters.add_parameter(param)
+        ret._parameters = self.parameters.copy()
         return ret
 
     @property
     def manual_shape(self) -> tuple[int | None]:
         r"""
-        The shape of this Component in the Fock representation. If not manually set,
-        it is a tuple of M ``None``s where M is the number of wires of the component. For
-        each wire, the entry is either an integer or ``None``. If it is an integer, it
-        is the cutoff of the corresponding Fock space. If it is ``None``, it means
-        the best shape is not known yet. ``None``s automatically become integers when
-        ``auto_shape`` is called, but the integers already set are not changed.
-        The order of the elements in the shape is intended the same order as the wires
-        in the `.sorted_wires` attribute.
+        The shape of this Component in the Fock representation in standard order. For each wire,
+        the entry is either an integer or ``None``. If it is an integer, it
+        is the shape (dimension) of the corresponding Fock space. For a cutoff of n
+        (maximum photon number n), the shape is n + 1
+        (includes :math:`\left\vert 0\right\rangle` through :math:`\left\vert n\right\rangle`).
+        If it is ``None``, it means the best shape is not known yet and will be determined by
+        ``auto_shape``.
         """
-        return tuple(w.fock_cutoff for w in self.wires.quantum.sorted_wires)
+        return self.wires.fock_shapes
 
     @manual_shape.setter
     def manual_shape(self, shape: tuple[int | None]):
-        for w, s in zip(self.wires.quantum.sorted_wires, shape):
-            w.fock_cutoff = s
+        for w, s in zip(self.wires, shape):
+            w.fock_shape = s
 
     @property
     def modes(self) -> list[int]:
         r"""
         The sorted list of modes of this component.
 
-        .. code-block::
-
-            >>> from mrmustard.lab import Ket
-
-            >>> ket = Ket.random([0, 1])
-            >>> assert ket.modes == (0, 1)
+        >>> from mrmustard.lab import GaussianKet
+        >>> ket = GaussianKet.random([0, 1])
+        >>> assert ket.modes == (0, 1)
         """
         return tuple(sorted(self.wires.modes))
 
@@ -172,11 +173,8 @@ class CircuitComponent:
         r"""
         The name of this component.
 
-        .. code-block::
-
-            >>> from mrmustard.lab import BtoPS
-
-            >>> assert BtoPS(modes=0, s=0).name == "BtoPS"
+        >>> from mrmustard.lab import BtoPS
+        >>> assert BtoPS(modes=0, s=0).name == "BtoPS"
         """
         if self._name is None:
             name = self.short_name
@@ -189,26 +187,16 @@ class CircuitComponent:
         r"""
         The number of modes spanned by this component across all wires.
 
-        .. code-block::
-
-            >>> from mrmustard.lab import Ket
-
-            >>> ket = Ket.random([0, 1])
-            >>> assert ket.n_modes == 2
+        >>> from mrmustard.lab import GaussianKet
+        >>> ket = GaussianKet.random([0, 1])
+        >>> assert ket.n_modes == 2
         """
         return len(self.modes)
 
     @property
-    def parameters(self) -> ParameterSet:
+    def parameters(self) -> ParameterDict:
         r"""
-        The set of parameters of this component.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import Coherent
-
-            >>> coh = Coherent(mode=0, alpha=1.0)
-            >>> assert coh.parameters.alpha.value == 1.0
+        The parameters of this component.
         """
         return self._parameters
 
@@ -232,6 +220,21 @@ class CircuitComponent:
         r"""
         Initializes a ``CircuitComponent`` object from its Bargmann (A,b,c) parametrization.
 
+        >>> from mrmustard import math
+        >>> from mrmustard.lab import CircuitComponent, Identity
+        >>> from mrmustard.physics.ansatz import PolyExpAnsatz
+        >>> A = math.astensor([[0, 1], [1, 0]])
+        >>> b = math.astensor([0, 0])
+        >>> c = 1
+        >>> modes_out_bra = {}
+        >>> modes_in_bra = {}
+        >>> modes_out_ket = {0}
+        >>> modes_in_ket = {0}
+        >>> triple = (A, b, c)
+        >>> cc = CircuitComponent.from_bargmann(triple, modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
+        >>> assert isinstance(cc.ansatz, PolyExpAnsatz)
+        >>> assert cc == Identity(modes = 0)
+
         Args:
             triple: The Bargmann representation of the component.
             modes_out_bra: The output modes on the bra side of this component.
@@ -242,25 +245,6 @@ class CircuitComponent:
 
         Returns:
             A circuit component with the given Bargmann representation.
-
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import CircuitComponent, Identity
-            >>> from mrmustard.physics.ansatz import PolyExpAnsatz
-
-            >>> A = math.astensor([[0, 1], [1, 0]])
-            >>> b = math.astensor([0, 0])
-            >>> c = 1
-            >>> modes_out_bra = {}
-            >>> modes_in_bra = {}
-            >>> modes_out_ket = {0}
-            >>> modes_in_ket = {0}
-            >>> triple = (A, b, c)
-            >>> cc = CircuitComponent.from_bargmann(triple, modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
-
-            >>> assert isinstance(cc.ansatz, PolyExpAnsatz)
-            >>> assert cc == Identity(modes = 0)
         """
         ansatz = PolyExpAnsatz(*triple)
         wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
@@ -287,7 +271,7 @@ class CircuitComponent:
             modes_out_ket: The output modes on the ket side of this component.
             modes_in_ket: The input modes on the ket side of this component.
             triple: The (A,b,c) triple that parametrizes the wave function.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature, ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+            phi: The quadrature angle. ``0`` corresponds to the x quadrature, ``pi/2`` to the p quadrature.
             name: The name of this component.
 
         Returns:
@@ -300,36 +284,16 @@ class CircuitComponent:
         QtoB_ib = BtoQ(modes_in_bra, phi).inverse().adjoint.dual  # input bra
         QtoB_ok = BtoQ(modes_out_ket, phi).inverse()  # output ket
         QtoB_ik = BtoQ(modes_in_ket, phi).inverse().dual  # input ket
+        ansatz_factory, _ = AnsatzFactory.from_ansatz(PolyExpAnsatz(*triple), ReprEnum.BARGMANN)
         # NOTE: the representation is Bargmann here because we use the inverse of BtoQ on the B side
-        QQQQ = CircuitComponent(PolyExpAnsatz(*triple), wires)
+        QQQQ = CircuitComponent(ansatz_factory=ansatz_factory, wires=wires)
         BBBB = QtoB_ib.contract(QtoB_ik.contract(QQQQ).contract(QtoB_ok)).contract(QtoB_ob)
         return cls._from_attributes(BBBB.ansatz, wires, name)
 
     @classmethod
-    def _deserialize(cls, data: dict) -> CircuitComponent:
-        r"""
-        Deserialization when within a circuit.
-
-        Args:
-            data: The data to deserialize.
-
-        Returns:
-            A circuit component with the given serialized data.
-        """
-        if "ansatz_cls" in data:
-            ansatz_cls, wires, name = map(data.pop, ["ansatz_cls", "wires", "name"])
-            ansatz = locate(ansatz_cls).from_dict(data)
-            return cls._from_attributes(ansatz, Wires(*tuple(set(m) for m in wires)), name=name)
-        if "modes" in data:
-            data["modes"] = tuple(data["modes"])
-        elif "mode" in data:
-            data["mode"] = tuple(data["mode"])
-        return cls(**data)
-
-    @classmethod
     def _from_attributes(
         cls,
-        ansatz: Ansatz,
+        ansatz: Ansatz | None,
         wires: Wires,
         name: str | None = None,
     ) -> CircuitComponent:
@@ -341,11 +305,9 @@ class CircuitComponent:
         methods on the returned object, e.g. when adding two coherent states we
         don't get a generic ``CircuitComponent`` but a ``Ket``:
 
-        .. code-block::
-
-            >>> from mrmustard.lab import Coherent, Ket
-            >>> cat = Coherent(mode=0, alpha=2.0) + Coherent(mode=0, alpha=-2.0)
-            >>> assert isinstance(cat, Ket)
+        >>> from mrmustard.lab import Coherent, Ket
+        >>> cat = Coherent(mode=0, alpha=2.0) + Coherent(mode=0, alpha=-2.0)
+        >>> assert isinstance(cat, Ket)
 
         Args:
             ansatz: An ansatz for this circuit component.
@@ -355,26 +317,19 @@ class CircuitComponent:
         Returns:
             A circuit component with the given attributes.
         """
+        if ansatz is not None:
+            ansatz_factory, representation = AnsatzFactory.from_ansatz(ansatz)
+            if representation == ReprEnum.FOCK:
+                for w in wires.quantum:
+                    w.repr = ReprEnum.FOCK
+                    w.fock_shape = ansatz.core_shape[w.index]
+        else:
+            ansatz_factory = None
         types = {"Ket", "DM", "Unitary", "Operation", "Channel", "Map"}
         for tp in cls.mro():
             if tp.__name__ in types:
-                return tp(ansatz=ansatz, wires=wires, name=name)
-        return CircuitComponent(ansatz, wires, name)
-
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):  # pragma: no cover
-        ret = cls.__new__(cls)
-        ret._parameters, ret._ansatz = children
-        ret._wires, ret._name = aux_data
-
-        # make sure the ansatz parameters match the parameter set
-        for param_name, param in ret.ansatz._kwargs.items():
-            if isinstance(param, Variable):
-                ret.ansatz._kwargs[param_name] = ret.parameters.all_parameters[param.name]
-            else:  # need this to build pytree of labels
-                ret.ansatz._kwargs[param_name] = param
-
-        return ret
+                return tp(ansatz_factory=ansatz_factory, wires=wires, name=name)
+        return CircuitComponent(ansatz_factory=ansatz_factory, wires=wires, name=name)
 
     def auto_shape(self, **_) -> tuple[int, ...]:
         r"""
@@ -394,98 +349,118 @@ class CircuitComponent:
         It returns a triple (A, b, c) such that the Bargmann function of this component is
         :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`
 
-        If ``batched`` is ``False`` (default), it removes the batch dimension if it is of size 1.
+        >>> from mrmustard.lab import CircuitComponent, Coherent
+        >>> coh = Coherent(mode=0, alpha=1.0)
+        >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=(0,))
+        >>> assert isinstance(coh_cc, CircuitComponent)
+        >>> assert coh == coh_cc  # equality looks at representation and wires
 
-        .. code-block:: pycon
+        Returns:
+            The Bargmann triple of this component.
 
-            >>> from mrmustard.lab import CircuitComponent, Coherent
-            >>> coh = Coherent(mode=0, alpha=1.0)
-            >>> coh_cc = CircuitComponent.from_bargmann(coh.bargmann_triple(), modes_out_ket=(0,))
-            >>> assert isinstance(coh_cc, CircuitComponent)
-            >>> assert coh == coh_cc  # equality looks at representation and wires
+        Raises:
+            AttributeError: If the component has no Bargmann data.
         """
         try:
-            return self.ansatz.triple
-        except AttributeError as e:
+            return self.ansatz_factory(
+                **self.parameters, representation=ReprEnum.BARGMANN, shape=self.manual_shape
+            ).triple
+        except (NotImplementedError, AttributeError) as e:
             raise AttributeError("No Bargmann data for this component.") from e
 
-    def contract(
-        self,
-        other: CircuitComponent | Scalar,
-        mode: str = "kron",
-    ) -> CircuitComponent:
+    def contract(self, other: CircuitComponent | Scalar) -> CircuitComponent:
         r"""
         Contracts ``self`` and ``other`` without adding adjoints.
-        It allows for contracting components exactly as specified.
+        Core index selection is determined solely by the wires; batch dimensions
+        are broadcast automatically by the underlying ansatz implementations.
 
-        For example, a coherent state can be input to an attenuator, but
-        the attenuator has two inputs: on the ket and the bra side.
-        The ``>>`` operator would automatically add the adjoint of the coherent
-        state on the bra side of the input of the attenuator, but the ``@`` operator
-        instead does not.
+        For example, a coherent state can be input to an attenuator, but the
+        attenuator has two inputs: on the ket and the bra side. The ``>>`` operator
+        would automatically add the adjoint of the coherent state on the bra side
+        of the input of the attenuator, but ``contract`` instead does not.
+
+        >>> from mrmustard.lab import Coherent, Attenuator
+        >>> coh = Coherent(0, 1.0)
+        >>> att = Attenuator(0, 0.5)
+        >>> assert coh.contract(att).wires.input.bra  # the input bra is still uncontracted
 
         Args:
             other: The other component to contract with.
-            mode: The mode of contraction. Can either "zip" the batch dimensions, "kron" the batch dimensions,
-                or pass a custom einsum-style batch string like "ab,cb->ac".
 
         Returns:
             The contracted component.
-
-        .. code-block::
-
-            >>> from mrmustard.lab import Coherent, Attenuator
-            >>> coh = Coherent(0, 1.0)
-            >>> att = Attenuator(0, 0.5)
-            >>> assert coh.contract(att).wires.input.bra  # the input bra is still uncontracted
         """
         if isinstance(other, numbers.Number | np.ndarray):
             return self * other
 
-        if type(self.ansatz) is not type(other.ansatz):
+        if (self_type := type(self.ansatz)) is not (other_type := type(other.ansatz)):
+            if settings.DEFAULT_REPRESENTATION is None:
+                raise TypeError(
+                    f"{self_type=} does not match {other_type=} and "
+                    "DEFAULT_REPRESENTATION is None. You must be more explicit to "
+                    "perform this contraction by calling `to_bargmann() or `to_fock()."
+                )
             if settings.DEFAULT_REPRESENTATION == "Bargmann":
                 self_rep = self.to_bargmann()
                 other_rep = other.to_bargmann()
+                representation = ReprEnum.BARGMANN
             else:
-                self_shape = list(self.auto_shape())
-                other_shape = list(other.auto_shape())
-                contracted_idxs = self.wires.contracted_indices(other.wires)
-                for idx1, idx2 in zip(*contracted_idxs):
-                    max_shape = max(self_shape[idx1], other_shape[idx2])
-                    self_shape[idx1] = max_shape
-                    other_shape[idx2] = max_shape
+                self_shape, other_shape = self._fock_shapes_for_contraction(other)
                 self_rep = self.to_fock(tuple(self_shape))
                 other_rep = other.to_fock(tuple(other_shape))
+                representation = ReprEnum.FOCK
         else:
             self_rep = self
             other_rep = other
+            representation = None
 
-        self_ansatz, self_wires = self_rep.ansatz, self_rep.wires
-        other_ansatz, other_wires = other_rep.ansatz, other_rep.wires
+        wires_result, core_perm = self_rep.wires @ other_rep.wires
+        core1, core2 = self_rep.wires.contracted_indices(other_rep.wires)
+        ansatz = self_rep.ansatz.contract(other_rep.ansatz, (core1, core2)).reorder(core_perm)
+        ansatz_factory, representation = AnsatzFactory.from_ansatz(ansatz, representation)
+        if representation == ReprEnum.FOCK:
+            for w in wires_result.quantum:
+                w.repr = ReprEnum.FOCK
+                w.fock_shape = ansatz.core_shape[w.index]
+        return CircuitComponent(ansatz_factory=ansatz_factory, wires=wires_result)
 
-        wires_result, _ = self_wires @ other_wires
-        core1, core2, core_out = self_wires.contracted_labels(other_wires)
-        if mode == "zip":
-            eins_str = zip_batch_strings(
-                self_ansatz.batch_dims - self_ansatz._lin_sup,
-                other_ansatz.batch_dims - other_ansatz._lin_sup,
+    def concat(self, other: CircuitComponent, axis: int = 0) -> CircuitComponent:
+        r"""
+        Concatenates this component with another along the specified batch axis.
+
+        The ansatze are concatenated along the given batch axis. The wires must match.
+        Returns an instance of the closest common superclass.
+
+        >>> from mrmustard.lab import Coherent
+        >>> state1 = Coherent(mode=0, alpha=1.0)
+        >>> state2 = Coherent(mode=0, alpha=2.0)
+        >>> # Add batch dimension first
+        >>> state1_batched = state1[None]
+        >>> state2_batched = state2[None]
+        >>> concatenated = state1_batched.concat(state2_batched, axis=0)
+        >>> assert concatenated.ansatz.batch_shape == (2,)
+
+        Args:
+            other: The other circuit component to concatenate with.
+            axis: The batch axis along which to concatenate.
+
+        Returns:
+            A new CircuitComponent with concatenated ansatze.
+
+        Raises:
+            ValueError: If wires don't match or if ansatz types don't match.
+        """
+        if (sw := self.wires) != (ow := other.wires):
+            raise ValueError(f"Can't stack or concat components with different wires: {sw} vs {ow}")
+
+        if (sa := type(self.ansatz)) is not (oa := type(other.ansatz)):
+            raise ValueError(
+                f"Can't stack or concat components with different ansatz types: {sa} vs {oa}"
             )
-        elif mode == "kron":
-            eins_str = outer_product_batch_str(
-                self_ansatz.batch_dims - self_ansatz._lin_sup,
-                other_ansatz.batch_dims - other_ansatz._lin_sup,
-            )
-        else:
-            eins_str = mode
-        batch12, batch_out = eins_str.split("->")
-        batch1, batch2 = batch12.split(",")
-        ansatz = self_ansatz.contract(
-            other_ansatz,
-            list(batch1) + core1,
-            list(batch2) + core2,
-            list(batch_out) + core_out,
-        )
-        return CircuitComponent(ansatz, wires_result)
+
+        concat_ansatz = self.ansatz.concat(other.ansatz, axis=axis)
+
+        return self._from_attributes(concat_ansatz, self.wires, self.name)
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
         r"""
@@ -500,28 +475,41 @@ class CircuitComponent:
             array: The Fock representation of this component.
 
         Raises:
+            ValueError: If the component has no ``AnsatzFactory``.
             ValueError: If the shape is not valid for the component.
         """
+        if self.ansatz_factory is None:
+            raise ValueError("CircuitComponent has no ansatz factory.")
         shape = self._check_fock_shape(shape)
-        try:
-            A, b, c = self.ansatz.triple
-            G = math.hermite_renormalized(
-                A,
-                b,
-                math.ones(self.ansatz.batch_shape, dtype=math.complex128),
-                shape=shape + self.ansatz.shape_derived_vars,
+        ansatz_factory = self.ansatz_factory
+        if ansatz_factory.ansatz_dict.get(ReprEnum.FOCK, None) is None:
+            ansatz_factory = self.to_fock(shape).ansatz_factory
+        return (
+            ansatz_factory(
+                **self.parameters,
+                representation=ReprEnum.FOCK,
+                shape=shape,
             )
-            G = math.reshape(G, self.ansatz.batch_shape + shape + (-1,))
-            cs = math.reshape(c, (*self.ansatz.batch_shape, -1))
-            core_str = "".join(
-                [chr(i) for i in range(97, 97 + len(G.shape[self.ansatz.batch_dims :]))],
-            )
-            ret = math.einsum(f"...{core_str},...{core_str[-1]}->...{core_str[:-1]}", G, cs)
-            if self.ansatz._lin_sup:
-                ret = math.sum(ret, axis=self.ansatz.batch_dims - 1)
-        except AttributeError:
-            ret = self.ansatz.reduce(shape).array
-        return ret
+            .reduce(shape)
+            .array
+        )
+
+    def _fock_shapes_for_contraction(
+        self, other: CircuitComponent
+    ) -> tuple[tuple[int, ...], tuple[int, ...]]:
+        r"""
+        Helper function to get the optimal shapes for contracting self with other in Fock.
+        """
+        self_shape = list(self.auto_shape())
+        other_shape = list(other.auto_shape())
+        contracted_idxs = self.wires.contracted_indices(other.wires)
+        for idx1, idx2 in zip(*contracted_idxs):
+            min_shape = min(self_shape[idx1], other_shape[idx2])
+            override = self.manual_shape[idx1] or other.manual_shape[idx2]
+            override_shape = max(self.manual_shape[idx1] or 1, other.manual_shape[idx2] or 1)
+            self_shape[idx1] = min_shape if not override else override_shape
+            other_shape[idx2] = min_shape if not override else override_shape
+        return tuple(self_shape), tuple(other_shape)
 
     def on(self, modes: int | Sequence[int]) -> CircuitComponent:
         r"""
@@ -540,7 +528,7 @@ class CircuitComponent:
 
         Raises:
             ValueError: If the component's wires are not all defined on the same modes or if the
-            length of the given modes is different from the length of the original modes.
+                length of the given modes is different from the length of the original modes.
         """
         modes = (modes,) if isinstance(modes, int) else modes
         ob = self.wires.output.bra.modes
@@ -555,14 +543,16 @@ class CircuitComponent:
         for subset in subsets:
             if subset and len(subset) != len(modes):
                 raise ValueError(f"Expected ``{len(modes)}`` modes, found ``{len(subset)}``.")
-        return self._light_copy(
-            Wires(
-                modes_out_bra=set(modes) if ob else set(),
-                modes_in_bra=set(modes) if ib else set(),
-                modes_out_ket=set(modes) if ok else set(),
-                modes_in_ket=set(modes) if ik else set(),
-            ),
+        wires = Wires(
+            modes_out_bra=set(modes) if ob else set(),
+            modes_in_bra=set(modes) if ib else set(),
+            modes_out_ket=set(modes) if ok else set(),
+            modes_in_ket=set(modes) if ik else set(),
         )
+        for w_o, w_n in zip(self.wires.index_order, wires.index_order):
+            w_n.repr = w_o.repr
+            w_n.fock_shape = w_o.fock_shape
+        return self._light_copy(wires=wires)
 
     def quadrature(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
         r"""
@@ -573,8 +563,7 @@ class CircuitComponent:
         Args:
             quad: discretized quadrature points to evaluate over in the
                 quadrature representation. One vector of points per wire.
-            phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+            phi: The quadrature angle. ``0`` corresponds to the x quadrature, ``pi/2`` to the p quadrature.
         Returns:
             A circuit component with the given quadrature representation.
         """
@@ -599,15 +588,13 @@ class CircuitComponent:
                     q_to_n = math.conj(q_to_n)
                 quad_basis_vecs += [math.cast(q_to_n, "complex128")]
 
-            # Convert each dimension to quadrature
-            fock_string = "".join([chr(97 + self.n_modes + dim) for dim in range(dims)])
-            q_string = "".join(
-                [
-                    f"{fock_string[idx]}{chr(97 + wire.mode)},"
-                    for idx, wire in enumerate(self.wires)
-                ],
-            )[:-1]
-            out_string = "".join([chr(97 + mode) for mode in self.modes])
+            # Assign compact einsum characters: first modes, then fock dims.
+            mode_char = {m: chr(97 + i) for i, m in enumerate(self.modes)}
+            fock_string = "".join(chr(97 + self.n_modes + d) for d in range(dims))
+            q_string = ",".join(
+                f"{fock_string[idx]}{mode_char[wire.mode]}" for idx, wire in enumerate(self.wires)
+            )
+            out_string = "".join(mode_char[mode] for mode in self.modes)
             ret = math.einsum(
                 "..." + fock_string + "," + q_string + "->" + out_string + "...",
                 self.ansatz.array,
@@ -625,7 +612,9 @@ class CircuitComponent:
             self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
         )
         batch_dims = len(batch_shape)
-        size = int(math.prod(ret.shape[:-batch_dims] if batch_shape else ret.shape))
+        size = 1
+        for i in ret.shape[:-batch_dims] if batch_shape else ret.shape:
+            size *= i
         return math.reshape(ret, (size, *batch_shape))
 
     def quadrature_triple(
@@ -637,55 +626,123 @@ class CircuitComponent:
 
         Args:
             phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+                    ``phi=pi/2`` to the p quadrature.
         Returns:
             A,b,c triple of the quadrature representation
         """
         return self.to_quadrature(phi=phi).ansatz.triple
 
+    def stack(self, other: CircuitComponent, axis: int = 0) -> CircuitComponent:
+        r"""
+        Stacks this component with another along a new batch axis.
+
+        The two components must have the same wires and compatible ansatze.
+        A new batch axis is inserted at the specified position.
+
+        >>> from mrmustard.lab import Coherent
+        >>> state1 = Coherent(mode=0, alpha=1.0)
+        >>> state2 = Coherent(mode=0, alpha=2.0)
+        >>> stacked = state1.stack(state2, axis=0)
+        >>> assert stacked.ansatz.batch_shape == (2,)
+
+        Args:
+            other: The other circuit component to stack with.
+            axis: The position where the new batch axis will be inserted.
+
+        Returns:
+            A new CircuitComponent with stacked ansatze.
+
+        Raises:
+            ValueError: If wires don't match, ansatz types don't match, or axis is out of range.
+        """
+        if (sw := self.wires) != (ow := other.wires):
+            raise ValueError(f"Can't stack components with different wires: {sw} vs {ow}")
+
+        if (sa := type(self.ansatz)) is not (oa := type(other.ansatz)):
+            raise ValueError(f"Can't stack components with different ansatz types: {sa} vs {oa}")
+
+        # Normalize negative axis
+        if axis < 0:
+            axis = self.ansatz.batch_dims + 1 + axis
+
+        if axis < 0 or axis > self.ansatz.batch_dims:
+            raise ValueError(f"axis {axis} is out of range for batch_dims {self.ansatz.batch_dims}")
+
+        # Add a new axis at the specified position to both components
+        index_tuple = (
+            (slice(None),) * axis + (None,) + (slice(None),) * (self.ansatz.batch_dims - axis)
+        )
+        self_expanded = self[index_tuple]
+        other_expanded = other[index_tuple]
+
+        # Concatenate along the new axis
+        return self_expanded.concat(other_expanded, axis=axis)
+
     def to_bargmann(self) -> CircuitComponent:
         r"""
         Returns a new ``CircuitComponent`` in the ``Bargmann`` representation.
 
-        .. code-block::
+        >>> from mrmustard.lab import Dgate, Number
+        >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+        >>> d = Dgate(1, alpha=0.1 + 0.1j)
+        >>> d_fock = d.to_fock(shape=3)
+        >>> d_bargmann = d_fock.to_bargmann()
+        >>> num = Number(0, n=2)
+        >>> assert isinstance(num.ansatz, ArrayAnsatz) # in Fock representation
+        >>> num_bargmann = num.to_bargmann()
+        >>> assert isinstance(num_bargmann.ansatz, PolyExpAnsatz) # in Bargmann representation
 
-            >>> from mrmustard.lab import Dgate, Number
-            >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+        Returns:
+            A new ``CircuitComponent`` in the ``Bargmann`` representation.
 
-            >>> d = Dgate(1, alpha=0.1 + 0.1j)
-            >>> d_fock = d.to_fock(shape=3)
-            >>> d_bargmann = d_fock.to_bargmann()
-            >>> num = Number(0, n=2)
-            >>> assert isinstance(num.ansatz, ArrayAnsatz) # in Fock representation
-            >>> num_bargmann = num.to_bargmann()
-            >>> assert isinstance(num_bargmann.ansatz, PolyExpAnsatz) # in Bargmann representation
+        Raises:
+            AttributeError: If the component has no ``AnsatzFactory``.
         """
-        if isinstance(self.ansatz, PolyExpAnsatz):
+        ansatz_factory = self.ansatz_factory
+        if ansatz_factory is None:
+            raise ValueError("CircuitComponent has no ansatz factory.")
+
+        representations = set(self.wires.representations)
+        if len(representations) == 1 and ReprEnum.BARGMANN in representations:
             return self
 
-        if self.ansatz._original_abc_data:
-            A, b, c = self.ansatz._original_abc_data
-        else:
-            A, b, _ = identity_Abc(len(self.wires.quantum))
-            c = self.ansatz.data
-        ansatz = PolyExpAnsatz(A, b, c)
         wires = self.wires.copy()
         for w in wires.quantum:
             w.repr = ReprEnum.BARGMANN
+        ret = self._light_copy(wires=wires)
 
-        cls = type(self)
-        params = signature(cls).parameters
-        if "mode" in params or "modes" in params:
-            ret = self.__class__(self.modes, **self.parameters.to_dict())
-            ret._ansatz = ansatz
-            ret._wires = wires
+        ansatz_dict = ansatz_factory.ansatz_dict
+        if ansatz_dict.get(ReprEnum.BARGMANN, None) is None:
+            fock_fn, fock_params = ansatz_dict[ReprEnum.FOCK]
+            ansatz_dict[ReprEnum.BARGMANN] = (fock_to_bargmann(fock_fn), fock_params)
         else:
-            ret = self._from_attributes(ansatz, wires, self.name)
+            shape = self.manual_shape
+            bargmann_ansatz = self.ansatz_factory(
+                **self.parameters, representation=ReprEnum.BARGMANN, shape=shape
+            )
+            if bargmann_ansatz.num_derived_vars > 0 and shape != bargmann_ansatz.shape_derived_vars:
+                ansatz_factory, _ = AnsatzFactory.from_ansatz(self.ansatz, ReprEnum.FOCK)
+                ansatz_dict = ansatz_factory.ansatz_dict
+                fock_fn, fock_params = ansatz_dict[ReprEnum.FOCK]
+                ansatz_dict[ReprEnum.BARGMANN] = (
+                    fock_to_bargmann(fock_fn),
+                    (*fock_params, "shape"),
+                )
+                ret._ansatz_factory = ansatz_factory
+
         return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
         r"""
         Returns a new ``CircuitComponent`` in the ``Fock`` representation.
+
+        >>> from mrmustard.lab import Dgate
+        >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+        >>> d = Dgate(1, alpha=0.1 + 0.1j)
+        >>> d_fock = d.to_fock(shape=3)
+        >>> assert d_fock.name == d.name
+        >>> assert isinstance(d.ansatz, PolyExpAnsatz) # in Bargmann representation
+        >>> assert isinstance(d_fock.ansatz, ArrayAnsatz) # in Fock representation
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as
@@ -695,40 +752,24 @@ class CircuitComponent:
         Returns:
             A new ``CircuitComponent`` in the ``Fock`` representation.
 
-        .. code-block::
-
-            >>> from mrmustard.lab import Dgate
-            >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-
-            >>> d = Dgate(1, alpha=0.1 + 0.1j)
-            >>> d_fock = d.to_fock(shape=3)
-
-            >>> assert d_fock.name == d.name
-            >>> assert isinstance(d.ansatz, PolyExpAnsatz) # in Bargmann representation
-            >>> assert isinstance(d_fock.ansatz, ArrayAnsatz) # in Fock representation
+        Raises:
+            ValueError: If the component has no ``AnsatzFactory``.
         """
-        shape = shape or self.auto_shape()
-        batch_dims = self.ansatz.batch_dims - 1 if self.ansatz._lin_sup else self.ansatz.batch_dims
-        fock = ArrayAnsatz(self.fock_array(shape), batch_dims=batch_dims)
-        try:
-            if self.ansatz.num_derived_vars == 0 and not self.ansatz._lin_sup:
-                fock._original_abc_data = self.ansatz.triple
-        except AttributeError:
-            fock._original_abc_data = None
+        if self.ansatz_factory is None:
+            raise ValueError("CircuitComponent has no ansatz factory.")
+        shape = self._check_fock_shape(shape)
+        ansatz_factory = self.ansatz_factory
+        if (ansatz_dict := ansatz_factory.ansatz_dict).get(ReprEnum.FOCK, None) is None:
+            bargmann_fn, bargmann_params = ansatz_dict[ReprEnum.BARGMANN]
+            ansatz_dict[ReprEnum.FOCK] = (
+                bargmann_to_fock(bargmann_fn),
+                (*bargmann_params, "shape"),
+            )
         wires = self.wires.copy()
         for w in wires.quantum:
             w.repr = ReprEnum.FOCK
-            w.fock_cutoff = fock.core_shape[w.index]
-
-        cls = type(self)
-        params = signature(cls).parameters
-        if "mode" in params or "modes" in params:
-            ret = self.__class__(self.modes, **self.parameters.to_dict())
-            ret._ansatz = fock
-            ret._wires = wires
-        else:
-            ret = self._from_attributes(fock, wires, self.name)
-        return ret
+            w.fock_shape = shape[w.index]
+        return self._light_copy(wires=wires)
 
     def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
         r"""
@@ -736,8 +777,8 @@ class CircuitComponent:
         in terms of A,b,c.
 
         Args:
-            phi (float): The quadrature angle. ``phi=0`` corresponds to the x quadrature,
-                    ``phi=pi/2`` to the p quadrature. The default value is ``0``.
+            phi: The quadrature angle. ``0`` corresponds to the x quadrature, ``pi/2`` to the p quadrature.
+
         Returns:
             A circuit component with the given quadrature representation.
         """
@@ -748,13 +789,36 @@ class CircuitComponent:
         BtoQ_ok = BtoQ(self.wires.output.ket.modes, phi)
         BtoQ_ik = BtoQ(self.wires.input.ket.modes, phi).dual
 
-        object_to_convert = self
-        if isinstance(self.ansatz, ArrayAnsatz):
-            object_to_convert = self.to_bargmann()
+        object_to_convert = self.to_bargmann()
 
         return BtoQ_ib.contract(BtoQ_ik.contract(object_to_convert).contract(BtoQ_ok)).contract(
             BtoQ_ob,
         )
+
+    def to_standard_order(self) -> CircuitComponent:
+        r"""
+        Reorders the ansatz and wires to the standard order.
+
+        Returns:
+            A circuit component in the standard order.
+        """
+        # make a copy of the wires and reindex them
+        wires_standard_order = self.wires.copy(new_ids=True)
+        wires_standard_order._reindex()
+
+        # create a new instance of the component with the reindexed wires
+        ret = self._light_copy(wires_standard_order)
+
+        # reorder the ansatz to the standard order
+        ok = self.wires.ket.output.indices
+        ik = self.wires.ket.input.indices
+        ib = self.wires.bra.input.indices
+        ob = self.wires.bra.output.indices
+        ansatz_standard_order = self.ansatz.reorder(ob + ib + ok + ik)
+
+        # update the ansatz factory
+        ret._ansatz_factory, _ = AnsatzFactory.from_ansatz(ansatz_standard_order)
+        return ret
 
     def _check_fock_shape(self, shape: int | Sequence[int] | None = None) -> tuple[int, ...]:
         r"""
@@ -771,11 +835,8 @@ class CircuitComponent:
             ValueError: If the shape either contains 0 or is not the correct length.
         """
         shape = shape if shape is not None else self.auto_shape()
-        num_vars = (
-            self.ansatz.num_CV_vars
-            if isinstance(self.ansatz, PolyExpAnsatz)
-            else self.ansatz.num_vars
-        )
+        ansatz = self.ansatz
+        num_vars = ansatz.num_CV_vars if isinstance(ansatz, PolyExpAnsatz) else ansatz.num_vars
         if isinstance(shape, int | math.int64):
             shape = (shape,) * num_vars
         shape = tuple(shape)
@@ -793,8 +854,8 @@ class CircuitComponent:
         """
         instance = super().__new__(self.__class__)
         instance.__dict__ = self.__dict__.copy()
-        instance._ansatz = self.ansatz
-        instance._wires = wires or Wires(*self.wires.args)
+        instance._ansatz_factory = self.ansatz_factory
+        instance._wires = wires or self.wires.copy()
         return instance
 
     def _rshift_return(
@@ -806,84 +867,12 @@ class CircuitComponent:
             return result
         return result.ansatz.scalar
 
-    def _serialize(self) -> tuple[dict[str, Any], dict[str, ArrayLike]]:
-        """
-        Inner serialization to be used by Circuit.serialize().
-
-        The first dict must be JSON-serializable, and the second dict must contain
-        the (non-JSON-serializable) array-like data to be collected separately.
-
-        Returns:
-            A tuple containing the serialized data and the array-like data.
-        """
-        cls = type(self)
-        serializable = {"class": f"{cls.__module__}.{cls.__qualname__}"}
-        params = signature(cls).parameters
-        if "name" in params:  # assume abstract type, serialize the representation
-            ansatz_cls = type(self.ansatz)
-            serializable["name"] = self.name
-            serializable["wires"] = tuple(tuple(a) for a in self.wires.args)
-            serializable["ansatz_cls"] = f"{ansatz_cls.__module__}.{ansatz_cls.__qualname__}"
-            return serializable, self.ansatz.to_dict()
-
-        # handle modes parameter
-        if "modes" in params:
-            serializable["modes"] = tuple(self.wires.modes)
-        elif "mode" in params:
-            serializable["mode"] = tuple(self.wires.modes)
-        else:
-            raise TypeError(f"{cls.__name__} does not seem to have any wires construction method")
-
-        if self.parameters:
-            for k, v in self.parameters.variables.items():
-                serializable[f"{k}_bounds"] = v.bounds
-                serializable[f"{k}_trainable"] = True
-            return serializable, {k: v.value for k, v in self.parameters.all_parameters.items()}
-
-        return serializable, {}
-
-    def _tree_flatten(self):  # pragma: no cover
-        children = (self.parameters, self.ansatz)
-        aux_data = (self.wires, self.name)
-        return (children, aux_data)
-
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
         Implements the addition between circuit components.
         """
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
-
-        if (
-            isinstance(self.ansatz, PolyExpAnsatz)
-            and self.ansatz._fn is not None
-            and self.ansatz._fn == other.ansatz._fn
-        ):
-            new_params = {}
-            for name in self.ansatz._kwargs:
-                self_param = getattr(self.parameters, name)
-                other_param = getattr(other.parameters, name)
-                if (self_type := type(self_param)) is not (other_type := type(other_param)):
-                    raise ValueError(
-                        f"Parameter '{name}' is a {self_type.__name__} for one component and a {other_type.__name__} for the other."
-                    )
-                if (self.ansatz.batch_dims - self.ansatz._lin_sup) > 0 or (
-                    other.ansatz.batch_dims - other.ansatz._lin_sup
-                ) > 0:
-                    raise ValueError("Cannot add batched components.")
-                if isinstance(self_param, Variable):
-                    if self_param.bounds != other_param.bounds:
-                        raise ValueError(
-                            f"Parameter '{name}' has bounds {self_param.bounds} and {other_param.bounds} for the two components."
-                        )
-                    new_params[name + "_trainable"] = True
-                    new_params[name + "_bounds"] = self_param.bounds
-                self_val = math.atleast_nd(self_param.value, 1)
-                other_val = math.atleast_nd(other_param.value, 1)
-                new_params[name] = math.concat((self_val, other_val), axis=0)
-            ret = self.__class__(self.modes, **new_params)
-            ret.ansatz._lin_sup = True
-            return ret
         ansatz = self.ansatz + other.ansatz
         name = self.name if self.name == other.name else ""
         ret = self._from_attributes(ansatz, self.wires, name)
@@ -904,6 +893,18 @@ class CircuitComponent:
             return False
         return self.ansatz == other.ansatz and self.wires == other.wires
 
+    def __getitem__(self, index: Any) -> CircuitComponent:
+        r"""
+        Batch-only indexing on the underlying ansatz. Mirrors ``Ansatz``'s batch-only ``__getitem__``.
+        Core axes and mode selection are not indexable here. Use ``get_modes`` for subsystem selection.
+
+        Raises:
+            AttributeError: If the circuit component has no ansatz to index.
+        """
+        if self.ansatz is None:
+            raise AttributeError("This circuit component has no ansatz to index.")
+        return self._from_attributes(self.ansatz[index], self.wires, self.name)
+
     def __mul__(self, other: Scalar) -> CircuitComponent:
         r"""
         Implements the multiplication by a scalar from the right.
@@ -911,14 +912,12 @@ class CircuitComponent:
         return self._from_attributes(self.ansatz * other, self.wires, self.name)
 
     def __repr__(self) -> str:
-        ansatz = self.ansatz
-        repr_name = ansatz.__class__.__name__
-        if repr_name == "NoneType":
+        if self.ansatz is None:
             return self.__class__.__name__ + f"(modes={self.modes}, name={self.name})"
         return (
             self.__class__.__name__
             + f"(modes={self.modes}, name={self.name}"
-            + f", repr={repr_name})"
+            + f", repr={self.ansatz!s})"
         )
 
     def __rmatmul__(self, other: Scalar) -> CircuitComponent:
@@ -956,14 +955,12 @@ class CircuitComponent:
         Note that a ``CircuitComponent`` is allowed to right-shift into scalars because the scalar
         part may result from an automated contraction subroutine that involves several components).
 
-        .. code-block::
-
-            >>> from mrmustard.lab import Coherent, Attenuator, Ket, DM, Channel
-            >>> state = Coherent(0, 1.0)
-            >>> assert issubclass(Coherent, Ket)
-            >>> assert issubclass(Attenuator, Channel)
-            >>> assert isinstance(state >> Attenuator(0, 0.5), DM)
-            >>> assert math.allclose(state >> state.dual, 1+0j)
+        >>> from mrmustard.lab import Coherent, Attenuator, Ket, DM, Channel
+        >>> state = Coherent(0, 1.0)
+        >>> assert issubclass(Coherent, Ket)
+        >>> assert issubclass(Attenuator, Channel)
+        >>> assert isinstance(state >> Attenuator(0, 0.5), DM)
+        >>> assert math.allclose(state >> state.dual, 1+0j)
         """
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)
@@ -989,12 +986,12 @@ class CircuitComponent:
         if only_ket or only_bra or both_sides:
             ret = self.contract(other)
         elif self_needs_bra or self_needs_ket:
-            ret = self.adjoint.contract(self.contract(other), "zip")
+            ret = self.adjoint.contract(self.contract(other))
         elif other_needs_bra or other_needs_ket:
             ret = self.contract(other.adjoint).contract(other)
         else:
-            msg = f"``>>`` not supported between {self} and {other} because it's not clear "
-            msg += "whether or where to add bra wires. Use ``@`` instead and specify all the components."
+            msg = f"``>>`` not supported between {self} and {other} because it's not clear if or "
+            msg += "where to add missing wires. Use ``contract`` and specify all the components."
             raise ValueError(msg)
         return self._rshift_return(ret)
 

@@ -29,9 +29,10 @@ from collections.abc import Sequence
 
 from mrmustard import math, settings
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from mrmustard.physics.ansatz_factory import AnsatzFactory
 from mrmustard.physics.bargmann_utils import XY_of_channel, au2Symplectic, symplectic2Au
 from mrmustard.physics.triples import XY_to_channel_Abc
-from mrmustard.physics.wires import Wires
+from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, RealMatrix, Vector
 
 from ..circuit_components import CircuitComponent
@@ -132,19 +133,17 @@ class Transformation(CircuitComponent):
         Returns the mathematical inverse of the transformation, if it exists.
         Note that it can be unphysical, for example when the original is not unitary.
 
+        >>> from mrmustard.lab import GaussianDM, Identity, Operation
+        >>> rho = GaussianDM.random(modes=0, seed=1)
+        >>> rho_as_operator = Operation.from_bargmann([0], [0], rho.ansatz.triple)
+        >>> assert rho_as_operator >> rho_as_operator.inverse() == Identity([0])
+
         Returns:
             The inverse of the transformation.
 
         Raises:
             NotImplementedError: If the input and output wires have different lengths.
             NotImplementedError: If the transformation is not in the Bargmann representation.
-
-        .. code-block::
-            >>> from mrmustard.lab import GDM, Identity
-
-            >>> rho = GDM(0, beta = 0.1)
-            >>> rho_as_operator = Operation.from_bargmann([0], [0], rho.ansatz.triple)
-            >>> assert rho_as_operator >> rho_as_operator.inverse() == Identity([0])
         """
         if not len(self.wires.input) == len(self.wires.output):
             raise NotImplementedError(
@@ -154,7 +153,9 @@ class Transformation(CircuitComponent):
             raise NotImplementedError("Only Bargmann representation is supported.")
 
         A_orig, b_orig, c_orig = self.ansatz.triple
-        A, b, _ = self.dual.ansatz.conj.triple
+
+        A, b, _ = self.dual.to_standard_order().ansatz.conj.triple
+
         A_inv = math.inv(A)
         b_of_inverse = math.einsum("...ij,...j->...i", -math.inv(A), b)
 
@@ -179,8 +180,8 @@ class Transformation(CircuitComponent):
 
         return self._from_attributes(
             PolyExpAnsatz(
-                math.inv(A),
-                math.einsum("...ij,...j->...i", -math.inv(A), b),
+                A_inv,
+                b_of_inverse,
                 c_of_inverse,
             ),
             self.wires.copy(new_ids=True),
@@ -208,9 +209,18 @@ class Operation(Transformation):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
+        wires = Wires(set(), set(), set(modes_out), set(modes_in))
+        if ansatz is not None:
+            ansatz_factory, representation = AnsatzFactory.from_ansatz(ansatz)
+            if representation == ReprEnum.FOCK:
+                for w in wires.quantum:
+                    w.repr = ReprEnum.FOCK
+                    w.fock_shape = ansatz.core_shape[w.index]
+        else:
+            ansatz_factory = None
         return Operation(
-            ansatz=ansatz,
-            wires=Wires(set(), set(), set(modes_out), set(modes_in)),
+            ansatz_factory=ansatz_factory,
+            wires=wires,
             name=name,
         )
 
@@ -241,9 +251,18 @@ class Unitary(Operation):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
+        wires = Wires(set(), set(), set(modes_out), set(modes_in))
+        if ansatz is not None:
+            ansatz_factory, representation = AnsatzFactory.from_ansatz(ansatz)
+            if representation == ReprEnum.FOCK:
+                for w in wires.quantum:
+                    w.repr = ReprEnum.FOCK
+                    w.fock_shape = ansatz.core_shape[w.index]
+        else:
+            ansatz_factory = None
         return Unitary(
-            ansatz=ansatz,
-            wires=Wires(set(), set(), set(modes_out), set(modes_in)),
+            ansatz_factory=ansatz_factory,
+            wires=wires,
             name=name,
         )
 
@@ -252,19 +271,15 @@ class Unitary(Operation):
         r"""
         A method for constructing a ``Unitary`` from its symplectic representation
 
+        >>> from mrmustard import math
+        >>> from mrmustard.lab import Unitary, Identity
+        >>> S = math.eye(2)
+        >>> U = Unitary.from_symplectic([0], S)
+        >>> assert U == Identity([0])
+
         Args:
             modes: the modes that we want the unitary to act on (should be a list of int)
             S: the symplectic representation (in XXPP order)
-
-        .. code-block::
-
-            >>> from mrmustard import math
-            >>> from mrmustard.lab import Unitary, Identity
-
-            >>> S = math.eye(2)
-            >>> U = Unitary.from_symplectic([0], S)
-
-            >>> assert U == Identity([0])
         """
         m = len(modes)
         batch_shape = S.shape[:-2]
@@ -275,42 +290,51 @@ class Unitary(Operation):
         return Unitary.from_bargmann(modes, modes, (A, b, c))
 
     @classmethod
-    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Unitary:
+    def random(
+        cls, modes: int | tuple[int, ...], max_r: float = 1.0, seed: int | None = None
+    ) -> Unitary:
         r"""
         Returns a random unitary.
+
+        >>> from mrmustard.lab import Unitary
+        >>> U = Unitary.random((0, 1, 2), max_r=1.2)
+        >>> assert U.modes == (0,1,2)
 
         Args:
             modes: The modes of the unitary.
             max_r: The maximum squeezing parameter.
+            seed: The random seed. If ``None``, the global seed is used.
 
-        .. code-block::
+        Returns:
+            The random Unitary.
 
-            >>> from mrmustard.lab import Unitary
-
-            >>> U = Unitary.random((0, 1, 2), max_r=1.2)
-            >>> assert U.modes == (0,1,2)
+        Raises:
+            ValueError: if ``modes`` is an empty tuple.
         """
+        modes = (modes,) if isinstance(modes, int) else modes
+        if len(modes) == 0:
+            raise ValueError("Cannot create a random unitary with no modes.")
         m = len(modes)
-        S = math.random_symplectic(m, max_r)
+        S = math.random_symplectic(m, max_r, seed=seed)
         return Unitary.from_symplectic(modes, S)
 
     def inverse(self) -> Unitary:
         r"""
         Returns the inverse of the unitary.
 
-        .. code-block::
-
-            >>> from mrmustard.lab import Unitary, Identity
-
-            >>> u = Unitary.random((0, 1, 2))
-            >>> assert u >> u.inverse() == Identity(u.modes)
+        >>> from mrmustard.lab import Unitary, Identity
+        >>> u = Unitary.random((0, 1, 2))
+        >>> assert u >> u.inverse() == Identity(u.modes)
         """
         unitary_dual = self.dual
-        return Unitary(
-            ansatz=unitary_dual.ansatz,
+        ret = Unitary(
+            ansatz_factory=unitary_dual.ansatz_factory,
             wires=unitary_dual.wires,
             name=unitary_dual.name,
         )
+        for param in self.parameters:
+            ret.parameters[param] = self.parameters[param]
+        return ret
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
         r"""
@@ -321,6 +345,7 @@ class Unitary(Operation):
             Contraction of ``self`` and ``other``.
 
         .. details::
+
             For example ``u >> channel`` is equivalent to ``u.adjoint @ u @ channel`` because the
             channel requires an input on the bra side as well.
 
@@ -330,9 +355,9 @@ class Unitary(Operation):
         ret = super().__rshift__(other)
 
         if isinstance(other, Unitary):
-            return Unitary(ret.ansatz, ret.wires)
+            return Unitary(ansatz_factory=ret.ansatz_factory, wires=ret.wires)
         if isinstance(other, Channel):
-            return Channel(ret.ansatz, ret.wires)
+            return Channel(ansatz_factory=ret.ansatz_factory, wires=ret.wires)
         return ret
 
 
@@ -355,9 +380,18 @@ class Map(Transformation):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
+        wires = Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in))
+        if ansatz is not None:
+            ansatz_factory, representation = AnsatzFactory.from_ansatz(ansatz)
+            if representation == ReprEnum.FOCK:
+                for w in wires.quantum:
+                    w.repr = ReprEnum.FOCK
+                    w.fock_shape = ansatz.core_shape[w.index]
+        else:
+            ansatz_factory = None
         return Map(
-            ansatz=ansatz,
-            wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
+            ansatz_factory=ansatz_factory,
+            wires=wires,
             name=name,
         )
 
@@ -374,12 +408,9 @@ class Channel(Map):
         r"""
         Whether this channel is completely positive (CP).
 
-        .. code-block::
-
-            >>> from mrmustard.lab import Channel
-
-            >>> channel = Channel.random((0, 1, 2))
-            >>> assert channel.is_CP
+        >>> from mrmustard.lab import Channel
+        >>> channel = Channel.random((0, 1, 2))
+        >>> assert channel.is_CP
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
@@ -410,12 +441,9 @@ class Channel(Map):
         r"""
         Whether this channel is trace preserving (TP).
 
-        .. code-block::
-
-            >>> from mrmustard.lab import Channel
-
-            >>> channel = Channel.random((0, 1, 2))
-            >>> assert channel.is_TP
+        >>> from mrmustard.lab import Channel
+        >>> channel = Channel.random((0, 1, 2))
+        >>> assert channel.is_TP
         """
         if self.ansatz._lin_sup:
             raise NotImplementedError(
@@ -446,12 +474,9 @@ class Channel(Map):
         r"""
         Whether this channel is physical (i.e. CPTP).
 
-        .. code-block::
-
-            >>> from mrmustard.lab import Channel
-
-            >>> channel = Channel.random((0, 1, 2))
-            >>> assert channel.is_physical
+        >>> from mrmustard.lab import Channel
+        >>> channel = Channel.random((0, 1, 2))
+        >>> assert channel.is_physical
         """
         return self.is_CP and self.is_TP
 
@@ -460,14 +485,11 @@ class Channel(Map):
         r"""
         Returns the X and Y matrix corresponding to the channel.
 
-        .. code-block::
-
-            >>> from mrmustard.lab import Channel
-
-            >>> channel = Channel.random((0, 1))
-            >>> X, Y = channel.XY
-            >>> assert X.shape == (4, 4)
-            >>> assert Y.shape == (4, 4)
+        >>> from mrmustard.lab import Channel
+        >>> channel = Channel.random((0, 1))
+        >>> X, Y = channel.XY
+        >>> assert X.shape == (4, 4)
+        >>> assert Y.shape == (4, 4)
         """
         return XY_of_channel(self.ansatz.A)
 
@@ -483,9 +505,18 @@ class Channel(Map):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
             raise ValueError(f"Input modes must be sorted. got {modes_in}")
+        wires = Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in))
+        if ansatz is not None:
+            ansatz_factory, representation = AnsatzFactory.from_ansatz(ansatz)
+            if representation == ReprEnum.FOCK:
+                for w in wires.quantum:
+                    w.repr = ReprEnum.FOCK
+                    w.fock_shape = ansatz.core_shape[w.index]
+        else:
+            ansatz_factory = None
         return Channel(
-            ansatz=ansatz,
-            wires=Wires(set(modes_out), set(modes_in), set(modes_out), set(modes_in)),
+            ansatz_factory=ansatz_factory,
+            wires=wires,
             name=name,
         )
 
@@ -501,22 +532,17 @@ class Channel(Map):
         r"""
         Initialize a Channel from its XY representation.
 
+        >>> from mrmustard.lab import Attenuator, Channel
+        >>> X = math.eye(2)
+        >>> Y = math.zeros((2,2))
+        >>> channel = Channel.from_XY([0], [0], X,Y)
+        >>> assert channel == Attenuator(0, transmissivity=1)
+
         Args:
             modes: The modes the channel is defined on.
             X: The X matrix of the channel.
             Y: The Y matrix of the channel.
             d:  The d vector of the channel.
-
-
-        .. code-block::
-
-            >>> from mrmustard.lab import Attenuator, Channel
-
-            >>> X = math.eye(2)
-            >>> Y = math.zeros((2,2))
-            >>> channel = Channel.from_XY([0], [0], X,Y)
-
-            >>> assert channel == Attenuator(0, transmissivity=1)
 
         Raises:
             ValueError: If the dimensions of the X,Y matrices and the number of modes don't match.
@@ -540,33 +566,37 @@ class Channel(Map):
         return Channel.from_bargmann(modes_out, modes_in, XY_to_channel_Abc(X, Y, d))
 
     @classmethod
-    def random(cls, modes: Sequence[int], max_r: float = 1.0) -> Channel:
+    def random(
+        cls, modes: int | tuple[int, ...], max_r: float = 1.0, seed: int | None = None
+    ) -> Channel:
         r"""
         A random channel without displacement.
+
+        >>> from mrmustard.lab import Channel
+        >>> channel = Channel.random((0, 1, 2), max_r=1.2)
+        >>> assert channel.modes == (0, 1, 2)
 
         Args:
             modes: The modes of the channel.
             max_r: The maximum squeezing parameter.
+            seed: The random seed. If ``None``, the global seed is used.
 
-        .. code-block::
+        Returns:
+            The random channel.
 
-            >>> from mrmustard.lab import Channel
-
-            >>> channel = Channel.random((0, 1, 2), max_r=1.2)
-            >>> assert channel.modes == (0, 1, 2)
+        Raises:
+            ValueError: if ``modes`` is an empty tuple.
         """
+        modes = (modes,) if isinstance(modes, int) else modes
+        if len(modes) == 0:
+            raise ValueError("Cannot create a random channel with no modes.")
         from mrmustard.lab.states import Vacuum  # noqa: PLC0415
 
         m = len(modes)
-        U = Unitary.random(range(3 * m), max_r)
+        U = Unitary.random(range(3 * m), max_r, seed=seed)
         u_psi = Vacuum(range(2 * m)) >> U
         ansatz = u_psi.ansatz
-        kraus = ansatz.conj.contract(
-            ansatz,
-            idx1=list(range(4 * m)),
-            idx2=list(range(2 * m)) + list(range(4 * m, 6 * m)),
-            idx_out=list(range(2 * m, 6 * m)),
-        )
+        kraus = ansatz.conj.contract(ansatz, idxs=(list(range(2 * m)), list(range(2 * m))))
         return Channel.from_bargmann(modes, modes, kraus.triple)
 
     def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
@@ -578,5 +608,5 @@ class Channel(Map):
         """
         ret = super().__rshift__(other)
         if isinstance(other, Channel | Unitary):
-            return Channel(ret.ansatz, ret.wires)
+            return Channel(ansatz_factory=ret.ansatz_factory, wires=ret.wires)
         return ret

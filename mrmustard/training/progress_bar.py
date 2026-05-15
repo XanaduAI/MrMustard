@@ -14,13 +14,17 @@
 
 """A module containing classes and methods for progress bars."""
 
-from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
+from rich.progress import BarColumn, Progress, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 
 from mrmustard import settings
 
+__all__ = ["ProgressBar"]
+
 
 class ProgressBar:
-    "A spiffy loading bar to display the progress during an optimization."
+    r"""
+    A spiffy loading bar to display the progress during an optimization.
+    """
 
     def __init__(self, max_steps: int):
         self.taskID = None
@@ -29,6 +33,8 @@ class ProgressBar:
                 TextColumn("Step {task.completed}/∞"),
                 BarColumn(),
                 TextColumn("Cost = {task.fields[loss]:.5f}"),
+                TextColumn(" | ⏱️ "),
+                TimeElapsedColumn(),
             )
         else:
             self.bar = Progress(
@@ -37,19 +43,23 @@ class ProgressBar:
                 TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
                 TextColumn("Cost = {task.fields[loss]:.5f} | ⏳ "),
                 TimeRemainingColumn(),
+                TextColumn(" | ⏱️ "),
+                TimeElapsedColumn(),
             )
         self.taskID = self.bar.add_task(
             description="Optimizing...",
-            start=max_steps > 0,
+            start=True,
             speed=0.0,
-            total=max_steps,
+            total=max_steps or None,
             loss=1.0,
             refresh=True,
             visible=settings.PROGRESSBAR,
         )
 
     def step(self, loss):
-        """Update bar step and the loss information associated with it."""
+        r"""
+        Update bar step and the loss information associated with it.
+        """
         speed = self.bar.tasks[0].speed or 0.0
         self.bar.update(self.taskID, advance=1, refresh=True, speed=speed, loss=loss)
 

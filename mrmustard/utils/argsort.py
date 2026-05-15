@@ -19,6 +19,8 @@ from collections.abc import Generator
 
 import numpy as np
 
+__all__ = ["argsort_gen"]
+
 
 def argsort_gen(generators: list[Generator[float, None, None]]) -> list[int]:
     r"""

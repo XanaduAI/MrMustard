@@ -18,6 +18,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab.transformations import Attenuator
+from mrmustard.parameters import Variable
 
 
 class TestAttenuator:
@@ -32,7 +33,7 @@ class TestAttenuator:
     def test_init(self, modes, transmissivity):
         gate = Attenuator(modes, transmissivity)
 
-        assert gate.name == "Att~"
+        assert gate.name == "Attenuator"
         assert gate.modes == (modes,)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
@@ -46,7 +47,8 @@ class TestAttenuator:
 
     def test_trainable_parameters(self):
         gate1 = Attenuator(0, 0.1)
-        gate2 = Attenuator(0, 0.1, transmissivity_trainable=True, transmissivity_bounds=(-0.2, 0.2))
+        transmissivity_var = Variable(0.1, "transmissivity", dtype=math.float64)
+        gate2 = Attenuator(0, transmissivity=transmissivity_var)
 
         with pytest.raises(AttributeError):
             gate1.parameters.transmissivity.value = 0.3

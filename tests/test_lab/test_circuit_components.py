@@ -40,13 +40,12 @@ from mrmustard.lab import (
     Unitary,
     Vacuum,
 )
-from mrmustard.lab.circuit_components import ReprEnum
-from mrmustard.math.parameters import Constant, Variable
+from mrmustard.parameters import Constant, Variable
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
+from mrmustard.physics.ansatz_factory import AnsatzFactory
 from mrmustard.physics.triples import displacement_gate_Abc, identity_Abc
-from mrmustard.physics.wires import Wires
-
-from ..random import Abc_triple
+from mrmustard.physics.utils import random_Abc
+from mrmustard.physics.wires import QuantumWire, ReprEnum, Wires
 
 
 class TestCircuitComponent:
@@ -61,8 +60,10 @@ class TestCircuitComponent:
         x = math.astensor(x, dtype=math.complex128)
         y = math.astensor(y, dtype=math.complex128)
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(x + 1j * y))
-        cc = CircuitComponent(ansatz, Wires(set(), set(), {1, 8}, {1, 8}), name=name)
-
+        ansatz_factory, _ = AnsatzFactory.from_ansatz(ansatz, ReprEnum.BARGMANN)
+        cc = CircuitComponent(
+            ansatz_factory=ansatz_factory, wires=Wires(set(), set(), {1, 8}, {1, 8}), name=name
+        )
         assert cc.name == name
         assert cc.modes == (1, 8)
         assert cc.wires == Wires(modes_out_ket={1, 8}, modes_in_ket={1, 8})
@@ -70,9 +71,12 @@ class TestCircuitComponent:
         assert cc.manual_shape == (None,) * 4
 
     def test_missing_name(self):
+        ansatz_factory, _ = AnsatzFactory.from_ansatz(
+            PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.2j)), ReprEnum.BARGMANN
+        )
         cc = CircuitComponent(
-            PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.2j)),
-            Wires(set(), set(), {1, 8}, {1, 8}),
+            ansatz_factory=ansatz_factory,
+            wires=Wires(set(), set(), {1, 8}, {1, 8}),
         )
         cc._name = None
         assert cc.name == "CC18"
@@ -98,7 +102,8 @@ class TestCircuitComponent:
 
     def test_from_to_quadrature(self):
         c = Dgate(0, alpha=0.1 + 0.2j) >> Sgate(0, r=1.0, phi=0.1)
-        cc = CircuitComponent(ansatz=c.ansatz, wires=c.wires, name=c.name)
+        ansatz_factory, _ = AnsatzFactory.from_ansatz(c.ansatz, ReprEnum.BARGMANN)
+        cc = CircuitComponent(ansatz_factory=ansatz_factory, wires=c.wires, name=c.name)
         ccc = CircuitComponent.from_quadrature((), (), (0,), (0,), cc.quadrature_triple())
         assert cc == ccc
 
@@ -141,7 +146,8 @@ class TestCircuitComponent:
     def test_light_copy(self):
         ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.1j))
         wires = Wires(set(), set(), {1}, {1})
-        d1 = CircuitComponent(ansatz=ansatz, wires=wires)
+        ansatz_factory, _ = AnsatzFactory.from_ansatz(ansatz, ReprEnum.BARGMANN)
+        d1 = CircuitComponent(ansatz_factory=ansatz_factory, wires=wires)
         d1_cp = d1._light_copy()
 
         assert d1_cp.parameters is d1.parameters
@@ -152,14 +158,28 @@ class TestCircuitComponent:
         assert Vacuum([1, 2]).on([3, 4]).modes == (3, 4)
         assert Number(3, n=4).on(9).modes == (9,)
 
-        d89 = DisplacedSqueezed(8, alpha=1 + 3j, r_trainable=True)
-        d67 = d89.on(6)
-        assert isinstance(d67.parameters.alpha, Constant)
-        assert math.allclose(d89.parameters.alpha.value, d67.parameters.alpha.value)
-        assert isinstance(d67.parameters.r, Variable)
-        assert math.allclose(d89.parameters.r.value, d67.parameters.r.value)
-        assert bool(d67.parameters) is True
-        assert d67.ansatz is d89.ansatz
+        r_var = Variable(0, "r", dtype=math.float64)
+        d8 = DisplacedSqueezed(8, alpha=1 + 3j, r=r_var)
+        d6 = d8.on(6)
+        assert isinstance(d6.parameters.alpha, Constant)
+        assert math.allclose(d8.parameters.alpha.value, d6.parameters.alpha.value)
+        assert isinstance(d6.parameters.r, Variable)
+        assert math.allclose(d8.parameters.r.value, d6.parameters.r.value)
+        assert bool(d6.parameters) is True
+        assert d6.ansatz is d8.ansatz
+
+        # ensure that representation and fock shape are preserved
+        d8_fock = d8.to_fock()
+        d6_fock_on = d8_fock.on(6)
+        for w8, w6 in zip(d8_fock.wires, d6_fock_on.wires):
+            assert w8.repr == w6.repr
+            assert w8.fock_shape == w6.fock_shape
+
+        # ensure that on matches to_fock
+        d6_fock_expected = d6.to_fock()
+        for w6, w6_expected in zip(d6_fock_on.wires, d6_fock_expected.wires):
+            assert w6.repr == w6_expected.repr
+            assert w6.fock_shape == w6_expected.fock_shape
 
     def test_on_error(self):
         with pytest.raises(ValueError):
@@ -192,24 +212,23 @@ class TestCircuitComponent:
         )
         for w in d_fock.wires.quantum:
             assert w.repr == ReprEnum.FOCK
-            assert w.fock_cutoff == d_fock.ansatz.core_shape[w.index]
+            assert w.fock_shape == d_fock.ansatz.core_shape[w.index]
 
         d_fock_barg = d_fock.to_bargmann()
-        assert d_fock.ansatz._original_abc_data == d.ansatz.triple
         assert d_fock_barg == d
         for w in d_fock_barg.wires.quantum:
             assert w.repr == ReprEnum.BARGMANN
 
     def test_to_fock_bargmann_poly_exp(self):
-        A, b, _ = Abc_triple(3)
-        c = settings.rng.random(5) + 0.0j
+        A, b, _ = random_Abc(3)
+        c = settings.get_rng().random(5) + 0.0j
         polyexp = PolyExpAnsatz(A, b, c)
+        ansatz_factory, _ = AnsatzFactory.from_ansatz(polyexp, ReprEnum.BARGMANN)
         fock_cc = CircuitComponent(
-            ansatz=polyexp,
+            ansatz_factory=ansatz_factory,
             wires=Wires(set(), set(), {0, 1}, set()),
         ).to_fock(shape=(10, 10))
         poly = math.hermite_renormalized(A, b, 1, (10, 10, 5))
-        assert fock_cc.ansatz._original_abc_data is None
         assert math.allclose(fock_cc.ansatz.data, math.einsum("ijk,k", poly, c))
 
         barg_cc = fock_cc.to_bargmann()
@@ -224,30 +243,19 @@ class TestCircuitComponent:
 
         d12 = d1 + d2
 
-        assert isinstance(d12, Dgate)
-        assert isinstance(d12.parameters.alpha, Constant)
-        assert math.allclose(d12.parameters.alpha.value, [0.1 + 0.1j, 0.2 + 0.2j])
         assert d12.ansatz._lin_sup is True
         assert d12.ansatz == d1.ansatz + d2.ansatz
 
     def test_add_error(self):
         d1 = Dgate(1, alpha=0.1 + 0.1j)
         d2 = Dgate(2, alpha=0.2 + 0.2j)
-        d3 = Dgate(1, alpha=0.1 + 0.1j, alpha_trainable=True)
-        d4 = Dgate(1, alpha=0.1 + 0.1j, alpha_trainable=True, alpha_bounds=(0, 1))
         d_batched = Dgate(1, alpha=[0.1, 0.2])
 
         with pytest.raises(ValueError, match="different wires"):
             d1 + d2
 
-        with pytest.raises(ValueError, match="Parameter 'alpha' is a"):
-            d1 + d3
-
-        with pytest.raises(ValueError, match="batched"):
+        with pytest.raises(ValueError, match="Cannot add PolyExpAnsatz"):
             d1 + d_batched
-
-        with pytest.raises(ValueError, match="Parameter 'alpha' has bounds"):
-            d3 + d4
 
     def test_sub(self):
         s1 = DisplacedSqueezed(1, alpha=1.0 + 0.5j, r=0.1)
@@ -321,6 +329,13 @@ class TestCircuitComponent:
 
         assert math.allclose(result1.ansatz.c, correct_c)
 
+    def test_contract_scalar(self):
+        d0 = Dgate(0, alpha=0.1 + 0.1j)
+        result = d0.contract(0.8)
+        assert math.allclose(result.ansatz.A, d0.ansatz.A)
+        assert math.allclose(result.ansatz.b, d0.ansatz.b)
+        assert math.allclose(result.ansatz.c, 0.8 * d0.ansatz.c)
+
     def test_matmul_is_associative(self):
         d0 = Dgate(0, alpha=0.1 + 0.1j)
         d1 = Dgate(1, alpha=0.1 + 0.1j)
@@ -338,9 +353,9 @@ class TestCircuitComponent:
         assert result1 == result3
         assert result1 == result4
 
-    def test_matmul_scalar(self):
+    def test_rmatmul(self):
         d0 = Dgate(0, alpha=0.1 + 0.1j)
-        result = d0.contract(0.8)
+        result = 0.8 @ d0
         assert math.allclose(result.ansatz.A, d0.ansatz.A)
         assert math.allclose(result.ansatz.b, d0.ansatz.b)
         assert math.allclose(result.ansatz.c, 0.8 * d0.ansatz.c)
@@ -356,6 +371,9 @@ class TestCircuitComponent:
         with settings(DEFAULT_REPRESENTATION="Fock"):
             result2 = coh0.contract(coh1)
             assert isinstance(result2.ansatz, ArrayAnsatz)
+
+        with pytest.raises(TypeError), settings(DEFAULT_REPRESENTATION=None):
+            coh0.contract(coh1)
 
     def test_to_fock_shape_error(self):
         state = Coherent(0, alpha=0.1 + 0.1j)
@@ -512,9 +530,9 @@ class TestCircuitComponent:
         assert math.allclose(result2.ansatz.c, 0.8 * d0.ansatz.c)
 
     def test_repr(self):
-        c1 = CircuitComponent(ansatz=None, wires=Wires(modes_out_ket={0, 1, 2}))
+        c1 = CircuitComponent(ansatz_factory=None, wires=Wires(modes_out_ket={0, 1, 2}))
         c2 = CircuitComponent(
-            ansatz=None,
+            ansatz_factory=None,
             wires=Wires(modes_out_ket={0, 1, 2}),
             name="my_component",
         )
@@ -523,8 +541,8 @@ class TestCircuitComponent:
         assert repr(c2) == "CircuitComponent(modes=(0, 1, 2), name=my_component)"
 
     def test_to_fock_shape_lookahead(self):
-        r = settings.rng.uniform(-0.5, 0.5, 3)
-        interf = Interferometer([0, 1])
+        r = settings.get_rng().uniform(-0.5, 0.5, 3)
+        interf = Interferometer.random(modes=(0, 1))
         gaussian_part = SqueezedVacuum(0, r[0]) >> SqueezedVacuum(1, r[1]) >> interf
         gauss_auto_shape = gaussian_part.auto_shape()
         fock_explicit_shape = gaussian_part.to_fock((gauss_auto_shape[0], 7)) >> Number(1, 6).dual
@@ -537,16 +555,37 @@ class TestCircuitComponent:
         coh.to_fock(20)
         assert coh.bargmann_triple() == Coherent(0, alpha=1.0).bargmann_triple()
 
+    def test_to_standard_order(self):
+        atten = Attenuator(0, transmissivity=0.5)
+        atten_dual = atten.dual
+        atten_dual_so = atten_dual.to_standard_order()
+
+        # before standard order
+        assert atten_dual.wires.standard_order == [
+            QuantumWire(mode=0, is_out=True, is_ket=False, index=1),
+            QuantumWire(mode=0, is_out=False, is_ket=False, index=0),
+            QuantumWire(mode=0, is_out=True, is_ket=True, index=3),
+            QuantumWire(mode=0, is_out=False, is_ket=True, index=2),
+        ]
+
+        # after standard order
+        assert atten_dual_so.wires.standard_order == [
+            QuantumWire(mode=0, is_out=True, is_ket=False, index=0),
+            QuantumWire(mode=0, is_out=False, is_ket=False, index=1),
+            QuantumWire(mode=0, is_out=True, is_ket=True, index=2),
+            QuantumWire(mode=0, is_out=False, is_ket=True, index=3),
+        ]
+
     def test_fock_component_no_bargmann(self):
         "tests that a fock component doesn't have a bargmann representation by default"
         coh = Coherent(0, alpha=1.0)
         CC = Ket.from_fock((0,), coh.fock_array(20))
-        with pytest.raises(AttributeError):
+        with pytest.raises(AttributeError, match="No Bargmann data for this component."):
             CC.bargmann_triple()
 
     def test_quadrature_ket(self):
         "tests that transforming to quadrature and back gives the same ket"
-        ket = SqueezedVacuum(0, 0.4, 0.5) >> Dgate(0, 0.3, 0.2)
+        ket = SqueezedVacuum(0, 0.4, 0.5) >> Dgate(0, 0.3 + 0.2j)
         back = Ket.from_quadrature((0,), ket.quadrature_triple())
         assert ket == back
 
@@ -613,40 +652,239 @@ class TestCircuitComponent:
         captured = capsys.readouterr()
         assert captured.out.rstrip() == repr(dgate)
 
-    def test_serialize_default_behaviour(self):
-        """Test the default serializer."""
-        name = "my_component"
-        ansatz = PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.4j))
-        cc = CircuitComponent(ansatz, Wires(set(), set(), {1, 8}, {1, 8}), name=name)
-        kwargs, arrays = cc._serialize()
-        assert kwargs == {
-            "class": f"{CircuitComponent.__module__}.CircuitComponent",
-            "wires": tuple(tuple(w) for w in cc.wires.args),
-            "ansatz_cls": f"{PolyExpAnsatz.__module__}.PolyExpAnsatz",
-            "name": name,
-        }
-        assert arrays == {
-            "A": ansatz.A,
-            "b": ansatz.b,
-            "c": ansatz.c,
-        }
+    def test_circuit_component_batch_getitem_array_ansatz(self):
+        array = math.arange(2 * 3 * 4).reshape((2, 3, 4))
+        ansatz_factory, _ = AnsatzFactory.from_ansatz(
+            ArrayAnsatz(array, batch_dims=1), ReprEnum.FOCK
+        )
+        wires = Wires({0}, set(), set(), set())
+        for w in wires.quantum:
+            w.repr = ReprEnum.FOCK
+            w.fock_shape = array.shape[w.index]
+        cc = CircuitComponent(ansatz_factory=ansatz_factory, wires=wires)
+        sub = cc[1]
+        assert isinstance(sub, CircuitComponent)
+        assert isinstance(sub.ansatz, ArrayAnsatz)
+        assert sub.ansatz.batch_dims == 0
 
-    def test_serialize_fail_when_no_modes_input(self):
-        """Test that the serializer fails if no modes or name+wires are present."""
+    def test_circuit_component_batch_getitem_polyexp_ansatz(self):
+        A, b, c = random_Abc(3, (2,))
+        ansatz_factory, _ = AnsatzFactory.from_ansatz(PolyExpAnsatz(A, b, c), ReprEnum.BARGMANN)
+        cc = CircuitComponent(ansatz_factory=ansatz_factory, wires=Wires({0}, set(), set(), set()))
+        sub = cc[1]
+        assert isinstance(sub, CircuitComponent)
+        assert isinstance(sub.ansatz, PolyExpAnsatz)
+        assert sub.ansatz.batch_dims == 0
 
-        class MyComponent(CircuitComponent):
-            """A dummy class without a valid modes kwarg."""
+    def test_concat_basic_with_bargmann(self):
+        """Test basic concatenation of circuit components with Bargmann ansatz."""
+        coh1 = Coherent(mode=0, alpha=1.0)
+        coh2 = Coherent(mode=0, alpha=2.0)
 
-            def __init__(self, ansatz, custom_modes):
-                super().__init__(
-                    ansatz,
-                    Wires(*tuple(set(m) for m in [custom_modes] * 4)),
-                    name="my_component",
-                )
+        # Add batch dimensions
+        coh1_batched = coh1[None]
+        coh2_batched = coh2[None]
 
-        cc = MyComponent(PolyExpAnsatz(*displacement_gate_Abc(0.1 + 0.4j)), [0, 1])
-        with pytest.raises(
-            TypeError,
-            match="MyComponent does not seem to have any wires construction method",
-        ):
-            cc._serialize()
+        concatenated = coh1_batched.concat(coh2_batched, axis=0)
+
+        assert concatenated.ansatz.batch_shape == (2,)
+        assert concatenated.wires == coh1.wires
+        assert isinstance(concatenated, Ket)
+        assert math.allclose(concatenated.ansatz.A[0], coh1.ansatz.A)
+        assert math.allclose(concatenated.ansatz.A[1], coh2.ansatz.A)
+
+    def test_concat_basic_with_fock(self):
+        """Test basic concatenation of circuit components with Fock ansatz."""
+        num1 = Number(mode=0, n=1).to_fock(5)
+        num2 = Number(mode=0, n=2).to_fock(5)
+
+        # Add batch dimensions
+        num1_batched = num1[None]
+        num2_batched = num2[None]
+
+        concatenated = num1_batched.concat(num2_batched, axis=0)
+
+        assert concatenated.ansatz.batch_shape == (2,)
+        assert concatenated.wires == num1.wires
+        assert isinstance(concatenated, Ket)
+        assert isinstance(concatenated.ansatz, ArrayAnsatz)
+
+    def test_concat_preserves_class_type(self):
+        """Test that concat preserves the circuit component class type."""
+        dgate1 = Dgate(mode=0, alpha=0.1)
+        dgate2 = Dgate(mode=0, alpha=0.2)
+
+        # Add batch dimensions
+        dgate1_batched = dgate1[None]
+        dgate2_batched = dgate2[None]
+
+        concatenated = dgate1_batched.concat(dgate2_batched, axis=0)
+
+        assert isinstance(concatenated, Unitary)
+        assert concatenated.ansatz.batch_shape == (2,)
+
+    def test_concat_multidimensional_batch(self):
+        """Test concatenation with multi-dimensional batch shapes."""
+        A1, b1, c1 = random_Abc(2, (3, 2))
+        A2, b2, c2 = random_Abc(2, (3, 5))
+        wires = Wires(set(), set(), {0}, {0})
+        ansatz_factory1, _ = AnsatzFactory.from_ansatz(PolyExpAnsatz(A1, b1, c1), ReprEnum.BARGMANN)
+        ansatz_factory2, _ = AnsatzFactory.from_ansatz(PolyExpAnsatz(A2, b2, c2), ReprEnum.BARGMANN)
+        cc1 = CircuitComponent(ansatz_factory=ansatz_factory1, wires=wires)
+        cc2 = CircuitComponent(ansatz_factory=ansatz_factory2, wires=wires)
+
+        concatenated = cc1.concat(cc2, axis=1)
+
+        assert concatenated.ansatz.batch_shape == (3, 7)
+        assert concatenated.wires == cc1.wires
+
+    def test_concat_wires_mismatch_error(self):
+        """Test that concat fails when wires don't match."""
+        coh1 = Coherent(mode=0, alpha=1.0)
+        coh2 = Coherent(mode=1, alpha=2.0)  # Different mode
+
+        coh1_batched = coh1[None]
+        coh2_batched = coh2[None]
+
+        with pytest.raises(ValueError, match="different wires"):
+            coh1_batched.concat(coh2_batched, axis=0)
+
+    def test_concat_ansatz_type_mismatch_error(self):
+        """Test that concat fails when ansatz types don't match."""
+        coh = Coherent(mode=0, alpha=1.0)
+        coh_fock = coh.to_fock(5)
+
+        coh_batched = coh[None]
+        coh_fock_batched = coh_fock[None]
+
+        with pytest.raises(ValueError, match="different ansatz types"):
+            coh_batched.concat(coh_fock_batched, axis=0)
+
+    def test_stack_basic_with_bargmann(self):
+        """Test basic stacking of circuit components with Bargmann ansatz."""
+        coh1 = Coherent(mode=0, alpha=1.0)
+        coh2 = Coherent(mode=0, alpha=2.0)
+
+        stacked = coh1.stack(coh2, axis=0)
+
+        assert stacked.ansatz.batch_shape == (2,)
+        assert stacked.wires == coh1.wires
+        assert isinstance(stacked, Ket)
+        assert math.allclose(stacked.ansatz.A[0], coh1.ansatz.A)
+        assert math.allclose(stacked.ansatz.A[1], coh2.ansatz.A)
+
+    def test_stack_basic_with_fock(self):
+        """Test basic stacking of circuit components with Fock ansatz."""
+        num1 = Number(mode=0, n=1).to_fock(5)
+        num2 = Number(mode=0, n=2).to_fock(5)
+
+        stacked = num1.stack(num2, axis=0)
+
+        assert stacked.ansatz.batch_shape == (2,)
+        assert stacked.wires == num1.wires
+        assert isinstance(stacked, Ket)
+        assert isinstance(stacked.ansatz, ArrayAnsatz)
+
+    def test_stack_preserves_class_type(self):
+        """Test that stack preserves the circuit component class type."""
+        dgate1 = Dgate(mode=0, alpha=0.1)
+        dgate2 = Dgate(mode=0, alpha=0.2)
+
+        stacked = dgate1.stack(dgate2, axis=0)
+
+        assert isinstance(stacked, Unitary)
+        assert stacked.ansatz.batch_shape == (2,)
+
+    def test_stack_multiple_components(self):
+        """Test stacking multiple components sequentially."""
+        coh1 = Coherent(mode=0, alpha=1.0)
+        coh2 = Coherent(mode=0, alpha=2.0)
+        coh3 = Coherent(mode=0, alpha=3.0)
+
+        # Stack first two
+        stacked12 = coh1.stack(coh2, axis=0)
+        # Add batch dimension and concatenate with third
+        coh3_batched = coh3[None]
+        stacked123 = stacked12.concat(coh3_batched, axis=0)
+
+        assert stacked123.ansatz.batch_shape == (3,)
+        assert isinstance(stacked123, Ket)
+
+    def test_stack_wires_mismatch_error(self):
+        """Test that stack fails when wires don't match."""
+        coh1 = Coherent(mode=0, alpha=1.0)
+        coh2 = Coherent(mode=1, alpha=2.0)  # Different mode
+
+        with pytest.raises(ValueError, match="different wires"):
+            coh1.stack(coh2, axis=0)
+
+    def test_stack_ansatz_type_mismatch_error(self):
+        """Test that stack fails when ansatz types don't match."""
+        coh = Coherent(mode=0, alpha=1.0)
+        coh_fock = coh.to_fock(5)
+
+        with pytest.raises(ValueError, match="different ansatz types"):
+            coh.stack(coh_fock, axis=0)
+
+    def test_concat_and_stack_integration(self):
+        """Test integration of concat and stack operations."""
+        # Create a batch of 3 coherent states using stack
+        coh1 = Coherent(mode=0, alpha=1.0)
+        coh2 = Coherent(mode=0, alpha=2.0)
+        coh3 = Coherent(mode=0, alpha=3.0)
+
+        batch_12 = coh1.stack(coh2, axis=0)
+        batch_123 = batch_12.concat(coh3[None], axis=0)
+
+        assert batch_123.ansatz.batch_shape == (3,)
+
+        # Test that we can index and get back individual components
+        coh1_recovered = batch_123[0]
+        assert coh1_recovered.ansatz.batch_dims == 0
+        assert math.allclose(coh1_recovered.ansatz.A, coh1.ansatz.A, atol=1e-10)
+
+    def test_stack_batched_components(self):
+        """Test stacking batched components."""
+        coh1 = Coherent(mode=0, alpha=1.0)
+        coh2 = Coherent(mode=0, alpha=2.0)
+        coh3 = Coherent(mode=0, alpha=3.0)
+
+        # First create two batched components with the same batch shape
+        batch_12 = coh1.stack(coh2, axis=0)  # batch_shape (2,)
+        batch_13 = coh1.stack(coh3, axis=0)  # batch_shape (2,)
+
+        # Stack the two batched components
+        stacked = batch_12.stack(batch_13, axis=0)
+        assert stacked.ansatz.batch_shape == (2, 2)  # 2 components, each with batch_shape (2,)
+        assert isinstance(stacked, Ket)
+
+        # Test stacking with axis=0 (the only valid axis for unbatched components)
+        batch_12_axis0 = coh1.stack(coh2, axis=0)
+        assert batch_12_axis0.ansatz.batch_shape == (2,)  # New dimension at axis=0
+
+        # Verify we can recover the original components
+        coh1_recovered = batch_12[0]
+        coh2_recovered = batch_12[1]
+
+        # Check that recovered components are unbatched
+        assert coh1_recovered.ansatz.batch_dims == 0
+        assert coh2_recovered.ansatz.batch_dims == 0
+
+        # Check that the representations match the originals
+        assert math.allclose(coh1_recovered.ansatz.A, coh1.ansatz.A, atol=1e-10)
+        assert math.allclose(coh2_recovered.ansatz.A, coh2.ansatz.A, atol=1e-10)
+
+    def test_stack_with_negative_axis(self):
+        """Test stacking with a negative axis."""
+        coh1 = Coherent(mode=0, alpha=1.0)
+        coh2 = Coherent(mode=0, alpha=2.0)
+        coh3 = Coherent(mode=0, alpha=3.0)
+
+        # Create two batched components with the same batch shape
+        batch_12 = coh1.stack(coh2, axis=0)  # batch_shape (2,)
+        batch_13 = coh1.stack(coh3, axis=0)  # batch_shape (2,)
+
+        # Stack them with negative axis
+        stacked = batch_12.stack(batch_13, axis=-1)
+        assert stacked.ansatz.batch_shape == (2, 2)  # New axis at the end
+        assert isinstance(stacked, Ket)

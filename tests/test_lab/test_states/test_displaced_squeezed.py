@@ -19,6 +19,7 @@ import pytest
 from mrmustard import math
 from mrmustard.lab.states import DisplacedSqueezed, Vacuum
 from mrmustard.lab.transformations import Dgate, Sgate
+from mrmustard.parameters import Variable
 
 
 class TestDisplacedSqueezed:
@@ -40,8 +41,10 @@ class TestDisplacedSqueezed:
 
     def test_trainable_parameters(self):
         state1 = DisplacedSqueezed(0, 1 + 1j)
-        state2 = DisplacedSqueezed(0, 1 + 1j, alpha_trainable=True, alpha_bounds=(0, 2))
-        state3 = DisplacedSqueezed(0, 1 + 1j, r_trainable=True, r_bounds=(0, 2))
+        alpha_var = Variable(1 + 1j, "alpha", dtype=math.complex128)
+        r_var = Variable(1, "r", dtype=math.float64)
+        state2 = DisplacedSqueezed(0, alpha=alpha_var)
+        state3 = DisplacedSqueezed(0, r=r_var)
 
         with pytest.raises(AttributeError):
             state1.parameters.alpha.value = 3
@@ -59,6 +62,6 @@ class TestDisplacedSqueezed:
         alpha, r, phi = math.broadcast_arrays(alpha, r, phi)
         rep = DisplacedSqueezed(modes, alpha, r, phi).ansatz
         exp = (
-            Vacuum(modes) >> Sgate(modes, r, phi).contract(Dgate(modes, alpha), "zip")
+            Vacuum(modes) >> Sgate(modes, r, phi).contract(Dgate(modes, alpha))
         ).ansatz  # TODO: revisit rshift
         assert rep == exp

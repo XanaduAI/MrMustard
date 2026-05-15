@@ -19,6 +19,7 @@ import pytest
 from mrmustard import math
 from mrmustard.lab.states import Coherent
 from mrmustard.lab.transformations import Amplifier, Attenuator
+from mrmustard.parameters import Variable
 
 
 class TestAmplifier:
@@ -33,7 +34,7 @@ class TestAmplifier:
     def test_init(self, modes, gain):
         gate = Amplifier(modes, gain)
 
-        assert gate.name == "Amp~"
+        assert gate.name == "Amplifier"
         assert gate.modes == (modes,)
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
@@ -51,7 +52,8 @@ class TestAmplifier:
 
     def test_trainable_parameters(self):
         gate1 = Amplifier(0, 1.2)
-        gate2 = Amplifier(0, 1.1, gain_trainable=True, gain_bounds=(1.0, 1.5))
+        gain_var = Variable(1.1, "gain", dtype=math.float64)
+        gate2 = Amplifier(0, gain=gain_var)
 
         with pytest.raises(AttributeError):
             gate1.parameters.gain.value = 1.7
