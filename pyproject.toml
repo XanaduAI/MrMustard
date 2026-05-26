@@ -32,7 +32,6 @@ classifiers = [
 ]
 requires-python = ">=3.12,<3.15"
 dependencies = [
-    "meson-python>=0.16.0",  # needed for editable installs of MrMustard
     "ninja>=1.13.0",  # invoked at runtime by meson-python's editable loader
     "anywidget >=0.9.0,<1",
     "importlib-resources>=6.5.2,<7",
@@ -63,7 +62,6 @@ jax_backend = [
 dev = [
     "cython>=3.1.4",
     "cython-lint>=0.18.1",
-    "meson-python>=0.16.0",  # build backend; required in the venv because of no-build-isolation-package
     "pre-commit==3.7.1",
     "pyright>=1.1.408",
     "pytest==8.4.1",
@@ -207,7 +205,7 @@ ignore = [
 convention = "google"
 
 [tool.uv]
-required-version = ">=0.8.11"
+required-version = ">=0.11.0"
 no-build-isolation-package = ["mrmustard"]
 cache-keys = [
     { file = "pyproject.toml" },
