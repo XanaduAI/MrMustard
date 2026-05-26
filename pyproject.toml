@@ -147,6 +147,9 @@ ignore_errors = true
 [tool.coverage.html]
 directory = "coverage_html_report"
 
+[tool.cython-lint]
+max-line-length = 100
+
 [tool.pytest.ini_options]
 addopts = "--cov-report term-missing"
 testpaths = [
@@ -211,4 +214,4 @@ cache-keys = [
 ]
 
 [tool.uv.extra-build-dependencies]
-mrmustard = ["meson-python"]
+mrmustard = ["mesonpy"]
