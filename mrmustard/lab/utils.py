@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains the utility functions used by the classes in ``mrmustard.lab``.
-"""
+"""This module contains the utility functions used by the classes in ``mrmustard.lab``."""
 
 from __future__ import annotations
 
@@ -29,12 +27,12 @@ __all__ = [
 
 
 def reshape_params(n_modes: int, **kwargs) -> Generator:
-    r"""
-    A utility function to turn the input parameters of states and gates into
+    r"""A utility function to turn the input parameters of states and gates into
     1-dimensional tensors of length ``n_modes``.
 
     Args:
         n_modes: The number of modes.
+        **kwargs: The parameters to reshape.
 
     Raise:
         ValueError: If a parameter has a length which is neither equal to ``1``
@@ -51,8 +49,7 @@ def reshape_params(n_modes: int, **kwargs) -> Generator:
 
 
 def shape_check(mat, vec, dim: int, name: str):
-    r"""
-    Check that the given Gaussian representation is consistent with the given modes.
+    r"""Check that the given Gaussian representation is consistent with the given modes.
 
     Args:
         mat: matrix (e.g. A or cov, etc.)

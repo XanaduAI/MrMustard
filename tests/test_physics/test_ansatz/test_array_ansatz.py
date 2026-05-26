@@ -87,7 +87,7 @@ class TestArrayAnsatz:
         ansatz1 = ArrayAnsatz(array1, batch_dims=1)
         ansatz2 = ArrayAnsatz(array2, batch_dims=1)
 
-        with pytest.raises(ValueError, match="axis .* is out of range"):
+        with pytest.raises(ValueError, match=r"axis .* is out of range"):
             ansatz1.concat(ansatz2, axis=5)
 
     def test_concat_basic(self):
@@ -175,7 +175,7 @@ class TestArrayAnsatz:
         ansatz1 = ArrayAnsatz(array1, batch_dims=0)
         ansatz2 = ArrayAnsatz(array2, batch_dims=0)
 
-        with pytest.raises(ValueError, match="axis .* is out of range"):
+        with pytest.raises(ValueError, match=r"axis .* is out of range"):
             ansatz1.concat(ansatz2, axis=0)
 
     def test_conj(self):

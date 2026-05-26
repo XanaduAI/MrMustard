@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Classes representing Gaussian states.
-"""
+"""Classes representing Gaussian states."""
 
 from __future__ import annotations
 
 from collections.abc import Sequence
+
+import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.parameters import Parameter
@@ -27,6 +27,7 @@ from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import RealMatrix
 
 from ..circuit_components_utils import TraceOut
+from ..transformations import Dgate
 from ..utils import reshape_params
 from .builtins import gdm_state, gket_state
 from .dm import DM
@@ -36,8 +37,7 @@ __all__ = ["GaussianDM", "GaussianKet"]
 
 
 class GaussianKet(Ket):
-    r"""
-    The `N`-mode pure state described by a Gaussian gate that acts on Vacuum.
+    r"""The `N`-mode pure state described by a Gaussian gate that acts on Vacuum.
 
     >>> from mrmustard.lab import GaussianKet, Ket
     >>> psi = GaussianKet.random(modes=0)
@@ -47,6 +47,7 @@ class GaussianKet(Ket):
         modes: The modes over which the state is defined.
         symplectic: The symplectic representation of the unitary that acts on
         vacuum to produce the desired state.
+        name: A name for the state. If not provided, the class name will be used.
 
     Returns:
         A ``GaussianKet``.
@@ -67,14 +68,16 @@ class GaussianKet(Ket):
         self,
         modes: int | tuple[int, ...],
         symplectic: RealMatrix | Parameter,
+        name: str | None = None,
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (gket_state, ("symplectic", "lin_sup"))}
             ),
             wires=Wires(modes_out_ket=set(modes)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["symplectic"] = Parameter.from_cc_init(
             symplectic, "float64", f"{self.name}/symplectic"
@@ -82,18 +85,29 @@ class GaussianKet(Ket):
 
     @classmethod
     def random(
-        cls, modes: int | tuple[int, ...], max_r: float = 1.0, seed: int | None = None
-    ) -> GaussianKet:
-        r"""
-        Returns a random GaussianKet.
+        cls,
+        modes: int | tuple[int, ...],
+        max_r: float = 1.0,
+        max_disp: float | None = None,
+        seed: int | None = None,
+        name: str | None = None,
+    ) -> Ket:
+        r"""Returns a random GaussianKet, optionally displaced.
+
+        When ``max_disp`` is given, each mode is displaced by a random complex
+        amplitude sampled uniformly from the disk of radius ``max_disp``.
 
         Args:
             modes: The modes of the GaussianKet.
             max_r: Maximum squeezing parameter over which we make random choices.
+            max_disp: Maximum displacement amplitude. Each mode gets an
+                independent displacement sampled uniformly from the disk
+                ``|alpha| <= max_disp``. If ``None``, no displacement is applied.
             seed: The random seed. If ``None``, the global seed is used.
+            name: A name for the state. If not provided, the class name will be used.
 
         Returns:
-            The random GaussianKet.
+            The random state (``GaussianKet`` if no displacement, ``Ket`` otherwise).
 
         Raises:
             ValueError: if ``modes`` is an empty tuple.
@@ -102,11 +116,13 @@ class GaussianKet(Ket):
         if len(modes) == 0:
             raise ValueError("Cannot create a random GaussianKet with no modes.")
         symplectic = math.random_symplectic(len(modes), max_r, seed=seed)
-        return cls(modes, symplectic)
+        state = cls(modes, symplectic, name=name)
+        if max_disp is not None:
+            state = _apply_random_displacement(state, modes, max_disp, seed)
+        return state
 
     def get_modes(self, modes: int | Sequence[int]) -> GaussianKet:
-        r"""
-        Keep the given modes and trace out the rest. Returns a density matrix.
+        r"""Keep the given modes and trace out the rest. Returns a density matrix.
 
         Args:
             modes: The modes to keep.
@@ -121,9 +137,28 @@ class GaussianKet(Ket):
         return self >> TraceOut(trace_out_modes)
 
 
+def _random_alphas_in_disk(
+    n_modes: int, max_disp: float, rng: np.random.Generator
+) -> list[complex]:
+    """Sample ``n_modes`` complex amplitudes uniformly from the disk ``|alpha| <= max_disp``."""
+    radii = max_disp * np.sqrt(rng.uniform(size=n_modes))
+    angles = rng.uniform(0, 2 * np.pi, size=n_modes)
+    return list(radii * np.exp(1j * angles))
+
+
+def _apply_random_displacement(
+    state: GaussianDM | GaussianKet, modes: tuple[int, ...], max_disp: float, seed: int | None
+) -> GaussianDM | GaussianKet:
+    """Displace each mode of ``state`` by a random amount inside the disk of radius ``max_disp``."""
+    rng = settings.get_rng(seed)
+    alphas = _random_alphas_in_disk(len(modes), max_disp, rng)
+    for mode, alpha in zip(modes, alphas):
+        state = state >> Dgate(mode, alpha)
+    return state
+
+
 class GaussianDM(DM):
-    r"""
-    The `N`-mode mixed state described by a Gaussian gate that acts on a given
+    r"""The `N`-mode mixed state described by a Gaussian gate that acts on a given
     thermal state. This corresponds to the Williamson form. It is equivalent to
     the construction ``Thermal(beta) >> Ggate(symplectic)``.
 
@@ -138,6 +173,7 @@ class GaussianDM(DM):
             across all modes.
         symplectic: The symplectic representation of the unitary that acts on a
             vacuum to produce the desired state.
+        name: A name for the state. If not provided, the class name will be used.
 
     Returns:
         A ``GaussianDM``.
@@ -161,14 +197,16 @@ class GaussianDM(DM):
         modes: int | tuple[int, ...],
         beta: float | Sequence[float] | Parameter,
         symplectic: RealMatrix | Parameter,
+        name: str | None = None,
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (gdm_state, ("beta", "symplectic", "lin_sup"))}
             ),
             wires=Wires(modes_out_bra=set(modes), modes_out_ket=set(modes)),
-            name=self.__class__.__name__,
+            name=name,
         )
         (betas,) = list(
             reshape_params(len(modes), betas=beta.value if isinstance(beta, Parameter) else beta)
@@ -185,25 +223,37 @@ class GaussianDM(DM):
         max_r: float = 1.0,
         min_beta: float = 0.2,
         max_beta: float = 1.0,
+        max_disp: float | None = None,
         seed: int | None = None,
-    ) -> GaussianDM:
-        r"""
-        Returns a random ``GaussianDM`` constructed as ``Thermal(beta) >> Ggate(symplectic)``
-        for a random ``beta`` and a random ``symplectic``.
-        If a specific ``beta`` is required, use the construction ``Thermal(beta) >> Ggate.random()``
-        where beta is the desired inverse temperature.
-        To obtain random Gaussian density matrices from the induced trace measure,
-        use the construction ``GaussianKet.random().get_modes()`` with appropriate modes.
+        name: str | None = None,
+    ) -> DM:
+        r"""Returns a random ``GaussianDM``, optionally displaced.
+
+        Constructed as ``Thermal(beta) >> Ggate(symplectic)``, for a random
+        ``beta`` and a random ``symplectic``.
+        If a specific ``beta`` is required, use the construction
+        ``Thermal(beta) >> Ggate.random()`` where beta is the desired
+        inverse temperature.
+        To obtain random Gaussian density matrices from the induced trace
+        measure, use the construction ``GaussianKet.random().get_modes()``
+        with appropriate modes.
+
+        When ``max_disp`` is given, each mode is displaced by a random complex
+        amplitude sampled uniformly from the disk of radius ``max_disp``.
 
         Args:
             modes: The modes of the GaussianDM.
             max_r: Maximum squeezing parameter for the Gaussian unitary. Default is 1.0.
             min_beta: Minimum inverse temperature that will be sampled. Default is 0.5.
             max_beta: Maximum inverse temperature that will be sampled. Default is 1.0.
+            max_disp: Maximum displacement amplitude. Each mode gets an
+                independent displacement sampled uniformly from the disk
+                ``|alpha| <= max_disp``. If ``None``, no displacement is applied.
             seed: The random seed. If ``None``, the global seed is used.
+            name: A name for the state. If not provided, the class name will be used.
 
         Returns:
-            The random GaussianDM.
+            The random state (``GaussianDM`` if no displacement, ``DM`` otherwise).
 
         Raises:
             ValueError: if ``modes`` is an empty tuple.
@@ -214,11 +264,13 @@ class GaussianDM(DM):
         rng = settings.get_rng(seed)
         beta = rng.uniform(low=min_beta, high=max_beta, size=m)
         symplectic = math.random_symplectic(m, max_r, seed=seed)
-        return cls(modes, beta, symplectic)
+        state = cls(modes, beta, symplectic, name=name)
+        if max_disp is not None:
+            state = _apply_random_displacement(state, modes, max_disp, seed)
+        return state
 
     def get_modes(self, modes: int | Sequence[int]) -> GaussianDM:
-        r"""
-        Keep the given modes and trace out the rest.
+        r"""Keep the given modes and trace out the rest.
 
         Args:
             modes: The modes to keep.

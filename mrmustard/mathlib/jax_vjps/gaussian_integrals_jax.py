@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-JAX implementations of complex Gaussian integrals.
-"""
+"""JAX implementations of complex Gaussian integrals."""
 
 import jax
 import jax.numpy as jnp
@@ -27,8 +25,7 @@ __all__ = [
 
 @jax.jit
 def complex_gaussian_integral_1_jax(A, b, idx12):
-    """
-    JAX implementation of complex Gaussian integral for one Abc.
+    """JAX implementation of complex Gaussian integral for one Abc.
 
     This is the core implementation that operates on single (non-batched) arrays.
     Use jax.vmap for batched operations.
@@ -92,8 +89,7 @@ def complex_gaussian_integral_1_jax(A, b, idx12):
 
 @jax.jit
 def complex_gaussian_integral_2_jax(A1, b1, A2, b2, idx1, idx2):
-    """
-    JAX implementation of complex Gaussian integral for two Abc.
+    """JAX implementation of complex Gaussian integral for two Abc.
 
     This is the core implementation that operates on single (non-batched) arrays.
     Use jax.vmap for batched operations.

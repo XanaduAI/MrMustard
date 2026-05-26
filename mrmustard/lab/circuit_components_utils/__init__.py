@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-A set of components that do not correspond to physical elements of a circuit, but can be used to
+"""A set of components that do not correspond to physical elements of a circuit, but can be used to
 perform useful mathematical calculations.
 """
 

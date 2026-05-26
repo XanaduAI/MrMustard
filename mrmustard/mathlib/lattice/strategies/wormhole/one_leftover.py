@@ -60,8 +60,7 @@ def _reorder_for_wormhole(
     leftover_mode: int,
     is_dm: bool,
 ) -> tuple[np.ndarray, np.ndarray, int]:
-    """
-    Reorder Bargmann (A, b) to put leftover mode last.
+    """Reorder Bargmann (A, b) to put leftover mode last.
 
     For DMs: uses paired bra/ket ordering [bra_0, ket_0, bra_1, ket_1, ...]
     For Kets: uses simple mode ordering [mode_0, mode_1, ...]
@@ -96,8 +95,7 @@ def _validate_wormhole_inputs(
     first_hypercube_pnr: PNR | None,
     num_measured_modes: int,
 ) -> PNR:
-    """
-    Validate wormhole inputs and return normalized first_hypercube_pnr.
+    """Validate wormhole inputs and return normalized first_hypercube_pnr.
 
     Args:
         pnr_outcomes: List of target PNR outcomes.
@@ -133,8 +131,7 @@ def wormhole_1leftover_dm(
     first_hypercube_pnr: PNR | None = None,
     stable: bool = True,
 ) -> dict[PNR, np.ndarray]:
-    r"""
-    Compute conditional density matrices for one leftover mode given PNR measurements.
+    r"""Compute conditional density matrices for one leftover mode given PNR measurements.
 
     This is the primary wormhole entry point for quantum optics applications.
     Given a multi-mode Gaussian state and a set of PNR measurement outcomes
@@ -269,8 +266,7 @@ def wormhole_1leftover_ket(
     first_hypercube_pnr: PNR | None = None,
     stable: bool = True,
 ) -> dict[PNR, np.ndarray]:
-    r"""
-    Compute conditional ket amplitudes for one leftover mode given PNR measurements.
+    r"""Compute conditional ket amplitudes for one leftover mode given PNR measurements.
 
     This is the Ket variant of the wormhole algorithm, which is significantly faster
     than the DM version because:
@@ -389,8 +385,7 @@ def _branching_wormhole_ket(
     tree: dict[tuple[PNR, int], dict],
     results: dict[PNR, np.ndarray],
 ) -> None:
-    r"""
-    Recursive branching wormhole traversal for Kets.
+    r"""Recursive branching wormhole traversal for Kets.
 
     Performs depth-first traversal of the visiting tree, advancing the hypercube
     along each branch and extracting conditional ket amplitudes at target PNR
@@ -439,8 +434,7 @@ def _next_hypercube_1leftover_ket(
     origin: tuple[int, ...],
     direction: int,
 ) -> np.ndarray:  # pragma: no cover
-    r"""
-    Advance hypercube by one step along given direction for Kets.
+    r"""Advance hypercube by one step along given direction for Kets.
 
     This is the core lattice propagation for the Ket wormhole. It shifts the
     hypercube forward by one Fock index in the specified dimension, computing
@@ -511,8 +505,7 @@ def _branching_wormhole(
     tree: dict[tuple[PNR, int], dict],
     results: dict[PNR, np.ndarray],
 ) -> None:
-    r"""
-    Recursive branching wormhole traversal for density matrices.
+    r"""Recursive branching wormhole traversal for density matrices.
 
     Performs depth-first traversal of the visiting tree, advancing the hypercube
     along each branch and extracting conditional density matrices at target PNR
@@ -570,8 +563,7 @@ def _next_hypercube_1leftover(
     origin: tuple[int, ...],
     direction: int,
 ) -> np.ndarray:  # pragma: no cover
-    r"""
-    Advance hypercube by one step along given direction for density matrices.
+    r"""Advance hypercube by one step along given direction for density matrices.
 
     This is the core lattice propagation for the DM wormhole. It shifts the
     hypercube forward by one Fock index in the specified direction, computing
@@ -666,8 +658,7 @@ def _flatten_tree_for_dm(
     num_measured_modes: int,
     pnr_targets: set[tuple[int, ...]],
 ) -> tuple[np.ndarray, np.ndarray, list[tuple[int, ...]]]:
-    """
-    Flatten the visiting tree into arrays suitable for Numba processing.
+    """Flatten the visiting tree into arrays suitable for Numba processing.
 
     For DM, each PNR step requires TWO lattice steps (ket then bra direction).
     This function performs a DFS traversal and records all steps.
@@ -726,8 +717,7 @@ def _flatten_tree_for_ket(
     num_measured_modes: int,
     pnr_targets: set[tuple[int, ...]],
 ) -> tuple[np.ndarray, np.ndarray, list[tuple[int, ...]]]:
-    """
-    Flatten the visiting tree into arrays suitable for Numba processing (Ket version).
+    """Flatten the visiting tree into arrays suitable for Numba processing (Ket version).
 
     For Ket, each PNR step requires ONE lattice step.
 
@@ -777,8 +767,7 @@ def _wormhole_1leftover_dm_batched(
     first_hypercube_pnr: PNR | None = None,
     stable: bool = True,
 ) -> dict[PNR, np.ndarray]:
-    r"""
-    Compute conditional density matrices for batched inputs.
+    r"""Compute conditional density matrices for batched inputs.
 
     Optimized batched version that processes multiple (A, b, c) triples in
     parallel. The tree traversal is pre-computed once, then each triple
@@ -872,8 +861,7 @@ def _wormhole_1leftover_ket_batched(
     first_hypercube_pnr: PNR | None = None,
     stable: bool = True,
 ) -> dict[PNR, np.ndarray]:
-    r"""
-    Compute conditional ket amplitudes for batched inputs.
+    r"""Compute conditional ket amplitudes for batched inputs.
 
     Optimized batched version that processes multiple (A, b, c) triples in
     parallel. The tree traversal is pre-computed once, then each triple
@@ -962,8 +950,7 @@ def _process_single_dm(
     directions: np.ndarray,
     results_out: np.ndarray,
 ) -> None:  # pragma: no cover
-    r"""
-    Process all wormhole DM steps for a single (A, b) pair.
+    r"""Process all wormhole DM steps for a single (A, b) pair.
 
     Follows the pre-computed step sequence (flattened from the visiting tree),
     calling ``_next_hypercube_1leftover`` at each step and extracting density
@@ -1002,8 +989,7 @@ def _process_all_triples_dm(
     directions: np.ndarray,
     all_results: np.ndarray,
 ) -> None:  # pragma: no cover
-    r"""
-    Process all (A, b) triples in parallel, each following the same step sequence.
+    r"""Process all (A, b) triples in parallel, each following the same step sequence.
 
     Parallelizes ``_process_single_dm`` over the batch dimension using prange.
 
@@ -1036,8 +1022,7 @@ def _process_single_ket(
     directions: np.ndarray,
     results_out: np.ndarray,
 ) -> None:  # pragma: no cover
-    r"""
-    Process all wormhole Ket steps for a single (A, b) pair.
+    r"""Process all wormhole Ket steps for a single (A, b) pair.
 
     Follows the pre-computed step sequence (flattened from the visiting tree),
     calling ``_next_hypercube_1leftover_ket`` at each step. Each step produces
@@ -1073,8 +1058,7 @@ def _process_all_triples_ket(
     directions: np.ndarray,
     all_results: np.ndarray,
 ) -> None:  # pragma: no cover
-    r"""
-    Process all (A, b) triples in parallel for Kets.
+    r"""Process all (A, b) triples in parallel for Kets.
 
     Parallelizes ``_process_single_ket`` over the batch dimension using prange.
 

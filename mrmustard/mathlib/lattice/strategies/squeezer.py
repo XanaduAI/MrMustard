@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"This module contains strategies for calculating the matrix elements of the squeezing gate."
+"""This module contains strategies for calculating the matrix elements of the squeezing gate."""
 
 import numpy as np
 from numba import njit, prange
@@ -141,11 +141,13 @@ def squeezer_vjp_batched(
     r"""Batched squeezing gradients with respect to r and theta.
     This function processes multiple parameter sets in parallel by flattening
     batch dimensions and using prange for parallel iteration.
+
     Args:
         G (np.ndarray): Tensor result of the forward pass with shape (*batch, M, N)
         dLdG (np.ndarray): gradient of the loss with respect to the output tensor (*batch, M, N)
         r (np.ndarray): squeezing magnitude with shape (*batch,)
         phi (np.ndarray): squeezing angle with shape (*batch,)
+
     Returns:
         tuple[np.ndarray, np.ndarray]: dL/dr and dL/dphi with shape (*batch,)
     """
@@ -190,11 +192,13 @@ def squeezed_vjp_batched(
     r"""Batched squeezed state gradients with respect to r and theta.
     This function processes multiple parameter sets in parallel by flattening
     batch dimensions and using prange for parallel iteration.
+
     Args:
         G (np.ndarray): Tensor result of the forward pass with shape (*batch, M)
         dLdG (np.ndarray): gradient of the loss with respect to the output tensor (*batch, M)
         r (np.ndarray): squeezing magnitude with shape (*batch,)
         phi (np.ndarray): squeezing angle with shape (*batch,)
+
     Returns:
         tuple[np.ndarray, np.ndarray]: dL/dr and dL/dphi with shape (*batch,)
     """

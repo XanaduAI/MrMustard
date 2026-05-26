@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a quadratic phase gate.
-"""
+"""The class representing a quadratic phase gate."""
 
 from __future__ import annotations
 
@@ -31,12 +29,12 @@ __all__ = ["Pgate"]
 
 
 class Pgate(Unitary):
-    r"""
-    Quadratic phase gate.
+    r"""Quadratic phase gate.
 
     Args:
         modes: The modes this gate is applied to.
         shearing: The shearing parameter.
+        name: A name for the gate. If not provided, the class name will be used.
 
     .. details::
         The quadratic phase gate is defined as
@@ -54,14 +52,16 @@ class Pgate(Unitary):
         self,
         mode: int | tuple[int],
         shearing: float | Sequence[float] | Parameter = 0.0,
+        name: str | None = None,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (p_gate, ("shearing", "lin_sup"))}
             ),
             wires=Wires(modes_in_ket=set(mode), modes_out_ket=set(mode)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["shearing"] = Parameter.from_cc_init(
             shearing, "float64", f"{self.name}/shearing"

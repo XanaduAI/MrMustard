@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-The classes for Ansatze in circuit components.
-"""
+r"""The classes for Ansatze in circuit components."""
 
 from .array_ansatz import *
 from .base import *

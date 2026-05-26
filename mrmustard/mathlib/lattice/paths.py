@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Path functions"""
+"""Path functions."""
 
 from numba import njit, typed, typeof, types
 from numba.cpython.unsafe.tuple import tuple_setitem
@@ -73,7 +73,7 @@ def binomial_subspace_basis(cutoffs: tuple[int, ...], weight: int):
 
 
 def BINOMIAL_PATHS_NUMBA_n(modes):
-    r"Creates a numba dictionary to store the paths and effectively cache them."
+    r"""Creates a numba dictionary to store the paths and effectively cache them."""
     return typed.Dict.empty(
         key_type=typeof(((0,) * modes, 0)),
         value_type=types.ListType(typeof((0,) * modes)),

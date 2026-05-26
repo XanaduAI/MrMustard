@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains the symplectic matrices for the Fock-Bargmann representation of
+"""This module contains the symplectic matrices for the Fock-Bargmann representation of
 various states and transformations.
 """
 
@@ -35,8 +34,7 @@ __all__ = [
 
 
 def cxgate_symplectic(s: float | Sequence[float]) -> Matrix:
-    r"""
-    The symplectic matrix of a controlled X gate.
+    r"""The symplectic matrix of a controlled X gate.
 
     Args:
         s: The control parameter.
@@ -63,8 +61,7 @@ def cxgate_symplectic(s: float | Sequence[float]) -> Matrix:
 
 
 def czgate_symplectic(s: float | Sequence[float]) -> Matrix:
-    r"""
-    The symplectic matrix of a controlled Z gate.
+    r"""The symplectic matrix of a controlled Z gate.
 
     Args:
         s: The control parameter.
@@ -91,8 +88,7 @@ def czgate_symplectic(s: float | Sequence[float]) -> Matrix:
 
 
 def interferometer_symplectic(unitary: Matrix) -> Matrix:
-    r"""
-    The symplectic matrix of an N-mode interferometer parametrized by an NxN unitary matrix.
+    r"""The symplectic matrix of an N-mode interferometer parametrized by an NxN unitary matrix.
 
     Args:
         unitary : A unitary matrix. For N modes it must have shape `(N,N)`.
@@ -110,8 +106,7 @@ def mzgate_symplectic(
     phi_b: float | Sequence[float],
     internal: bool,
 ) -> Matrix:
-    r"""
-    The symplectic matrix of a Mach-Zehnder gate.
+    r"""The symplectic matrix of a Mach-Zehnder gate.
 
     It supports two conventions:
         1. if ``internal=True``, both phases act inside the interferometer: ``phi_a`` on the upper arm, ``phi_b`` on the lower arm;
@@ -162,8 +157,7 @@ def mzgate_symplectic(
 
 
 def pgate_symplectic(n_modes: int, shearing: float | Sequence[float]) -> Matrix:
-    r"""
-    The symplectic matrix of a quadratic phase gate.
+    r"""The symplectic matrix of a quadratic phase gate.
 
     Args:
         n_modes: The number of modes.
@@ -185,8 +179,7 @@ def pgate_symplectic(n_modes: int, shearing: float | Sequence[float]) -> Matrix:
 
 
 def realinterferometer_symplectic(orthogonal: Matrix) -> Matrix:
-    r"""
-    The symplectic matrix of an N-mode interferometer parametrized by an NxN orthogonal matrix.
+    r"""The symplectic matrix of an N-mode interferometer parametrized by an NxN orthogonal matrix.
 
     Args:
         orthogonal : A real orthogonal matrix. For N modes it must have shape `(N,N)`.

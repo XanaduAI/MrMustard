@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a trace out operation.
-"""
+"""The class representing a trace out operation."""
 
 from __future__ import annotations
 
+from numpy.typing import ArrayLike
+
 from mrmustard.physics.ansatz_factory import AnsatzFactory
+from mrmustard.utils.typing import Scalar
 
 from ...physics.wires import ReprEnum, Wires
 from ..circuit_components import CircuitComponent
@@ -28,8 +29,7 @@ __all__ = ["TraceOut"]
 
 
 class TraceOut(CircuitComponent):
-    r"""
-    A circuit component to perform trace-out operations.
+    r"""A circuit component to perform trace-out operations.
 
     It has input wires on both the ket and bra sides, but no output wires. Its representation is
     the same as that of the identity channel.
@@ -64,7 +64,9 @@ class TraceOut(CircuitComponent):
             name="Tr",
         )
 
-    def __custom_rrshift__(self, other: CircuitComponent | complex) -> CircuitComponent | complex:
+    def __custom_rrshift__(
+        self, other: CircuitComponent | Scalar | ArrayLike
+    ) -> CircuitComponent | Scalar | ArrayLike:
         r"""A custom ``>>`` operator for the ``TraceOut`` component.
         It allows ``TraceOut`` to carry the method that processes ``other >> TraceOut``.
         We know that the trace in Bargmann is a Gaussian integral, and in
@@ -92,7 +94,7 @@ class TraceOut(CircuitComponent):
         if len(wires_out) == 0:
             return ansatz.scalar
 
-        if isinstance(other, DM | Ket):
+        if isinstance(other, (DM, Ket)):
             return DM._from_attributes(ansatz, wires_out)
 
         return CircuitComponent._from_attributes(ansatz, wires_out)

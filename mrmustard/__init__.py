@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This is the top-most `__init__.py` file of MrMustard package."""
+"""This is the top-most `__init__.py` file of the MrMustard package."""
 
 # ruff: noqa: PLC0415
 import os
@@ -35,6 +35,21 @@ if TYPE_CHECKING:
 
     math: BackendManager = math  # noqa: PLW0127
     settings: Settings = settings  # noqa: PLW0127
+
+try:
+    import jax
+except ImportError:
+    pass
+else:
+    from platformdirs import user_cache_dir
+
+    jax.config.update("jax_enable_x64", True)
+    jax.config.update("jax_compilation_cache_dir", f"{user_cache_dir('mrmustard')}/jax_cache")
+    jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
+    jax.config.update("jax_persistent_cache_min_compile_time_secs", 0)
+    jax.config.update(
+        "jax_persistent_cache_enable_xla_caches", "xla_gpu_per_fusion_autotune_cache_dir"
+    )
 
 
 def version():

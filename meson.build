@@ -19,9 +19,19 @@ if host_machine.system() == 'windows' and cc.get_id() != 'msvc'
     error('MrMustard requires Windows to be build with MSVC.')
 endif
 
-# Numpy dependency for Cython
+# Numpy dependency for Cython.
+# Use a path relative to the source root so meson accepts it even when
+# numpy is installed inside the source tree (e.g. an in-tree .venv).
 incdir_numpy = run_command(py,
-  ['-c', 'import numpy; print(numpy.get_include())'],
+  ['-c', '''
+import os
+import numpy as np
+try:
+    incdir = os.path.relpath(np.get_include())
+except ValueError:
+    incdir = np.get_include()
+print(incdir)
+'''],
   check: true
 ).stdout().strip()
 

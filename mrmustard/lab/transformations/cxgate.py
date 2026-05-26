@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a controlled-X gate.
-"""
+"""The class representing a controlled-X gate."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["CXgate"]
 
 
 class CXgate(Unitary):
-    r"""
-    Controlled X gate.
+    r"""Controlled X gate.
 
     >>> from mrmustard.lab import CXgate
     >>> gate = CXgate((0, 1), s=0.5)
@@ -42,6 +39,7 @@ class CXgate(Unitary):
     Args:
         modes: The pair of modes of the controlled-X gate.
         s: The control parameter.
+        name: A name for the gate. If not provided, the class name will be used.
 
     .. details::
 
@@ -59,12 +57,14 @@ class CXgate(Unitary):
         self,
         modes: tuple[int, int],
         s: float | Sequence[float] | Parameter = 0.0,
+        name: str | None = None,
     ):
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (cx_gate, ("s", "lin_sup"))}
             ),
             wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["s"] = Parameter.from_cc_init(s, "float64", f"{self.name}/s")

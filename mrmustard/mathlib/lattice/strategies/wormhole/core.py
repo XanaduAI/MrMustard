@@ -43,8 +43,7 @@ def Ab_at_pivot_directional(
     origin: tuple[int, ...],
     direction: int,
 ) -> tuple[np.ndarray, np.ndarray]:
-    r"""
-    Compute effective A row and b scalar at a pivot for hypercube advancement.
+    r"""Compute effective A row and b scalar at a pivot for hypercube advancement.
 
     This is the core recurrence computation that enables wormhole to advance
     through the Fock lattice. It handles the algebraic rearrangement needed

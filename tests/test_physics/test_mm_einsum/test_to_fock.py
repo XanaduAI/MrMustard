@@ -19,7 +19,7 @@ import pytest
 from mrmustard import math
 from mrmustard.lab import GaussianKet
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.mm_einsum import to_fock
+from mrmustard.physics.mm_einsum.core import to_fock
 from mrmustard.physics.utils import random_Abc
 
 

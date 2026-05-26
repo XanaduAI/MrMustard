@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Stellar representation computations.
+"""Stellar representation computations.
 
 Includes the stellar decomposition (factoring states into core states and
 Gaussian operations/unitaries) and stellar root finding (computing the zeros
@@ -28,7 +27,7 @@ from numpy.polynomial import Polynomial
 from scipy.special import gammaln
 
 from mrmustard import math
-from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
+from mrmustard.utils.typing import ComplexMatrix, ComplexScalar, ComplexTensor, ComplexVector
 
 __all__ = [
     "formal_stellar_triples",
@@ -52,11 +51,11 @@ def _unitary_normalization(Au: ComplexMatrix, bu: ComplexVector) -> ComplexTenso
 
 
 def formal_stellar_triples(
-    triple: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    triple: tuple[ComplexMatrix, ComplexVector, ComplexScalar],
     M: int,
 ) -> tuple[
-    tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    tuple[ComplexMatrix, ComplexVector, ComplexScalar],
+    tuple[ComplexMatrix, ComplexVector, ComplexScalar],
 ]:
     """Returns the core and operator triples for the formal stellar decomposition.
     It decomposes any block Bargmann triple into two triples where the first has the core
@@ -91,11 +90,11 @@ def formal_stellar_triples(
 
 
 def physical_stellar_triples_ket(
-    triple: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    triple: tuple[ComplexMatrix, ComplexVector, ComplexScalar],
     M: int,
 ) -> tuple[
-    tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    tuple[ComplexMatrix, ComplexVector, ComplexScalar],
+    tuple[ComplexMatrix, ComplexVector, ComplexScalar],
 ]:
     """Returns ``core`` and ``U`` from the physical stellar decomposition ``psi = core >> U``.
     Here ``core`` is a Gaussian ket on M+N modes with the core property on the first M modes,
@@ -156,13 +155,14 @@ def physical_stellar_triples_ket(
 
 
 def physical_stellar_triples_dm(
-    triple: tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    triple: tuple[ComplexMatrix, ComplexVector, ComplexScalar],
     M: int,
 ) -> tuple[
-    tuple[ComplexMatrix, ComplexVector, ComplexTensor],
-    tuple[ComplexMatrix, ComplexVector, ComplexTensor],
+    tuple[ComplexMatrix, ComplexVector, ComplexScalar],
+    tuple[ComplexMatrix, ComplexVector, ComplexScalar],
 ]:
     r"""Physical stellar decomposition rho = rho_core >> channel.
+
     It decomposes a triple parametrizing a DM into a Gaussian core DM and a Gaussian channel
     that acts on the core modes to reconstruct the original DM.
     This is always possible if M is at least half of the total number of modes.

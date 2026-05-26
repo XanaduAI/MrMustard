@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"The base for the ``State`` class"
+"""The base for the ``State`` class."""
 
 from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Sequence
 from itertools import product
+from typing import Self
 
 import numpy as np
 import plotly.graph_objects as go
@@ -37,7 +38,7 @@ from mrmustard.physics.fock_utils import quadrature_distribution
 from mrmustard.physics.gaussian import von_neumann_entropy
 from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.physics.wires import Wires
-from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector, RealVector
+from mrmustard.utils.typing import ComplexTensor, Matrix, RealVector, Scalar, Vector
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import BtoChar, BtoPS, BtoQ
@@ -52,21 +53,16 @@ __all__ = ["State"]
 
 
 class State(CircuitComponent):
-    r"""
-    Base class for all states.
-    """
+    r"""Base class for all states."""
 
     @property
     def is_pure(self):
-        r"""
-        Whether this state is pure.
-        """
+        r"""Whether this state is pure."""
         return math.allclose(self.purity, 1.0)
 
     @property
     def is_separable(self):
-        r"""
-        Check if a multi-mode quantum state is separable based on the von Neumann entropy.
+        r"""Check if a multi-mode quantum state is separable based on the von Neumann entropy.
 
         Returns:
             Whether the state is separable.
@@ -91,8 +87,7 @@ class State(CircuitComponent):
 
     @property
     def L2_norm(self) -> float:
-        r"""
-        The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
+        r"""The `L2` norm squared of a ``Ket``, or the Hilbert-Schmidt norm of a ``DM``.
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import GaussianKet
@@ -107,22 +102,18 @@ class State(CircuitComponent):
     @property
     @abstractmethod
     def probability(self) -> float:
-        r"""
-        Returns :math:`\langle\psi|\psi\rangle` for ``Ket`` states
+        r"""Returns :math:`\langle\psi|\psi\rangle` for ``Ket`` states
         :math:`|\psi\rangle` and :math:`\text{Tr}(\rho)` for ``DM`` states :math:`\rho`.
         """
 
     @property
     @abstractmethod
     def purity(self) -> float:
-        r"""
-        The purity of this state.
-        """
+        r"""The purity of this state."""
 
     @property
     def wigner(self):
-        r"""
-        Returns the Wigner function of this state in phase space as an ``Ansatz``.
+        r"""Returns the Wigner function of this state in phase space as an ``Ansatz``.
 
         >>> import numpy as np
         >>> from mrmustard.lab import GaussianKet
@@ -140,12 +131,11 @@ class State(CircuitComponent):
     def from_bargmann(
         cls,
         modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        triple: tuple[Matrix, Vector, Scalar],
         name: str | None = None,
         lin_sup: bool = False,
-    ) -> State:
-        r"""
-        Initializes a state of type ``cls`` from an ``(A, b, c)`` triple
+    ) -> Self:
+        r"""Initializes a state of type ``cls`` from an ``(A, b, c)`` triple
         parametrizing the Ansatz in Bargmann representation.
 
         >>> from mrmustard.physics.ansatz import PolyExpAnsatz
@@ -162,6 +152,7 @@ class State(CircuitComponent):
             modes: The modes of this state.
             triple: The ``(A, b, c)`` triple.
             name: The name of this state.
+            lin_sup: Whether to include linear superposition axes in the batch dimensions.
 
         Returns:
             A ``State``.
@@ -179,9 +170,8 @@ class State(CircuitComponent):
         array: ComplexTensor,
         name: str | None = None,
         batch_dims: int = 0,
-    ) -> State:
-        r"""
-        Initializes a state of type ``cls`` from an array parametrizing the
+    ) -> Self:
+        r"""Initializes a state of type ``cls`` from an array parametrizing the
         state in Fock representation.
 
         >>> from mrmustard.physics.ansatz import ArrayAnsatz
@@ -214,9 +204,8 @@ class State(CircuitComponent):
         modes: Sequence[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
-    ) -> State:
-        r"""
-        Initializes a state of type ``cls`` given modes and an ansatz.
+    ) -> Self:
+        r"""Initializes a state of type ``cls`` given modes and an ansatz.
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import Ket
@@ -241,12 +230,11 @@ class State(CircuitComponent):
     def from_phase_space(
         cls,
         modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        triple: tuple[Matrix, Vector, Scalar],
         name: str | None = None,
         atol_purity: float | None = None,
-    ) -> State:
-        r"""
-        Initializes a state from the covariance matrix and the vector of means of a state in
+    ) -> Self:
+        r"""Initializes a state from the covariance matrix and the vector of means of a state in
         phase space.
 
         >>> from mrmustard import math
@@ -280,12 +268,11 @@ class State(CircuitComponent):
     def from_quadrature(
         cls,
         modes: Sequence[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        triple: tuple[Matrix, Vector, Scalar],
         phi: float = 0.0,
         name: str | None = None,
-    ) -> State:
-        r"""
-        Initializes a state from a triple (A,b,c) that parametrizes the wavefunction
+    ) -> Self:
+        r"""Initializes a state from a triple (A,b,c) that parametrizes the wavefunction
         as `c * exp(0.5 z^T A z + b^T z)` in the quadrature representation.
 
         Args:
@@ -312,8 +299,7 @@ class State(CircuitComponent):
         min_shape=None,
         respect_manual_shape=True,
     ) -> tuple[int, ...]:
-        r"""
-        Generates an estimate for the Fock shape. If the state is in Fock the core shape is used.
+        r"""Generates an estimate for the Fock shape. If the state is in Fock the core shape is used.
         If in Bargmann, the shape is computed as the shape that captures at least ``settings.AUTOSHAPE_PROBABILITY``
         of the probability mass of each single-mode marginal (default 99.9%) so long as the state has no derived variables
         and is unbatched. Otherwise, defaults to ``settings.DEFAULT_FOCK_SIZE``. If ``respect_manual_shape`` is ``True``,
@@ -365,8 +351,7 @@ class State(CircuitComponent):
         return tuple(shape)
 
     def fock_distribution(self, cutoff: int) -> ComplexTensor:
-        r"""
-        Returns the Fock distribution of the state up to some cutoff.
+        r"""Returns the Fock distribution of the state up to some cutoff.
 
         Args:
             cutoff: The photon cutoff (maximum photon number).
@@ -388,8 +373,7 @@ class State(CircuitComponent):
         return math.stack([fock_array[indices] for indices in indices_list], axis=batch_dim)
 
     def get_modes(self, modes: int | Sequence[int]) -> State:
-        r"""
-        Reduced density matrix obtained by tracing out all the modes except those in
+        r"""Reduced density matrix obtained by tracing out all the modes except those in
         ``modes``. Note that the result is returned with modes in increasing order.
 
         Args:
@@ -419,8 +403,7 @@ class State(CircuitComponent):
         output_cutoff: int,
         leftover_mode: int,
     ) -> dict[tuple[int, ...], State]:
-        r"""
-        Compute conditional single-mode states given PNR measurements.
+        r"""Compute conditional single-mode states given PNR measurements.
 
         Uses the wormhole algorithm to efficiently compute the conditional state
         of one "leftover" mode given photon number resolving (PNR) measurements
@@ -523,8 +506,7 @@ class State(CircuitComponent):
         self,
         core_modes: Sequence[int],
     ) -> tuple[State, Transformation]:
-        r"""
-        Applies the formal stellar decomposition.
+        r"""Applies the formal stellar decomposition.
 
         Args:
             core_modes: The set of modes defining core variables.
@@ -534,17 +516,14 @@ class State(CircuitComponent):
         """
 
     def normalize(self) -> State:
-        r"""
-        Returns a rescaled version of the state such that its probability is 1.
-        """
+        r"""Returns a rescaled version of the state such that its probability is 1."""
         probability = self.probability
         if not self.wires.ket or not self.wires.bra:
             return self / math.sqrt(probability)
         return self / probability
 
     def phase_space(self, s: float) -> tuple:
-        r"""
-        Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means
+        r"""Returns the phase space parametrization of a state, consisting in a covariance matrix, a vector of means
         and a scaling coefficient. When a state is a linear superposition of Gaussians, each of cov, means,
         coeff are arranged in a batch.
 
@@ -574,8 +553,7 @@ class State(CircuitComponent):
         self,
         core_modes: Sequence[int],
     ) -> tuple[State, Transformation]:
-        r"""
-        Applies the physical stellar decomposition.
+        r"""Applies the physical stellar decomposition.
 
         Args:
             core_modes: The set of modes defining core variables.
@@ -585,12 +563,12 @@ class State(CircuitComponent):
         """
 
     def quadrature_distribution(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
-        r"""
-        The (discretized) quadrature distribution of the ``State``.
+        r"""The (discretized) quadrature distribution of the ``State``.
 
         Args:
             quad: the discretized quadrature axis over which the distribution is computed.
             phi: The quadrature angle. ``0`` corresponds to the x quadrature, ``pi/2`` to the p quadrature.
+
         Returns:
             The quadrature distribution.
         """
@@ -613,8 +591,7 @@ class State(CircuitComponent):
         return_fig: bool = False,
         min_shape: int = 50,
     ) -> go.Figure | None:
-        r"""
-        2D visualization of the Wigner function of this state.
+        r"""2D visualization of the Wigner function of this state.
 
         Plots the Wigner function on a heatmap, alongside the probability distributions on the
         two quadrature axis.
@@ -729,17 +706,79 @@ class State(CircuitComponent):
         display(fig)
         return None
 
-    def visualize_3d(
+    def visualize_2d_with_arrows(
         self,
-        xbounds: tuple[int] = (-6, 6),
-        pbounds: tuple[int] = (-6, 6),
+        arrows: np.ndarray,
+        xbounds: tuple[int, int] = (-6, 6),
+        pbounds: tuple[int, int] = (-6, 6),
         resolution: int = 200,
         colorscale: str = "RdBu",
         return_fig: bool = False,
         min_shape: int = 50,
     ) -> go.Figure | None:
-        r"""
-        3D visualization of the Wigner function of this state on a surface plot.
+        r"""Plot the state Wigner function and q/p marginals along
+        with arrows from the origin of the Wigner function.
+
+        Useful for, e.g., visualizing the stabilizer arguments of a GKP state.
+
+        Args:
+            arrows: 1D numpy array of complex numbers representing arrow end-points.
+            xbounds: The range of the `x` axis.
+            pbounds: The range of the `p` axis.
+            resolution: The number of bins on each axes.
+            colorscale: A colorscale. Must be one of ``Plotly``'s built-in continuous color
+                scales.
+            return_fig: Whether to return the ``Plotly`` figure.
+            min_shape: The minimum fock shape to use for the Wigner function plot.
+
+        Returns:
+            A ``Plotly`` figure.
+        """
+
+        def _plot_arrow(x: float, y: float) -> go.Scatter:
+            return go.Scatter(
+                x=[0, x],
+                y=[0, y],
+                line={"color": "black", "width": 2},
+                marker={"symbol": "arrow", "angleref": "previous", "size": 15},
+            )
+
+        fig = self.visualize_2d(
+            xbounds=xbounds,
+            pbounds=pbounds,
+            resolution=resolution,
+            colorscale=colorscale,
+            return_fig=True,
+            min_shape=min_shape,
+        )
+        assert fig is not None
+
+        stabilizer_arrows = [
+            _plot_arrow(
+                alpha.real * np.sqrt(2 * settings.HBAR),
+                alpha.imag * np.sqrt(2 * settings.HBAR),
+            )
+            for alpha in arrows
+        ]
+
+        for arrow in stabilizer_arrows:
+            fig.add_trace(arrow, row=2, col=1)  # row=2 col=1 is the Wigner plot of the figure
+
+        if return_fig:
+            return fig
+        display(fig)
+        return None
+
+    def visualize_3d(
+        self,
+        xbounds: tuple[int, int] = (-6, 6),
+        pbounds: tuple[int, int] = (-6, 6),
+        resolution: int = 200,
+        colorscale: str = "RdBu",
+        return_fig: bool = False,
+        min_shape: int = 50,
+    ) -> go.Figure | None:
+        r"""3D visualization of the Wigner function of this state on a surface plot.
 
         Args:
             xbounds: The range of the `x` axis.
@@ -828,8 +867,7 @@ class State(CircuitComponent):
         cutoff: int | None = None,
         return_fig: bool = False,
     ) -> go.Figure | None:
-        r"""
-        Plots the absolute value :math:`abs(\rho)` of the density matrix :math:`\rho` of this state
+        r"""Plots the absolute value :math:`abs(\rho)` of the density matrix :math:`\rho` of this state
         on a heatmap.
 
         Args:

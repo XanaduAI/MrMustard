@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-The lab module.
-"""
+r"""The lab module."""
 
+from .circuit import *
 from .circuit_components import *
 from .circuit_components_utils import *
+from .computational_graph import *
 from .samplers import *
 from .states import *
 from .transformations import *

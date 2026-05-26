@@ -18,7 +18,7 @@ import pytest
 
 from mrmustard import math
 from mrmustard.lab import Attenuator, BSgate, GaussianKet, Rgate, SqueezedVacuum, TraceOut, Unitary
-from mrmustard.physics.ansatz import ArrayAnsatz
+from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.mm_einsum import mm_einsum
 
 
@@ -196,6 +196,80 @@ class TestMmEinsumValues:
         )
         assert isinstance(res, ArrayAnsatz)
         assert res == (f0 >> f01.dual).ansatz
+
+    def test_sublist_extension(self):
+        """Tests that the sublist style can support >26 indices."""
+        sv0 = SqueezedVacuum(0, 0.1)
+        sv1 = SqueezedVacuum(1, 0.2)
+        sv2 = SqueezedVacuum(2, 0.3)
+        sv3 = SqueezedVacuum(3, 0.4)
+        bs_12_first = BSgate((1, 2), theta=0.1)
+        bs_01 = BSgate((0, 1), theta=0.2)
+        bs_12_second = BSgate((1, 2), theta=0.3)
+        rot_0 = Rgate(0, theta=0.1)
+        att_0 = Attenuator(0, 0.9)
+        att_1 = Attenuator(1, 0.9)
+        att_2 = Attenuator(2, 0.9)
+
+        res = mm_einsum(
+            sv0.ansatz,
+            [0],
+            sv1.ansatz,
+            [1],
+            sv2.ansatz,
+            [2],
+            bs_01.ansatz,
+            [3, 4, 0, 5],
+            bs_12_first.ansatz,
+            [5, 6, 1, 2],
+            bs_12_second.ansatz,
+            [7, 8, 4, 6],
+            sv0.adjoint.ansatz,
+            [9],
+            sv1.adjoint.ansatz,
+            [10],
+            sv2.adjoint.ansatz,
+            [11],
+            bs_01.adjoint.ansatz,
+            [12, 13, 9, 14],
+            bs_12_first.adjoint.ansatz,
+            [14, 15, 10, 11],
+            bs_12_second.adjoint.ansatz,
+            [16, 17, 13, 15],
+            rot_0.ansatz,
+            [18, 3],
+            rot_0.adjoint.ansatz,
+            [19, 12],
+            att_0.ansatz,
+            [20, 19, 21, 18],
+            att_1.ansatz,
+            [22, 16, 23, 7],
+            att_2.ansatz,
+            [24, 17, 25, 8],
+            sv3.ansatz,
+            [26],
+            sv3.adjoint.ansatz,
+            [27],
+            [20, 22, 24, 27, 21, 23, 25, 26],
+        )
+
+        assert isinstance(res, PolyExpAnsatz)
+        assert (
+            res
+            == (
+                sv0
+                >> sv1
+                >> sv2
+                >> sv3
+                >> bs_12_first
+                >> bs_01
+                >> bs_12_second
+                >> rot_0
+                >> att_0
+                >> att_1
+                >> att_2
+            ).ansatz
+        )
 
     def test_trace_out(self):
         """Tests the trace out phase in mm_einsum."""

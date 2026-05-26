@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a controlled-phase gate.
-"""
+"""The class representing a controlled-phase gate."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["CZgate"]
 
 
 class CZgate(Unitary):
-    r"""
-    Controlled Z gate.
+    r"""Controlled Z gate.
 
     >>> from mrmustard.lab import CZgate
     >>> gate = CZgate((0, 1), s=0.5)
@@ -42,6 +39,7 @@ class CZgate(Unitary):
     Args:
         modes: The pair of modes of the controlled-Z gate.
         s: The control parameter.
+        name: A name for the gate. If not provided, the class name will be used.
 
     .. details::
         We have that the controlled-Z gate is defined as
@@ -60,12 +58,14 @@ class CZgate(Unitary):
         self,
         modes: tuple[int, int],
         s: float | Sequence[float] | Parameter = 0.0,
+        name: str | None = None,
     ):
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (cz_gate, ("s", "lin_sup"))}
             ),
             wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["s"] = Parameter.from_cc_init(s, "float64", f"{self.name}/s")

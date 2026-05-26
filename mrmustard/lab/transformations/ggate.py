@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a generic gaussian gate.
-"""
+"""The class representing a generic gaussian gate."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["Ggate"]
 
 
 class Ggate(Unitary):
-    r"""
-    The generic N-mode Gaussian gate.
+    r"""The generic N-mode Gaussian gate.
 
     >>> from mrmustard import math
     >>> from mrmustard.lab import Ggate, Vacuum, Identity, Ket
@@ -43,6 +40,7 @@ class Ggate(Unitary):
     Args:
         modes: The modes this gate is applied to.
         symplectic: The symplectic matrix of the gate in the XXPP ordering.
+        name: A name for the gate. If not provided, the class name will be used.
     """
 
     short_name = "G"
@@ -51,14 +49,16 @@ class Ggate(Unitary):
         self,
         modes: int | tuple[int, ...],
         symplectic: RealMatrix | Parameter,
+        name: str | None = None,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (gaussian_gate, ("symplectic", "lin_sup"))}
             ),
             wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["symplectic"] = Parameter.from_cc_init(
             symplectic, "float64", f"{self.name}/symplectic"
@@ -70,15 +70,19 @@ class Ggate(Unitary):
 
     @classmethod
     def random(
-        cls, modes: int | tuple[int, ...], max_r: float = 1.0, seed: int | None = None
+        cls,
+        modes: int | tuple[int, ...],
+        max_r: float = 1.0,
+        seed: int | None = None,
+        name: str | None = None,
     ) -> Ggate:
-        r"""
-        Returns a random Ggate.
+        r"""Returns a random Ggate.
 
         Args:
             modes: The modes of the Ggate.
             max_r: Maximum squeezing parameter over which we make random choices.
             seed: The random seed. If ``None``, the global seed is used.
+            name: A name for the gate. If not provided, the class name will be used.
 
         Returns:
             The random Ggate.
@@ -90,4 +94,4 @@ class Ggate(Unitary):
         if len(modes) == 0:
             raise ValueError("Cannot create a random Ggate with no modes.")
         symplectic = math.random_symplectic(len(modes), max_r=max_r, seed=seed)
-        return cls(modes, symplectic)
+        return cls(modes, symplectic, name=name)

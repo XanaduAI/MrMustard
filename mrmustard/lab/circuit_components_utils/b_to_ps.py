@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing an operation that changes Bargmann into phase space.
-"""
+"""The class representing an operation that changes Bargmann into phase space."""
 
 from __future__ import annotations
 
@@ -32,8 +30,7 @@ __all__ = ["BtoPS"]
 
 
 class BtoPS(Map):
-    r"""
-    The `s`-parametrized Stratonovich-Weyl kernel as a ``Map``.
+    r"""The `s`-parametrized Stratonovich-Weyl kernel as a ``Map``.
 
     Used internally as a ``Channel`` for transformations between representations.
 

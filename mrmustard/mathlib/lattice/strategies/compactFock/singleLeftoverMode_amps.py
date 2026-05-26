@@ -1,5 +1,4 @@
-"""
-This module calculates all possible Fock representations of mode 0,where all other modes are PNR detected.
+"""This module calculates all possible Fock representations of mode 0,where all other modes are PNR detected.
 This is done by applying the recursion relation in a selective manner.
 """
 
@@ -30,8 +29,7 @@ def write_block(
     K_i,
     cutoff_leftoverMode,
 ):  # pragma: no cover
-    """
-    Apply the recurrence relation to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
+    """Apply the recurrence relation to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
     This is the coarse-grained version of applying the recurrence relation of mrmustard.math.compactFock.compactFock_diagonal_amps once.
     """
     m, n = 0, 0
@@ -81,9 +79,8 @@ def read_block(
     idx_read_tail,
     cutoff_leftoverMode,
 ):  # pragma: no cover
-    """
-    Read the blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
-    that are required to apply the recurrence relation and write them to G_in
+    """Read the blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
+    that are required to apply the recurrence relation and write them to G_in.
     """
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
@@ -112,8 +109,8 @@ def use_offDiag_pivot(
     arr1001,
     arr1,
 ):
-    """
-    Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
+    """Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...].
+
     Args:
         A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of detected modes
@@ -223,8 +220,8 @@ def use_offDiag_pivot(
 
 @njit(cache=True)
 def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1):
-    """
-    Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
+    """Apply recurrence relation for pivot of type [a,a,b,b,c,c...].
+
     Args:
         A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of detected modes
@@ -302,8 +299,7 @@ def fock_representation_1leftoverMode_amps_NUMBA(
     list_type,
     zero_tuple,
 ):
-    """
-    Returns the density matrices in the upper, undetected mode of a circuit when all other modes are PNR detected
+    """Returns the density matrices in the upper, undetected mode of a circuit when all other modes are PNR detected
     according to algorithm 2 of https://doi.org/10.22331/q-2023-08-29-1097
     Args:
         A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
@@ -317,9 +313,8 @@ def fock_representation_1leftoverMode_amps_NUMBA(
         arr1 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
         tuple_type, list_type (Numba types): numba types that need to be defined outside of numba compiled functions
     Returns:
-        Tensor: the fock representation
+        Tensor: the fock representation.
     """
-
     # fill first mode for all PNR detections equal to zero
     for m in range(cutoff_leftoverMode - 1):
         arr0[(m + 1, 0) + zero_tuple] = (
@@ -369,13 +364,11 @@ def fock_representation_1leftoverMode_amps_NUMBA(
 
 
 def fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs):
-    """
-    First initialise the submatrices of G (of which the shape depends on cutoff and M)
+    """First initialise the submatrices of G (of which the shape depends on cutoff and M)
     and some other constants
     (These initialisations currently cannot be done using Numba.)
     Then calculate the fock representation.
     """
-
     cutoff_leftoverMode = cutoffs[0]
     cutoffs_tail = tuple(cutoffs[1:])
     tuple_type = numba.types.UniTuple(int64, M - 1)

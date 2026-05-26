@@ -17,7 +17,7 @@
 from mrmustard import settings
 from mrmustard.lab import GaussianKet
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.mm_einsum import to_bargmann
+from mrmustard.physics.mm_einsum.conversions import to_bargmann
 from mrmustard.physics.utils import random_Abc
 
 

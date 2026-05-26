@@ -70,7 +70,7 @@ def vanilla_step(
 def vanilla_step_batch(
     G: ComplexTensor,
     A: ComplexMatrix,
-    b: ComplexTensor,
+    b: ComplexVector,
     index: tuple[int, ...],
 ) -> complex:  # pragma: no cover
     r"""Fock-Bargmann recurrence relation step, batched version.
@@ -120,6 +120,7 @@ def vanilla_step_jacobian(
         index (Sequence): index at which to compute the jacobian
         dGdB (array): gradient of G with respect to b (partially computed)
         dGdA (array): gradient of G with respect to A (partially computed)
+
     Returns:
         tuple[array, array]: the dGdB and dGdA tensors updated at the given index
     """

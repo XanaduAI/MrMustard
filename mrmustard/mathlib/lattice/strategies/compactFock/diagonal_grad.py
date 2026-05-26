@@ -1,5 +1,4 @@
-"""
-This module calculates the derivatives of the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
+"""This module calculates the derivatives of the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
 by applying the derivated recursion relation in a selective manner.
 """
 
@@ -17,8 +16,8 @@ from mrmustard.mathlib.lattice.strategies.compactFock.helperFunctions import (
 
 @njit(cache=True)
 def calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB):
-    """
-    Calculate the derivatives of one Fock amplitude w.r.t A and B.
+    """Calculate the derivatives of one Fock amplitude w.r.t A and B.
+
     Args:
         i (int): the element of the multidim index that is increased
         G_in, G_in_dA, G_in_dB (array, array, array): all Fock amplitudes from the 'read' group in the recurrence relation and their derivatives w.r.t. A and B
@@ -61,8 +60,8 @@ def use_offDiag_pivot_grad(
     arr1001_dB,
     arr1_dB,
 ):  # pragma: no cover
-    """
-    Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
+    """Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...].
+
     Args:
         A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
@@ -199,8 +198,8 @@ def use_offDiag_pivot_grad(
 
 @njit(cache=True)
 def use_diag_pivot_grad(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB):
-    """
-    Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
+    """Apply recurrence relation for pivot of type [a,a,b,b,c,c...].
+
     Args:
         A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
@@ -271,8 +270,7 @@ def fock_representation_diagonal_grad_NUMBA(
     tuple_type,
     list_type,
 ):
-    """
-    Returns the gradients of the PNR probabilities of a mixed state according to algorithm 1 of
+    """Returns the gradients of the PNR probabilities of a mixed state according to algorithm 1 of
     https://doi.org/10.22331/q-2023-08-29-1097
     Args:
         A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
@@ -285,7 +283,7 @@ def fock_representation_diagonal_grad_NUMBA(
         arr1 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
         tuple_type, list_type (Numba types): numba types that need to be defined outside of Numba compiled functions
     Returns:
-        array: the derivatives of the fock representation w.r.t. A and B
+        array: the derivatives of the fock representation w.r.t. A and B.
     """
     arr0_dA = np.zeros(arr0.shape + A.shape, dtype=np.complex128)
     arr2_dA = np.zeros(arr2.shape + A.shape, dtype=np.complex128)
@@ -355,11 +353,9 @@ def fock_representation_diagonal_grad_NUMBA(
 
 
 def fock_representation_diagonal_grad(A, B, M, arr0, arr2, arr1010, arr1001, arr1):
-    """
-    First initialise some Numba types (needs to be done outside of Numba compiled function)
+    """First initialise some Numba types (needs to be done outside of Numba compiled function)
     Then calculate the fock representation.
     """
-
     cutoffs = arr0.shape
     tuple_type = numba.types.UniTuple(int64, M)
     list_type = numba.types.ListType(tuple_type)

@@ -171,7 +171,7 @@ class TestUnitary:
         assert u_from_global_2 == u_from_global_2_redux
 
         # no modes should raise error
-        with pytest.raises(ValueError, match="Cannot create a random unitary with no modes."):
+        with pytest.raises(ValueError, match=r"Cannot create a random unitary with no modes."):
             Unitary.random(modes=[])
 
 
@@ -288,7 +288,7 @@ class TestChannel:
         assert ch_from_global_2 == ch_from_global_2_redux
 
         # no modes should raise error
-        with pytest.raises(ValueError, match="Cannot create a random channel with no modes."):
+        with pytest.raises(ValueError, match=r"Cannot create a random channel with no modes."):
             Channel.random(modes=[])
 
     @pytest.mark.parametrize("modes", [(0,), (0, 1), (0, 1, 2)])

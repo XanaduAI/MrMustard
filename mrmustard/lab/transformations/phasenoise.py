@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a Phase noise channel.
-"""
+"""The class representing a Phase noise channel."""
 
 from __future__ import annotations
 
@@ -32,8 +30,7 @@ __all__ = ["PhaseNoise"]
 
 
 class PhaseNoise(Channel):
-    r"""
-    The Phase noise channel.
+    r"""The Phase noise channel.
 
     This class represents the application of a random phase. The distributiuon of the phase
     is assumed to be a Gaussian with mean zero, and standard deviation `phase_stdev`.
@@ -45,6 +42,7 @@ class PhaseNoise(Channel):
     Args:
         mode: The mode the channel is applied to.
         phase_stdev: The standard deviation of the random phase noise.
+        name: A name for the channel. If not provided, the class name will be used.
 
     .. details::
         The Fock representation is connected to the Fourier coefficients of the distribution.
@@ -56,8 +54,10 @@ class PhaseNoise(Channel):
         self,
         mode: int | tuple[int],
         phase_stdev: float | Parameter = 0.0,
+        name: str | None = None,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             wires=Wires(
                 modes_in_bra=set(mode),
@@ -65,15 +65,14 @@ class PhaseNoise(Channel):
                 modes_in_ket=set(mode),
                 modes_out_ket=set(mode),
             ),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["phase_stdev"] = Parameter.from_cc_init(
             phase_stdev, "float64", f"{self.name}/phase_stdev"
         )
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Since PhaseNoise admits a particularly nice form in the Fock basis, we have implemented its right-shift operation separately.
+        r"""Since PhaseNoise admits a particularly nice form in the Fock basis, we have implemented its right-shift operation separately.
 
         Args:
             other: the component other than the PhaseNoise object that is present in the contraction

@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Utility functions for the math module.
+"""Utility functions for the math module.
 
 This module contains pure functions for einsum string parsing and tensor shape manipulation.
 These utilities support extended einsum notation with parenthesized index groups.

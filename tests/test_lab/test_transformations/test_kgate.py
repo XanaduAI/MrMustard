@@ -37,9 +37,11 @@ class TestKgate:
         assert gate.name == "Kgate"
         assert gate.parameters.kappa.value == 0.3
         assert gate.modes == (0,)
-        assert gate.ansatz is None
         assert gate.normal_ordered is True
         assert Kgate(0, 0.3, normal_ordered=False).normal_ordered is False
+
+        with pytest.raises(AttributeError, match="no ansatz factory"):
+            _ = gate.ansatz
 
     @pytest.mark.parametrize("normal_ordered", [True, False])
     def test_diagonal_on_number_state(self, normal_ordered):

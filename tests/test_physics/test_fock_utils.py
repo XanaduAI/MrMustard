@@ -16,8 +16,6 @@
 
 import numpy as np
 import pytest
-from hypothesis import given
-from hypothesis import strategies as st
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 
@@ -32,9 +30,6 @@ from mrmustard.lab import (
     Vacuum,
 )
 from mrmustard.physics import fock_utils
-
-# helper strategies
-st_angle = st.floats(min_value=0, max_value=2 * np.pi)
 
 
 @pytest.mark.parametrize("batch_shape", [(), (2,), (3, 4)])
@@ -57,7 +52,8 @@ def test_fock_state(batch_shape):
     assert math.all(array3[(*batch_indices, n)] == 1)
 
 
-@given(n_mean=st.floats(0, 3), phi=st_angle)
+@pytest.mark.parametrize("n_mean", [0.0, 1.7, 3.0])
+@pytest.mark.parametrize("phi", [0.0, 1.6 * np.pi, 2 * np.pi])
 def test_two_mode_squeezing_fock(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state
     Note that this is consistent with the Strawberryfields convention"""
@@ -69,7 +65,8 @@ def test_two_mode_squeezing_fock(n_mean, phi):
     assert np.allclose(amps, expected)
 
 
-@given(n_mean=st.floats(0, 3), phi=st_angle, varphi=st_angle)
+@pytest.mark.parametrize("n_mean, phi", [(0.0, 0.0), (1.7, 1.6 * np.pi), (3.0, 2.0 * np.pi)])
+@pytest.mark.parametrize("varphi", [0.0, 1.8 * np.pi, 2 * np.pi])
 def test_hong_ou_mandel(n_mean, phi, varphi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     cutoff = 2
@@ -83,7 +80,7 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
     assert np.allclose(amps[1, 1, 1, 1], 0.0, atol=1e-6)
 
 
-@given(alpha=st.complex_numbers(min_magnitude=0, max_magnitude=2))
+@pytest.mark.parametrize("alpha", [0.0 + 0.0j, 0.0 + 1.2j, 1.2 + 0.0j, 1.1 + 1.3j])
 def test_coherent_state(alpha):
     """Test that coherent states have the correct photon number statistics"""
     cutoff = 10
@@ -94,7 +91,8 @@ def test_coherent_state(alpha):
     assert np.allclose(amps, expected, atol=1e-6)
 
 
-@given(r=st.floats(0, 2), phi=st_angle)
+@pytest.mark.parametrize("r", [0.0, 1.7, 2.0])
+@pytest.mark.parametrize("phi", [0.0, 1.6 * np.pi, 2 * np.pi])
 def test_squeezed_state(r, phi):
     """Test that squeezed states have the correct photon number statistics
     Note that we use the same sign with respect to SMSV in https://en.wikipedia.org/wiki/Squeezed_coherent_state
@@ -119,7 +117,8 @@ def test_squeezed_state(r, phi):
     assert np.allclose(non_zero_amps, amp_pairs)
 
 
-@given(n_mean=st.floats(0, 2), phi=st_angle, eta=st.floats(min_value=0, max_value=1))
+@pytest.mark.parametrize("n_mean, phi", [(0.0, 0.0), (1.7, 1.6 * np.pi), (2.0, 2.0 * np.pi)])
+@pytest.mark.parametrize("eta", [0.0, 0.7, 1.0])
 def test_lossy_squeezing(n_mean, phi, eta):
     """Tests the total photon number distribution of a lossy squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
@@ -131,7 +130,8 @@ def test_lossy_squeezing(n_mean, phi, eta):
     assert np.allclose(ps, expected, atol=1e-5)
 
 
-@given(n_mean=st.floats(0, 2), phi=st_angle, eta_0=st.floats(0, 1), eta_1=st.floats(0, 1))
+@pytest.mark.parametrize("n_mean, phi", [(0.0, 0.0), (1.7, 1.6 * np.pi), (2.0, 2.0 * np.pi)])
+@pytest.mark.parametrize("eta_0, eta_1", [(0.0, 0.0), (0.0, 0.7), (0.7, 0.0), (1.0, 1.0)])
 def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     """Tests the photon number distribution of a lossy two-mode squeezed state"""
     cutoff = 40

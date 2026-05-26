@@ -35,6 +35,7 @@ from ..lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
 )
+from .level_scan import hermite_renormalized
 
 __all__ = [
     "hermite_renormalized_1leftoverMode_jax",
@@ -49,7 +50,6 @@ __all__ = [
 # ~~~~~~~~~~~~~~~~~~~~
 
 
-@partial(jax.custom_vjp, nondiff_argnums=(3, 4))
 @partial(jax.jit, static_argnums=(3, 4))
 def hermite_renormalized_jax(
     A: jnp.ndarray,
@@ -58,11 +58,23 @@ def hermite_renormalized_jax(
     shape: tuple[int],
     stable: bool,
 ) -> jnp.ndarray:
-    r"""
-    The jax custom gradient for hermite_renormalized.
-    """
+    """Hermite hermite_renormalized entry point."""
+    if stable:
+        return hermite_renormalized_stable_jax(A, b, c, shape)
+    return hermite_renormalized(A, b, c, shape)
+
+
+@partial(jax.custom_vjp, nondiff_argnums=(3,))
+@partial(jax.jit, static_argnums=(3,))
+def hermite_renormalized_stable_jax(
+    A: jnp.ndarray,
+    b: jnp.ndarray,
+    c: jnp.ndarray,
+    shape: tuple[int],
+) -> jnp.ndarray:
+    r"""The jax custom gradient for hermite_renormalized."""
     return jax.pure_callback(
-        lambda A, b, c: vanilla(shape, np.array(A), np.array(b), np.array(c), stable),
+        lambda A, b, c: vanilla(shape, np.array(A), np.array(b), np.array(c), stable=True),
         jax.ShapeDtypeStruct(shape, jnp.complex128),
         A,
         b,
@@ -70,18 +82,14 @@ def hermite_renormalized_jax(
     )
 
 
-def hermite_renormalized_jax_fwd(A, b, c, shape, stable):
-    r"""
-    The jax forward pass for hermite_renormalized.
-    """
-    G = hermite_renormalized_jax(A, b, c, shape, stable)
+def hermite_renormalized_stable_jax_fwd(A, b, c, shape):
+    r"""The jax forward pass for hermite_renormalized."""
+    G = hermite_renormalized_stable_jax(A, b, c, shape)
     return (G, (G, A, b, c))
 
 
-def hermite_renormalized_jax_bwd(shape, stable, res, g):
-    r"""
-    The jax backward pass for hermite_renormalized.
-    """
+def hermite_renormalized_stable_jax_bwd(shape, res, g):
+    r"""The jax backward pass for hermite_renormalized."""
     G, A, b, c = res
     return jax.pure_callback(
         lambda G, c, g: vanilla_vjp(np.array(G), np.array(c), np.array(g)),
@@ -96,7 +104,9 @@ def hermite_renormalized_jax_bwd(shape, stable, res, g):
     )
 
 
-hermite_renormalized_jax.defvjp(hermite_renormalized_jax_fwd, hermite_renormalized_jax_bwd)
+hermite_renormalized_stable_jax.defvjp(
+    hermite_renormalized_stable_jax_fwd, hermite_renormalized_stable_jax_bwd
+)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,7 +114,6 @@ hermite_renormalized_jax.defvjp(hermite_renormalized_jax_fwd, hermite_renormaliz
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@partial(jax.custom_vjp, nondiff_argnums=(3, 4))
 @partial(jax.jit, static_argnums=(3, 4))
 def hermite_renormalized_batched_jax(
     A: jnp.ndarray,
@@ -113,9 +122,21 @@ def hermite_renormalized_batched_jax(
     shape: tuple[int],
     stable: bool,
 ) -> jnp.ndarray:
-    r"""
-    The jax custom gradient for hermite_renormalized_batched.
-    """
+    """Hermite hermite_renormalized_batched entry point."""
+    if stable:
+        return hermite_renormalized_stable_batched_jax(A, b, c, shape)
+    return hermite_renormalized(A, b, c, shape)
+
+
+@partial(jax.custom_vjp, nondiff_argnums=(3,))
+@partial(jax.jit, static_argnums=(3,))
+def hermite_renormalized_stable_batched_jax(
+    A: jnp.ndarray,
+    b: jnp.ndarray,
+    c: jnp.ndarray,
+    shape: tuple[int],
+) -> jnp.ndarray:
+    r"""The jax custom gradient for hermite_renormalized_batched."""
     batch_size = A.shape[0]
     output_shape = (batch_size, *shape)
     return jax.pure_callback(
@@ -124,7 +145,7 @@ def hermite_renormalized_batched_jax(
             np.asarray(A),
             np.asarray(b),
             np.asarray(c),
-            stable,
+            stable=True,
         ),
         jax.ShapeDtypeStruct(output_shape, jnp.complex128),
         A,
@@ -133,18 +154,14 @@ def hermite_renormalized_batched_jax(
     )
 
 
-def hermite_renormalized_batched_jax_fwd(A, b, c, shape, stable):
-    r"""
-    The jax forward pass for hermite_renormalized_batched.
-    """
-    G = hermite_renormalized_batched_jax(A, b, c, shape, stable)
+def hermite_renormalized_stable_batched_jax_fwd(A, b, c, shape):
+    r"""The jax forward pass for hermite_renormalized_batched."""
+    G = hermite_renormalized_stable_batched_jax(A, b, c, shape)
     return (G, (G, A, b, c))
 
 
-def hermite_renormalized_batched_jax_bwd(shape, stable, res, g):
-    r"""
-    The jax backward pass for hermite_renormalized_batched.
-    """
+def hermite_renormalized_stable_batched_jax_bwd(shape, res, g):
+    r"""The jax backward pass for hermite_renormalized_batched."""
     G, A, b, c = res
     dLdA, dLdB, dLdC = jax.pure_callback(
         lambda G, c, g: vanilla_vjp_batched(np.array(G), np.array(c), np.array(g)),
@@ -160,9 +177,9 @@ def hermite_renormalized_batched_jax_bwd(shape, stable, res, g):
     return dLdA, dLdB, dLdC
 
 
-hermite_renormalized_batched_jax.defvjp(
-    hermite_renormalized_batched_jax_fwd,
-    hermite_renormalized_batched_jax_bwd,
+hermite_renormalized_stable_batched_jax.defvjp(
+    hermite_renormalized_stable_batched_jax_fwd,
+    hermite_renormalized_stable_batched_jax_bwd,
 )
 
 
@@ -181,9 +198,7 @@ def hermite_renormalized_binomial_jax(
     max_l2: float | None,
     global_cutoff: int | None,
 ) -> jnp.ndarray:
-    r"""
-    The jax custom gradient for hermite_renormalized_binomial.
-    """
+    r"""The jax custom gradient for hermite_renormalized_binomial."""
     function = partial(strategies.binomial, tuple(shape))
     return jax.pure_callback(
         lambda A, B, C, max_l2, global_cutoff: function(
@@ -203,17 +218,13 @@ def hermite_renormalized_binomial_jax(
 
 
 def hermite_renormalized_binomial_jax_fwd(A, b, c, shape, max_l2, global_cutoff):
-    r"""
-    The jax forward pass for hermite_renormalized_binomial.
-    """
+    r"""The jax forward pass for hermite_renormalized_binomial."""
     G = hermite_renormalized_binomial_jax(A, b, c, shape, max_l2, global_cutoff)
     return (G, (G, A, b, c))
 
 
 def hermite_renormalized_binomial_jax_bwd(shape, max_l2, global_cutoff, res, g):
-    r"""
-    The jax backward pass for hermite_renormalized_binomial.
-    """
+    r"""The jax backward pass for hermite_renormalized_binomial."""
     G, A, b, c = res
     dLdA, dLdB, dLdC = jax.pure_callback(
         lambda G, c, g: strategies.vanilla_vjp(np.array(G), np.array(c), np.array(g)),
@@ -248,9 +259,7 @@ def hermite_renormalized_diagonal_jax(
     C: jnp.ndarray,
     cutoffs: tuple[int],
 ) -> jnp.ndarray:
-    r"""
-    The jax custom gradient for hermite_renormalized_diagonal.
-    """
+    r"""The jax custom gradient for hermite_renormalized_diagonal."""
     M = len(cutoffs)
     batch_shape = B.shape[-1:] if B.ndim == 2 else ()
     shape = (1, 1, 1, *batch_shape) if M == 1 else (M, M - 1, *cutoffs, *batch_shape)
@@ -273,17 +282,13 @@ def hermite_renormalized_diagonal_jax(
 
 
 def hermite_renormalized_diagonal_jax_fwd(A, b, c, cutoffs):
-    r"""
-    The jax forward pass for hermite_renormalized_diagonal.
-    """
+    r"""The jax forward pass for hermite_renormalized_diagonal."""
     primal_output = hermite_renormalized_diagonal_jax(A, b, c, cutoffs)
     return (primal_output, (*primal_output, A, b, c))
 
 
 def hermite_renormalized_diagonal_jax_bwd(cutoffs, res, g):
-    r"""
-    The jax backward pass for hermite_renormalized_diagonal.
-    """
+    r"""The jax backward pass for hermite_renormalized_diagonal."""
     poly0, poly2, poly1010, poly1001, poly1, A, b, c = res
     if b.ndim > 1:
         raise ValueError("B batched")
@@ -340,9 +345,7 @@ def hermite_renormalized_1leftoverMode_jax(
     output_cutoff: int,
     pnr_cutoffs: tuple[int, ...],
 ) -> jnp.ndarray:
-    r"""
-    The jax custom gradient for hermite_renormalized_1leftoverMode.
-    """
+    r"""The jax custom gradient for hermite_renormalized_1leftoverMode."""
     cutoffs = (output_cutoff + 1, *tuple(p + 1 for p in pnr_cutoffs))
     M = len(cutoffs)
     cutoff_leftoverMode = cutoffs[0]
@@ -351,7 +354,7 @@ def hermite_renormalized_1leftoverMode_jax(
         shape = (1, 1, 1, 1, 1)
     else:
         shape = (cutoff_leftoverMode, cutoff_leftoverMode, M - 1, M - 2, *cutoffs_tail)
-    # TODO: add vjp for fast_diagonal and make use of it in 95226
+    # TODO: add vjp for fock_diagonals and make use of it in 95226
     return jax.pure_callback(
         lambda A, B, C, cutoffs: hermite_multidimensional_1leftoverMode(
             np.array(A), np.array(B), np.array(C), np.array(cutoffs)
@@ -378,35 +381,26 @@ def hermite_renormalized_1leftoverMode_jax(
 
 
 def hermite_renormalized_1leftoverMode_jax_fwd(A, b, c, output_cutoff, pnr_cutoffs):
-    r"""
-    The jax forward pass for hermite_renormalized_reorderedAB.
-    """
+    r"""The jax forward pass for hermite_renormalized_reorderedAB."""
     primal_output = hermite_renormalized_1leftoverMode_jax(A, b, c, output_cutoff, pnr_cutoffs)
     return (primal_output, (*primal_output, A, b, c))
 
 
 def hermite_renormalized_1leftoverMode_jax_bwd(output_cutoff, pnr_cutoffs, res, g):
-    r"""
-    The jax backward pass for hermite_renormalized_1leftoverMode.
-    """
+    r"""The jax backward pass for hermite_renormalized_1leftoverMode."""
     poly0, poly2, poly1010, poly1001, poly1, A, b, c = res
     dpoly_dC, dpoly_dA, dpoly_dB = jax.pure_callback(
-        lambda A,
-        B,
-        C,
-        arr0,
-        arr2,
-        arr1010,
-        arr1001,
-        arr1: grad_hermite_multidimensional_1leftoverMode(
-            np.array(A),
-            np.array(B),
-            np.array(C),
-            np.array(arr0),
-            np.array(arr2),
-            np.array(arr1010),
-            np.array(arr1001),
-            np.array(arr1),
+        lambda A, B, C, arr0, arr2, arr1010, arr1001, arr1: (
+            grad_hermite_multidimensional_1leftoverMode(
+                np.array(A),
+                np.array(B),
+                np.array(C),
+                np.array(arr0),
+                np.array(arr2),
+                np.array(arr1010),
+                np.array(arr1001),
+                np.array(arr1),
+            )
         ),
         (
             jax.ShapeDtypeStruct(poly0.shape + c.shape, jnp.complex128),

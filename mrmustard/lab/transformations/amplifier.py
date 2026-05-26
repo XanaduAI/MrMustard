@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a noisy amplifier channel.
-"""
+"""The class representing a noisy amplifier channel."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["Amplifier"]
 
 
 class Amplifier(Channel):
-    r"""
-    The noisy amplifier channel.
+    r"""The noisy amplifier channel.
 
     >>> import numpy as np
     >>> from mrmustard.lab import Amplifier, Coherent
@@ -45,6 +42,7 @@ class Amplifier(Channel):
     Args:
         mode: The mode this gate is applied to.
         gain: The gain.
+        name: A name for the channel. If not provided, the class name will be used.
 
     .. details::
 
@@ -77,8 +75,10 @@ class Amplifier(Channel):
         self,
         mode: int | tuple[int],
         gain: float | Sequence[float] | Parameter = 1.0,
+        name: str | None = None,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (amplifier_channel, ("gain", "lin_sup"))}
@@ -89,6 +89,6 @@ class Amplifier(Channel):
                 modes_in_ket=set(mode),
                 modes_out_ket=set(mode),
             ),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["gain"] = Parameter.from_cc_init(gain, "float64", f"{self.name}/gain")

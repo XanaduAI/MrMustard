@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a rotation gate.
-"""
+"""The class representing a rotation gate."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["Rgate"]
 
 
 class Rgate(Unitary):
-    r"""
-    The rotation gate.
+    r"""The rotation gate.
 
     >>> from mrmustard.lab import Rgate
     >>> unitary = Rgate(mode=1, theta=0.1)
@@ -41,6 +38,7 @@ class Rgate(Unitary):
     Args:
         mode: The mode this gate is applied to.
         theta: The rotation angle.
+        name: A name for the gate. If not provided, the class name will be used.
     """
 
     short_name = "R"
@@ -49,13 +47,15 @@ class Rgate(Unitary):
         self,
         mode: int | tuple[int],
         theta: float | Sequence[float] | Parameter = 0.0,
+        name: str | None = None,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (rotation_gate, ("theta", "lin_sup"))}
             ),
             wires=Wires(modes_in_ket=set(mode), modes_out_ket=set(mode)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["theta"] = Parameter.from_cc_init(theta, "float64", f"{self.name}/theta")

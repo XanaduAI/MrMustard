@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a Gaussian random noise channel.
-"""
+"""The class representing a Gaussian random noise channel."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["GaussianRandomNoise"]
 
 
 class GaussianRandomNoise(Channel):
-    r"""
-    The Gaussian random noise channel.
+    r"""The Gaussian random noise channel.
 
     >>> import numpy as np
     >>> from mrmustard.lab import GaussianRandomNoise
@@ -43,6 +40,7 @@ class GaussianRandomNoise(Channel):
     Args:
         modes: The modes the channel is applied to. The number of modes must match half of the size of ``Y``.
         Y: The Y matrix of the Gaussian random noise channel.
+        name: A name for the channel. If not provided, the class name will be used.
 
     Raises:
         ValueError: If the number of modes does not match half of the size of ``Y``.
@@ -64,8 +62,10 @@ class GaussianRandomNoise(Channel):
         self,
         modes: int | tuple[int, ...],
         Y: RealMatrix | Parameter,
+        name: str | None = None,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
+        name = name if name is not None else self.__class__.__name__
         if Y.shape[-1] // 2 != len(modes):
             raise ValueError(
                 f"The number of modes {len(modes)} does not match the dimension of the "
@@ -88,6 +88,6 @@ class GaussianRandomNoise(Channel):
                 modes_in_ket=set(modes),
                 modes_out_ket=set(modes),
             ),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["Y"] = Parameter.from_cc_init(Y, "float64", f"{self.name}/Y")

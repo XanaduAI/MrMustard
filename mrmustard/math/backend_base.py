@@ -14,16 +14,12 @@
 
 
 class BackendBase:
-    r"""
-    A base class for backends.
-    """
+    r"""A base class for backends."""
 
     def __init__(self, name):
         self._name = name
 
     @property
     def name(self):
-        r"""
-        The name of this backend.
-        """
+        r"""The name of this backend."""
         return self._name

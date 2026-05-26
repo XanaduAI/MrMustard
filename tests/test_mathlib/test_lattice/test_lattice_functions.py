@@ -32,6 +32,7 @@ def test_binomial_vs_binomialDict():
     """Test that binomial and binomial_dict give the same result."""
 
     A, b, c = GaussianKet.random((0, 1)).bargmann_triple()
+    A, b, c = math.asnumpy(A), math.asnumpy(b), math.asnumpy(c)
 
     max_prob = 0.9
     local_cutoffs = (5, 5)

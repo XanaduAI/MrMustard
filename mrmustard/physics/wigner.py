@@ -65,29 +65,12 @@ def _wig_laguerre_val(L, x, diag):  # pragma: no cover
 
 
 def wigner_discretized(rho, q_vec, p_vec):
-    r"""Calculates the discretized Wigner function for a single mode.
+    r"""Calculates the discretized Wigner function for a single mode using Clenshaw recursion.
 
-    The supported discretization methods are:
-
-    * ``iterative`` (default): Uses an iterative method to calculate the Wigner
-      coefficients :math:`W_{mn}` in :math:`W = \sum_{mn} W_{mn} |m\rangle\langle n|`.
-      This method is recommended for systems with low numbers of excitations (``n\leq50``).
-    * ``clenshaw``: Uses Clenshaw summations to improve the performance for systems
-      with large numbers of excitations (``n\leq50``).
-
-    The discretization method can be changed by moodifying the `Settings` object.
-
-    .. code::
-
-        >>> settings.DISCRETIZATION_METHOD  # default method
-        "iterative"
-
-        >>> settings.DISCRETIZATION_METHOD = "clenshaw"  # change method
-
-    These methods are adapted versions of the 'iterative' and 'clenshaw' methods of the
-    Wigner function discretization routine provided in
+    Uses Clenshaw summations for the Wigner coefficients :math:`W_{mn}` in
+    :math:`W = \sum_{mn} W_{mn} |m\rangle\langle n|`, adapted from the routine in
     QuTiP <http://qutip.org/docs/4.0.2/apidoc/functions.html?highlight=wigner#qutip.wigner.wigner>`_,
-    which is released under the BSD license, with the following copyright notice:
+    which is released under the BSD license:
 
     Copyright (C) 2011 and later, P.D. Nation, J.R. Johansson,
     A.J.G. Pitchford, C. Granade, and A.L. Grimsmo. All rights reserved.
@@ -102,17 +85,15 @@ def wigner_discretized(rho, q_vec, p_vec):
             P coordinates (in meshgrid form) in which the function is calculated
     """
     hbar = settings.HBAR
-    method = settings.DISCRETIZATION_METHOD
-
     rho = math.asnumpy(rho)
-    if method == "iterative":
-        return _wigner_discretized_iterative(rho, q_vec, p_vec, hbar)
     return _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar)
 
 
 @njit(cache=True)
 def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):  # pragma: no cover
-    r"""Calculates the Wigner function as
+    r"""Calculates the Wigner function as a sum of Laguerre polynomials.
+
+    Namely,
     :math:`W = C(x) \sum_L c_L (2x)^L / sqrt(L!)`, where:
 
     * :math:`x = (q + ip)`, for ``q`` and ``p`` in ``q_vec`` and ``p_vec``
@@ -139,35 +120,3 @@ def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):  # pragma: no cover
         w0 = c_L + w0 * A * (L - j + 1) ** -0.5
 
     return w0.real * np.exp(-B * 0.5) / np.pi / hbar, Q, P
-
-
-@njit(cache=True)
-def _wigner_discretized_iterative(rho, q_vec, p_vec, hbar):  # pragma: no cover
-    cutoff = len(rho)
-    Q, P, grid = make_grid(q_vec, p_vec, hbar)
-    Wmat = np.zeros((2, cutoff, *grid.shape), dtype=np.complex128)
-
-    # W = rho(0,0)W(|0><0|)
-    Wmat[0, 0] = np.exp(-2.0 * np.abs(grid) ** 2) / np.pi
-    W = np.real(rho[0, 0]) * np.real(Wmat[0, 0])
-
-    for n in range(1, cutoff):
-        Wmat[0, n] = (2.0 * grid * Wmat[0, n - 1]) / np.sqrt(n)
-
-        # W += rho(0,n)W(|0><n|) + rho(n,0)W(|n><0|)
-        W += 2 * np.real(rho[0, n] * Wmat[0, n])
-
-    for m in range(1, cutoff):
-        Wmat[1, m] = (2 * np.conj(grid) * Wmat[0, m] - np.sqrt(m) * Wmat[0, m - 1]) / np.sqrt(m)
-
-        # W = rho(m, m)W(|m><m|)
-        W += np.real(rho[m, m] * Wmat[1, m])
-
-        for n in range(m + 1, cutoff):
-            Wmat[1, n] = (2 * grid * Wmat[1, n - 1] - np.sqrt(m) * Wmat[0, n - 1]) / np.sqrt(n)
-
-            # W += rho(m,n)W(|m><n|) + rho(n,m)W(|n><m|)
-            W += 2 * np.real(rho[m, n] * Wmat[1, n])
-        Wmat[0] = Wmat[1]
-
-    return W / hbar, Q, P

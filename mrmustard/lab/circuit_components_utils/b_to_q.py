@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing an operation that changes Bargmann into quadrature.
-"""
+"""The class representing an operation that changes Bargmann into quadrature."""
 
 from __future__ import annotations
 
@@ -33,8 +31,7 @@ __all__ = ["BtoQ"]
 
 
 class BtoQ(Operation):
-    r"""
-    The ``Operation`` that changes the representation of an object from Bargmann (B) into quadrature (Q).
+    r"""The ``Operation`` that changes the representation of an object from Bargmann (B) into quadrature (Q).
     By default it's defined on the output ket side.
 
     >>> from mrmustard import math

@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a squeezed thermal state.
-"""
+"""The class representing a squeezed thermal state."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["SqueezedThermal"]
 
 
 class SqueezedThermal(DM):
-    r"""
-    The squeezed thermal state in Bargmann representation.
+    r"""The squeezed thermal state in Bargmann representation.
 
     >>> from mrmustard.lab import Sgate, SqueezedThermal, Thermal, Vacuum
     >>> state = SqueezedThermal(mode=0, nbar=1, r=0.2, phi=0.3)
@@ -43,6 +40,7 @@ class SqueezedThermal(DM):
         nbar: The expected number of photons.
         r: The squeezing magnitude.
         phi: The squeezing angle.
+        name: A name for the state. If not provided, the class name will be used.
 
     Returns:
         A ``DM`` type object that represents the squeezed thermal state.
@@ -52,12 +50,14 @@ class SqueezedThermal(DM):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         nbar: float | Sequence[float] | Parameter = 0.0,
         r: float | Sequence[float] | Parameter = 0.0,
         phi: float | Sequence[float] | Parameter = 0.0,
+        name: str | None = None,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={
@@ -68,7 +68,7 @@ class SqueezedThermal(DM):
                 }
             ),
             wires=Wires(modes_out_bra=set(mode), modes_out_ket=set(mode)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["nbar"] = Parameter.from_cc_init(nbar, "float64", f"{self.name}/nbar")
         self.parameters["r"] = Parameter.from_cc_init(r, "float64", f"{self.name}/r")

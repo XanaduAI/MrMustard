@@ -1,5 +1,4 @@
-"""
-This module contains helper functions that are used in
+"""This module contains helper functions that are used in
 diagonal_amps.py, diagonal_grad.py, singleLeftoverMode_amps.py and singleLeftoverMode_grad.py
 to validate the input provided by the user.
 """
@@ -28,7 +27,7 @@ def input_validation(A, rtol=1e-05, atol=1e-08):
     * That the ``A`` is a NumPy array
     * That ``A`` is square
     * That ``A`` does not contain any NaNs
-    * That ``A`` is symmetric
+    * That ``A`` is symmetric.
 
     .. note:: This function is an adaptation of the of an analogous method in The Walrus.
 
@@ -40,7 +39,6 @@ def input_validation(A, rtol=1e-05, atol=1e-08):
     Returns:
         bool: returns ``True`` if the matrix satisfies all requirements
     """
-
     if not isinstance(A, np.ndarray):
         raise TypeError("Input matrix must be a NumPy array.")
 
@@ -59,9 +57,7 @@ def input_validation(A, rtol=1e-05, atol=1e-08):
 
 
 def hermite_multidimensional_diagonal(A, B, G0, cutoffs, rtol=1e-05, atol=1e-08):
-    """
-    Validation of user input for mrmustard.math.hermite_renormalized_diagonal
-    """
+    """Validation of user input for mrmustard.math.hermite_renormalized_diagonal."""
     input_validation(A, atol=atol, rtol=rtol)
     if B.ndim > 2:
         raise ValueError(
@@ -80,9 +76,7 @@ def hermite_multidimensional_diagonal(A, B, G0, cutoffs, rtol=1e-05, atol=1e-08)
 
 
 def grad_hermite_multidimensional_diagonal(A, B, G0, arr0, arr2, arr1010, arr1001, arr1):
-    """
-    Validation of user input for gradients of mrmustard.math.hermite_renormalized_diagonal
-    """
+    """Validation of user input for gradients of mrmustard.math.hermite_renormalized_diagonal."""
     if A.shape[0] != B.shape[0]:
         raise ValueError("The matrix A and vector B have incompatible dimensions")
     M = A.shape[0] // 2
@@ -101,9 +95,7 @@ def grad_hermite_multidimensional_diagonal(A, B, G0, arr0, arr2, arr1010, arr100
 
 
 def hermite_multidimensional_1leftoverMode(A, B, G0, cutoffs, rtol=1e-05, atol=1e-08):
-    """
-    Validation of user input for mrmustard.math.hermite_renormalized_1leftoverMode
-    """
+    """Validation of user input for mrmustard.math.hermite_renormalized_1leftoverMode."""
     input_validation(A, atol=atol, rtol=rtol)
     if A.shape[0] != B.shape[0]:
         raise ValueError("The matrix A and vector B have incompatible dimensions")
@@ -120,9 +112,7 @@ def hermite_multidimensional_1leftoverMode(A, B, G0, cutoffs, rtol=1e-05, atol=1
 
 
 def grad_hermite_multidimensional_1leftoverMode(A, B, G0, arr0, arr2, arr1010, arr1001, arr1):
-    """
-    Validation of user input for gradients of mrmustard.math.hermite_renormalized_1leftoverMode
-    """
+    """Validation of user input for gradients of mrmustard.math.hermite_renormalized_1leftoverMode."""
     if A.shape[0] != B.shape[0]:
         raise ValueError("The matrix A and vector B have incompatible dimensions")
     M = A.shape[0] // 2

@@ -20,15 +20,35 @@ import importlib.util
 import sys
 from collections.abc import Callable, Sequence
 from functools import lru_cache
-from typing import Any, Literal
+from typing import Any, Literal, cast, overload
 
 import numpy as np
+from numpy.typing import ArrayLike, DTypeLike
 from opt_einsum import contract
+from opt_einsum.typing import BackendType, OptimizeKind
 from scipy.stats import ortho_group, unitary_group
 
 from mrmustard import settings
 
-from ..utils.typing import Batch, Matrix, Scalar, Tensor, Trainable, Vector
+from ..utils.typing import (
+    BoolScalar,
+    ComplexMatrix,
+    ComplexScalar,
+    ComplexTensor,
+    ComplexVector,
+    IntArrayLike,
+    IntScalarValue,
+    IntTensor,
+    Matrix,
+    RealScalar,
+    RealScalarValue,
+    RealTensor,
+    Scalar,
+    ScalarValue,
+    Tensor,
+    Trainable,
+    Vector,
+)
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
 from .utils import compute_collapsed_shape, strip_parentheses
@@ -43,17 +63,23 @@ __all__ = [
 
 
 def lazy_import(module_name: str):
-    r"""
-    Returns module and loader for lazy import.
+    r"""Returns module and loader for lazy import.
 
     Args:
         module_name: The name of the module to import.
+
+    Raises:
+        ValueError: If the spec or spec loader are not found.
     """
     try:
         return sys.modules[module_name], None
     except KeyError:
         spec = importlib.util.find_spec(module_name)
+        if spec is None:
+            raise ValueError(f"Spec {module_name} not found!") from None
         module = importlib.util.module_from_spec(spec)
+        if spec.loader is None:
+            raise ValueError(f"Spec loader {module_name} not found!") from None
         loader = importlib.util.LazyLoader(spec.loader)
         return module, loader
 
@@ -77,9 +103,15 @@ all_modules = {
 
 
 class BackendManager:
-    r"""
-    A class to manage the different backends supported by Mr Mustard.
-    """
+    r"""A class to manage the different backends supported by Mr Mustard."""
+
+    # defaults to help with type-hinting, e.g. so math.complex128 is available for static analysis
+    int32 = np.int32
+    int64 = np.int64
+    float32 = np.float32
+    float64 = np.float64
+    complex64 = np.complex64
+    complex128 = np.complex128
 
     # the backend in use, which is numpy by default
     _backend = BackendNumpy()
@@ -91,12 +123,11 @@ class BackendManager:
     def _apply(
         self,
         fn: str,
-        args: Sequence[Any] | None = (),
+        args: Sequence[Any] = (),
         kwargs: dict | None = None,
         backend_name: str | None = None,
     ) -> Any:
-        r"""
-        Applies a function ``fn`` from the backend in use to the given ``args`` and ``kwargs``.
+        r"""Applies a function ``fn`` from the backend in use to the given ``args`` and ``kwargs``.
 
         Args:
             fn: The function to apply.
@@ -118,9 +149,7 @@ class BackendManager:
         return attr(*args, **kwargs)
 
     def _bind(self) -> None:
-        r"""
-        Binds the types and decorators of this backend manager to those of the given ``self._backend``.
-        """
+        r"""Binds the types and decorators of this backend manager to those of the given ``self._backend``."""
         for name in [
             "int32",
             "int64",
@@ -144,22 +173,17 @@ class BackendManager:
 
     @property
     def backend(self) -> BackendBase:
-        r"""
-        The backend that is being used.
-        """
+        r"""The backend that is being used."""
         return self._backend
 
     @property
     def backend_name(self) -> str:
-        r"""
-        The name of the backend in use.
-        """
+        r"""The name of the backend in use."""
         return self._backend.name
 
     @property
     def BackendError(self):
-        r"""
-        The error class for backend specific errors.
+        r"""The error class for backend specific errors.
 
         Note that currently this only applies to the case where
         ``auto_shape`` is jitted  via the ``jax`` backend.
@@ -167,8 +191,7 @@ class BackendManager:
         return self._apply("BackendError")
 
     def change_backend(self, name: str) -> None:
-        r"""
-        Changes the backend to a different one.
+        r"""Changes the backend to a different one.
 
         Args:
             name: The name of the new backend.
@@ -180,8 +203,7 @@ class BackendManager:
             self._bind()
 
     def get_backend(self, name: str | None = None) -> BackendBase:
-        r"""
-        Returns the backend with the given name.
+        r"""Returns the backend with the given name.
 
         Args:
             name: The name of the backend.
@@ -215,7 +237,7 @@ class BackendManager:
     # ~~~~~~~
     # Below are the methods supported by the various backends.
 
-    def abs(self, array: Tensor) -> Tensor:
+    def abs(self, array: ArrayLike) -> RealTensor:
         r"""The absolute value of array.
 
         Args:
@@ -226,9 +248,8 @@ class BackendManager:
         """
         return self._apply("abs", (array,))
 
-    def all(self, array: Tensor) -> bool:
-        r"""
-        Returns ``True`` if all elements of array are ``True``, ``False`` otherwise.
+    def all(self, array: ArrayLike) -> bool:
+        r"""Returns ``True`` if all elements of array are ``True``, ``False`` otherwise.
 
         Args:
             array: The array to check.
@@ -236,12 +257,12 @@ class BackendManager:
         Returns:
             ``True`` if all elements of array are ``True``, ``False`` otherwise.
         """
-        array = self.astensor(array)
         return self._apply("all", (array,))
 
-    def allclose(self, array1: Tensor, array2: Tensor, atol=1e-9, rtol=1e-5) -> bool:
-        r"""
-        Whether two arrays are equal within tolerance.
+    def allclose(
+        self, array1: ArrayLike, array2: ArrayLike, atol: float = 1e-9, rtol: float = 1e-5
+    ) -> bool:
+        r"""Whether two arrays are equal within tolerance.
 
         The two arrays are compaired element-wise.
 
@@ -249,6 +270,7 @@ class BackendManager:
             array1: An array.
             array2: Another array.
             atol: The absolute tolerance.
+            rtol: The relative tolerance.
 
         Returns:
             Whether two arrays are equal within tolerance.
@@ -256,13 +278,10 @@ class BackendManager:
         Raises:
             ValueError: If the shape of the two arrays do not match.
         """
-        array1 = self.astensor(array1)
-        array2 = self.astensor(array2)
         return self._apply("allclose", (array1, array2, atol, rtol))
 
-    def angle(self, array: Tensor) -> Tensor:
-        r"""
-        The complex phase of ``array``.
+    def angle(self, array: ArrayLike) -> RealScalarValue | RealTensor:
+        r"""The complex phase of ``array``.
 
         Args:
             array: The array to take the complex phase of.
@@ -272,7 +291,7 @@ class BackendManager:
         """
         return self._apply("angle", (array,))
 
-    def any(self, array: Tensor) -> bool:
+    def any(self, array: ArrayLike) -> bool:
         r"""Returns ``True`` if any element of array is ``True``, ``False`` otherwise.
 
         Args:
@@ -289,7 +308,7 @@ class BackendManager:
         limit: int | None = None,
         delta: int = 1,
         dtype: Any = None,
-    ) -> Tensor:
+    ) -> IntTensor:
         r"""Returns an array of evenly spaced values within a given interval.
 
         Args:
@@ -303,7 +322,7 @@ class BackendManager:
         """
         return self._apply("arange", (start, limit, delta, dtype))
 
-    def argmax(self, array: Tensor, axis: int | None = None) -> Tensor:
+    def argmax(self, array: ArrayLike, axis: int | None = None) -> IntScalarValue | IntTensor:
         r"""The indices of the maximum values along an axis.
 
         Args:
@@ -315,7 +334,7 @@ class BackendManager:
         """
         return self._apply("argmax", (array, axis))
 
-    def argmin(self, array: Tensor, axis: int | None = None) -> Tensor:
+    def argmin(self, array: ArrayLike, axis: int | None = None) -> IntScalarValue | IntTensor:
         r"""The indices of the minimum values along an axis.
 
         Args:
@@ -327,7 +346,7 @@ class BackendManager:
         """
         return self._apply("argmin", (array, axis))
 
-    def argsort(self, array: Tensor, axis: int | None = None) -> Tensor:
+    def argsort(self, array: ArrayLike, axis: int | None = None) -> IntTensor:
         r"""The indices that would sort an array along an axis.
 
         Args:
@@ -339,22 +358,34 @@ class BackendManager:
         """
         return self._apply("argsort", (array, axis))
 
-    def asnumpy(self, tensor: Tensor) -> Tensor:
+    @overload
+    def asnumpy[Arr: np.ndarray](self, tensor: Arr) -> Arr: ...
+    @overload
+    def asnumpy(self, tensor: ArrayLike) -> Tensor: ...
+    def asnumpy(self, tensor: ArrayLike) -> Tensor:
         r"""Converts an array to a numpy array.
 
         Args:
             tensor: The tensor to convert.
 
         Returns:
-            The corresponidng numpy array.
+            The corresponding numpy array.
         """
         return self._apply("asnumpy", (tensor,))
 
-    def astensor(self, array: Tensor, dtype=None):
-        r"""Converts a numpy array to a tensor.
+    @overload
+    def astensor(self, array: ArrayLike, dtype: type[np.floating]) -> RealTensor: ...
+    @overload
+    def astensor(self, array: ArrayLike, dtype: type[np.complexfloating]) -> ComplexTensor: ...
+    @overload
+    def astensor(self, array: ArrayLike, dtype: type[np.signedinteger]) -> IntTensor: ...
+    @overload
+    def astensor(self, array: ArrayLike, dtype: DTypeLike | None = None) -> Tensor: ...
+    def astensor(self, array, dtype=None):
+        r"""Converts a scalar or array-like input to a tensor.
 
         Args:
-            array: The numpy array to convert.
+            array: The scalar or array-like input to convert.
             dtype: The dtype of the tensor.  If ``None``, the returned tensor
                 is of type ``float``.
 
@@ -363,7 +394,17 @@ class BackendManager:
         """
         return self._apply("astensor", (array, dtype))
 
-    def atleast_nd(self, array: Tensor, n: int, dtype=None) -> Tensor:
+    @overload
+    def atleast_nd(self, array: ArrayLike, n: int, dtype: type[np.floating]) -> RealTensor: ...
+    @overload
+    def atleast_nd(
+        self, array: ArrayLike, n: int, dtype: type[np.complexfloating]
+    ) -> ComplexTensor: ...
+    @overload
+    def atleast_nd(self, array: ArrayLike, n: int, dtype: type[np.signedinteger]) -> IntTensor: ...
+    @overload
+    def atleast_nd(self, array: ArrayLike, n: int, dtype: DTypeLike | None = None) -> Tensor: ...
+    def atleast_nd(self, array: ArrayLike, n: int, dtype: DTypeLike | None = None) -> Tensor:
         r"""Returns an array with at least n dimensions. Note that dimensions are
         prepended to meet the minimum number of dimensions.
 
@@ -372,14 +413,14 @@ class BackendManager:
             n: The minimum number of dimensions.
             dtype: The data type of the array. If ``None``, the returned array
                 is of the same type as the given one.
+
         Returns:
             The array with at least n dimensions.
         """
         return self._apply("atleast_nd", (array, n, dtype))
 
-    def block(self, blocks: list[list[Tensor]], axes=(-2, -1)) -> Tensor:
-        r"""
-        Returns a matrix made from the given blocks.
+    def block(self, blocks: list[list[ArrayLike]], axes: tuple[int, ...] = (-2, -1)) -> Tensor:
+        r"""Returns a matrix made from the given blocks.
 
         Args:
             blocks: A list of lists of compatible blocks.
@@ -391,9 +432,8 @@ class BackendManager:
         rows = [self.concat(row, axis=axes[-1]) for row in blocks]
         return self.concat(rows, axis=axes[-2])
 
-    def broadcast_arrays(self, *arrays: list[Tensor]) -> list[Tensor]:
-        r"""
-        Broadcast arrays to a common shape.
+    def broadcast_arrays(self, *arrays: list[ArrayLike]) -> list[Tensor]:
+        r"""Broadcast arrays to a common shape.
 
         Args:
             *arrays: The arrays to broadcast.
@@ -403,20 +443,27 @@ class BackendManager:
         """
         return self._apply("broadcast_arrays", arrays)
 
-    def broadcast_to(self, array: Tensor, shape: tuple[int, ...], dtype=None) -> Tensor:
+    def broadcast_to(self, array: ArrayLike, shape: tuple[int, ...]) -> Tensor:
         r"""Broadcasts an array to a new shape.
 
         Args:
             array: The array to broadcast.
             shape: The shape to broadcast to.
-            dtype: The dtype to broadcast to.
+
         Returns:
             The broadcasted array.
         """
-        array = self.astensor(array, dtype=dtype)
         return self._apply("broadcast_to", (array, shape))
 
-    def cast(self, array: Tensor, dtype=None) -> Tensor:
+    @overload
+    def cast(self, array: ArrayLike, dtype: type[np.floating]) -> RealTensor: ...
+    @overload
+    def cast(self, array: ArrayLike, dtype: type[np.complexfloating]) -> ComplexTensor: ...
+    @overload
+    def cast(self, array: ArrayLike, dtype: type[np.signedinteger]) -> IntTensor: ...
+    @overload
+    def cast(self, array: ArrayLike, dtype: DTypeLike | None = None) -> Tensor: ...
+    def cast(self, array: ArrayLike, dtype: DTypeLike | None = None) -> Tensor:
         r"""Casts ``array`` to ``dtype``.
 
         Args:
@@ -429,7 +476,17 @@ class BackendManager:
         """
         return self._apply("cast", (array, dtype))
 
-    def clip(self, array: Tensor, a_min: float, a_max: float) -> Tensor:
+    @overload
+    def clip[Arr: np.ndarray](
+        self, array: Arr, a_min: ArrayLike | None, a_max: ArrayLike | None = None
+    ) -> Arr: ...
+    @overload
+    def clip(
+        self, array: ArrayLike, a_min: ArrayLike | None, a_max: ArrayLike | None = None
+    ) -> Tensor: ...
+    def clip(
+        self, array: ArrayLike, a_min: ArrayLike | None = None, a_max: ArrayLike | None = None
+    ) -> Tensor:
         r"""Clips array to the interval ``[a_min, a_max]``.
 
         Args:
@@ -442,9 +499,18 @@ class BackendManager:
         """
         return self._apply("clip", (array, a_min, a_max))
 
-    def complex_gaussian_integral_1(self, A, b, idx12, A_out=None, b_out=None, log_c_out=None):
-        r"""
-        Computes the complex Gaussian integral:
+    def complex_gaussian_integral_1(
+        self,
+        A: ComplexMatrix,
+        b: ComplexVector,
+        idx12: ArrayLike,
+        A_out: ComplexMatrix | None = None,
+        b_out: ComplexVector | None = None,
+        log_c_out: ComplexTensor | None = None,
+    ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
+        r"""Computes the complex Gaussian integral.
+
+        In particular,
 
         .. math::
             \int_{C^m} d\mu(z) \exp(\frac{1}{2}(z,z^*,\beta)^T A (z,z^*,\beta) + (z,z^*,\beta)^T b),
@@ -492,10 +558,20 @@ class BackendManager:
         )
 
     def complex_gaussian_integral_2(
-        self, A1, b1, A2, b2, idx1, idx2, A_out=None, b_out=None, log_c_out=None
-    ):
-        r"""
-        Computes the complex Gaussian integral:
+        self,
+        A1: ComplexMatrix,
+        b1: ComplexVector,
+        A2: ComplexMatrix,
+        b2: ComplexVector,
+        idx1: ArrayLike,
+        idx2: ArrayLike,
+        A_out: ComplexMatrix | None = None,
+        b_out: ComplexVector | None = None,
+        log_c_out: ComplexTensor | None = None,
+    ) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
+        r"""Computes the complex Gaussian integral.
+
+        In particular:
 
         .. math::
             \int_{C^m} d\mu(z) 
@@ -560,7 +636,7 @@ class BackendManager:
             (A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out),
         )
 
-    def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:
+    def concat(self, values: Sequence[ArrayLike], axis: int = 0) -> Tensor:
         r"""Concatenates values along the given axis.
 
         Args:
@@ -572,7 +648,11 @@ class BackendManager:
         """
         return self._apply("concat", (values, axis))
 
-    def conj(self, array: Tensor) -> Tensor:
+    @overload
+    def conj[Arr: np.ndarray](self, array: Arr) -> Arr: ...
+    @overload
+    def conj(self, array: ArrayLike) -> Tensor: ...
+    def conj(self, array: ArrayLike) -> Tensor:
         r"""The complex conjugate of array.
 
         Args:
@@ -583,7 +663,7 @@ class BackendManager:
         """
         return self._apply("conj", (array,))
 
-    def cos(self, array: Tensor) -> Tensor:
+    def cos(self, array: ArrayLike) -> Tensor:
         r"""The cosine of an array.
 
         Args:
@@ -594,7 +674,7 @@ class BackendManager:
         """
         return self._apply("cos", (array,))
 
-    def cosh(self, array: Tensor) -> Tensor:
+    def cosh(self, array: ArrayLike) -> Tensor:
         r"""The hyperbolic cosine of array.
 
         Args:
@@ -605,7 +685,7 @@ class BackendManager:
         """
         return self._apply("cosh", (array,))
 
-    def det(self, matrix: Tensor) -> Tensor:
+    def det(self, matrix: ArrayLike) -> ScalarValue | Tensor:
         r"""The determinant of matrix.
 
         Args:
@@ -616,9 +696,8 @@ class BackendManager:
         """
         return self._apply("det", (matrix,))
 
-    def diagonal(self, array: Tensor, offset: int = 0, axis1: int = 0, axis2: int = 0) -> Tensor:
-        r"""
-        Return specified diagonals of array.
+    def diagonal(self, array: ArrayLike, offset: int = 0, axis1: int = 0, axis2: int = 1) -> Tensor:
+        r"""Return specified diagonals of array.
 
         Args:
             array: The array to take the diagonal of.
@@ -631,9 +710,8 @@ class BackendManager:
         """
         return self._apply("diagonal", (array, offset, axis1, axis2))
 
-    def diag(self, array: Tensor, k: int = 0) -> Tensor:
-        r"""
-        The array made by inserting the given array along the :math:`k`-th diagonal.
+    def diag(self, array: ArrayLike, k: int = 0) -> Tensor:
+        r"""The array made by inserting the given array along the :math:`k`-th diagonal.
 
         Args:
             array: The array to insert.
@@ -644,7 +722,7 @@ class BackendManager:
         """
         return self._apply("diag", (array, k))
 
-    def diag_part(self, array: Tensor, k: int = 0) -> Tensor:
+    def diag_part(self, array: ArrayLike, k: int = 0) -> Tensor:
         r"""The array of the main diagonal of array.
 
         Args:
@@ -656,7 +734,7 @@ class BackendManager:
         """
         return self.diagonal(array, offset=k, axis1=-2, axis2=-1)
 
-    def eigvals(self, tensor: Tensor) -> Tensor:
+    def eigvals(self, tensor: ArrayLike) -> Tensor:
         r"""The eigenvalues of a tensor.
 
         Args:
@@ -667,9 +745,8 @@ class BackendManager:
         """
         return self._apply("eigvals", (tensor,))
 
-    def eigh(self, tensor: Tensor) -> Tensor:
-        """
-        The eigenvalues and eigenvectors of a matrix.
+    def eigh(self, tensor: ArrayLike) -> Tensor:
+        """The eigenvalues and eigenvectors of a matrix.
 
         Args:
             tensor: The tensor to calculate the eigenvalues and eigenvectors of.
@@ -681,45 +758,63 @@ class BackendManager:
 
     def einsum(
         self,
-        string: str,
-        *tensors,
-        optimize: bool | str = "greedy",
+        *operands: str | ArrayLike | list[int],
+        optimize: OptimizeKind = "greedy",
         memory_limit: int | Literal["max_input"] | None = None,
-        backend: str | None = None,
+        backend: BackendType | None = None,
     ) -> Tensor:
-        r"""The result of the Einstein summation convention on the tensors.
+        r"""The result of the Einstein summation convention on the operands.
+
+        Similar to ``np.einsum``, two signatures are supported:
+            - Subscript style:
+                The first operand is a string where the subscripts for summation are a comma separated list
+                of subscript labels with explicit output indices following a `->` indicator.
+            - Sublist style:
+                The operands must be in the form ``tensor0, labels0, tensor1, labels1, ..., output`` where ``labels``
+                are a list of integers labeling indices for the preceding tensor in the list of operands
+                and output is a list of integers labeling output indices for the resulting tensor.
+
+        Note:
+            In subscript style, parentheses are supported in the output string to group indices
+            that should be vectorized/flattened. For example, ``"ij,jk->h(ik)"`` will vectorize
+            indices ``i`` and ``k``. Ellipsis notation (``...``) cannot be combined with parenthesized
+            groups.
 
         Args:
-            string: The string of the Einstein summation convention. Supports parentheses
-                in the output string to group indices that should be vectorized/flattened.
-                For example, ``"ij,jk->h(ik)"`` will vectorize indices ``i`` and ``k``.
-                Note: ellipsis notation (``...``) cannot be combined with parenthesized groups.
-            tensors: The tensors to perform the Einstein summation on.
+            operands: The operands to perform the Einstein summation on in either subscript style or sublist style.
             optimize: Optional flag whether to optimize the contraction order.
                 Allowed values are True, False, "greedy", "optimal" or "auto".
                 Note the TF backend does not support False and converts it to "greedy".
                 If None, ``settings.EINSUM_OPTIMIZE`` is used.
+            memory_limit: The memory limit for the contraction. If ``None``, the memory limit is set to the default value.
             backend: The name of the backend to use. If ``None``, the set backend is used.
 
         Returns:
             The result of the Einstein summation convention.
         """
         optimize = optimize or settings.EINSUM_OPTIMIZE
-        backend = self.backend_name if backend is None else backend
+        backend_ = cast(BackendType, self.backend_name if backend is None else backend)
 
-        string, groups = strip_parentheses(string)
+        if isinstance(operands[0], str):
+            string = operands[0]
+            tensors = operands[1:]
+            string, groups = strip_parentheses(string)
 
-        result = contract(
-            string, *tensors, optimize=optimize, memory_limit=memory_limit, backend=backend
-        )
+            result = contract(
+                string, *tensors, optimize=optimize, memory_limit=memory_limit, backend=backend_
+            )
 
-        if groups:
-            new_shape = compute_collapsed_shape(tuple(result.shape), groups)
-            result = self.reshape(result, new_shape)
+            if groups:
+                new_shape = compute_collapsed_shape(tuple(result.shape), groups)
+                result = self.reshape(result, new_shape)
+        else:
+            result = contract(
+                *operands, optimize=optimize, memory_limit=memory_limit, backend=backend_
+            )
 
         return result
 
-    def exp(self, array: Tensor) -> Tensor:
+    def exp(self, array: ArrayLike) -> Tensor:
         r"""The exponential of array element-wise.
 
         Args:
@@ -730,7 +825,7 @@ class BackendManager:
         """
         return self._apply("exp", (array,))
 
-    def expand_dims(self, array: Tensor, axis: int) -> Tensor:
+    def expand_dims(self, array: ArrayLike, axis: int) -> Tensor:
         r"""The array with an additional dimension inserted at the given axis.
 
         Args:
@@ -742,7 +837,7 @@ class BackendManager:
         """
         return self._apply("expand_dims", (array, axis))
 
-    def squeeze(self, array: Tensor, axis: int | tuple[int, ...] | None = None) -> Tensor:
+    def squeeze(self, array: ArrayLike, axis: ArrayLike | None = None) -> Tensor:
         r"""Remove axes of length one from the array.
 
         Args:
@@ -756,7 +851,7 @@ class BackendManager:
         """
         return self._apply("squeeze", (array, axis))
 
-    def expm(self, matrix: Tensor) -> Tensor:
+    def expm(self, matrix: ArrayLike) -> Tensor:
         r"""The matrix exponential of matrix.
 
         Args:
@@ -767,7 +862,15 @@ class BackendManager:
         """
         return self._apply("expm", (matrix,))
 
-    def eye(self, size: int, dtype=None) -> Tensor:
+    @overload
+    def eye(self, size: int, dtype: type[np.floating]) -> RealTensor: ...
+    @overload
+    def eye(self, size: int, dtype: type[np.complexfloating]) -> ComplexTensor: ...
+    @overload
+    def eye(self, size: int, dtype: type[np.signedinteger]) -> IntTensor: ...
+    @overload
+    def eye(self, size: int, dtype: DTypeLike | None = None) -> Tensor: ...
+    def eye(self, size: int, dtype: DTypeLike | None = None) -> Tensor:
         r"""The identity matrix of size.
 
         Args:
@@ -780,7 +883,11 @@ class BackendManager:
         """
         return self._apply("eye", (size, dtype))
 
-    def eye_like(self, array: Tensor) -> Tensor:
+    @overload
+    def eye_like[Arr: np.ndarray](self, array: Arr) -> Arr: ...
+    @overload
+    def eye_like(self, array: ArrayLike) -> Tensor: ...
+    def eye_like(self, array: ArrayLike) -> Tensor:
         r"""The identity matrix of the same shape and dtype as array.
 
         Args:
@@ -791,9 +898,8 @@ class BackendManager:
         """
         return self._apply("eye_like", (array,))
 
-    def equal(self, a: Tensor, b: Tensor) -> Tensor | Scalar:
-        r"""
-        Returns the element-wise equality of two arrays.
+    def equal(self, a: ArrayLike, b: ArrayLike) -> BoolScalar:
+        r"""Returns the element-wise equality of two arrays.
 
         Args:
             a: The first array.
@@ -804,7 +910,15 @@ class BackendManager:
         """
         return self._apply("equal", (a, b))
 
-    def gather(self, array: Tensor, indices: Batch[int], axis: int | None = None) -> Tensor:
+    @overload
+    def gather[Arr: np.ndarray](
+        self, array: Arr, indices: IntArrayLike, axis: int | None = None
+    ) -> Arr: ...
+    @overload
+    def gather(
+        self, array: ArrayLike, indices: IntArrayLike, axis: int | None = None
+    ) -> Tensor: ...
+    def gather(self, array: ArrayLike, indices: IntArrayLike, axis: int | None = None) -> Tensor:
         r"""The values of the array at the given indices.
 
         Args:
@@ -815,8 +929,6 @@ class BackendManager:
         Returns:
             The values of the array at the given indices.
         """
-        array = self.astensor(array)
-        indices = self.astensor(indices, dtype=self.int64)
         return self._apply(
             "gather",
             (
@@ -828,13 +940,13 @@ class BackendManager:
 
     def hermite_renormalized(
         self,
-        A: Tensor,
-        b: Tensor,
-        c: Tensor,
-        shape: tuple[int],
-        stable: bool = False,
-        out: Tensor | None = None,
-    ) -> Tensor:
+        A: ArrayLike,
+        b: ArrayLike,
+        c: ArrayLike,
+        shape: tuple[int, ...],
+        stable: bool | None = None,
+        out: ComplexTensor | None = None,
+    ) -> ComplexTensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(c + bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
@@ -851,6 +963,8 @@ class BackendManager:
             c: The c scalar. Can be scalar or batched (shape B).
             shape: The shape of the final tensor (excluding batch dimensions).
             stable: Whether to use the numerically stable version of the algorithm (also slower).
+                If ``None``, uses ``settings.STABLE_FOCK_CONVERSION``. Explicit ``True``/``False``
+                takes precedence over the setting.
             out: If provided, the result will be stored in this tensor.
 
         Returns:
@@ -869,7 +983,8 @@ class BackendManager:
         b = self.astensor(b, dtype=self.complex128)
         c = self.astensor(c, dtype=self.complex128)
 
-        stable = stable or settings.STABLE_FOCK_CONVERSION
+        stable = settings.STABLE_FOCK_CONVERSION if stable is None else stable
+
         if A.ndim > 2 and b.ndim > 1 and c.ndim > 0:
             batch_shape = A.shape[:-2]
             check_out_shape(batch_shape)
@@ -918,14 +1033,13 @@ class BackendManager:
 
     def hermite_renormalized_diagonal(
         self,
-        A: Tensor,
-        b: Tensor,
-        c: Tensor,
-        cutoffs: tuple[int],
+        A: ArrayLike,
+        b: ArrayLike,
+        c: ArrayLike,
+        cutoffs: tuple[int, ...],
         reorderedAB: bool = True,
-    ) -> Tensor:
-        r"""
-        Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+    ) -> ComplexTensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
         denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
 
@@ -948,13 +1062,13 @@ class BackendManager:
 
     def hermite_renormalized_1leftoverMode(
         self,
-        A: Tensor,
-        b: Tensor,
-        c: Tensor,
+        A: ArrayLike,
+        b: ArrayLike,
+        c: ArrayLike,
         output_cutoff: int,
         pnr_cutoffs: tuple[int, ...],
         reorderedAB: bool = True,
-    ) -> Tensor:
+    ) -> ComplexTensor:
         r"""Compute the conditional density matrix of mode 0, with all the other modes
         detected with PNR detectors up to the given photon numbers.
 
@@ -977,13 +1091,13 @@ class BackendManager:
 
     def hermite_renormalized_binomial(
         self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        shape: tuple[int],
+        A: ArrayLike,
+        B: ArrayLike,
+        C: ArrayLike,
+        shape: tuple[int, ...],
         max_l2: float | None,
         global_cutoff: int | None,
-    ) -> np.ndarray:
+    ) -> ComplexTensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
@@ -1003,18 +1117,18 @@ class BackendManager:
         """
         return self._apply("hermite_renormalized_binomial", (A, B, C, shape, max_l2, global_cutoff))
 
-    def imag(self, array: Tensor) -> Tensor:
+    def imag(self, array: ArrayLike) -> RealTensor:
         r"""The imaginary part of array.
 
         Args:
-            array: The array to take the imaginary part of
+            array: The scalar or array-like input to take the imaginary part of.
 
         Returns:
             The imaginary part of array
         """
         return self._apply("imag", (array,))
 
-    def inv(self, tensor: Tensor) -> Tensor:
+    def inv(self, tensor: ArrayLike) -> Tensor:
         r"""The inverse of tensor.
 
         Args:
@@ -1026,8 +1140,7 @@ class BackendManager:
         return self._apply("inv", (tensor,))
 
     def iscomplexobj(self, x: Any) -> bool:
-        r"""
-        Whether the given object is complex.
+        r"""Whether the given object is complex.
 
         Args:
             x: The object to check.
@@ -1037,7 +1150,7 @@ class BackendManager:
         """
         return self._apply("iscomplexobj", (x,))
 
-    def isnan(self, array: Tensor) -> Tensor:
+    def isnan(self, array: ArrayLike) -> BoolScalar:
         r"""Whether the given array contains any NaN values.
 
         Args:
@@ -1048,9 +1161,8 @@ class BackendManager:
         """
         return self._apply("isnan", (array,))
 
-    def issubdtype(self, arg1, arg2) -> bool:
-        r"""
-        Whether the ``arg1`` is a typecode lower/equal in type hierarchy to ``arg2``.
+    def issubdtype(self, arg1: DTypeLike, arg2: DTypeLike) -> bool:
+        r"""Whether the ``arg1`` is a typecode lower/equal in type hierarchy to ``arg2``.
 
         Args:
             arg1: The object to be tested
@@ -1061,9 +1173,8 @@ class BackendManager:
         """
         return self._apply("issubdtype", (arg1, arg2))
 
-    def lgamma(self, x: Tensor) -> Tensor:
-        r"""
-        The natural logarithm of the gamma function of ``x``.
+    def lgamma(self, x: ArrayLike) -> Tensor:
+        r"""The natural logarithm of the gamma function of ``x``.
 
         Args:
             x: The array to take the natural logarithm of the gamma function of.
@@ -1073,7 +1184,7 @@ class BackendManager:
         """
         return self._apply("lgamma", (x,))
 
-    def log(self, x: Tensor) -> Tensor:
+    def log(self, x: ArrayLike) -> Tensor:
         r"""The natural logarithm of ``x``.
 
         Args:
@@ -1084,7 +1195,7 @@ class BackendManager:
         """
         return self._apply("log", (x,))
 
-    def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
+    def make_complex(self, real: ArrayLike, imag: ArrayLike) -> ComplexTensor:
         """Given two real tensors representing the real and imaginary part of a complex number,
         this operation returns a complex tensor. The input tensors must have the same shape.
 
@@ -1097,7 +1208,7 @@ class BackendManager:
         """
         return self._apply("make_complex", (real, imag))
 
-    def matmul(self, *matrices: Matrix) -> Tensor:
+    def matmul(self, *matrices: ArrayLike) -> Tensor:
         r"""The matrix product of the given matrices.
 
         Args:
@@ -1120,7 +1231,7 @@ class BackendManager:
         """
         return self._apply("matvec", (a, b))
 
-    def max(self, array: Tensor) -> Tensor:
+    def max(self, array: ArrayLike) -> ScalarValue:
         r"""The maximum value of an array.
 
         Args:
@@ -1131,9 +1242,8 @@ class BackendManager:
         """
         return self._apply("max", (array,))
 
-    def maximum(self, a: Tensor, b: Tensor) -> Tensor:
-        r"""
-        The element-wise maximum of ``a`` and ``b``.
+    def maximum(self, a: ArrayLike, b: ArrayLike) -> Tensor:
+        r"""The element-wise maximum of ``a`` and ``b``.
 
         Args:
             a: The first array to take the maximum of.
@@ -1150,9 +1260,8 @@ class BackendManager:
             ),
         )
 
-    def minimum(self, a: Tensor, b: Tensor) -> Tensor:
-        r"""
-        The element-wise minimum of ``a`` and ``b``.
+    def minimum(self, a: ArrayLike, b: ArrayLike) -> Tensor:
+        r"""The element-wise minimum of ``a`` and ``b``.
 
         Args:
             a: The first array to take the minimum of.
@@ -1169,9 +1278,8 @@ class BackendManager:
             ),
         )
 
-    def mod(self, a: Tensor, b: Tensor) -> Tensor:
-        r"""
-        Returns the element-wise remainder of division.
+    def mod(self, a: ArrayLike, b: ArrayLike) -> Tensor:
+        r"""Returns the element-wise remainder of division.
 
         Args:
             a: The dividend array.
@@ -1182,9 +1290,18 @@ class BackendManager:
         """
         return self._apply("mod", (a, b))
 
-    def moveaxis(self, array: Tensor, old: Tensor, new: Tensor) -> Tensor:
-        r"""
-        Moves the axes of an array to a new position.
+    @overload
+    def moveaxis[Arr: np.ndarray](
+        self, array: Arr, old: int | Sequence[int], new: int | Sequence[int]
+    ) -> Arr: ...
+    @overload
+    def moveaxis(
+        self, array: ArrayLike, old: int | Sequence[int], new: int | Sequence[int]
+    ) -> Tensor: ...
+    def moveaxis(
+        self, array: ArrayLike, old: int | Sequence[int], new: int | Sequence[int]
+    ) -> Tensor:
+        r"""Moves the axes of an array to a new position.
 
         Args:
             array: The array to move the axes of.
@@ -1203,7 +1320,9 @@ class BackendManager:
             ),
         )
 
-    def mean(self, array: Tensor, axis: int | Sequence[int] | None = None) -> Tensor:
+    def mean(
+        self, array: ArrayLike, axis: int | Sequence[int] | None = None
+    ) -> ScalarValue | Tensor:
         r"""The mean of array along an axis.
 
         Args:
@@ -1216,7 +1335,7 @@ class BackendManager:
         return self._apply("mean", (array, axis))
 
     def norm(
-        self, array: Tensor, axis: int | Sequence[int] | None = None, keepdims: bool = False
+        self, array: ArrayLike, axis: int | Sequence[int] | None = None, keepdims: bool = False
     ) -> Tensor:
         r"""The norm of array.
 
@@ -1230,21 +1349,29 @@ class BackendManager:
         """
         return self._apply("norm", (array, axis, keepdims))
 
-    def ones(self, shape: Sequence[int], dtype=None) -> Tensor:
+    @overload
+    def ones(self, shape: Sequence[int], dtype: type[np.floating] | None) -> RealTensor: ...
+    @overload
+    def ones(self, shape: Sequence[int], dtype: type[np.complexfloating]) -> ComplexTensor: ...
+    @overload
+    def ones(self, shape: Sequence[int], dtype: type[np.signedinteger]) -> IntTensor: ...
+    @overload
+    def ones(self, shape: Sequence[int], dtype: DTypeLike | None = None) -> Tensor: ...
+    def ones(self, shape: Sequence[int], dtype: DTypeLike | None = None) -> Tensor:
         r"""Returns an array of ones with the given ``shape`` and ``dtype``.
 
         Args:
-            shape (tuple): shape of the array
-            dtype (type): dtype of the array. If ``None``, the returned array is
-                of type ``float``.
+            shape: The shape of the array
+            dtype: The dtype of the array.
 
         Returns:
             The array of ones
         """
-        # NOTE : should be float64 by default
         return self._apply("ones", (shape, dtype))
 
-    def full(self, shape: Sequence[int], fill_value: Scalar, dtype=None) -> Tensor:
+    def full(
+        self, shape: Sequence[int], fill_value: Scalar, dtype: DTypeLike | None = None
+    ) -> Tensor:
         r"""Returns an array of given shape filled with ``fill_value``.
 
         Args:
@@ -1258,7 +1385,11 @@ class BackendManager:
         """
         return self._apply("full", (shape, fill_value, dtype))
 
-    def ones_like(self, array: Tensor) -> Tensor:
+    @overload
+    def ones_like[Arr: np.ndarray](self, array: Arr) -> Arr: ...
+    @overload
+    def ones_like(self, array: ArrayLike) -> Tensor: ...
+    def ones_like(self, array: ArrayLike) -> Tensor:
         r"""Returns an array of ones with the same shape and ``dtype`` as ``array``.
 
         Args:
@@ -1269,7 +1400,7 @@ class BackendManager:
         """
         return self._apply("ones_like", (array,))
 
-    def outer(self, array1: Tensor, array2: Tensor) -> Tensor:
+    def outer(self, array1: ArrayLike, array2: ArrayLike) -> Tensor:
         r"""The outer product of ``array1`` and ``array2``.
 
         Args:
@@ -1283,7 +1414,7 @@ class BackendManager:
 
     def pad(
         self,
-        array: Tensor,
+        array: ArrayLike,
         paddings: Sequence[tuple[int, int]],
         mode="CONSTANT",
         constant_values=0,
@@ -1301,7 +1432,7 @@ class BackendManager:
         """
         return self._apply("pad", (array, tuple(paddings), mode, constant_values))
 
-    def pinv(self, matrix: Tensor) -> Tensor:
+    def pinv(self, matrix: ArrayLike) -> Tensor:
         r"""The pseudo-inverse of matrix.
 
         Args:
@@ -1312,8 +1443,9 @@ class BackendManager:
         """
         return self._apply("pinv", (matrix,))
 
-    def pow(self, x: Tensor, y: Tensor) -> Tensor:
+    def pow(self, x: ArrayLike, y: ArrayLike) -> Tensor:
         r"""Returns :math:`x^y`. Broadcasts ``x`` and ``y`` if necessary.
+
         Args:
             x: The base.
             y: The exponent.
@@ -1323,9 +1455,8 @@ class BackendManager:
         """
         return self._apply("pow", (x, y))
 
-    def kron(self, tensor1: Tensor, tensor2: Tensor) -> Tensor:
-        r"""
-        The Kroenecker product of the given tensors.
+    def kron(self, tensor1: ArrayLike, tensor2: ArrayLike) -> Tensor:
+        r"""The Kroenecker product of the given tensors.
 
         Args:
             tensor1: A tensor.
@@ -1336,9 +1467,10 @@ class BackendManager:
         """
         return self._apply("kron", (tensor1, tensor2))
 
-    def prod(self, array: Tensor, axis=None) -> Tensor:
-        r"""
-        The product of all elements in ``array``.
+    def prod(
+        self, array: ArrayLike, axis: int | tuple[int, ...] | None = None
+    ) -> ScalarValue | Tensor:
+        r"""The product of all elements in ``array``.
 
         Args:
             array: The array of elements to calculate the product of.
@@ -1348,21 +1480,24 @@ class BackendManager:
         Returns:
             The product of the elements in ``array``.
         """
-        array = self.astensor(array)
         return self._apply("prod", (array, axis))
 
-    def real(self, array: Tensor) -> Tensor:
+    def real(self, array: ArrayLike) -> RealTensor:
         r"""The real part of ``array``.
 
         Args:
-            array: The array to take the real part of.
+            array: The scalar or array-like input to take the real part of.
 
         Returns:
             The real part of ``array``
         """
         return self._apply("real", (array,))
 
-    def reshape(self, array: Tensor, shape: Sequence[int]) -> Tensor:
+    @overload
+    def reshape[Arr: np.ndarray](self, array: Arr, shape: int | Sequence[int]) -> Arr: ...
+    @overload
+    def reshape(self, array: ArrayLike, shape: int | Sequence[int]) -> Tensor: ...
+    def reshape(self, array: ArrayLike, shape: int | Sequence[int]) -> Tensor:
         r"""The reshaped array.
 
         Args:
@@ -1375,9 +1510,8 @@ class BackendManager:
         shape = (shape,) if isinstance(shape, int) else tuple(shape)
         return self._apply("reshape", (array, shape))
 
-    def shape(self, array: Tensor) -> tuple[int, ...]:
-        r"""
-        The shape of an array.
+    def shape(self, array: ArrayLike) -> tuple[int, ...]:
+        r"""The shape of an array.
 
         Args:
             array: The array to take the shape of.
@@ -1387,7 +1521,7 @@ class BackendManager:
         """
         return self._apply("shape", (array,))
 
-    def sin(self, array: Tensor) -> Tensor:
+    def sin(self, array: ArrayLike) -> Tensor:
         r"""The sine of ``array``.
 
         Args:
@@ -1398,7 +1532,7 @@ class BackendManager:
         """
         return self._apply("sin", (array,))
 
-    def sinh(self, array: Tensor) -> Tensor:
+    def sinh(self, array: ArrayLike) -> Tensor:
         r"""The hyperbolic sine of ``array``.
 
         Args:
@@ -1409,7 +1543,7 @@ class BackendManager:
         """
         return self._apply("sinh", (array,))
 
-    def solve(self, matrix: Tensor, rhs: Tensor) -> Tensor:
+    def solve(self, matrix: ArrayLike, rhs: ArrayLike) -> Tensor:
         r"""The solution of the linear system :math:`Ax = b`.
 
         Args:
@@ -1421,23 +1555,27 @@ class BackendManager:
         """
         return self._apply("solve", (matrix, rhs))
 
-    def sort(self, array: Tensor, axis: int = -1) -> Tensor:
+    @overload
+    def sort[Arr: np.ndarray](self, array: Arr, axis: int = -1) -> Arr: ...
+    @overload
+    def sort(self, array: ArrayLike, axis: int = -1) -> Tensor: ...
+    def sort(self, array: ArrayLike, axis: int = -1) -> Tensor:
         r"""Sort the array along an axis.
 
         Args:
             array: The array to sort.
-            axis: (optional) The axis to sort along. Defaults to last axis.
+            axis: The axis to sort along.
 
         Returns:
             A sorted version of the array in ascending order.
         """
         return self._apply("sort", (array, axis))
 
-    def sqrt(self, x: Tensor, dtype=None) -> Tensor:
+    def sqrt(self, x: ArrayLike, dtype: DTypeLike | None = None) -> Tensor:
         r"""The square root of ``x``.
 
         Args:
-            x: The array to take the square root of.
+            x: The scalar or array-like input to take the square root of.
             dtype: ``dtype`` of the output array.
 
         Returns:
@@ -1445,7 +1583,7 @@ class BackendManager:
         """
         return self._apply("sqrt", (x, dtype))
 
-    def sqrtm(self, tensor: Tensor, dtype=None) -> Tensor:
+    def sqrtm(self, tensor: ArrayLike, dtype: DTypeLike | None = None) -> Tensor:
         r"""The matrix square root.
 
         Args:
@@ -1458,7 +1596,7 @@ class BackendManager:
         """
         return self._apply("sqrtm", (tensor, dtype))
 
-    def stack(self, arrays: Sequence[Tensor], axis: int = 0) -> Tensor:
+    def stack(self, arrays: Sequence[ArrayLike], axis: int = 0) -> Tensor:
         r"""Stack arrays in sequence along a new axis.
 
         Args:
@@ -1470,7 +1608,7 @@ class BackendManager:
         """
         return self._apply("stack", (arrays, axis))
 
-    def sum(self, array: Tensor, axis: int | Sequence[int] | None = None):
+    def sum(self, array: ArrayLike, axis: int | Sequence[int] | None = None):
         r"""The sum of array.
 
         Args:
@@ -1480,16 +1618,18 @@ class BackendManager:
         Returns:
             The sum of array.
         """
-        array = self.astensor(array)
         if axis is not None and not isinstance(axis, int):
             neg = [a for a in axis if a < 0]
             pos = [a for a in axis if a >= 0]
             axis = tuple(sorted(neg) + sorted(pos)[::-1])
         return self._apply("sum", (array, axis))
 
-    def swapaxes(self, array: Tensor, axis1: int, axis2: int) -> Tensor:
-        r"""
-        Swap two axes of an array.
+    @overload
+    def swapaxes[Arr: np.ndarray](self, array: Arr, axis1: int, axis2: int) -> Arr: ...
+    @overload
+    def swapaxes(self, array: ArrayLike, axis1: int, axis2: int) -> Tensor: ...
+    def swapaxes(self, array: ArrayLike, axis1: int, axis2: int) -> Tensor:
+        r"""Swap two axes of an array.
 
         Args:
             array: The array to swap axes of.
@@ -1501,7 +1641,7 @@ class BackendManager:
         """
         return self._apply("swapaxes", (array, axis1, axis2))
 
-    def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
+    def tensordot(self, a: ArrayLike, b: ArrayLike, axes: Sequence[int]) -> Tensor:
         r"""The tensordot product of ``a`` and ``b``.
 
         Args:
@@ -1514,7 +1654,7 @@ class BackendManager:
         """
         return self._apply("tensordot", (a, b, tuple(axes)))
 
-    def tile(self, array: Tensor, repeats: Sequence[int]) -> Tensor:
+    def tile(self, array: ArrayLike, repeats: Sequence[int]) -> Tensor:
         r"""The tiled array.
 
         Args:
@@ -1526,7 +1666,7 @@ class BackendManager:
         """
         return self._apply("tile", (array, tuple(repeats)))
 
-    def trace(self, array: Tensor, dtype=None) -> Tensor:
+    def trace(self, array: ArrayLike, dtype: DTypeLike | None = None) -> Tensor:
         r"""The trace of array.
 
         Args:
@@ -1538,7 +1678,11 @@ class BackendManager:
         """
         return self._apply("trace", (array, dtype))
 
-    def transpose(self, a: Tensor, perm: Sequence[int] | None = None):
+    @overload
+    def transpose[Arr: np.ndarray](self, a: Arr, perm: Sequence[int] | None = None) -> Arr: ...
+    @overload
+    def transpose(self, a: ArrayLike, perm: Sequence[int] | None = None) -> Tensor: ...
+    def transpose(self, a: ArrayLike, perm: Sequence[int] | None = None) -> Tensor:
         r"""The transposed arrays.
 
         Args:
@@ -1551,7 +1695,7 @@ class BackendManager:
         perm = tuple(perm) if perm is not None else None
         return self._apply("transpose", (a, perm))
 
-    def tan(self, array: Tensor) -> Tensor:
+    def tan(self, array: ArrayLike) -> Tensor:
         r"""The tangent of ``array``.
 
         Args:
@@ -1562,7 +1706,7 @@ class BackendManager:
         """
         return self._apply("tan", (array,))
 
-    def tanh(self, array: Tensor) -> Tensor:
+    def tanh(self, array: ArrayLike) -> Tensor:
         r"""The hyperbolic tangent of ``array``.
 
         Args:
@@ -1573,20 +1717,15 @@ class BackendManager:
         """
         return self._apply("tanh", (array,))
 
-    def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
-        r"""Updates a tensor in place with the given values.
-
-        Args:
-            tensor: The tensor to update.
-            indices: The indices to update.
-            values: The values to update.
-
-        Returns:
-            The updated tensor.
-        """
-        return self._apply("update_tensor", (tensor, indices, values))
-
-    def update_add_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
+    @overload
+    def update_add_tensor[Arr: np.ndarray](
+        self, tensor: Arr, indices: ArrayLike, values: ArrayLike
+    ) -> Arr: ...
+    @overload
+    def update_add_tensor(
+        self, tensor: ArrayLike, indices: ArrayLike, values: ArrayLike
+    ) -> Tensor: ...
+    def update_add_tensor(self, tensor: ArrayLike, indices: ArrayLike, values: ArrayLike) -> Tensor:
         r"""Updates a tensor in place by adding the given values.
 
         Args:
@@ -1615,9 +1754,8 @@ class BackendManager:
         """
         return self._apply("value_and_gradients", (cost_fn, parameters))
 
-    def xlogy(self, x: Tensor, y: Tensor) -> Tensor:
-        """
-        Returns ``0`` if ``x == 0`` elementwise and ``x * log(y)`` otherwise.
+    def xlogy(self, x: ArrayLike, y: ArrayLike) -> Tensor:
+        """Returns ``0`` if ``x == 0`` elementwise and ``x * log(y)`` otherwise.
 
         Args:
             x: The first array.
@@ -1628,20 +1766,31 @@ class BackendManager:
         """
         return self._apply("xlogy", (x, y))
 
-    def zeros(self, shape: Sequence[int], dtype=None) -> Tensor:
+    @overload
+    def zeros(self, shape: int | Sequence[int], dtype: type[np.floating] | None) -> RealTensor: ...
+    @overload
+    def zeros(
+        self, shape: int | Sequence[int], dtype: type[np.complexfloating]
+    ) -> ComplexTensor: ...
+    @overload
+    def zeros(self, shape: int | Sequence[int], dtype: type[np.signedinteger]) -> IntTensor: ...
+    @overload
+    def zeros(self, shape: int | Sequence[int], dtype: DTypeLike | None = None) -> Tensor: ...
+    def zeros(self, shape: int | Sequence[int], dtype: DTypeLike | None = None) -> Tensor:
         r"""Returns an array of zeros with the given shape and ``dtype``.
 
         Args:
             shape: The shape of the array.
-            dtype: The dtype of the array. If ``None``, the returned array is
-                of type ``float``.
+            dtype: The dtype of the array.
 
         Returns:
             The array of zeros.
         """
         return self._apply("zeros", (shape, dtype))
 
-    def conditional(self, cond: Tensor, true_fn: Callable, false_fn: Callable, *args) -> Tensor:
+    def conditional(
+        self, cond: ArrayLike, true_fn: Callable, false_fn: Callable, *args: Any
+    ) -> Any:
         r"""Executes ``true_fn`` if ``cond`` is ``True``, otherwise ``false_fn``.
 
         Args:
@@ -1655,13 +1804,12 @@ class BackendManager:
         """
         return self._apply("conditional", (cond, true_fn, false_fn, *args))
 
-    def error_if(self, array: Tensor, condition: Tensor, msg: str) -> None:
+    def error_if(self, array: ArrayLike, condition: BoolScalar, msg: str) -> None:
         r"""Raises an error if ``condition`` is ``True``.
 
         Args:
             array: The array to check.
-            condition: The condition to check; should only use array elements in the condition
-                And must be boolean.
+            condition: The condition to check; should only use array elements in the condition.
             msg: The message to raise if ``condition`` is ``True``.
 
         Raises:
@@ -1669,7 +1817,7 @@ class BackendManager:
         """
         return self._apply("error_if", (array, condition, msg))
 
-    def infinity_like(self, array: Tensor) -> Tensor:
+    def infinity_like(self, array: ArrayLike) -> Tensor:
         r"""Returns an array of infinities with the same shape as ``array``.
 
         Args:
@@ -1680,7 +1828,11 @@ class BackendManager:
         """
         return self._apply("infinity_like", (array,))
 
-    def zeros_like(self, array: Tensor) -> Tensor:
+    @overload
+    def zeros_like[Arr: np.ndarray](self, array: Arr) -> Arr: ...
+    @overload
+    def zeros_like(self, array: ArrayLike) -> Tensor: ...
+    def zeros_like(self, array: ArrayLike) -> Tensor:
         r"""Returns an array of zeros with the same shape and ``dtype`` as ``array``.
 
         Args:
@@ -1691,7 +1843,7 @@ class BackendManager:
         """
         return self._apply("zeros_like", (array,))
 
-    def map_fn(self, fn: Callable, elements: Tensor) -> Tensor:
+    def map_fn(self, fn: Callable, elements: ArrayLike) -> Tensor:
         """Transforms elems by applying fn to each element unstacked on axis 0.
 
         Args:
@@ -1710,9 +1862,8 @@ class BackendManager:
     # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def displacement(self, alpha: complex | Tensor, shape: tuple[int, int]) -> Tensor:
-        r"""
-        Creates a single mode displacement matrix using a Fock lattice strategy.
+    def displacement(self, alpha: ComplexScalar, shape: tuple[int, int]) -> ComplexTensor:
+        r"""Creates a single mode displacement matrix using a Fock lattice strategy.
 
         Args:
             alpha: The displacement.
@@ -1725,13 +1876,12 @@ class BackendManager:
 
     def beamsplitter(
         self,
-        theta: float | Tensor,
-        phi: float | Tensor,
+        theta: RealScalar,
+        phi: RealScalar,
         shape: tuple[int, int, int, int],
         method: Literal["vanilla", "schwinger", "stable"],
-    ) -> Tensor:
-        r"""
-        Creates a beamsplitter matrix with given cutoffs using a Fock lattice strategy.
+    ) -> ComplexTensor:
+        r"""Creates a beamsplitter matrix with given cutoffs using a Fock lattice strategy.
 
         Args:
             theta: Transmittivity angle of the beamsplitter.
@@ -1748,10 +1898,14 @@ class BackendManager:
         return self._apply("beamsplitter", (theta, phi), {"shape": shape, "method": method})
 
     def homodyne_projector(
-        self, fock_dim: int, A: Tensor, b: Tensor, c: Tensor, out: Tensor | None = None
-    ) -> Tensor:
-        r"""
-        Creates a homodyne projector matrix.
+        self,
+        fock_dim: int,
+        A: ComplexMatrix,
+        b: ComplexVector,
+        c: ComplexScalar,
+        out: Tensor | None = None,
+    ) -> ComplexTensor:
+        r"""Creates a homodyne projector matrix.
 
         Args:
             fock_dim: The Fock dimension.
@@ -1765,9 +1919,8 @@ class BackendManager:
         """
         return self._apply("homodyne_projector", (fock_dim, A, b, c, out))
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int]) -> Tensor:
-        r"""
-        Creates a single mode squeezed state matrix using a Fock lattice strategy.
+    def squeezed(self, r: RealScalar, phi: RealScalar, shape: tuple[int]) -> ComplexTensor:
+        r"""Creates a single mode squeezed state matrix using a Fock lattice strategy.
 
         Args:
             r: Squeezing magnitude.
@@ -1779,9 +1932,10 @@ class BackendManager:
         """
         return self._apply("squeezed", (r, phi, shape))
 
-    def squeezer(self, r: float, phi: float, shape: tuple[int, int]) -> Tensor:  # pragma: no cover
-        r"""
-        Creates a single mode squeezer matrix using a Fock lattice strategy.
+    def squeezer(
+        self, r: RealScalar, phi: RealScalar, shape: tuple[int, int]
+    ) -> ComplexTensor:  # pragma: no cover
+        r"""Creates a single mode squeezer matrix using a Fock lattice strategy.
 
         Args:
             r: Squeezing magnitude.
@@ -1797,7 +1951,11 @@ class BackendManager:
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def dagger(self, array: Tensor) -> Tensor:
+    @overload
+    def dagger[Arr: np.ndarray](self, array: Arr) -> Arr: ...
+    @overload
+    def dagger(self, array: ArrayLike) -> Tensor: ...
+    def dagger(self, array: ArrayLike) -> Tensor:
         """The adjoint of ``array``. This operation swaps the first
         and second half of the indexes and then conjugates the matrix.
 
@@ -1807,13 +1965,12 @@ class BackendManager:
         Returns:
             The adjoint of ``array``
         """
-        N = len(array.shape) // 2
+        N = len(self.shape(array)) // 2
         perm = list(range(N, 2 * N)) + list(range(N))
         return self.conj(self.transpose(array, perm=perm))
 
-    def unitary_to_orthogonal(self, U: Tensor) -> Tensor:
-        r"""
-        Maps a unitary matrix (or batch of unitary matrices) into an orthogonal matrix (or batch)
+    def unitary_to_orthogonal(self, U: ArrayLike) -> Tensor:
+        r"""Maps a unitary matrix (or batch of unitary matrices) into an orthogonal matrix (or batch)
         of twice the size.
 
         Args:
@@ -1833,8 +1990,7 @@ class BackendManager:
         seed: int | None = None,
         batch_shape: tuple[int, ...] = (),
     ) -> Tensor:
-        r"""
-        A random symplectic matrix in ``Sp(2*num_modes)``.
+        r"""A random symplectic matrix in ``Sp(2*num_modes)``.
 
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
 
@@ -1858,8 +2014,7 @@ class BackendManager:
     def random_orthogonal(
         self, N: int, seed: int | None = None, batch_shape: tuple[int, ...] = ()
     ) -> Tensor:
-        r"""
-        A random orthogonal matrix in :math:`O(N)`.
+        r"""A random orthogonal matrix in :math:`O(N)`.
 
         Args:
             N: The dimension of the matrix.
@@ -1873,8 +2028,7 @@ class BackendManager:
     def random_unitary(
         self, N: int, seed: int | None = None, batch_shape: tuple[int, ...] = ()
     ) -> Tensor:
-        r"""
-        A random unitary matrix in :math:`U(N)`.
+        r"""A random unitary matrix in :math:`U(N)`.
 
         Args:
             N: The dimension of the matrix.
@@ -1885,11 +2039,50 @@ class BackendManager:
         matrices = unitary_group.rvs(dim=N, size=int(np.prod(batch_shape)), random_state=rng)
         return matrices.reshape(*batch_shape, N, N)
 
+    def random_siegel(
+        self,
+        n: int,
+        max_r: float = 0.9,
+        seed: int | None = None,
+        batch_shape: tuple[int, ...] = (),
+    ) -> Tensor:
+        r"""A random complex symmetric matrix in the open Siegel disk
+        :math:`\mathcal{D}_n = \{Z \in \mathbb{C}^{n\times n} : Z = Z^T,\ I - Z^* Z \succ 0\}`.
+
+        The matrix is sampled as :math:`Z = U \mathrm{diag}(r) U^T` with ``U`` Haar-random
+        unitary and :math:`r_i \sim \mathrm{Uniform}(0, \mathtt{max\_r})`. The Takagi
+        (singular) values of :math:`Z` coincide with the :math:`r_i`, so
+        :math:`\|Z\|_\mathrm{op} < \mathtt{max\_r} < 1` and all eigenvalues of :math:`Z`
+        lie in the open unit disk.
+
+        Args:
+            n: The dimension of the matrix.
+            max_r: The maximum Takagi value. Must satisfy ``0 <= max_r < 1`` to remain
+                strictly inside the open Siegel disk.
+            seed: The random seed. If ``None``, the global seed is used.
+            batch_shape: The batch shape for generating multiple random matrices.
+
+        Returns:
+            A complex symmetric matrix of shape ``(*batch_shape, n, n)``.
+
+        Raises:
+            ValueError: If ``max_r`` is not in ``[0, 1)``.
+        """
+        if not 0.0 <= max_r < 1.0:
+            raise ValueError(
+                f"max_r must be in [0, 1) for the open Siegel disk, got {max_r}.",
+            )
+        rng = settings.get_rng(seed)
+        U = unitary_group.rvs(dim=n, size=int(np.prod(batch_shape)), random_state=rng).reshape(
+            *batch_shape, n, n
+        )
+        r = rng.uniform(low=0.0, high=max_r, size=(*batch_shape, n)).astype(U.dtype)
+        return self.einsum("...ij,...j,...kj->...ik", U, r, U)
+
     @staticmethod
     @lru_cache
-    def Xmat(num_modes: int) -> Tensor:
-        r"""
-        The matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}.`
+    def Xmat(num_modes: int) -> RealTensor:
+        r"""The matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}.`.
 
         Args:
             num_modes: A positive integer representing the number of modes.
@@ -1903,8 +2096,8 @@ class BackendManager:
 
     @staticmethod
     @lru_cache
-    def Zmat(num_modes: int) -> Tensor:
-        r"""The matrix :math:`Z_n = \begin{bmatrix}I_n & 0\\ 0 & -I_n\end{bmatrix}.`
+    def Zmat(num_modes: int) -> RealTensor:
+        r"""The matrix :math:`Z_n = \begin{bmatrix}I_n & 0\\ 0 & -I_n\end{bmatrix}.`.
 
         Args:
             num_modes: A positive integer representing the number of modes.
@@ -1918,7 +2111,7 @@ class BackendManager:
 
     @staticmethod
     @lru_cache
-    def rotmat(num_modes: int) -> Tensor:
+    def rotmat(num_modes: int) -> ComplexTensor:
         r"""Rotation matrix from quadratures to complex amplitudes.
 
         Args:
@@ -1932,7 +2125,7 @@ class BackendManager:
 
     @staticmethod
     @lru_cache
-    def J(num_modes: int) -> Tensor:
+    def J(num_modes: int) -> RealTensor:
         r"""Symplectic form.
 
         Args:
@@ -1945,7 +2138,11 @@ class BackendManager:
         O = np.zeros_like(I)
         return np.block([[O, I], [-I, O]])
 
-    def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
+    @overload
+    def all_diagonals(self, rho: ArrayLike, real: Literal[True]) -> RealTensor: ...
+    @overload
+    def all_diagonals(self, rho: ArrayLike, real: Literal[False]) -> Tensor: ...
+    def all_diagonals(self, rho: ArrayLike, real: bool) -> Tensor:
         r"""Returns all the diagonals of a density matrix.
 
         Args:
@@ -1955,6 +2152,7 @@ class BackendManager:
         Returns:
             The diagonals of the density matrix.
         """
+        rho = self.astensor(rho)
         cutoffs = rho.shape[: rho.ndim // 2]
         rho = self.reshape(rho, (int(np.prod(cutoffs)), int(np.prod(cutoffs))))
         diag = self.diag_part(rho)
@@ -1963,7 +2161,7 @@ class BackendManager:
 
         return self.reshape(diag, cutoffs)
 
-    def euclidean_to_symplectic(self, S: Tensor, dS_euclidean: Tensor) -> Tensor:
+    def euclidean_to_symplectic(self, S: ArrayLike, dS_euclidean: ArrayLike) -> Tensor:
         r"""Convert the Euclidean gradient to a Riemannian gradient on the
         tangent bundle of the symplectic manifold.
 
@@ -1979,11 +2177,11 @@ class BackendManager:
         Returns:
             The symplectic gradient tensor.
         """
-        Jmat = self.J(S.shape[-1] // 2)
+        Jmat = self.J(self.shape(S)[-1] // 2)
         Z = self.matmul(self.swapaxes(S, -1, -2), dS_euclidean)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.swapaxes(Z, -1, -2)), Jmat))
 
-    def euclidean_to_unitary(self, U: Tensor, dU_euclidean: Tensor) -> Tensor:
+    def euclidean_to_unitary(self, U: ArrayLike, dU_euclidean: ArrayLike) -> Tensor:
         r"""Convert the Euclidean gradient to a Riemannian gradient on the
         tangent bundle of the unitary manifold.
 
@@ -1999,3 +2197,30 @@ class BackendManager:
         """
         Z = self.matmul(self.conj(self.swapaxes(U, -1, -2)), dU_euclidean)
         return 0.5 * (Z - self.conj(self.swapaxes(Z, -1, -2)))
+
+    def euclidean_to_siegel(self, Z: ArrayLike, dZ_euclidean: ArrayLike) -> Tensor:
+        r"""Convert the Euclidean gradient to a Riemannian gradient on the Siegel disk
+        :math:`\mathcal{D}_g = \{Z \in \mathbb{C}^{g\times g} : Z = Z^T,\ I - Z^* Z
+        \succ 0\}` with the Bergman metric.
+
+        .. math::
+            \mathrm{grad}\,f(Z) = \mathrm{sym}\!\left[(I - Z Z^*)\,\nabla_E f\,
+            (I - Z^* Z)\right],
+
+        where :math:`\mathrm{sym}(M) = (M + M^T)/2` projects onto the tangent space
+        :math:`T_Z \mathcal{D}_g \simeq \mathrm{Sym}(g,\mathbb{C})`.
+
+        Args:
+            Z: A point in :math:`\mathcal{D}_g` (complex symmetric).
+            dZ_euclidean: Euclidean gradient tensor.
+
+        Returns:
+            The Siegel (Bergman) gradient tensor.
+        """
+        Z = self.astensor(Z)
+        Z_H = self.conj(self.swapaxes(Z, -1, -2))
+        eye = self.eye(Z.shape[-1], dtype=Z.dtype)
+        left = eye - self.matmul(Z, Z_H)
+        right = eye - self.matmul(Z_H, Z)
+        grad = self.matmul(self.matmul(left, dZ_euclidean), right)
+        return 0.5 * (grad + self.swapaxes(grad, -1, -2))

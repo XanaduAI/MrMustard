@@ -38,8 +38,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains functions for creating a logger that can be used in Mr Mustard.
+"""This module contains functions for creating a logger that can be used in Mr Mustard.
 
 The implementation in this module is based on the solution for logging used in
 the Flask web application framework:

@@ -3,7 +3,6 @@ repos:
     rev: v0.18.1
     hooks:
     -   id: cython-lint
-        args: [--max-line-length=100]
     -   id: double-quote-cython-strings
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.3.0
@@ -12,8 +11,12 @@ repos:
     - id: check-merge-conflict
       args: [--assume-in-merge]
       exclude: \.rst$
+-   repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.8.13
+    hooks:
+      - id: uv-lock
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.12.0
+  rev: v0.15.7
   hooks:
     - id: ruff-check
       args: [ --fix, --exit-non-zero-on-fix]
@@ -24,3 +27,12 @@ repos:
   hooks:
     - id: clang-format
       args: [-i, --style=file]
+- repo: local
+  hooks:
+    - id: pyright
+      name: pyright
+      entry: pyright
+      language: system
+      'types_or': [python, pyi]
+      require_serial: true
+      files: ^MrMustard/mrmustard/parameters/

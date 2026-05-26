@@ -1,5 +1,4 @@
-"""
-This module calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
+"""This module calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
 by applying the recursion relation in a selective manner.
 """
 
@@ -29,8 +28,8 @@ def use_offDiag_pivot(  # noqa: C901
     arr1001,
     arr1,
 ):  # pragma: no cover
-    """
-    Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
+    """Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...].
+
     Args:
         A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
@@ -96,8 +95,8 @@ def use_offDiag_pivot(  # noqa: C901
 
 @njit(cache=True)
 def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):  # pragma: no cover
-    """
-    Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
+    """Apply recurrence relation for pivot of type [a,a,b,b,c,c...].
+
     Args:
         A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
@@ -155,8 +154,7 @@ def fock_representation_diagonal_amps_NUMBA(
     tuple_type,
     list_type,
 ):  # pragma: no cover
-    """
-    Returns the PNR probabilities of a mixed state according to algorithm 1 of:
+    """Returns the PNR probabilities of a mixed state according to algorithm 1 of:
     https://doi.org/10.22331/q-2023-08-29-1097
     Args:
         A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
@@ -170,7 +168,7 @@ def fock_representation_diagonal_amps_NUMBA(
         arr1 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
         tuple_type, list_type (numba types): numba types that need to be defined outside of numba compiled functions
     Returns:
-        array: the fock representation
+        array: the fock representation.
     """
     dict_params = construct_dict_params(cutoffs, tuple_type, list_type)
     for sum_params in range(sum(cutoffs)):
@@ -198,13 +196,11 @@ def fock_representation_diagonal_amps_NUMBA(
 
 
 def fock_representation_diagonal_amps(A, B, G0, M, cutoffs):
-    """
-    First initialise the submatrices of G (of which the shape depends on cutoff and M)
+    """First initialise the submatrices of G (of which the shape depends on cutoff and M)
     and some other constants
     (These initialisations currently cannot be done using Numba.)
     Then calculate the fock representation.
     """
-
     cutoffs = tuple(cutoffs)
     tuple_type = numba.types.UniTuple(int64, M)
     list_type = numba.types.ListType(tuple_type)

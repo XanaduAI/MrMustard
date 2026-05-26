@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a Mach-Zehnder gate.
-"""
+"""The class representing a Mach-Zehnder gate."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["MZgate"]
 
 
 class MZgate(Unitary):
-    r"""
-    Mach-Zehnder gate.
+    r"""Mach-Zehnder gate.
 
     It supports two conventions:
         1. if ``internal=True``, both phases act inside the interferometer: ``phi_a`` on the upper arm, ``phi_b`` on the lower arm.
@@ -49,6 +46,7 @@ class MZgate(Unitary):
         phi_a: The phase in the upper arm of the MZ interferometer.
         phi_b: The phase in the lower arm or external of the MZ interferometer.
         internal: Whether phases are both in the internal arms.
+        name: A name for the gate. If not provided, the class name will be used.
     """
 
     short_name = "MZ"
@@ -59,7 +57,9 @@ class MZgate(Unitary):
         phi_a: float | Sequence[float] | Parameter = 0.0,
         phi_b: float | Sequence[float] | Parameter = 0.0,
         internal: bool = False,
+        name: str | None = None,
     ):
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={
@@ -68,7 +68,7 @@ class MZgate(Unitary):
                 internal=internal,
             ),
             wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["phi_a"] = Parameter.from_cc_init(phi_a, "float64", f"{self.name}/phi_a")
         self.parameters["phi_b"] = Parameter.from_cc_init(phi_b, "float64", f"{self.name}/phi_b")

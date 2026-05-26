@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a squeezed vacuum state.
-"""
+"""The class representing a squeezed vacuum state."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["SqueezedVacuum"]
 
 
 class SqueezedVacuum(Ket):
-    r"""
-    The squeezed vacuum state in Bargmann representation.
+    r"""The squeezed vacuum state in Bargmann representation.
 
     >>> from mrmustard.lab import SqueezedVacuum, Vacuum, Sgate
     >>> state = SqueezedVacuum(mode=0, r=0.3, phi=0.2)
@@ -42,6 +39,7 @@ class SqueezedVacuum(Ket):
         mode: The mode of the squeezed vacuum state.
         r: The squeezing magnitude.
         phi: The squeezing angle.
+        name: A name for the state. If not provided, the class name will be used.
     """
 
     short_name = "Sq"
@@ -51,8 +49,10 @@ class SqueezedVacuum(Ket):
         mode: int | tuple[int],
         r: float | Sequence[float] | Parameter = 0.0,
         phi: float | Sequence[float] | Parameter = 0.0,
+        name: str | None = None,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={
@@ -61,7 +61,7 @@ class SqueezedVacuum(Ket):
                 }
             ),
             wires=Wires(modes_out_ket=set(mode)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["r"] = Parameter.from_cc_init(r, "float64", f"{self.name}/r")
         self.parameters["phi"] = Parameter.from_cc_init(phi, "float64", f"{self.name}/phi")

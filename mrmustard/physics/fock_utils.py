@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains functions for performing calculations on objects in the Fock representations.
-"""
+"""This module contains functions for performing calculations on objects in the Fock representations."""
 
 from __future__ import annotations
 
@@ -25,7 +23,7 @@ import numpy as np
 from scipy.special import comb, factorial
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import Batch, Scalar, Tensor, Vector
+from mrmustard.utils.typing import Scalar, Tensor, Vector
 
 __all__ = [
     "c_in_PS",
@@ -41,10 +39,6 @@ __all__ = [
     "quadrature_distribution",
 ]
 
-try:
-    import jax
-except ImportError:  # pragma: no cover
-    jax = None
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
@@ -52,8 +46,7 @@ except ImportError:  # pragma: no cover
 
 
 def fock_state(n: int | Sequence[int], cutoff: int | None = None) -> Tensor:
-    r"""
-    The Fock array of a batchable single-mode ``Number`` state.
+    r"""The Fock array of a batchable single-mode ``Number`` state.
 
     Args:
         n: The photon number of the number state. Can be a single integer or a batch of integers.
@@ -79,13 +72,14 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     r"""Harmonic oscillator eigenstate wavefunction `\psi_n(q) = <n|q>`.
 
     Args:
-        q (Vector): a vector containing the q points at which the function is evaluated (units of \sqrt{\hbar})
+        q: array of q points at which the function is evaluated (units of \sqrt{\hbar}).
+            Can have any shape; the result has shape ``(cutoff, *q.shape)``.
         cutoff (int): Fock space dimension (shape). Note: despite the parameter name, this is
             the shape (cutoff + 1), not the max photon number. Callers pass shape values here.
 
     Returns:
-        Tensor: a tensor of size ``len(q) * cutoff``. Each entry with index ``[i, j]`` represents the eigenstate evaluated
-            with number of photons ``i`` evaluated at position ``q[j]``, i.e., `\psi_i(q_j)`.
+        Tensor: shape ``(cutoff, *q.shape)``. Entry ``[n, ...]`` is :math:`\psi_n` evaluated
+            at the corresponding points of *q*.
 
     .. details::
 
@@ -102,7 +96,9 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
                 where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial.
     """
     hbar = settings.HBAR
-    x = math.cast(q / np.sqrt(hbar), math.complex128)  # unit-less vector
+    q = np.asarray(q)
+    batch_shape = q.shape
+    x = math.cast(q.ravel() / np.sqrt(hbar), math.complex128)  # unit-less vector
 
     # prefactor term (\Omega/\hbar \pi)**(1/4) * 1 / sqrt(2**n)
     prefactor = math.cast(
@@ -115,15 +111,16 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
 
     hermite_polys = math.hermite_renormalized(R, 2 * x[..., None], 1 + 0j, (cutoff,))
 
-    # (real) wavefunction
-    return math.exp(-(x**2 / 2)) * math.transpose(prefactor * hermite_polys)
+    # (real) wavefunction — shape (cutoff, *batch_shape)
+    result = math.exp(-(x**2 / 2)) * math.transpose(prefactor * hermite_polys)
+    return math.reshape(result, (cutoff, *batch_shape))
 
 
 @lru_cache
 def estimate_dx(cutoff, period_resolution=20):
     r"""Estimates a suitable quadrature discretization interval `dx`. Uses the fact
     that Fock state `n` oscillates with angular frequency :math:`\sqrt{2(n + 1)}`,
-    which follows from the relation
+    which follows from the relation.
 
     .. math::
 
@@ -149,13 +146,13 @@ def estimate_dx(cutoff, period_resolution=20):
 
 @lru_cache
 def estimate_xmax(cutoff, minimum=5):
-    r"""Estimates a suitable quadrature axis length
+    r"""Estimates a suitable quadrature axis length.
 
-    Args
+    Args:
         cutoff (int): Fock cutoff
         minimum (float): Minimum value of the returned xmax
 
-    Returns
+    Returns:
         (float): maximum quadrature value
     """
     if cutoff == 0:
@@ -194,7 +191,7 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
 
 def quadrature_basis(
     fock_array: Tensor,
-    quad: Batch[Vector],
+    quad: Vector,
     conjugates: bool | list[bool] = False,
     phi: Scalar = 0.0,
 ):
@@ -243,8 +240,7 @@ def quadrature_distribution(
     quadrature_angle: float = 0.0,
     x: Vector | None = None,
 ):
-    r"""
-    Given the ket or density matrix of a single-mode state, it generates the probability
+    r"""Given the ket or density matrix of a single-mode state, it generates the probability
     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]` where ``\rho`` is the
     density matrix of the state and ``|x_\phi>`` the quadrature eigenvector with angle ``\phi``
     equal to ``quadrature_angle``.
@@ -274,17 +270,14 @@ def quadrature_distribution(
 
 
 def c_ps_matrix(m, n, alpha):
-    """
-    helper function for ``c_in_PS``.
-    """
+    """Helper function for ``c_in_PS``."""
     mu_range = range(max(0, alpha - n), min(m, alpha) + 1)
     tmp = [comb(m, mu) * comb(n, alpha - mu) * (1j) ** (m - n - 2 * mu + alpha) for mu in mu_range]
     return np.sum(tmp)
 
 
 def gamma_matrix(c):
-    """
-    helper function for ``c_in_PS``.
+    """Helper function for ``c_in_PS``.
     constructs the matrix transformation that helps transforming ``c``.
     ``c`` here must be 2-dimensional.
     """
@@ -305,9 +298,7 @@ def gamma_matrix(c):
 
 
 def c_in_PS(c):
-    """
-    Transforms the ``c`` matrix of a ``DM`` object from bargmann to phase-space.
-    It is a helper function used in
+    """Transforms the ``c`` matrix of a ``DM`` object from bargmann to phase-space.
 
     Args:
         c (Tensor): the 2-dimensional ``c`` matrix of the ``DM`` object

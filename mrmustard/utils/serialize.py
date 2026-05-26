@@ -29,8 +29,7 @@ __all__ = ["load", "save"]
 
 
 def save(cls: type, filename=None, do_zip=True, arrays=None, **data) -> Path:
-    r"""
-    Save a serialized set of data to file for later deserialization.
+    r"""Save a serialized set of data to file for later deserialization.
 
     This function can serialize any object that implements the MrMustard
     serialization interface, which is the following:
@@ -91,8 +90,7 @@ def save(cls: type, filename=None, do_zip=True, arrays=None, **data) -> Path:
 
 
 def load(file: Path, remove_after=False):
-    r"""
-    The deserializer entrypoint for objects saved with the ``save`` method.
+    r"""The deserializer entrypoint for objects saved with the ``save`` method.
 
     Args:
         file (Path): The json file to load from

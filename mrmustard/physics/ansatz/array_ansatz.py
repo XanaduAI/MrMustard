@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains the array ansatz.
-"""
+"""This module contains the array ansatz."""
 
 from __future__ import annotations
 
@@ -28,7 +26,7 @@ from numpy.typing import ArrayLike
 
 from mrmustard import math, settings, widgets
 from mrmustard.physics.utils import batch_indexer_info
-from mrmustard.utils.typing import Batch, Scalar, Tensor
+from mrmustard.utils.typing import Scalar, Tensor
 
 from .base import Ansatz
 
@@ -36,32 +34,29 @@ __all__ = ["ArrayAnsatz"]
 
 
 class ArrayAnsatz(Ansatz):
-    r"""
-    The ansatz of the Fock-Bargmann representation.
+    r"""The ansatz of the Fock-Bargmann representation.
 
     Represents the ansatz as a multidimensional array.
+
+    Args:
+        array: A (potentially) batched array.
+        batch_dims: The number of batch dimensions.
 
     >>> import numpy as np
     >>> from mrmustard.physics.ansatz import ArrayAnsatz
     >>> array = np.random.random((2, 4, 5))
     >>> ansatz = ArrayAnsatz(array)
-
-    Args:
-        array: A (potentially) batched array.
-        batch_dims: The number of batch dimensions.
     """
 
-    def __init__(self, array: Batch[Tensor], batch_dims: int = 0):
+    def __init__(self, array: Tensor, batch_dims: int = 0):
         super().__init__()
         self._array = array
         self._batch_dims = batch_dims
         self._batch_shape = tuple(self._array.shape[:batch_dims])
 
     @property
-    def array(self) -> Batch[Tensor]:
-        r"""
-        The array of this ansatz.
-        """
+    def array(self) -> Tensor:
+        r"""The array of this ansatz."""
         return self._array
 
     @array.setter
@@ -82,25 +77,21 @@ class ArrayAnsatz(Ansatz):
         return int(np.prod(self.batch_shape)) if self.batch_shape else 0
 
     @property
-    def conj(self):
+    def conj(self) -> ArrayAnsatz:
         return ArrayAnsatz(math.conj(self.array), self.batch_dims)
 
     @property
     def core_dims(self) -> int:
-        r"""
-        The number of core dimensions of this ansatz.
-        """
+        r"""The number of core dimensions of this ansatz."""
         return len(self.core_shape)
 
     @property
-    def core_shape(self) -> tuple[int, ...] | None:
-        r"""
-        The core dimensions of this ansatz.
-        """
+    def core_shape(self) -> tuple[int, ...]:
+        r"""The core dimensions of this ansatz."""
         return self.array.shape[self.batch_dims :]
 
     @property
-    def data(self) -> Batch[Tensor]:
+    def data(self) -> Tensor:
         return self.array
 
     @property
@@ -108,9 +99,8 @@ class ArrayAnsatz(Ansatz):
         return len(self.array.shape) - self.batch_dims
 
     @property
-    def scalar(self) -> Scalar | ArrayLike:
-        r"""
-        The scalar part of the ansatz.
+    def scalar(self) -> Scalar:
+        r"""The scalar part of the ansatz.
         I.e. the vacuum component of the Fock array, whatever it may be.
         """
         return self.array[(...,) + (0,) * self.core_dims]
@@ -119,9 +109,8 @@ class ArrayAnsatz(Ansatz):
     def from_dict(cls, data: dict[str, ArrayLike]) -> ArrayAnsatz:
         return cls(**data)
 
-    def concat(self, other: ArrayAnsatz, axis: int = 0) -> ArrayAnsatz:
-        r"""
-        Concatenates two ArrayAnsatz objects along the specified batch axis.
+    def concat(self, other: Ansatz, axis: int = 0) -> ArrayAnsatz:
+        r"""Concatenates two ArrayAnsatz objects along the specified batch axis.
 
         All batch axes except the concatenation axis must agree in size.
         Core shapes must also match.
@@ -134,19 +123,22 @@ class ArrayAnsatz(Ansatz):
             A new ArrayAnsatz with the concatenated batch dimensions.
 
         Raises:
+            TypeError: If ``other`` is not an ``ArrayAnsatz``.
             ValueError: If batch dimensions don't match (except at axis) or if core shapes don't match.
 
-        Example:
-            >>> from mrmustard.physics.ansatz import ArrayAnsatz
-            >>> import numpy as np
-            >>> array1 = np.random.random((2, 4, 5))
-            >>> ansatz1 = ArrayAnsatz(array1, batch_dims=1)
-            >>> array2 = np.random.random((3, 4, 5))
-            >>> ansatz2 = ArrayAnsatz(array2, batch_dims=1)
-            >>> concatenated = ansatz1.concat(ansatz2, axis=0)
-            >>> assert concatenated.batch_shape == (5,)
-            >>> assert concatenated.core_shape == (4, 5)
+        >>> from mrmustard.physics.ansatz import ArrayAnsatz
+        >>> import numpy as np
+        >>> array1 = np.random.random((2, 4, 5))
+        >>> ansatz1 = ArrayAnsatz(array1, batch_dims=1)
+        >>> array2 = np.random.random((3, 4, 5))
+        >>> ansatz2 = ArrayAnsatz(array2, batch_dims=1)
+        >>> concatenated = ansatz1.concat(ansatz2, axis=0)
+        >>> assert concatenated.batch_shape == (5,)
+        >>> assert concatenated.core_shape == (4, 5)
         """
+        if not isinstance(other, ArrayAnsatz):
+            raise TypeError(f"Cannot concatenate with ansatz of type {type(other)}!")
+
         # Check that both have the same number of batch dimensions
         if self.batch_dims != other.batch_dims:
             raise ValueError(
@@ -185,7 +177,7 @@ class ArrayAnsatz(Ansatz):
 
     def contract(
         self,
-        other: ArrayAnsatz,
+        other: Ansatz,
         idxs: tuple[Sequence[int], Sequence[int]],
     ) -> ArrayAnsatz:
         r"""Contract along specified core axes, broadcasting batch dimensions.
@@ -200,20 +192,23 @@ class ArrayAnsatz(Ansatz):
             ``[self non-contracted] + [other non-contracted]``. Batch dims are
             broadcast and preserved.
 
-        Example:
-            >>> from mrmustard.physics.ansatz import ArrayAnsatz
-            >>> from mrmustard import math
-            >>> array1 = math.arange(20).reshape((1, 4, 5))
-            >>> array2 = math.arange(72).reshape((3, 4, 6))
-            >>> ansatz1 = ArrayAnsatz(array1, batch_dims=1)
-            >>> ansatz2 = ArrayAnsatz(array2, batch_dims=1)
-            >>> # broadcast 1 and 3 while contracting 4 and 4, leaving 3 (batch), 5 and 6:
-            >>> contracted = ansatz1.contract(ansatz2, ([0], [0]))
-            >>> assert contracted.array.shape == (3, 5, 6)
-
         Raises:
+            TypeError: If ``other`` is not an ``ArrayAnsatz``.
             ValueError: If index sequences have incorrect length, duplicates, or out-of-range indices.
+
+        >>> from mrmustard.physics.ansatz import ArrayAnsatz
+        >>> from mrmustard import math
+        >>> array1 = math.arange(20).reshape((1, 4, 5))
+        >>> array2 = math.arange(72).reshape((3, 4, 6))
+        >>> ansatz1 = ArrayAnsatz(array1, batch_dims=1)
+        >>> ansatz2 = ArrayAnsatz(array2, batch_dims=1)
+        >>> # broadcast 1 and 3 while contracting 4 and 4, leaving 3 (batch), 5 and 6:
+        >>> contracted = ansatz1.contract(ansatz2, ([0], [0]))
+        >>> assert contracted.array.shape == (3, 5, 6)
         """
+        if not isinstance(other, ArrayAnsatz):
+            raise TypeError(f"Cannot contract with ansatz of type {type(other)}!")
+
         idxs_self, idxs_other = idxs
 
         if len(idxs_self) != len(idxs_other):
@@ -222,7 +217,7 @@ class ArrayAnsatz(Ansatz):
                 f"got {len(idxs_self)} and {len(idxs_other)}."
             )
 
-        def normalize(indices: list[int], core_dims: int) -> list[int]:
+        def normalize(indices: Sequence[int], core_dims: int) -> list[int]:
             normalized = [i + core_dims if i < 0 else i for i in indices]
             if any(i < 0 or i >= core_dims for i in normalized):
                 raise ValueError(
@@ -285,8 +280,10 @@ class ArrayAnsatz(Ansatz):
         display(w)
 
     def reduce(self, shape: Sequence[int]) -> ArrayAnsatz:
-        r"""
-        Returns a new ``ArrayAnsatz`` with a sliced core shape.
+        r"""Returns a new ``ArrayAnsatz`` with a sliced core shape.
+
+        Args:
+            shape: The shape of the array of the returned ``ArrayAnsatz``.
 
         >>> from mrmustard import math
         >>> from mrmustard.physics.ansatz import ArrayAnsatz
@@ -300,9 +297,6 @@ class ArrayAnsatz(Ansatz):
         >>> fock4 = fock1.reduce((1, 3, 1))
         >>> array4 = math.astensor([[[0], [3], [6]]])
         >>> assert fock4 == ArrayAnsatz(array4)
-
-        Args:
-            shape: The shape of the array of the returned ``ArrayAnsatz``.
         """
         if shape == self.core_shape:
             return self
@@ -368,12 +362,21 @@ class ArrayAnsatz(Ansatz):
         trace = math.einsum("...ii->...", new_array)
         return ArrayAnsatz(trace, self.batch_dims)
 
-    def __add__(self, other: ArrayAnsatz) -> ArrayAnsatz:
-        r"""
-        Adds two ArrayAnsatz together. In order to use the __add__ method, the ansatze must have
+    def __add__(self, other: Ansatz) -> ArrayAnsatz:
+        r"""Adds two ArrayAnsatz together. In order to use the __add__ method, the ansatze must have
         the same batch dimensions. The shape of the core arrays must be such that one can be reduced
         to the other. Other will be reduced to the shape of self. If you want the opposite use other + self.
+
+        Args:
+            other: The other ansatz to add.
+
+        Raises:
+            TypeError: If ``other`` is not an ``ArrayAnsatz``.
+            ValueError: If the batch dimensions don't match.
         """
+        if not isinstance(other, ArrayAnsatz):
+            raise TypeError(f"Cannot add ansatz of type {type(other)}!")
+
         if self.batch_dims != other.batch_dims:
             raise ValueError("Batch dimensions must match.")
         if self.core_shape != other.core_shape:
@@ -388,7 +391,9 @@ class ArrayAnsatz(Ansatz):
             other_array = other.array
         return ArrayAnsatz(array=self_array + other_array, batch_dims=self.batch_dims)
 
-    def __and__(self, other: ArrayAnsatz) -> ArrayAnsatz:
+    def __and__(self, other: Ansatz) -> ArrayAnsatz:
+        if not isinstance(other, ArrayAnsatz):
+            raise TypeError(f"Cannot tensor product ansatz of type {type(other)}!")
         if self.batch_shape != other.batch_shape:
             raise ValueError("Batch shapes must match.")
         batch_size = int(np.prod(self.batch_shape))
@@ -401,7 +406,7 @@ class ArrayAnsatz(Ansatz):
     def __call__(self, _: Any):
         raise AttributeError("Cannot call an ArrayAnsatz.")
 
-    def __eq__(self, other: Ansatz) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, ArrayAnsatz):
             return False
         if self.batch_shape != other.batch_shape:
@@ -414,8 +419,7 @@ class ArrayAnsatz(Ansatz):
         )
 
     def __getitem__(self, index: Any) -> ArrayAnsatz:
-        r"""
-        Batch-only indexing. Supports integers, slices, None (newaxis), and Ellipsis.
+        r"""Batch-only indexing. Supports integers, slices, None (newaxis), and Ellipsis.
         Indexing is restricted to the first ``batch_dims`` axes. Core axes are not indexable.
 
         The number of batch dimensions in the returned object is updated according to
@@ -427,7 +431,7 @@ class ArrayAnsatz(Ansatz):
             new_array, batch_dims=self.batch_dims - removed_by_int + inserted_by_none
         )
 
-    def __mul__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:
+    def __mul__(self, other: Scalar) -> ArrayAnsatz:
         return ArrayAnsatz(array=self.array * other, batch_dims=self.batch_dims)
 
     def __neg__(self) -> ArrayAnsatz:
@@ -439,7 +443,7 @@ class ArrayAnsatz(Ansatz):
     def __str__(self) -> str:
         return f"ArrayAnsatz(shape={self.array.shape}, batch_dims={self.batch_dims})"
 
-    def __truediv__(self, other: Scalar | ArrayLike) -> ArrayAnsatz:
+    def __truediv__(self, other: Scalar) -> ArrayAnsatz:
         # handle the case where other is a batched scalar
         shape = math.shape(other)
         if shape != ():

@@ -149,6 +149,24 @@ class TestConstant:
         const.name = "new_name"
         assert const.name == "new_name"
 
+    @pytest.mark.parametrize(
+        "real_or_complex,expected_dtype", [("real", float), ("complex", complex)]
+    )
+    @pytest.mark.parametrize("normal_or_uniform", ["normal", "uniform"])
+    def test_classmethods(self, real_or_complex, normal_or_uniform, expected_dtype):
+        r"""Tests that classmethods create real_or_complex-valued Constants as expected."""
+        const = getattr(Constant, f"{real_or_complex}_{normal_or_uniform}")()
+        assert isinstance(const, Constant)
+        assert const.name == real_or_complex
+        assert const.value.dtype == expected_dtype
+
+    def test_complex_normal_with_parameters(self):
+        r"""Tests that the complex_normal classmethod can be initialized with Parameters."""
+        const = Constant.complex_normal(variance=Constant(2.0), mean=Constant(1.0))
+        assert isinstance(const, Constant)
+        assert const.name == "complex"
+        assert const.value.dtype == complex
+
 
 class TestVariable:
     r"""

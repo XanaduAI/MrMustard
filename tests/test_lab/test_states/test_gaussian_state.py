@@ -14,11 +14,13 @@
 
 """Tests for the ``Gket`` and ``Gdm`` classes."""
 
+import numpy as np
 import pytest
 
-from mrmustard import math
+from mrmustard import math, settings
 from mrmustard.lab.states import DM, GaussianDM, GaussianKet, Vacuum
-from mrmustard.lab.transformations import Unitary
+from mrmustard.lab.states.gaussian_state import _random_alphas_in_disk
+from mrmustard.lab.transformations import Dgate, Unitary
 from mrmustard.parameters import Variable
 
 
@@ -62,6 +64,30 @@ class TestGaussianKet:
         assert psi.parameters.symplectic.value.shape == (2, 2)
         assert math.allclose(psi.probability, 1.0)
         assert math.allclose(psi.parameters.symplectic.value, math.random_symplectic(1, seed=1))
+
+    def test_random_displaced_preserves_normalization(self):
+        """Displaced random kets must remain normalized."""
+        psi = GaussianKet.random(modes=(0, 1), max_disp=2.0, seed=42)
+        assert np.isclose(psi.probability, 1.0, atol=1e-8)
+
+    def test_random_displaced_is_reproducible(self):
+        """Same seed must produce the same displaced state."""
+        psi1 = GaussianKet.random(modes=0, max_disp=1.5, seed=7)
+        psi2 = GaussianKet.random(modes=0, max_disp=1.5, seed=7)
+        assert psi1 == psi2
+
+    def test_random_displaced_matches_manual_construction(self):
+        """Displaced random ket must equal the undisplaced ket >> Dgate(alpha)."""
+        seed, modes, max_disp = 42, (0, 1), 1.5
+
+        psi = GaussianKet.random(modes=modes, max_disp=max_disp, seed=seed)
+
+        psi_manual = GaussianKet.random(modes=modes, seed=seed)
+        rng = settings.get_rng(seed)
+        for mode, alpha in zip(modes, _random_alphas_in_disk(len(modes), max_disp, rng)):
+            psi_manual = psi_manual >> Dgate(mode, alpha)
+
+        assert psi == psi_manual
 
 
 class TestGaussianDM:
@@ -110,3 +136,43 @@ class TestGaussianDM:
         assert rho.parameters.beta.value.shape == (1,)
         with pytest.raises(ValueError, match="high - low < 0"):
             GaussianDM.random(modes=0, min_beta=0.3, max_beta=0.2)
+
+    def test_random_displaced_preserves_normalization(self):
+        """Displaced random density matrices must remain normalized."""
+        rho = GaussianDM.random(modes=(0, 1), max_disp=2.0, seed=42)
+        assert np.isclose(rho.probability, 1.0, atol=1e-8)
+
+    def test_random_displaced_is_reproducible(self):
+        """Same seed must produce the same displaced state."""
+        rho1 = GaussianDM.random(modes=0, max_disp=1.5, seed=7)
+        rho2 = GaussianDM.random(modes=0, max_disp=1.5, seed=7)
+        assert rho1 == rho2
+
+    def test_random_displaced_matches_manual_construction(self):
+        """Displaced random DM must equal the undisplaced DM >> Dgate(alpha)."""
+        seed, modes, max_disp = 42, (0, 1), 1.5
+
+        rho = GaussianDM.random(modes=modes, max_disp=max_disp, seed=seed)
+
+        rho_manual = GaussianDM.random(modes=modes, seed=seed)
+        rng = settings.get_rng(seed)
+        for mode, alpha in zip(modes, _random_alphas_in_disk(len(modes), max_disp, rng)):
+            rho_manual = rho_manual >> Dgate(mode, alpha)
+
+        assert rho == rho_manual
+
+
+class TestRandomAlphasInDisk:
+    """Tests for the disk-uniform sampling helper."""
+
+    def test_magnitudes_bounded(self):
+        """All sampled magnitudes must be at most max_disp."""
+        rng = np.random.default_rng(0)
+        magnitudes = np.abs(_random_alphas_in_disk(1000, 2.0, rng))
+        assert np.all(magnitudes <= 2.0 + 1e-15)
+
+    def test_zero_radius_gives_zero_displacement(self):
+        """max_disp=0 must produce alpha=0 for every mode."""
+        rng = np.random.default_rng(0)
+        alphas = _random_alphas_in_disk(5, 0.0, rng)
+        assert np.allclose(alphas, 0.0)

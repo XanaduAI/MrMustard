@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a Kerr gate.
-"""
+"""The class representing a Kerr gate."""
 
 from __future__ import annotations
 
@@ -32,8 +30,7 @@ __all__ = ["Kgate"]
 
 
 class Kgate(Unitary):
-    r"""
-    The Kerr gate.
+    r"""The Kerr gate.
 
     A non-Gaussian single-mode unitary, diagonal in the Fock basis. By default
     the generator is the normal-ordered :math:`a^\dagger a^\dagger a a = n(n-1)`,
@@ -76,8 +73,7 @@ class Kgate(Unitary):
         return self._normal_ordered
 
     def __custom_rrshift__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Kerr is diagonal in Fock, so we implement its right-shift directly:
+        r"""Kerr is diagonal in Fock, so we implement its right-shift directly:
         multiply the ket-side photon-number axis by :math:`e^{i\kappa g(n)}`, and
         (when present) the bra-side axis by :math:`e^{-i\kappa g(n)}`, where
         :math:`g(n) = n(n-1)` if ``normal_ordered`` else :math:`n^2`.

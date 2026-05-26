@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Custom vjps for fock utilities.
-"""
+"""Custom vjps for fock utilities."""
 
 from __future__ import annotations
 
@@ -43,9 +41,7 @@ __all__ = [
 @partial(jax.custom_vjp, nondiff_argnums=(2, 3))
 @partial(jax.jit, static_argnums=(2, 3))
 def beamsplitter_jax(theta: float, phi: float, shape: tuple[int, ...], method: str) -> jnp.ndarray:
-    r"""
-    The jax custom gradient for the beamsplitter gate.
-    """
+    r"""The jax custom gradient for the beamsplitter gate."""
     if method == "schwinger":
         bs_unitary = jax.pure_callback(
             lambda t, s: strategies.beamsplitter_schwinger(shape, np.asarray(t), np.asarray(s)),
@@ -93,9 +89,7 @@ def beamsplitter_jax_fwd(
     shape: tuple[int, ...],
     method: str,
 ) -> tuple[jnp.ndarray, tuple[jnp.ndarray, float, float]]:
-    r"""
-    The jax forward pass for the beamsplitter gate.
-    """
+    r"""The jax forward pass for the beamsplitter gate."""
     bs_unitary = beamsplitter_jax(theta, phi, shape, method)
     return bs_unitary, (bs_unitary, theta, phi)
 
@@ -106,9 +100,7 @@ def beamsplitter_jax_bwd(
     res: tuple[jnp.ndarray, float, float],
     g: jnp.ndarray,
 ) -> tuple[float, float]:
-    r"""
-    The jax backward pass for the beamsplitter gate.
-    """
+    r"""The jax backward pass for the beamsplitter gate."""
     bs_unitary, theta, phi = res
     dtheta, dphi = jax.pure_callback(
         lambda bs_unitary, g, theta, phi: strategies.beamsplitter_vjp(
@@ -137,9 +129,7 @@ beamsplitter_jax.defvjp(beamsplitter_jax_fwd, beamsplitter_jax_bwd)
 @partial(jax.custom_vjp, nondiff_argnums=(1,))
 @partial(jax.jit, static_argnums=(1,))
 def displacement_jax(alpha: complex, shape: tuple[int, ...]) -> jnp.ndarray:
-    r"""
-    The jax custom gradient for the displacement gate.
-    """
+    r"""The jax custom gradient for the displacement gate."""
     batch_shape = alpha.shape
     if batch_shape == ():
         return jax.pure_callback(
@@ -167,9 +157,7 @@ def displacement_jax_fwd(
     alpha: complex,
     shape: tuple[int, ...],
 ) -> tuple[jnp.ndarray, tuple[jnp.ndarray, complex]]:
-    r"""
-    The jax forward pass for the displacement gate.
-    """
+    r"""The jax forward pass for the displacement gate."""
     gate = displacement_jax(alpha, shape)
     return gate, (gate, alpha)
 
@@ -179,9 +167,7 @@ def displacement_jax_bwd(
     res: tuple[jnp.ndarray, complex],
     dL_dD: jnp.ndarray,
 ) -> tuple[jnp.ndarray]:
-    r"""
-    The jax backward pass for the displacement gate.
-    """
+    r"""The jax backward pass for the displacement gate."""
     gate, alpha = res
     batch_shape = alpha.shape
     dD_da, dD_dac = jax.pure_callback(
@@ -213,9 +199,7 @@ displacement_jax.defvjp(displacement_jax_fwd, displacement_jax_bwd)
 def homodyne_projector_jax(
     fock_dim: int, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray
 ) -> jnp.ndarray:
-    r"""
-    The jax custom gradient for the homodyne projector.
-    """
+    r"""The jax custom gradient for the homodyne projector."""
     batch_shape = c.shape
     if batch_shape == ():
         return jax.pure_callback(
@@ -233,7 +217,7 @@ def homodyne_projector_jax(
     c_flattened = c.reshape(-1)
     batch_size = A_flattened.shape[0]
     ret = jax.pure_callback(
-        lambda fock_dim, A, b, c: cython_lattice.homodyne_projector_batched(fock_dim, A, b, c),
+        cython_lattice.homodyne_projector_batched,
         jax.ShapeDtypeStruct((batch_size, fock_dim, fock_dim, fock_dim), jnp.complex128),
         fock_dim,
         A_flattened,
@@ -251,9 +235,7 @@ def homodyne_projector_jax(
 @partial(jax.custom_vjp, nondiff_argnums=(2,))
 @partial(jax.jit, static_argnums=(2,))
 def squeezed_jax(r: float, phi: float, shape: tuple[int]) -> jnp.ndarray:
-    r"""
-    The jax custom gradient for the squeezed state.
-    """
+    r"""The jax custom gradient for the squeezed state."""
     batch_shape = r.shape
     if batch_shape == ():
         return jax.pure_callback(
@@ -281,17 +263,13 @@ def squeezed_jax(r: float, phi: float, shape: tuple[int]) -> jnp.ndarray:
 
 
 def squeezed_jax_fwd(r, phi, shape):
-    r"""
-    The jax forward pass for the squeezed state.
-    """
+    r"""The jax forward pass for the squeezed state."""
     primal_output = squeezed_jax(r, phi, shape)
     return (primal_output, (primal_output, r, phi))
 
 
 def squeezed_jax_bwd(shape, res, g):
-    r"""
-    The jax backward pass for the squeezed state.
-    """
+    r"""The jax backward pass for the squeezed state."""
     sq_state, r, phi = res
     batch_shape = r.shape
     if batch_shape == ():
@@ -337,9 +315,7 @@ squeezed_jax.defvjp(squeezed_jax_fwd, squeezed_jax_bwd)
 @partial(jax.custom_vjp, nondiff_argnums=(2,))
 @partial(jax.jit, static_argnums=(2,))
 def squeezer_jax(r: float, phi: float, shape: tuple[int, int]) -> jnp.ndarray:
-    r"""
-    The jax custom gradient for the squeezer gate.
-    """
+    r"""The jax custom gradient for the squeezer gate."""
     batch_shape = r.shape
     if batch_shape == ():
         return jax.pure_callback(
@@ -367,17 +343,13 @@ def squeezer_jax(r: float, phi: float, shape: tuple[int, int]) -> jnp.ndarray:
 
 
 def squeezer_jax_fwd(r, phi, shape):
-    r"""
-    The jax forward pass for the squeezer gate.
-    """
+    r"""The jax forward pass for the squeezer gate."""
     primal_output = squeezer_jax(r, phi, shape)
     return (primal_output, (primal_output, r, phi))
 
 
 def squeezer_jax_bwd(shape, res, g):
-    r"""
-    The jax backward pass for the squeezer gate.
-    """
+    r"""The jax backward pass for the squeezer gate."""
     squeezer, r, phi = res
     batch_shape = r.shape
     if batch_shape == ():

@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains functions for transforming to the Husimi representation.
-"""
+"""This module contains functions for transforming to the Husimi representation."""
 
 from mrmustard import math, settings
 
@@ -22,7 +20,7 @@ __all__ = ["pq_to_aadag", "wigner_to_husimi"]
 
 
 def pq_to_aadag(X):
-    r"""maps a matrix or vector from the q/p basis to the a/adagger basis"""
+    r"""Maps a matrix or vector from the q/p basis to the a/adagger basis."""
     N = X.shape[0] // 2
     R = math.rotmat(N)
     if X.ndim == 2:
@@ -33,7 +31,7 @@ def pq_to_aadag(X):
 
 
 def wigner_to_husimi(cov, means):
-    r"Returns the husimi complex covariance matrix and means vector."
+    r"""Returns the husimi complex covariance matrix and means vector."""
     N = cov.shape[-1] // 2
     sigma = pq_to_aadag(cov)
     beta = pq_to_aadag(means)

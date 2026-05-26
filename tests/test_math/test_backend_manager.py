@@ -16,11 +16,14 @@
 Unit tests for the :class:`BackendManager`.
 """
 
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 from scipy.special import loggamma as scipy_loggamma
 
 from mrmustard import math, settings
+from mrmustard.physics.utils import random_Abc
 
 try:
     import jax.numpy as jnp
@@ -502,6 +505,32 @@ class TestBackendManager:
         exp2 = np.array([6, 7, 8])
         assert math.allclose(res2, exp2)
 
+    def test_hermite_renormalized_stable_user_overrides_setting(self):
+        """Explicit stable=False must override STABLE_FOCK_CONVERSION=True."""
+        A, b, c = random_Abc(core_vars=2, seed=42)
+        shape = (4, 4)
+
+        with patch(
+            "mrmustard.math.backend_manager.BackendManager._apply",
+            wraps=math._apply,
+        ) as mock_apply:
+            with settings(STABLE_FOCK_CONVERSION=True):
+                G_unstable = math.hermite_renormalized(A, b, c, shape, stable=False)
+                G_stable = math.hermite_renormalized(A, b, c, shape, stable=True)
+
+            assert G_unstable.shape == shape
+            assert G_stable.shape == shape
+
+            # filter calls to only hermite_renormalized and get the stable argument
+            stable_args = [
+                c[0][2].get("stable")
+                for c in mock_apply.call_args_list
+                if c[0][0] == "hermite_renormalized"
+            ]
+
+            assert len(stable_args) == 2
+            assert stable_args == [False, True]
+
     def test_imag(self):
         r"""
         Tests the ``imag`` method.
@@ -792,9 +821,23 @@ class TestBackendManager:
         r"""
         Tests the ``sqrtm`` method.
         """
-        arr = 4 * np.eye(3)
-        res = math.asnumpy(math.sqrtm(arr))
-        assert math.allclose(res, 2 * np.eye(3))
+        arr_diag = np.diag([1, 4, 9])
+        res_diag = math.asnumpy(math.sqrtm(arr_diag))
+        np.testing.assert_allclose(res_diag, np.diag([1, 2, 3]))
+
+        arr_near_zero = np.full((3, 3), 1e-9)
+        res_near_zero = math.asnumpy(math.sqrtm(arr_near_zero))
+        np.testing.assert_allclose(res_near_zero, np.zeros_like(arr_near_zero))
+
+        arr_non_hermitian = np.array([[9.0, 9.0], [0.0, 36.0]])
+        res_non_hermitian = math.asnumpy(math.sqrtm(arr_non_hermitian))
+        exp_non_hermitian = np.array([[3, 1], [0, 6]])
+        np.testing.assert_allclose(res_non_hermitian, exp_non_hermitian)
+
+        arr_hermitian = np.array([[5.0, 4.0], [4.0, 5.0]])
+        res_hermitian = math.asnumpy(math.sqrtm(arr_hermitian))
+        exp_hermitian = np.array([[2, 1], [1, 2]])
+        np.testing.assert_allclose(res_hermitian, exp_hermitian)
 
     def test_stack(self):
         r"""

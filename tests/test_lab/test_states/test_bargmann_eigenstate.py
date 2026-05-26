@@ -42,7 +42,7 @@ class TestBargmannEigenstate:
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 3)])
     def test_numerial(self, alpha, batch_shape):
         "A numerical test."
-        alpha = math.broadcast_to(alpha, batch_shape, dtype=math.complex128)
+        alpha = math.broadcast_to(alpha, batch_shape)
         be = BargmannEigenstate(0, alpha)
         assert math.allclose(
             be.contract(be.dual).ansatz.scalar,

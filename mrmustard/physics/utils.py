@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains the utility functions used by the classes in ``mrmustard.physics``.
-"""
+"""This module contains the utility functions used by the classes in ``mrmustard.physics``."""
 
 from __future__ import annotations
 
@@ -25,7 +23,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
+from mrmustard.utils.typing import ComplexMatrix, ComplexScalar, ComplexTensor, ComplexVector
 
 __all__ = [
     "IndexerType",
@@ -56,8 +54,7 @@ def _join_Ab(
     m1: int,
     m2: int,
 ) -> tuple[ComplexMatrix, ComplexVector]:
-    r"""
-    Joins two (A, b) pairs by block-diagonal concatenation and reordering.
+    r"""Joins two (A, b) pairs by block-diagonal concatenation and reordering.
 
     This helper function creates a block-diagonal A matrix from A1 and A2, concatenates
     the b vectors, and reorders rows/columns to group core variables first, then derived variables.
@@ -110,8 +107,7 @@ def _join_c(
     batch_dim2: int,
     return_log: bool = False,
 ) -> ComplexTensor:
-    r"""
-    Joins two c tensors by computing their outer product.
+    r"""Joins two c tensors by computing their outer product.
 
     This helper function computes the outer product of c1 and c2 in log space for
     numerical stability, then reshapes to the final output shape.
@@ -141,8 +137,8 @@ def _join_c(
     c2_flat = math.reshape(c2, (*batch2, c2_flat_size))
 
     # Broadcast to output batch shape
-    c1_bc = math.broadcast_to(c1_flat, (*output_batch_shape, c1_flat_size), dtype=math.complex128)
-    c2_bc = math.broadcast_to(c2_flat, (*output_batch_shape, c2_flat_size), dtype=math.complex128)
+    c1_bc = math.broadcast_to(c1_flat, (*output_batch_shape, c1_flat_size))
+    c2_bc = math.broadcast_to(c2_flat, (*output_batch_shape, c2_flat_size))
 
     # Compute outer product in log space for numerical stability
     c1_exp = c1_bc[..., :, None]  # Add axis for outer product
@@ -166,8 +162,7 @@ def _join_c(
 def batch_indexer_info(
     indexer: IndexerType, batch_dims: int
 ) -> tuple[tuple[int | slice, ...], int, int]:
-    r"""
-    Process the indexer passed to a __getitem__ call and return
+    r"""Process the indexer passed to a __getitem__ call and return
     the batch index and the number of removed and inserted batch dimensions.
 
     Args:
@@ -186,7 +181,7 @@ def batch_indexer_info(
     indexer = (indexer,) if not isinstance(indexer, tuple) else indexer
 
     def is_consuming(x: _IndexerTypes) -> bool:
-        return isinstance(x, int | slice)
+        return isinstance(x, (int, slice))
 
     if any((x is not None) and (x is not Ellipsis) and not is_consuming(x) for x in indexer):
         raise TypeError("Only int, slice, None, and Ellipsis are supported for batch indexing.")
@@ -212,7 +207,7 @@ def batch_indexer_info(
 def _batch_indexer_info_return_values(
     expanded: list[_IndexerTypes],
 ) -> tuple[list[_IndexerTypes], int, int]:
-    "Helper function to return the final index, the number of removed batch dimensions, and the number of inserted batch dimensions."
+    """Helper function to return the final index, the number of removed batch dimensions, and the number of inserted batch dimensions."""
     final_index: list[_IndexerTypes] = []
     removed_by_int = 0
     inserted_by_none = 0
@@ -231,11 +226,10 @@ def _batch_indexer_info_return_values(
 
 
 def generate_batch_str(batch_dim: int, offset: int = 0) -> str:
-    r"""
-    Generate a string of characters to represent the batch dimensions.
+    r"""Generate a string of characters to represent the batch dimensions.
 
     Args:
-        batch_shape: The shape of the batch dimensions.
+        batch_dim: The number of batch dimensions.
         offset: The offset of the characters.
 
     Returns:
@@ -252,9 +246,8 @@ def join_Abc(
     b2: ComplexVector,
     c2: ComplexTensor,
     return_log_c: bool = False,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` by block-diagonal concatenation of the
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` by block-diagonal concatenation of the
     A matrices and concatenation of the b vectors. The c tensor is computed as the outer product of the
     c tensors of the two input triples.
 
@@ -338,10 +331,10 @@ def join_Abc(
     output_batch_shape = np.broadcast_shapes(batch1, batch2)
 
     # Broadcast A and b to common batch shape before joining
-    A1_bc = math.broadcast_to(A1, (*output_batch_shape, nA1, mA1), dtype=math.complex128)
-    A2_bc = math.broadcast_to(A2, (*output_batch_shape, nA2, mA2), dtype=math.complex128)
-    b1_bc = math.broadcast_to(b1, (*output_batch_shape, nA1), dtype=math.complex128)
-    b2_bc = math.broadcast_to(b2, (*output_batch_shape, nA2), dtype=math.complex128)
+    A1_bc = math.broadcast_to(A1, (*output_batch_shape, nA1, mA1))
+    A2_bc = math.broadcast_to(A2, (*output_batch_shape, nA2, mA2))
+    b1_bc = math.broadcast_to(b1, (*output_batch_shape, nA1))
+    b2_bc = math.broadcast_to(b2, (*output_batch_shape, nA2))
 
     # Join A and b using helper function
     A, b = _join_Ab(A1_bc, b1_bc, A2_bc, b2_bc, m1, m2)
@@ -353,8 +346,7 @@ def join_Abc(
 
 
 def lin_sup_batch_str(batch_str: str) -> str:
-    r"""
-    Given a batch string, appends the linear superposition batch dimension to the end.
+    r"""Given a batch string, appends the linear superposition batch dimension to the end.
 
     Args:
         batch_str: The batch string to append the linear superposition batch dimension to.
@@ -372,8 +364,7 @@ def lin_sup_batch_str(batch_str: str) -> str:
 
 
 def outer_product_batch_str(*batch_dims: int, lin_sup: tuple[int, ...] | None = None) -> str:
-    r"""
-    Creates the einsum string for the outer product of the given tuple of dimensions.
+    r"""Creates the einsum string for the outer product of the given tuple of dimensions.
     E.g. for (2,1,3) it returns ab,c,def->abcdef.
     If lin_sup is provided, the linear superposition dimensions are moved to the end.
     E.g. for (2,1,3) and lin_sup=(0,1) it returns ab,c,def->adefbc, as b and c are the linear superposition dimensions
@@ -404,9 +395,8 @@ def random_Abc(
     batch: tuple[int, ...] = (),
     derived: tuple[int, ...] = (),
     seed: int | None = None,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    Generate a random ``(A, b, c)`` triple for testing purposes.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""Generate a random ``(A, b, c)`` triple for testing purposes.
 
     This function creates random complex-valued (A, b, c) triples with specified
     batch dimensions, core variables, and derived variables (polynomial dimensions).
@@ -435,7 +425,7 @@ def random_Abc(
         >>> # Batched triple with derived variables
         >>> A, b, c = random_Abc(2, batch=(5,), derived=(4,))
         >>> A.shape, b.shape, c.shape
-        ((5, 2, 2), (5, 2), (5, 4))
+        ((5, 3, 3), (5, 3), (5, 4))
     """
     m = len(derived)
     n = core_vars
@@ -472,8 +462,7 @@ def reshape_args_to_batch_string(
     args: list[ArrayLike],
     batch_string: str,
 ) -> tuple[list[ArrayLike], tuple[int, ...]]:
-    r"""
-    Reshapes arguments to match the batch string by inserting singleton dimensions where needed
+    r"""Reshapes arguments to match the batch string by inserting singleton dimensions where needed
     so that they are broadcastable.
     E.g. given two arrays of shape (2,7) and (3,7) and string ab,cb->abc, it reshapes them to
     shape (2,7,1) and (1,7,3).
@@ -508,10 +497,9 @@ def reshape_args_to_batch_string(
 def verify_triple(
     A: ComplexMatrix,
     b: ComplexVector,
-    c: ComplexTensor,
+    c: ComplexScalar,
 ) -> None:
-    r"""
-    Verify that both the batch and core dimensions of the ``(A, b, c)`` triple are consistent.
+    r"""Verify that both the batch and core dimensions of the ``(A, b, c)`` triple are consistent.
 
     ``A`` and ``b`` must have core dimensions ``(N, N)`` and ``(N,)``, respectively.
 
@@ -545,8 +533,6 @@ def verify_triple(
 
 
 def zip_batch_strings(*batch_dims: int) -> str:
-    r"""
-    Creates a batch string for zipping over the batch dimensions.
-    """
+    r"""Creates a batch string for zipping over the batch dimensions."""
     input_str = ",".join([generate_batch_str(batch_dim) for batch_dim in batch_dims])
     return input_str + "->" + generate_batch_str(max(batch_dims))

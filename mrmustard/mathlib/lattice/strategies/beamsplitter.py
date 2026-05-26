@@ -26,7 +26,7 @@ import numpy as np
 from numba import njit
 
 from mrmustard.mathlib.lattice import steps
-from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
+from mrmustard.utils.typing import ComplexTensor
 
 __all__ = [
     "beamsplitter_schwinger",
@@ -40,7 +40,7 @@ def beamsplitter_vjp(
     dLdG: ComplexTensor,
     theta: float,
     phi: float,
-) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
+) -> tuple[complex, complex]:  # pragma: no cover
     r"""Beamsplitter gradients with respect to theta and phi.
     This function could return dL/dA, dL/db, dL/dc like its vanilla counterpart,
     but it is more efficient to include this chain rule step in the numba function,
@@ -54,13 +54,13 @@ def beamsplitter_vjp(
               [i ct exp, 0]]
 
     Args:
-        G (np.ndarray): Tensor result of the forward pass
-        dLdG (np.ndarray): gradient of the loss with respect to the output tensor
-        theta (float): beamsplitter angle
-        phi (float): beamsplitter phase
+        G: Tensor result of the forward pass
+        dLdG: gradient of the loss with respect to the output tensor
+        theta: beamsplitter angle
+        phi: beamsplitter phase
 
     Returns:
-        tuple[float, float]: dL/dtheta, dL/dphi
+        dL/dtheta, dL/dphi
     """
     M, N, P, Q = G.shape
 

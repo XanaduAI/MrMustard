@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a displacement gate.
-"""
+"""The class representing a displacement gate."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["Dgate"]
 
 
 class Dgate(Unitary):
-    r"""
-    The displacement gate.
+    r"""The displacement gate.
 
     >>> from mrmustard.lab import Dgate
     >>> unitary = Dgate(mode=1, alpha=0.1 + 0.2j)
@@ -42,6 +39,7 @@ class Dgate(Unitary):
     Args:
         mode: The mode this gate is applied to.
         alpha: The displacement in the complex phase space.
+        name: A name for the gate. If not provided, the class name will be used.
 
     .. details::
 
@@ -68,10 +66,12 @@ class Dgate(Unitary):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         alpha: complex | Sequence[complex] | Parameter = 0.0 + 0.0j,
+        name: str | None = None,
     ) -> None:
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={
@@ -80,6 +80,6 @@ class Dgate(Unitary):
                 }
             ),
             wires=Wires(modes_in_ket=set(mode), modes_out_ket=set(mode)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["alpha"] = Parameter.from_cc_init(alpha, "complex128", f"{self.name}/alpha")

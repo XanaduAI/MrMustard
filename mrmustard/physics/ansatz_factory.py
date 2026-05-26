@@ -12,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains the ``AnsatzFactory`` class.
-"""
+"""This module contains the ``AnsatzFactory`` class."""
 
 from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any
 
 from mrmustard import math
@@ -32,8 +30,7 @@ __all__ = ["AnsatzFactory"]
 
 
 class AnsatzFactory:
-    r"""
-    A base class for ansatz factories.
+    r"""A base class for ansatz factories.
     Takes a function that represents the ansätze and generates new ansätze given parameters.
     Caches the ansätze for given parameters and representation.
 
@@ -47,7 +44,9 @@ class AnsatzFactory:
     """
 
     def __init__(
-        self, ansatz_dict: dict[ReprEnum, tuple[Callable[..., Ansatz], list[str]]], **kwargs
+        self,
+        ansatz_dict: Mapping[ReprEnum, tuple[Callable[..., Ansatz], tuple[str, ...]]],
+        **kwargs,
     ) -> None:
         if not ansatz_dict:
             raise ValueError(
@@ -58,25 +57,20 @@ class AnsatzFactory:
         self._ansatz_dict = ansatz_dict
 
     @property
-    def ansatz_dict(self) -> dict[ReprEnum, Callable[..., Ansatz]]:
-        r"""
-        The ansatz generating functions of this ansatz factory.
-        """
+    def ansatz_dict(self) -> Mapping[ReprEnum, tuple[Callable[..., Ansatz], tuple[str, ...]]]:
+        r"""The ansatz generating functions of this ansatz factory."""
         return self._ansatz_dict
 
     @property
     def additional_args(self) -> dict[str, Any]:
-        r"""
-        The additional arguments to pass into the ansatz functions.
-        """
+        r"""The additional arguments to pass into the ansatz functions."""
         return self._additional_args
 
     @classmethod
     def from_ansatz(
         cls, ansatz: Ansatz, representation: ReprEnum | None = None
     ) -> tuple[AnsatzFactory, ReprEnum]:
-        r"""
-        Creates an AnsatzFactory from an Ansatz.
+        r"""Creates an AnsatzFactory from an Ansatz.
 
         Args:
             ansatz: The ansatz to create the AnsatzFactory from.
@@ -92,8 +86,7 @@ class AnsatzFactory:
         return cls(ansatz_dict={representation: (lambda **kwargs: ansatz, ())}), representation
 
     def get_cached_ansatz(self, representation: ReprEnum, **kwargs: Any) -> Ansatz | None:
-        r"""
-        Retrieves the cached ansatz for the given kwargs.
+        r"""Retrieves the cached ansatz for the given kwargs.
         Returns None if caching should be skipped.
 
         Args:
@@ -110,8 +103,7 @@ class AnsatzFactory:
         return cached.get(hashed, None)
 
     def _hash_kwargs(self, **kwargs: Any) -> str:
-        r"""
-        Efficiently hash keyword arguments for caching.
+        r"""Efficiently hash keyword arguments for caching.
 
         Args:
             **kwargs: Keyword arguments to hash.
@@ -123,8 +115,7 @@ class AnsatzFactory:
         return hashlib.sha256(json_data.encode("utf-8")).hexdigest()
 
     def _prepare_hashable(self, obj: Any) -> Any:  # noqa: PLR0911
-        r"""
-        Recursively converts unhashable types into hashable/serializable types.
+        r"""Recursively converts unhashable types into hashable/serializable types.
         Note: if the backend is JAX, ``Tracer`` objects are skipped.
 
         Args:
@@ -142,7 +133,7 @@ class AnsatzFactory:
                 return None
         if isinstance(obj, dict):
             return {k: self._prepare_hashable(obj[k]) for k in sorted(obj.keys())}
-        if isinstance(obj, list | tuple):
+        if isinstance(obj, (list, tuple)):
             return [self._prepare_hashable(i) for i in obj]
         if isinstance(obj, complex):
             return ["__complex__", obj.real, obj.imag]
@@ -153,8 +144,7 @@ class AnsatzFactory:
         return obj
 
     def _set_cached_ansatz(self, ansatz: Ansatz, representation: ReprEnum, **kwargs: Any) -> None:
-        r"""
-        Caches the ansatz for the given kwargs.
+        r"""Caches the ansatz for the given kwargs.
         Skips caching if hashing returns None.
 
         Args:
@@ -173,8 +163,7 @@ class AnsatzFactory:
             self._ansatz_cache[representation][hashed] = ansatz
 
     def __call__(self, representation: ReprEnum, **kwargs: Any) -> Ansatz:
-        r"""
-        Generates the ansatz of this ansatz factory.
+        r"""Generates the ansatz of this ansatz factory.
 
         Args:
             representation: The representation to compute the ansatz for.

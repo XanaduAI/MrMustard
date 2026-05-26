@@ -33,7 +33,8 @@ class TestPhaseNoise:
         assert ch.name == "PhaseNoise"
         assert ch.parameters.phase_stdev.value == 0.2
         assert ch.modes == (0,)
-        assert ch.ansatz is None
+        with pytest.raises(AttributeError, match="no ansatz factory"):
+            _ = ch.ansatz
 
     @pytest.mark.parametrize("batch_shape", [(), (2,), (2, 1)])
     def test_application(self, batch_shape):

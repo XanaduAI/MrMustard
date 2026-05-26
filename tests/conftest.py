@@ -12,25 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 
 import pytest
-from hypothesis import Verbosity
-from hypothesis import settings as hyp_settings
 
 from mrmustard import math
 
 print("pytest.conf -----------------------")
-
-# ~~~~~~~~~~
-# Hypothesis
-# ~~~~~~~~~~
-
-hyp_settings.register_profile("ci", max_examples=10, deadline=None)
-hyp_settings.register_profile("dev", max_examples=10, deadline=None)
-hyp_settings.register_profile("debug", max_examples=10, verbosity=Verbosity.verbose, deadline=None)
-
-hyp_settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "dev"))
 
 # ~~~~~~
 # Pytest
