@@ -111,7 +111,6 @@ The `math` module
     transpose
     unitary_to_orthogonal
     update_add_tensor
-    update_tensor
     value_and_gradients
     xlogy
     zeros
@@ -127,6 +126,6 @@ The `math` module
         iscomplexobj, isnan, issubdtype, kron, lgamma, log, make_complex, map_fn, matmul, matvec, max, maximum, minimum,
         mod, moveaxis, norm, ones, ones_like, outer, pad, pinv, pow, prod, random_orthogonal, random_symplectic,
         random_unitary, real, reshape, rotmat, shape, sin, sinh, solve, sort, sqrt, sqrtm, squeezed, squeezer, stack,
-        sum, swapaxes, tensordot, tile, trace, transpose, unitary_to_orthogonal, update_add_tensor, update_tensor,
+        sum, swapaxes, tensordot, tile, trace, transpose, unitary_to_orthogonal, update_add_tensor,
         value_and_gradients, xlogy, zeros, zeros_like
 

@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath("_ext"))
 # -- Project information -----------------------------------------------------
 
 project = "MrMustard"
-copyright = "2022, Xanadu Quantum Technologies"  # noqa: A001
+copyright = "2022-2026, Xanadu Quantum Technologies"  # noqa: A001
 author = "Filippo Miatto"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -78,22 +78,31 @@ master_doc = "index"
 
 autodoc_typehints = "description"
 autodoc_type_aliases = {
-    "ComplexMatrix": "ComplexMatrix",
-    "ComplexTensor": "ComplexTensor",
-    "ComplexVector": "ComplexVector",
-    "IntMatrix": "IntMatrix",
-    "IntTensor": "IntTensor",
-    "IntVector": "IntVector",
-    "Matrix": "Matrix",
-    "RealMatrix": "RealMatrix",
-    "RealTensor": "RealTensor",
-    "RealVector": "RealVector",
-    "Scalar": "Scalar",
-    "Tensor": "Tensor",
-    "UIntMatrix": "UIntMatrix",
-    "UIntTensor": "UIntTensor",
-    "UIntVector": "UIntVector",
-    "Vector": "Vector",
+    "ArrayLike": "ArrayLike",
+    "DTypeLike": "DTypeLike",
+    "BoolScalar": "mrmustard.utils.typing.BoolScalar",
+    "BoolScalarValue": "mrmustard.utils.typing.BoolScalarValue",
+    "ComplexMatrix": "mrmustard.utils.typing.ComplexMatrix",
+    "ComplexScalar": "mrmustard.utils.typing.ComplexScalar",
+    "ComplexScalarValue": "mrmustard.utils.typing.ComplexScalarValue",
+    "ComplexTensor": "mrmustard.utils.typing.ComplexTensor",
+    "ComplexVector": "mrmustard.utils.typing.ComplexVector",
+    "IntMatrix": "mrmustard.utils.typing.IntMatrix",
+    "IntScalar": "mrmustard.utils.typing.IntScalar",
+    "IntScalarValue": "mrmustard.utils.typing.IntScalarValue",
+    "IntTensor": "mrmustard.utils.typing.IntTensor",
+    "IntVector": "mrmustard.utils.typing.IntVector",
+    "Matrix": "mrmustard.utils.typing.Matrix",
+    "RealMatrix": "mrmustard.utils.typing.RealMatrix",
+    "RealScalar": "mrmustard.utils.typing.RealScalar",
+    "RealScalarValue": "mrmustard.utils.typing.RealScalarValue",
+    "RealTensor": "mrmustard.utils.typing.RealTensor",
+    "RealVector": "mrmustard.utils.typing.RealVector",
+    "Scalar": "mrmustard.utils.typing.Scalar",
+    "ScalarValue": "mrmustard.utils.typing.ScalarValue",
+    "Tensor": "mrmustard.utils.typing.Tensor",
+    "Trainable": "mrmustard.utils.typing.Trainable",
+    "Vector": "mrmustard.utils.typing.Vector",
 }
 autosummary_generate = True
 autosummary_imported_members = False

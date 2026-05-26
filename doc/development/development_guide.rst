@@ -6,8 +6,8 @@ Dependencies
 
 MrMustard requires the following to be installed:
 
-* `Python <http://python.org/>`_ >= 3.11, <3.14
-* `uv <https://github.com/astral-sh/uv>`_ >= 0.7.0
+* `Python <http://python.org/>`_ >= 3.12, <3.14
+* `uv <https://github.com/astral-sh/uv>`_ >= 0.11.0
 
 Installation
 ------------
@@ -39,8 +39,7 @@ Software tests
 --------------
 
 The MrMustard test suite includes `pytest <https://docs.pytest.org/en/latest/>`_,
-`pytest-cov <https://pytest-cov.readthedocs.io/en/latest/>`_ for coverage reports and
-`hypothesis <https://hypothesis.readthedocs.io/en/latest/>`_ for property-based testing.
+`pytest-cov <https://pytest-cov.readthedocs.io/en/latest/>`_ for coverage reports.
 
 To ensure that MrMustard is working correctly after installation, the test suite
 can be run by navigating to the source code folder and running

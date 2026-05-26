@@ -28,9 +28,6 @@ The `settings` module
 .. autoattribute:: mrmustard.settings.settings::Settings.DEFAULT_REPRESENTATION
    :annotation: Literal["Bargmann", "Fock", None] = "Fock"
 
-.. autoattribute:: mrmustard.settings.settings::Settings.DISCRETIZATION_METHOD
-   :annotation: Literal["clenshaw", "iterative"] = "clenshaw"
-
 .. autoattribute:: mrmustard.settings.settings::Settings.DRAW_CIRCUIT_PARAMS
    :annotation: bool = True
 
