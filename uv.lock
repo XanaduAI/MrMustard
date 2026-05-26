@@ -1445,6 +1445,7 @@ jax-backend = [
 dev = [
     { name = "cython" },
     { name = "cython-lint" },
+    { name = "meson-python" },
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "pytest" },
@@ -1501,6 +1502,7 @@ provides-extras = ["jax-backend"]
 dev = [
     { name = "cython", specifier = ">=3.1.4" },
     { name = "cython-lint", specifier = ">=0.18.1" },
+    { name = "meson-python", specifier = ">=0.16.0" },
     { name = "pre-commit", specifier = "==3.7.1" },
     { name = "pyright", specifier = ">=1.1.408" },
     { name = "pytest", specifier = "==8.4.1" },

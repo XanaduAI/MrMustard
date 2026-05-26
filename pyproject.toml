@@ -63,6 +63,7 @@ jax_backend = [
 dev = [
     "cython>=3.1.4",
     "cython-lint>=0.18.1",
+    "meson-python>=0.16.0",  # build backend; required in the venv because of no-build-isolation-package
     "pre-commit==3.7.1",
     "pyright>=1.1.408",
     "pytest==8.4.1",
@@ -212,6 +213,3 @@ cache-keys = [
     { file = "pyproject.toml" },
     { dir = "build" },
 ]
-
-[tool.uv.extra-build-dependencies]
-mrmustard = ["mesonpy"]
