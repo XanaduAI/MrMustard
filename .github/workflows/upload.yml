@@ -16,7 +16,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "0.8.11"
+          version: "0.11.3"
           python-version: "3.14"
 
       - name: Build and install Mr Mustard
