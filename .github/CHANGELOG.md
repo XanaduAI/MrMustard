@@ -2,6 +2,20 @@
 
 ### Breaking changes
 
+* Deprecated `CircuitComponent.ansatz` returning `None`.
+
+* Deprecated passing an `Ansatz` into `__mul__`.
+
+* Updated `ComputationalGraph` to make use of `mm_einsum` sublist style calls.
+
+* Deprecated `mm_einsum` support for `ArrayLike` operands.
+
+* Removed `DISCRETIZATION_METHOD`; Wigner computation now uses only Clenshaw.
+
+* Bumped minimum pydantic to version 2.11 to support @cached_property directly.
+
+* Dropped support for Python 3.11.
+
 * Deprecated `Circuit` in the `lab` module.
 
 * Updated `lab` to use the new `AnsatzFactory` under the hood.
@@ -53,7 +67,48 @@ implementation `math.cython_lattice.beamsplitter`.
 * Changed the API of `Coherent`, `DisplacedSqueezed`, `Dgate` from real `x`, `y` parameters to a complex `alpha`.
 [(#617)](https://github.com/XanaduAI/MrMustard/pull/617)
 
+### New features
+
+* Added the new `Circuit` class.
+
+* Added Siegel-disk Riemannian optimization (Bergman metric) for complex symmetric matrices with operator norm < 1, via `Variable.siegel` and `Optimizer(siegel_lr=...)`.
+
+* Introduced the `ComputationalGraph`, a class to represent computations where nodes are components and edges are tensor contractions.
+
 ### Improvements
+
+* Added the `Kgate` (Kerr) non-Gaussian single-mode unitary, diagonal in the Fock basis
+with entries :math:`e^{i\kappa n*(n-1)}`.
+
+* Added support for Python 3.14.
+
+* Added native jax version of the vanilla hermite_renormalized function.
+
+* `Optimizer` now catches `KeyboardInterrupt` during `minimize` and returns the current variable values instead of crashing. Added an opt-in `parameter_history` flag to `Optimizer.minimize` that stores intermediate variable values at each step in `Optimizer.parameter_history`.
+
+* Updated `mm_einsum` to support a sublist signature. As a result, contractions are no longer constrained to the number of supported characters.
+
+* Added `fock_config` and `representation_config` to `ComputationalGraph`.
+
+* Updated `ComputationalGraph` to do things in standard order.
+
+* `oscillator_eigenstate` now supports arbitrary batch dimensions.
+
+* Updated built-in `CircuitComponent`s to expose a `name` argument for users.
+
+* Added `fock_diagonals_1leftover` (in `mrmustard.mathlib.lattice.strategies.fock_diagonals`), a numerically stable and exact algorithm for computing conditional density matrices.
+
+* Added the `CircuitComponent.from_fock` classmethod.
+
+* Added `WIGNER_2D_RESOLUTION` and `WIGNER_BOUNDS` settings for the single-mode state repr Wigner plot.
+
+* Fixed `hermite_renormalized`: user-provided `stable` now overrides `STABLE_FOCK_CONVERSION`.
+
+* Added `visualize_2d_with_arrows` to `State`.
+
+* Made `fock_diagonals` numerically stable (in `mrmustard.mathlib.lattice.strategies.fock_diagonals`). It computes the multimode Fock diagonal / photon-number probabilities of a Gaussian operator.
+
+* Added `max_disp` as a keyword argument to `GaussianKet.random` and `GaussianDM.random`. When given, each mode is displaced by a random complex amplitude sampled uniformly from the disk of radius `max_disp`.
 
 * Added `tan`, `tanh`, `argmax`, `argmin`, `argsort`, and `mean` functions to the math backend.
 
@@ -151,11 +206,18 @@ representations by setting `settings.DEFAULT_REPRESENTATION` to `None`.
 * Added a ``rich`` based repr to ``ParameterSet``.
 [(#616)](https://github.com/XanaduAI/MrMustard/pull/616)
 
-* Added the `Kgate` (Kerr) non-Gaussian single-mode unitary, diagonal in the Fock basis
-with entries :math:`e^{i\kappa n*(n-1)}`.
-[(#653)](https://github.com/XanaduAI/MrMustard/pull/653)
-
 ### Bug fixes
+
+* Fixed a bug in `ComputationalGraph` where generic `CircuitComponent` subclasses were populating the `ansatz_dict`.
+
+* Tests will now all pass on GPU when selecting the JAX backend.
+
+* Moved `jax.config` logic from `mrmustard/math/backend_jax.py` into `mrmustard/__init__.py` to ensure settings are updated even when the backend is
+  not set to `jax`.
+
+* Added an absolute tolerance of `1e-20` to the check that a determinant in `complex_gaussian_integral_2_jitted` is close to `0` to mitigate underflows.
+
+* Fixed a bug in `mm_einsum` where the user-supplied path would only work for the Bargmann contraction. Now it works all the way through.
 
 * Fixed a bug in `CircuitComponent.quadrature` where einsum fock indices collided with mode indices for states on non-zero modes (e.g. a single-mode DM on mode 1 after tracing), forcing the number of quadrature points to equal the Fock cutoff and silently giving wrong results.
 
