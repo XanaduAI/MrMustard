@@ -25,7 +25,10 @@ incdir_numpy = run_command(py,
   check: true
 ).stdout().strip()
 
-inc_np = include_directories(incdir_numpy)
+# Use a compile arg instead of include_directories() so the path is accepted
+# even when it lives inside the source tree (e.g. an in-project .venv built
+# with build isolation disabled).
+np_dep = declare_dependency(compile_args: ['-I' + incdir_numpy])
 
 # OpenMP dependency
 omp_dep = dependency('openmp', required: get_option('use_openmp'))

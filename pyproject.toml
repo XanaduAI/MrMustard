@@ -31,6 +31,8 @@ classifiers = [
 ]
 requires-python = ">=3.11,<3.14"
 dependencies = [
+    "meson-python>=0.16.0",  # needed for editable installs of MrMustard
+    "ninja>=1.13.0",         # needed for editable installs of MrMustard
     "anywidget >=0.9.0,<1",
     "importlib-resources>=6.5.2,<7",
     "ipython >=8.18.1",
@@ -190,6 +192,7 @@ ignore = [
 
 [tool.uv]
 required-version = ">=0.8.11"
+no-build-isolation-package = ["mrmustard"]
 cache-keys = [
     { file = "pyproject.toml" },
     { dir = "build" },
