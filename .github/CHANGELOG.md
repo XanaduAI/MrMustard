@@ -157,6 +157,9 @@ with entries :math:`e^{i\kappa n*(n-1)}`.
 
 ### Bug fixes
 
+* Fixed editable installs failing with a `FileNotFoundError` on `ninja` when re-running `uv run` (build isolation is now disabled for `mrmustard` so the rebuild hook uses the environment's stable `ninja`/`meson`).
+[(#655)](https://github.com/XanaduAI/MrMustard/pull/655)
+
 * Fixed a bug in `CircuitComponent.quadrature` where einsum fock indices collided with mode indices for states on non-zero modes (e.g. a single-mode DM on mode 1 after tracing), forcing the number of quadrature points to equal the Fock cutoff and silently giving wrong results.
 
 * Fixed a bug in `beamsplitter.pyx::beamsplitter_c` and `beamsplitter.pyx::beamsplitter_stable_c`that would cause builds on Windows to fail.
