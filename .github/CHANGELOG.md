@@ -77,9 +77,6 @@ implementation `math.cython_lattice.beamsplitter`.
 
 ### Improvements
 
-* Added the `Kgate` (Kerr) non-Gaussian single-mode unitary, diagonal in the Fock basis
-with entries :math:`e^{i\kappa n*(n-1)}`.
-
 * Added support for Python 3.14.
 
 * Added native jax version of the vanilla hermite_renormalized function.
@@ -187,6 +184,10 @@ matrix is provided and a random interferometer is to be generated.
 
 * Added ability to raise when contracting two circuit components in different
 representations by setting `settings.DEFAULT_REPRESENTATION` to `None`.
+
+* Added the `Kgate` (Kerr) non-Gaussian single-mode unitary, diagonal in the Fock basis
+with entries :math:`e^{i\kappa n*(n-1)}`.
+[(#653)](https://github.com/XanaduAI/MrMustard/pull/653)
 
 * Added support for Python 3.13.
 [(#640)](https://github.com/XanaduAI/MrMustard/pull/640)
