@@ -27,12 +27,3 @@ repos:
   hooks:
     - id: clang-format
       args: [-i, --style=file]
-- repo: local
-  hooks:
-    - id: pyright
-      name: pyright
-      entry: pyright
-      language: system
-      'types_or': [python, pyi]
-      require_serial: true
-      files: ^MrMustard/mrmustard/parameters/

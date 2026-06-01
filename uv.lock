@@ -1446,7 +1446,6 @@ dev = [
     { name = "cython" },
     { name = "cython-lint" },
     { name = "pre-commit" },
-    { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -1502,7 +1501,6 @@ dev = [
     { name = "cython", specifier = ">=3.1.4" },
     { name = "cython-lint", specifier = ">=0.18.1" },
     { name = "pre-commit", specifier = "==3.7.1" },
-    { name = "pyright", specifier = ">=1.1.408" },
     { name = "pytest", specifier = "==8.4.1" },
     { name = "pytest-cov", specifier = ">=5.0.0,<6.0.0" },
     { name = "ruff", specifier = ">=0.15.0,<0.16.0" },
@@ -2179,19 +2177,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/83/fa/8bf4fa41adfebd95dce360afe3f5fca243a17932089d3d5486e95ca44c57/pyproject_metadata-0.11.0.tar.gz", hash = "sha256:c72fa49418bb7c5a10f25e050c418009898d1c051721d19f98a6fb6da59a66cf", size = 43799, upload-time = "2026-02-09T19:12:50.578Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1d/0b/da4851b1e2d9c40c9bd74c0abd94510a7d797da9ccde0a90e8953751ed4a/pyproject_metadata-0.11.0-py3-none-any.whl", hash = "sha256:85bbecca8694e2c00f63b492c96921d6c228454057c88e7c352b2077fcaa4096", size = 22040, upload-time = "2026-02-09T19:12:49.184Z" },
-]
-
-[[package]]
-name = "pyright"
-version = "1.1.409"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "nodeenv" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/51/4e/3aa27f74211522dba7e9cbc3e74de779c6d4b654c54e50a4840623be8014/pyright-1.1.409.tar.gz", hash = "sha256:986ee05beca9e077c165758ad123667c679e050059a2546aa02473930394bc93", size = 4430434, upload-time = "2026-04-23T11:02:03.799Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/16/6b/330d8ebae582b30c2959a1ef4c3bc344ebde48c2ff0c3f113c4710735e11/pyright-1.1.409-py3-none-any.whl", hash = "sha256:aa3ea228cab90c845c7a60d28db7a844c04315356392aa09fafcee98c8c22fb3", size = 6438161, upload-time = "2026-04-23T11:02:01.309Z" },
 ]
 
 [[package]]

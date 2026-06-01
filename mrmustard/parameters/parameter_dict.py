@@ -23,8 +23,8 @@ from copy import deepcopy as _deepcopy
 from typing import Any
 
 import numpy as np
-from rich.console import Console  # pyright: ignore[reportMissingImports]
-from rich.table import Table  # pyright: ignore[reportMissingImports]
+from rich.console import Console
+from rich.table import Table
 
 from mrmustard.math.backend_manager import BackendManager
 
