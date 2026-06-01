@@ -7,7 +7,7 @@ Dependencies
 MrMustard requires the following to be installed:
 
 * `Python <http://python.org/>`_ >= 3.12, <3.14
-* `uv <https://github.com/astral-sh/uv>`_ >= 0.11.0
+* `uv <https://github.com/astral-sh/uv>`_ >= 0.8.11
 
 Installation
 ------------
