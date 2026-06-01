@@ -232,6 +232,9 @@ representations by setting `settings.DEFAULT_REPRESENTATION` to `None`.
 
 * Fixed a bug that prevented `Number` from being JIT compiled in the JAX backend.
 
+* Fixed editable installs failing with a `FileNotFoundError` on `ninja` when re-running `uv run` (build isolation is now disabled for `mrmustard` so the rebuild hook uses the environment's stable `ninja`/`meson`).
+[(#655)](https://github.com/XanaduAI/MrMustard/pull/655)
+
 * Fixed bug in Gaussian integrals where small/large c values were not multiplying correctly.
 [(#641)](https://github.com/XanaduAI/MrMustard/pull/641)
 
