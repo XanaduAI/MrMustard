@@ -86,11 +86,10 @@ def W_fock(q_vec, p_vec, n):
 class TestWignerDiscretized:
     r"""Tests discretized Wigner functions (DWF) for various states"""
 
-    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     @pytest.mark.parametrize("hbar", [1, 2])
-    def test_cat_state(self, method, hbar):
+    def test_cat_state(self, hbar):
         r"""Tests DWF for cat states"""
-        with settings(DISCRETIZATION_METHOD=method, HBAR=hbar):
+        with settings(HBAR=hbar):
             q_vec = np.linspace(-4, 4, 100)
             p_vec = np.linspace(-1.5, 1.5, 100)
 
@@ -107,12 +106,10 @@ class TestWignerDiscretized:
 
     @pytest.mark.parametrize("alpha", [0 + 0j, 3 + 3j])
     @pytest.mark.parametrize("hbar", [2, 3])
-    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
-    def test_coherent_state(self, alpha, hbar, method):
+    def test_coherent_state(self, alpha, hbar):
         r"""Tests DWF for coherent states"""
 
         with settings(
-            DISCRETIZATION_METHOD=method,
             HBAR=hbar,
             AUTOSHAPE_MIN=100,
             AUTOSHAPE_MAX=150,
@@ -138,10 +135,9 @@ class TestWignerDiscretized:
 
     @pytest.mark.parametrize("n", [2, 6])
     @pytest.mark.parametrize("hbar", [2, 3])
-    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
-    def test_fock_state(self, n, hbar, method):
+    def test_fock_state(self, n, hbar):
         r"""Tests DWF for fock states"""
-        with settings(DISCRETIZATION_METHOD=method, HBAR=hbar):
+        with settings(HBAR=hbar):
             q_vec = np.linspace(-1, 1, 20)
             p_vec = np.linspace(-1, 1, 20)
 
@@ -153,12 +149,9 @@ class TestWignerDiscretized:
             assert np.allclose(q_mat.T, q_vec)
             assert np.allclose(p_mat, p_vec)
 
-    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
-    def test_squeezed_vacuum_both_method_succeed(self, method):
-        r"""Tests DWF for a squeezed vacuum state with squeezing s=1.
-        Both discretization methods are expected to pass successfully.
-        """
-        with settings(DISCRETIZATION_METHOD=method, AUTOSHAPE_MIN=100, AUTOSHAPE_MAX=150):
+    def test_squeezed_vacuum(self):
+        r"""Tests DWF for a squeezed vacuum state with squeezing s=1."""
+        with settings(AUTOSHAPE_MIN=100, AUTOSHAPE_MAX=150):
             q_vec = np.linspace(-0.5, 0.5, 50)
             p_vec = np.linspace(-5, 5, 50)
 
@@ -174,24 +167,3 @@ class TestWignerDiscretized:
             assert np.allclose(W_mm, W_th, atol=1e-4)
             assert np.allclose(q_mat.T, q_vec)
             assert np.allclose(p_mat, p_vec)
-
-    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
-    def test_squeezed_vacuum_iterative_fails(self, method):
-        r"""Tests DWF for a squeezed vacuum state with squeezing s=2.
-        The iterative method cannot produce a DWF that matched with the analytical one.
-        """
-        with settings(DISCRETIZATION_METHOD=method, AUTOSHAPE_MIN=100, AUTOSHAPE_MAX=150):
-            q_vec = np.linspace(-0.2, 0.2, 50)
-            p_vec = np.linspace(-5, 5, 50)
-
-            s = 2
-            state = SqueezedVacuum(0, s)
-            W_mm, _, _ = wigner_discretized(
-                state.dm().fock_array(100, standard_order=True),
-                q_vec,
-                p_vec,
-            )
-            W_th = W_coherent(q_vec, p_vec, 0j, s)
-
-            success = np.allclose(W_mm, W_th, atol=1e-4)
-            assert success is False if method == "iterative" else True

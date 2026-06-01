@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains the ``(A, b, c)`` triples for the Fock-Bargmann representation of
+"""This module contains the ``(A, b, c)`` triples for the Fock-Bargmann representation of
 various states and transformations.
 """
 
@@ -24,7 +23,7 @@ from collections.abc import Sequence
 import numpy as np
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector, RealMatrix
+from mrmustard.utils.typing import ComplexMatrix, ComplexScalar, ComplexVector, RealMatrix
 
 from .bargmann_utils import symplectic2Au
 
@@ -65,23 +64,17 @@ __all__ = [
 
 
 def X_matrix_for_unitary(n_modes: int) -> ComplexMatrix:
-    r"""
-    The X matrix for the order of unitaries.
-    """
+    r"""The X matrix for the order of unitaries."""
     return math.cast(math.kron(math.astensor([[0, 1], [1, 0]]), math.eye(n_modes)), math.complex128)
 
 
 def vacuum_A_matrix(n_modes: int) -> ComplexMatrix:
-    r"""
-    The A matrix of the vacuum state.
-    """
+    r"""The A matrix of the vacuum state."""
     return math.zeros((n_modes, n_modes), dtype=math.complex128)
 
 
 def vacuum_B_vector(n_modes: int) -> ComplexVector:
-    r"""
-    The B vector of the vacuum state.
-    """
+    r"""The B vector of the vacuum state."""
     return math.zeros((n_modes,), dtype=math.complex128)
 
 
@@ -90,9 +83,8 @@ def vacuum_B_vector(n_modes: int) -> ComplexVector:
 #  ~~~~~~~~~~~
 
 
-def vacuum_state_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a tensor product of vacuum states on ``n_modes``.
+def vacuum_state_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a tensor product of vacuum states on ``n_modes``.
 
     Args:
         n_modes: The number of modes.
@@ -100,7 +92,6 @@ def vacuum_state_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, Comple
     Returns:
         The ``(A, b, c)`` triple of the vacuum states.
     """
-
     A = vacuum_A_matrix(n_modes)
     b = vacuum_B_vector(n_modes)
     c = math.astensor(1.0 + 0.0j)
@@ -110,9 +101,8 @@ def vacuum_state_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, Comple
 
 def bargmann_eigenstate_Abc(
     alpha: complex | Sequence[complex],
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The Abc triple of a Bargmann eigenstate.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The Abc triple of a Bargmann eigenstate.
 
     Args:
         alpha: The eigenvalue of the Bargmann eigenstate.
@@ -132,9 +122,8 @@ def bargmann_eigenstate_Abc(
 
 def coherent_state_Abc(
     alpha: complex | Sequence[complex],
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a pure coherent state.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a pure coherent state.
 
     Args:
         alpha: The complex displacement.
@@ -156,9 +145,8 @@ def coherent_state_Abc(
 def squeezed_vacuum_state_Abc(
     r: float | Sequence[float],
     phi: float | Sequence[float] = 0.0,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a squeezed vacuum state.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a squeezed vacuum state.
 
     Args:
         r: The squeezing magnitudes.
@@ -184,9 +172,8 @@ def displaced_squeezed_vacuum_state_Abc(
     alpha: complex | Sequence[complex] = 0,
     r: float | Sequence[float] = 0,
     phi: float | Sequence[float] = 0,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a displaced squeezed vacuum state.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a displaced squeezed vacuum state.
 
     Args:
         alpha: The complex displacement.
@@ -223,9 +210,8 @@ def displaced_squeezed_vacuum_state_Abc(
 def two_mode_squeezed_vacuum_state_Abc(
     r: float | Sequence[float],
     phi: float | Sequence[float] = 0,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a two mode squeezed vacuum state.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a two mode squeezed vacuum state.
 
     Args:
         r: The squeezing magnitudes.
@@ -252,8 +238,7 @@ def two_mode_squeezed_vacuum_state_Abc(
 
 
 def gket_state_Abc(symplectic: RealMatrix):
-    r"""
-    The A,b,c parameters of a Gaussian Ket (Gket) state. This is simply a Gaussian acted on the vacuum.
+    r"""The A,b,c parameters of a Gaussian Ket (Gket) state. This is simply a Gaussian acted on the vacuum.
 
     Args:
         symplectic: the symplectic representation of the Gaussian
@@ -277,8 +262,7 @@ def gket_state_Abc(symplectic: RealMatrix):
 
 
 def gdm_state_Abc(beta: ComplexVector, symplectic: RealMatrix):
-    r"""
-    The A,b,c parameters of a Gaussian mixed state that is defined by the action of a Guassian on a thermal state
+    r"""The A,b,c parameters of a Gaussian mixed state that is defined by the action of a Guassian on a thermal state.
 
     Args:
         beta: the list of betas corresponding to the temperatures of the initial thermal state
@@ -289,7 +273,7 @@ def gdm_state_Abc(beta: ComplexVector, symplectic: RealMatrix):
     """
     batch_shape = symplectic.shape[:-2]
     m = len(beta)
-    betas = math.broadcast_to(beta, (*batch_shape, m), dtype=math.complex128)
+    betas = math.broadcast_to(beta, (*batch_shape, m))
     Au = symplectic2Au(symplectic)
     A_udagger_u = math.block(
         [
@@ -327,9 +311,8 @@ def homodyne_projector_Abc(
     homodyne_angle: float | RealMatrix,
     homodyne_outcome: float | RealMatrix,
     hbar: float | None = None,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a homodyne projector.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a homodyne projector.
 
     Args:
         bs_theta: The values of the beamsplitter angles.
@@ -371,9 +354,8 @@ def homodyne_projector_Abc(
     return A_out, b_out, c_out
 
 
-def sauron_state_Abc(n: int, epsilon: float) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The A,b,c parametrization of Sauron states. These are Fock states written as a linear superposition of a
+def sauron_state_Abc(n: int, epsilon: float) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The A,b,c parametrization of Sauron states. These are Fock states written as a linear superposition of a
     ring of coherent states.
 
     Args:
@@ -383,7 +365,6 @@ def sauron_state_Abc(n: int, epsilon: float) -> tuple[ComplexMatrix, ComplexVect
     Returns:
         The ``(A, b, c)`` triple of the sauron state.
     """
-
     phases = np.linspace(0, 2 * np.pi * (1 - 1 / (n + 1)), n + 1)
     cs = math.exp(1j * phases)
     bs = epsilon * cs[..., None]
@@ -403,9 +384,8 @@ def sauron_state_Abc(n: int, epsilon: float) -> tuple[ComplexMatrix, ComplexVect
 def quadrature_eigenstates_Abc(
     x: float | Sequence[float],
     phi: float | Sequence[float],
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a quadrature eigenstate.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a quadrature eigenstate.
 
     Args:
         x: The quadrature eigenvalues.
@@ -437,9 +417,8 @@ def squeezed_thermal_state_Abc(
     nbar: float | Sequence[float],
     r: float | Sequence[float],
     phi: float | Sequence[float] = 0.0,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a squeezed thermal state.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a squeezed thermal state.
 
     Args:
         nbar: The average number of photons.
@@ -481,9 +460,8 @@ def squeezed_thermal_state_Abc(
 
 def thermal_state_Abc(
     nbar: float | Sequence[float],
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a thermal state.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a thermal state.
 
     Args:
         nbar: The average number of photons.
@@ -517,9 +495,8 @@ def thermal_state_Abc(
 
 def rotation_gate_Abc(
     theta: float | Sequence[float],
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of of a tensor product of a rotation gate.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of of a tensor product of a rotation gate.
 
     Args:
         theta: The rotation angles.
@@ -548,9 +525,8 @@ def rotation_gate_Abc(
 
 def displacement_gate_Abc(
     alpha: complex | Sequence[complex],
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a tensor product of a displacement gate.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a tensor product of a displacement gate.
 
     Args:
         alpha: The displacement in the complex phase space.
@@ -573,9 +549,8 @@ def displacement_gate_Abc(
 def squeezing_gate_Abc(
     r: float | Sequence[float],
     phi: float | Sequence[float] = 0,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a squeezing gate.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a squeezing gate.
 
     Args:
         r: The squeezing magnitudes.
@@ -610,9 +585,8 @@ def squeezing_gate_Abc(
 def beamsplitter_gate_Abc(
     theta: float | Sequence[float],
     phi: float | Sequence[float] = 0,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a tensor product of a two-mode beamsplitter gate.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a tensor product of a two-mode beamsplitter gate.
 
     Args:
         theta: The transmissivity parameters.
@@ -649,9 +623,8 @@ def beamsplitter_gate_Abc(
 def twomode_squeezing_gate_Abc(
     r: float | Sequence[float],
     phi: float | Sequence[float] = 0,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a tensor product of a two-mode squeezing gate.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a tensor product of a two-mode squeezing gate.
 
     Args:
         r: The squeezing magnitudes.
@@ -693,9 +666,8 @@ def twomode_squeezing_gate_Abc(
     return A, b, c
 
 
-def identity_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a tensor product of identity gates.
+def identity_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a tensor product of identity gates.
 
     Args:
         n_modes: The number of modes.
@@ -720,9 +692,8 @@ def identity_Abc(n_modes: int) -> tuple[ComplexMatrix, ComplexVector, ComplexTen
 
 def attenuator_Abc(
     transmissivity: float | Sequence[float],
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of an attenuator.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of an attenuator.
 
     Args:
         transmissivity: The values of the transmissivities.
@@ -761,9 +732,8 @@ def attenuator_Abc(
 
 def amplifier_Abc(
     gain: float | Sequence[float],
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of an amplifier.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of an amplifier.
 
     Args:
         gain: The values of the gains.
@@ -804,9 +774,8 @@ def amplifier_Abc(
 
 def fock_damping_Abc(
     damping: float | Sequence[float],
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a Fock damper.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a Fock damper.
 
     Args:
         damping: The damping parameter.
@@ -831,9 +800,10 @@ def fock_damping_Abc(
     return A, b, c
 
 
-def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The triple (A, b, c) for the gaussian random noise channel.
+def gaussian_random_noise_Abc(
+    Y: RealMatrix,
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The triple (A, b, c) for the gaussian random noise channel.
 
     Args:
         Y: the Y matrix of the Gaussian random noise channel.
@@ -888,9 +858,8 @@ def gaussian_random_noise_Abc(Y: RealMatrix) -> tuple[ComplexMatrix, ComplexVect
 def bargmann_to_quadrature_Abc(
     n_modes: int,
     phi: float | Sequence[float],
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle`
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of the multi-mode kernel :math:`\langle \vec{p}|\vec{z} \rangle`
     between bargmann representation with ABC Ansatz form and quadrature representation with ABC Ansatz.
     The kernel can be considered as a Unitary-like component: the out_ket wires are related to the real variable
     :math:`\vec{p}` in quadrature representation and the in_ket wires are related to the complex variable :math:`\vec{z}`.
@@ -917,7 +886,7 @@ def bargmann_to_quadrature_Abc(
             [
                 math.stack(
                     [
-                        math.broadcast_to(-1 / hbar, batch_shape, dtype=math.complex128),
+                        math.broadcast_to(-1 / hbar, batch_shape),
                         -1j * e * np.sqrt(2 / hbar),
                     ],
                     batch_dim,
@@ -942,9 +911,8 @@ def bargmann_to_quadrature_Abc(
 def displacement_map_s_parametrized_Abc(
     s: float | Sequence[float],
     n_modes: int,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The ``(A, b, c)`` triple of a multi-mode ``s``\-parametrized displacement map.
 
     :math:
         D_s(\vec{\gamma}^*, \vec{\gamma}) = e^{\frac{s}{2}|\vec{\gamma}|^2} D(\vec{\gamma}^*,
@@ -968,12 +936,10 @@ def displacement_map_s_parametrized_Abc(
     Zmat = math.broadcast_to(
         -math.Zmat(num_modes=n_modes),
         (*batch_shape, 2 * n_modes, 2 * n_modes),
-        dtype=math.complex128,
     )
     Xmat = math.broadcast_to(
         math.Xmat(num_modes=n_modes),
         (*batch_shape, 2 * n_modes, 2 * n_modes),
-        dtype=math.complex128,
     )
     A = math.block(
         [[(s[..., None, None] - 1) / 2 * math.Xmat(num_modes=n_modes), Zmat], [Zmat, Xmat]],
@@ -1002,9 +968,8 @@ def displacement_map_s_parametrized_Abc(
 def bargmann_to_wigner_Abc(
     s: float,
     n_modes: int,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The Abc triple of the Bargmann to Wigner/Husimi transformation.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The Abc triple of the Bargmann to Wigner/Husimi transformation.
 
     Args:
         s: The `s` parameter of this channel. The case `s=-1`  corresponds to Husimi, `s=0` to Wigner, and `s=1` to Glauber P function.
@@ -1013,7 +978,6 @@ def bargmann_to_wigner_Abc(
     Returns:
         The Abc triple of the Bargmann to Wigner/Husimi transformation.
     """
-
     On = math.zeros((n_modes, n_modes), dtype=math.complex128)
     In = math.eye(n_modes, dtype=math.complex128)
 
@@ -1041,9 +1005,8 @@ def bargmann_to_wigner_Abc(
 
 def attenuator_kraus_Abc(
     eta: float | Sequence[float],
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The entire family of Kraus operators of the attenuator (loss) channel as a single ``(A, b, c)`` triple.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The entire family of Kraus operators of the attenuator (loss) channel as a single ``(A, b, c)`` triple.
     The last index is the "bond" index which should be summed/integrated over.
 
     Args:
@@ -1079,9 +1042,8 @@ def XY_to_channel_Abc(
     X: RealMatrix,
     Y: RealMatrix,
     d: ComplexVector | None = None,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    The method to compute the A,b,c triple of a channel based on its X, Y, and d parameters in the Wigner representation.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""The method to compute the A,b,c triple of a channel based on its X, Y, and d parameters in the Wigner representation.
 
     Args:
         X: The X matrix of the channel

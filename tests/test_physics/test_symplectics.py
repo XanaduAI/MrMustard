@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import numpy as np
-from hypothesis import given
-from hypothesis import strategies as st
+import pytest
 from thewalrus.symplectic import beam_splitter, expand, rotation, squeezing, two_mode_squeezing
 
 from mrmustard import settings
@@ -22,7 +21,8 @@ from mrmustard.lab import Amplifier, Attenuator, BSgate, Dgate, MZgate, Pgate, R
 from mrmustard.lab.states import Thermal, TwoModeSqueezedVacuum, Vacuum
 
 
-@given(r=st.floats(0, 2), phi=st.floats(0, 2 * np.pi))
+@pytest.mark.parametrize("r", [0.0, 1.7, 2.0])
+@pytest.mark.parametrize("phi", [0.0, 1.6 * np.pi, 2 * np.pi])
 def test_two_mode_squeezing(r, phi):
     """Tests that the two-mode squeezing operation is implemented correctly"""
     cov = (Vacuum((0, 1)) >> S2gate((0, 1), r=r, phi=phi)).phase_space(0)[0] * 2 / settings.HBAR
@@ -30,7 +30,8 @@ def test_two_mode_squeezing(r, phi):
     assert np.allclose(cov, S @ S.T, atol=1e-6)
 
 
-@given(r=st.floats(0, 1), phi=st.floats(0, 1))
+@pytest.mark.parametrize("r", [0.0, 1.7, 2.0])
+@pytest.mark.parametrize("phi", [0.0, 1.6 * np.pi, 2 * np.pi])
 def test_Sgate(r, phi):
     """Tests the Sgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
@@ -43,7 +44,7 @@ def test_Sgate(r, phi):
     assert np.allclose(cov, expected, atol=1e-6)
 
 
-@given(s=st.floats(0, 1))
+@pytest.mark.parametrize("s", [0.0, 0.2, 1 / 3, np.pi / 4, 0.9, 1.0])
 def test_Pgate(s):
     """Tests the Pgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
@@ -56,7 +57,7 @@ def test_Pgate(s):
     assert np.allclose(cov, expected, atol=1e-6)
 
 
-@given(theta=st.floats(0, 2 * np.pi))
+@pytest.mark.parametrize("theta", [0.0, 0.2, np.pi, 1.6 * np.pi, 2 * np.pi])
 def test_Rgate(theta):
     """Tests the Rgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
@@ -69,7 +70,8 @@ def test_Rgate(theta):
     assert np.allclose(cov, expected, atol=1e-6)
 
 
-@given(theta=st.floats(0, 2 * np.pi), phi=st.floats(0, 2 * np.pi))
+@pytest.mark.parametrize("theta", [0.0, 1.6 * np.pi, 2 * np.pi])
+@pytest.mark.parametrize("phi", [0.0, 1.6 * np.pi, 2 * np.pi])
 def test_BSgate(theta, phi):
     """Tests the BSgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
@@ -90,7 +92,8 @@ def test_BSgate(theta, phi):
     assert np.allclose(cov, expected, atol=1e-6)
 
 
-@given(r=st.floats(0, 1), phi=st.floats(0, 2 * np.pi))
+@pytest.mark.parametrize("r", [0.0, 1.7, 2.0])
+@pytest.mark.parametrize("phi", [0.0, 1.6 * np.pi, 2 * np.pi])
 def test_S2gate(r, phi):
     """Tests the S2gate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
@@ -107,7 +110,8 @@ def test_S2gate(r, phi):
     assert np.allclose(cov, expected, atol=1e-6)
 
 
-@given(phi_ex=st.floats(0, 2 * np.pi), phi_in=st.floats(0, 2 * np.pi))
+@pytest.mark.parametrize("phi_ex", [0.0, 1.6 * np.pi, 2 * np.pi])
+@pytest.mark.parametrize("phi_in", [0.0, 1.6 * np.pi, 2 * np.pi])
 def test_MZgate_external_tms(phi_ex, phi_in):
     """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
@@ -132,7 +136,8 @@ def test_MZgate_external_tms(phi_ex, phi_in):
     assert np.allclose(cov, expected, atol=1e-6)
 
 
-@given(phi_a=st.floats(0, 2 * np.pi), phi_b=st.floats(0, 2 * np.pi))
+@pytest.mark.parametrize("phi_a", [0.0, 1.6 * np.pi, 2 * np.pi])
+@pytest.mark.parametrize("phi_b", [0.0, 1.6 * np.pi, 2 * np.pi])
 def test_MZgate_internal_tms(phi_a, phi_b):
     """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
@@ -157,7 +162,8 @@ def test_MZgate_internal_tms(phi_a, phi_b):
     assert np.allclose(cov, expected, atol=1e-6)
 
 
-@given(g=st.floats(1, 3), x=st.floats(-2, 2), y=st.floats(-2, 2))
+@pytest.mark.parametrize("g, x", [(1.0, -2.0), (2.7, 0.1), (3.0, 2.0)])
+@pytest.mark.parametrize("y", [-2.0, 0.1, 2.0])
 def test_amplifier_on_coherent_is_thermal_coherent(g, x, y):
     """Tests that amplifying a coherent state is equivalent to preparing a thermal state displaced state"""
     assert Vacuum(0) >> Dgate(0, x + 1j * y) >> Amplifier(0, g) == Thermal(0, g - 1) >> Dgate(
@@ -166,7 +172,8 @@ def test_amplifier_on_coherent_is_thermal_coherent(g, x, y):
     )
 
 
-@given(eta=st.floats(0.1, 0.9), x=st.floats(-2, 2), y=st.floats(-2, 2))
+@pytest.mark.parametrize("eta, x", [(0.1, -2.0), (0.7, 0.1), (1.0, 2.0)])
+@pytest.mark.parametrize("y", [-2.0, 0.1, 2.0])
 def test_amplifier_attenuator_on_coherent_coherent(eta, x, y):
     """Tests that amplifying and the attenuating a coherent state is equivalent to preparing a thermal state displaced state"""
     assert Vacuum(0) >> Dgate(0, x + 1j * y) >> Amplifier(0, 1 / eta) >> Attenuator(

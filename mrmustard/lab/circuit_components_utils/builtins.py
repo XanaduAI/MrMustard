@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains methods for creating built-in ``CircuitComponent`` utility ``Ansatz``.
-"""
+"""This module contains methods for creating built-in ``CircuitComponent`` utility ``Ansatz``."""
 
 from __future__ import annotations
 
@@ -35,8 +33,7 @@ def bargmann_to_quadrature(
     phi: float | Sequence[float],
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The Bargmann to quadrature transformation.
+    r"""The Bargmann to quadrature transformation.
 
     Args:
         n_modes: The number of modes.
@@ -55,8 +52,7 @@ def bargmann_to_wigner(
     n_modes: int,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The Bargmann to Wigner transformation.
+    r"""The Bargmann to Wigner transformation.
 
     Args:
         s: The `s` parameter of this channel. The case `s=-1`  corresponds to Husimi, `s=0` to Wigner, and `s=1` to Glauber P function.
@@ -75,8 +71,7 @@ def displacement_map_s_parametrized(
     n_modes: int,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The `s`-parametrized displacement map.
+    r"""The `s`-parametrized displacement map.
 
     Args:
         s: The phase space parameter.

@@ -18,7 +18,8 @@ import pytest
 
 from mrmustard import settings
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.mm_einsum import mm_einsum, to_fock
+from mrmustard.physics.mm_einsum import mm_einsum
+from mrmustard.physics.mm_einsum.core import to_fock
 from mrmustard.physics.utils import random_Abc
 
 
@@ -42,13 +43,13 @@ class TestMmEinsumErrorHandling:
     def test_dimension_validation_missing_core(self):
         """Test validation when core dimension is not labeled."""
         a = PolyExpAnsatz(*random_Abc(4))
-        with pytest.raises(ValueError, match="missing fock_dims for {'d'}"):
+        with pytest.raises(ValueError, match=r"has 4 CV vars but got 3 indices"):
             mm_einsum("abc,abcd->", a, a)
 
     def test_dimension_validation_too_many_core(self):
         """Test validation when too many core indices are provided."""
         a = PolyExpAnsatz(*random_Abc(1))
-        with pytest.raises(ValueError, match="missing fock_dims for {'y'}"):
+        with pytest.raises(ValueError, match="has 1 CV vars but got 2 indices"):
             mm_einsum("xy,x->", a, a)
 
     def test_empty_output_different_indices_errors(self):
@@ -101,6 +102,34 @@ class TestMmEinsumErrorHandling:
                 fock_dims={"x": 5, "y": 5},
             )
 
+    def test_incomplete_user_path_raises(self):
+        """A user path should describe the full contraction, not just the Bargmann prefix."""
+        a = PolyExpAnsatz(*random_Abc(2))
+        b = PolyExpAnsatz(*random_Abc(2))
+        kernel = ArrayAnsatz(settings.get_rng().random((5, 5)), batch_dims=0)
+
+        with pytest.raises(ValueError, match="contraction_path"):
+            mm_einsum(
+                "xz,yz,xy->",
+                a,
+                b,
+                kernel,
+                contraction_path=[(0, 1)],
+                fock_dims={"x": 5, "y": 5},
+            )
+
+    def test_overlong_bargmann_only_path_raises(self):
+        """Extra user steps after Bargmann contraction should raise a path-specific error."""
+        a = PolyExpAnsatz(*random_Abc(1))
+
+        with pytest.raises(ValueError, match="contraction_path"):
+            mm_einsum(
+                "x,x->",
+                a,
+                a,
+                contraction_path=[(0, 1), (0, 1)],
+            )
+
     def test_lowercase_in_parentheses(self):
         """Test validation when lowercase letters are grouped in parentheses."""
         a = ArrayAnsatz(settings.get_rng().random((2, 3, 4)), batch_dims=1)
@@ -116,7 +145,7 @@ class TestMmEinsumErrorHandling:
     def test_missing_fock_dims_for_conversion_single_mode(self):
         """Should raise error when PolyExpAnsatz can't be converted due to missing fock_dims."""
         a = PolyExpAnsatz(*random_Abc(1))
-        with pytest.raises(ValueError, match="missing fock_dims for {'y'}"):
+        with pytest.raises(ValueError, match=r"missing fock_dims for {'y'}"):
             mm_einsum("x,y->xy", a, a, fock_dims={"x": 5})
 
     def test_multiple_arrows_in_equation(self):
@@ -147,7 +176,7 @@ class TestMmEinsumErrorHandling:
     def test_out_of_range_path_indices(self):
         """Should raise error for path indices out of range."""
         a = PolyExpAnsatz(*random_Abc(1))
-        with pytest.raises(IndexError):
+        with pytest.raises(ValueError, match="contraction_path"):
             mm_einsum("x,y->xy", a, a, contraction_path=[(0, 5)], fock_dims={"x": 5, "y": 5})
 
     def test_unclosed_parentheses_validation(self):

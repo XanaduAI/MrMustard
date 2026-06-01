@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing an Interferometer gate.
-"""
+"""The class representing an Interferometer gate."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["Interferometer"]
 
 
 class Interferometer(Unitary):
-    r"""
-    N-mode interferometer.
+    r"""N-mode interferometer.
 
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` unitary symplectic matrix.
 
@@ -45,6 +42,7 @@ class Interferometer(Unitary):
     Args:
         modes: The modes this gate is applied to.
         unitary: A unitary matrix. For N modes it must have shape `(N,N)`.
+        name: A name for the gate. If not provided, the class name will be used.
 
     Raises:
         ValueError: If the size of the unitary does not match the number of modes.
@@ -56,15 +54,17 @@ class Interferometer(Unitary):
         self,
         modes: int | tuple[int, ...],
         unitary: ComplexMatrix | Parameter,
+        name: str | None = None,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
+        name = name if name is not None else self.__class__.__name__
         num_modes = len(modes)
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (interferometer_gate, ("unitary", "lin_sup"))}
             ),
             wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["unitary"] = Parameter.from_cc_init(
             unitary, "complex128", f"{self.name}/unitary"
@@ -75,13 +75,15 @@ class Interferometer(Unitary):
             )
 
     @classmethod
-    def random(cls, modes: int | tuple[int, ...], seed: int | None = None) -> Interferometer:
-        r"""
-        Returns a random Interferometer.
+    def random(
+        cls, modes: int | tuple[int, ...], seed: int | None = None, name: str | None = None
+    ) -> Interferometer:
+        r"""Returns a random Interferometer.
 
         Args:
             modes: The modes of the Interferometer.
             seed: The random seed. If ``None``, the global seed is used.
+            name: A name for the gate. If not provided, the class name will be used.
 
         Returns:
             The random Interferometer.
@@ -93,4 +95,4 @@ class Interferometer(Unitary):
         if len(modes) == 0:
             raise ValueError("Cannot create a random Interferometer with no modes.")
         unitary = math.random_unitary(len(modes), seed)
-        return cls(modes, unitary)
+        return cls(modes, unitary, name=name)

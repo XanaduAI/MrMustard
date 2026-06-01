@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class repesenting a vacuum state.
-"""
+"""The class repesenting a vacuum state."""
 
 from __future__ import annotations
 
@@ -30,8 +28,7 @@ __all__ = ["Vacuum"]
 
 
 class Vacuum(Ket):
-    r"""
-    The `N`-mode vacuum state in Bargmann representation.
+    r"""The `N`-mode vacuum state in Bargmann representation.
 
     >>> from mrmustard.lab import Vacuum
     >>> state = Vacuum((1, 2))
@@ -39,6 +36,7 @@ class Vacuum(Ket):
 
     Args:
         modes: A tuple of modes.
+        name: A name for the state. If not provided, the class name will be used.
 
     .. details::
 
@@ -58,15 +56,17 @@ class Vacuum(Ket):
     def __init__(
         self,
         modes: int | tuple[int, ...],
+        name: str | None = None,
     ) -> None:
         modes = (modes,) if isinstance(modes, int) else modes
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (vacuum_state, ("n_modes", "lin_sup"))},
                 n_modes=len(modes),
             ),
             wires=Wires(modes_out_ket=set(modes)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.manual_shape = (1,) * len(modes)
 

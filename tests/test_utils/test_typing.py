@@ -15,100 +15,108 @@
 from typing import get_args, get_origin
 
 import numpy as np
+import pytest
 
 from mrmustard.utils.typing import (
-    Batch,
+    Array,
+    ComplexArray,
     ComplexMatrix,
+    ComplexScalar,
+    ComplexScalarValue,
     ComplexTensor,
     ComplexVector,
+    IntArray,
     IntMatrix,
+    IntScalar,
+    IntScalarValue,
     IntTensor,
     IntVector,
+    Matrix,
+    RealArray,
     RealMatrix,
+    RealScalar,
+    RealScalarValue,
     RealTensor,
     RealVector,
-    UIntMatrix,
-    UIntTensor,
-    UIntVector,
+    Scalar,
+    ScalarValue,
+    Tensor,
+    Vector,
 )
 
 
-def test_complexvector():
-    vec: ComplexVector = np.array([1.0 + 1.0j])
-    assert isinstance(vec, get_origin(ComplexVector))
-    assert isinstance(vec[0], get_args(ComplexVector)[1].__constraints__)
+def _get_ndarray_dtype_family(alias):
+    """Return the numpy abstract dtype class from an NDArray-backed alias.
+
+    E.g. ``ComplexVector`` -> ``np.complexfloating``.
+    Works for aliases defined as ``type X = NDArray[np.T]`` (two levels of
+    ``__value__``: the first unwraps the outer ``type`` statement, the second
+    unwraps the intermediate ``*Array`` alias).
+    """
+    inner = alias.__value__  # e.g. ComplexArray (TypeAliasType)
+    ndarray_parameterized = inner.__value__  # e.g. NDArray[np.complexfloating]
+    dtype_arg = get_args(ndarray_parameterized)[1]  # np.dtype[np.complexfloating]
+    return get_args(dtype_arg)[0]  # np.complexfloating
 
 
-def test_realvector():
-    vec: RealVector = np.array([1.0, 2.0, 3.0])
-    assert isinstance(vec, get_origin(RealVector))
-    assert isinstance(vec[0], get_args(RealVector)[1].__constraints__)
+def _get_scalar_value_types(alias):
+    """Return the tuple of concrete / abstract types inside a *ScalarValue alias.
+
+    E.g. ``ComplexScalarValue`` -> ``(complex, np.complexfloating)``.
+    """
+    return get_args(alias.__value__)
 
 
-def test_intvector():
-    vec: IntVector = np.array([1, 2, 3])
-    assert isinstance(vec, get_origin(IntVector))
-    assert isinstance(vec[0], get_args(IntVector)[1].__constraints__)
+@pytest.mark.parametrize(
+    "alias, expected_members",
+    [
+        (ComplexScalarValue, (complex, np.complexfloating)),
+        (RealScalarValue, (float, np.floating)),
+        (IntScalarValue, (int, np.signedinteger)),
+        (ScalarValue, (complex, float, int, np.number)),
+    ],
+)
+def test_scalar_value_structure(alias, expected_members):
+    """*ScalarValue aliases should be unions of Python builtins and numpy abstract types."""
+    members = _get_scalar_value_types(alias)
+    for expected_member in expected_members:
+        assert expected_member in members
 
 
-def test_uintvector():
-    vec: UIntVector = np.array([1, 2, 3], dtype=np.uint32)
-    assert isinstance(vec, get_origin(UIntVector))
-    assert isinstance(vec[0], get_args(UIntVector)[1].__constraints__)
+@pytest.mark.parametrize(
+    "alias, expected_members",
+    [
+        (ComplexScalar, (ComplexScalarValue, ComplexArray)),
+        (RealScalar, (RealScalarValue, RealArray)),
+        (IntScalar, (IntScalarValue, IntArray)),
+        (Scalar, (ScalarValue, Array)),
+    ],
+)
+def test_scalar_structure(alias, expected_members):
+    """*Scalar aliases should be unions of *ScalarValue and *Array."""
+    members = get_args(alias.__value__)
+    for expected_member in expected_members:
+        assert expected_member in members
 
 
-def test_complexmatrix():
-    mat: ComplexMatrix = np.array([[1.0 + 1.0j, 2.0 + 2.0j, 3.0 + 3.0j]])
-    assert isinstance(mat, get_origin(ComplexMatrix))
-    assert isinstance(mat[0, 0], get_args(ComplexMatrix)[1].__constraints__)
-
-
-def test_realmatrix():
-    mat: RealMatrix = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
-    assert isinstance(mat, get_origin(RealMatrix))
-    assert isinstance(mat[0, 0], get_args(RealMatrix)[1].__constraints__)
-
-
-def test_intmatrix():
-    mat: IntMatrix = np.array([[1, 2, 3], [4, 5, 6]])
-    assert isinstance(mat, get_origin(IntMatrix))
-    assert isinstance(mat[0, 0], get_args(IntMatrix)[1].__constraints__)
-
-
-def test_uintmatrix():
-    mat: UIntMatrix = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.uint32)
-    assert isinstance(mat, get_origin(UIntMatrix))
-    assert isinstance(mat[0, 0], get_args(UIntMatrix)[1].__constraints__)
-
-
-def test_complextensor():
-    ten: ComplexTensor = np.array(
-        [[[1.0 + 1.0j, 2.0 + 2.0j, 3.0 + 3.0j], [4.0 + 4.0j, 5.0 + 5.0j, 6.0 + 6.0j]]],
-    )
-    assert isinstance(ten, get_origin(ComplexTensor))
-    assert isinstance(ten[0, 0, 0], get_args(ComplexTensor)[1].__constraints__)
-
-
-def test_realtensor():
-    ten: RealTensor = np.array([[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]])
-    assert isinstance(ten, get_origin(RealTensor))
-    assert isinstance(ten[0, 0, 0], get_args(RealTensor)[1].__constraints__)
-
-
-def test_inttensor():
-    ten: IntTensor = np.array([[[1, 2, -3], [4, 5, -6]], [[7, 8, 9], [10, 11, 12]]])
-    assert isinstance(ten, get_origin(IntTensor))
-    assert isinstance(ten[0, 0, 0], get_args(IntTensor)[1].__constraints__)
-
-
-def test_uinttensor():
-    ten: UIntTensor = np.array([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]], dtype=np.uint32)
-    assert isinstance(ten, get_origin(UIntTensor))
-    assert isinstance(ten[0, 0, 0], get_args(UIntTensor)[1].__constraints__)
-
-
-def test_batch():
-    batch: Batch[RealVector] = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
-    # remember batch is a protocol, so we can't use isinstance
-    assert issubclass(type(batch), Batch)
-    assert isinstance(batch[0][0], get_args(get_args(Batch[RealVector])[0])[1].__constraints__)
+@pytest.mark.parametrize(
+    "alias, expected_dtype",
+    [
+        (ComplexVector, np.complexfloating),
+        (ComplexMatrix, np.complexfloating),
+        (ComplexTensor, np.complexfloating),
+        (RealVector, np.floating),
+        (RealMatrix, np.floating),
+        (RealTensor, np.floating),
+        (IntVector, np.signedinteger),
+        (IntMatrix, np.signedinteger),
+        (IntTensor, np.signedinteger),
+        (Vector, np.number),
+        (Matrix, np.number),
+        (Tensor, np.number),
+    ],
+)
+def test_array_structure(alias, expected_dtype):
+    """Vector / Matrix / Tensor aliases should be backed by NDArray with the correct dtype."""
+    assert get_origin(alias.__value__.__value__) is np.ndarray
+    assert _get_ndarray_dtype_family(alias) is expected_dtype

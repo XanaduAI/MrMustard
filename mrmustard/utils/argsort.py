@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Sorting functions"""
+"""Sorting functions."""
 
 from collections import defaultdict
 from collections.abc import Generator
@@ -23,8 +23,7 @@ __all__ = ["argsort_gen"]
 
 
 def argsort_gen(generators: list[Generator[float, None, None]]) -> list[int]:
-    r"""
-    Sorts a list of generator objects based on their yielded values.
+    r"""Sorts a list of generator objects based on their yielded values.
 
     This function takes a list of generator objects, each yielding a sequence of numbers.
     It sorts the generators based on their first yielded values. If multiple generators

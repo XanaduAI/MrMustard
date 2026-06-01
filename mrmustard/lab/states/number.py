@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a number state.
-"""
+"""The class representing a number state."""
 
 from __future__ import annotations
 
@@ -32,8 +30,7 @@ __all__ = ["Number"]
 
 
 class Number(Ket):
-    r"""
-    The number state in Fock representation.
+    r"""The number state in Fock representation.
 
     >>> from mrmustard.lab import Number
     >>> from mrmustard.physics.ansatz import ArrayAnsatz
@@ -45,6 +42,7 @@ class Number(Ket):
         n: The (batchable) number of photons.
         cutoff: The photon cutoff. If ``cutoff`` is ``None``, it
             defaults to ``math.max(n)``.
+        name: A name for the state. If not provided, the class name will be used.
 
     .. details::
 
@@ -66,14 +64,16 @@ class Number(Ket):
         mode: int | tuple[int],
         n: int | Sequence[int],
         cutoff: int | None = None,
+        name: str | None = None,
     ) -> None:
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.FOCK: (number_state, ("n", "shape"))}
             ),
             wires=Wires(modes_out_ket=set(mode)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["n"] = Parameter.from_cc_init(n, "int64", f"{self.name}/n")
         if cutoff is None:

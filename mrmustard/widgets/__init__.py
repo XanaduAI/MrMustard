@@ -20,9 +20,12 @@ import plotly.graph_objs as go
 from IPython import get_ipython
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
 
-from mrmustard import math
+from mrmustard import math, settings
 
 from .css import FOCK, STATE, TABLE, WIRES
+from .manipulate import ComplexSlider as ComplexSlider
+from .manipulate import manipulate as manipulate
+from .wigner import wigner_explore as wigner_explore
 
 NO_MARGIN = {"l": 0, "r": 0, "t": 0, "b": 0}
 IN_INTERACTIVE_SHELL = isinstance(get_ipython(), TerminalInteractiveShell)
@@ -278,7 +281,15 @@ def state(obj, is_ket, is_fock):
         [table_widget, go.FigureWidget(obj.visualize_dm(return_fig=True))],
         layout=widgets.Layout(flex_flow="column nowrap", max_width="800px"),
     )
-    right_widget = go.FigureWidget(obj.visualize_2d(resolution=100, return_fig=True))
+    bounds = settings.WIGNER_BOUNDS
+    right_widget = go.FigureWidget(
+        obj.visualize_2d(
+            resolution=settings.WIGNER_2D_RESOLUTION,
+            xbounds=bounds,
+            pbounds=bounds,
+            return_fig=True,
+        )
+    )
     return widgets.HBox(
         [left_widget, right_widget],
         layout=widgets.Layout(flex="0 0 auto", flex_flow="row wrap"),

@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing an operation that changes Bargmann into phase space.
-"""
+"""The class representing an operation that changes Bargmann into phase space."""
 
 from __future__ import annotations
 
@@ -32,8 +30,7 @@ __all__ = ["BtoChar"]
 
 
 class BtoChar(Map):
-    r"""
-    The ``s``-parametrized ``Dgate`` as a ``Map``. Also known as the Fourier transform of the Stratonovich-Weyl kernel.
+    r"""The ``s``-parametrized ``Dgate`` as a ``Map``. Also known as the Fourier transform of the Stratonovich-Weyl kernel.
     See https://arxiv.org/abs/quant-ph/9707010.
 
     This is an unphysical component whose purpose is to modify the internal representation of another component.

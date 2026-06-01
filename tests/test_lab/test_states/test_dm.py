@@ -613,7 +613,7 @@ class TestDM:
         assert dm_from_global_2 == dm_from_global_2_redux
 
         # no modes should raise error
-        with pytest.raises(ValueError, match="Cannot create a random GaussianDM with no modes."):
+        with pytest.raises(ValueError, match=r"Cannot create a random GaussianDM with no modes."):
             GaussianDM.random(modes=[])
 
     def test_is_positive(self):

@@ -16,13 +16,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
 from functools import partial
-from typing import Any
 from warnings import warn
 
 import numpy as np
-from platformdirs import user_cache_dir
 
 from mrmustard.parameters import Variable
 
@@ -54,22 +51,13 @@ else:
         squeezer_jax,
     )
 
-jax.config.update("jax_enable_x64", True)
-jax.config.update("jax_compilation_cache_dir", f"{user_cache_dir('mrmustard')}/jax_cache")
-jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
-jax.config.update("jax_persistent_cache_min_compile_time_secs", 0)
-jax.config.update("jax_persistent_cache_enable_xla_caches", "xla_gpu_per_fusion_autotune_cache_dir")
-
-
 # ~~~~~~~
 # Helpers
 # ~~~~~~~
 
 
 def get_all_subclasses(cls):
-    r"""
-    Returns all subclasses of a given class.
-    """
+    r"""Returns all subclasses of a given class."""
     all_subclasses = []
     for subclass in cls.__subclasses__():
         all_subclasses.append(subclass)
@@ -83,9 +71,7 @@ def get_all_subclasses(cls):
 
 
 class BackendJax(BackendBase):
-    r"""
-    A JAX backend implementation.
-    """
+    r"""A JAX backend implementation."""
 
     int32 = jnp.int32
     int64 = jnp.int64
@@ -97,7 +83,7 @@ class BackendJax(BackendBase):
     def __init__(self):
         super().__init__(name="jax")
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return "BackendJax()"
 
     def _tree_flatten(self):
@@ -108,45 +94,38 @@ class BackendJax(BackendBase):
         return cls(*children, *aux)
 
     @jax.jit
-    def abs(self, array: jnp.ndarray) -> jnp.ndarray:
+    def abs(self, array):
         return jnp.abs(array)
 
-    def all(self, array: jnp.ndarray) -> jnp.ndarray:
+    def all(self, array):
         return jnp.all(array)
 
     @jax.jit
-    def angle(self, array: jnp.ndarray) -> jnp.ndarray:
+    def angle(self, array):
         return jnp.angle(array)
 
     @jax.jit
-    def any(self, array: jnp.ndarray) -> jnp.ndarray:
+    def any(self, array):
         return jnp.any(array)
 
-    def arange(
-        self,
-        start: int,
-        limit: int | None = None,
-        delta: int = 1,
-        dtype=None,
-    ) -> jnp.ndarray:
+    def arange(self, start, limit=None, delta=1, dtype=None):
         dtype = dtype or self.float64
         return jnp.arange(start, limit, delta, dtype=dtype)
 
     @partial(jax.jit, static_argnames=["axis"])
-    def argmax(self, array: jnp.ndarray, axis: int | None = None) -> jnp.ndarray:
+    def argmax(self, array, axis=None):
         return jnp.argmax(array, axis=axis)
 
     @partial(jax.jit, static_argnames=["axis"])
-    def argmin(self, array: jnp.ndarray, axis: int | None = None) -> jnp.ndarray:
+    def argmin(self, array, axis=None):
         return jnp.argmin(array, axis=axis)
 
     @partial(jax.jit, static_argnames=["axis"])
-    def argsort(self, array: jnp.ndarray, axis: int | None = None) -> jnp.ndarray:
+    def argsort(self, array, axis=None):
         return jnp.argsort(array, axis=axis)
 
     def complex_gaussian_integral_1_single(self, A, b, idx12, A_out, b_out, log_c_out):
-        """
-        Single (non-batched) complex Gaussian integral for one Abc using JAX.
+        """Single (non-batched) complex Gaussian integral for one Abc using JAX.
 
         Args:
             A: Complex matrix
@@ -162,8 +141,7 @@ class BackendJax(BackendBase):
         return complex_gaussian_integral_1_jax(A, b, idx12)
 
     def complex_gaussian_integral_1_batched(self, A, b, idx12, A_out, b_out, log_c_out):
-        """
-        Batched complex Gaussian integral for one Abc using JAX vmap.
+        """Batched complex Gaussian integral for one Abc using JAX vmap.
 
         Args:
             A: Batched complex matrices
@@ -197,13 +175,15 @@ class BackendJax(BackendBase):
     def complex_gaussian_integral_2_single(
         self, A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out
     ):
-        """
-        Single (non-batched) complex Gaussian integral for two Abc using JAX.
+        """Single (non-batched) complex Gaussian integral for two Abc using JAX.
 
         Args:
-            A1, b1: First Abc triple
-            A2, b2: Second Abc triple
-            idx1, idx2: Indices to integrate over
+            A1: First A matrix
+            b1: First b vector
+            A2: Second A matrix
+            b2: Second b vector
+            idx1: Integer array of indices for first Abc
+            idx2: Integer array of indices for second Abc
             A_out: Ignored (for API compatibility)
             b_out: Ignored (for API compatibility)
             log_c_out: Ignored (for API compatibility)
@@ -216,13 +196,15 @@ class BackendJax(BackendBase):
     def complex_gaussian_integral_2_batched(
         self, A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out
     ):
-        """
-        Batched complex Gaussian integral for two Abc using JAX vmap.
+        """Batched complex Gaussian integral for two Abc using JAX vmap.
 
         Args:
-            A1, b1: First batched Abc triple
-            A2, b2: Second batched Abc triple
-            idx1, idx2: Indices to integrate over (same for all batch elements)
+            A1: First batched A matrix
+            b1: First batched b vector
+            A2: Second batched A matrix
+            b2: Second batched b vector
+            idx1: Integer array of indices for first Abc
+            idx2: Integer array of indices for second Abc
             A_out: Ignored (for API compatibility)
             b_out: Ignored (for API compatibility)
             log_c_out: Ignored (for API compatibility)
@@ -254,172 +236,154 @@ class BackendJax(BackendBase):
 
         return vmapped_fn(A1_broadcast, b1_broadcast, A2_broadcast, b2_broadcast, idx1, idx2)
 
-    def asnumpy(self, tensor: jnp.ndarray) -> np.ndarray:
+    def asnumpy(self, tensor):
         return np.array(tensor)
 
     def BackendError(self):
         return jax.errors.TracerArrayConversionError
 
     @partial(jax.jit, static_argnames=["shape"])
-    def broadcast_to(self, array: jnp.ndarray, shape: tuple[int]) -> jnp.ndarray:
+    def broadcast_to(self, array, shape):
         return jnp.broadcast_to(array, shape)
 
-    def broadcast_arrays(self, *arrays: list[jnp.ndarray]) -> list[jnp.ndarray]:
+    def broadcast_arrays(self, *arrays):
         return jnp.broadcast_arrays(*arrays)
 
-    @partial(jax.jit, static_argnames=["axis"])
-    def prod(self, x: jnp.ndarray, axis: int | None):
-        return jnp.prod(x, axis=axis)
+    def prod(self, x, axis):
+        return jnp.prod(jnp.asarray(x), axis=axis)
 
-    def astensor(self, array: np.ndarray | jnp.ndarray, dtype=None) -> jnp.ndarray:
+    def astensor(self, array, dtype=None):
         return jnp.asarray(array, dtype=dtype)
 
     @jax.jit
-    def log(self, array: jnp.ndarray) -> jnp.ndarray:
+    def log(self, array):
         return jnp.log(array)
 
-    def atleast_nd(self, array: jnp.ndarray, n: int, dtype=None) -> jnp.ndarray:
+    def atleast_nd(self, array, n, dtype=None):
         return jnp.array(array, ndmin=n, dtype=dtype)
 
     @partial(jax.jit, static_argnames=["dtype"])
-    def cast(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
+    def cast(self, array, dtype=None):
         if dtype is None:
             return array
         return jnp.asarray(array, dtype=dtype)
 
     @partial(jax.jit, static_argnames=["axis"])
-    def concat(self, values: Sequence[jnp.ndarray], axis: int) -> jnp.ndarray:
+    def concat(self, values, axis):
         try:
             return jnp.concatenate(values, axis)
         except ValueError:
             return jnp.asarray(values)
 
     @partial(jax.jit, static_argnames=["axis"])
-    def sort(self, array: jnp.ndarray, axis: int = -1) -> jnp.ndarray:
+    def sort(self, array, axis=-1):
         return jnp.sort(array, axis)
 
-    @jax.jit
-    def allclose(self, array1: jnp.ndarray, array2: jnp.ndarray, atol=1e-9, rtol=1e-5) -> bool:
-        return jnp.allclose(array1, array2, atol=atol, rtol=rtol)
+    def allclose(self, array1, array2, atol, rtol):
+        return jnp.allclose(jnp.asarray(array1), jnp.asarray(array2), atol=atol, rtol=rtol)
 
     @partial(jax.jit, static_argnames=["a_min", "a_max"])
-    def clip(self, array: jnp.ndarray, a_min: float, a_max: float) -> jnp.ndarray:
+    def clip(self, array, a_min, a_max):
         return jnp.clip(array, a_min, a_max)
 
-    def conj(self, array: jnp.ndarray) -> jnp.ndarray:
+    def conj(self, array):
         return jnp.conj(array)
 
-    def pow(self, x: jnp.ndarray, y: float) -> jnp.ndarray:
+    def pow(self, x, y):
         return jnp.power(x, y)
 
     @jax.jit
-    def outer(self, array1: jnp.ndarray, array2: jnp.ndarray) -> jnp.ndarray:
+    def outer(self, array1, array2):
         return self.tensordot(array1, array2, [[], []])
 
-    def tile(self, array: jnp.ndarray, repeats: Sequence[int]) -> jnp.ndarray:
+    def tile(self, array, repeats):
         return jnp.tile(array, repeats)
 
-    def update_tensor(
-        self,
-        tensor: jnp.ndarray,
-        indices: jnp.ndarray,
-        values: jnp.ndarray,
-    ) -> jnp.ndarray:
-        return tensor.at[indices].set(values)
-
     @jax.jit
-    def update_add_tensor(
-        self,
-        tensor: jnp.ndarray,
-        indices: jnp.ndarray,
-        values: jnp.ndarray,
-    ) -> jnp.ndarray:
+    def update_add_tensor(self, tensor, indices, values):
         indices = self.atleast_nd(indices, 2)
         return tensor.at[tuple(indices.T)].add(values)
 
     @jax.jit
-    def matvec(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+    def matvec(self, a, b):
         return jnp.matmul(a, b[..., None])[..., 0]
 
     @jax.jit
-    def cos(self, array: jnp.ndarray) -> jnp.ndarray:
+    def cos(self, array):
         return jnp.cos(array)
 
     @jax.jit
-    def cosh(self, array: jnp.ndarray) -> jnp.ndarray:
+    def cosh(self, array):
         return jnp.cosh(array)
 
     @jax.jit
-    def det(self, matrix: jnp.ndarray) -> jnp.ndarray:
+    def det(self, matrix):
         return jnp.linalg.det(matrix)
 
-    def diagonal(
-        self, array: jnp.ndarray, offset: int | None, axis1: int | None, axis2: int | None
-    ) -> jnp.ndarray:
+    def diagonal(self, array, offset, axis1, axis2):
         return jnp.diagonal(array, offset=offset, axis1=axis1, axis2=axis2)
 
-    def diag(self, array: jnp.ndarray, k: int = 0) -> jnp.ndarray:
+    def diag(self, array, k=0):
         return jnp.diag(array, k=k)
 
     @jax.jit
-    def exp(self, array: jnp.ndarray) -> jnp.ndarray:
+    def exp(self, array):
         return jnp.exp(array)
 
     @partial(jax.jit, static_argnames=["axis"])
-    def expand_dims(self, array: jnp.ndarray, axis: int) -> jnp.ndarray:
+    def expand_dims(self, array, axis):
         return jnp.expand_dims(array, axis)
 
     @partial(jax.jit, static_argnames=["axis"])
-    def squeeze(self, array: jnp.ndarray, axis: int | tuple[int, ...] | None = None) -> jnp.ndarray:
+    def squeeze(self, array, axis=None):
         return jnp.squeeze(array, axis=axis)
 
     @jax.jit
-    def expm(self, matrix: jnp.ndarray) -> jnp.ndarray:
+    def expm(self, matrix):
         return jsp.linalg.expm(matrix)
 
-    def eye(self, size: int, dtype=None) -> jnp.ndarray:
+    def eye(self, size, dtype=None):
         dtype = dtype or self.float64
         return jnp.eye(size, dtype=dtype)
 
     @jax.jit
-    def eye_like(self, array: jnp.ndarray) -> jnp.ndarray:
+    def eye_like(self, array):
         return jnp.eye(array.shape[-1], dtype=array.dtype)
 
     @jax.jit
-    def equal(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+    def equal(self, a, b):
         return jnp.equal(a, b)
 
-    @partial(jax.jit, static_argnames=["axis"])
-    def gather(self, array: jnp.ndarray, indices: jnp.ndarray, axis: int = 0) -> jnp.ndarray:
-        return jnp.take(array, indices, axis=axis)
+    def gather(self, array, indices, axis=0):
+        return jnp.take(jnp.asarray(array), jnp.asarray(indices, dtype=jnp.int64), axis=axis)
 
     @jax.jit
-    def imag(self, array: jnp.ndarray) -> jnp.ndarray:
+    def imag(self, array):
         return jnp.imag(array)
 
     @jax.jit
-    def inv(self, tensor: jnp.ndarray) -> jnp.ndarray:
+    def inv(self, tensor):
         return jnp.linalg.inv(tensor)
 
-    def iscomplexobj(self, x: Any) -> bool:
+    def iscomplexobj(self, x):
         return jnp.iscomplexobj(x)
 
-    def isnan(self, array: jnp.ndarray) -> jnp.ndarray:
+    def isnan(self, array):
         return jnp.isnan(array)
 
-    def issubdtype(self, arg1, arg2) -> bool:
+    def issubdtype(self, arg1, arg2):
         return jnp.issubdtype(arg1, arg2)
 
     @jax.jit
-    def lgamma(self, array: jnp.ndarray) -> jnp.ndarray:
+    def lgamma(self, array):
         return jax.lax.lgamma(array)
 
     @jax.jit
-    def make_complex(self, real: jnp.ndarray, imag: jnp.ndarray) -> jnp.ndarray:
+    def make_complex(self, real, imag):
         return real + 1j * imag
 
     @jax.jit
-    def matmul(self, *matrices: jnp.ndarray) -> jnp.ndarray:
+    def matmul(self, *matrices):
         try:
             return jnp.linalg.multi_dot(matrices)
         except ValueError:
@@ -429,178 +393,182 @@ class BackendJax(BackendBase):
             return mat
 
     @jax.jit
-    def max(self, array: jnp.ndarray) -> jnp.ndarray:
+    def max(self, array):
         return jnp.max(array)
 
     @jax.jit
-    def maximum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+    def maximum(self, a, b):
         return jnp.maximum(a, b)
 
     @jax.jit
-    def minimum(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+    def minimum(self, a, b):
         return jnp.minimum(a, b)
 
     @jax.jit
-    def mod(self, a: jnp.ndarray, b: jnp.ndarray) -> jnp.ndarray:
+    def mod(self, a, b):
         return jnp.mod(a, b)
 
     @partial(jax.jit, static_argnames=["old", "new"])
-    def moveaxis(
-        self,
-        array: jnp.ndarray,
-        old: int | Sequence[int],
-        new: int | Sequence[int],
-    ) -> jnp.ndarray:
+    def moveaxis(self, array, old, new):
         return jnp.moveaxis(array, old, new)
 
     @partial(jax.jit, static_argnames=["axis"])
-    def mean(self, array: jnp.ndarray, axis: int | Sequence[int] | None = None) -> jnp.ndarray:
+    def mean(self, array, axis=None):
         return jnp.mean(array, axis=axis)
 
-    def ones(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:
+    def ones(self, shape, dtype=None):
         dtype = dtype or self.float64
         return jnp.ones(shape, dtype=dtype)
 
-    def full(self, shape: Sequence[int], fill_value, dtype=None) -> jnp.ndarray:
+    def full(self, shape, fill_value, dtype=None):
         dtype = dtype or jnp.result_type(fill_value)
         return jnp.full(shape, fill_value, dtype=dtype)
 
     @jax.jit
-    def ones_like(self, array: jnp.ndarray) -> jnp.ndarray:
+    def ones_like(self, array):
         return jnp.ones_like(array)
 
     @jax.jit
-    def infinity_like(self, array: jnp.ndarray) -> jnp.ndarray:
+    def infinity_like(self, array):
         return jnp.full_like(array, jnp.inf, dtype="complex128")
 
-    def conditional(
-        self,
-        cond: jnp.ndarray,
-        true_fn: Callable,
-        false_fn: Callable,
-        *args,
-    ) -> jnp.ndarray:
+    def conditional(self, cond, true_fn, false_fn, *args):
         return jax.lax.cond(jnp.all(cond), true_fn, false_fn, *args)
 
-    def error_if(self, array: jnp.ndarray, condition: jnp.ndarray, msg: str):
-        eqx.error_if(array, condition, msg)
+    def error_if(self, array, condition, msg):
+        try:
+            eqx.error_if(array, condition, msg)
+        except eqx.EquinoxRuntimeError as e:
+            raise ValueError(msg) from e
 
-    def pad(
-        self,
-        array: jnp.ndarray,
-        paddings: Sequence[tuple[int, int]],
-        mode="constant",
-        constant_values=0,
-    ) -> jnp.ndarray:
+    def pad(self, array, paddings, mode="constant", constant_values=0):
         return jnp.pad(array, paddings, mode=mode.lower(), constant_values=constant_values)
 
     @jax.jit
-    def pinv(self, matrix: jnp.ndarray) -> jnp.ndarray:
+    def pinv(self, matrix):
         return jnp.linalg.pinv(matrix)
 
     @jax.jit
-    def real(self, array: jnp.ndarray) -> jnp.ndarray:
+    def real(self, array):
         return jnp.real(array)
 
-    def reshape(self, array: jnp.ndarray, shape: Sequence[int]) -> jnp.ndarray:
+    def reshape(self, array, shape):
         return jnp.reshape(array, shape)
 
-    def shape(self, array: jnp.ndarray) -> tuple[int, ...]:
+    def shape(self, array):
         return jnp.shape(array)
 
     @jax.jit
-    def sin(self, array: jnp.ndarray) -> jnp.ndarray:
+    def sin(self, array):
         return jnp.sin(array)
 
     @jax.jit
-    def sinh(self, array: jnp.ndarray) -> jnp.ndarray:
+    def sinh(self, array):
         return jnp.sinh(array)
 
     @jax.jit
-    def solve(self, matrix: jnp.ndarray, rhs: jnp.ndarray) -> jnp.ndarray:
+    def solve(self, matrix, rhs):
         if len(rhs.shape) == len(matrix.shape) - 1:
             rhs = jnp.expand_dims(rhs, -1)
             return jnp.linalg.solve(matrix, rhs)[..., 0]
         return jnp.linalg.solve(matrix, rhs)
 
     @partial(jax.jit, static_argnames=["dtype"])
-    def sqrt(self, x: jnp.ndarray, dtype=None) -> jnp.ndarray:
-        return jnp.sqrt(self.cast(x, dtype))
+    def sqrt(self, x, dtype=None):
+        return jnp.sqrt(self.cast(jnp.asarray(x), dtype))
 
     @partial(jax.jit, static_argnames=["axis"])
-    def stack(self, arrays: jnp.ndarray, axis: int = 0) -> jnp.ndarray:
+    def stack(self, arrays, axis=0):
         return jnp.stack(arrays, axis=axis)
 
     @jax.jit
-    def kron(self, tensor1: jnp.ndarray, tensor2: jnp.ndarray):
+    def kron(self, tensor1, tensor2):
         return jnp.kron(tensor1, tensor2)
 
-    @partial(jax.jit, static_argnames=["axes"])
-    def sum(self, array: jnp.ndarray, axes: Sequence[int] | None = None):
-        return jnp.sum(array, axis=axes)
+    def sum(self, array, axes=None):
+        return jnp.sum(jnp.asarray(array), axis=axes)
 
-    def swapaxes(self, array: jnp.ndarray, axis1: int, axis2: int) -> jnp.ndarray:
+    def swapaxes(self, array, axis1, axis2):
         return jnp.swapaxes(array, axis1, axis2)
 
     @partial(jax.jit, static_argnames=["axis", "keepdims"])
-    def norm(
-        self, array: jnp.ndarray, axis: int | tuple[int, int] | None = None, keepdims: bool = False
-    ) -> jnp.ndarray:
+    def norm(self, array, axis=None, keepdims=False):
         return jnp.linalg.norm(array, axis=axis, keepdims=keepdims)
 
     def map_fn(self, func, elements):
         return jax.vmap(func)(elements)
 
-    def tensordot(self, a: jnp.ndarray, b: jnp.ndarray, axes: Sequence[int]) -> jnp.ndarray:
+    def tensordot(self, a, b, axes):
         return jnp.tensordot(a, b, axes)
 
     @partial(jax.jit, static_argnames=["dtype"])
-    def trace(self, array: jnp.ndarray, dtype=None) -> jnp.ndarray:
+    def trace(self, array, dtype=None):
         return self.cast(jnp.trace(array, axis1=-1, axis2=-2), dtype)
 
-    def transpose(self, a: jnp.ndarray, perm: Sequence[int] | None = None) -> jnp.ndarray:
+    def transpose(self, a, perm=None):
         return jnp.transpose(a, perm)
 
     @jax.jit
-    def tan(self, array: jnp.ndarray) -> jnp.ndarray:
+    def tan(self, array):
         return jnp.tan(array)
 
     @jax.jit
-    def tanh(self, array: jnp.ndarray) -> jnp.ndarray:
+    def tanh(self, array):
         return jnp.tanh(array)
 
-    def zeros(self, shape: Sequence[int], dtype=None) -> jnp.ndarray:
+    def zeros(self, shape, dtype=None):
         dtype = dtype or self.float64
         return jnp.zeros(shape, dtype=dtype)
 
     @partial(jax.jit, static_argnames=["dtype"])
-    def zeros_like(self, array: jnp.ndarray, dtype: str = "complex128") -> jnp.ndarray:
+    def zeros_like(self, array, dtype="complex128"):
         return jnp.zeros_like(array, dtype=dtype)
 
-    def xlogy(self, x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+    def xlogy(self, x, y):
         return jax.scipy.special.xlogy(x, y)
 
     @staticmethod
     @jax.jit
-    def eigh(tensor: jnp.ndarray) -> tuple:
+    def eigh(tensor):
         return jnp.linalg.eigh(tensor)
 
     @staticmethod
     @jax.jit
-    def eigvals(tensor: jnp.ndarray) -> jnp.ndarray:
+    def eigvals(tensor):
         return jnp.linalg.eigvals(tensor)
 
-    @jax.jit
-    def eqigendecomposition_sqrtm(self, tensor: jnp.ndarray) -> jnp.ndarray:
-        eigvals, eigvecs = jnp.linalg.eigh(tensor)
-        return eigvecs @ jnp.diag(jnp.sqrt(eigvals)) @ jnp.conj(eigvecs.T)
-
     @partial(jax.jit, static_argnames=["dtype", "rtol", "atol"])
-    def sqrtm(self, tensor: jnp.ndarray, dtype, rtol=1e-05, atol=1e-08) -> jnp.ndarray:
+    def sqrtm(self, tensor, dtype, rtol=1e-05, atol=1e-08):
+        # There is no GPU Schur decomposition for jax, which jax sqrtm relies on.
+        # https://github.com/jax-ml/jax/issues/28927
+        # Implementing our own eigenvalue decomposition based sqrtm, which is differentiable and
+        # works on GPU/TPU.
+
+        def eig_sqrtm_hermitian(tensor):
+            eigenvalues, eigenvectors = jnp.linalg.eigh(tensor)
+            tol = atol + rtol * jnp.max(jnp.abs(eigenvalues))
+            clamped_eigenvalues = jnp.where(jnp.abs(eigenvalues) < tol, 0, eigenvalues)
+            sqrt_eigenvalues = jnp.sqrt(clamped_eigenvalues.astype(jnp.complex128))
+            return eigenvectors @ jnp.diag(sqrt_eigenvalues) @ jnp.conj(eigenvectors.T)
+
+        def eig_sqrtm_non_hermitian(tensor):
+            eigenvalues, eigenvectors = jnp.linalg.eig(tensor)
+            sqrt_eigenvalues = jnp.sqrt(eigenvalues)
+            scaled_eigenvectors = eigenvectors @ jnp.diag(sqrt_eigenvalues)
+            return jnp.linalg.solve(eigenvectors.T, scaled_eigenvectors.T).T
+
+        def eig_sqrtm(tensor):
+            hermitian = jnp.allclose(tensor, jnp.conj(jnp.transpose(tensor)), rtol=rtol, atol=atol)
+            return jax.lax.cond(
+                hermitian,
+                lambda: eig_sqrtm_hermitian(tensor),
+                lambda: eig_sqrtm_non_hermitian(tensor),
+            )
+
         ret = jax.lax.cond(
             jnp.allclose(tensor, 0, rtol=rtol, atol=atol),
             lambda _: self.zeros_like(tensor, dtype="complex128"),
-            lambda _: jsp.linalg.sqrtm(tensor),
+            lambda _: eig_sqrtm(tensor),
             None,
         )
 
@@ -609,11 +577,7 @@ class BackendJax(BackendBase):
         return self.cast(ret, dtype)
 
     @jax.jit
-    def reorder_AB_bargmann(
-        self,
-        A: jnp.ndarray,
-        B: jnp.ndarray,
-    ) -> tuple[jnp.ndarray, jnp.ndarray]:
+    def reorder_AB_bargmann(self, A, B):
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann_utils the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
@@ -627,15 +591,7 @@ class BackendJax(BackendBase):
     # hermite_renormalized
     # ~~~~~~~~~~~~~~~~~~~~
 
-    def hermite_renormalized(
-        self,
-        A: jnp.ndarray,
-        b: jnp.ndarray,
-        c: jnp.ndarray,
-        shape: tuple[int],
-        stable: bool = False,
-        out: jnp.ndarray | None = None,
-    ) -> jnp.ndarray:
+    def hermite_renormalized(self, A, b, c, shape, stable, out=None):
         if out is not None:
             warn(
                 "Using the out= keyword argument with the jax backend"
@@ -646,15 +602,7 @@ class BackendJax(BackendBase):
             return out
         return hermite_renormalized_jax(A, b, c, shape, stable)
 
-    def hermite_renormalized_batched(
-        self,
-        A: jnp.ndarray,
-        b: jnp.ndarray,
-        c: jnp.ndarray,
-        shape: tuple[int],
-        stable: bool = False,
-        out: jnp.ndarray | None = None,
-    ) -> jnp.ndarray:
+    def hermite_renormalized_batched(self, A, b, c, shape, stable, out=None):
         if out is not None:
             warn(
                 "Using the out= keyword argument with the jax backend"
@@ -665,37 +613,14 @@ class BackendJax(BackendBase):
             return out
         return hermite_renormalized_batched_jax(A, b, c, shape, stable)
 
-    def hermite_renormalized_binomial(
-        self,
-        A: jnp.ndarray,
-        B: jnp.ndarray,
-        C: jnp.ndarray,
-        shape: tuple[int],
-        max_l2: float | None,
-        global_cutoff: int | None,
-    ) -> jnp.ndarray:
+    def hermite_renormalized_binomial(self, A, B, C, shape, max_l2, global_cutoff):
         return hermite_renormalized_binomial_jax(A, B, C, shape, max_l2, global_cutoff)
 
-    def hermite_renormalized_diagonal(
-        self,
-        A: jnp.ndarray,
-        B: jnp.ndarray,
-        C: jnp.ndarray,
-        cutoffs: tuple[int],
-        reorderedAB: bool,
-    ) -> jnp.ndarray:
+    def hermite_renormalized_diagonal(self, A, B, C, cutoffs, reorderedAB):
         A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
         return hermite_renormalized_diagonal_jax(A, B, C, cutoffs)[0]
 
-    def hermite_renormalized_1leftoverMode(
-        self,
-        A: jnp.ndarray,
-        B: jnp.ndarray,
-        C: jnp.ndarray,
-        output_cutoff: int,
-        pnr_cutoffs: tuple[int, ...],
-        reorderedAB: bool,
-    ) -> jnp.ndarray:
+    def hermite_renormalized_1leftoverMode(self, A, B, C, output_cutoff, pnr_cutoffs, reorderedAB):
         A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
         return hermite_renormalized_1leftoverMode_jax(A, B, C, output_cutoff, pnr_cutoffs)[0]
 
@@ -703,21 +628,13 @@ class BackendJax(BackendBase):
     # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~
 
-    def displacement(self, alpha: complex | jnp.ndarray, shape: tuple[int, int]):
+    def displacement(self, alpha, shape):
         return displacement_jax(alpha, shape)
 
-    def beamsplitter(
-        self,
-        theta: float | jnp.ndarray,
-        phi: float | jnp.ndarray,
-        shape: tuple[int, int, int, int],
-        method: str,
-    ):
+    def beamsplitter(self, theta, phi, shape, method):
         return beamsplitter_jax(theta, phi, shape, method)
 
-    def homodyne_projector(
-        self, fock_dim: int, A: jnp.ndarray, b: jnp.ndarray, c: jnp.ndarray, out: jnp.ndarray | None
-    ):
+    def homodyne_projector(self, fock_dim, A, b, c, out):
         if out is not None:
             warn(
                 "Using the out= keyword argument with the jax backend"
@@ -728,10 +645,10 @@ class BackendJax(BackendBase):
             return out
         return homodyne_projector_jax(fock_dim, A, b, c)
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int]):
+    def squeezed(self, r, phi, shape):
         return squeezed_jax(r, phi, shape)
 
-    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
+    def squeezer(self, r, phi, shape):
         return squeezer_jax(r, phi, shape)
 
 

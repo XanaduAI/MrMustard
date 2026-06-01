@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The classes representing states in quantum circuits.
-"""
+"""The classes representing states in quantum circuits."""
 
 from .bargmann_eigenstate import BargmannEigenstate as BargmannEigenstate
 from .base import State as State

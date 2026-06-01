@@ -16,8 +16,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
-from typing import Any
+import importlib
 
 import numpy as np
 from scipy.linalg import expm as scipy_expm
@@ -27,14 +26,9 @@ from scipy.special import xlogy as scipy_xlogy
 
 from mrmustard import settings
 from mrmustard.mathlib import cython_lattice
-from mrmustard.mathlib.gaussian_integrals import (  # numba or guvectorized functions
-    complex_gaussian_integral_1_guvectorized,
-    complex_gaussian_integral_1_jitted,
-    complex_gaussian_integral_2_guvectorized,
-    complex_gaussian_integral_2_jitted,
-)
 from mrmustard.mathlib.lattice import strategies
 from mrmustard.mathlib.lattice.strategies.compactFock.inputValidation import (
+    hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
 )
 
@@ -43,10 +37,14 @@ from .backend_base import BackendBase
 np.set_printoptions(legacy="1.25")
 
 
+def _gaussian_integral_fn(name: str):
+    r"""Return the named function from the gaussian_integrals module, loading it on first use."""
+    module = importlib.import_module("mrmustard.mathlib.gaussian_integrals")
+    return getattr(module, name)
+
+
 class BackendNumpy(BackendBase):
-    r"""
-    A numpy backend.
-    """
+    r"""A numpy backend."""
 
     int32 = np.int32
     int64 = np.int64
@@ -58,69 +56,63 @@ class BackendNumpy(BackendBase):
     def __init__(self):
         super().__init__(name="numpy")
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return "BackendNumpy()"
 
-    def abs(self, array: np.ndarray) -> np.ndarray:
+    def abs(self, array):
         return np.abs(array)
 
-    def all(self, array: np.ndarray) -> bool:
+    def all(self, array):
         return np.all(array)
 
-    def allclose(self, array1: np.array, array2: np.array, atol: float, rtol: float) -> bool:
+    def allclose(self, array1, array2, atol, rtol):
         return np.allclose(array1, array2, atol=atol, rtol=rtol)
 
-    def angle(self, array: np.ndarray) -> np.ndarray:
+    def angle(self, array):
         return np.angle(array)
 
-    def any(self, array: np.ndarray) -> np.ndarray:
+    def any(self, array):
         return np.any(array)
 
-    def arange(
-        self,
-        start: int,
-        limit: int | None = None,
-        delta: int = 1,
-        dtype=np.float64,
-    ) -> np.ndarray:
+    def arange(self, start, limit, delta, dtype=None):
         return np.arange(start, limit, delta, dtype=dtype)
 
-    def argmax(self, array: np.ndarray, axis: int | None = None) -> np.ndarray:
+    def argmax(self, array, axis):
         return np.argmax(array, axis=axis)
 
-    def argmin(self, array: np.ndarray, axis: int | None = None) -> np.ndarray:
+    def argmin(self, array, axis):
         return np.argmin(array, axis=axis)
 
-    def argsort(self, array: np.ndarray, axis: int | None = None) -> np.ndarray:
+    def argsort(self, array, axis):
         return np.argsort(array, axis=axis)
 
-    def asnumpy(self, tensor: np.ndarray) -> np.ndarray:
+    def asnumpy(self, tensor):
         return np.asarray(tensor)
 
-    def astensor(self, array: np.ndarray, dtype=None) -> np.ndarray:
+    def astensor(self, array, dtype=None):
         return np.asarray(array, dtype=dtype)
 
-    def atleast_nd(self, array: np.ndarray, n: int, dtype=None) -> np.ndarray:
+    def atleast_nd(self, array, n, dtype=None):
         return np.array(array, ndmin=n, dtype=dtype)
 
     def BackendError(self):
         # no numpy backend specific errors
         raise NotImplementedError
 
-    def broadcast_to(self, array: np.ndarray, shape: tuple[int]) -> np.ndarray:
+    def broadcast_to(self, array, shape):
         return np.broadcast_to(array, shape)
 
-    def broadcast_arrays(self, *arrays: list[np.ndarray]) -> list[np.ndarray]:
+    def broadcast_arrays(self, *arrays):
         return np.broadcast_arrays(*arrays)
 
-    def cast(self, array: np.ndarray, dtype=None) -> np.ndarray:
+    def cast(self, array, dtype=None):
         if dtype is None:
             return array
         if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
             array = self.real(array)
         return np.asarray(array, dtype=dtype)
 
-    def clip(self, array, a_min, a_max) -> np.ndarray:
+    def clip(self, array, a_min, a_max):
         return np.clip(array, a_min, a_max)
 
     def complex_gaussian_integral_1_single(self, A, b, idx12, A_out, b_out, log_c_out):
@@ -130,7 +122,9 @@ class BackendNumpy(BackendBase):
             b_out = np.empty((m,), dtype=A.dtype)
             log_c_out = np.empty((1,), dtype=A.dtype)
 
-        complex_gaussian_integral_1_jitted(A, b, idx12, A_out, b_out, log_c_out)
+        _gaussian_integral_fn("complex_gaussian_integral_1_jitted")(
+            A, b, idx12, A_out, b_out, log_c_out
+        )
 
         return A_out, b_out, log_c_out[..., 0]
 
@@ -144,7 +138,9 @@ class BackendNumpy(BackendBase):
             A_out = np.empty((*target_batch, m, m), dtype=A.dtype)
             b_out = np.empty((*target_batch, m), dtype=A.dtype)
             log_c_out = np.empty((*target_batch, 1), dtype=A.dtype)
-        complex_gaussian_integral_1_guvectorized(A, b, idx12, A_out, b_out, log_c_out)
+        _gaussian_integral_fn("complex_gaussian_integral_1_guvectorized")(
+            A, b, idx12, A_out, b_out, log_c_out
+        )
 
         return A_out, b_out, log_c_out[..., 0]
 
@@ -157,7 +153,9 @@ class BackendNumpy(BackendBase):
             b_out = np.empty((m,), dtype=A1.dtype)
             log_c_out = np.empty((1,), dtype=A1.dtype)
 
-        complex_gaussian_integral_2_jitted(A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out)
+        _gaussian_integral_fn("complex_gaussian_integral_2_jitted")(
+            A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out
+        )
 
         return A_out, b_out, log_c_out[..., 0]
 
@@ -176,89 +174,87 @@ class BackendNumpy(BackendBase):
             b_out = np.empty((*target_batch, output_size), dtype=A1.dtype)
             log_c_out = np.empty((*target_batch, 1), dtype=A1.dtype)
 
-        complex_gaussian_integral_2_guvectorized(
+        _gaussian_integral_fn("complex_gaussian_integral_2_guvectorized")(
             A1, b1, A2, b2, idx1, idx2, A_out, b_out, log_c_out
         )
         return A_out, b_out, log_c_out[..., 0]
 
-    def concat(self, values: list[np.ndarray], axis: int) -> np.ndarray:
+    def concat(self, values, axis):
         try:
             return np.concatenate(values, axis)
         except ValueError:
             return np.asarray(values)
 
-    def conj(self, array: np.ndarray) -> np.ndarray:
+    def conj(self, array):
         return np.conj(array)
 
-    def cos(self, array: np.ndarray) -> np.ndarray:
+    def cos(self, array):
         return np.cos(array)
 
-    def cosh(self, array: np.ndarray) -> np.ndarray:
+    def cosh(self, array):
         return np.cosh(array)
 
-    def det(self, matrix: np.ndarray) -> np.ndarray:
+    def det(self, matrix):
         with np.errstate(divide="ignore", invalid="ignore"):
             det = np.linalg.det(matrix)
         return det  # noqa: RET504
 
-    def diagonal(
-        self, array: np.ndarray, offset: int | None, axis1: int | None, axis2: int | None
-    ) -> np.ndarray:
+    def diagonal(self, array, offset, axis1, axis2):
         return np.diagonal(array, offset=offset, axis1=axis1, axis2=axis2)
 
-    def diag(self, array: np.ndarray, k: int = 0) -> np.ndarray:
+    def diag(self, array, k=0):
         return np.diag(array, k=k)
 
-    def exp(self, array: np.ndarray) -> np.ndarray:
+    def exp(self, array):
         return np.exp(array)
 
-    def expand_dims(self, array: np.ndarray, axis: int) -> np.ndarray:
+    def expand_dims(self, array, axis):
         return np.expand_dims(array, axis)
 
-    def squeeze(self, array: np.ndarray, axis: int | tuple[int, ...] | None = None) -> np.ndarray:
+    def squeeze(self, array, axis=None):
         return np.squeeze(array, axis=axis)
 
-    def expm(self, matrix: np.ndarray) -> np.ndarray:
+    def expm(self, matrix):
         return scipy_expm(matrix)
 
-    def eye(self, size: int, dtype=np.float64) -> np.ndarray:
+    def eye(self, size, dtype=None):
         return np.eye(size, dtype=dtype)
 
-    def eye_like(self, array: np.ndarray) -> np.ndarray:
+    def eye_like(self, array):
         return np.eye(array.shape[-1], dtype=array.dtype)
 
-    def equal(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    def equal(self, a, b):
         return np.equal(a, b)
 
-    def gather(self, array: np.ndarray, indices: np.ndarray, axis: int = 0) -> np.ndarray:
+    def gather(self, array, indices, axis=0):
         return np.take(array, indices, axis=axis)
 
-    def imag(self, array: np.ndarray) -> np.ndarray:
+    def imag(self, array):
         return np.imag(array)
 
-    def inv(self, tensor: np.ndarray) -> np.ndarray:
+    def inv(self, tensor):
         return np.linalg.inv(tensor)
 
-    def iscomplexobj(self, x: Any) -> bool:
+    def iscomplexobj(self, x):
         return np.iscomplexobj(x)
 
-    def isnan(self, array: np.ndarray) -> np.ndarray:
+    def isnan(self, array):
         return np.isnan(array)
 
-    def issubdtype(self, arg1, arg2) -> bool:
+    def issubdtype(self, arg1, arg2):
         return np.issubdtype(arg1, arg2)
 
-    def lgamma(self, x: np.ndarray) -> np.ndarray:
+    def lgamma(self, x):
         return scipy_loggamma(x)
 
-    def log(self, x: np.ndarray) -> np.ndarray:
+    def log(self, x):
         with np.errstate(divide="ignore"):
             return np.log(x)
 
-    def make_complex(self, real: np.ndarray, imag: np.ndarray) -> np.ndarray:
+    def make_complex(self, real, imag):
         return real + 1j * imag
 
-    def matmul(self, *matrices: np.ndarray) -> np.ndarray:
+    def matmul(self, *matrices):
         use_matmul = self.any(matrix.ndim > 2 for matrix in matrices)
         if use_matmul:
             mat = matrices[0]
@@ -268,170 +264,137 @@ class BackendNumpy(BackendBase):
             mat = np.linalg.multi_dot(matrices)
         return mat
 
-    def matvec(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    def matvec(self, a, b):
         return self.matmul(a, b[..., None])[..., 0]
 
-    def max(self, array: np.ndarray) -> np.ndarray:
+    def max(self, array):
         return np.max(array)
 
-    def maximum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    def maximum(self, a, b):
         return np.maximum(a, b)
 
-    def minimum(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    def minimum(self, a, b):
         return np.minimum(a, b)
 
-    def mod(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    def mod(self, a, b):
         return np.mod(a, b)
 
-    def moveaxis(
-        self,
-        array: np.ndarray,
-        old: int | Sequence[int],
-        new: int | Sequence[int],
-    ) -> np.ndarray:
+    def moveaxis(self, array, old, new):
         return np.moveaxis(array, old, new)
 
-    def mean(self, array: np.ndarray, axis: int | tuple[int] | None = None) -> np.ndarray:
+    def mean(self, array, axis=None):
         return np.mean(array, axis=axis)
 
-    def norm(
-        self, array: np.ndarray, axis: int | tuple[int, int] | None = None, keepdims: bool = False
-    ) -> np.ndarray:
+    def norm(self, array, axis=None, keepdims=False):
         return np.linalg.norm(array, axis=axis, keepdims=keepdims)
 
-    def ones(self, shape: Sequence[int], dtype=np.float64) -> np.ndarray:
+    def ones(self, shape, dtype=None):
         return np.ones(shape, dtype=dtype)
 
-    def full(self, shape: Sequence[int], fill_value, dtype=None) -> np.ndarray:
+    def full(self, shape, fill_value, dtype=None):
         dtype = dtype or np.result_type(fill_value)
         return np.full(shape, fill_value, dtype=dtype)
 
-    def ones_like(self, array: np.ndarray) -> np.ndarray:
+    def ones_like(self, array):
         return np.ones(array.shape, dtype=array.dtype)
 
-    def infinity_like(self, array: np.ndarray) -> np.ndarray:
+    def infinity_like(self, array):
         return np.full_like(array, np.inf)
 
-    def conditional(
-        self,
-        cond: np.ndarray | bool,
-        true_fn: Callable,
-        false_fn: Callable,
-        *args,
-    ) -> np.ndarray:
+    def conditional(self, cond, true_fn, false_fn, *args):
         if self.asnumpy(cond).all():
             return true_fn(*args)
         return false_fn(*args)
 
-    def error_if(self, array: np.ndarray, condition: np.ndarray, msg: str):
+    def error_if(self, array, condition, msg):
         if np.any(condition):
             raise ValueError(msg)
 
-    def outer(self, array1: np.ndarray, array2: np.ndarray) -> np.ndarray:
+    def outer(self, array1, array2):
         return self.tensordot(array1, array2, [[], []])
 
-    def pad(
-        self,
-        array: np.ndarray,
-        paddings: Sequence[tuple[int, int]],
-        mode="CONSTANT",
-        constant_values=0,
-    ) -> np.ndarray:
+    def pad(self, array, paddings, mode, constant_values):
         if mode == "CONSTANT":
             mode = "constant"
         return np.pad(array, paddings, mode, constant_values=constant_values)
 
     @staticmethod
-    def pinv(matrix: np.ndarray) -> np.ndarray:
+    def pinv(matrix):
         return np.linalg.pinv(matrix)
 
-    def pow(self, x: np.ndarray, y: float) -> np.ndarray:
+    def pow(self, x, y):
         return np.power(x, y)
 
-    def kron(self, tensor1: np.ndarray, tensor2: np.ndarray):
+    def kron(self, tensor1, tensor2):
         return np.kron(tensor1, tensor2)
 
-    def prod(self, x: np.ndarray, axis: int | None):
+    def prod(self, x, axis):
         return np.prod(x, axis=axis)
 
-    def real(self, array: np.ndarray) -> np.ndarray:
+    def real(self, array):
         return np.real(array)
 
-    def reshape(self, array: np.ndarray, shape: Sequence[int]) -> np.ndarray:
+    def reshape(self, array, shape):
         return np.reshape(array, shape)
 
-    def shape(self, array: np.ndarray) -> tuple[int, ...]:
+    def shape(self, array):
         return np.shape(array)
 
-    def sin(self, array: np.ndarray) -> np.ndarray:
+    def sin(self, array):
         return np.sin(array)
 
-    def sinh(self, array: np.ndarray) -> np.ndarray:
+    def sinh(self, array):
         return np.sinh(array)
 
-    def solve(self, matrix: np.ndarray, rhs: np.ndarray) -> np.ndarray:
+    def solve(self, matrix, rhs):
         if len(rhs.shape) == len(matrix.shape) - 1:
             rhs = np.expand_dims(rhs, -1)
             return np.linalg.solve(matrix, rhs)[..., 0]
         return np.linalg.solve(matrix, rhs)
 
-    def sort(self, array: np.ndarray, axis: int = -1) -> np.ndarray:
+    def sort(self, array, axis=-1):
         return np.sort(array, axis)
 
-    def sqrt(self, x: np.ndarray, dtype=None) -> np.ndarray:
-        return np.sqrt(self.cast(x, dtype))
+    def sqrt(self, x, dtype=None):
+        return np.sqrt(self.cast(np.asarray(x), dtype))
 
-    def stack(self, arrays: np.ndarray, axis: int = 0) -> np.ndarray:
+    def stack(self, arrays, axis=0):
         return np.stack(arrays, axis=axis)
 
-    def sum(self, array: np.ndarray, axis: int | tuple[int] | None = None):
+    def sum(self, array, axis=None):
         return np.sum(array, axis=axis)
 
-    def swapaxes(self, array: np.ndarray, axis1: int, axis2: int) -> np.ndarray:
+    def swapaxes(self, array, axis1, axis2):
         return np.swapaxes(array, axis1, axis2)
 
-    def tensordot(self, a: np.ndarray, b: np.ndarray, axes: list[int]) -> np.ndarray:
+    def tensordot(self, a, b, axes):
         return np.tensordot(a, b, axes)
 
-    def tile(self, array: np.ndarray, repeats: Sequence[int]) -> np.ndarray:
+    def tile(self, array, repeats):
         return np.tile(array, repeats)
 
-    def trace(self, array: np.ndarray, dtype=None) -> np.ndarray:
+    def trace(self, array, dtype=None):
         return self.cast(np.trace(array, axis1=-1, axis2=-2), dtype)
 
-    def transpose(self, a: np.ndarray, perm: Sequence[int] | None = None) -> np.ndarray | None:
+    def transpose(self, a, perm=None):
         return np.transpose(a, axes=perm)
 
-    def tan(self, array: np.ndarray) -> np.ndarray:
+    def tan(self, array):
         return np.tan(array)
 
-    def tanh(self, array: np.ndarray) -> np.ndarray:
+    def tanh(self, array):
         return np.tanh(array)
 
-    def update_tensor(
-        self,
-        tensor: np.ndarray,
-        indices: np.ndarray,
-        values: np.ndarray,
-    ) -> np.ndarray:
-        tensor[indices] = values
-        return tensor
-
-    def update_add_tensor(
-        self,
-        tensor: np.ndarray,
-        indices: np.ndarray,
-        values: np.ndarray,
-    ) -> np.ndarray:
+    def update_add_tensor(self, tensor, indices, values):
         indices = self.atleast_nd(indices, 2)
         for i, v in zip(indices, values):
             tensor[tuple(i)] += v
         return tensor
 
-    def zeros(self, shape: Sequence[int], dtype=np.float64) -> np.ndarray:
+    def zeros(self, shape, dtype=None):
         return np.zeros(shape, dtype=dtype)
 
-    def zeros_like(self, array: np.ndarray) -> np.ndarray:
+    def zeros_like(self, array):
         return np.zeros_like(array, dtype=array.dtype)
 
     def map_fn(self, func, elements):
@@ -439,18 +402,18 @@ class BackendNumpy(BackendBase):
         return np.asarray([func(e) for e in elements])
 
     @staticmethod
-    def eigvals(tensor: np.ndarray) -> np.ndarray:
+    def eigvals(tensor):
         return np.linalg.eigvals(tensor)
 
     @staticmethod
-    def xlogy(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def xlogy(x, y):
         return scipy_xlogy(x, y)
 
     @staticmethod
-    def eigh(tensor: np.ndarray) -> tuple:
+    def eigh(tensor):
         return np.linalg.eigh(tensor)
 
-    def sqrtm(self, tensor: np.ndarray, dtype, rtol=1e-05, atol=1e-08) -> np.ndarray:
+    def sqrtm(self, tensor, dtype=None, rtol=1e-05, atol=1e-08):
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
             ret = self.zeros_like(tensor)
         else:
@@ -460,7 +423,7 @@ class BackendNumpy(BackendBase):
             return self.cast(ret, self.complex128)
         return self.cast(ret, dtype)
 
-    def reorder_AB_bargmann(self, A: np.ndarray, B: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def reorder_AB_bargmann(self, A, B):
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann_utils the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
@@ -474,37 +437,13 @@ class BackendNumpy(BackendBase):
     # hermite_renormalized
     # ~~~~~~~~~~~~~~~~~~~~
 
-    def hermite_renormalized(
-        self,
-        A: np.ndarray,
-        b: np.ndarray,
-        c: np.ndarray,
-        shape: tuple[int],
-        stable: bool = False,
-        out: np.ndarray | None = None,
-    ) -> np.ndarray:
+    def hermite_renormalized(self, A, b, c, shape, stable, out=None):
         return cython_lattice.vanilla(tuple(shape), A, b, c, stable, out)
 
-    def hermite_renormalized_batched(
-        self,
-        A: np.ndarray,
-        b: np.ndarray,
-        c: np.ndarray,
-        shape: tuple[int],
-        stable: bool = False,
-        out: np.ndarray | None = None,
-    ) -> np.ndarray:
+    def hermite_renormalized_batched(self, A, b, c, shape, stable, out=None):
         return cython_lattice.vanilla_batched(tuple(shape), A, b, c, stable, out)
 
-    def hermite_renormalized_binomial(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        shape: tuple[int],
-        max_l2: float | None,
-        global_cutoff: int | None,
-    ) -> np.ndarray:
+    def hermite_renormalized_binomial(self, A, B, C, shape, max_l2, global_cutoff):
         return strategies.binomial(
             tuple(shape),
             A,
@@ -514,36 +453,22 @@ class BackendNumpy(BackendBase):
             global_cutoff=global_cutoff or sum(shape) - len(shape) + 1,
         )[0]
 
-    def hermite_renormalized_diagonal(
-        self,
-        A: np.ndarray,
-        B: np.ndarray,
-        C: np.ndarray,
-        cutoffs: tuple[int],
-        reorderedAB: bool,
-    ) -> np.ndarray:
+    def hermite_renormalized_diagonal(self, A, B, C, cutoffs, reorderedAB):
         A, B = self.reorder_AB_bargmann(A, B) if reorderedAB else (A, B)
         return hermite_multidimensional_diagonal(A, B, C, cutoffs)[0]
 
     def hermite_renormalized_1leftoverMode(
-        self,
-        A: np.ndarray,
-        b: np.ndarray,
-        c: np.ndarray,
-        output_cutoff: int,
-        pnr_cutoffs: tuple[int, ...],
-        stable: bool = False,
-        reorderedAB: bool = True,
-    ) -> np.ndarray:
-        return strategies.fast_diagonal(A, b, c, output_cutoff, pnr_cutoffs, stable).transpose(
-            (-2, -1, *tuple(range(len(pnr_cutoffs)))),
-        )
+        self, A, b, c, output_cutoff, pnr_cutoffs, reorderedAB=True
+    ):
+        A, b = self.reorder_AB_bargmann(A, b) if reorderedAB else (A, b)
+        shape = (output_cutoff + 1, *tuple(p + 1 for p in pnr_cutoffs))
+        return hermite_multidimensional_1leftoverMode(A, b, c, shape)[0]
 
     # ~~~~~~~~~~~~~~~~~~~~~~~
     # Fock lattice strategies
     # ~~~~~~~~~~~~~~~~~~~~~~~
 
-    def displacement(self, alpha: complex | np.ndarray, shape: tuple[int, int]):
+    def displacement(self, alpha, shape):
         alpha = self.astensor(alpha, dtype=self.complex128)
         batch_shape = alpha.shape
         if batch_shape == ():
@@ -552,13 +477,7 @@ class BackendNumpy(BackendBase):
         ret = cython_lattice.displacement_batched(tuple(shape), alpha_flattened)
         return ret.reshape((*batch_shape, *shape))
 
-    def beamsplitter(
-        self,
-        theta: float | np.ndarray,
-        phi: float | np.ndarray,
-        shape: tuple[int, int, int, int],
-        method: str,
-    ):
+    def beamsplitter(self, theta, phi, shape, method):
         theta, phi = (
             self.astensor(theta, dtype=self.float64),
             self.astensor(phi, dtype=self.float64),
@@ -576,14 +495,7 @@ class BackendNumpy(BackendBase):
         )
         return bs_unitary.reshape((*batch_shape, *shape))
 
-    def homodyne_projector(
-        self,
-        fock_dim: int,
-        A: np.ndarray,
-        b: np.ndarray,
-        c: np.ndarray,
-        out: np.ndarray | None,
-    ):
+    def homodyne_projector(self, fock_dim, A, b, c, out):
         A, b, c = (
             self.astensor(A, dtype=self.complex128),
             self.astensor(b, dtype=self.complex128),
@@ -601,7 +513,7 @@ class BackendNumpy(BackendBase):
         )
         return ret.reshape((*batch_shape, fock_dim, fock_dim, fock_dim))
 
-    def squeezed(self, r: float, phi: float, shape: tuple[int]):
+    def squeezed(self, r, phi, shape):
         r, phi = self.astensor(r, dtype=self.float64), self.astensor(phi, dtype=self.float64)
         batch_shape = r.shape
         if batch_shape == ():
@@ -611,7 +523,7 @@ class BackendNumpy(BackendBase):
         ret = cython_lattice.squeezed_batched(int(shape[0]), r_flattened, phi_flattened)
         return ret.reshape((*batch_shape, shape[0]))
 
-    def squeezer(self, r: float, phi: float, shape: tuple[int, int]):
+    def squeezer(self, r, phi, shape):
         r, phi = self.astensor(r, dtype=self.float64), self.astensor(phi, dtype=self.float64)
         batch_shape = r.shape
         if batch_shape == ():

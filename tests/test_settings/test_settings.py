@@ -33,10 +33,11 @@ class TestSettings:
         assert settings.AUTOSHAPE_PROBABILITY == 0.99999
         assert settings.AUTOSHAPE_MAX == 50
         assert settings.AUTOSHAPE_MIN == 1
-        assert settings.DISCRETIZATION_METHOD == "clenshaw"
         assert settings.DEFAULT_FOCK_SIZE == 50
         assert settings.DEFAULT_REPRESENTATION == "Fock"
         assert settings.PROGRESSBAR is True
+        assert settings.WIGNER_2D_RESOLUTION == 100
+        assert settings.WIGNER_BOUNDS == (-6.0, 6.0)
 
     def test_setters(self):
         settings = Settings()
@@ -90,3 +91,11 @@ class TestSettings:
             settings.AUTOSHAPE_PROBABILITY = 2.3
         with pytest.raises(ValueError, match="Input should be a non-negative integer or None"):
             settings.SEED = 4.5
+
+    def test_wigner_bounds_validation(self):
+        """WIGNER_BOUNDS must be (min, max) with min < max."""
+        settings = Settings()
+        settings.WIGNER_BOUNDS = (-5.0, 5.0)
+        assert settings.WIGNER_BOUNDS == (-5.0, 5.0)
+        with pytest.raises(ValidationError, match="greater"):
+            settings.WIGNER_BOUNDS = (5.0, 3.0)

@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-This file contains the implementation of the complex Gaussian integral for one or two Abc.
+r"""This file contains the implementation of the complex Gaussian integral for one or two Abc.
 Refer to the documentation of the complex_gaussian_integral_1 and complex_gaussian_integral_2
 functions in the backend_manager.py file for more details.
 """
@@ -31,9 +30,7 @@ __all__ = [
 
 @njit(cache=True, fastmath=True)
 def _get_not_indices(total_size, indices_to_exclude):  # pragma: no cover
-    r"""
-    Creates a boolean mask and returns the indices where the mask is True.
-    """
+    r"""Creates a boolean mask and returns the indices where the mask is True."""
     mask = np.full(total_size, True)
     mask[indices_to_exclude] = False
     return np.where(mask)[0]
@@ -87,7 +84,7 @@ def complex_gaussian_integral_2_jitted(
     invL = A @ D - np.eye(A.shape[0])
     detinv = np.linalg.det(-invL)
 
-    if np.isclose(np.abs(detinv), 0):
+    if np.isclose(np.abs(detinv), 0, atol=1e-20):
         A_out[:, :] = np.inf
         b_out[:] = np.inf
         log_c_out[0] = np.inf

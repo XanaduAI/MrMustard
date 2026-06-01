@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains the defintion of the density matrix class ``DM``.
-"""
+"""This module contains the defintion of the density matrix class ``DM``."""
 
 from __future__ import annotations
 
@@ -30,7 +28,7 @@ from mrmustard.physics.ansatz_factory import AnsatzFactory
 from mrmustard.physics.fock_utils import fidelity as fock_dm_fidelity
 from mrmustard.physics.gaussian import fidelity as gaussian_fidelity
 from mrmustard.physics.wires import ReprEnum, Wires
-from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
+from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Vector
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
@@ -43,16 +41,13 @@ __all__ = ["DM"]
 
 
 class DM(State):
-    r"""
-    Base class for density matrices.
-    """
+    r"""Base class for density matrices."""
 
     short_name = "DM"
 
     @property
     def is_positive(self) -> bool:
-        r"""
-        Whether this DM corresponds to a positive operator.
+        r"""Whether this DM corresponds to a positive operator.
 
         >>> from mrmustard.lab import GaussianDM
         >>> assert GaussianDM.random([0]).is_positive
@@ -86,8 +81,7 @@ class DM(State):
 
     @property
     def is_physical(self) -> bool:
-        r"""
-        Whether this DM is a physical density operator.
+        r"""Whether this DM is a physical density operator.
 
         >>> from mrmustard.lab import GaussianDM
         >>> assert GaussianDM.random([0]).is_physical
@@ -96,8 +90,7 @@ class DM(State):
 
     @property
     def probability(self) -> float:
-        r"""
-        Probability (trace) of this DM, using the batch dimension of the Ansatz
+        r"""Probability (trace) of this DM, using the batch dimension of the Ansatz
         as a convex combination of states.
         """
         idx_ket = self.wires.output.ket.indices
@@ -107,8 +100,7 @@ class DM(State):
 
     @property
     def purity(self) -> float:
-        r"""
-        Computes the purity (:math:`tr(rho^2)`) of this DM.
+        r"""Computes the purity (:math:`tr(rho^2)`) of this DM.
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import DM, Vacuum
@@ -117,12 +109,32 @@ class DM(State):
         return self.L2_norm / self.probability**2
 
     @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[Matrix, Vector, Scalar],
+        name: str | None = None,
+        lin_sup: bool = False,
+    ) -> DM:
+        return super().from_bargmann(modes=modes, triple=triple, name=name, lin_sup=lin_sup)
+
+    @classmethod
+    def from_fock(
+        cls,
+        modes: Sequence[int],
+        array: ComplexTensor,
+        name: str | None = None,
+        batch_dims: int = 0,
+    ) -> DM:
+        return super().from_fock(modes=modes, array=array, name=name, batch_dims=batch_dims)
+
+    @classmethod
     def from_ansatz(
         cls,
         modes: Collection[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
-    ) -> State:
+    ) -> DM:
         if not isinstance(modes, set) and sorted(modes) != list(modes):
             raise ValueError(f"Modes must be sorted. got {modes}")
         modes = set(modes)
@@ -145,12 +157,11 @@ class DM(State):
     def from_phase_space(
         cls,
         modes: Collection[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        triple: tuple[Matrix, Vector, Scalar],
         name: str | None = None,
         atol_purity: float | None = None,
     ) -> DM:
-        r"""
-        Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
+        r"""Initializes a density matrix from the covariance matrix, vector of means and a coefficient,
         which parametrize the s-parametrized phase space function
         :math:`coeff * exp(-1/2(x-means)^T cov^{-1} (x-means))`.h:`coeff * exp((x-means)^T cov^{-1} (x-means))`.
 
@@ -187,9 +198,18 @@ class DM(State):
         ansatz = ansatz_factory(cov=cov, means=means, representation=ReprEnum.BARGMANN)
         return DM.from_ansatz(modes, coeff * ansatz, name)
 
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[Matrix, Vector, Scalar],
+        phi: float = 0.0,
+        name: str | None = None,
+    ) -> DM:
+        return super().from_quadrature(modes=modes, triple=triple, phi=phi, name=name)
+
     def dm(self) -> DM:
-        r"""
-        The ``DM`` object obtained from this ``DM``.
+        r"""The ``DM`` object obtained from this ``DM``.
 
         >>> from mrmustard.lab import Vacuum, DM
         >>> assert isinstance(Vacuum([0]).dm(), DM)
@@ -199,9 +219,8 @@ class DM(State):
         """
         return self
 
-    def expectation(self, operator: CircuitComponent) -> Batch[Scalar]:
-        r"""
-        The expectation value of an operator with respect to this DM.
+    def expectation(self, operator: CircuitComponent) -> Scalar:
+        r"""The expectation value of an operator with respect to this DM.
 
         Given the operator `O`, this function returns :math:`Tr\big(\rho O)`\, where :math:`\rho`
         is the density matrix of this state.
@@ -255,9 +274,8 @@ class DM(State):
 
         return ret
 
-    def fidelity(self, other: State) -> float:
-        r"""
-        The fidelity between this DM and another ket or DM. If the other state is a Ket, fidelity
+    def fidelity(self, other: State) -> Scalar:
+        r"""The fidelity between this DM and another ket or DM. If the other state is a Ket, fidelity
         is computed as the squared overlap, consistent with the pure state's fidelity.
         If the other state is a DM and the representation is Fock, the fidelity is computed as in
         Richard Jozsa (1994) Fidelity for Mixed Quantum States,
@@ -300,8 +318,7 @@ class DM(State):
         shape: int | Sequence[int] | None = None,
         standard_order: bool = False,
     ) -> ComplexTensor:
-        r"""
-        Returns an array representation of this component in the Fock basis with the given shape.
+        r"""Returns an array representation of this component in the Fock basis with the given shape.
 
         The ``standard_order`` boolean argument lets one choose the standard convention for the
         index ordering of the density matrix. For a single mode, if ``standard_order=True`` the
@@ -353,9 +370,8 @@ class DM(State):
 
         return array
 
-    def formal_stellar_decomposition(self, core_modes):
-        r"""
-        Computes the formal stellar decomposition for the DM.
+    def formal_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[DM, Map]:
+        r"""Computes the formal stellar decomposition for the DM.
 
         >>> from mrmustard.lab import GaussianDM, Vacuum
         >>> rho = GaussianDM.random([0,1])
@@ -368,8 +384,7 @@ class DM(State):
             core_modes: The set of modes defining core variables.
 
         Returns:
-            core: The core state (`DM`)
-            phi: The Gaussian `Map` performing the stellar decomposition (not necessarily CPTP).
+            The core state (`DM`) and the Gaussian `Map` performing the stellar decomposition (not necessarily CPTP).
 
         Note:
             This method pulls out the map ``phi`` from the given state on the given modes, so that
@@ -413,8 +428,7 @@ class DM(State):
         return core, phi
 
     def _ket_stellar_decomposition(self, core_modes: Collection[int]):
-        r"""
-        Physical stellar decomposition returning a Ket core.
+        r"""Physical stellar decomposition returning a Ket core.
 
         This private method implements the algorithm that extracts a pure state (Ket) core
         from a DM. It only works when the number of core modes equals half the total modes.
@@ -423,8 +437,7 @@ class DM(State):
             core_modes: The core modes (must be exactly n_modes // 2).
 
         Returns:
-            core: The core state (``Ket``)
-            phi: The channel acting on the core modes (``Channel``)
+            The core state (``Ket``) and the channel acting on the core modes (``Channel``).
         """
         from .ket import Ket  # noqa: PLC0415
 
@@ -522,9 +535,8 @@ class DM(State):
             phi,
         )
 
-    def physical_stellar_decomposition(self, core_modes: Collection[int]):
-        r"""
-        Applies the physical stellar decomposition.
+    def physical_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[State, Channel]:
+        r"""Applies the physical stellar decomposition.
 
         When the number of core modes equals exactly half of the total modes (and n_modes is even),
         returns a ``Ket`` core and ``Channel``. Otherwise, returns a ``DM`` core and ``Channel``.
@@ -539,12 +551,7 @@ class DM(State):
             core_modes: The core modes defining the core variables.
 
         Returns:
-            When ``len(core_modes) == n_modes // 2`` (and n_modes is even):
-                core: The core state (``Ket``)
-                phi: The channel acting on the core modes (``Channel``)
-            Otherwise:
-                core: The core state (``DM``)
-                phi: The channel acting on the core modes (``Channel``)
+            The core state (`DM` or `Ket` depending on the number of core modes) and the channel acting on the core modes.
 
         Raises:
             ValueError: If the rank condition is not satisfied (when core modes < half).
@@ -582,28 +589,7 @@ class DM(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=False, is_fock=is_fock))
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Contracts ``self`` and ``other`` (output of self into the inputs of other),
-        adding the adjoints when they are missing.
-
-        >>> from mrmustard.lab import CircuitComponent, GaussianDM, TraceOut
-        >>> assert isinstance(GaussianDM.random([0]).dual >> GaussianDM.random([0]), CircuitComponent)
-        >>> assert isinstance(GaussianDM.random([0,1]) >> TraceOut(0), DM)
-
-        Args:
-            other: the ``CircuitComponent`` we want to contract with.
-
-        Returns:
-            A ``DM`` when the wires of the resulting components are compatible with
-            those of a ``DM``, a ``CircuitComponent`` otherwise, and a scalar if there are no wires left.
-
-        Note:
-            Given this is a ``DM`` object which
-            has both ket and bra wires at the output, expressions like ``dm >> u`` where
-            ``u`` is a unitary will automatically apply the adjoint of ``u`` on the bra side.
-        """
-
+    def __rshift__(self, other: Scalar | CircuitComponent) -> Scalar | CircuitComponent:
         result = super().__rshift__(other)
         if not isinstance(result, CircuitComponent):
             return result  # scalar case handled here

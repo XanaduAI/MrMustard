@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a coherent state.
-"""
+"""The class representing a coherent state."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["Coherent"]
 
 
 class Coherent(Ket):
-    r"""
-    The coherent state in Bargmann representation.
+    r"""The coherent state in Bargmann representation.
 
     >>> from mrmustard.lab import Coherent, Vacuum, Dgate
     >>> state = Coherent(mode=0, alpha=0.3 + 0.2j)
@@ -41,6 +38,7 @@ class Coherent(Ket):
     Args:
         mode: The mode of the coherent state.
         alpha: The `alpha` displacement of the coherent state.
+        name: A name for the state. If not provided, the class name will be used.
 
     Returns:
         A ``Ket`` object representing a coherent state.
@@ -67,15 +65,17 @@ class Coherent(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         alpha: complex | Sequence[complex] | Parameter = 0.0 + 0.0j,
+        name: str | None = None,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (coherent_state, ("alpha", "lin_sup"))}
             ),
             wires=Wires(modes_out_ket=set(mode)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["alpha"] = Parameter.from_cc_init(alpha, "complex128", f"{self.name}/alpha")

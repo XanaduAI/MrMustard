@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains methods for creating built-in ``State`` ``Ansatz``.
-"""
+"""This module contains methods for creating built-in ``State`` ``Ansatz``."""
 
 from __future__ import annotations
 
@@ -51,8 +49,7 @@ def bargmann_eigenstate(
     alpha: complex | Sequence[complex],
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The Bargmann eigenstate in the Bargmann representation.
+    r"""The Bargmann eigenstate in the Bargmann representation.
 
     Args:
         alpha: The displacement of the state (i.e., the eigen-value).
@@ -69,8 +66,7 @@ def coherent_state(
     alpha: complex | Sequence[complex],
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The coherent state in the Bargmann representation.
+    r"""The coherent state in the Bargmann representation.
 
     Args:
         alpha: The complex displacement.
@@ -89,8 +85,7 @@ def displaced_squeezed_vacuum_state(
     phi: float | Sequence[float] = 0.0,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The displaced squeezed vacuum state in the Bargmann representation.
+    r"""The displaced squeezed vacuum state in the Bargmann representation.
 
     Args:
         alpha: The complex displacement.
@@ -109,8 +104,7 @@ def gket_state(
     symplectic: RealMatrix,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The Gaussian ket state in the Bargmann representation.
+    r"""The Gaussian ket state in the Bargmann representation.
 
     Args:
         symplectic: The symplectic matrix of the state.
@@ -128,8 +122,7 @@ def gdm_state(
     symplectic: RealMatrix,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The Gaussian dm state in the Bargmann representation.
+    r"""The Gaussian dm state in the Bargmann representation.
 
     Args:
         beta: The displacement of the state.
@@ -147,8 +140,7 @@ def number_state(
     n: int | Sequence[int],
     shape: tuple[int],
 ) -> ArrayAnsatz:
-    r"""
-    The number state in the Fock representation.
+    r"""The number state in the Fock representation.
 
     Args:
         n: The number of photons.
@@ -166,8 +158,7 @@ def quadrature_eigenstate(
     phi: float | Sequence[float],
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The quadrature eigenstate in the Bargmann representation.
+    r"""The quadrature eigenstate in the Bargmann representation.
 
     Args:
         x: The displacement of the state.
@@ -186,8 +177,7 @@ def sauron_state(
     epsilon: float,
     lin_sup: bool = True,
 ) -> PolyExpAnsatz:
-    r"""
-    The Sauron state in the Bargmann representation.
+    r"""The Sauron state in the Bargmann representation.
 
     Args:
         n: The number of photons.
@@ -207,8 +197,7 @@ def squeezed_thermal_state(
     phi: float | Sequence[float] = 0.0,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The squeezed thermal state in the Bargmann representation.
+    r"""The squeezed thermal state in the Bargmann representation.
 
     Args:
         nbar: The expected number of photons.
@@ -228,8 +217,7 @@ def squeezed_vacuum_state(
     phi: float | Sequence[float] = 0.0,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The squeezed vacuum state in the Bargmann representation.
+    r"""The squeezed vacuum state in the Bargmann representation.
 
     Args:
         r: The squeezing magnitude.
@@ -249,8 +237,7 @@ def squeezed_vacuum_state_fock(
     shape: int | Sequence[int] | None = None,
     lin_sup: bool = False,
 ) -> ArrayAnsatz:
-    r"""
-    The squeezed vacuum state in the Fock representation.
+    r"""The squeezed vacuum state in the Fock representation.
 
     Args:
         r: The squeezing magnitude.
@@ -276,8 +263,7 @@ def thermal_state(
     nbar: float | Sequence[float],
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The thermal state in the Bargmann representation.
+    r"""The thermal state in the Bargmann representation.
 
     Args:
         nbar: The expected number of photons.
@@ -295,8 +281,7 @@ def two_mode_squeezed_vacuum_state(
     phi: float | Sequence[float] = 0.0,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The two-mode squeezed vacuum state in the Bargmann representation.
+    r"""The two-mode squeezed vacuum state in the Bargmann representation.
 
     Args:
         r: The squeezing magnitude.
@@ -311,8 +296,7 @@ def two_mode_squeezed_vacuum_state(
 
 
 def vacuum_state(n_modes: int, lin_sup: bool = False) -> PolyExpAnsatz:
-    r"""
-    The `N`-mode vacuum state in the Bargmann representation.
+    r"""The `N`-mode vacuum state in the Bargmann representation.
 
     Args:
         n_modes: The number of modes.
@@ -330,8 +314,7 @@ def wigner_to_bargmann_psi(
     means: RealVector,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The Wigner ``Ket`` in the Bargmann representation.
+    r"""The Wigner ``Ket`` in the Bargmann representation.
 
     Args:
         cov: The covariance matrix of the state.
@@ -350,8 +333,7 @@ def wigner_to_bargmann_rho(
     means: RealVector,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The Wigner ``DM`` in the Bargmann representation.
+    r"""The Wigner ``DM`` in the Bargmann representation.
 
     Args:
         cov: The covariance matrix of the state.

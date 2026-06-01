@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains functions for performing calculations on objects in the Gaussian representations.
-"""
+"""This module contains functions for performing calculations on objects in the Gaussian representations."""
 
 from __future__ import annotations
 
@@ -108,15 +106,14 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix) -> float:
     Note that we compute the square of equation 98.
 
     Args:
-        mu1 (Vector): the means vector of state 1
-        mu2 (Vector): the means vector of state 2
-        cov1 (Matrix): the covariance matrix of state 1
-        cov1 (Matrix): the covariance matrix of state 2
+        mu1: The means vector of state 1.
+        cov1: The covariance matrix of state 1.
+        mu2: The means vector of state 2.
+        cov2: The covariance matrix of state 2.
 
     Returns:
-        float: the fidelity
+        The fidelity of the two states.
     """
-
     cov1 = math.cast(cov1 / settings.HBAR, "complex128")  # convert to units where hbar = 1
     cov2 = math.cast(cov2 / settings.HBAR, "complex128")  # convert to units where hbar = 1
 

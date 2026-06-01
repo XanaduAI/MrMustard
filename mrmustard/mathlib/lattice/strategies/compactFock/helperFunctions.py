@@ -1,6 +1,5 @@
-"""
-This module contains helper functions that are used in
-diagonal_amps.py, diagonal_grad.py, singleLeftoverMode_amps.py and singleLeftoverMode_grad.py
+"""This module contains helper functions that are used in
+diagonal_amps.py, diagonal_grad.py, singleLeftoverMode_amps.py and singleLeftoverMode_grad.py.
 """
 
 import numba
@@ -11,10 +10,11 @@ from numba.typed import Dict
 
 @njit(cache=True)
 def repeat_twice(params):
-    """
-    This function is equivalent to np.repeat(params,2), but runs faster.
+    """This function is equivalent to np.repeat(params,2), but runs faster.
+
     Args:
         params (1D array): [a,b,c,...]
+
     Returns:
         (1D array): [a,a,b,b,c,c,...]
     """
@@ -27,8 +27,7 @@ def repeat_twice(params):
 
 @njit(cache=True)
 def construct_dict_params(cutoffs, tuple_type, list_type):
-    """
-    Args:
+    """Args:
         cutoffs (tuple): upper bounds for the number of photons in each mode
         tuple_type,list_type (numba types): numba types that need to be defined outside of numba compiled functions
     Returns:

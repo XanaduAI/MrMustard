@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-A base class for the components of quantum circuits.
-"""
+"""A base class for the components of quantum circuits."""
 
 from __future__ import annotations
 
@@ -35,8 +33,8 @@ from mrmustard.physics.fock_utils import oscillator_eigenstate
 from mrmustard.physics.mm_einsum import bargmann_to_fock, fock_to_bargmann
 from mrmustard.physics.wires import ReprEnum, Wires
 from mrmustard.utils.typing import (
-    Batch,
     ComplexMatrix,
+    ComplexScalar,
     ComplexTensor,
     ComplexVector,
     RealVector,
@@ -47,8 +45,7 @@ __all__ = ["CircuitComponent"]
 
 
 class CircuitComponent:
-    r"""
-    A base class for the circuit components (states, transformations, measurements,
+    r"""A base class for the circuit components (states, transformations, measurements,
     and any component made by combining CircuitComponents). CircuitComponents are
     defined by their ``ansatz`` and ``wires``.
 
@@ -73,8 +70,7 @@ class CircuitComponent:
 
     @property
     def adjoint(self) -> CircuitComponent:
-        r"""
-        The adjoint of this component obtained by conjugating the ansatz and swapping
+        r"""The adjoint of this component obtained by conjugating the ansatz and swapping
         the ket and bra wires.
 
         >>> from mrmustard.lab import GaussianKet
@@ -86,20 +82,15 @@ class CircuitComponent:
             To get the standard order, call ``to_standard_order()`` on the result.
         """
         ansatz_factory, _ = AnsatzFactory.from_ansatz(self.ansatz.conj)
-        ret = CircuitComponent(
-            ansatz_factory=ansatz_factory, wires=self.wires.adjoint, name=self.name
-        )
+        name = self.name.removesuffix("_adj") if self.name.endswith("_adj") else self.name + "_adj"
+        ret = CircuitComponent(ansatz_factory=ansatz_factory, wires=self.wires.adjoint, name=name)
         ret.short_name = self.short_name
         ret._parameters = self.parameters.copy()
         return ret
 
     @property
-    def ansatz(self) -> Ansatz | None:
-        r"""
-        The ansatz of this circuit component.
-        """
-        if self.ansatz_factory is None:
-            return None
+    def ansatz(self) -> Ansatz:
+        r"""The ansatz of this circuit component."""
         representation = ReprEnum.BARGMANN
         shape = ()
         if len(self.wires.quantum) != 0:
@@ -112,16 +103,19 @@ class CircuitComponent:
         return self.ansatz_factory(**self.parameters, representation=representation, shape=shape)
 
     @property
-    def ansatz_factory(self) -> AnsatzFactory | None:
-        r"""
-        The ansatz factory of this component.
+    def ansatz_factory(self) -> AnsatzFactory:
+        r"""The ansatz factory of this component.
+
+        Raises:
+            AttributeError: If the component has no ``AnsatzFactory``.
         """
+        if self._ansatz_factory is None:
+            raise AttributeError("CircuitComponent has no ansatz factory.")
         return self._ansatz_factory
 
     @property
     def dual(self) -> CircuitComponent:
-        r"""
-        The dual of this component obtained by conjugating the ansatz and swapping
+        r"""The dual of this component obtained by conjugating the ansatz and swapping
         the input and output wires.
 
         >>> from mrmustard import math
@@ -134,15 +128,17 @@ class CircuitComponent:
             To get the standard order, call ``to_standard_order()`` on the result.
         """
         ansatz_factory, _ = AnsatzFactory.from_ansatz(self.ansatz.conj)
-        ret = CircuitComponent(ansatz_factory=ansatz_factory, wires=self.wires.dual, name=self.name)
+        name = (
+            self.name.removesuffix("_dual") if self.name.endswith("_dual") else self.name + "_dual"
+        )
+        ret = CircuitComponent(ansatz_factory=ansatz_factory, wires=self.wires.dual, name=name)
         ret.short_name = self.short_name
         ret._parameters = self.parameters.copy()
         return ret
 
     @property
-    def manual_shape(self) -> tuple[int | None]:
-        r"""
-        The shape of this Component in the Fock representation in standard order. For each wire,
+    def manual_shape(self) -> tuple[int | None, ...]:
+        r"""The shape of this Component in the Fock representation in standard order. For each wire,
         the entry is either an integer or ``None``. If it is an integer, it
         is the shape (dimension) of the corresponding Fock space. For a cutoff of n
         (maximum photon number n), the shape is n + 1
@@ -153,14 +149,13 @@ class CircuitComponent:
         return self.wires.fock_shapes
 
     @manual_shape.setter
-    def manual_shape(self, shape: tuple[int | None]):
+    def manual_shape(self, shape: tuple[int | None, ...]):
         for w, s in zip(self.wires, shape):
             w.fock_shape = s
 
     @property
-    def modes(self) -> list[int]:
-        r"""
-        The sorted list of modes of this component.
+    def modes(self) -> tuple[int, ...]:
+        r"""The sorted tuple of modes of this component.
 
         >>> from mrmustard.lab import GaussianKet
         >>> ket = GaussianKet.random([0, 1])
@@ -170,8 +165,7 @@ class CircuitComponent:
 
     @property
     def name(self) -> str:
-        r"""
-        The name of this component.
+        r"""The name of this component.
 
         >>> from mrmustard.lab import BtoPS
         >>> assert BtoPS(modes=0, s=0).name == "BtoPS"
@@ -184,8 +178,7 @@ class CircuitComponent:
 
     @property
     def n_modes(self) -> int:
-        r"""
-        The number of modes spanned by this component across all wires.
+        r"""The number of modes spanned by this component across all wires.
 
         >>> from mrmustard.lab import GaussianKet
         >>> ket = GaussianKet.random([0, 1])
@@ -195,16 +188,12 @@ class CircuitComponent:
 
     @property
     def parameters(self) -> ParameterDict:
-        r"""
-        The parameters of this component.
-        """
+        r"""The parameters of this component."""
         return self._parameters
 
     @property
     def wires(self) -> Wires:
-        r"""
-        The wires of this circuit component.
-        """
+        r"""The wires of this circuit component."""
         return self._wires
 
     @classmethod
@@ -217,8 +206,7 @@ class CircuitComponent:
         modes_in_ket: Sequence[int] = (),
         name: str | None = None,
     ) -> CircuitComponent:
-        r"""
-        Initializes a ``CircuitComponent`` object from its Bargmann (A,b,c) parametrization.
+        r"""Initializes a ``CircuitComponent`` object from its Bargmann (A,b,c) parametrization.
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import CircuitComponent, Identity
@@ -251,6 +239,50 @@ class CircuitComponent:
         return cls._from_attributes(ansatz, wires, name)
 
     @classmethod
+    def from_fock(
+        cls,
+        array: ComplexTensor,
+        batch_dims: int,
+        modes_out_bra: Sequence[int] = (),
+        modes_in_bra: Sequence[int] = (),
+        modes_out_ket: Sequence[int] = (),
+        modes_in_ket: Sequence[int] = (),
+        name: str | None = None,
+    ) -> CircuitComponent:
+        r"""Initializes a ``CircuitComponent`` object from its Fock parametrization.
+
+        Args:
+            array: The Fock array of the component.
+            batch_dims: The number of batch dimensions in the given array.
+            modes_out_bra: The output modes on the bra side of this component.
+            modes_in_bra: The input modes on the bra side of this component.
+            modes_out_ket: The output modes on the ket side of this component.
+            modes_in_ket: The input modes on the ket side of this component.
+            name: The name of this component.
+
+        Returns:
+            A ``CircuitComponent`` with the given Fock representation.
+
+        Raises:
+            ValueError: If the given array has a shape that is inconsistent with the number of modes.
+        """
+        expected_core_dims = (
+            len(modes_out_bra) + len(modes_in_bra) + len(modes_out_ket) + len(modes_in_ket)
+        )
+        num_core_dims = array.ndim - batch_dims
+        if num_core_dims != expected_core_dims:
+            raise ValueError(
+                f"Wires expect {expected_core_dims} core dimensions, got {num_core_dims} in the given array."
+            )
+
+        ansatz = ArrayAnsatz(array, batch_dims=batch_dims)
+        wires = Wires(set(modes_out_bra), set(modes_in_bra), set(modes_out_ket), set(modes_in_ket))
+        for w in wires.quantum:
+            w.repr = ReprEnum.FOCK
+            w.fock_shape = ansatz.core_shape[w.index]
+        return cls._from_attributes(ansatz, wires, name)
+
+    @classmethod
     def from_quadrature(
         cls,
         modes_out_bra: Sequence[int],
@@ -261,8 +293,7 @@ class CircuitComponent:
         phi: float = 0.0,
         name: str | None = None,
     ) -> CircuitComponent:
-        r"""
-        Returns a circuit component from the given triple (A,b,c) that parametrizes the
+        r"""Returns a circuit component from the given triple (A,b,c) that parametrizes the
         quadrature wavefunction of this component in the form :math:`c * exp(1/2 x^T A x + b^T x)`.
 
         Args:
@@ -297,8 +328,8 @@ class CircuitComponent:
         wires: Wires,
         name: str | None = None,
     ) -> CircuitComponent:
-        r"""
-        Initializes a circuit component from an ``Ansatz``, ``Wires`` and a name.
+        r"""Initializes a circuit component from an ``Ansatz``, ``Wires`` and a name.
+
         It differs from the __init__ in that the return type is the closest parent
         among the types ``Ket``, ``DM``, ``Unitary``, ``Operation``, ``Channel``,
         and ``Map``. This is to ensure the right properties are used when calling
@@ -332,8 +363,7 @@ class CircuitComponent:
         return CircuitComponent(ansatz_factory=ansatz_factory, wires=wires, name=name)
 
     def auto_shape(self, **_) -> tuple[int, ...]:
-        r"""
-        The shape of the Fock representation of this component. If the component has a Fock representation
+        r"""The shape of the Fock representation of this component. If the component has a Fock representation
         then it is just the shape of the array. If the component is a ``State`` in Bargmann
         then the shape is calculated using ``autoshape`` using single-mode marginals.
         If the component is not a ``State`` then the shape is a tuple of ``settings.DEFAULT_FOCK_SIZE``
@@ -343,11 +373,10 @@ class CircuitComponent:
 
     def bargmann_triple(
         self,
-    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        r"""
-        The Bargmann parametrization of this component, if available.
+    ) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+        r"""The Bargmann parametrization of this component, if available.
         It returns a triple (A, b, c) such that the Bargmann function of this component is
-        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`
+        :math:`F(z) = c \exp\left(\frac{1}{2} z^T A z + b^T z\right)`.
 
         >>> from mrmustard.lab import CircuitComponent, Coherent
         >>> coh = Coherent(mode=0, alpha=1.0)
@@ -369,8 +398,7 @@ class CircuitComponent:
             raise AttributeError("No Bargmann data for this component.") from e
 
     def contract(self, other: CircuitComponent | Scalar) -> CircuitComponent:
-        r"""
-        Contracts ``self`` and ``other`` without adding adjoints.
+        r"""Contracts ``self`` and ``other`` without adding adjoints.
         Core index selection is determined solely by the wires; batch dimensions
         are broadcast automatically by the underlying ansatz implementations.
 
@@ -390,7 +418,7 @@ class CircuitComponent:
         Returns:
             The contracted component.
         """
-        if isinstance(other, numbers.Number | np.ndarray):
+        if isinstance(other, (numbers.Number, np.ndarray)):
             return self * other
 
         if (self_type := type(self.ansatz)) is not (other_type := type(other.ansatz)):
@@ -425,8 +453,7 @@ class CircuitComponent:
         return CircuitComponent(ansatz_factory=ansatz_factory, wires=wires_result)
 
     def concat(self, other: CircuitComponent, axis: int = 0) -> CircuitComponent:
-        r"""
-        Concatenates this component with another along the specified batch axis.
+        r"""Concatenates this component with another along the specified batch axis.
 
         The ansatze are concatenated along the given batch axis. The wires must match.
         Returns an instance of the closest common superclass.
@@ -463,8 +490,7 @@ class CircuitComponent:
         return self._from_attributes(concat_ansatz, self.wires, self.name)
 
     def fock_array(self, shape: int | Sequence[int] | None = None) -> ComplexTensor:
-        r"""
-        Returns an array representation of this component in the Fock basis with the given shape.
+        r"""Returns an array representation of this component in the Fock basis with the given shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component.
 
         Args:
@@ -475,11 +501,8 @@ class CircuitComponent:
             array: The Fock representation of this component.
 
         Raises:
-            ValueError: If the component has no ``AnsatzFactory``.
             ValueError: If the shape is not valid for the component.
         """
-        if self.ansatz_factory is None:
-            raise ValueError("CircuitComponent has no ansatz factory.")
         shape = self._check_fock_shape(shape)
         ansatz_factory = self.ansatz_factory
         if ansatz_factory.ansatz_dict.get(ReprEnum.FOCK, None) is None:
@@ -497,9 +520,7 @@ class CircuitComponent:
     def _fock_shapes_for_contraction(
         self, other: CircuitComponent
     ) -> tuple[tuple[int, ...], tuple[int, ...]]:
-        r"""
-        Helper function to get the optimal shapes for contracting self with other in Fock.
-        """
+        r"""Helper function to get the optimal shapes for contracting self with other in Fock."""
         self_shape = list(self.auto_shape())
         other_shape = list(other.auto_shape())
         contracted_idxs = self.wires.contracted_indices(other.wires)
@@ -512,8 +533,7 @@ class CircuitComponent:
         return tuple(self_shape), tuple(other_shape)
 
     def on(self, modes: int | Sequence[int]) -> CircuitComponent:
-        r"""
-        Creates a light copy of this component that acts on the given ``modes`` instead of the
+        r"""Creates a light copy of this component that acts on the given ``modes`` instead of the
         original modes. It only works if the component's wires are all defined on the same modes.
         As a light copy, the returned component shares the representation with the original one.
 
@@ -555,8 +575,7 @@ class CircuitComponent:
         return self._light_copy(wires=wires)
 
     def quadrature(self, *quad: RealVector, phi: float = 0.0) -> ComplexTensor:
-        r"""
-        The (discretized) quadrature basis representation of the circuit component.
+        r"""The (discretized) quadrature basis representation of the circuit component.
         This method considers the same basis in all the wires. For more fine-grained control,
         use the BtoQ transformation or a combination of transformations.
 
@@ -564,6 +583,7 @@ class CircuitComponent:
             quad: discretized quadrature points to evaluate over in the
                 quadrature representation. One vector of points per wire.
             phi: The quadrature angle. ``0`` corresponds to the x quadrature, ``pi/2`` to the p quadrature.
+
         Returns:
             A circuit component with the given quadrature representation.
         """
@@ -620,21 +640,20 @@ class CircuitComponent:
     def quadrature_triple(
         self,
         phi: float = 0.0,
-    ) -> tuple[Batch[ComplexMatrix], Batch[ComplexVector], Batch[ComplexTensor]]:
-        r"""
-        The quadrature representation triple A,b,c of this circuit component.
+    ) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+        r"""The quadrature representation triple A,b,c of this circuit component.
 
         Args:
             phi: The quadrature angle. ``phi=0`` corresponds to the x quadrature,
                     ``phi=pi/2`` to the p quadrature.
+
         Returns:
             A,b,c triple of the quadrature representation
         """
         return self.to_quadrature(phi=phi).ansatz.triple
 
     def stack(self, other: CircuitComponent, axis: int = 0) -> CircuitComponent:
-        r"""
-        Stacks this component with another along a new batch axis.
+        r"""Stacks this component with another along a new batch axis.
 
         The two components must have the same wires and compatible ansatze.
         A new batch axis is inserted at the specified position.
@@ -679,8 +698,7 @@ class CircuitComponent:
         return self_expanded.concat(other_expanded, axis=axis)
 
     def to_bargmann(self) -> CircuitComponent:
-        r"""
-        Returns a new ``CircuitComponent`` in the ``Bargmann`` representation.
+        r"""Returns a new ``CircuitComponent`` in the ``Bargmann`` representation.
 
         >>> from mrmustard.lab import Dgate, Number
         >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
@@ -694,14 +712,8 @@ class CircuitComponent:
 
         Returns:
             A new ``CircuitComponent`` in the ``Bargmann`` representation.
-
-        Raises:
-            AttributeError: If the component has no ``AnsatzFactory``.
         """
         ansatz_factory = self.ansatz_factory
-        if ansatz_factory is None:
-            raise ValueError("CircuitComponent has no ansatz factory.")
-
         representations = set(self.wires.representations)
         if len(representations) == 1 and ReprEnum.BARGMANN in representations:
             return self
@@ -733,8 +745,7 @@ class CircuitComponent:
         return ret
 
     def to_fock(self, shape: int | Sequence[int] | None = None) -> CircuitComponent:
-        r"""
-        Returns a new ``CircuitComponent`` in the ``Fock`` representation.
+        r"""Returns a new ``CircuitComponent`` in the ``Fock`` representation.
 
         >>> from mrmustard.lab import Dgate
         >>> from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
@@ -751,12 +762,7 @@ class CircuitComponent:
 
         Returns:
             A new ``CircuitComponent`` in the ``Fock`` representation.
-
-        Raises:
-            ValueError: If the component has no ``AnsatzFactory``.
         """
-        if self.ansatz_factory is None:
-            raise ValueError("CircuitComponent has no ansatz factory.")
         shape = self._check_fock_shape(shape)
         ansatz_factory = self.ansatz_factory
         if (ansatz_dict := ansatz_factory.ansatz_dict).get(ReprEnum.FOCK, None) is None:
@@ -772,8 +778,7 @@ class CircuitComponent:
         return self._light_copy(wires=wires)
 
     def to_quadrature(self, phi: float = 0.0) -> CircuitComponent:
-        r"""
-        Returns a circuit component with the quadrature representation of this component
+        r"""Returns a circuit component with the quadrature representation of this component
         in terms of A,b,c.
 
         Args:
@@ -796,8 +801,7 @@ class CircuitComponent:
         )
 
     def to_standard_order(self) -> CircuitComponent:
-        r"""
-        Reorders the ansatz and wires to the standard order.
+        r"""Reorders the ansatz and wires to the standard order.
 
         Returns:
             A circuit component in the standard order.
@@ -821,13 +825,13 @@ class CircuitComponent:
         return ret
 
     def _check_fock_shape(self, shape: int | Sequence[int] | None = None) -> tuple[int, ...]:
-        r"""
-        Checks that the given shape is valid for the component and returns the final Fock shape.
+        r"""Checks that the given shape is valid for the component and returns the final Fock shape.
         If the shape is not given, it defaults to the ``auto_shape`` of the component.
 
         Args:
             shape: The Fock shape of the returned representation. If ``shape`` is given as an ``int``,
                 it is broadcasted to all the dimensions. If not given, it is generated via ``auto_shape``.
+
         Returns:
             The shape of the Fock representation of this component.
 
@@ -837,7 +841,7 @@ class CircuitComponent:
         shape = shape if shape is not None else self.auto_shape()
         ansatz = self.ansatz
         num_vars = ansatz.num_CV_vars if isinstance(ansatz, PolyExpAnsatz) else ansatz.num_vars
-        if isinstance(shape, int | math.int64):
+        if isinstance(shape, (int, math.int64)):
             shape = (shape,) * num_vars
         shape = tuple(shape)
         if 0 in shape:
@@ -847,8 +851,7 @@ class CircuitComponent:
         return shape
 
     def _light_copy(self, wires: Wires | None = None) -> CircuitComponent:
-        r"""
-        Creates a "light" copy of this component by referencing its __dict__, except for the wires,
+        r"""Creates a "light" copy of this component by referencing its __dict__, except for the wires,
         which are a new object or the given one.
         This is useful when one needs the same component acting on different modes, for example.
         """
@@ -860,17 +863,15 @@ class CircuitComponent:
 
     def _rshift_return(
         self,
-        result: CircuitComponent | np.ndarray | complex,
-    ) -> CircuitComponent | np.ndarray | complex:
-        "internal convenience method for right-shift, to return the right type of object"
+        result: CircuitComponent | Scalar,
+    ) -> CircuitComponent | Scalar:
+        """Internal convenience method for right-shift, to return the right type of object."""
         if len(result.wires) > 0:
             return result
         return result.ansatz.scalar
 
     def __add__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Implements the addition between circuit components.
-        """
+        r"""Implements the addition between circuit components."""
         if self.wires != other.wires:
             raise ValueError("Cannot add components with different wires.")
         ansatz = self.ansatz + other.ansatz
@@ -883,8 +884,7 @@ class CircuitComponent:
         return ret
 
     def __eq__(self, other) -> bool:
-        r"""
-        Whether this component is equal to another component.
+        r"""Whether this component is equal to another component.
 
         Compares representations, but not the other attributes
         (e.g. name and parameter set).
@@ -894,8 +894,7 @@ class CircuitComponent:
         return self.ansatz == other.ansatz and self.wires == other.wires
 
     def __getitem__(self, index: Any) -> CircuitComponent:
-        r"""
-        Batch-only indexing on the underlying ansatz. Mirrors ``Ansatz``'s batch-only ``__getitem__``.
+        r"""Batch-only indexing on the underlying ansatz. Mirrors ``Ansatz``'s batch-only ``__getitem__``.
         Core axes and mode selection are not indexable here. Use ``get_modes`` for subsystem selection.
 
         Raises:
@@ -906,35 +905,31 @@ class CircuitComponent:
         return self._from_attributes(self.ansatz[index], self.wires, self.name)
 
     def __mul__(self, other: Scalar) -> CircuitComponent:
-        r"""
-        Implements the multiplication by a scalar from the right.
-        """
+        r"""Implements the multiplication by a scalar from the right."""
         return self._from_attributes(self.ansatz * other, self.wires, self.name)
 
     def __repr__(self) -> str:
-        if self.ansatz is None:
+        try:
+            return (
+                self.__class__.__name__
+                + f"(modes={self.modes}, name={self.name}"
+                + f", repr={self.ansatz!s})"
+            )
+        except AttributeError as e:
+            if str(e) != "CircuitComponent has no ansatz factory.":
+                raise e
             return self.__class__.__name__ + f"(modes={self.modes}, name={self.name})"
-        return (
-            self.__class__.__name__
-            + f"(modes={self.modes}, name={self.name}"
-            + f", repr={self.ansatz!s})"
-        )
 
     def __rmatmul__(self, other: Scalar) -> CircuitComponent:
-        r"""
-        Multiplies a scalar with a circuit component when written as ``scalar @ component``.
-        """
+        r"""Multiplies a scalar with a circuit component when written as ``scalar @ component``."""
         return self * other
 
     def __rmul__(self, other: Scalar) -> CircuitComponent:
-        r"""
-        Implements the multiplication by a scalar from the left.
-        """
+        r"""Implements the multiplication by a scalar from the left."""
         return self * other
 
-    def __rrshift__(self, other: Scalar) -> CircuitComponent | np.array:
-        r"""
-        Multiplies a scalar with a circuit component when written as ``scalar >> component``.
+    def __rrshift__(self, other: Scalar) -> Scalar:
+        r"""Multiplies a scalar with a circuit component when written as ``scalar >> component``.
         This is needed when the "component" on the left is the result of a contraction that leaves
         no wires and the component is returned as a scalar. Note that there is an edge case if the
         object on the left happens to have the ``__rshift__`` method, but it's not the one we want
@@ -944,16 +939,23 @@ class CircuitComponent:
         """
         return (self * other).ansatz.scalar
 
-    def __rshift__(self, other: CircuitComponent | numbers.Number) -> CircuitComponent | np.ndarray:
-        r"""
-        Contracts ``self`` and ``other`` (output of self going into input of other).
-        It adds the adjoints when they are missing (e.g. if ``self`` is a Ket and
-        ``other`` is a Channel). An error is raised if these cannot be deduced from
-        the wires of the components. For example this allows ``Ket``s to be right-shifted
-        into ``Channel``s and automatically the result is a ``DM``. If the result has
+    def __rshift__(self, other: Scalar | CircuitComponent) -> Scalar | CircuitComponent:
+        r"""Contracts ``self`` and ``other`` (output of self going into input of other).
+        It adds the adjoints when they are missing (e.g. if ``self`` is a ``Ket`` and
+        ``other`` is a ``Channel``). An error is raised if these cannot be deduced from
+        the wires of the components. For example this allows ``Ket`` to be right-shifted
+        into ``Channel`` and automatically the result is a ``DM``. If the result has
         no wires left, it returns the (batched) scalar value of the representation.
         Note that a ``CircuitComponent`` is allowed to right-shift into scalars because the scalar
         part may result from an automated contraction subroutine that involves several components).
+
+        Note that the resulting component type is coerced based on the wires of the result:
+
+        - ``Ket``: only output ket wires remain
+        - ``DM``: only output bra and ket on the same modes remain
+        - ``Unitary``: only bra wires remain
+        - ``Channel``: input bra and ket on the same modes and output bra and ket on the same modes
+        - ``CircuitComponent``: otherwise
 
         >>> from mrmustard.lab import Coherent, Attenuator, Ket, DM, Channel
         >>> state = Coherent(0, 1.0)
@@ -961,11 +963,20 @@ class CircuitComponent:
         >>> assert issubclass(Attenuator, Channel)
         >>> assert isinstance(state >> Attenuator(0, 0.5), DM)
         >>> assert math.allclose(state >> state.dual, 1+0j)
+
+        Args:
+            other: The other component or (batchable) scalar to contract with.
+
+        Returns:
+            The contracted component or (batched) scalar value of the representation.
+
+        Raises:
+            ValueError: If the component wires are incompatible with the other component.
         """
         if hasattr(other, "__custom_rrshift__"):
             return other.__custom_rrshift__(self)
 
-        if isinstance(other, numbers.Number | np.ndarray):
+        if not isinstance(other, CircuitComponent):
             return self * other
 
         s_k = self.wires.ket
@@ -996,9 +1007,7 @@ class CircuitComponent:
         return self._rshift_return(ret)
 
     def __sub__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Implements the subtraction between circuit components.
-        """
+        r"""Implements the subtraction between circuit components."""
         if self.wires != other.wires:
             raise ValueError("Cannot subtract components with different wires.")
         ansatz = self.ansatz - other.ansatz
@@ -1006,9 +1015,7 @@ class CircuitComponent:
         return self._from_attributes(ansatz, self.wires, name)
 
     def __truediv__(self, other: Scalar) -> CircuitComponent:
-        r"""
-        Implements the division by a scalar for circuit components.
-        """
+        r"""Implements the division by a scalar for circuit components."""
         return self._from_attributes(self.ansatz / other, self.wires, self.name)
 
     def _ipython_display_(self):

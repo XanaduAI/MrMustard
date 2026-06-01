@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a rotation gate.
-"""
+"""The class representing a rotation gate."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["FockDamping"]
 
 
 class FockDamping(Operation):
-    r"""
-    The Fock damping operator.
+    r"""The Fock damping operator.
 
     >>> from mrmustard.lab import FockDamping, Coherent
     >>> operator = FockDamping(mode=0, damping=0.1)
@@ -45,6 +42,7 @@ class FockDamping(Operation):
     Args:
         mode: The mode this gate is applied to.
         damping: The damping parameter.
+        name: A name for the operator. If not provided, the class name will be used.
 
     .. details::
 
@@ -66,14 +64,16 @@ class FockDamping(Operation):
         self,
         mode: int | tuple[int],
         damping: float | Sequence[float] | Parameter = 0.0,
+        name: str | None = None,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (fock_damping_operation, ("damping", "lin_sup"))}
             ),
             wires=Wires(modes_in_ket=set(mode), modes_out_ket=set(mode)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["damping"] = Parameter.from_cc_init(
             damping, "float64", f"{self.name}/damping"

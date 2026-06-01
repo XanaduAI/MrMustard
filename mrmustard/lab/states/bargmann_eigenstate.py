@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a Bargmann eigenstate.
-"""
+"""The class representing a Bargmann eigenstate."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["BargmannEigenstate"]
 
 
 class BargmannEigenstate(Ket):
-    r"""
-    The Bargmann eigenstate.
+    r"""The Bargmann eigenstate.
 
     >>> from mrmustard.lab import BargmannEigenstate
     >>> state = BargmannEigenstate(mode=1, alpha=0.1 + 0.5j)
@@ -41,6 +38,7 @@ class BargmannEigenstate(Ket):
     Args:
         mode: The mode of the Bargmann eigenstate.
         alpha: The displacement of the state (i.e., the eigen-value).
+        name: A name for the state. If not provided, the class name will be used.
 
     Note:
         The only difference with ``Coherent(mode, alpha)`` is in its `c` parameter (and hence, does not have unit norm).
@@ -60,13 +58,15 @@ class BargmannEigenstate(Ket):
         self,
         mode: int | tuple[int],
         alpha: complex | Sequence[complex] | Parameter = 0.0 + 0.0j,
+        name: str | None = None,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (bargmann_eigenstate, ("alpha", "lin_sup"))}
             ),
             wires=Wires(modes_out_ket=set(mode)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["alpha"] = Parameter.from_cc_init(alpha, "complex128", f"{self.name}/alpha")

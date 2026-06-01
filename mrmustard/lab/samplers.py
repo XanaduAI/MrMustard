@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Samplers for measurement devices.
-"""
+"""Samplers for measurement devices."""
 
 from __future__ import annotations
 
@@ -35,8 +33,7 @@ __all__ = ["HomodyneSampler", "PNRSampler", "Sampler"]
 
 
 class Sampler(ABC):
-    r"""
-    A sampler for measurements of quantum circuits.
+    r"""A sampler for measurements of quantum circuits.
 
     Args:
         meas_outcomes: The measurement outcomes for this sampler.
@@ -54,22 +51,17 @@ class Sampler(ABC):
 
     @property
     def povms(self) -> CircuitComponent | Sequence[CircuitComponent] | None:
-        r"""
-        The POVMs of this sampler.
-        """
+        r"""The POVMs of this sampler."""
         return self._povms
 
     @property
     def meas_outcomes(self) -> Sequence[Any]:
-        r"""
-        The measurement outcomes of this sampler.
-        """
+        r"""The measurement outcomes of this sampler."""
         return self._meas_outcomes
 
     @abstractmethod
     def probabilities(self, state: State, atol: float = 1e-4) -> Sequence[float]:
-        r"""
-        Returns the probability distribution of a state w.r.t. measurement outcomes.
+        r"""Returns the probability distribution of a state w.r.t. measurement outcomes.
 
         Args:
             state: The state to generate the probability distribution of. Note: the
@@ -79,8 +71,7 @@ class Sampler(ABC):
         """
 
     def sample(self, state: State, n_samples: int = 1000, seed: int | None = None) -> np.ndarray:
-        r"""
-        Returns an array of samples given a state.
+        r"""Returns an array of samples given a state.
 
         Args:
             state: The state to sample.
@@ -119,8 +110,7 @@ class Sampler(ABC):
         n_samples: int = 1000,
         seed: int | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
-        r"""
-        Samples a state by computing the probability distribution.
+        r"""Samples a state by computing the probability distribution.
 
         Args:
             state: The state to sample.
@@ -142,8 +132,7 @@ class Sampler(ABC):
         return samples, np.array([probs[meas_outcomes.index(tuple(sample))] for sample in samples])
 
     def _get_povm(self, meas_outcome: Any, mode: int) -> CircuitComponent:
-        r"""
-        Returns the POVM associated with a given outcome on a given mode.
+        r"""Returns the POVM associated with a given outcome on a given mode.
 
         Args:
             meas_outcome: The measurement outcome.
@@ -164,8 +153,7 @@ class Sampler(ABC):
         return self.povms[self.meas_outcomes.index(meas_outcome)].on([mode])
 
     def _validate_probs(self, probs: Sequence[float], atol: float) -> Sequence[float]:
-        r"""
-        Validates that the given probability distribution sums to ``1`` within some
+        r"""Validates that the given probability distribution sums to ``1`` within some
         tolerance and returns a renormalized probability distribution to account for
         small numerical errors.
 
@@ -185,8 +173,7 @@ class Sampler(ABC):
 
 
 class PNRSampler(Sampler):
-    r"""
-    A sampler for photon-number resolving (PNR) detectors.
+    r"""A sampler for photon-number resolving (PNR) detectors.
 
     Args:
         cutoff: The photon number cutoff.
@@ -202,8 +189,7 @@ class PNRSampler(Sampler):
 
 
 class HomodyneSampler(Sampler):
-    r"""
-    A sampler for homodyne measurements.
+    r"""A sampler for homodyne measurements.
 
     Args:
         phi: The quadrature angle where ``0`` corresponds to ``x`` and ``\pi/2`` to ``p``.

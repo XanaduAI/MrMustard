@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The classes representing an identity gate.
-"""
+"""The classes representing an identity gate."""
 
 from __future__ import annotations
 
@@ -28,8 +26,7 @@ __all__ = ["Identity"]
 
 
 class Identity(Unitary):
-    r"""
-    The identity gate.
+    r"""The identity gate.
 
     >>> from mrmustard.lab import Identity
     >>> unitary = Identity(modes=(1, 2))
@@ -37,6 +34,7 @@ class Identity(Unitary):
 
     Args:
         modes: The modes this gate is applied to.
+        name: A name for the gate. If not provided, the class name will be used.
 
     .. details::
 
@@ -62,8 +60,10 @@ class Identity(Unitary):
     def __init__(
         self,
         modes: int | tuple[int, ...],
+        name: str | None = None,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (identity_gate, ("n_modes", "lin_sup"))},
@@ -75,5 +75,5 @@ class Identity(Unitary):
                 modes_in_ket=set(modes),
                 modes_out_ket=set(modes),
             ),
-            name=self.__class__.__name__,
+            name=name,
         )

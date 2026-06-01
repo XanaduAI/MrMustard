@@ -19,7 +19,7 @@ from numba.cpython.unsafe.tuple import tuple_setitem
 
 @njit(cache=True)
 def first_available_pivot(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
-    r"""returns the first available pivot for the given index. A pivot is a nearest neighbor
+    r"""Returns the first available pivot for the given index. A pivot is a nearest neighbor
     of the index. Here we pick the first available pivot.
 
     Arguments:
@@ -36,7 +36,7 @@ def first_available_pivot(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]
 
 @njit(cache=True)
 def smallest_pivot(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
-    r"""returns the pivot closest to a zero index. A pivot is a nearest neighbor
+    r"""Returns the pivot closest to a zero index. A pivot is a nearest neighbor
     of the index. Here we pick the pivot with the smallest non-zero element.
 
     Arguments:
@@ -59,7 +59,7 @@ def smallest_pivot(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
 def all_pivots(
     index: tuple[int, ...],
 ) -> list[tuple[int, tuple[int, ...]]]:
-    r"""returns all the pivots for the given index. A pivot is a nearest neighbor
+    r"""Returns all the pivots for the given index. A pivot is a nearest neighbor
     of the index one index lowered.
 
     Arguments:

@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains the base classes for the available unitaries and channels on quantum states.
+"""This module contains the base classes for the available unitaries and channels on quantum states.
 
 In the docstrings defining the available unitaries we provide a definition in terms of
 the symplectic matrix :math:`S` and the real vector :math:`d`. For deterministic Gaussian channels,
@@ -26,6 +25,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Sequence
+from typing import Self
 
 from mrmustard import math, settings
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
@@ -33,7 +33,7 @@ from mrmustard.physics.ansatz_factory import AnsatzFactory
 from mrmustard.physics.bargmann_utils import XY_of_channel, au2Symplectic, symplectic2Au
 from mrmustard.physics.triples import XY_to_channel_Abc
 from mrmustard.physics.wires import ReprEnum, Wires
-from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, RealMatrix, Vector
+from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, RealMatrix, Scalar, Vector
 
 from ..circuit_components import CircuitComponent
 
@@ -41,9 +41,7 @@ __all__ = ["Channel", "Map", "Operation", "Transformation", "Unitary"]
 
 
 class Transformation(CircuitComponent):
-    r"""
-    Base class for all transformations.
-    """
+    r"""Base class for all transformations."""
 
     @classmethod
     @abstractmethod
@@ -53,9 +51,8 @@ class Transformation(CircuitComponent):
         modes_in: Sequence[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
-    ) -> Transformation:
-        r"""
-        Initializes a transformation of type ``cls`` given modes and an ansatz.
+    ) -> Self:
+        r"""Initializes a transformation of type ``cls`` given modes and an ansatz.
 
         Args:
             modes_out: The output modes of this transformation.
@@ -74,9 +71,8 @@ class Transformation(CircuitComponent):
         modes_in: Sequence[int],
         triple: tuple,
         name: str | None = None,
-    ) -> Transformation:
-        r"""
-        Initialize a Transformation from the given Bargmann triple (A,b,c)
+    ) -> Self:
+        r"""Initialize a Transformation from the given Bargmann triple (A,b,c)
         which parametrizes the Bargmann function of the transformation as
         :math:`c * exp(0.5*z^T A z + b^T z)`.
         """
@@ -90,9 +86,8 @@ class Transformation(CircuitComponent):
         array: ComplexTensor,
         batch_dims: int = 0,
         name: str | None = None,
-    ) -> Transformation:
-        r"""
-        Initializes a transformation of type ``cls`` given modes and a fock array.
+    ) -> Self:
+        r"""Initializes a transformation of type ``cls`` given modes and a fock array.
 
         Args:
             modes_out: The output modes of this transformation.
@@ -114,9 +109,8 @@ class Transformation(CircuitComponent):
         triple: tuple,
         phi: float = 0,
         name: str | None = None,
-    ) -> Transformation:
-        r"""
-        Initialize a Transformation from the given quadrature triple (A, b, c).
+    ) -> Self:
+        r"""Initialize a Transformation from the given quadrature triple (A, b, c).
         The triple parametrizes the quadrature representation of the transformation as
         :math:`c * exp(0.5*x^T A x + b^T x)`.
         """
@@ -129,8 +123,7 @@ class Transformation(CircuitComponent):
         return cls.from_ansatz(modes_out, modes_in, BB.ansatz, name)
 
     def inverse(self) -> Transformation:
-        r"""
-        Returns the mathematical inverse of the transformation, if it exists.
+        r"""Returns the mathematical inverse of the transformation, if it exists.
         Note that it can be unphysical, for example when the original is not unitary.
 
         >>> from mrmustard.lab import GaussianDM, Identity, Operation
@@ -177,7 +170,7 @@ class Transformation(CircuitComponent):
                 0.5 * math.einsum("...i,...ij,...j->...", combined_b, math.inv(M), combined_b),
             )
         )
-
+        name = self.name.removesuffix("_inv") if self.name.endswith("_inv") else self.name + "_inv"
         return self._from_attributes(
             PolyExpAnsatz(
                 A_inv,
@@ -185,13 +178,12 @@ class Transformation(CircuitComponent):
                 c_of_inverse,
             ),
             self.wires.copy(new_ids=True),
-            self.name + "_inv",
+            name,
         )
 
 
 class Operation(Transformation):
-    r"""
-    A CircuitComponent with input and output wires on the ket side. Operation are allowed
+    r"""A CircuitComponent with input and output wires on the ket side. Operation are allowed
     to have a different number of input and output wires.
     """
 
@@ -204,7 +196,7 @@ class Operation(Transformation):
         modes_in: Sequence[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
-    ) -> Transformation:
+    ) -> Operation:
         if not isinstance(modes_out, set) and sorted(modes_out) != list(modes_out):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
@@ -226,17 +218,13 @@ class Operation(Transformation):
 
 
 class Unitary(Operation):
-    r"""
-    Base class for all unitary transformations.
-    """
+    r"""Base class for all unitary transformations."""
 
     short_name = "U"
 
     @property
     def symplectic(self):
-        r"""
-        Returns the symplectic matrix that corresponds to this unitary.
-        """
+        r"""Returns the symplectic matrix that corresponds to this unitary."""
         return au2Symplectic(self.ansatz.A)
 
     @classmethod
@@ -246,7 +234,7 @@ class Unitary(Operation):
         modes_in: Sequence[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
-    ) -> Transformation:
+    ) -> Unitary:
         if not isinstance(modes_out, set) and sorted(modes_out) != list(modes_out):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
@@ -267,9 +255,10 @@ class Unitary(Operation):
         )
 
     @classmethod
-    def from_symplectic(cls, modes: Sequence[int], S: RealMatrix) -> Unitary:
-        r"""
-        A method for constructing a ``Unitary`` from its symplectic representation
+    def from_symplectic(
+        cls, modes: Sequence[int], S: RealMatrix, name: str | None = None
+    ) -> Unitary:
+        r"""A method for constructing a ``Unitary`` from its symplectic representation.
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import Unitary, Identity
@@ -280,6 +269,7 @@ class Unitary(Operation):
         Args:
             modes: the modes that we want the unitary to act on (should be a list of int)
             S: the symplectic representation (in XXPP order)
+            name: A name for the unitary. If not provided, the class name will be used.
         """
         m = len(modes)
         batch_shape = S.shape[:-2]
@@ -287,14 +277,17 @@ class Unitary(Operation):
         b = math.zeros((*batch_shape, 2 * m), dtype="complex128")
         A_inin = A[..., m:, m:]
         c = ((-1) ** m * math.det(A_inin @ math.conj(A_inin) - math.eye_like(A_inin))) ** 0.25
-        return Unitary.from_bargmann(modes, modes, (A, b, c))
+        return Unitary.from_bargmann(modes, modes, (A, b, c), name=name)
 
     @classmethod
     def random(
-        cls, modes: int | tuple[int, ...], max_r: float = 1.0, seed: int | None = None
+        cls,
+        modes: int | tuple[int, ...],
+        max_r: float = 1.0,
+        seed: int | None = None,
+        name: str | None = None,
     ) -> Unitary:
-        r"""
-        Returns a random unitary.
+        r"""Returns a random unitary.
 
         >>> from mrmustard.lab import Unitary
         >>> U = Unitary.random((0, 1, 2), max_r=1.2)
@@ -304,6 +297,7 @@ class Unitary(Operation):
             modes: The modes of the unitary.
             max_r: The maximum squeezing parameter.
             seed: The random seed. If ``None``, the global seed is used.
+            name: A name for the unitary. If not provided, the class name will be used.
 
         Returns:
             The random Unitary.
@@ -316,42 +310,27 @@ class Unitary(Operation):
             raise ValueError("Cannot create a random unitary with no modes.")
         m = len(modes)
         S = math.random_symplectic(m, max_r, seed=seed)
-        return Unitary.from_symplectic(modes, S)
+        return Unitary.from_symplectic(modes, S, name=name)
 
     def inverse(self) -> Unitary:
-        r"""
-        Returns the inverse of the unitary.
+        r"""Returns the inverse of the unitary.
 
         >>> from mrmustard.lab import Unitary, Identity
         >>> u = Unitary.random((0, 1, 2))
         >>> assert u >> u.inverse() == Identity(u.modes)
         """
         unitary_dual = self.dual
+        name = self.name.removesuffix("_inv") if self.name.endswith("_inv") else self.name + "_inv"
         ret = Unitary(
             ansatz_factory=unitary_dual.ansatz_factory,
             wires=unitary_dual.wires,
-            name=unitary_dual.name,
+            name=name,
         )
         for param in self.parameters:
             ret.parameters[param] = self.parameters[param]
         return ret
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
-        they are missing.
-
-        Returns:
-            Contraction of ``self`` and ``other``.
-
-        .. details::
-
-            For example ``u >> channel`` is equivalent to ``u.adjoint @ u @ channel`` because the
-            channel requires an input on the bra side as well.
-
-            Returns a ``Unitary`` when ``other`` is a ``Unitary``, a ``Channel`` when ``other`` is a
-            ``Channel``, and a ``CircuitComponent`` otherwise.
-        """
+    def __rshift__(self, other: Scalar | CircuitComponent) -> Scalar | CircuitComponent:
         ret = super().__rshift__(other)
 
         if isinstance(other, Unitary):
@@ -362,9 +341,7 @@ class Unitary(Operation):
 
 
 class Map(Transformation):
-    r"""
-    A ``CircuitComponent`` more general than ``Channel``, which are CPTP maps.
-    """
+    r"""A ``CircuitComponent`` more general than ``Channel``, which are CPTP maps."""
 
     short_name = "Map"
 
@@ -375,7 +352,7 @@ class Map(Transformation):
         modes_in: Sequence[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
-    ) -> Transformation:
+    ) -> Map:
         if not isinstance(modes_out, set) and sorted(modes_out) != list(modes_out):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
@@ -397,16 +374,13 @@ class Map(Transformation):
 
 
 class Channel(Map):
-    r"""
-    Base class for all CPTP channels.
-    """
+    r"""Base class for all CPTP channels."""
 
     short_name = "Ch"
 
     @property
     def is_CP(self) -> bool:
-        r"""
-        Whether this channel is completely positive (CP).
+        r"""Whether this channel is completely positive (CP).
 
         >>> from mrmustard.lab import Channel
         >>> channel = Channel.random((0, 1, 2))
@@ -438,8 +412,7 @@ class Channel(Map):
 
     @property
     def is_TP(self) -> bool:
-        r"""
-        Whether this channel is trace preserving (TP).
+        r"""Whether this channel is trace preserving (TP).
 
         >>> from mrmustard.lab import Channel
         >>> channel = Channel.random((0, 1, 2))
@@ -471,8 +444,7 @@ class Channel(Map):
 
     @property
     def is_physical(self) -> bool:
-        r"""
-        Whether this channel is physical (i.e. CPTP).
+        r"""Whether this channel is physical (i.e. CPTP).
 
         >>> from mrmustard.lab import Channel
         >>> channel = Channel.random((0, 1, 2))
@@ -482,8 +454,7 @@ class Channel(Map):
 
     @property
     def XY(self) -> tuple[ComplexMatrix, ComplexMatrix]:
-        r"""
-        Returns the X and Y matrix corresponding to the channel.
+        r"""Returns the X and Y matrix corresponding to the channel.
 
         >>> from mrmustard.lab import Channel
         >>> channel = Channel.random((0, 1))
@@ -500,7 +471,7 @@ class Channel(Map):
         modes_in: Sequence[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
-    ) -> Transformation:
+    ) -> Channel:
         if not isinstance(modes_out, set) and sorted(modes_out) != list(modes_out):
             raise ValueError(f"Output modes must be sorted. got {modes_out}")
         if not isinstance(modes_in, set) and sorted(modes_in) != list(modes_in):
@@ -528,9 +499,9 @@ class Channel(Map):
         X: RealMatrix,
         Y: RealMatrix,
         d: Vector | None = None,
+        name: str | None = None,
     ) -> Channel:
-        r"""
-        Initialize a Channel from its XY representation.
+        r"""Initialize a Channel from its XY representation.
 
         >>> from mrmustard.lab import Attenuator, Channel
         >>> X = math.eye(2)
@@ -539,10 +510,12 @@ class Channel(Map):
         >>> assert channel == Attenuator(0, transmissivity=1)
 
         Args:
-            modes: The modes the channel is defined on.
+            modes_out: The output modes of the channel.
+            modes_in: The input modes of the channel.
             X: The X matrix of the channel.
             Y: The Y matrix of the channel.
-            d:  The d vector of the channel.
+            d: The displacement vector of the channel.
+            name: A name for the channel. If not provided, the class name will be used.
 
         Raises:
             ValueError: If the dimensions of the X,Y matrices and the number of modes don't match.
@@ -554,7 +527,6 @@ class Channel(Map):
             This channel has a Bargmann triple that is computed in https://arxiv.org/pdf/2209.06069. We borrow
             the formulas from the paper to implement the corresponding channel.
         """
-
         if X.shape[-2:] != (2 * len(modes_out), 2 * len(modes_in)) or Y.shape[-2:] != (
             2 * len(modes_out),
             2 * len(modes_out),
@@ -563,14 +535,17 @@ class Channel(Map):
                 f"The dimension of XY matrices ({X.shape}, {Y.shape}) and number of modes ({len(modes_in), len(modes_out)}) don't match.",
             )
 
-        return Channel.from_bargmann(modes_out, modes_in, XY_to_channel_Abc(X, Y, d))
+        return Channel.from_bargmann(modes_out, modes_in, XY_to_channel_Abc(X, Y, d), name=name)
 
     @classmethod
     def random(
-        cls, modes: int | tuple[int, ...], max_r: float = 1.0, seed: int | None = None
+        cls,
+        modes: int | tuple[int, ...],
+        max_r: float = 1.0,
+        seed: int | None = None,
+        name: str | None = None,
     ) -> Channel:
-        r"""
-        A random channel without displacement.
+        r"""A random channel without displacement.
 
         >>> from mrmustard.lab import Channel
         >>> channel = Channel.random((0, 1, 2), max_r=1.2)
@@ -580,6 +555,7 @@ class Channel(Map):
             modes: The modes of the channel.
             max_r: The maximum squeezing parameter.
             seed: The random seed. If ``None``, the global seed is used.
+            name: A name for the channel. If not provided, the class name will be used.
 
         Returns:
             The random channel.
@@ -597,16 +573,10 @@ class Channel(Map):
         u_psi = Vacuum(range(2 * m)) >> U
         ansatz = u_psi.ansatz
         kraus = ansatz.conj.contract(ansatz, idxs=(list(range(2 * m)), list(range(2 * m))))
-        return Channel.from_bargmann(modes, modes, kraus.triple)
+        return Channel.from_bargmann(modes, modes, kraus.triple, name=name)
 
-    def __rshift__(self, other: CircuitComponent) -> CircuitComponent:
-        r"""
-        Contracts ``self`` and ``other`` as it would in a circuit, adding the adjoints when
-        they are missing.
-
-        Returns a ``Channel`` when ``other`` is a ``Channel`` or a ``Unitary``, and a ``CircuitComponent`` otherwise.
-        """
+    def __rshift__(self, other: Scalar | CircuitComponent) -> Scalar | CircuitComponent:
         ret = super().__rshift__(other)
-        if isinstance(other, Channel | Unitary):
+        if isinstance(other, (Channel, Unitary)):
             return Channel(ansatz_factory=ret.ansatz_factory, wires=ret.wires)
         return ret

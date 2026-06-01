@@ -6,8 +6,6 @@ on:
 jobs:
   upload:
     runs-on: ubuntu-latest
-    env:
-      HYPOTHESIS_PROFILE: ci
 
     steps:
       - name: Checkout repo
@@ -16,7 +14,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.13"
+          python-version: "3.14"
 
       - name: Build and install Mr Mustard
         run: |

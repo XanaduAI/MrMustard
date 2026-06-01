@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a beam splitter gate.
-"""
+"""The class representing a beam splitter gate."""
 
 from __future__ import annotations
 
@@ -32,8 +30,7 @@ __all__ = ["BSgate"]
 
 
 class BSgate(Unitary):
-    r"""
-    The beam splitter gate.
+    r"""The beam splitter gate.
 
     >>> from mrmustard.lab import BSgate
     >>> unitary = BSgate(modes=(1, 2), theta=0.1)
@@ -45,6 +42,7 @@ class BSgate(Unitary):
         modes: The pair of modes of the beam splitter gate.
         theta: The transmissivity angle.
         phi: The phase angle.
+        name: A name for the gate. If not provided, the class name will be used.
 
     .. details::
 
@@ -83,7 +81,9 @@ class BSgate(Unitary):
         modes: tuple[int, int],
         theta: float | Sequence[float] | Parameter = 0.0,
         phi: float | Sequence[float] | Parameter = 0.0,
+        name: str | None = None,
     ):
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={
@@ -95,7 +95,7 @@ class BSgate(Unitary):
                 }
             ),
             wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["theta"] = Parameter.from_cc_init(theta, "float64", f"{self.name}/theta")
         self.parameters["phi"] = Parameter.from_cc_init(phi, "float64", f"{self.name}/phi")
@@ -105,8 +105,7 @@ class BSgate(Unitary):
         shape: int | Sequence[int] | None = None,
         method: str = "stable",
     ) -> ComplexTensor:
-        r"""
-        Returns the unitary representation of the Beam Splitter gate in the Fock basis.
+        r"""Returns the unitary representation of the Beam Splitter gate in the Fock basis.
 
         Args:
             shape: The shape of the returned representation. If ``shape`` is given as an ``int``,
@@ -119,14 +118,9 @@ class BSgate(Unitary):
 
         Returns:
             array: The Fock representation of this component.
-
-        Raises:
-            ValueError: If the shape is not valid for the component.
         """
-        if self.ansatz_factory is None:
-            raise ValueError("CircuitComponent has no ansatz factory.")
-        shape = self._check_fock_shape(shape)
         ansatz_factory = self.ansatz_factory
+        shape = self._check_fock_shape(shape)
         if ansatz_factory.ansatz_dict.get(ReprEnum.FOCK, None) is None:
             ansatz_factory = self.to_fock(shape).ansatz_factory
         return (

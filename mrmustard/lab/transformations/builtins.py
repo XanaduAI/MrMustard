@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains methods for creating built-in ``Transformation`` ``Ansatz``.
-"""
+"""This module contains methods for creating built-in ``Transformation`` ``Ansatz``."""
 
 from __future__ import annotations
 
@@ -54,8 +52,7 @@ def amplifier_channel(
     gain: float | Sequence[float],
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The noisy amplifier channel in the Bargmann representation.
+    r"""The noisy amplifier channel in the Bargmann representation.
 
     Args:
         gain: The gain.
@@ -72,8 +69,7 @@ def attenuator_channel(
     transmissivity: float | Sequence[float],
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The noisy attenuator channel in the Bargmann representation.
+    r"""The noisy attenuator channel in the Bargmann representation.
 
     Args:
         transmissivity: The transmissivity.
@@ -91,8 +87,7 @@ def beamsplitter_gate(
     phi: float | Sequence[float] = 0.0,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The beam splitter gate in the Bargmann representation.
+    r"""The beam splitter gate in the Bargmann representation.
 
     Args:
         theta: The transmissivity angle.
@@ -113,8 +108,7 @@ def beamsplitter_gate_fock(
     method: str = "stable",
     lin_sup: bool = False,
 ) -> ArrayAnsatz:
-    r"""
-    The beamsplitter gate in the Fock representation.
+    r"""The beamsplitter gate in the Fock representation.
 
     Args:
         theta: The transmissivity angle.
@@ -138,8 +132,7 @@ def beamsplitter_gate_fock(
 
 
 def cx_gate(s: float | Sequence[float], lin_sup: bool = False) -> PolyExpAnsatz:
-    r"""
-    The controlled-X gate in the Bargmann representation.
+    r"""The controlled-X gate in the Bargmann representation.
 
     Args:
         s: The control parameter.
@@ -153,8 +146,7 @@ def cx_gate(s: float | Sequence[float], lin_sup: bool = False) -> PolyExpAnsatz:
 
 
 def cz_gate(s: float | Sequence[float], lin_sup: bool = False) -> PolyExpAnsatz:
-    r"""
-    The controlled-Z gate in the Bargmann representation.
+    r"""The controlled-Z gate in the Bargmann representation.
 
     Args:
         s: The control parameter.
@@ -168,8 +160,7 @@ def displacement_gate(
     alpha: complex | Sequence[complex],
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The displacement gate in the Bargmann representation.
+    r"""The displacement gate in the Bargmann representation.
 
     Args:
         alpha: The displacement in the complex phase space.
@@ -187,8 +178,7 @@ def displacement_gate_fock(
     shape: int | Sequence[int],
     lin_sup: bool = False,
 ) -> ArrayAnsatz:
-    r"""
-    The displacement gate in the Fock representation.
+    r"""The displacement gate in the Fock representation.
 
     Args:
         alpha: The displacement in the complex phase space.
@@ -209,8 +199,7 @@ def fock_damping_operation(
     damping: float | Sequence[float],
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The Fock damping operator in the Bargmann representation.
+    r"""The Fock damping operator in the Bargmann representation.
 
     Args:
         damping: The damping parameter.
@@ -227,8 +216,7 @@ def gaussian_random_noise_channel(
     Y: RealMatrix,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The Gaussian random noise channel in the Bargmann representation.
+    r"""The Gaussian random noise channel in the Bargmann representation.
 
     Args:
         Y: The Y matrix of the Gaussian random noise channel.
@@ -245,8 +233,7 @@ def gaussian_gate(
     symplectic: RealMatrix,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The Gaussian gate in the Bargmann representation.
+    r"""The Gaussian gate in the Bargmann representation.
 
     Args:
         symplectic: The symplectic matrix of the Gaussian gate.
@@ -263,8 +250,7 @@ def identity_gate(
     n_modes: int,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The identity gate in the Bargmann representation.
+    r"""The identity gate in the Bargmann representation.
 
     Args:
         n_modes: The number of modes.
@@ -281,8 +267,7 @@ def interferometer_gate(
     unitary: ComplexMatrix,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The interferometer gate in the Bargmann representation.
+    r"""The interferometer gate in the Bargmann representation.
 
     Args:
         unitary: The unitary matrix of the interferometer gate.
@@ -301,8 +286,7 @@ def mz_gate(
     internal: bool,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The MZ gate in the Bargmann representation.
+    r"""The MZ gate in the Bargmann representation.
 
     Args:
         phi_a: The phase in the upper arm of the MZ interferometer.
@@ -321,8 +305,7 @@ def p_gate(
     shearing: float | Sequence[float],
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The P gate in the Bargmann representation.
+    r"""The P gate in the Bargmann representation.
 
     Args:
         shearing: The shearing parameter.
@@ -339,8 +322,7 @@ def real_interferometer_gate(
     orthogonal: RealMatrix,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The real interferometer gate in the Bargmann representation.
+    r"""The real interferometer gate in the Bargmann representation.
 
     Args:
         orthogonal: The orthogonal matrix of the real interferometer gate.
@@ -357,8 +339,7 @@ def rotation_gate(
     theta: float | Sequence[float],
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The rotation gate in the Bargmann representation.
+    r"""The rotation gate in the Bargmann representation.
 
     Args:
         theta: The rotation angle.
@@ -376,8 +357,7 @@ def squeezing_gate(
     phi: float | Sequence[float] = 0.0,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The squeezing gate in the Bargmann representation.
+    r"""The squeezing gate in the Bargmann representation.
 
     Args:
         r: The squeezing magnitude.
@@ -397,8 +377,7 @@ def squeezing_gate_fock(
     shape: int | Sequence[int] | None = None,
     lin_sup: bool = False,
 ) -> ArrayAnsatz:
-    r"""
-    The squeezing gate in the Fock representation.
+    r"""The squeezing gate in the Fock representation.
 
     Args:
         r: The squeezing magnitude.
@@ -425,8 +404,7 @@ def twomode_squeezing_gate(
     phi: float | Sequence[float] = 0.0,
     lin_sup: bool = False,
 ) -> PolyExpAnsatz:
-    r"""
-    The two-mode squeezing gate in the Bargmann representation.
+    r"""The two-mode squeezing gate in the Bargmann representation.
 
     Args:
         r: The squeezing amplitude.

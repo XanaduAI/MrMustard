@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a RealInterferometer gate.
-"""
+"""The class representing a RealInterferometer gate."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["RealInterferometer"]
 
 
 class RealInterferometer(Unitary):
-    r"""
-    N-mode interferometer parametrized by an NxN orthogonal matrix (or 2N x 2N block-diagonal orthogonal matrix).
+    r"""N-mode interferometer parametrized by an NxN orthogonal matrix (or 2N x 2N block-diagonal orthogonal matrix).
     Does not mix q's and p's.
 
     >>> from mrmustard import math
@@ -43,6 +40,7 @@ class RealInterferometer(Unitary):
     Args:
         modes: The modes this gate is applied to.
         orthogonal: A real unitary (orthogonal) matrix.  For N modes it must have shape `(N,N)`.
+        name: A name for the gate. If not provided, the class name will be used.
     """
 
     short_name = "RI"
@@ -51,8 +49,10 @@ class RealInterferometer(Unitary):
         self,
         modes: int | tuple[int, ...],
         orthogonal: RealMatrix | Parameter,
+        name: str | None = None,
     ):
         modes = (modes,) if isinstance(modes, int) else modes
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={
@@ -60,7 +60,7 @@ class RealInterferometer(Unitary):
                 }
             ),
             wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["orthogonal"] = Parameter.from_cc_init(
             orthogonal, "float64", f"{self.name}/orthogonal"
@@ -71,13 +71,15 @@ class RealInterferometer(Unitary):
             )
 
     @classmethod
-    def random(cls, modes: int | tuple[int, ...], seed: int | None = None) -> RealInterferometer:
-        r"""
-        Returns a random RealInterferometer.
+    def random(
+        cls, modes: int | tuple[int, ...], seed: int | None = None, name: str | None = None
+    ) -> RealInterferometer:
+        r"""Returns a random RealInterferometer.
 
         Args:
             modes: The modes of the RealInterferometer.
             seed: The random seed. If ``None``, the global seed is used.
+            name: A name for the gate. If not provided, the class name will be used.
 
         Returns:
             The random RealInterferometer.
@@ -89,4 +91,4 @@ class RealInterferometer(Unitary):
         if len(modes) == 0:
             raise ValueError("Cannot create a random RealInterferometer with no modes.")
         orthogonal = math.random_orthogonal(len(modes), seed)
-        return cls(modes, orthogonal)
+        return cls(modes, orthogonal, name=name)

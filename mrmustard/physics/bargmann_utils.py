@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains functions for performing calculations on objects in the Bargmann representations.
-"""
+"""This module contains functions for performing calculations on objects in the Bargmann representations."""
 
 import numpy as np
 
@@ -22,7 +20,7 @@ from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
 from mrmustard.utils.typing import (
     ComplexMatrix,
-    ComplexTensor,
+    ComplexScalar,
     ComplexVector,
     Matrix,
     Scalar,
@@ -42,9 +40,8 @@ __all__ = [
 
 
 def au2Symplectic(A):
-    r"""
-    helper for finding the Au of a unitary from its symplectic rep.
-    Au : in bra-ket order
+    r"""Helper for finding the Au of a unitary from its symplectic rep.
+    Au : in bra-ket order.
     """
     # A represents the A matrix corresponding to unitary U
     A = A * (1.0 + 0.0 * 1j)
@@ -87,8 +84,7 @@ def bargmann_Abc_to_phasespace_cov_means(
     b: Vector,
     c: Scalar,
 ) -> tuple[Matrix, Vector, Scalar]:
-    r"""
-    Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
+    r"""Function to derive the covariance matrix and mean vector of a Gaussian state from its Wigner characteristic function in ABC form.
 
     The covariance matrix and mean vector can be used to write the characteristic function of a Gaussian state
 
@@ -108,10 +104,12 @@ def bargmann_Abc_to_phasespace_cov_means(
     This function is to go from the Abc triple in characteristic phase space into the covariance and mean vector for Gaussian state.
 
     Args:
-        A, b, c: The ``(A, b, c)`` triple of the state in characteristic phase space.
+        A: The A matrix of the state in characteristic phase space.
+        b: The b vector of the state in characteristic phase space.
+        c: The c scalar of the state in characteristic phase space.
 
     Returns:
-        The covariance matrix, mean vector and coefficient of the state in phase space.
+        The covariance matrix, mean vector and coefficient of the state in characteristic phase space.
     """
     num_modes = A.shape[-1] // 2
     Omega = math.cast(math.transpose(math.J(num_modes)), dtype=math.complex128)
@@ -123,7 +121,7 @@ def bargmann_Abc_to_phasespace_cov_means(
 
 def cayley(X, c):
     r"""Returns the Cayley transform of a matrix:
-    :math:`cay(X) = (X - cI)(X + cI)^{-1}`
+    :math:`cay(X) = (X - cI)(X + cI)^{-1}`.
 
     Args:
         c (float): the parameter of the Cayley transform
@@ -137,8 +135,7 @@ def cayley(X, c):
 
 
 def symplectic2Au(S):
-    r"""
-    The inverse of au2Symplectic i.e., returns symplectic, given Au
+    r"""The inverse of au2Symplectic i.e., returns symplectic, given Au.
 
     S: symplectic in XXPP order
     """
@@ -164,9 +161,8 @@ def symplectic2Au(S):
 
 def symplectic_to_bargmann_Abc(
     symplectic: Matrix,
-) -> tuple[ComplexMatrix, ComplexVector, ComplexTensor]:
-    r"""
-    Converts a symplectic matrix to a Bargmann triple.
+) -> tuple[ComplexMatrix, ComplexVector, ComplexScalar]:
+    r"""Converts a symplectic matrix to a Bargmann triple.
 
     Args:
         symplectic: The symplectic matrix to convert.
@@ -214,8 +210,7 @@ def wigner_to_bargmann_rho(cov, means):
 
 
 def XY_of_channel(A: ComplexMatrix):
-    r"""
-    Outputting the X and Y matrices corresponding to a channel determined by the "A"
+    r"""Outputting the X and Y matrices corresponding to a channel determined by the "A"
     matrix.
 
     Args:

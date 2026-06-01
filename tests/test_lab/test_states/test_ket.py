@@ -626,7 +626,7 @@ class TestKet:
         assert ket_from_global_2 == ket_from_global_2_redux
 
         # no modes should raise error
-        with pytest.raises(ValueError, match="Cannot create a random GaussianKet with no modes."):
+        with pytest.raises(ValueError, match=r"Cannot create a random GaussianKet with no modes."):
             GaussianKet.random(modes=[])
 
     def test_ipython_repr(self):

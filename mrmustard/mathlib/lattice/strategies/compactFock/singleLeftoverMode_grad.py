@@ -1,5 +1,4 @@
-"""
-This module calculates the derivatives for all possible Fock representations of mode 0, where all other modes are PNR detected.
+"""This module calculates the derivatives for all possible Fock representations of mode 0, where all other modes are PNR detected.
 This is done by applying the derivated recursion relation in a selective manner.
 """
 
@@ -33,9 +32,7 @@ def calc_dA_dB(  # pragma: no cover
     G_in_dB_adapted,
     l_range,
 ):
-    """
-    Apply the derivated recurrence relation.
-    """
+    """Apply the derivated recurrence relation."""
     dA = arr_read_pivot_dA[(m, n, *read_GB)] * B[i]
     dB = arr_read_pivot_dB[(m, n, *read_GB)] * B[i]
     dB[i] += arr_read_pivot[(m, n, *read_GB)]
@@ -65,8 +62,7 @@ def write_block_grad(  # pragma: no cover
     arr_read_pivot_dB,
     G_in_dB,
 ):
-    """
-    Apply the derivated recurrence relation to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
+    """Apply the derivated recurrence relation to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
     This is the coarse-grained version of applying the derivated recurrence relation of mrmustard.math.compactFock.compactFock_diagonal_grad once.
     """
     m, n = 0, 0
@@ -237,9 +233,8 @@ def read_block(  # pragma: no cover
     idx_read_tail,
     cutoff_leftoverMode,
 ):
-    """
-    Read the blocks of Fock amplitudes(of shape cutoff_leftoverMode x cutoff_leftoverMode)
-    and their derivatives w.r.t A and B and write them to G_in, G_in_dA, G_in_dB
+    """Read the blocks of Fock amplitudes(of shape cutoff_leftoverMode x cutoff_leftoverMode)
+    and their derivatives w.r.t A and B and write them to G_in, G_in_dA, G_in_dB.
     """
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
@@ -275,8 +270,8 @@ def use_offDiag_pivot_grad(  # noqa: C901
     arr1001_dB,
     arr1_dB,
 ):
-    """
-    Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
+    """Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...].
+
     Args:
         A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of detected modes
@@ -289,7 +284,6 @@ def use_offDiag_pivot_grad(  # noqa: C901
     Returns:
         (array, array, array, array, array): updated versions of arr0, arr2, arr1010, arr1001, arr1
     """
-
     pivot = repeat_twice(params)
     pivot[2 * d] += 1
     K_l = SQRT[pivot]
@@ -476,8 +470,8 @@ def use_diag_pivot_grad(  # pragma: no cover
     arr0_dB,
     arr1_dB,
 ):
-    """
-    Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
+    """Apply recurrence relation for pivot of type [a,a,b,b,c,c...].
+
     Args:
         A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of detected modes
@@ -572,9 +566,9 @@ def fock_representation_1leftoverMode_grad_NUMBA(  # pragma: no cover
     list_type,
     zero_tuple,
 ):
-    """
-    Returns the gradients of the density matrices in the upper, undetected mode of a circuit when all other modes
-    are PNR detected (according to algorithm 2 of https://doi.org/10.22331/q-2023-08-29-1097)
+    """Returns the gradients of the density matrices in the upper, undetected mode of a circuit when all other modes
+    are PNR detected (according to algorithm 2 of https://doi.org/10.22331/q-2023-08-29-1097).
+
     Args:
         A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock_utils.ABC)
         M (int): number of modes
@@ -693,13 +687,11 @@ def fock_representation_1leftoverMode_grad_NUMBA(  # pragma: no cover
 
 
 def fock_representation_1leftoverMode_grad(A, B, M, arr0, arr2, arr1010, arr1001, arr1):
-    """
-    First initialise the submatrices of G (of which the shape depends on cutoff and M)
+    """First initialise the submatrices of G (of which the shape depends on cutoff and M)
     and some other constants
     (These initialisations currently cannot be done using Numba.)
     Then calculate the fock representation.
     """
-
     cutoffs = tuple(arr0.shape[1:])
     cutoff_leftoverMode = cutoffs[0]
     cutoffs_tail = tuple(cutoffs[1:])

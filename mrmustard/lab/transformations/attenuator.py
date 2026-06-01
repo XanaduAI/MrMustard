@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a noisy attenuator channel.
-"""
+"""The class representing a noisy attenuator channel."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["Attenuator"]
 
 
 class Attenuator(Channel):
-    r"""
-    The noisy attenuator channel.
+    r"""The noisy attenuator channel.
 
     >>> from mrmustard import math
     >>> from mrmustard.lab import Attenuator
@@ -43,6 +40,7 @@ class Attenuator(Channel):
     Args:
         mode: The mode this gate is applied to.
         transmissivity: The transmissivity.
+        name: A name for the channel. If not provided, the class name will be used.
 
     .. details::
 
@@ -75,8 +73,10 @@ class Attenuator(Channel):
         self,
         mode: int | tuple[int],
         transmissivity: float | Sequence[float] | Parameter = 1.0,
+        name: str | None = None,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (attenuator_channel, ("transmissivity", "lin_sup"))}
@@ -87,7 +87,7 @@ class Attenuator(Channel):
                 modes_in_ket=set(mode),
                 modes_out_ket=set(mode),
             ),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["transmissivity"] = Parameter.from_cc_init(
             transmissivity, "float64", f"{self.name}/transmissivity"

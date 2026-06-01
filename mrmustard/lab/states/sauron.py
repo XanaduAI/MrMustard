@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-The Sauron state is an approximation of the `n`-th Fock states using a ring of `n+1` coherent states.
-"""
+r"""The Sauron state is an approximation of the `n`-th Fock states using a ring of `n+1` coherent states."""
 
 from __future__ import annotations
 
@@ -27,8 +25,7 @@ from .builtins import sauron_state
 
 
 class Sauron(Ket):
-    r"""
-    The `n`-th Sauron state is an approximation of the `n`-th Fock states using
+    r"""The `n`-th Sauron state is an approximation of the `n`-th Fock states using
     a ring of `n+1` coherent states.
 
     >>> from mrmustard.lab import Sauron
@@ -39,6 +36,7 @@ class Sauron(Ket):
         mode: The mode of the Sauron state.
         n: The Fock state that is approximated.
         epsilon: The radius of the ring of coherent states, default is 0.1.
+        name: A name for the state. If not provided, the class name will be used.
 
     Note:
         The reference to the Lord of the Rings comes from
@@ -54,14 +52,17 @@ class Sauron(Ket):
 
     short_name = "Saur"
 
-    def __init__(self, mode: int | tuple[int], n: int, epsilon: float = 0.1):
+    def __init__(
+        self, mode: int | tuple[int], n: int, epsilon: float = 0.1, name: str | None = None
+    ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else f"{self.__class__.__name__}-{n}"
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (sauron_state, ("n", "epsilon", "lin_sup"))}
             ),
             wires=Wires(modes_out_ket=set(mode)),
-            name=f"{self.__class__.__name__}-{n}",
+            name=name,
         )
         self.parameters["n"] = Parameter.from_cc_init(n, "int64", f"{self.name}/n")
         self.parameters["epsilon"] = Parameter.from_cc_init(

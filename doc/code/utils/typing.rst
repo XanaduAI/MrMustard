@@ -18,99 +18,141 @@ Typing
         }
     </style>
 
-.. class:: Scalar
+.. class:: BoolScalar
 
-.. data:: Scalar
-    :type: R | C | Z | N
+.. data:: BoolScalar
+    :type: BoolScalarValue | BoolArray
     :noindex:
 
-.. class:: Vector
+.. class:: BoolScalarValue
 
-.. data:: Vector
-    :type: np.ndarray[tuple[int], Scalar]
-    :noindex:
-
-.. class:: Matrix
-
-.. data:: Matrix
-    :type: np.ndarray[tuple[int, int], Scalar]
-    :noindex:
-
-.. class:: Tensor
-
-.. data:: Tensor
-    :type: np.ndarray[tuple[int, ...], Scalar]
-    :noindex:
-
-.. class:: RealVector
-
-.. data:: RealVector
-    :type: np.ndarray[tuple[int], R]
-    :noindex:
-
-.. class:: ComplexVector
-
-.. data:: ComplexVector
-    :type: np.ndarray[tuple[int], C]
-    :noindex:
-
-.. class:: IntVector
-
-.. data:: IntVector
-    :type: np.ndarray[tuple[int], Z]
-    :noindex:
-
-.. class:: UIntVector
-
-.. data:: UIntVector
-    :type: np.ndarray[tuple[int], N]
-    :noindex:
-
-.. class:: RealMatrix
-
-.. data:: RealMatrix
-    :type: np.ndarray[tuple[int, int], R]
+.. data:: BoolScalarValue
+    :type: bool | np.bool
     :noindex:
 
 .. class:: ComplexMatrix
 
 .. data:: ComplexMatrix
-    :type: np.ndarray[tuple[int, int], C]
+    :type: ComplexArray
     :noindex:
 
-.. class:: IntMatrix
+.. class:: ComplexScalar
 
-.. data:: IntMatrix
-    :type: np.ndarray[tuple[int, int], Z]
+.. data:: ComplexScalar
+    :type: ComplexScalarValue | ComplexArray
     :noindex:
 
-.. class:: UIntMatrix
+.. class:: ComplexScalarValue
 
-.. data:: UIntMatrix
-    :type: np.ndarray[tuple[int, int], N]
-    :noindex:
-
-.. class:: RealTensor
-
-.. data:: RealTensor
-    :type: np.ndarray[tuple[int, ...], R]
+.. data:: ComplexScalarValue
+    :type: complex | np.complexfloating
     :noindex:
 
 .. class:: ComplexTensor
 
 .. data:: ComplexTensor
-    :type: np.ndarray[tuple[int, ...], C]
+    :type: ComplexArray
+    :noindex:
+
+.. class:: ComplexVector
+
+.. data:: ComplexVector
+    :type: ComplexArray
+    :noindex:
+
+.. class:: IntMatrix
+
+.. data:: IntMatrix
+    :type: IntArray
+    :noindex:
+
+.. class:: IntScalar
+
+.. data:: IntScalar
+    :type: IntScalarValue | IntArray
+    :noindex:
+
+.. class:: IntScalarValue
+
+.. data:: IntScalarValue
+    :type: int | np.signedinteger
     :noindex:
 
 .. class:: IntTensor
 
 .. data:: IntTensor
-    :type: np.ndarray[tuple[int, ...], Z]
+    :type: IntArray
     :noindex:
 
-.. class:: UIntTensor
+.. class:: IntVector
 
-.. data:: UIntTensor
-    :type: np.ndarray[tuple[int, ...], N]
+.. data:: IntVector
+    :type: IntArray
     :noindex:
-    
+
+.. class:: Matrix
+
+.. data:: Matrix
+    :type: Array
+    :noindex:
+
+.. class:: RealMatrix
+
+.. data:: RealMatrix
+    :type: RealArray
+    :noindex:
+
+.. class:: RealScalar
+
+.. data:: RealScalar
+    :type: RealScalarValue | RealArray
+    :noindex:
+
+.. class:: RealScalarValue
+
+.. data:: RealScalarValue
+    :type: float | np.floating
+    :noindex:
+
+.. class:: RealTensor
+
+.. data:: RealTensor
+    :type: RealArray
+    :noindex:
+
+.. class:: RealVector
+
+.. data:: RealVector
+    :type: RealArray
+    :noindex:
+
+.. class:: Scalar
+
+.. data:: Scalar
+    :type: ScalarValue | Array
+    :noindex:
+
+.. class:: ScalarValue
+
+.. data:: ScalarValue
+    :type: complex | float | int | np.number
+    :noindex:
+
+.. class:: Tensor
+
+.. data:: Tensor
+    :type: Array
+    :noindex:
+
+.. class:: Trainable
+
+.. data:: Trainable
+    :type: TypeVar("Trainable", bound=NDArray[np.number])
+    :noindex:
+
+.. class:: Vector
+
+.. data:: Vector
+    :type: Array
+    :noindex:
+

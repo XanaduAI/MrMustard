@@ -220,7 +220,7 @@ class TestPolyExpAnsatz:
         ansatz1 = PolyExpAnsatz(A1, b1, c1)
         ansatz2 = PolyExpAnsatz(A2, b2, c2)
 
-        with pytest.raises(ValueError, match="axis .* is out of range"):
+        with pytest.raises(ValueError, match=r"axis .* is out of range"):
             ansatz1.concat(ansatz2, axis=5)
 
     def test_concat_basic(self):
@@ -552,6 +552,12 @@ class TestPolyExpAnsatz:
         assert ansatz2 == ansatz2
         assert ansatz != ansatz2
         assert ansatz2 != ansatz
+
+        A2, b2, c2 = random_Abc(5, derived=(2,))
+        ansatz3 = PolyExpAnsatz(A2, b2, c2)
+        assert ansatz3 == ansatz3
+        assert ansatz3 != ansatz2
+        assert ansatz3 != ansatz
 
     def test_eval_with_batched_inputs(self):
         """Test evaluation with batched inputs."""

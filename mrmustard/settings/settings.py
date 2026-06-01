@@ -23,6 +23,7 @@ from typing import Annotated, Literal
 import numpy as np
 import rich.table
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     Field,
@@ -38,9 +39,15 @@ __all__ = [
 ]
 
 
+def check_greater(bounds: tuple[float, float]) -> tuple[float, float]:
+    """Validate that bounds[1] > bounds[0]."""
+    if not (bounds[1] > bounds[0]):
+        raise ValueError(f"Second element {bounds[1]} must be greater than first {bounds[0]}")
+    return tuple(float(x) for x in bounds)
+
+
 class Settings(BaseModel):
-    r"""
-    A class containing various settings that are used by Mr Mustard throughout a session.
+    r"""A class containing various settings that are used by Mr Mustard throughout a session.
 
     >>> from mrmustard import settings
     >>> assert settings.HBAR == 1.0  # check the default values
@@ -78,14 +85,10 @@ class Settings(BaseModel):
     DEFAULT_FOCK_SIZE: PositiveInt = 50
     r"""The default size for the Fock representation."""
 
-    DEFAULT_REPRESENTATION: Literal["Bargmann", "Fock", None] = "Fock"
+    DEFAULT_REPRESENTATION: Literal["Bargmann", "Fock"] | None = "Fock"
     r"""The representation to use when contracting two circuit components in
     different representations. Can be ``Fock``, ``Bargmann`` or ``None``. 
     If ``None``, a ``TypeError`` is raised  instead."""
-
-    DISCRETIZATION_METHOD: Literal["clenshaw", "iterative"] = "clenshaw"
-    r"""The method used to discretize the Wigner function. Can be ``clenshaw`` (better, default) or
-    ``iterative`` (worse, faster)."""
 
     DRAW_CIRCUIT_PARAMS: bool = True
     r"""Whether or not to draw the parameters of a circuit."""
@@ -126,6 +129,14 @@ class Settings(BaseModel):
     r"""Whether to use the ``stable`` function when computing Fock amplitudes 
     (more stable, but slower)."""
 
+    WIGNER_2D_RESOLUTION: PositiveInt = 100
+    r"""Default resolution (grid points per axis) for the Wigner plot shown in the 
+    repr of single-mode states."""
+
+    WIGNER_BOUNDS: Annotated[tuple[float, float], AfterValidator(check_greater)] = (-6.0, 6.0)
+    r"""Default (min, max) bounds for both x and p axes of the Wigner plot shown 
+    in the repr of single-mode states."""
+
     def __new__(cls):  # singleton
         if not hasattr(cls, "_instance"):
             cls._instance = super().__new__(cls)
@@ -145,27 +156,24 @@ class Settings(BaseModel):
         return self._rng
 
     def __call__(self, **kwargs):
-        r"""
-        Allows for setting multiple settings at once and saving the original values.
-        """
+        r"""Allows for setting multiple settings at once and saving the original values."""
         self._original_values = {k: getattr(self, k) for k in kwargs}
         for k, v in kwargs.items():
             setattr(self, k, v)
         return self
 
     def __enter__(self):
-        "Context manager enter method"
+        """Context manager enter method."""
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        "Context manager exit method that resets the settings to their original values"
+        """Context manager exit method that resets the settings to their original values."""
         for k, v in self._original_values.items():
             setattr(self, k, v)
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
         r"""Returns a string representation of the settings."""
-
         table = rich.table.Table(title="MrMustard Settings")
         table.add_column("Setting")
         table.add_column("Value")
@@ -179,9 +187,7 @@ class Settings(BaseModel):
         return ""
 
     def __setattr__(self, name, value):
-        r"""
-        The addition of new settings is not allowed. A custom error message is provided.
-        """
+        r"""The addition of new settings is not allowed. A custom error message is provided."""
         try:
             return super().__setattr__(name, value)
         except ValidationError as e:

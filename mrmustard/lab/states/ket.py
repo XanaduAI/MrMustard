@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains the defintion of the ket class ``Ket``.
-"""
+"""This module contains the defintion of the ket class ``Ket``."""
 
 from __future__ import annotations
 
 import warnings
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 
 import numpy as np
 from IPython.display import display
+from matplotlib import pyplot as plt
 
 from mrmustard import math, settings, widgets
 from mrmustard.physics import stellar
@@ -30,7 +29,7 @@ from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.ansatz_factory import AnsatzFactory
 from mrmustard.physics.gaussian import purity
 from mrmustard.physics.wires import ReprEnum, Wires
-from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Scalar
+from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Vector
 
 from ..circuit_components import CircuitComponent
 from ..circuit_components_utils import TraceOut
@@ -44,16 +43,13 @@ __all__ = ["Ket"]
 
 
 class Ket(State):
-    r"""
-    Base class for all Hilbert space vectors.
-    """
+    r"""Base class for all Hilbert space vectors."""
 
     short_name = "Ket"
 
     @property
     def is_physical(self) -> bool:
-        r"""
-        Whether the ket object is a physical one.
+        r"""Whether the ket object is a physical one.
 
         >>> from mrmustard.lab import GaussianKet
         >>> psi = GaussianKet.random([0])
@@ -87,8 +83,7 @@ class Ket(State):
 
     @property
     def probability(self) -> float:
-        r"""
-        Probability of this Ket (L2 norm squared).
+        r"""Probability of this Ket (L2 norm squared).
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import GaussianKet
@@ -102,8 +97,7 @@ class Ket(State):
 
     @property
     def purity(self) -> float:
-        r"""
-        The purity of the state.
+        r"""The purity of the state.
 
         >>> from mrmustard.lab import GaussianKet
         >>> assert GaussianKet.random([0]).purity == 1.0
@@ -111,13 +105,35 @@ class Ket(State):
         Returns:
             The purity of this ``Ket`` (always 1.0).
         """
-        if self.ansatz:
+        try:
             shape = (
                 self.ansatz.batch_shape[:-1] if self.ansatz._lin_sup else self.ansatz.batch_shape
             )
-        else:
+        except AttributeError as e:
+            if str(e) != "CircuitComponent has no ansatz factory.":
+                raise e
             shape = ()
         return math.ones(shape)
+
+    @classmethod
+    def from_bargmann(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[Matrix, Vector, Scalar],
+        name: str | None = None,
+        lin_sup: bool = False,
+    ) -> Ket:
+        return super().from_bargmann(modes=modes, triple=triple, name=name, lin_sup=lin_sup)
+
+    @classmethod
+    def from_fock(
+        cls,
+        modes: Sequence[int],
+        array: ComplexTensor,
+        name: str | None = None,
+        batch_dims: int = 0,
+    ) -> Ket:
+        return super().from_fock(modes=modes, array=array, name=name, batch_dims=batch_dims)
 
     @classmethod
     def from_ansatz(
@@ -125,7 +141,7 @@ class Ket(State):
         modes: Collection[int],
         ansatz: PolyExpAnsatz | ArrayAnsatz | None = None,
         name: str | None = None,
-    ) -> State:
+    ) -> Ket:
         if not isinstance(modes, set) and sorted(modes) != list(modes):
             raise ValueError(f"Modes must be sorted. Got {modes}")
         modes = set(modes)
@@ -148,7 +164,7 @@ class Ket(State):
     def from_phase_space(
         cls,
         modes: Collection[int],
-        triple: tuple[ComplexMatrix, ComplexVector, complex],
+        triple: tuple[Matrix, Vector, Scalar],
         name: str | None = None,
         atol_purity: float | None = None,
     ) -> Ket:
@@ -177,9 +193,18 @@ class Ket(State):
             name,
         )
 
+    @classmethod
+    def from_quadrature(
+        cls,
+        modes: Sequence[int],
+        triple: tuple[Matrix, Vector, Scalar],
+        phi: float = 0.0,
+        name: str | None = None,
+    ) -> Ket:
+        return super().from_quadrature(modes=modes, triple=triple, phi=phi, name=name)
+
     def dm(self) -> DM:
-        r"""
-        The ``DM`` object obtained from this ``Ket``.
+        r"""The ``DM`` object obtained from this ``Ket``.
 
         >>> from mrmustard.lab import Vacuum, DM
         >>> assert isinstance(Vacuum([0]).dm(), DM)
@@ -190,9 +215,8 @@ class Ket(State):
         ret = self.contract(self.adjoint)
         return DM._from_attributes(ret.ansatz, ret.wires, name=self.name)
 
-    def expectation(self, operator: CircuitComponent) -> Batch[Scalar]:
-        r"""
-        The expectation value of an operator calculated with respect to this Ket.
+    def expectation(self, operator: CircuitComponent) -> Scalar:
+        r"""The expectation value of an operator calculated with respect to this Ket.
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import Number, Rgate
@@ -249,9 +273,8 @@ class Ket(State):
             return ret.ansatz.scalar
         return ret
 
-    def fidelity(self, other: State) -> float:
-        r"""
-        The fidelity between this ket and another state.
+    def fidelity(self, other: State) -> Scalar:
+        r"""The fidelity between this ket and another state.
 
         .. details::
 
@@ -271,9 +294,8 @@ class Ket(State):
             raise ValueError("Cannot compute fidelity between states with different modes.")
         return self.expectation(other)
 
-    def formal_stellar_decomposition(self, core_modes):
-        r"""
-        Applies the formal stellar decomposition.
+    def formal_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[Ket, Operation]:
+        r"""Applies the formal stellar decomposition.
 
         >>> from mrmustard.lab import GaussianKet
         >>> psi = GaussianKet.random([0,1])
@@ -285,8 +307,7 @@ class Ket(State):
             core_modes: The set of modes defining core variables.
 
         Returns:
-            S: The core state (`Ket`).
-            T: The Gaussian `Operation` performing the stellar decomposition.
+            The core state (`Ket`) and the Gaussian `Operation` performing the stellar decomposition.
 
         Note:
             This method pulls out the unitary ``U`` from the given state on the given modes, so that
@@ -303,7 +324,7 @@ class Ket(State):
         idx = self.wires[core_modes].indices + self.wires[other_modes].indices
         inv = np.argsort(idx)
 
-        A, b, c = self.ansatz.A, self.ansatz.b, self.ansatz.c
+        A, b, c = self.bargmann_triple()
         A = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2)
         b = math.gather(b, idx, axis=-1)
 
@@ -317,9 +338,8 @@ class Ket(State):
 
         return core, t
 
-    def physical_stellar_decomposition(self, core_modes):
-        r"""
-        Applies the physical stellar decomposition.
+    def physical_stellar_decomposition(self, core_modes: Collection[int]) -> tuple[Ket, Unitary]:
+        r"""Applies the physical stellar decomposition.
 
         >>> from mrmustard import math
         >>> from mrmustard.lab import GaussianKet
@@ -333,25 +353,24 @@ class Ket(State):
             core_modes: The set of modes defining core variables.
 
         Returns:
-            psi_core: The core state (`Ket`)
-            U: The Gaussian unitary performing the stellar decomposition.
+            The core state (`Ket`) and the Gaussian unitary performing the stellar decomposition.
 
         Note:
-            This method pulls out the unitary ``U`` from the given state on the given modes, so that
+            This method pulls out the unitary `U` from the given state on the given modes, so that
             the remaining state is a core state. Formally, we have
+
             .. math::
 
                 \psi = (U\otimes\mathbb I) \psi_{\mathrm{core}}
 
-            where the unitary :math:`U` acts on the given `core_modes` only.
-            Core states have favorable properties in the Fock representation
-            e.g., being sparse.
+            where the unitary `U` acts on the given `core_modes` only.
+            Core states have favorable properties in the Fock representation e.g., being sparse.
         """
         other_modes = [m for m in self.modes if m not in core_modes]
         idx = self.wires[core_modes].indices + self.wires[other_modes].indices
         inv = np.argsort(idx)
 
-        A, b, c = self.ansatz.A, self.ansatz.b, self.ansatz.c
+        A, b, c = self.bargmann_triple()
         A = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2)
         b = math.gather(b, idx, axis=-1)
 
@@ -443,9 +462,9 @@ class Ket(State):
         self,
         max_degree: int | None = None,
         *,
-        ax=None,
+        ax: plt.Axes | None = None,
         max_limit: float = 10.0,
-    ):
+    ) -> plt.Axes:
         """Plot the stellar roots of this single-mode ket.
 
         Each root is plotted in the complex plane and colored by its phase
@@ -458,7 +477,7 @@ class Ket(State):
                 roots are drawn on the existing axes (no new figure is
                 created and ``plt.show()`` is not called).  Useful with the
                 ipympl backend for flicker-free interactive updates.
-            max_limit: Maximum absolute value for each axis (default 10).
+            max_limit: Maximum absolute value for each axis.
 
         Returns:
             The matplotlib ``Axes`` instance used for the plot.
@@ -479,34 +498,7 @@ class Ket(State):
         is_fock = isinstance(self.ansatz, ArrayAnsatz)
         display(widgets.state(self, is_ket=True, is_fock=is_fock))
 
-    def __rshift__(self, other: CircuitComponent | Scalar) -> CircuitComponent | Batch[Scalar]:
-        r"""
-        Contracts ``self`` and ``other`` (output of self into the inputs of other),
-        adding the adjoints when they are missing.
-
-        >>> from mrmustard.lab import Attenuator, Dgate, DM, GaussianKet
-        >>> psi = GaussianKet.random([0,1])
-        >>> U = Dgate(0, alpha=1)
-        >>> channel = Attenuator(0, .5)
-        >>> assert isinstance(psi >> U, Ket)
-        >>> assert isinstance(psi >> channel, DM)
-
-        Args:
-            other: the ``CircuitComponent`` object that we want to contract the state with.
-
-        Returns:
-            A ``DM`` or a ``Ket`` when the wires of the resulting components are compatible
-            with those of a ``DM`` or of a ``Ket``. Returns a ``CircuitComponent`` in general,
-            and a (batched) scalar if there are no wires left, for convenience.
-
-        Note:
-            Given this is a ``Ket`` object which
-            has only ket wires at the output, in expressions like ``ket >> channel`` where ``channel``
-            has wires on the ket and bra sides the adjoint of ket is automatically added, effectively
-            calling ``ket.adjoint @ (ket @ channel)`` and the method returns a new ``DM``.
-            In expressions lke ``ket >> u`` where ``u`` is a unitary, the adjoint of ``ket`` is
-            not needed and the method returns a new ``Ket``.
-        """
+    def __rshift__(self, other: Scalar | CircuitComponent) -> Scalar | CircuitComponent:
         result = super().__rshift__(
             other,
         )  # this would be the output if we didn't override __rshift__

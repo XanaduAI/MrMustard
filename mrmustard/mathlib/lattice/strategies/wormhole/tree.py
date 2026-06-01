@@ -52,19 +52,16 @@ This minimizes total computation because:
 
 from __future__ import annotations
 
-from typing import TypeAlias
-
 # Type aliases
 PNR = tuple[int, ...]
-VisitingTree: TypeAlias = dict[tuple[PNR, int], "VisitingTree"]
+type VisitingTree = dict[tuple[PNR, int], "VisitingTree"]
 
 
 def create_visiting_tree(
     targets: list[PNR],
     origin: PNR | None = None,
 ) -> VisitingTree:
-    r"""
-    Build a tree structure for visiting all target PNR outcomes.
+    r"""Build a tree structure for visiting all target PNR outcomes.
 
     The tree encodes the minimal set of lattice steps needed to reach all targets
     from the origin. Each node represents a position in PNR space, and edges
@@ -120,8 +117,7 @@ def _build_branches_dict(
     current_node: PNR,
     adj: dict[PNR, dict[int, PNR]],
 ) -> VisitingTree:
-    r"""
-    Recursively build VisitingTree structure from adjacency list.
+    r"""Recursively build VisitingTree structure from adjacency list.
 
     Transforms the flat adjacency representation into the nested tree structure
     expected by the branching wormhole traversal algorithm.

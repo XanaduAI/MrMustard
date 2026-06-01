@@ -14,13 +14,16 @@
 
 """Tests for mm_einsum mechanics: batch dimensions, output types, shapes, and structure."""
 
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 
 from mrmustard import math, settings
 from mrmustard.lab import GaussianKet, Sgate, SqueezedVacuum
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
-from mrmustard.physics.mm_einsum import mm_einsum, to_fock
+from mrmustard.physics.mm_einsum import mm_einsum
+from mrmustard.physics.mm_einsum.core import to_fock
 from mrmustard.physics.utils import random_Abc
 
 
@@ -272,6 +275,58 @@ class TestMmEinsumMechanics:
         assert res.batch_shape == (H * J,)
         assert res.array.shape == (H * J, a, c)
 
+    def test_user_path_reaches_final_einsum(self):
+        """A user path should be forwarded from Bargmann contraction into the final einsum."""
+        a = PolyExpAnsatz(*random_Abc(2))
+        b = PolyExpAnsatz(*random_Abc(2))
+        kernel = ArrayAnsatz(settings.get_rng().random((3, 3)), batch_dims=0)
+
+        with patch(
+            "mrmustard.physics.mm_einsum.core.math.einsum", wraps=math.einsum
+        ) as einsum_mock:
+            res = mm_einsum(
+                "xz,yz,xy->",
+                a,
+                b,
+                kernel,
+                fock_dims={"x": 3, "y": 3},
+                contraction_path=[(0, 1), (0, 1)],
+            )
+
+        assert isinstance(res, ArrayAnsatz)
+        assert einsum_mock.call_count == 1
+        assert einsum_mock.call_args.args[1] == einsum_mock.call_args.args[3]
+        assert einsum_mock.call_args.args[4] == []
+        assert einsum_mock.call_args.kwargs["optimize"] == [(0, 1)]
+
+    def test_empty_user_path_stays_explicit_for_unary_final_einsum(self):
+        """An explicit empty user path should stay explicit for a unary final einsum."""
+        matrix = ArrayAnsatz(settings.get_rng().random((3, 3)), batch_dims=0)
+
+        with patch(
+            "mrmustard.physics.mm_einsum.core.math.einsum", wraps=math.einsum
+        ) as einsum_mock:
+            res = mm_einsum("ii->", matrix, contraction_path=[])
+
+        assert isinstance(res, ArrayAnsatz)
+        final_call = einsum_mock.call_args_list[-1]
+        assert final_call.args[2] == []
+        assert final_call.kwargs["optimize"] == [(0,)]
+
+    def test_literal_unary_user_path_reaches_final_einsum(self):
+        """A literal unary opt_einsum path should pass through to the unary final einsum."""
+        matrix = ArrayAnsatz(settings.get_rng().random((3, 3)), batch_dims=0)
+
+        with patch(
+            "mrmustard.physics.mm_einsum.core.math.einsum", wraps=math.einsum
+        ) as einsum_mock:
+            res = mm_einsum("ii->", matrix, contraction_path=[(0,)])
+
+        assert isinstance(res, ArrayAnsatz)
+        final_call = einsum_mock.call_args_list[-1]
+        assert final_call.args[2] == []
+        assert final_call.kwargs["optimize"] == [(0,)]
+
     @pytest.mark.parametrize(
         "equation,expected_cv_vars,expected_batch_shape",
         [
@@ -343,23 +398,6 @@ class TestMmEinsumMechanics:
         assert isinstance(res, PolyExpAnsatz)
         assert res.batch_shape == (2,)
         assert res._lin_sup is True
-
-    def test_raw_array_with_batch_dims(self):
-        """Test raw numpy arrays get batch_dims from equation."""
-        array = settings.get_rng().random((2, 3, 4))
-
-        res = mm_einsum("Hab->Hab", array)
-        assert isinstance(res, ArrayAnsatz)
-        assert res.batch_shape == (2,)
-        assert res.core_shape == (3, 4)
-
-    def test_raw_numpy_array_input(self):
-        """Test that raw NumPy arrays are automatically wrapped."""
-        array = settings.get_rng().random((5, 6))
-        res = mm_einsum("ab,bc->ac", array, array.T)
-        assert isinstance(res, ArrayAnsatz)
-        expected = array @ array.T
-        assert np.allclose(res.array, expected)
 
     def test_scalar_polyexp_result(self):
         """Test scalar PolyExpAnsatz result from contraction."""

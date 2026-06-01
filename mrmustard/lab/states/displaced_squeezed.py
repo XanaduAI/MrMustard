@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a displaced squeezed state.
-"""
+"""The class representing a displaced squeezed state."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["DisplacedSqueezed"]
 
 
 class DisplacedSqueezed(Ket):
-    r"""
-    The displaced squeezed state in Bargmann representation.
+    r"""The displaced squeezed state in Bargmann representation.
 
     >>> from mrmustard.lab import DisplacedSqueezed, Vacuum, Sgate, Dgate
     >>> state = DisplacedSqueezed(mode=0, alpha=1, r=0.2, phi=0.3)
@@ -43,6 +40,7 @@ class DisplacedSqueezed(Ket):
         alpha: The complex displacement.
         r: The squeezing magnitude.
         phi: The squeezing angle.
+        name: A name for the state. If not provided, the class name will be used.
 
     Returns:
         A ``Ket``.
@@ -52,12 +50,14 @@ class DisplacedSqueezed(Ket):
 
     def __init__(
         self,
-        mode: int,
+        mode: int | tuple[int],
         alpha: complex | Sequence[complex] | Parameter = 0.0j,
         r: float | Sequence[float] | Parameter = 0.0,
         phi: float | Sequence[float] | Parameter = 0.0,
+        name: str | None = None,
     ):
         mode = (mode,) if not isinstance(mode, tuple) else mode
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={
@@ -68,7 +68,7 @@ class DisplacedSqueezed(Ket):
                 }
             ),
             wires=Wires(modes_out_ket=set(mode)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["alpha"] = Parameter.from_cc_init(alpha, "complex128", f"{self.name}/alpha")
         self.parameters["r"] = Parameter.from_cc_init(r, "float64", f"{self.name}/r")

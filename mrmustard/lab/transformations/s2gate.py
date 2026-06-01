@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-The class representing a two-mode squeezing gate.
-"""
+"""The class representing a two-mode squeezing gate."""
 
 from __future__ import annotations
 
@@ -31,8 +29,7 @@ __all__ = ["S2gate"]
 
 
 class S2gate(Unitary):
-    r"""
-    The two-mode squeezing gate.
+    r"""The two-mode squeezing gate.
 
     >>> from mrmustard.lab import S2gate
     >>> unitary = S2gate(modes=(1, 2), r=1)
@@ -44,6 +41,7 @@ class S2gate(Unitary):
         modes: The pair of modes of the two-mode squeezing gate.
         r: The squeezing amplitude.
         phi: The phase angle.
+        name: A name for the gate. If not provided, the class name will be used.
 
     .. details::
 
@@ -67,13 +65,15 @@ class S2gate(Unitary):
         modes: tuple[int, int],
         r: float | Sequence[float] | Parameter = 0.0,
         phi: float | Sequence[float] | Parameter = 0.0,
+        name: str | None = None,
     ):
+        name = name if name is not None else self.__class__.__name__
         super().__init__(
             ansatz_factory=AnsatzFactory(
                 ansatz_dict={ReprEnum.BARGMANN: (twomode_squeezing_gate, ("r", "phi", "lin_sup"))}
             ),
             wires=Wires(modes_in_ket=set(modes), modes_out_ket=set(modes)),
-            name=self.__class__.__name__,
+            name=name,
         )
         self.parameters["r"] = Parameter.from_cc_init(r, "float64", f"{self.name}/r")
         self.parameters["phi"] = Parameter.from_cc_init(phi, "float64", f"{self.name}/phi")

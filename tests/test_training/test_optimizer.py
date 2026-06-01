@@ -14,10 +14,10 @@
 
 """Tests for the Optimizer class"""
 
+from unittest.mock import patch
+
 import numpy as np
 import pytest
-from hypothesis import given
-from hypothesis import strategies as st
 from thewalrus.symplectic import two_mode_squeezing
 
 from mrmustard import math, settings
@@ -551,7 +551,7 @@ class TestOptimizer:
         assert math.allclose(sgate_r_reused.value, sgate_r.value)
         assert math.allclose(sgate_phi_reused.value, sgate_phi.value)
 
-    @given(n=st.integers(0, 3))
+    @pytest.mark.parametrize("n", [0, 1, 2, 3])
     def test_S2gate_coincidence_prob(self, n):
         """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
         S_r = Variable(abs(settings.get_rng().normal(loc=1.0, scale=0.1)), "r", dtype=math.float64)
@@ -632,3 +632,93 @@ class TestOptimizer:
             cost_fn, by_optimizing=[S_01_phi, S_23_phi, S_12_r, S_12_phi], max_steps=300
         )
         assert math.allclose(math.sinh(S_12_r.value) ** 2, 1, atol=1e-2)
+
+    def test_parameter_history_off_by_default(self):
+        """Parameter history is empty when not enabled."""
+        x = Variable(value=1.0, name="x", dtype=math.float64)
+
+        def cost_fn(x):
+            return (x.value - 0.5) ** 2
+
+        opt = Optimizer()
+        opt.minimize(cost_fn, by_optimizing=[x], max_steps=5)
+        assert opt.parameter_history == {}
+
+    def test_parameter_history_scalar(self):
+        """Parameter history tracks scalar variables with shape (n_steps+1,)."""
+        x = Variable(value=1.0, name="x", dtype=math.float64)
+
+        def cost_fn(x):
+            return (x.value - 0.5) ** 2
+
+        max_steps = 10
+        opt = Optimizer()
+        opt.minimize(cost_fn, by_optimizing=[x], max_steps=max_steps, parameter_history=True)
+
+        assert "x" in opt.parameter_history
+        assert opt.parameter_history["x"].shape == (max_steps + 1,)
+        # first entry is initial value
+        assert opt.parameter_history["x"][0] == 1.0
+
+    def test_parameter_history_matrix(self):
+        """Parameter history tracks matrix variables with shape (n_steps+1, N, N)."""
+        U = Variable.unitary(name="U", N=3)
+
+        def cost_fn(U):
+            return math.sum(math.abs(U.value) ** 2)
+
+        max_steps = 5
+        opt = Optimizer(unitary_lr=0.01)
+        opt.minimize(cost_fn, by_optimizing=[U], max_steps=max_steps, parameter_history=True)
+
+        assert "U" in opt.parameter_history
+        assert opt.parameter_history["U"].shape == (max_steps + 1, 3, 3)
+
+    def test_parameter_history_multiple_variables(self):
+        """Parameter history tracks multiple variables independently."""
+        x = Variable(value=1.0, name="x", dtype=math.float64)
+        y = Variable(value=-1.0, name="y", dtype=math.float64)
+
+        def cost_fn(x, y):
+            return (x.value - 0.5) ** 2 + (y.value + 0.5) ** 2
+
+        max_steps = 10
+        opt = Optimizer()
+        opt.minimize(cost_fn, by_optimizing=[x, y], max_steps=max_steps, parameter_history=True)
+
+        assert set(opt.parameter_history.keys()) == {"x", "y"}
+        assert opt.parameter_history["x"].shape == (max_steps + 1,)
+        assert opt.parameter_history["y"].shape == (max_steps + 1,)
+        assert opt.parameter_history["x"][0] == 1.0
+        assert opt.parameter_history["y"][0] == -1.0
+
+    def test_keyboard_interrupt_returns_current_values(self):
+        """KeyboardInterrupt returns current variable values instead of raising."""
+        x = Variable(value=1.0, name="x", dtype=math.float64)
+
+        call_count = 0
+        original_make_step = Optimizer.make_step.__wrapped__
+
+        def interrupting_make_step(self, optim, cost_fn, by_optimizing, opt_state):
+            nonlocal call_count
+            call_count += 1
+            result = original_make_step(self, optim, cost_fn, by_optimizing, opt_state)
+            if call_count >= 3:
+                raise KeyboardInterrupt
+            return result
+
+        def cost_fn(x):
+            return (x.value - 0.5) ** 2
+
+        opt = Optimizer()
+        with patch.object(Optimizer, "make_step", interrupting_make_step):
+            (result,) = opt.minimize(
+                cost_fn, by_optimizing=[x], max_steps=100, parameter_history=True
+            )
+
+        # got a result, not an exception
+        assert result.value != 1.0
+        # history has initial + 2 completed steps (3rd call raises before returning)
+        assert opt.parameter_history["x"].shape == (3,)
+        # loss history has initial 0 + 2 completed steps
+        assert len(opt.opt_history) == 3

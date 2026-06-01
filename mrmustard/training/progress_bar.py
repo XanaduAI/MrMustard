@@ -22,9 +22,7 @@ __all__ = ["ProgressBar"]
 
 
 class ProgressBar:
-    r"""
-    A spiffy loading bar to display the progress during an optimization.
-    """
+    r"""A spiffy loading bar to display the progress during an optimization."""
 
     def __init__(self, max_steps: int):
         self.taskID = None
@@ -57,9 +55,7 @@ class ProgressBar:
         )
 
     def step(self, loss):
-        r"""
-        Update bar step and the loss information associated with it.
-        """
+        r"""Update bar step and the loss information associated with it."""
         speed = self.bar.tasks[0].speed or 0.0
         self.bar.update(self.taskID, advance=1, refresh=True, speed=speed, loss=loss)
 

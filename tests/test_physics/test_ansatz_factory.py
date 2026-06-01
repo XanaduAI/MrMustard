@@ -27,7 +27,8 @@ from mrmustard.physics import triples
 from mrmustard.physics.ansatz import ArrayAnsatz, PolyExpAnsatz
 from mrmustard.physics.ansatz_factory import AnsatzFactory
 from mrmustard.physics.fock_utils import fock_state
-from mrmustard.physics.mm_einsum import bargmann_to_fock, fock_to_bargmann, to_bargmann, to_fock
+from mrmustard.physics.mm_einsum import bargmann_to_fock, fock_to_bargmann
+from mrmustard.physics.mm_einsum.conversions import to_bargmann, to_fock
 from mrmustard.physics.wires import ReprEnum
 
 

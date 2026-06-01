@@ -21,13 +21,6 @@ from mrmustard import math, settings
 from mrmustard.physics import triples
 from mrmustard.physics.ansatz import PolyExpAnsatz
 
-try:
-    from equinox import EquinoxRuntimeError
-
-    _validation_error = (ValueError, EquinoxRuntimeError)
-except ImportError:
-    _validation_error = (ValueError,)
-
 
 class TestTriples:
     r"""
@@ -65,7 +58,7 @@ class TestTriples:
         assert math.allclose(c2, [0.5, 1])
 
     def test_amplifier_Abc_error(self):
-        with pytest.raises(_validation_error, match="smaller than"):
+        with pytest.raises(ValueError, match="smaller than"):
             triples.amplifier_Abc(0.1)
 
     def test_attenuator_Abc(self):
@@ -93,10 +86,10 @@ class TestTriples:
         assert math.allclose(c2, math.ones(2))
 
     def test_attenuator_Abc_error(self):
-        with pytest.raises(_validation_error, match="greater than `1`"):
+        with pytest.raises(ValueError, match="greater than `1`"):
             triples.attenuator_Abc(2)
 
-        with pytest.raises(_validation_error, match="less than `0`"):
+        with pytest.raises(ValueError, match="less than `0`"):
             triples.attenuator_Abc(-2)
 
     @pytest.mark.parametrize("eta", [0.0, 0.1, 0.5, 0.9, 1.0])

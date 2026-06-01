@@ -38,7 +38,7 @@ MrMustard Documentation
         <div class="row mt-3">
 
 .. index-card::
-    :link: introduction/basic_reference.html
+    :link: user/basic_reference.html
     :name: Key Concepts
     :description: Learn about the main features of MrMustard
 
@@ -120,7 +120,7 @@ Features
    :caption: Using MrMustard
    :hidden:
 
-   introduction/basic_reference
+   user/index
 
 .. toctree::
    :maxdepth: 1

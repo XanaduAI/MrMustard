@@ -12,6 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-The module containing the math library.
-"""
+r"""The module containing the math library."""

@@ -20,6 +20,7 @@ import io
 from collections import UserDict
 from copy import copy as _copy
 from copy import deepcopy as _deepcopy
+from typing import Any
 
 import numpy as np
 from rich.console import Console
@@ -35,8 +36,7 @@ __all__ = ["ParameterDict"]
 
 
 class ParameterDict(UserDict):
-    r"""
-    A dictionary-like class for storing parameters.
+    r"""A dictionary-like class for storing parameters.
 
     >>> c1 = Constant(1.2345, "const1")
     >>> c2 = Constant(2.3456, "const2")
@@ -51,30 +51,30 @@ class ParameterDict(UserDict):
         **kwargs: Constant or Variable parameters by name.
     """
 
-    def __init__(self, *args: Constant | Variable, **kwargs: dict[str, Constant | Variable]):
+    def __init__(self, *args: Constant | Variable, **kwargs: Constant | Variable) -> None:
         super().__init__()
         for arg in args:
             self.data[arg.name] = arg
-            if not isinstance(arg, Constant | Variable):
+            if not isinstance(arg, (Constant, Variable)):
                 raise ValueError(f"Argument {arg} is not a Constant or Variable")
         for key, value in kwargs.items():
             self.data[key] = value
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: dict[int, Any]) -> ParameterDict:
         new = type(self)()
         new.data = _deepcopy(self.data, memo)
         return new
 
-    def copy(self):
+    def copy(self) -> ParameterDict:
         return _copy(self)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Constant | Variable) -> None:
         self.data[key] = value
 
     def __getattr__(self, key: str) -> Constant | Variable:
         return self.data[key]
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(tuple(self.data.values()))
 
     def __tuple__(self) -> tuple[Constant | Variable, ...]:
@@ -86,25 +86,20 @@ class ParameterDict(UserDict):
 
     @property
     def constants(self) -> ParameterDict:
-        r"""
-        Returns a ParameterDict of constant parameters in this ParameterDict.
-        """
+        r"""Returns a ParameterDict of constant parameters in this ParameterDict."""
         return ParameterDict(
             **{name: param for name, param in self.data.items() if isinstance(param, Constant)}
         )
 
     @property
     def variables(self) -> ParameterDict:
-        r"""
-        Returns a ParameterDict of variable parameters in this ParameterDict.
-        """
+        r"""Returns a ParameterDict of variable parameters in this ParameterDict."""
         return ParameterDict(
             **{name: param for name, param in self.data.items() if isinstance(param, Variable)}
         )
 
     def to_string(self, decimals: int) -> str:
-        r"""
-        Returns a string representation of the parameter values, separated by commas and rounded
+        r"""Returns a string representation of the parameter values, separated by commas and rounded
         to the specified number of decimals.
 
         Args:
@@ -123,9 +118,7 @@ class ParameterDict(UserDict):
         return ", ".join(strings)
 
     def __repr__(self) -> str:
-        r"""
-        Returns a rich-formatted string representation of this parameter set.
-        """
+        r"""Returns a rich-formatted string representation of this parameter set."""
         if not self:
             return "ParameterDict()"
 

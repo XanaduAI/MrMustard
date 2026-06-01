@@ -16,86 +16,79 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from typing import (
-    Protocol,
-    TypeVar,
-    runtime_checkable,
-)
+from typing import TypeVar
 
 import numpy as np
+from numpy._typing import _ArrayLikeInt_co
+from numpy.typing import NDArray
 
 __all__ = [
-    "Batch",
+    "BoolScalar",
+    "BoolScalarValue",
     "ComplexMatrix",
+    "ComplexScalar",
+    "ComplexScalarValue",
     "ComplexTensor",
     "ComplexVector",
+    "IntArrayLike",
     "IntMatrix",
+    "IntScalar",
+    "IntScalarValue",
     "IntTensor",
     "IntVector",
     "Matrix",
     "RealMatrix",
+    "RealScalar",
+    "RealScalarValue",
     "RealTensor",
     "RealVector",
     "Scalar",
+    "ScalarValue",
     "Tensor",
     "Trainable",
-    "UIntMatrix",
-    "UIntTensor",
-    "UIntVector",
     "Vector",
 ]
+# ArrayLike families
+type IntArrayLike = _ArrayLikeInt_co
 
-R = TypeVar("R", np.float16, np.float32, np.float64)
-C = TypeVar("C", np.complex64, np.complex128)
-Z = TypeVar("Z", np.int16, np.int32, np.int64)
-N = TypeVar("N", np.uint16, np.uint32, np.uint64)
+# Dtype families
+type Array = NDArray[np.number]
+type RealArray = NDArray[np.floating]
+type ComplexArray = NDArray[np.complexfloating]
+type IntArray = NDArray[np.signedinteger]
+type BoolArray = NDArray[np.bool]
 
-Scalar = R | C | Z | N
-Vector = np.ndarray[tuple[int], Scalar]
-Matrix = np.ndarray[tuple[int, int], Scalar]
-Tensor = np.ndarray[tuple[int, ...], Scalar]
+# Scalar values (true scalars, not "batched")
+type ScalarValue = complex | float | int | np.number
+type RealScalarValue = float | np.floating
+type ComplexScalarValue = complex | np.complexfloating
+type IntScalarValue = int | np.signedinteger
+type BoolScalarValue = bool | np.bool
 
-RealVector = np.ndarray[tuple[int], R]
-ComplexVector = np.ndarray[tuple[int], C]
-IntVector = np.ndarray[tuple[int], Z]
-UIntVector = np.ndarray[tuple[int], N]
+# Scalars (no core shape)
+type Scalar = ScalarValue | Array
+type RealScalar = RealScalarValue | RealArray
+type ComplexScalar = ComplexScalarValue | ComplexArray
+type IntScalar = IntScalarValue | IntArray
+type BoolScalar = BoolScalarValue | BoolArray
 
-RealMatrix = np.ndarray[tuple[int, int], R]
-ComplexMatrix = np.ndarray[tuple[int, int], C]
-IntMatrix = np.ndarray[tuple[int, int], Z]
-UIntMatrix = np.ndarray[tuple[int, int], N]
+# Vectors (core shape: (n, ))
+type Vector = Array
+type RealVector = RealArray
+type ComplexVector = ComplexArray
+type IntVector = IntArray
 
-RealTensor = np.ndarray[tuple[int, ...], R]
-ComplexTensor = np.ndarray[tuple[int, ...], C]
-IntTensor = np.ndarray[tuple[int, ...], Z]
-UIntTensor = np.ndarray[tuple[int, ...], N]
+# Matrices (core shape: (n, m))
+type Matrix = Array
+type RealMatrix = RealArray
+type ComplexMatrix = ComplexArray
+type IntMatrix = IntArray
 
+# Tensors (core shape: arbitrary rank)
+type Tensor = Array
+type RealTensor = RealArray
+type ComplexTensor = ComplexArray
+type IntTensor = IntArray
 
-# Revisit when requiring python 3.12 (see PEP 695)
-T_co = TypeVar(
-    "T_co",
-    RealVector,
-    ComplexVector,
-    IntVector,
-    UIntVector,
-    RealMatrix,
-    ComplexMatrix,
-    IntMatrix,
-    UIntMatrix,
-    RealTensor,
-    ComplexTensor,
-    IntTensor,
-    UIntTensor,
-    covariant=True,
-)
-
-Trainable = TypeVar("Trainable")
-
-
-@runtime_checkable
-class Batch(Protocol[T_co]):
-    r"""Anything that can iterate over objects of type T_co."""
-
-    def __iter__(self) -> Iterator[T_co]:
-        pass
+# Trainable
+Trainable = TypeVar("Trainable", bound=NDArray[np.number])

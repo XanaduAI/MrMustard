@@ -14,6 +14,6 @@
 
 from .beamsplitter import *
 from .binomial import *
-from .fast_diagonal import *
+from .fock_diagonals import *
 from .squeezer import *
 from .wormhole import *

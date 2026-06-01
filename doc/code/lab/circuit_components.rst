@@ -14,3 +14,4 @@ CircuitComponent
 
 .. autoclass:: mrmustard.lab.circuit_components::CircuitComponent
     :members:
+    :special-members: __rshift__
