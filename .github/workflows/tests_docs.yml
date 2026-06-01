@@ -16,8 +16,6 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
-    env:
-      HYPOTHESIS_PROFILE: ci
 
     steps:
       - name: Checkout repo

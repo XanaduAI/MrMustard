@@ -6,8 +6,6 @@ on:
 jobs:
   upload:
     runs-on: ubuntu-latest
-    env:
-      HYPOTHESIS_PROFILE: ci
 
     steps:
       - name: Checkout repo

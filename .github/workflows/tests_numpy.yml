@@ -20,7 +20,6 @@ jobs:
       matrix:
         python-version: ['3.12', '3.14']
     env:
-      HYPOTHESIS_PROFILE: ci
       UPLOAD_TIMINGS: ${{ github.event_name != 'pull_request' && matrix.python-version == '3.14' && 'true' || 'false' }}
 
     steps:
