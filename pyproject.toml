@@ -67,7 +67,6 @@ dev = [
     "pytest==8.4.1",
     "pytest-cov >=5.0.0, <6.0.0",
     "ruff>=0.15.0,<0.16.0",
-    "setuptools>=75.9.1",
     "thewalrus >=0.19.0,<1",
 ]
 doc = [
